@@ -1,0 +1,19 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+	
+	<bean id="smaSunnyNetPowerDatumDataSource"
+		class="net.solarnetwork.node.util.BeanConfigurationFactoryBean">
+		<property name="beanClass" 
+			value="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource"/>
+		<property name="singleton" value="true"/>
+		<property name="config" ref="smaSunnyNetBeanConfiguration"/>
+		<property name="staticProperties">
+			<map>
+				<entry key="dataCollectorFactory" value-ref="powerConversationalDataCollectorFactory"/>
+				<entry key="settingDao" value-ref="settingDao"/>
+			</map>
+		</property>
+	</bean>
+	
+</beans>

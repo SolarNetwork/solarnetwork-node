@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+	<!-- Service References -->
+	
+	<osgi:reference id="powerConversationalDataCollectorFactory" 
+		interface="org.springframework.beans.factory.ObjectFactory"
+		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.ConversationalDataCollector))"/>
+	
+	<osgi:reference id="smaSunnyNetBeanConfiguration" 
+		interface="net.solarnetwork.node.util.BeanConfiguration"
+		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.power.impl.sma.SMASunnyNetPowerDatumDataSource))"/>
+	
+	<osgi:reference id="settingDao"
+		interface="net.solarnetwork.node.dao.SettingDao"/>
+	
+	<!-- Published Services -->
+	
+	<osgi:service ref="smaSunnyNetPowerDatumDataSource" 
+		interface="net.solarnetwork.node.DatumDataSource"
+		ranking="1">
+		<osgi:service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
+		</osgi:service-properties>
+	</osgi:service>
+	
+</beans>
