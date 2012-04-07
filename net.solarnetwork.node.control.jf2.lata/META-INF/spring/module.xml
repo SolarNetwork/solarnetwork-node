@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<bean id="settingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="LATA control switch"/>
+		<property name="factoryUID" value="net.solarnetwork.node.control.jf2.lata"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.control.jf2.lata.LATAController"/>
+			</bean>
+		</property>
+	</bean>
+
+	<!-- Service References -->
+	
+	<!-- Published Services -->
+	
+	<osgi:service ref="settingsFactory" 
+		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.jf2.lata" update-strategy="container-managed">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.NodeControlProvider</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="settingPid" value="net.solarnetwork.node.control.jf2.lata"/>
+		</osgix:service-properties>
+		<bean id="controller" class="net.solarnetwork.node.control.jf2.lata.LATAController">
+			<property name="dataCollectorFactory">
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="/dev/ttyUSB0"/>
+						</map>
+					</property>
+				</bean>	
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</beans>
