@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+	http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+	
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="dao.jdbc.derby.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.derby">
+		<prop key="job.syncBackup.cron">0 0/10 * * * ? 2099</prop>
+		<prop key="job.syncBackup.destinationPath">var/db-bak</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:reference id="scheduler" interface="org.quartz.Scheduler"/>
+	
+	<osgi:reference id="jdbcOps" interface="org.springframework.jdbc.core.JdbcOperations"
+		filter="(db=node)"/>
+
+	<!-- Published Services -->
+	
+	<osgi:service ref="syncBackup" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<!-- Supporting services -->
+
+	<osgi:list id="jdbcDaos" interface="net.solarnetwork.node.dao.jdbc.JdbcDao" cardinality="0..N">
+		<osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="listener"/>
+	</osgi:list>
+
+	<bean id="listener" class="net.solarnetwork.node.dao.jdbc.derby.DerbyMaintenanceRegistrationListener">
+		<property name="scheduler" ref="scheduler"/>
+		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="maintenanceProperties" ref="dao.jdbc.derby.cfg"/>
+	</bean>
+	
+</beans>

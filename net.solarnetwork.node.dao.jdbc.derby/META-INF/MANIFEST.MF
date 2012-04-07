@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode Derby JDBC Support
+Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby
+Bundle-Version: 1.1.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ net.solarnetwork.node;version="1.0.0",
+ net.solarnetwork.node.dao;version="1.0.0",
+ net.solarnetwork.node.dao.jdbc;version="1.0.0",
+ net.solarnetwork.node.job;version="1.0.0",
+ net.solarnetwork.node.support;version="1.0.0",
+ org.osgi.framework,
+ org.quartz;version="[1.6.2,2.0.0)",
+ org.quartz.simpl;version="[1.6.2,2.0.0)",
+ org.slf4j;version="[1.5.0,2.0.0)",
+ org.springframework.beans.factory;version="[3.0,4.0)",
+ org.springframework.context;version="[3.0,4.0)",
+ org.springframework.core;version="[3.0,4.0)",
+ org.springframework.dao;version="[3.0,4.0)",
+ org.springframework.jdbc.core;version="[3.0,4.0)",
+ org.springframework.osgi.compendium.cm;version="[1.2.0,2.0.0)",
+ org.springframework.osgi.compendium.config;version="[1.2.0,2.0.0)",
+ org.springframework.osgi.config;version="[1.2.0,2.0.0)",
+ org.springframework.scheduling.quartz;version="[3.0,4.0)"
