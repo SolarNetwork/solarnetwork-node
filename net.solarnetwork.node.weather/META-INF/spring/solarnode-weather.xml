@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<ctx:property-placeholder properties-ref="weather.cfg"/>
+
+	<!-- Day Logger job -->
+
+	<bean id="dayDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="dayDatumLoggerTrigger"/>
+		<property name="jobDetail" ref="dayDatumLoggerJob"/>
+	</bean>
+
+	<bean id="dayDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="dayDatumLoggerJob"/>
+		<property name="name" value="Day Logger"/>
+		<property name="description" value="Capture day conditions from registered DayDatum data sources"/>
+		<property name="cronExpression" value="${job.dayDatumLogger.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="dayDatumLoggerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceLoggerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDataSources" value-ref="dayDatumDataSources"/>
+				<entry key="datumDao" value-ref="dayDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+	<!-- Day Cleaner job -->
+
+	<bean id="dayDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="dayDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="dayDatumCleanerJob"/>
+	</bean>
+
+	<bean id="dayDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="dayDatumCleanerJob"/>
+		<property name="name" value="Day Cleaner"/>
+		<property name="description" value="Clean out old cached day data from the local database"/>
+		<property name="cronExpression" value="${job.dayDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="dayDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="dayDatumDao"/>
+			</map>
+		</property>
+	</bean>
+
+
+	<!-- Weather Logger job -->
+
+	<bean id="weatherDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="weatherDatumLoggerTrigger"/>
+		<property name="jobDetail" ref="weatherDatumLoggerJob"/>
+	</bean>
+
+	<bean id="weatherDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="weatherDatumLoggerJob"/>
+		<property name="name" value="Weather Logger"/>
+		<property name="description" value="Capture weather samples from registered WeatherDatum data sources"/>
+		<property name="cronExpression" value="${job.weatherDatumLogger.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="weatherDatumLoggerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceLoggerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDataSources" value-ref="weatherDatumDataSources"/>
+				<entry key="datumDao" value-ref="weatherDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+	<!-- Weather Cleaner job -->
+
+	<bean id="weatherDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="weatherDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="weatherDatumCleanerJob"/>
+	</bean>
+
+	<bean id="weatherDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="weatherDatumCleanerJob"/>
+		<property name="name" value="Weather Cleaner"/>
+		<property name="description" value="Clean out old cached weather data from the local database"/>
+		<property name="cronExpression" value="${job.weatherDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="weatherDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="weatherDatumDao"/>
+			</map>
+		</property>
+	</bean>
+
+</beans>
