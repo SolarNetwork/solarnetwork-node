@@ -193,7 +193,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	/** The default value for the {@code synOnlineWaitMs} property. */
 	public static final long DEFAULT_SYN_ONLINE_WAIT_MS = 5000;
 	
-	private ObjectFactory<ConversationalDataCollector<PowerDatum>> dataCollectorFactory;
+	private ObjectFactory<ConversationalDataCollector> dataCollectorFactory;
 	private Set<String> channelNamesToMonitor = DEFAULT_CHANNEL_NAMES_TO_MONITOR;
 	private Set<String> channelNamesToResetDaily = null;
 	private Set<String> channelNamesToOffsetDaily = DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY;
@@ -215,7 +215,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		ConversationalDataCollector<PowerDatum> dataCollector = null;
+		ConversationalDataCollector dataCollector = null;
 		try {
 			dataCollector = this.dataCollectorFactory.getObject();
 			return dataCollector.collectData(this);
@@ -226,7 +226,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 		}
 	}
 	
-	public PowerDatum conductConversation(ConversationalDataCollector<PowerDatum> dataCollector) {
+	public PowerDatum conductConversation(ConversationalDataCollector dataCollector) {
 		SmaPacket req = null;
 		SmaPacket resp = null;
 		if ( this.smaAddress < 0 || this.channelMap == null ) {
@@ -305,7 +305,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * @param newDay flag if today is considered a "new day" for purposes of calling
 	 * {@link #handleDailyChannelOffset(String, Number, boolean)}
 	 */
-	private void getNumericDataValue(ConversationalDataCollector<PowerDatum> dataCollector, 
+	private void getNumericDataValue(ConversationalDataCollector dataCollector, 
 			String channelName, String beanProperty, PowerDatum datum, final boolean newDay) {
 		if ( this.channelMap.containsKey(channelName) ) {
 			SmaChannel channel = this.channelMap.get(channelName);
@@ -539,7 +539,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * 
 	 * @param dataCollector the data collector to issue the SetData commands with
 	 */
-	private void handleDailyChannelReset(ConversationalDataCollector<PowerDatum> dataCollector) {
+	private void handleDailyChannelReset(ConversationalDataCollector dataCollector) {
 		Calendar now = Calendar.getInstance();
 		String dayOfYear = String.valueOf(now.get(Calendar.DAY_OF_YEAR));
 		
@@ -572,7 +572,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	}
 
 	private SmaPacket issueGetData(
-			ConversationalDataCollector<PowerDatum> dataCollector,
+			ConversationalDataCollector dataCollector,
 			SmaChannel channel, int address) {
 		if ( log.isTraceEnabled() ) {
 			log.trace("Getting data for channel " +channel);
@@ -585,7 +585,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	}
 
 	private SmaPacket issueSetData(
-			ConversationalDataCollector<PowerDatum> dataCollector,
+			ConversationalDataCollector dataCollector,
 			SmaChannel channel, int address, int word) {
 		if ( log.isTraceEnabled() ) {
 			log.trace("Setting data for channel " +channel);
@@ -629,7 +629,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * @param data the user data to include in the command
 	 * @return the command request packet
 	 */
-	private SmaPacket writeCommand(ConversationalDataCollector<?> dataCollector, 
+	private SmaPacket writeCommand(ConversationalDataCollector dataCollector, 
 			SmaCommand cmd, int destAddr, int count, SmaControl control, byte[] data) {
 		SmaPacket packet = createRequestPacket(cmd, destAddr, count, control, data);
 		dataCollector.speakAndListen(packet.getPacket());
@@ -647,7 +647,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * @param data the user data to include in the command
 	 * @return the command request packet
 	 */
-	private SmaPacket writeProclamation(ConversationalDataCollector<?> dataCollector, 
+	private SmaPacket writeProclamation(ConversationalDataCollector dataCollector, 
 			SmaCommand cmd, int destAddr, int count, SmaControl control, byte[] data) {
 		SmaPacket packet = createRequestPacket(cmd, destAddr, count, control, data);
 		dataCollector.speak(packet.getPacket());
@@ -696,7 +696,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * @param originalRequest the original request packet
 	 * @return the response packet
 	 */
-	private SmaPacket decodeResponse(ConversationalDataCollector<?> dataCollector, 
+	private SmaPacket decodeResponse(ConversationalDataCollector dataCollector, 
 			SmaPacket originalRequest) {
 		ByteArrayOutputStream byos = null;
 		SmaPacket curr = null;
@@ -743,7 +743,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	/**
 	 * @return the dataCollectorFactory
 	 */
-	public ObjectFactory<ConversationalDataCollector<PowerDatum>> 
+	public ObjectFactory<ConversationalDataCollector> 
 			getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
@@ -752,7 +752,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	 * @param dataCollectorFactory the dataCollectorFactory to set
 	 */
 	public void setDataCollectorFactory(
-			ObjectFactory<ConversationalDataCollector<PowerDatum>> dataCollectorFactory) {
+			ObjectFactory<ConversationalDataCollector> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
 	}
 	
