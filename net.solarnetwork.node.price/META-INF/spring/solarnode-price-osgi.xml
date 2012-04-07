@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+						http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="price.cfg" persistent-id="net.solarnetwork.node.price">
+		<prop key="job.priceDatumLogger.cron">5 1/5 * * * ?</prop>
+		<prop key="job.priceDatumCleaner.cron">45 21 0 ? * MON,WED,SAT</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:reference id="priceDatumDao" interface="net.solarnetwork.node.dao.DatumDao"
+		filter="(datumClassName=net.solarnetwork.node.price.PriceDatum)"
+		cardinality="0..1"/>
+
+	<osgi:reference id="priceDatumDataSource" interface="net.solarnetwork.node.DatumDataSource"
+		filter="(datumClassName=net.solarnetwork.node.price.PriceDatum)"
+		cardinality="0..1"/>
+
+	<!-- Published Services -->
+	
+	<osgi:service ref="priceDatumLogger" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<osgi:service ref="priceDatumCleaner" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+</beans>
