@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+	<!-- Centameter Power -->
+
+	<osgi:service interface="net.solarnetwork.node.util.BeanConfiguration"
+		ref="centameterDataCollectorConfiguration">
+		<osgi:service-properties>
+			<entry key="beanConfigurationTarget"
+				value="org.springframework.beans.factory.ObjectFactory"/>
+			<entry key="factoryObjectClassName"
+				value="net.solarnetwork.node.DataCollector"/>
+			<entry key="io" value="serial"/>
+		</osgi:service-properties>
+	</osgi:service>
+
+	<bean id="centameterDataCollectorConfiguration"
+		class="net.solarnetwork.node.support.BasicBeanConfiguration">
+		<property name="ordering" value="1"/>
+		<property name="attributes">
+			<map>
+				<entry key="datumClassName"
+					value="net.solarnetwork.node.power.PowerDatum"/>
+				<entry key="factoryObjectClassName"
+					value="net.solarnetwork.node.DataCollector"/>
+			</map>
+		</property>
+		<property name="configuration">
+			<map>
+				<entry key="serialPort" value="/dev/ttyUSB0"/>
+				<entry key="magicBytes" value="x"/>
+				<entry key="baud" value="4800"/>
+				<entry key="bufferSize" value="16"/>
+				<entry key="readSize" value="16"/>
+				<entry key="receiveThreshold" value="8"/>
+				<entry key="maxWait" value="60000"/>
+			</map>
+		</property>
+	</bean>
+
+</beans>

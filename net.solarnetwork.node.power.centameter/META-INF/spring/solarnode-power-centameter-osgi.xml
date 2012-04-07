@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+						http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="centameter.cfg" persistent-id="net.solarnetwork.node.power.centameter">
+		<prop key="CentameterPowerDataSource.addressSourceMappingValue"></prop>
+		<prop key="CentameterPowerDataSource.ampSensorIndex">1</prop>
+		<prop key="CentameterPowerDataSource.multiAmpSensorIndexFlags">1</prop>
+		<prop key="CentameterPowerDataSource.sourceIdFilterValue"></prop>
+		<prop key="CentameterPowerDataSource.sourceIdFormat">%X.%d</prop>
+		<prop key="CentameterPowerDataSource.voltage">230</prop>
+		<prop key="CentameterPowerDataSource.collectAllSourceIds">true</prop>
+		<prop key="CentameterPowerDataSource.collectAllSourceIdsTimeout">30</prop>
+		<prop key="CentameterPowerDataSource.priceSource"></prop>
+		<prop key="CentameterPowerDataSource.priceLocation"></prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:reference id="centameterDataCollectorFactory" 
+		interface="org.springframework.beans.factory.ObjectFactory"
+		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.DataCollector))"/>
+	
+	<osgi:reference id="priceLocationServiceRef" cardinality="0..1"
+		interface="net.solarnetwork.node.price.PriceLocationService">
+		<osgi:listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
+	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="priceLocationServiceRef"/>
+	</bean>
+	
+	<!-- Published Services -->
+	
+	<osgi:service ref="priceCentameterPowerDatumDataSource" ranking="1">
+		<osgi:interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.MultiDatumDataSource</value>
+		</osgi:interfaces>
+		<osgi:service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
+		</osgi:service-properties>
+	</osgi:service>
+	
+</beans>
