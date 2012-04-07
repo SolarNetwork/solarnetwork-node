@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<ctx:property-placeholder properties-ref="core.cfg"/>
+
+	<!-- Quartz scheduler for scheduling all jobs -->
+	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="applicationContextSchedulerContextKey" value="applicationContext"/>
+		<property name="waitForJobsToCompleteOnShutdown" value="true"/>
+		<property name="startupDelay" value="${scheduler.startupDelay}"/>
+		<property name="schedulerName" value="Solar Node"/>
+		<property name="quartzProperties">
+			<props>
+				<prop key="org.quartz.threadPool.threadCount">3</prop>
+			</props>
+		</property>
+		<property name="jobFactory">
+			<bean class="org.springframework.scheduling.quartz.SpringBeanJobFactory"/>
+		</property>
+	</bean>
+	
+	<bean id="delegatingReactorSerialization" 
+		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
+		<property name="serializers" ref="serializers"/>
+	</bean>
+	
+</beans>

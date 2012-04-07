@@ -1,0 +1,16 @@
+<ivy-module version="2.0">
+	<info organisation="SolarNetwork" module="${bundle.name}" />
+	<dependencies>
+		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" />
+		<dependency org="org.apache.commons" name="com.springsource.org.apache.commons.beanutils" rev="1.8.0" />
+		<dependency org="org.eclipse.osgi" name="org.eclipse.osgi" rev="3.5.1.R35x_v20091005" />
+		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0" >
+    		<artifact name="org.osgi.compendium" type="jar" />
+		</dependency>
+		<dependency org="org.slf4j" name="com.springsource.slf4j.api" rev="1.5.10" />
+		<dependency org="org.springframework" name="org.springframework.beans" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.core" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.context" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.context.support" rev="3.0.5.RELEASE"/>
+	</dependencies>
+</ivy-module>
