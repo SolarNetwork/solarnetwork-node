@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+			http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context-3.0.xsd
+			http://www.springframework.org/schema/jee
+			http://www.springframework.org/schema/jee/spring-jee-3.0.xsd
+			http://www.springframework.org/schema/tx
+			http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+	<bean id="messageSource" 
+		class="org.springframework.context.support.ReloadableResourceBundleMessageSource"
+		p:cacheSeconds="-1" p:basename="WEB-INF/messages"/>
+	
+	<!-- See http://forum.springsource.org/archive/index.php/t-54188.html for discussion
+		on getting component-scan to work in PDE. We are required to add the Eclipse build
+		path to the Bundle-Classpath value. -->
+
+	<ctx:component-scan base-package="net.solarnetwork.node.setup.web"/>
+
+	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
+
+	<!-- Dispatch requests mapped to POJO @Controllers implementations -->
+	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"
+		p:alwaysUseFullPath="true"/>
+	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter"
+		p:alwaysUseFullPath="true"/>
+
+	<!-- Resolves logical view names returned by Controllers to Tiles; 
+		a view name to resolve is treated as the name of a tiles definition -->
+	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.tiles2.TilesView"/>
+	</bean>
+
+	<!-- If Tiles view not found, try a bean name (xml, json below) -->
+	<bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
+		<property name="order" value="2"/>
+	</bean>
+	
+	<!-- Configures the Tiles layout system -->
+	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles2.TilesConfigurer">
+		<property name="definitions">
+			<list>
+				<value>/WEB-INF/layouts/layout.xml</value>
+				<value>/WEB-INF/**/views.xml</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="json" class="net.solarnetwork.web.support.JSONView">
+		<property name="contentType" value="application/json;charset=UTF-8"/>
+		<property name="propertySerializerRegistrar" ref="propertySerializerRegistrar"/>
+	</bean>
+	
+</beans>

@@ -1,0 +1,12 @@
+<%@ taglib prefix="pack" uri="http://packtag.sf.net" %>
+<link rel="stylesheet" type="text/css" href="<c:url value='/css/sunny/jquery-ui-1.8.18.custom.css'/>" />
+<pack:style>
+	<src>/css/global.css</src>
+	<src>/css/login.css</src>
+	<src>/css/new-node.css</src>
+	<src>/css/setup.css</src>
+</pack:style>
+<pack:script> 
+	<src>/js-lib/jquery-1.7.1.js</src>
+	<src>/js-lib/jquery-ui-1.8.18.custom.min.js</src>
+</pack:script>

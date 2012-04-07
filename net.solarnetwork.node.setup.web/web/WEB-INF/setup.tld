@@ -1,0 +1,93 @@
+<taglib xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		http://java.sun.com/xml/ns/j2ee
+		http://java.sun.com/xml/ns/j2ee/web-jsptaglibrary_2_0.xsd"
+	version="2.0">
+
+	<description>SolarNetwork Setup Taglib</description>
+	<tlib-version>1.1</tlib-version>
+	<short-name>setup</short-name>
+	<uri>http://solarnetwork.net/taglib/setup</uri>
+
+	<tag>
+		<description>TODO</description>
+		<name>message</name>
+		<tag-class>net.solarnetwork.node.setup.web.support.MessageTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<description>
+				The MessageSource to resolve the i18n message from. 
+			</description>
+			<name>messageSource</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				The message key to resolve. 
+			</description>
+			<name>key</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				A default value if MessageSource not available. 
+			</description>
+			<name>text</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+
+	<tag>
+		<description>TODO</description>
+		<name>settingValue</name>
+		<tag-class>net.solarnetwork.node.setup.web.support.SettingValueTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<description>The SettingService.</description>
+			<name>service</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>The SettingSpecifierProvider of the setting.</description>
+			<name>provider</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>The SettingSpecifier to resolve the value for.</description>
+			<name>setting</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>Escape XML or not.</description>
+			<name>escapeXml</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+
+	<function>
+		<description>instanceof function</description>
+		<name>instanceOf</name>
+		<function-class>net.solarnetwork.node.setup.web.support.TagFunctions</function-class>
+		<function-signature>
+			boolean instanceOf(java.lang.Object, java.lang.String)
+		</function-signature>
+	</function>
+
+	<function>
+		<description>JavaScript escape function</description>
+		<name>js</name>
+		<function-class>net.solarnetwork.node.setup.web.support.TagFunctions</function-class>
+		<function-signature>
+			String jsString(java.lang.String)
+		</function-signature>
+	</function>
+
+</taglib>

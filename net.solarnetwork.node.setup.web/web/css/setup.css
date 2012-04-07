@@ -1,0 +1,104 @@
+a {
+	color: #00c;
+}
+
+a:visited {
+	color: #00c;
+}
+
+.ui-widget {
+	font-size: 9pt !important
+}
+
+form#settings-form {
+	max-width: none;
+}
+
+table.factories {
+	border-collapse: collapse;
+	margin-bottom: 2em;
+}
+
+table.factories td:first-child {
+	font-weight: bold;
+	padding-right: 22pt;
+}
+
+table.settings {
+	border-collapse: collapse;
+}
+
+table.settings thead td {
+	font-weight: bold;
+	vertical-align: bottom;
+	border-bottom: 1px solid black;
+}
+
+table.settings tbody td {
+	vertical-align: top;
+	padding: 12pt 8pt 12pt 0pt;
+}
+
+table.settings tbody td.setting {
+	width: 240pt;
+	padding-left: 22pt;
+	padding-right: 22pt;
+}
+
+table.settings tbody td.setting input[type=text] {
+	width: 25em;
+}
+
+table.settings tbody td.value,
+table.settings tbody td.label,
+table.settings tbody td.description {
+	font-size: 80%;
+}
+
+table.settings tbody td.description {
+	width: 10em;
+}
+
+table.settings tbody td.dirty {
+	background-color: #c99;
+}
+
+div.slider a.ui-slider-handle {
+	text-decoration: none;
+	font-style: normal;
+	font-size: 9pt;
+	color: #666;
+	padding: 2pt;
+	width: auto;
+	min-width: 1.2em;
+	text-align: center;
+	cursor: move;
+}
+
+table.settings div.description-dialog {
+	display: none;
+}
+
+table.settings div.description-brief {
+	height: 1.5em;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+table.settings div.dotdotdot {
+	float: right;
+}
+
+div.alert {
+	display: none;
+}
+
+div.slider-min {
+	float: left;
+	margin-top: 4pt;
+}
+
+div.slider-max {
+	float: right;
+	margin-top: 4pt;
+}

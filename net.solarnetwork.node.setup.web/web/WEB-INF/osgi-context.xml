@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="setup.web.cfg" persistent-id="net.solarnetwork.node.setup.web">
+		<prop key="mail.sender">nobody@localhost.localdomain</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:reference id="transactionManager"
+		interface="org.springframework.transaction.PlatformTransactionManager"
+		filter="(db=node)"/>
+	
+	<osgi:reference id="identityService"
+		interface="net.solarnetwork.node.IdentityService"/>
+	
+	<osgi:reference id="setupService"
+		interface="net.solarnetwork.node.setup.SetupService"/>
+		
+	<osgi:reference id="settingsServiceRef" cardinality="0..1"
+		interface="net.solarnetwork.node.settings.SettingsService">
+		<osgi:listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
+	<!--osgi:reference id="userBiz" depends-on="userValidator"
+		interface="net.solarnetwork.central.reg.biz.UserBiz"/>
+	
+	<osgi:reference id="mailSender" interface="org.springframework.mail.MailSender"/-->
+	
+	<!-- Published Services ->
+	
+	<osgi:service ref="userValidator" 
+		interface="org.springframework.validation.Validator"
+		ranking="1">
+		<osgi:service-properties>
+			<entry key="targetClassName" value="net.solarnetwork.central.user.domain.User"/>
+			<entry key="mode" value="Registration"/>
+		</osgi:service-properties>
+	</osgi:service-->
+	
+</beans>
