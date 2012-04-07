@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<bean id="factory" class="net.solarnetwork.node.io.rxtx.SerialPortConversationalDataCollectorFactory">
+		<property name="serialPort" value="/dev/ttyUSB0"/>
+		<property name="baud" value="4800"/>
+		<!--property name="bufferSize" value="16"/>
+		<property name="readSize" value="16"/-->
+		<property name="receiveThreshold" value="-1"/>
+		<property name="maxWait" value="60000"/>
+		
+		<!--property name="baudRate" value="9600"/>
+		<property name="databits" value="8"/>
+		<property name="parity" value="0"/><!- SerialPort.PARITY_NONE ->
+		<property name="stopbits" value="2"/>
+		<property name="encoding" value="rtu"/>
+		<property name="echo" value="false"/>
+		<property name="receiveTimeout" value="2000"/-->
+	</bean>
+
+</beans>
