@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+						http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+	
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="power.cfg" persistent-id="net.solarnetwork.node.power">
+		<prop key="job.powerDatumLogger.cron">0 * * * * ?</prop>
+		<prop key="job.powerDatumCleaner.cron">50 23 0 ? * TUE,THU,SUN</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:reference id="powerDatumDao" interface="net.solarnetwork.node.dao.DatumDao"
+		filter="(datumClassName=net.solarnetwork.node.power.PowerDatum)"
+		cardinality="0..1"/>
+
+	<osgi:list id="powerDatumDataSources" greedy-proxying="true" cardinality="0..N" 
+		interface="net.solarnetwork.node.DatumDataSource"
+		filter="(datumClassName=net.solarnetwork.node.power.PowerDatum)"/>
+
+	<osgi:reference id="uploadService" interface="net.solarnetwork.node.UploadService"
+		cardinality="0..1"/>
+	
+	<!-- Published Services -->
+	
+	<osgi:service ref="powerDatumLogger" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<osgi:service ref="powerDatumCleaner" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+</beans>

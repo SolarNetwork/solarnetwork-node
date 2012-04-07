@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<ctx:property-placeholder properties-ref="power.cfg"/>
+
+	<!-- Logger job -->
+
+	<bean id="powerDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="powerDatumLoggerTrigger"/>
+		<property name="jobDetail" ref="powerDatumLoggerJob"/>
+	</bean>
+
+	<bean id="powerDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="powerDatumLoggerJob"/>
+		<property name="name" value="Power Logger"/>
+		<property name="description" value="Capture power generation samples from registered PowerDatum data sources"/>
+		<property name="cronExpression" value="${job.powerDatumLogger.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="powerDatumLoggerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceLoggerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDataSources" value-ref="powerDatumDataSources"/>
+				<entry key="datumDao" value-ref="powerDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+	<!-- Cleaner job -->
+
+	<bean id="powerDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="powerDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="powerDatumCleanerJob"/>
+	</bean>
+
+	<bean id="powerDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="powerDatumCleanerJob"/>
+		<property name="name" value="Power Cleaner"/>
+		<property name="description" value="Clean out old cached power data from the local database"/>
+		<property name="cronExpression" value="${job.powerDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="powerDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="powerDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+</beans>

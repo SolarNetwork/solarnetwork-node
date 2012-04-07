@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beansProjectDescription>
+	<version>1</version>
+	<pluginVersion><![CDATA[2.2.6.200908051215-RELEASE]]></pluginVersion>
+	<configSuffixes>
+		<configSuffix><![CDATA[xml]]></configSuffix>
+	</configSuffixes>
+	<enableImports><![CDATA[false]]></enableImports>
+	<configs>
+		<config>META-INF/spring/solarnode-power.xml</config>
+		<config>META-INF/spring/solarnode-power-osgi.xml</config>
+	</configs>
+	<configSets>
+		<configSet>
+			<name><![CDATA[SolarNode Power]]></name>
+			<allowBeanDefinitionOverriding>true</allowBeanDefinitionOverriding>
+			<incomplete>false</incomplete>
+			<configs>
+				<config>/net.solarnetwork.node.osgi.core/META-INF/spring/solarnode-core.xml</config>
+				<config>/net.solarnetwork.node.osgi.core/META-INF/spring/solarnode-core-osgi.xml</config>
+				<config>META-INF/spring/solarnode-power.xml</config>
+				<config>META-INF/spring/solarnode-power-osgi.xml</config>
+			</configs>
+		</configSet>
+	</configSets>
+</beansProjectDescription>
