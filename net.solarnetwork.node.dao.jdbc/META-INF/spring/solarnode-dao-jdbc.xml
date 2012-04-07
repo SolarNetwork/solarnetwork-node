@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<ctx:property-placeholder properties-ref="dao.jdbc.cfg"/>
+	
+	<bean id="dataSource" class="net.solarnetwork.dao.jdbc.TomcatJdbcPoolDataSourceFactoryBean">
+		<property name="poolProperties">
+			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties"
+				p:jmxEnabled="true"
+				p:testWhileIdle="false"
+				p:testOnBorrow="true"
+				p:validationQuery="SELECT CURRENT_DATE"
+				p:testOnReturn="false"
+				p:validationInterval="30000"
+				p:timeBetweenEvictionRunsMillis="${jdbc.pool.timeBetweenEvictionRunsMillis}"
+				p:maxActive="${jdbc.pool.maxActive}"
+				p:initialSize="0"
+				p:maxWait="${jdbc.pool.maxWait}"
+				p:removeAbandonedTimeout="60"
+				p:minEvictableIdleTimeMillis="${jdbc.pool.minEvictableIdleTimeMillis}"
+				p:minIdle="0"
+				p:maxIdle="${jdbc.pool.maxActive}"
+				p:logAbandoned="true"
+				p:jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer"
+				/>
+		</property>
+		<property name="dataSourceFactory" ref="dataSourceFactory"/>
+		<property name="dataSourceProperties">
+			<props>
+				<prop key="url">${jdbc.url}</prop>
+				<prop key="user">${jdbc.user}</prop>
+				<prop key="password">${jdbc.pass}</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<!-- PlatformTransactionManager: local JDBC transaction manager. -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<bean id="databaseSetup" class="net.solarnetwork.node.dao.jdbc.DatabaseSetup"
+			init-method="init">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initSqlResource" value="${DatabaseSetup.initSqlResource}"/>
+	</bean>
+	
+	<bean id="settingDao" class="net.solarnetwork.node.dao.jdbc.JdbcSettingDao">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+</beans>
