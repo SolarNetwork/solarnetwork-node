@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+	<!-- DataCollectorFactory service -->
+
+	<osgi:list id="dataCollectorFactoryConfigurationList"
+		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N"
+		filter="(&amp;(beanConfigurationTarget=org.springframework.beans.factory.ObjectFactory)(factoryObjectClassName=net.solarnetwork.node.DataCollector)(io=serial))">
+		<osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="dataCollectorFactory"/>
+	</osgi:list>
+	
+	<bean id="dataCollectorFactory" 
+		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener">
+		<property name="serviceClass"
+			value="net.solarnetwork.node.io.rxtx.SerialPortDataCollectorFactory"/>
+		<property name="serviceInterfaces"
+			value="org.springframework.beans.factory.ObjectFactory"/>
+		<property name="serviceProperties">
+			<map>
+				<entry key="factoryObjectClassName" value="net.solarnetwork.node.DataCollector"/>
+			</map>
+		</property>
+		<property name="bundleContext" ref="bundleContext"/>
+	</bean>
+	
+	<!-- ConversationalDataCollectorFactory service -->
+	
+	<osgi:list id="conversationalDataCollectorFactoryConfigurationList" 
+		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N"
+		filter="(&amp;(beanConfigurationTarget=org.springframework.beans.factory.ObjectFactory)(factoryObjectClassName=net.solarnetwork.node.ConversationalDataCollector)(io=serial))">
+		<osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="conversationalDataCollectorFactory"/>
+	</osgi:list>
+	
+	<bean id="conversationalDataCollectorFactory" 
+		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener">
+		<property name="serviceClass"
+			value="net.solarnetwork.node.io.rxtx.SerialPortConversationalDataCollectorFactory"/>
+		<property name="serviceInterfaces"
+			value="org.springframework.beans.factory.ObjectFactory"/>
+		<property name="serviceProperties">
+			<map>
+				<entry key="factoryObjectClassName" value="net.solarnetwork.node.ConversationalDataCollector"/>
+			</map>
+		</property>
+		<property name="bundleContext" ref="bundleContext"/>
+	</bean>
+	
+</beans>

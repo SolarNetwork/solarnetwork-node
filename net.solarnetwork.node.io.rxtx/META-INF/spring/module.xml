@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<bean id="listenerSettingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="Serial Port"/>
+		<property name="factoryUID" value="net.solarnetwork.node.io.rxtx"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.io.rxtx.RxtxDataCollectorFactory"/>
+			</bean>
+		</property>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<osgi:service ref="listenerSettingsFactory" 
+		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.rxtx" update-strategy="container-managed">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.DataCollectorFactory</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="settingPid" value="net.solarnetwork.node.io.rxtx"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.rxtx.RxtxDataCollectorFactory"/>
+	</osgix:managed-service-factory>
+	
+</beans>
