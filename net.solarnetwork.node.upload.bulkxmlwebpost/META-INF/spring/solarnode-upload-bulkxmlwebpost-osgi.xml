@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="upload.cfg" persistent-id="net.solarnetwork.node.upload.bulkxmlwebpost">
+		<prop key="job.bulkDatumUploader.cron">20 * * * * ?</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<osgi:list id="datumDaoCollection" cardinality="0..N" 
+		interface="net.solarnetwork.node.dao.DatumDao"/>
+	
+	<osgi:reference id="identityService" cardinality="0..1" 
+		interface="net.solarnetwork.node.IdentityService"/>
+	
+	<osgi:reference id="reactorServiceRef" cardinality="0..1"
+		interface="net.solarnetwork.node.reactor.ReactorService">
+		<osgi:listener ref="reactorService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
+	<bean id="reactorService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="reactorServiceRef"/>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<osgi:service ref="bulkDatumUploader" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+	<osgi:service ref="bulkXmlWebPostUploadService"
+		interface="net.solarnetwork.node.reactor.InstructionAcknowledgementService"/>
+	
+</beans>
