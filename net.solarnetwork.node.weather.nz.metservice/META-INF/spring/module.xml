@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<bean id="daySettingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="New Zealand Metservice day information"/>
+		<property name="factoryUID" value="net.solarnetwork.node.weather.nz.metservice.day"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="weatherSettingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="New Zealand Metservice weather information"/>
+		<property name="factoryUID" value="net.solarnetwork.node.weather.nz.metservice.weather"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- Published Services -->
+	
+	<osgi:service ref="daySettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<osgi:service ref="weatherSettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.nz.metservice.day" update-strategy="container-managed">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.weather.DayDatum"/>
+			<entry key="settingPid" value="net.solarnetwork.node.weather.nz.metservice.day"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
+	</osgix:managed-service-factory>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.nz.metservice.weather" update-strategy="container-managed">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.weather.WeatherDatum"/>
+			<entry key="settingPid" value="net.solarnetwork.node.weather.nz.metservice.weather"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
+	</osgix:managed-service-factory>
+
+</beans>
