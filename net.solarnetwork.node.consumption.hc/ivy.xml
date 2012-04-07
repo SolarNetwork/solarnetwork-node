@@ -1,0 +1,12 @@
+<ivy-module version="2.0">
+	<info organisation="SolarNetwork" module="${bundle.name}" />
+	<dependencies>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.4">
+    		<artifact name="slf4j-api" type="jar" />
+		</dependency>
+		<dependency org="org.springframework" name="org.springframework.beans" rev="3.0.0.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.context" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.context.support" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.core" rev="3.0.0.RELEASE"/>
+	</dependencies>
+</ivy-module>
