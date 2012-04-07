@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<bean id="settingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="EnaSolar web service power generation"/>
+		<property name="factoryUID" value="net.solarnetwork.node.price.delimited"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<!-- Service References -->
+	
+	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="priceLocationServiceRef"/>
+	</bean>
+	
+	<osgi:reference id="priceLocationServiceRef" cardinality="0..1"
+		interface="net.solarnetwork.node.PriceLocationService">
+		<osgi:listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+
+	<!-- Published Services -->
+	
+	<osgi:service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.price.delimited" update-strategy="container-managed">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.price.PriceDatum"/>
+			<entry key="settingPid" value="net.solarnetwork.node.price.delimited"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
+			<property name="delegate">
+				<bean id="priceDataSource" class="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource"/>
+			</property>
+			<property name="priceLocationService" ref="priceLocationService"/>
+			<property name="requirePriceLocationService" value="true"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+</beans>
