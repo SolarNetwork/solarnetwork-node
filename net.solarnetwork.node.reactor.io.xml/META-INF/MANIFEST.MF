@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode XML Reactor IO
+Bundle-SymbolicName: net.solarnetwork.node.reactor.io.xml
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ javax.xml.namespace,
+ javax.xml.parsers,
+ javax.xml.transform,
+ javax.xml.transform.dom,
+ javax.xml.transform.stream,
+ javax.xml.xpath,
+ net.solarnetwork.node.reactor;version="1.0.0",
+ net.solarnetwork.node.reactor.support;version="1.0.0",
+ net.solarnetwork.node.support;version="1.2.0",
+ org.w3c.dom,
+ org.xml.sax
