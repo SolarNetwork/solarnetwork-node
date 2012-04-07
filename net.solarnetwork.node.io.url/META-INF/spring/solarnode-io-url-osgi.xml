@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
+						http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- DataCollectorFactory service -->
+
+	<osgi:list id="dataCollectorFactoryConfigurationList"
+		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N"
+		filter="(&amp;(beanConfigurationTarget=org.springframework.beans.factory.ObjectFactory)(factoryObjectClassName=net.solarnetwork.node.DataCollector)(io=url))">
+		<osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="dataCollectorFactory"/>
+	</osgi:list>
+	
+	<bean id="dataCollectorFactory" 
+		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener">
+		<property name="serviceClass"
+			value="net.solarnetwork.node.io.url.UrlDataCollectorFactory"/>
+		<property name="serviceInterfaces"
+			value="org.springframework.beans.factory.ObjectFactory"/>
+		<property name="serviceProperties">
+			<map>
+				<entry key="factoryObjectClassName" value="net.solarnetwork.node.DataCollector"/>
+			</map>
+		</property>
+		<property name="bundleContext" ref="bundleContext"/>
+	</bean>
+	
+	<!--osgix:managed-service-factory 
+		factory-pid="net.solarnetwork.node.io.url.datacollector" 
+		interface="org.springframework.beans.factory.ObjectFactory" 
+		update-strategy="container-managed">
+		<osgi:service-properties>
+			<entry key="factoryObjectClassName" value="net.solarnetwork.node.DataCollector"/>
+		</osgi:service-properties>
+		<bean class="net.solarnetwork.node.io.url.UrlDataCollectorFactory"/>
+	</osgix:managed-service-factory-->
+	
+</beans>
