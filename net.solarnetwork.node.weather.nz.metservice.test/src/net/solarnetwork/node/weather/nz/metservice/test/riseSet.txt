@@ -1,0 +1,8 @@
+"day":"18 October 2011",
+"id":"loc13001",
+"location":"Wellington",
+"moonRise":"12:33am",
+"moonSet":"10:01am",
+"sunRise":"6:28am",
+"sunSet":"7:45pm"
+}
