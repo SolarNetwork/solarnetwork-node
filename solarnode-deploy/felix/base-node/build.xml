@@ -1,0 +1,96 @@
+<project basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+	<property file="${basedir}/build.properties"/>
+	
+	<property name="log.file" value="/dev/shm/solar/log/solarnode.log"/>
+	<property name="dir.runtime.lib" value="../../lib"/>
+	<property name="dir.build" value="build"/>
+	<property name="dir.assemble" value="${dir.build}/assemble"/>
+	<property name="dir.target" value="${basedir}/../../../solarnetwork-osgi-lib"/>
+	<property name="dir.platform" value="${basedir}/../../../solarnetwork-osgi-target"/>
+	<import file="${dir.target}/lib-build.xml"/>
+	
+	<patternset id="base.node.app.main">
+		<include name="*.jar"/>
+		<exclude name="aopalliance*"/>
+		<exclude name="com.springsource.org.apache.commons.*"/>
+		<exclude name="com.springsource.org.apache.juli.extras-*"/>
+		<exclude name="commons-logging*"/>
+	</patternset>
+	
+	<patternset id="spring.osgi">
+		<include name="spring/org.springframework.osgi.core*"/>
+		<include name="gemini/dep/org.springframework.osgi.io*"/>
+		<include name="platform/spring-osgi-extender*"/>
+	</patternset>
+	
+	<target name="app-clean">
+		<delete dir="${dir.build}" failonerror="no"/>
+	</target>
+	
+	<target name="assemble-prepare">
+		<mkdir dir="${dir.assemble}"/>
+	</target>
+	
+	<target name="app-main" depends="ivy-init, assemble-prepare">
+		<ivy:settings file="${ivy.settings}"/>
+		<ivy:resolve file="${basedir}/ivy.xml" conf="runtime"/>
+		<mkdir dir="${dir.build}/jars"/>
+		<ivy:retrieve type="jar" pattern="${dir.build}/jars/[artifact]-[revision].[ext]"/>
+		<mkdir dir="${dir.assemble}/app/main"/>
+		<copy todir="${dir.assemble}/app/main" flatten="yes">
+			<fileset dir="${dir.build}/jars">
+				<patternset refid="base.node.app.main"/>
+			</fileset>
+			<fileset dir="${dir.platform}">
+				<patternset refid="spring.osgi"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="app-boot" depends="assemble-prepare">
+		<mkdir dir="${dir.assemble}/app/boot"/>
+		<copy todir="${dir.assemble}/app/boot" flatten="yes">
+			<fileset dir="${dir.runtime.lib}/app-boot">
+				<include name="*"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="app-conf" depends="assemble-prepare">
+		<mkdir dir="${dir.assemble}/conf"/>
+		<copy todir="${dir.assemble}/conf" flatten="no">
+			<fileset dir="conf">
+				<include name="**"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="app-logging" depends="assemble-prepare">
+		<copy todir="${dir.assemble}/app/main" filtering="yes">
+			<fileset dir="${dir.runtime.lib}" 
+				includes="org.springframework.osgi.log4j.config/**"/>
+			<filterset>
+				<filter token="LOGFILE" value="${log.file}"/>
+			</filterset>
+		</copy>
+	</target>
+	
+	<target name="felix" depends="assemble-prepare">
+		<untar src="base-felix.tgz" dest="${dir.assemble}" 
+					compression="gzip"/>
+	</target>
+	
+	<target name="assemble" depends="app-boot,app-main,app-conf,app-logging,felix"
+		description="Assemble a base node directory structure"/>
+	
+	<target name="archive" depends="assemble"
+		description="Assemble and then package a base node archive">
+		<tar destfile="${dir.build}/base-node.tgz" compression="gzip">
+			<tarfileset dir="${dir.assemble}">
+				<include name="**"/>
+			</tarfileset>
+		</tar>
+	</target>
+	
+</project>

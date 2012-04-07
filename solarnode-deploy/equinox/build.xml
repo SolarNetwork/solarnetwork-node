@@ -1,0 +1,148 @@
+<project basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+	<property file="${basedir}/build.properties"/>
+
+	<property name="log.file" value="/dev/shm/solar/log/solarnode.log"/>
+	<property name="dir.runtime.lib" value="../lib"/>
+	<property name="equinox.lib" value="${dir.runtime.lib}/org.eclipse.osgi_3.6.2.R36x_v20110210.jar"/>
+	<property name="dir.equinox.conf" value="gemini1"/>
+	<property name="gemini.release" value="1.1.1.RELEASE"/>
+	<property name="gemini.lib" value="${dir.runtime.lib}/gemini-web-${gemini.release}.zip"/>
+	<property name="dir.generic.conf" value="conf"/>
+	<property name="dir.core.conf" value="core"/>
+	
+	<property name="dir.build" value="build"/>
+	<property name="dir.assemble" value="${dir.build}/assemble"/>
+	<property name="dir.target" value="${basedir}/../../solarnetwork-osgi-lib"/>
+	<property name="dir.platform" value="${basedir}/../../solarnetwork-osgi-target"/>
+	<import file="${dir.target}/lib-build.xml"/>
+	
+	<patternset id="base.node.app.core">
+		<include name="*.jar"/>
+		<exclude name="aopalliance*"/>
+		<exclude name="aspectj*"/>
+		<exclude name="com.springsource.org.apache.commons.*"/>
+		<exclude name="com.springsource.org.apache.juli.extras-*"/>
+		<exclude name="commons-logging*"/>
+	</patternset>
+
+	<patternset id="spring.osgi">
+		<include name="spring/org.springframework.osgi.*"/>
+	</patternset>
+	
+	<patternset id="virgo.support">
+		<include name="virgo/*"/>
+		<exclude name="virgo/*-sources-*"/>
+	</patternset>
+	
+	<target name="app-clean">
+		<delete dir="${dir.build}" failonerror="no"/>
+	</target>
+	
+	<target name="assemble-prepare">
+		<mkdir dir="${dir.assemble}"/>
+		<mkdir dir="${dir.assemble}/app/boot"/>
+		<mkdir dir="${dir.assemble}/app/core"/>
+		<mkdir dir="${dir.assemble}/app/main"/>
+		<mkdir dir="${dir.assemble}/var"/>
+	</target>
+	
+	<target name="app-main" depends="ivy-init, assemble-prepare">
+		<ivy:settings file="${ivy.settings}"/>
+		<ivy:resolve file="${basedir}/ivy.xml" conf="runtime"/>
+		<delete dir="${dir.build}/jars" failonerror="no"/>
+		<mkdir dir="${dir.build}/jars"/>
+		<ivy:retrieve type="jar" pattern="${dir.build}/jars/[artifact]-[revision].[ext]"/>
+		<mkdir dir="${dir.assemble}/app/core"/>
+		<copy todir="${dir.assemble}/app/core" flatten="yes">
+			<fileset dir="${dir.build}/jars">
+				<patternset refid="base.node.app.core"/>
+			</fileset>
+			<fileset dir="${dir.platform}">
+				<patternset refid="spring.osgi"/>
+				<patternset refid="virgo.support"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="app-boot" depends="assemble-prepare">
+		<mkdir dir="${dir.assemble}/app/boot"/>
+		<copy todir="${dir.assemble}/app/boot" flatten="yes">
+			<fileset dir="${dir.runtime.lib}/app-boot">
+				<include name="*"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="app-conf" depends="assemble-prepare">
+		<mkdir dir="${dir.assemble}/conf"/>
+		<copy todir="${dir.assemble}/conf" flatten="no">
+			<!--fileset dir="${dir.equinox.conf}">
+				<include name="**"/>
+			</fileset-->
+			<fileset dir="${dir.generic.conf}">
+				<include name="**"/>
+			</fileset>
+		</copy>
+		<copy todir="${dir.assemble}/app/core">
+			<fileset dir="${dir.core.conf}" includes="**"/>
+		</copy>
+	</target>
+	
+	<target name="app-logging" depends="assemble-prepare">
+		<copy todir="${dir.assemble}/app/core">
+			<fileset dir="${dir.runtime.lib}" 
+				includes="org.springframework.osgi.log4j.config/**"/>
+			<filterset>
+				<filter token="LOGFILE" value="${log.file}"/>
+			</filterset>
+		</copy>
+	</target>
+
+	<target name="app-tomcat" depends="assemble-prepare">
+		<copy todir="${dir.assemble}/app/core">
+			<fileset dir="${dir.runtime.lib}" 
+				includes="org.eclipse.gemini.web.tomcat.config/**"/>
+		</copy>
+	</target>
+
+	<target name="app-core" depends="assemble-prepare">
+		<copy todir="${dir.assemble}/app/core">
+			<fileset dir="${dir.runtime.lib}/app-core" includes="**"/>
+		</copy>
+	</target>
+	
+	<patternset id="gemini.jars">
+		<include name="*.jar"/>
+		<include name="dep/*.jar"/>
+		<exclude name="**/*slf4j*"/>
+		<exclude name="**/*springframework*"/>
+		<exclude name="**/*logging*"/>
+	</patternset>
+
+	<target name="gemini" depends="assemble-prepare">
+		<unzip src="${gemini.lib}" dest="${dir.build}/gemini"/>
+		<copy todir="${dir.assemble}/app/core" flatten="yes">
+			<fileset dir="${dir.build}/gemini/gemini-web-${gemini.release}">
+				<patternset refid="gemini.jars"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="equinox" depends="assemble-prepare">
+		<copy todir="${dir.assemble}/app" file="${equinox.lib}"/>
+	</target>
+	
+	<target name="assemble" depends="app-boot,app-main,app-conf,app-logging,app-tomcat,app-core,equinox,gemini"
+		description="Assemble a base node directory structure"/>
+	
+	<target name="archive" depends="assemble"
+		description="Assemble and then package a base node archive">
+		<tar destfile="${dir.build}/base-equinox-node.tgz" compression="gzip">
+			<tarfileset dir="${dir.assemble}">
+				<include name="**"/>
+			</tarfileset>
+		</tar>
+	</target>
+	
+</project>

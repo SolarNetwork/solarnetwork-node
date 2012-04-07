@@ -1,0 +1,90 @@
+<project basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" >
+
+	<macrodef name="bundle-iterate">
+		<attribute name="target"/>
+		<sequential>
+			<subant target="@{target}">
+				<property name="dir.dist" value="${dir.dist}"/>
+				<property name="dir.bundles" value="${dir.bundles}"/>
+				<fileset refid="bundle.build.xml"/>
+			</subant>
+		</sequential>
+	</macrodef>
+
+	<property file="${basedir}/build.properties"/>
+	
+	<property name="dir.dist" value="${basedir}/target/main"/>
+	<property name="dir.dist.core" value="${basedir}/target/core"/>
+	<property name="dir.bundles" value="${basedir}/platform"/>
+	<property name="dir.target" value="${basedir}/../../solarnetwork-osgi-lib"/>
+	<property name="dir.platform" value="${basedir}/../../solarnetwork-osgi-target"/>
+
+	<property name="dir.build" value="build"/>
+	<property name="dir.assemble" value="${dir.build}/assemble"/>
+	<property name="dir.deps" value="${dir.build}/deps"/>
+	
+	<property name="bundles" value="net.solarnetwork.node.core"/>
+	
+	<import file="${dir.target}/lib-build.xml"/>
+
+	<fileset id="bundle.build.xml" dir="${basedir}/../.." includes="*/build.xml">
+		<scriptselector language="javascript">
+			var result = (project.getProperty("bundles").search("\\b" 
+				+file.getParentFile().getName().replace(".","\\.") +"(\\s|,|$)") !== -1);
+			if ( result ) {
+				java.lang.System.out.println("Including bundle " +file.getParentFile().getName());
+			}
+			self.setSelected(result);
+		</scriptselector>
+	</fileset>
+	
+	<patternset id="core.bundles">
+		<include name="net.solarnetwork.common-*"/>
+		<include name="net.solarnetwork.node.core-*"/>
+		<include name="net.solarnetwork.node.dao.jdbc-*"/>
+		<include name="net.solarnetwork.node.setup-*"/>
+		<include name="net.solarnetwork.org.*"/>
+		<include name="net.solarnetwork.net.*"/>
+	</patternset>
+	
+	<target name="clean" description="Remove generated build files">
+		<delete dir="${dir.build}" failonerror="no"/>
+		<delete dir="${dir.dist}" failonerror="no"/>
+		<delete dir="${dir.dist.core}" failonerror="no"/>
+		<delete dir="${dir.bundles}" failonerror="no"/>
+	</target>
+	
+	<target name="prepare">
+		<mkdir dir="${dir.dist}"/>
+		<mkdir dir="${dir.dist.core}"/>
+		<mkdir dir="${dir.bundles}"/>
+	</target>
+	
+	<target name="jar" description="Create bundle jars" depends="prepare">
+		<bundle-iterate target="deploy"/>
+		
+		<!-- Also copy all dependent SolarNetwork JARs into target dir -->
+		<copy todir="${dir.dist}">
+			<fileset dir="${dir.bundles}" includes="net.solarnetwork.*"/>
+		</copy>
+		<move todir="${dir.dist.core}" overwrite="yes">
+			<fileset dir="${dir.dist}">
+				<patternset refid="core.bundles"/>
+			</fileset>
+		</move>
+	</target>
+	
+	<target name="clean-jar" description="Clean bundle jars">
+		<bundle-iterate target="clean"/>
+	</target>
+
+	<target name="external-jars" depends="ivy-init">
+		<ivy:settings file="${ivy.settings}"/>
+		<ivy:resolve file="${basedir}/ivy.xml" conf="runtime"/>
+		<mkdir dir="${dir.dist}"/>
+		<ivy:retrieve type="jar" pattern="${dir.dist}/[artifact]-[revision].[ext]"/>
+	</target>
+	
+	<target name="assemble" depends="jar,external-jars" description="Assemble jars"/>
+
+</project>

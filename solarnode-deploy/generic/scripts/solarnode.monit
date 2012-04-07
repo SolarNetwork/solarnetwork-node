@@ -1,0 +1,7 @@
+# Monit script to monitor SolarNode 
+# 
+# Change the "pidfile" path to match your system.
+
+check process solarnode with pidfile /home/solar/var/solarnode-felix.pid
+	start = "/etc/init.d/solarnode start"
+	stop  = "/etc/init.d/solarnode stop"

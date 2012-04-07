@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+	<info organisation="SolarNetwork" module="Equinox Base"/>
+	<configurations>
+		<conf name="runtime" visibility="public" description="The Runtime"/>
+	</configurations>
+	<dependencies defaultconfmapping="runtime->runtime(default)">
+		<!-- Apache Commons -->
+		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3">
+			<artifact name="commons-beanutils" type="jar" />
+		</dependency>
+		<dependency org="commons-collections" name="commons-collections" rev="3.2.1">
+			<artifact name="commons-collections" type="jar" />
+		</dependency>
+		<dependency org="commons-codec" name="commons-codec" rev="1.6" >
+    		<artifact name="commons-codec" type="jar" />
+		</dependency>
+		
+		<!-- JDBC connection pool -->
+		<dependency org="org.apache.tomcat" name="com.springsource.org.apache.tomcat.jdbc" rev="1.0.9.3" />
+		
+		<!-- Logging -->
+		<dependency org="org.apache.log4j" name="com.springsource.org.apache.log4j" rev="1.2.16" />
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.4">
+    		<artifact name="slf4j-api" type="jar" />
+		</dependency>
+		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.6.4">
+		    <artifact name="slf4j-log4j12" type="jar" />
+		</dependency>
+		<dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.6.4">
+    		<artifact name="jcl-over-slf4j" type="jar" />
+		</dependency>
+		
+		<!-- Spring -->
+		<dependency org="org.springframework" name="spring-beans" rev="3.0.7.RELEASE">
+    		<artifact name="spring-beans" type="jar" />
+		</dependency>
+		<dependency org="org.springframework" name="spring-context" rev="3.0.7.RELEASE">
+    		<artifact name="spring-context" type="jar" />
+		</dependency>
+		<dependency org="org.springframework" name="spring-core" rev="3.0.7.RELEASE">
+    		<artifact name="spring-core" type="jar" />
+		</dependency>
+		<dependency org="org.springframework" name="spring-jdbc" rev="3.0.7.RELEASE">
+    		<artifact name="spring-jdbc" type="jar" />
+		</dependency>
+		<dependency org="org.springframework" name="spring-webmvc" rev="3.0.7.RELEASE">
+    		<artifact name="spring-webmvc" type="jar" />
+		</dependency>
+		
+		<!-- Spring Security -->
+		<dependency org="org.springframework.security" name="spring-security-config" rev="3.0.7.RELEASE">
+    		<artifact name="spring-security-config" type="jar" />
+		</dependency>
+		<dependency org="org.springframework.security" name="spring-security-core" rev="3.0.7.RELEASE">
+    		<artifact name="spring-security-core" type="jar" />
+		</dependency>
+		<dependency org="org.springframework.security" name="spring-security-web" rev="3.0.7.RELEASE">
+    		<artifact name="spring-security-web" type="jar" />
+		</dependency>
+		<dependency org="org.springframework.security" name="spring-security-taglibs" rev="3.0.7.RELEASE">
+    		<artifact name="spring-security-taglibs" type="jar" />
+		</dependency>
+
+		<!--  OSGi -->
+		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0" >
+    		<artifact name="org.osgi.compendium" type="jar" />
+		</dependency>
+		<dependency org="org.osgi" name="org.osgi.enterprise" rev="4.2.0" >
+    		<artifact name="org.osgi.enterprise" type="jar" />
+		</dependency>
+		
+		<!-- Extra Servlet -->
+		<dependency org="javax.servlet" name="com.springsource.javax.servlet.jsp.jstl" rev="1.2.0.v20110728" />
+		
+		<!-- Apache Tiles -->
+		<dependency org="org.apache.tiles" name="tiles-el" rev="2.2.2" >
+    		<artifact name="tiles-el" type="jar" />
+		</dependency>
+		<dependency org="org.apache.tiles" name="tiles-jsp" rev="2.2.2" >
+    		<artifact name="tiles-jsp" type="jar" />
+		</dependency>
+		<dependency org="org.apache.tiles" name="tiles-servlet" rev="2.2.2" >
+    		<artifact name="tiles-servlet" type="jar" />
+		</dependency>
+		<dependency org="org.apache.tiles" name="tiles-servlet-wildcard" rev="2.2.2" >
+			<artifact name="tiles-servlet-wildcard" type="jar" />
+		</dependency>
+		
+		<!-- JodaTime -->
+		<dependency org="joda-time" name="joda-time" rev="2.1" >
+    		<artifact name="joda-time" type="jar" />
+		</dependency>
+		
+		<!-- Quartz scheduler -->
+		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" />
+	</dependencies>
+</ivy-module>
