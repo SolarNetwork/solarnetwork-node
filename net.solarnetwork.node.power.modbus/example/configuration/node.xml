@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+
+	<!-- Jamod (MODBUS) Power -->
+
+	<osgi:service interface="net.solarnetwork.node.util.BeanConfiguration"
+		ref="jamodSerialParametersConfiguration">
+		<osgi:service-properties>
+			<entry key="datumClassName"
+				value="net.solarnetwork.node.power.PowerDatum"/>
+			<entry key="factoryObjectClassName"
+				value="net.wimpi.modbus.util.SerialParameters"/>
+		</osgi:service-properties>
+	</osgi:service>
+
+	<bean id="jamodSerialParametersConfiguration"
+		class="net.solarnetwork.node.support.BasicBeanConfiguration">
+		<property name="configuration">
+			<map>
+				<entry key="portName" value="/dev/ttyS0"/>
+				<entry key="baudRate" value="9600"/>
+				<entry key="databits" value="8"/>
+				<entry key="parity" value="0"/><!-- SerialPort.PARITY_NONE -->
+				<entry key="stopbits" value="2"/>
+				<entry key="encoding" value="rtu"/>
+				<entry key="echo" value="false"/>
+				<entry key="receiveTimeout" value="2000"/>
+			</map>
+		</property>
+	</bean>
+
+</beans>
