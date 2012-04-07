@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd">
+	
+	<bean id="settingService" class="net.solarnetwork.node.settings.ca.CASettingsService">
+		<property name="configurationAdmin" ref="ca"/>
+		<property name="settingDao" ref="settingDao"/>
+	</bean>
+	
+	<osgi:reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
+	
+	<osgi:reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	
+	<osgi:service ref="settingService" interface="net.solarnetwork.node.settings.SettingsService"/>
+	
+	<osgi:list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" cardinality="0..N">
+		<osgi:listener ref="settingService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>
+	</osgi:list>
+	
+	<osgi:list id="providerList" interface="net.solarnetwork.node.settings.SettingSpecifierProvider" cardinality="0..N">
+		<osgi:listener ref="settingService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:list>
+	
+</beans>
