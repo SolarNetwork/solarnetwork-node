@@ -1,0 +1,5 @@
+<ivy-module version="2.0">
+	<info organisation="SolarNetwork" module="${bundle.name}" />
+	<dependencies>
+	</dependencies>
+</ivy-module>
