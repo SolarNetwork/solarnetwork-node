@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.control.mock">
+		<prop key="MockNodeControlProvider.booleanControlIds">
+			/power/switch/1,
+			/power/switch/2,
+			/power/switch/3,
+			/power/switch/grid
+		</prop>
+	</osgix:cm-properties>
+
+	<!-- Published Services -->
+
+	<osgi:service ref="mockProvider" ranking="-1">
+		<osgi:interfaces>
+			<value>net.solarnetwork.node.NodeControlProvider</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+		</osgi:interfaces>
+	</osgi:service>
+	
+</beans>
