@@ -58,9 +58,9 @@ public class SwitchTest extends BaseTestSupport {
 	
 	private static final String SWITCH_2_IDENTIFIER = "100000FD";
 	
-	@Autowired private SerialPortConversationalDataCollectorFactory<String> spcdcf;
+	@Autowired private SerialPortConversationalDataCollectorFactory spcdcf;
 	
-	private SerialPortConversationalDataCollector<String> dc;
+	private SerialPortConversationalDataCollector dc;
 	
 	@Before
 	public void setUp() {
