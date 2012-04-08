@@ -29,7 +29,7 @@
 		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.DataCollector))"/>
 	
 	<osgi:reference id="priceLocationServiceRef" cardinality="0..1"
-		interface="net.solarnetwork.node.price.PriceLocationService">
+		interface="net.solarnetwork.node.PriceLocationService">
 		<osgi:listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
 	
