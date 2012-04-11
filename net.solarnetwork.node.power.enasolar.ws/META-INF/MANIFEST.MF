@@ -6,6 +6,7 @@ Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
+ javax.xml.xpath,
  net.solarnetwork.node;version="1.5.0",
  net.solarnetwork.node.dao;version="1.0.0",
  net.solarnetwork.node.power;version="1.0.0",
