@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode JDBC Reactor DAO
+Bundle-Name: SolarNode Reactor JDBC DAO
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.reactor
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
