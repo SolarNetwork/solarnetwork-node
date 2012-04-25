@@ -336,11 +336,13 @@ public class CASettingsService implements SettingsService {
 					}
 				}
 
-				String settingKey = command.getProviderKey() != null ? command.getProviderKey()
-						: bean.getProviderKey();
-				if ( command.getProviderKey() == null && bean.getInstanceKey() != null ) {
-					settingKey = getFactoryInstanceSettingKey(settingKey, bean.getInstanceKey());
-					props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, bean.getInstanceKey());
+				String settingKey = command.getProviderKey() != null ? command.getProviderKey() : bean.getProviderKey();
+				String instanceKey = command.getInstanceKey() != null ? command.getInstanceKey() : bean.getInstanceKey();
+				if ( instanceKey != null ) {
+					settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
+					if ( command.getInstanceKey() == null ) {
+						props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
+					}
 				}
 				props.put(bean.getKey(), bean.getValue());
 				if ( command.getProviderKey() == null ) {
