@@ -79,6 +79,7 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 	public ConsumptionDatum readCurrentDatum() {
 		DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
 		if ( df == null ) {
+			log.debug("No DataCollectorFactory available");
 			return null;
 		}
 		
