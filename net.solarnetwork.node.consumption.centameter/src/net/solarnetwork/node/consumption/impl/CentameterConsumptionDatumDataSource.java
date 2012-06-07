@@ -42,7 +42,7 @@ import net.solarnetwork.node.centameter.CentameterUtils;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.util.DataUtils;
 
 import org.springframework.context.MessageSource;
@@ -77,7 +77,7 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
-		DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory().service();
 		if ( df == null ) {
 			log.debug("No DataCollectorFactory available");
 			return null;
@@ -110,7 +110,7 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 
 	@Override
 	public Collection<ConsumptionDatum> readMultipleDatum() {
-		DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory().service();
 		if ( df == null ) {
 			return null;
 		}

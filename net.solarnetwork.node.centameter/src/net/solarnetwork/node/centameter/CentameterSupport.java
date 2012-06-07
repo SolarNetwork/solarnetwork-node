@@ -36,6 +36,7 @@ import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
@@ -148,8 +149,8 @@ public class CentameterSupport {
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
-	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
-	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
+	private DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory;
+	private DataCollectorSerialPortBeanParameters serialParams = new DataCollectorSerialPortBeanParameters();
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -227,7 +228,7 @@ public class CentameterSupport {
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
 				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
-		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
+		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
 		return results;
 	}
 
@@ -236,7 +237,10 @@ public class CentameterSupport {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-				serial.setBasename(SerialPortBeanParameters.class.getName());
+				serial.setBasenames(new String[] {
+						SerialPortBeanParameters.class.getName(),
+						DataCollectorSerialPortBeanParameters.class.getName()
+				});
 
 				PrefixedMessageSource serialSource = new PrefixedMessageSource();
 				serialSource.setDelegate(serial);
@@ -252,20 +256,20 @@ public class CentameterSupport {
 		return MESSAGE_SOURCE;
 	}
 
-	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
+	public DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
 
 	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
+			DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
 	}
 
-	public SerialPortBeanParameters getSerialParams() {
+	public DataCollectorSerialPortBeanParameters getSerialParams() {
 		return serialParams;
 	}
 
-	public void setSerialParams(SerialPortBeanParameters serialParams) {
+	public void setSerialParams(DataCollectorSerialPortBeanParameters serialParams) {
 		this.serialParams = serialParams;
 	}
 
