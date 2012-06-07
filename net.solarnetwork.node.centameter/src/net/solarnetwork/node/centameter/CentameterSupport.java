@@ -224,7 +224,7 @@ public class CentameterSupport {
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
-		results.add(new BasicToggleSettingSpecifier("sourceIdFilter", Boolean.TRUE));
+		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
 				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
