@@ -72,12 +72,15 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPortBeanParameters>,
 		SettingSpecifierProvider {
 
+	/** The default value for the {@code portIdentifier} property. */
+	public static final String DEFAULT_PORT_IDENTIFIER = "/dev/USB0";
+	
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private String portIdentifier;
+	private String portIdentifier = DEFAULT_PORT_IDENTIFIER;
 
 	@Override
 	public String getUID() {
@@ -158,7 +161,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier(
-				"portIdentifier", "/dev/ttyUSB0"));
+				"portIdentifier", DEFAULT_PORT_IDENTIFIER));
 	}
 
 	/**
