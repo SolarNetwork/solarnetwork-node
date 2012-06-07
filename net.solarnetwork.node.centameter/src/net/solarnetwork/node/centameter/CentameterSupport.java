@@ -24,16 +24,26 @@
 
 package net.solarnetwork.node.centameter;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.DataCollectorFactory;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.DynamicServiceTracker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Base class for reading Centameter sensor data.
@@ -42,9 +52,10 @@ import org.springframework.beans.factory.ObjectFactory;
  * 
  * <dl class="class-properties">
  *   <dt>dataCollectorFactory</dt>
- *   <dd>The factory for creating {@link DataCollector} instances with. 
- *   {@link ObjectFactory#getObject()} will be called on each invocation
- *   of {@link #readCurrentPowerDatum()}.</dd>
+ *   <dd>The factory for creating {@link DataCollector} instances with.</dd>
+ *   
+ *   <dt>serialParams</dt>
+ *   <dd>The serial port parameters to use.</dd>
  *   
  *   <dt>voltage</dt>
  *   <dd>A hard-coded voltage value to use for the Cent-a-meter, since it
@@ -53,9 +64,7 @@ import org.springframework.beans.factory.ObjectFactory;
  *   <dt>ampSensorIndex</dt>
  *   <dd>The Cent-a-meter can report on 3 different currents. This index value
  *   is the desired current to read. Possible values for this property are 1,
- *   2, or 3. Defaults to {@code 1}. This applies only when the 
- *   {@link #readCurrentDatum()} method is used, not 
- *   {@link #readMultipleDatum()}.</dd>
+ *   2, or 3. Defaults to {@code 1}.</dd>
  *   
  *   <dt>sourceIdFormat</dt>
  *   <dd>A string format pattern for generating the {@code sourceId} value in
@@ -127,13 +136,24 @@ public class CentameterSupport {
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 30;
 	
+	/** The default value for the {@code multiAmpSensorIndexFlags} property. */
+	public static final int DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS = (1 | 2 | 4);
+	
+	/** The default value for the {@code ampSensorIndex} property. */
+	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
+	
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	private ObjectFactory<DataCollector> dataCollectorFactory;
+	private static final Object MONITOR = new Object();
+	private static MessageSource MESSAGE_SOURCE;
+
+	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
+	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
+
 	private float voltage = DEFAULT_VOLTAGE;
-	private int ampSensorIndex = 1;
-	private int multiAmpSensorIndexFlags = (1 | 2 | 4);
+	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
+	private int multiAmpSensorIndexFlags = DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS;
 	private String sourceIdFormat = DEFAULT_SOURCE_ID_FORMAT;
 	private Map<String,String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
@@ -190,132 +210,127 @@ public class CentameterSupport {
 		}
 		setSourceIdFilter(s);
 	}
-		
-	/**
-	 * @return the dataCollectorFactory
-	 */
-	public ObjectFactory<DataCollector> getDataCollectorFactory() {
+
+	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		results.add(new BasicTextFieldSettingSpecifier(
+				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
+		// the multiAmpSensorIndexFlags override this settings, so let's not expose it
+		// results.add(new BasicTextFieldSettingSpecifier("ampSensorIndex", 
+		//		String.valueOf(DEFAULT_AMP_SENSOR_INDEX)));
+		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", 
+				String.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
+		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
+		results.add(new BasicTextFieldSettingSpecifier("addressSourceMapping", ""));
+		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilter", ""));
+		results.add(new BasicToggleSettingSpecifier("sourceIdFilter", Boolean.TRUE));
+		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
+				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
+		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
+		return results;
+	}
+
+	public MessageSource getDefaultSettingsMessageSource() {
+		synchronized (MONITOR) {
+			if ( MESSAGE_SOURCE == null ) {
+				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
+				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
+				serial.setBasename(SerialPortBeanParameters.class.getName());
+
+				PrefixedMessageSource serialSource = new PrefixedMessageSource();
+				serialSource.setDelegate(serial);
+				serialSource.setPrefix("serialParams.");
+
+				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+				source.setBundleClassLoader(CentameterSupport.class.getClassLoader());
+				source.setBasename(CentameterSupport.class.getName());
+				source.setParentMessageSource(serialSource);
+				MESSAGE_SOURCE = source;
+			}
+		}
+		return MESSAGE_SOURCE;
+	}
+
+	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
-	
-	/**
-	 * @param dataCollectorFactory the dataCollectorFactory to set
-	 */
+
 	public void setDataCollectorFactory(
-			ObjectFactory<DataCollector> dataCollectorFactory) {
+			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
 	}
-	
-	/**
-	 * @return the voltage
-	 */
+
+	public SerialPortBeanParameters getSerialParams() {
+		return serialParams;
+	}
+
+	public void setSerialParams(SerialPortBeanParameters serialParams) {
+		this.serialParams = serialParams;
+	}
+
 	public float getVoltage() {
 		return voltage;
 	}
-	
-	/**
-	 * @param voltage the voltage to set
-	 */
+
 	public void setVoltage(float voltage) {
 		this.voltage = voltage;
 	}
-	
-	/**
-	 * @return the ampSensorIndex
-	 */
+
 	public int getAmpSensorIndex() {
 		return ampSensorIndex;
 	}
-	
-	/**
-	 * @param ampSensorIndex the ampSensorIndex to set
-	 */
+
 	public void setAmpSensorIndex(int ampSensorIndex) {
 		this.ampSensorIndex = ampSensorIndex;
 	}
-	
-	/**
-	 * @return the multiAmpSensorIndexFlags
-	 */
+
 	public int getMultiAmpSensorIndexFlags() {
 		return multiAmpSensorIndexFlags;
 	}
-	
-	/**
-	 * @param multiAmpSensorIndexFlags the multiAmpSensorIndexFlags to set
-	 */
+
 	public void setMultiAmpSensorIndexFlags(int multiAmpSensorIndexFlags) {
 		this.multiAmpSensorIndexFlags = multiAmpSensorIndexFlags;
 	}
-	
-	/**
-	 * @return the sourceIdFormat
-	 */
+
 	public String getSourceIdFormat() {
 		return sourceIdFormat;
 	}
-	
-	/**
-	 * @param sourceIdFormat the sourceIdFormat to set
-	 */
+
 	public void setSourceIdFormat(String sourceIdFormat) {
 		this.sourceIdFormat = sourceIdFormat;
 	}
-	
-	/**
-	 * @return the addressSourceMapping
-	 */
+
 	public Map<String, String> getAddressSourceMapping() {
 		return addressSourceMapping;
 	}
-	
-	/**
-	 * @param addressSourceMapping the addressSourceMapping to set
-	 */
+
 	public void setAddressSourceMapping(Map<String, String> addressSourceMapping) {
 		this.addressSourceMapping = addressSourceMapping;
 	}
-	
-	/**
-	 * @return the sourceIdFilter
-	 */
+
 	public Set<String> getSourceIdFilter() {
 		return sourceIdFilter;
 	}
-	
-	/**
-	 * @param sourceIdFilter the sourceIdFilter to set
-	 */
+
 	public void setSourceIdFilter(Set<String> sourceIdFilter) {
 		this.sourceIdFilter = sourceIdFilter;
 	}
 
-	/**
-	 * @return the collectAllSourceIds
-	 */
 	public boolean isCollectAllSourceIds() {
 		return collectAllSourceIds;
 	}
 
-	/**
-	 * @param collectAllSourceIds the collectAllSourceIds to set
-	 */
 	public void setCollectAllSourceIds(boolean collectAllSourceIds) {
 		this.collectAllSourceIds = collectAllSourceIds;
 	}
 
-	/**
-	 * @return the collectAllSourceIdsTimeout
-	 */
 	public int getCollectAllSourceIdsTimeout() {
 		return collectAllSourceIdsTimeout;
 	}
 
-	/**
-	 * @param collectAllSourceIdsTimeout the collectAllSourceIdsTimeout to set
-	 */
 	public void setCollectAllSourceIdsTimeout(int collectAllSourceIdsTimeout) {
 		this.collectAllSourceIdsTimeout = collectAllSourceIdsTimeout;
 	}
-	
+		
 }

@@ -34,12 +34,19 @@ import java.util.List;
 import java.util.Set;
 
 import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.centameter.CentameterSupport;
 import net.solarnetwork.node.centameter.CentameterUtils;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.DataUtils;
+
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * {@link ConsumptionDataSource} implementation for Cent-a-meter monitors, 
@@ -58,8 +65,11 @@ import net.solarnetwork.node.util.DataUtils;
  * @version $Revision$ $Date$
  */
 public class CentameterConsumptionDatumDataSource extends CentameterSupport
-implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum> {
-	
+implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>, SettingSpecifierProvider {
+
+	private static final Object MONITOR = new Object();
+	private static MessageSource MESSAGE_SOURCE;
+
 	@Override
 	public Class<? extends ConsumptionDatum> getDatumType() {
 		return ConsumptionDatum.class;
@@ -67,20 +77,24 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
-		DataCollector dataCollector = null;
-		byte[] data = null;
-		try {
-			dataCollector = getDataCollectorFactory().getObject();
-			dataCollector.collectData();
-			data = dataCollector.getCollectedData();
-		} finally {
-			if ( dataCollector != null ) {
-				dataCollector.stopCollecting();
-			}
+		DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			return null;
 		}
 		
-		if ( data == null ) {
-			log.warn("Null serial data received, serial communications problem");
+		byte[] data = null;
+		DataCollector dc = df.getDataCollectorInstance(getSerialParams());
+		try {
+			dc.collectData();
+			data = dc.getCollectedData();
+		} finally {
+			if ( dc != null ) {
+				dc.stopCollecting();
+			}
+		}
+
+		if ( data == null || data.length == 0 ) {
+			log.warn("No serial data received, serial communications problem");
 			return null;
 		}
 		
@@ -95,8 +109,11 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 
 	@Override
 	public Collection<ConsumptionDatum> readMultipleDatum() {
-		DataCollector dataCollector = null;
-
+		DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			return null;
+		}
+		
 		List<ConsumptionDatum> result = new ArrayList<ConsumptionDatum>(3);
 		long endTime = isCollectAllSourceIds() && getSourceIdFilter() != null 
 				&& getSourceIdFilter().size() > 1
@@ -104,11 +121,12 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 				: 0;
 		Set<String> sourceIdSet = new HashSet<String>(
 				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
+		DataCollector dc = null;
 		try {
-			dataCollector = getDataCollectorFactory().getObject();
+			dc = df.getDataCollectorInstance(getSerialParams());
 			do {
-				dataCollector.collectData();
-				byte[] data = dataCollector.getCollectedData();
+				dc.collectData();
+				byte[] data = dc.getCollectedData();
 				if ( data == null ) {
 					log.warn("Null serial data received, serial communications problem");
 					return null;
@@ -129,8 +147,8 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 			} while ( System.currentTimeMillis() < endTime && sourceIdSet.size() < 
 					(getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()) );
 		} finally {
-			if ( dataCollector != null ) {
-				dataCollector.stopCollecting();
+			if ( dc != null ) {
+				dc.stopCollecting();
 			}
 		}
 		
@@ -167,5 +185,36 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 		datum.setCreated(new Date());
 		return datum;
 	}
-		
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.consumption.centameter";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Cent-a-meter consumption meter";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		synchronized (MONITOR) {
+			if ( MESSAGE_SOURCE == null ) {
+				MessageSource parent = getDefaultSettingsMessageSource();
+				
+				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+				source.setBundleClassLoader(CentameterConsumptionDatumDataSource.class.getClassLoader());
+				source.setBasename(CentameterConsumptionDatumDataSource.class.getName());
+				source.setParentMessageSource(parent);
+				MESSAGE_SOURCE = source;
+			}
+		}
+		return MESSAGE_SOURCE;
+	}
+	
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return getDefaultSettingSpecifiers();
+	}
+
 }
