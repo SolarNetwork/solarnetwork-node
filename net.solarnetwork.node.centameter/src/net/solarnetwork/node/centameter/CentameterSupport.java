@@ -222,8 +222,8 @@ public class CentameterSupport {
 		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", 
 				String.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
-		results.add(new BasicTextFieldSettingSpecifier("addressSourceMapping", ""));
-		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilter", ""));
+		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
+		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
 		results.add(new BasicToggleSettingSpecifier("sourceIdFilter", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
 				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
