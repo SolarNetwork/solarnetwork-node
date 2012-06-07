@@ -47,17 +47,17 @@
 		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.consumption.impl.CentameterConsumptionDatumDataSource">
-			<property name="dataCollectorFactory">
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
-					<property name="propertyFilters">
-						<map>
-							<entry key="UID" value="/dev/ttyUSB0"/>
-						</map>
+					<property name="dataCollectorFactory">
+						<bean class="net.solarnetwork.util.DynamicServiceTracker">
+							<property name="bundleContext" ref="bundleContext"/>
+							<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+							<property name="propertyFilters">
+								<map>
+									<entry key="UID" value="/dev/ttyUSB0"/>
+								</map>
+							</property>
+						</bean>	
 					</property>
-				</bean>	
-			</property>
 				</bean>
 			</property>
 			<property name="priceLocationService" ref="priceLocationService"/>
