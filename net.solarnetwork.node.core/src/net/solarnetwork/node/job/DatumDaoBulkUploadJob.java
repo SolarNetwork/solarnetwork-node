@@ -136,7 +136,8 @@ implements StatefulJob {
 			}
 			if ( root instanceof IOException ) {
 				if ( log.isWarnEnabled() ) {
-					log.warn("Network problem posting data: {}" +root.getMessage());
+					log.warn("Network problem posting data ({}): {}", 
+							root.getClass().getSimpleName(), root.getMessage());
 				}
 			} else {
 				if ( log.isErrorEnabled() ) {
