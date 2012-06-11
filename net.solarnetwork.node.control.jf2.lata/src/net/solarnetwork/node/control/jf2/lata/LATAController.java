@@ -87,6 +87,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 public class LATAController implements NodeControlProvider, InstructionHandler,
 		SettingSpecifierProvider {
 	
+	/** The default value for the {@code controlIdMappingValue} property. */
+	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
+	
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
@@ -104,6 +107,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 	 */
 	public LATAController() {
 		super();
+		setControlIdMappingValue(DEFAULT_CONTROL_ID_MAPPING);
 	}
 	
 	@Override
@@ -115,7 +119,10 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 	public InstructionState processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
+		log.debug("Inspecting instruction {} against controls {}",
+				instruction.getId(), controlIdMapping.keySet());
 		for ( String controlId : instruction.getParameterNames() ) {
+			log.trace("Got instruction parameter {}", controlId);
 			if ( controlIdMapping.containsKey(controlId) ) {
 				// treat parameter value as boolean
 				String value = instruction.getParameterValue(controlId);
@@ -126,6 +133,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 				if ( "false".equals(value) || "0".equals(value) ) {
 					newStatus = false;
 				}
+				log.debug("Setting switch {} to {}", controlId, newStatus);
 				if ( setSwitchStatus(controlId, newStatus) ) {
 					result = InstructionState.Completed;
 				} else {
@@ -325,7 +333,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTextFieldSettingSpecifier(
-				"controlIdMappingValue", "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD"));
+				"controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
 		results.add(new BasicTextFieldSettingSpecifier(
 				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
