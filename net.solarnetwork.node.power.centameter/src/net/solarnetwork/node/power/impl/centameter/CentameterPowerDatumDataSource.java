@@ -33,12 +33,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
+
 import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.centameter.CentameterSupport;
 import net.solarnetwork.node.centameter.CentameterUtils;
 import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.node.util.DataUtils;
 
@@ -76,14 +84,17 @@ import net.solarnetwork.node.util.DataUtils;
  * @version $Revision$
  */
 public class CentameterPowerDatumDataSource extends CentameterSupport
-implements DatumDataSource<PowerDatum>, MultiDatumDataSource<PowerDatum>{
+implements DatumDataSource<PowerDatum>, MultiDatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code ampsFieldName} property. */
 	public static final String DEFAULT_AMPS_FIELD_NAME = "pvAmps";
 
 	/** The default value for the {@code voltsFieldName} property. */
 	public static final String DEFAULT_VOLTS_FIELD_NAME = "pvVolts";
-	
+
+	private static final Object MONITOR = new Object();
+	private static MessageSource MESSAGE_SOURCE;
+
 	private String ampsFieldName = DEFAULT_AMPS_FIELD_NAME;
 	private String voltsFieldName = DEFAULT_VOLTS_FIELD_NAME;
 
@@ -94,10 +105,15 @@ implements DatumDataSource<PowerDatum>, MultiDatumDataSource<PowerDatum>{
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		DataCollector dataCollector = null;
+		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			log.debug("No DataCollectorFactory available");
+			return null;
+		}
+
+		DataCollector dataCollector = df.getDataCollectorInstance(getSerialParams());
 		byte[] data = null;
 		try {
-			dataCollector = getDataCollectorFactory().getObject();
 			dataCollector.collectData();
 			data = dataCollector.getCollectedData();
 		} finally {
@@ -122,15 +138,19 @@ implements DatumDataSource<PowerDatum>, MultiDatumDataSource<PowerDatum>{
 
 	@Override
 	public Collection<PowerDatum> readMultipleDatum() {
-		DataCollector dataCollector = null;
+		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			return null;
+		}
 
 		List<PowerDatum> result = new ArrayList<PowerDatum>(3);
 		long endTime = isCollectAllSourceIds() && getSourceIdFilter().size() > 1
 				? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000)
 				: 0;
 		Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter().size());
+		DataCollector dataCollector = null;
 		try {
-			dataCollector = getDataCollectorFactory().getObject();
+			dataCollector = df.getDataCollectorInstance(getSerialParams());
 			do {
 				dataCollector.collectData();
 				byte[] data = dataCollector.getCollectedData();
@@ -201,30 +221,52 @@ implements DatumDataSource<PowerDatum>, MultiDatumDataSource<PowerDatum>{
 		return datum;
 	}
 	
-	/**
-	 * @return the ampsFieldName
-	 */
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.power.centameter";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Cent-a-meter power meter";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		synchronized (MONITOR) {
+			if ( MESSAGE_SOURCE == null ) {
+				MessageSource parent = getDefaultSettingsMessageSource();
+				
+				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+				source.setBundleClassLoader(CentameterPowerDatumDataSource.class.getClassLoader());
+				source.setBasename(CentameterPowerDatumDataSource.class.getName());
+				source.setParentMessageSource(parent);
+				MESSAGE_SOURCE = source;
+			}
+		}
+		return MESSAGE_SOURCE;
+	}
+	
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = getDefaultSettingSpecifiers();
+		results.add(new BasicTextFieldSettingSpecifier("ampsFieldName", DEFAULT_AMPS_FIELD_NAME));
+		results.add(new BasicTextFieldSettingSpecifier("voltsFieldName", DEFAULT_VOLTS_FIELD_NAME));
+		return results;
+	}
+
 	public String getAmpsFieldName() {
 		return ampsFieldName;
 	}
 
-	/**
-	 * @param ampsFieldName the ampsFieldName to set
-	 */
 	public void setAmpsFieldName(String ampsFieldName) {
 		this.ampsFieldName = ampsFieldName;
 	}
 
-	/**
-	 * @return the voltsFieldName
-	 */
 	public String getVoltsFieldName() {
 		return voltsFieldName;
 	}
 
-	/**
-	 * @param voltsFieldName the voltsFieldName to set
-	 */
 	public void setVoltsFieldName(String voltsFieldName) {
 		this.voltsFieldName = voltsFieldName;
 	}
