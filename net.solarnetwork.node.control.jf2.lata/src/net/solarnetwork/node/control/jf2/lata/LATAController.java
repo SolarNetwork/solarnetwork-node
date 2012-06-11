@@ -27,6 +27,7 @@ package net.solarnetwork.node.control.jf2.lata;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 		SettingSpecifierProvider {
 	
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
-	private Map<String, String> controlIdMapping;
+	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
 	
 	private static final Pattern SWITCH_STATUS_RESULT_PATTERN
