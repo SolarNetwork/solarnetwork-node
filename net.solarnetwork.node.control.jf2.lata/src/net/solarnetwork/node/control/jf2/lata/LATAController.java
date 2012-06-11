@@ -133,7 +133,6 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 				if ( "false".equals(value) || "0".equals(value) ) {
 					newStatus = false;
 				}
-				log.debug("Setting switch {} to {}", controlId, newStatus);
 				if ( setSwitchStatus(controlId, newStatus) ) {
 					result = InstructionState.Completed;
 				} else {
