@@ -91,7 +91,12 @@ public class InstructionExecutionJob extends AbstractJob implements StatefulJob 
 		final long timeLimitMs = executionReceivedHourLimit * 60 * 60 * 1000;
 		for ( Instruction instruction : instructions ) {
 			boolean handled = false;
+			log.trace("Passing instruction {} {} to {} handlers", new Object[] {
+				instruction.getId(), instruction.getTopic(), handlers.size() });
 			for ( InstructionHandler handler : handlers ) {
+				log.trace("Handler {} handles topic {}: {}", new Object[] {
+					handler, instruction.getTopic(), handler.handlesTopic(instruction.getTopic())
+				});
 				if ( handler.handlesTopic(instruction.getTopic()) ) {
 					InstructionState state = handler.processInstruction(instruction);
 					if ( state != null && !InstructionState.Received.equals(state) ) {
