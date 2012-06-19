@@ -29,8 +29,6 @@ import java.util.List;
 
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-
 
 /**
  * A basic JavaBean class for serial port configuration elements.
@@ -122,8 +120,8 @@ public class SerialPortBean {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveThreshold", "40"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveTimeout", "-1"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveFraming", "-1"));
-		results.add(new BasicToggleSettingSpecifier(prefix + "dtr", Boolean.TRUE));
-		results.add(new BasicToggleSettingSpecifier(prefix + "rts", Boolean.FALSE));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dtrFlag", "1"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "rtsFlag", "0"));
 		return results;
 	}
 
