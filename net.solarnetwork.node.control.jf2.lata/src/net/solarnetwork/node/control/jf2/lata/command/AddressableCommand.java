@@ -94,4 +94,9 @@ public class AddressableCommand implements CommandInterface {
 		return command.includesResponse();
 	}
 
+	@Override
+	public String toString() {
+		return "AddressableCommand{"+hexIdentifier+","+command+"}";
+	}
+
 }

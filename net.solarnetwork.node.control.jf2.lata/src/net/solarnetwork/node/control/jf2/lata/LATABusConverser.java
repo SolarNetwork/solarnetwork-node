@@ -24,6 +24,9 @@
 
 package net.solarnetwork.node.control.jf2.lata;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
@@ -36,6 +39,8 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
  */
 public class LATABusConverser extends Converser {
 
+	private static Logger LOG = LoggerFactory.getLogger(LATABusConverser.class);
+	
 	private static final byte[] MAGIC = new byte[] {'T'};
 	private static final int READ_LENGTH = 13; // e.g. 100000BD26464
 	
@@ -52,12 +57,18 @@ public class LATABusConverser extends Converser {
 	public String conductConversation(ConversationalDataCollector dataCollector) {
 		//sets the Operational Mode in the LATA Bus
 		speakAndWait(dataCollector, Command.StartOperationalMode, 500);
+		
 		//sets the speed in the LATA Bus
 		speakAndWait(dataCollector, Command.SetSpeed, 500);
-		//sends the actual command
-		speakAndWait(dataCollector, getCommand(), 500);
+		
+		//send the actual command
+		
+		// TODO: what was this for, when we call this again immediately below?
+		// speakAndWait(dataCollector, getCommand(), 500);
 		
 		if ( getCommand().includesResponse() ) {
+			LOG.trace("Sending command {} ({}) and waiting for response", 
+					getCommand(), getCommand().getData());
 			dataCollector.speakAndCollect(getCommand().getCommandData(), MAGIC, READ_LENGTH);
 			return dataCollector.getCollectedDataAsString();
 		}
@@ -68,6 +79,7 @@ public class LATABusConverser extends Converser {
 	
 	private void speakAndWait(ConversationalDataCollector dataCollector,
 			CommandInterface command, long waitMillis) {
+		LOG.trace("Sending command {}: {}", command, command.getData());
 		dataCollector.speak(command.getCommandData());
 		synchronized (this) {
 			try {
