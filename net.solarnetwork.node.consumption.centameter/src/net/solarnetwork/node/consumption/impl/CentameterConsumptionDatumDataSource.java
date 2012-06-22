@@ -61,6 +61,15 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * appropriate data is available when the {@link DataCollector#collectData()}
  * method is called.</p>
  *
+ * <p>Serial parameters that are known to work are:</p>
+ * 
+ * <pre>magicBytes = x
+ * baud = 4800
+ * bufferSize = 16
+ * readSize = 15
+ * receiveThreshold = -1
+ * maxWait = 60000</pre>
+ * 
  * @author matt
  * @version $Revision$ $Date$
  */

@@ -35,8 +35,8 @@
 				<entry key="magicBytes" value="x"/>
 				<entry key="baud" value="4800"/>
 				<entry key="bufferSize" value="16"/>
-				<entry key="readSize" value="16"/>
-				<entry key="receiveThreshold" value="8"/>
+				<entry key="readSize" value="15"/>
+				<entry key="receiveThreshold" value="-1"/>
 				<entry key="maxWait" value="60000"/>
 			</map>
 		</property>

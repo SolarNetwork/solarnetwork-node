@@ -67,6 +67,15 @@ import net.solarnetwork.node.util.DataUtils;
  * appropriate data is available when the {@link DataCollector#collectData()}
  * method is called.</p>
  * 
+ * <p>Serial parameters that are known to work are:</p>
+ * 
+ * <pre>magicBytes = x
+ * baud = 4800
+ * bufferSize = 16
+ * readSize = 15
+ * receiveThreshold = -1
+ * maxWait = 60000</pre>
+ * 
  * <p>The configurable properties of this class are:</p>
  * 
  * <dl class="class-properties">
