@@ -165,7 +165,7 @@ implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDa
 			log.debug(String.format(
 				"Centameter address %s, count %d, amp1 %.1f, amp2 %.1f, amp3 %.1f", 
 				addr, 
-				( unsigned[2] & 0xF ), 
+				( unsigned[1] & 0xF ), 
 				CentameterUtils.getAmpReading(unsigned, 1),
 				CentameterUtils.getAmpReading(unsigned, 2),
 				CentameterUtils.getAmpReading(unsigned, 3)

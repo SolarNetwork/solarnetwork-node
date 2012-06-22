@@ -34,6 +34,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollector;
@@ -61,6 +65,8 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	private boolean listening = false;
 	private boolean collecting = false;
 
+	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
+	
 	/**
 	 * Constructor.
 	 * 
@@ -87,6 +93,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} finally {
+			log.trace("Cleaning up port {}...", serialPort);
 			serialPort.removeEventListener();
 			if ( this.in != null ) {
 				try {
@@ -102,6 +109,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 					// ignore this one
 				}
 			}
+			log.trace("Clean up port {} complete.", serialPort);
 		}
 	}
 
@@ -134,11 +142,12 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			synchronized (this) {
 				this.wait(getMaxWait());
 			}
-			this.listening = false;
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
+		} finally {
+			this.listening = false;
 		}
 	}
 
@@ -171,12 +180,13 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			synchronized (this) {
 				this.wait(getMaxWait());
 			}
-			this.listening = false;
-			this.collecting = false;
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
+		} finally {
+			this.listening = false;
+			this.collecting = false;
 		}
 	}
 
@@ -191,9 +201,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 
 	@Override
 	public void serialEvent(SerialPortEvent event) {
-		if ( log.isTraceEnabled() ) {
-			log.trace("SerialPortEvent: " +event);
-		}
+		eventLog.trace("SerialPortEvent {}", event.getEventType());
 		if ( !listening || event.getEventType() != SerialPortEvent.DATA_AVAILABLE) {
 			return;
 		}
@@ -216,8 +224,8 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			throw new RuntimeException(e);
 		}
 
-		if ( log.isTraceEnabled() ) {
-			log.trace("Finished reading data");
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Finished reading data: {}", Arrays.toString(buffer.toByteArray()));
 		}
 		synchronized (this) {
 			notifyAll();

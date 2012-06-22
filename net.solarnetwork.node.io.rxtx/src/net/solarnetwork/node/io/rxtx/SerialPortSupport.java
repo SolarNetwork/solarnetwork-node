@@ -75,7 +75,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	 */
 	protected void closeSerialPort() {
 		if ( this.serialPort != null ) {
+			log.debug("Closing serial port {}", this.serialPort);
 			this.serialPort.close();
+			log.trace("Serial port closed");
 		}
 	}
 
@@ -161,6 +163,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	/**
 	 * Handle a SerialEvent, looking for "magic" data.
 	 * 
+	 * <p><b>Note</b> that the <em>magic</em> bytes are <em>not</em> returned
+	 * by this method, they are stripped from the output buffer.</p>
+	 * 
 	 * @param event the event
 	 * @param in the InputStream to read data from
 	 * @param sink the output buffer to store the collected bytes
@@ -184,16 +189,12 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					// if we've collected at least desiredSize bytes, we're done
 					if ( sinkSize >= readLength ) {
 						if ( log.isDebugEnabled() ) {
-							log.debug("Got desired " +readLength +" bytes of data");
+							log.debug("Got desired {}  bytes of data: {}", readLength, 
+									Arrays.toString(sink.toByteArray()));
 						}
-						synchronized (this) {
-							notifyAll();
-							return true;
-						}
+						return true;
 					}
-					if ( log.isDebugEnabled() ) {
-						log.debug("Looking for " +(readLength - sinkSize) +" more bytes of data");
-					}
+					log.debug("Looking for {} more bytes of data", (readLength - sinkSize));
 					return false;
 				}
 				
@@ -232,11 +233,10 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					sinkSize += count;
 					if ( sinkSize >= readLength ) {
 						// we got all the data here... we're done
-						synchronized (this) {
-							notifyAll();
-						}
 						return true;
 					}
+					log.trace("Need {} more bytes of data", (readLength - sinkSize));
+					append = true;
 				}
 			}
 		} catch ( IOException e ) {

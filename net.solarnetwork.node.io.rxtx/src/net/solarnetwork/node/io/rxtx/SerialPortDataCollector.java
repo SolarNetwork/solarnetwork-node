@@ -30,9 +30,13 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import net.solarnetwork.node.DataCollector;
 
@@ -69,7 +73,7 @@ import net.solarnetwork.node.DataCollector;
 public class SerialPortDataCollector extends SerialPortSupport
 implements DataCollector, SerialPortEventListener {
 
-	private byte[] buf;
+	private ByteArrayOutputStream buffer;
 	private byte[] magic;
 	private int readSize;
 	
@@ -77,10 +81,10 @@ implements DataCollector, SerialPortEventListener {
 	private boolean toggleRts = true;
 	
 	private boolean collectData = false;
-	private int bufPtr = 0;
 	private InputStream in = null;
-	private boolean magicFound = false;
-	
+
+	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
+
 	/**
 	 * Construct with a port and default settings.
 	 * 
@@ -113,25 +117,22 @@ implements DataCollector, SerialPortEventListener {
 			throw new IllegalArgumentException(
 					"The bufferSize value must not be less than the readSize value");
 		}
-		this.buf = new byte[bufferSize];
+		this.buffer = new ByteArrayOutputStream(bufferSize);
 		this.magic = magic;
 		this.readSize = readSize;
 	}
 	
 	@Override
 	public int bytesRead() {
-		return bufPtr;
+		return buffer.size();
 	}
 	
 	@Override
 	public byte[] getCollectedData() {
-		if ( bufPtr < readSize ) {
+		if ( buffer.size() < readSize ) {
 			return null;
 		}
-		// return copy of array so can't modify internal buffer
-		byte[] data = new byte[readSize];
-		System.arraycopy(buf, 0, data, 0, readSize);
-		return data;
+		return buffer.toByteArray();
 	}
 
 	@Override
@@ -141,10 +142,10 @@ implements DataCollector, SerialPortEventListener {
 
 	@Override
 	public String getCollectedDataAsString() {
-		if ( bufPtr < readSize ) {
+		if ( buffer.size() < readSize ) {
 			return null;
 		}
-		return new String(buf, 0, readSize);
+		return buffer.toString();
 	}
 	
 	/**
@@ -156,12 +157,10 @@ implements DataCollector, SerialPortEventListener {
 		// open the input stream
 		try {
 			this.in = serialPort.getInputStream();
+			this.buffer.reset();
 			
 			// sleep until we have data
 			synchronized (this) {
-				this.magicFound = false;
-				bufPtr = 0;
-				Arrays.fill(buf, (byte)0);
 				this.collectData = true;
 				this.wait(getMaxWait());
 				this.collectData = false;
@@ -189,80 +188,21 @@ implements DataCollector, SerialPortEventListener {
 	}
 
 	public void serialEvent(SerialPortEvent event) {
+		eventLog.trace("SerialPortEvent {}", event.getEventType());
 		if ( !collectData || event.getEventType() != SerialPortEvent.DATA_AVAILABLE ) {
 			return;
 		}
 		
-		try {
-			while ( bufPtr < buf.length && in.available() > 0 ) {
-				bufPtr += in.read(buf, bufPtr, buf.length - bufPtr);
-			}
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
-		}
-		
-		if ( magicFound ) {
-			// if we've collected at least desiredSize bytes, we're done
-			if ( bufPtr >= readSize ) {
-				if ( log.isDebugEnabled() ) {
-					log.debug("Got desired " +readSize +" bytes of data");
-				}
-				bufPtr = readSize;
-				synchronized (this) {
-					notifyAll();
-					return;
-				}
-			}
-			if ( log.isDebugEnabled() ) {
-				log.debug("Looking for " +(readSize - bufPtr) +" more bytes of data");
+		boolean done = handleSerialEvent(event, in, buffer, magic, readSize);
+		if ( done ) {
+			synchronized (this) {
+				notifyAll();
 			}
 			return;
 		}
 		
-		// look for magic in the buffer
-		int magicIdx = 0;
-		boolean found = false;
-		for ( ; magicIdx < (bufPtr - magic.length); magicIdx++ ) {
-			found = true;
-			for ( int j = 0; j < magic.length; j++ ) {
-				if ( buf[magicIdx+j] != magic[j] ) {
-					found = false;
-					break;
-				}
-			}
-			if ( found ) {
-				break;
-			}
-		}
-		
-		if ( found ) {
-			// magic found!
-			if ( log.isTraceEnabled() ) {
-				log.trace("Found magic bytes " +Arrays.toString(magic)
-						+" at buffer index " +magicIdx
-						+", bufPtr at " +bufPtr);
-			}
-			magicFound = true;
-			if ( magicIdx > 0 ) {
-				byte[] tmp = new byte[bufPtr - magicIdx];
-				System.arraycopy(buf, magicIdx, tmp, 0, tmp.length);
-				System.arraycopy(tmp, 0, buf, 0, tmp.length);
-				bufPtr = tmp.length;
-			}
-			if ( bufPtr >= readSize ) {
-				// we got all the data here... we're done
-				synchronized (this) {
-					notifyAll();
-				}
-				return;
-			}
-		} else {
-			// magic not found at all, so reset bufPtr back to 0
-			bufPtr = 0;
-		}
-		
-		if ( log.isTraceEnabled() ) {
-			log.trace("Buffer: " +new String(buf, 0, bufPtr));
+		if ( eventLog.isTraceEnabled() ) {
+			log.trace("Buffer: {}", Arrays.toString(buffer.toByteArray()));
 		}
 	}
 	
