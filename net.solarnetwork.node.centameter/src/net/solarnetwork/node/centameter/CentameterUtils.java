@@ -40,6 +40,9 @@ public final class CentameterUtils {
 	/**
 	 * Extract the amp value for a specific Centameter sensor.
 	 * 
+	 * <p>The {@code unsigned} array should have a length of <b>15</b>
+	 * (one complete Centameter packet, minus the "magic" prefix byte).</p>
+	 * 
 	 * @param unsigned array of unsigned data read from Centameter.
 	 * @param ampIndex the Centameter sensor to read, either 1, 2, or 3
 	 * @return
@@ -47,16 +50,16 @@ public final class CentameterUtils {
 	public static double getAmpReading(short[] unsigned, int ampIndex) {
 		switch ( ampIndex ) {
 			case 1:
-				return (unsigned[4] 
-				     	+ ((unsigned[5] &  0x3) * 256)) / 10.0;
+				return (unsigned[3] 
+				     	+ ((unsigned[4] &  0x3) * 256)) / 10.0;
 				
 			case 2:
-				return (((unsigned[5] >> 2) & 0x3F) 
-						+ ((unsigned[6] &  0xF) * 64)) / 10.0;
+				return (((unsigned[4] >> 2) & 0x3F) 
+						+ ((unsigned[5] &  0xF) * 64)) / 10.0;
 				
 			case 3:
-				return (((unsigned[6] >> 4) & 0xF) 
-						+ ((unsigned[7] &  0x3F) * 16)) / 10.0;
+				return (((unsigned[5] >> 4) & 0xF) 
+						+ ((unsigned[6] &  0x3F) * 16)) / 10.0;
 		}
 		return 0;
 	}

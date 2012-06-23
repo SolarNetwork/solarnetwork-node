@@ -49,6 +49,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 /**
  * Base class for reading Centameter sensor data.
  * 
+ * <p>The Centameter packet contains a "magic" byte prefix (0x78) followed
+ * by 15 message bytes.</p>
+ * 
  * <p>The configurable properties of this class are:</p>
  * 
  * <dl class="class-properties">
@@ -120,13 +123,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 public class CentameterSupport {
 
 	/** The data byte index for the Centameter's address ID. */
-	public static final int CENTAMETER_ADDRESS_IDX = 3;
+	public static final int CENTAMETER_ADDRESS_IDX = 2;
 	
 	/** 
 	 * The data byte index for the Centameter's amp reading, as integer 
 	 * (amps * 10) value.
 	 */
-	public static final int CENTAMETER_AMPS_IDX = 8;
+	public static final int CENTAMETER_AMPS_IDX = 7;
 	
 	/** The default value for the {@code voltage} property. */
 	public static final float DEFAULT_VOLTAGE = 230.0F;
