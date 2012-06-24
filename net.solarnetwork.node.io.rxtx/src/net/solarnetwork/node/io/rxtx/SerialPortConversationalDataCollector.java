@@ -143,8 +143,8 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				out.write(data);
 				this.wait(getMaxWait());
 			}
-			if ( log.isDebugEnabled() && !doneCollecting ) {
-				log.debug("Timeout collecting serial data");
+			if ( log.isWarnEnabled() && !doneCollecting ) {
+				log.warn("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
@@ -185,8 +185,8 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				
 				this.wait(getMaxWait());
 			}
-			if ( log.isDebugEnabled() && !doneCollecting ) {
-				log.debug("Timeout collecting serial data");
+			if ( log.isWarnEnabled() && !doneCollecting ) {
+				log.warn("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);

@@ -167,8 +167,8 @@ implements DataCollector, SerialPortEventListener {
 				this.wait(getMaxWait());
 				this.collectData = false;
 			}
-			if ( log.isDebugEnabled() && !doneCollecting ) {
-				log.debug("Timeout collecting serial data");
+			if ( log.isWarnEnabled() && !doneCollecting ) {
+				log.warn("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			log.warn("Interrupted, stopping data collection");
