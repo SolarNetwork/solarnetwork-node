@@ -63,8 +63,14 @@ public enum Command implements CommandInterface {
 		return this.data.getBytes();
 	}
 	
+	/**
+	 * Get the command as a string, with the trailing carriage return stripped off.
+	 * 
+	 * <p>This method is designed for debugging only. The {@link #getCommandData()}
+	 * method should be used when actually communicating with the switch.</p>
+	 */
 	public String getData() {
-		return this.data;
+		return this.data.substring(0, this.data.length() - 1);
 	}
 
 	@Override
