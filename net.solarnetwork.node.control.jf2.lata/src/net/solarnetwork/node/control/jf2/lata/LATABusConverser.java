@@ -35,6 +35,20 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
  * Extension of {@link Converser} that initializes the LATA Bus prior to 
  * sending commands.
  * 
+ * <p>Serial parameters known to work on Linux using <code>/dev/USB</code>:<p>
+ * 
+ * <pre>baud               4800
+ * data bits          8
+ * stop bits          1
+ * parity             0
+ * flow control       -1
+ * receive threshold  -1
+ * receive timeout    30000
+ * receive framing    -1
+ * dtr                -1
+ * rts                -1
+ * response timeout   60000</pre>
+ * 
  * @author shauryab
  */
 public class LATABusConverser extends Converser {
