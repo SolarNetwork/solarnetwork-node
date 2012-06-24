@@ -43,7 +43,7 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
  * parity             0
  * flow control       -1
  * receive threshold  -1
- * receive timeout    30000
+ * receive timeout    -1
  * receive framing    -1
  * dtr                -1
  * rts                -1
