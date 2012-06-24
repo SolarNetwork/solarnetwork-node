@@ -37,8 +37,19 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>serialPort</dt>
+ * <dd>The name of the serial port to use. This is OS-specific, for example
+ * <code>/dev/ttyUSB0</code>.</dd>
+ * 
+ * <dt>commPortAppName</dt>
+ * <dd>A user-defined name to associate with the serial port. The serial port
+ * can only be used by one application at a time.</dd>
+ * 
+ * <dt>maxWait</dt>
+ * <dd>A maximum number of milliseconds to wait for the serial port to return
+ * data, before giving up. This differs from the {@code receiveTimeout} 
+ * setting in that this timeout is not set on the port itself, but is managed
+ * by the application.</dd>
  * </dl>
  * 
  * @author matt
