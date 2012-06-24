@@ -82,6 +82,7 @@ implements DataCollector, SerialPortEventListener {
 	
 	private boolean collectData = false;
 	private InputStream in = null;
+	private boolean doneCollecting = false;
 
 	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
 
@@ -161,16 +162,19 @@ implements DataCollector, SerialPortEventListener {
 			
 			// sleep until we have data
 			synchronized (this) {
+				this.doneCollecting = false;
 				this.collectData = true;
 				this.wait(getMaxWait());
 				this.collectData = false;
+			}
+			if ( log.isDebugEnabled() && !doneCollecting ) {
+				log.debug("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			log.warn("Interrupted, stopping data collection");
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} finally {
-			serialPort.removeEventListener();
 			if ( this.in != null ) {
 				if ( toggleDtr ) {
 					serialPort.setDTR(!isDtr());
@@ -184,6 +188,7 @@ implements DataCollector, SerialPortEventListener {
 					// ignore this one
 				}
 			}
+			serialPort.removeEventListener();
 		}
 	}
 
@@ -196,6 +201,7 @@ implements DataCollector, SerialPortEventListener {
 		boolean done = handleSerialEvent(event, in, buffer, magic, readSize);
 		if ( done ) {
 			synchronized (this) {
+				doneCollecting = true;
 				notifyAll();
 			}
 			return;

@@ -64,6 +64,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	private ByteArrayOutputStream buffer;
 	private boolean listening = false;
 	private boolean collecting = false;
+	private boolean doneCollecting = false;
 
 	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
 	
@@ -94,7 +95,6 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			throw new RuntimeException(e);
 		} finally {
 			log.trace("Cleaning up port {}...", serialPort);
-			serialPort.removeEventListener();
 			if ( this.in != null ) {
 				try {
 					this.in.close();
@@ -109,6 +109,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 					// ignore this one
 				}
 			}
+			serialPort.removeEventListener();
 			log.trace("Clean up port {} complete.", serialPort);
 		}
 	}
@@ -133,14 +134,17 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	 */
 	public void speakAndListen(byte[] data) {
 		try {
-			this.buffer.reset();
-			this.listening = true;
-			this.collecting = false;
-			out.write(data);
-			
 			// sleep until we have data
 			synchronized (this) {
+				this.buffer.reset();
+				listening = true;
+				collecting = false;
+				doneCollecting = false;
+				out.write(data);
 				this.wait(getMaxWait());
+			}
+			if ( log.isDebugEnabled() && !doneCollecting ) {
+				log.debug("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
@@ -169,16 +173,20 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	@Override
 	public void speakAndCollect(byte[] data, byte[] magicBytes, int readLength) {
 		try {
-			this.buffer.reset();
-			this.magic = magicBytes;
-			this.readSize = readLength;
-			this.listening = true;
-			this.collecting = true;
-			out.write(data);
-			
 			// sleep until we have data
 			synchronized (this) {
+				buffer.reset();
+				magic = magicBytes;
+				readSize = readLength;
+				listening = true;
+				collecting = true;
+				this.doneCollecting = false;
+				out.write(data);
+				
 				this.wait(getMaxWait());
+			}
+			if ( log.isDebugEnabled() && !doneCollecting ) {
+				log.debug("Timeout collecting serial data");
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
@@ -209,6 +217,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			boolean done = handleSerialEvent(event, in, buffer, magic, readSize);
 			if ( done ) {
 				synchronized (this) {
+					doneCollecting = true;
 					notifyAll();
 				}
 			}
@@ -228,6 +237,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			eventLog.trace("Finished reading data: {}", Arrays.toString(buffer.toByteArray()));
 		}
 		synchronized (this) {
+			doneCollecting = true;
 			notifyAll();
 		}
 	}
