@@ -247,10 +247,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		byte[] buf = new byte[Math.min(readLength, 1024)];
 		try {
 			int len = -1;
-			int max = Math.min(in.available(), buf.length);
+			final int max = Math.min(in.available(), buf.length);
 			eventLog.trace("Attempting to read {} bytes from serial port", max);
-			if ( in.available() > 0 ) {
-			while ( (len = in.read(buf, 0, max)) > 0 ) {
+			while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
 				sink.write(buf, 0, len);
 				sinkSize += len;
 
@@ -307,7 +306,6 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					eventLog.trace("Need {} more bytes of data", (readLength - sinkSize));
 					append = true;
 				}
-			}
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
