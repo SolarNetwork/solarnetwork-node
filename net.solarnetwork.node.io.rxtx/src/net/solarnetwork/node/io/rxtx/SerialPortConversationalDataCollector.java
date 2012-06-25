@@ -36,9 +36,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollector;
 
@@ -56,6 +53,8 @@ import net.solarnetwork.node.DataCollector;
 public class SerialPortConversationalDataCollector extends SerialPortSupport implements
 		ConversationalDataCollector, SerialPortEventListener {
 
+	private final long TIMEOUT_PADDING = 800;
+	
 	private byte[] magic;
 	private int readSize;
 
@@ -64,10 +63,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	private ByteArrayOutputStream buffer;
 	private boolean listening = false;
 	private boolean collecting = false;
-	private boolean doneCollecting = false;
 
-	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
-	
 	/**
 	 * Constructor.
 	 * 
@@ -139,12 +135,9 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				this.buffer.reset();
 				listening = true;
 				collecting = false;
-				doneCollecting = false;
+				timeoutStart();
 				out.write(data);
-				this.wait(getMaxWait());
-			}
-			if ( log.isWarnEnabled() && !doneCollecting ) {
-				log.warn("Timeout collecting serial data");
+				this.wait(getMaxWait()+TIMEOUT_PADDING);
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
@@ -180,13 +173,10 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				readSize = readLength;
 				listening = true;
 				collecting = true;
-				this.doneCollecting = false;
+				timeoutStart();
 				out.write(data);
 				
-				this.wait(getMaxWait());
-			}
-			if ( log.isWarnEnabled() && !doneCollecting ) {
-				log.warn("Timeout collecting serial data");
+				this.wait(getMaxWait()+TIMEOUT_PADDING);
 			}
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
@@ -214,10 +204,14 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			return;
 		}
 		if ( collecting ) {
-			boolean done = handleSerialEvent(event, in, buffer, magic, readSize);
+			boolean done;
+			try {
+				done = handleSerialEvent(event, in, buffer, magic, readSize);
+			} catch (Exception e) {
+				done = true;
+			}
 			if ( done ) {
 				synchronized (this) {
-					doneCollecting = true;
 					notifyAll();
 				}
 			}
@@ -230,14 +224,13 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				this.buffer.write(buf, 0, len);
 			}
 		} catch ( IOException e ) {
-			throw new RuntimeException(e);
+			log.warn("IOException reading serial data: {}", e.getMessage());
 		}
 
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.trace("Finished reading data: {}", Arrays.toString(buffer.toByteArray()));
 		}
 		synchronized (this) {
-			doneCollecting = true;
 			notifyAll();
 		}
 	}

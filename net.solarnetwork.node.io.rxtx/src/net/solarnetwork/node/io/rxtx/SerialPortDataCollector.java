@@ -35,9 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.solarnetwork.node.DataCollector;
 
 /**
@@ -83,8 +80,6 @@ implements DataCollector, SerialPortEventListener {
 	private boolean collectData = false;
 	private InputStream in = null;
 	private boolean doneCollecting = false;
-
-	private Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
 
 	/**
 	 * Construct with a port and default settings.
@@ -198,7 +193,12 @@ implements DataCollector, SerialPortEventListener {
 			return;
 		}
 		
-		boolean done = handleSerialEvent(event, in, buffer, magic, readSize);
+		boolean done;
+		try {
+			done = handleSerialEvent(event, in, buffer, magic, readSize);
+		} catch (Exception e) {
+			done = true;
+		}
 		if ( done ) {
 			synchronized (this) {
 				doneCollecting = true;

@@ -26,21 +26,28 @@
 
 package net.solarnetwork.node.io.rxtx;
 
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+import gnu.io.UnsupportedCommOperationException;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.TooManyListenersException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import net.solarnetwork.node.support.SerialPortBean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import gnu.io.SerialPort;
-import gnu.io.SerialPortEvent;
-import gnu.io.SerialPortEventListener;
-import gnu.io.UnsupportedCommOperationException;
 
 /**
  * A base class with properties to support {@link SerialPort} communication.
@@ -53,10 +60,15 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	/** The SerialPort. */
 	protected SerialPort serialPort;
 	
-	private long maxWait;
+	private final long maxWait;
+	private final ExecutorService executor;
+	private long timeout = 0;
 	
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+	
+	/** A class-level logger with the suffix SERIAL_EVENT. */
+	protected final Logger eventLog = LoggerFactory.getLogger(getClass().getName()+".SERIAL_EVENT");
 	
 	/**
 	 * Constructor.
@@ -68,6 +80,24 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	public SerialPortSupport(SerialPort serialPort, long maxWait) {
 		this.serialPort = serialPort;
 		this.maxWait = maxWait;
+		if ( maxWait > 0 ) {
+			executor = Executors.newFixedThreadPool(1);
+		} else {
+			executor = null;
+		}
+	}
+	
+	/**
+	 * Set a "timeout" flag, so that all subsequent calls to 
+	 * {@link #handleSerialEvent(SerialPortEvent, InputStream, ByteArrayOutputStream, byte[], int)}
+	 * use this as the reference point for calculating the maximum time to wait for serial data.
+	 * 
+	 * <p>When called, the {@code handleSerialEvent} method will treat the time offset from the
+	 * call to this method as the reference amount of time that has passed before the 
+	 * {@code maxWait} value triggers a timeout.</p>
+	 */
+	protected void timeoutStart() {
+		timeout = System.currentTimeMillis();
 	}
 	
 	/**
@@ -173,28 +203,67 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	 * @param readLength the number of bytes, excluding the magic bytes, to
 	 * read from the stream
 	 * @return <em>true</em> if the data has been found
+	 * @throws TimeoutException if {@code maxWait} is configured and that amount of time
+	 * passes before the requested serial data is read
 	 */
-	protected boolean handleSerialEvent(SerialPortEvent event, InputStream in,
+	protected boolean handleSerialEvent(final SerialPortEvent event, final InputStream in,
+			final ByteArrayOutputStream sink, final byte[] magicBytes, final int readLength)
+	throws TimeoutException, InterruptedException, ExecutionException {
+		if ( timeout < 1 ) {
+			return handleSerialEventWithoutTimeout(event, in, sink, magicBytes, readLength);
+		}
+		
+		Callable<Boolean> task = new Callable<Boolean>() {
+			@Override
+			public Boolean call() throws Exception {
+				return handleSerialEventWithoutTimeout(event, in, sink, magicBytes, readLength);
+			}
+		};
+		Future<Boolean> future = executor.submit(task);
+		boolean result = false;
+		final long maxMs = Math.max(1, this.maxWait - System.currentTimeMillis() + timeout);
+		eventLog.trace("Waiting at most {}ms for data", maxMs);
+		try {
+			result = future.get(maxMs, TimeUnit.MILLISECONDS);
+		} catch (InterruptedException e) {
+			log.debug("Interrupted waiting for serial data");
+			throw e;
+		} catch (ExecutionException e) {
+			// log stack trace in DEBUG
+			log.debug("Exception thrown reading from serial port", e.getCause());
+			throw e;
+		} catch (TimeoutException e) {
+			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
+			future.cancel(true);
+			throw e;
+		}
+		return result;
+	}
+	
+	private boolean handleSerialEventWithoutTimeout(SerialPortEvent event, InputStream in,
 			ByteArrayOutputStream sink, byte[] magicBytes, int readLength) {
 		int sinkSize = sink.size();
 		boolean append = sinkSize > 0;
-		byte[] buf = new byte[1024];
+		byte[] buf = new byte[Math.min(readLength, 1024)];
 		try {
 			int len = -1;
-			while ( (len = in.read(buf, 0, buf.length)) > 0 ) {
+			int max = Math.min(in.available(), buf.length);
+			eventLog.trace("Attempting to read {} bytes from serial port", max);
+			if ( in.available() > 0 ) {
+			while ( (len = in.read(buf, 0, max)) > 0 ) {
 				sink.write(buf, 0, len);
 				sinkSize += len;
 
 				if ( append ) {
 					// if we've collected at least desiredSize bytes, we're done
 					if ( sinkSize >= readLength ) {
-						if ( log.isDebugEnabled() ) {
-							log.debug("Got desired {}  bytes of data: {}", readLength, 
+						if ( eventLog.isDebugEnabled() ) {
+							eventLog.debug("Got desired {}  bytes of data: {}", readLength, 
 									Arrays.toString(sink.toByteArray()));
 						}
 						return true;
 					}
-					log.debug("Looking for {} more bytes of data", (readLength - sinkSize));
+					eventLog.debug("Looking for {} more bytes of data", (readLength - sinkSize));
 					return false;
 				}
 				
@@ -219,8 +288,8 @@ public abstract class SerialPortSupport extends SerialPortBean {
 
 				if ( found ) {
 					// magic found!
-					if ( log.isTraceEnabled() ) {
-						log.trace("Found magic bytes " +Arrays.toString(magicBytes)
+					if ( eventLog.isTraceEnabled() ) {
+						eventLog.trace("Found magic bytes " +Arrays.toString(magicBytes)
 								+" at buffer index " +magicIdx);
 					}
 					
@@ -235,16 +304,17 @@ public abstract class SerialPortSupport extends SerialPortBean {
 						// we got all the data here... we're done
 						return true;
 					}
-					log.trace("Need {} more bytes of data", (readLength - sinkSize));
+					eventLog.trace("Need {} more bytes of data", (readLength - sinkSize));
 					append = true;
 				}
+			}
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
 		
-		if ( log.isTraceEnabled() ) {
-			log.trace("Buffer: " +sink.toString());
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Buffer: " +sink.toString());
 		}
 		return false;
 	}
