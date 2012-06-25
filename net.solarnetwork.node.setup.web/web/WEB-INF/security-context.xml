@@ -16,8 +16,10 @@
 	<!-- Configure Spring Security -->
 	<http auto-config="true">
 		<intercept-url pattern="/*.do*" filters="none"/>
+		<intercept-url pattern="/images/**" filters="none"/>
 		<intercept-url pattern="/js/**" filters="none"/>
-		<intercept-url pattern="/style/**" filters="none"/>
+		<intercept-url pattern="/js-lib/**" filters="none"/>
+		<intercept-url pattern="/css/**" filters="none"/>
 	    <intercept-url pattern="/a/**" access="ROLE_USER" />
 		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
