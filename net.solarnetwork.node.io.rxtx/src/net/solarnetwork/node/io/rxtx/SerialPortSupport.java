@@ -34,7 +34,6 @@ import gnu.io.UnsupportedCommOperationException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.TooManyListenersException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -261,7 +260,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					if ( sinkSize >= readLength ) {
 						if ( eventLog.isDebugEnabled() ) {
 							eventLog.debug("Got desired {}  bytes of data: {}", readLength, 
-									Arrays.toString(sink.toByteArray()));
+									asciiDebugValue(sink.toByteArray()));
 						}
 						return true;
 					}
@@ -291,7 +290,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 				if ( found ) {
 					// magic found!
 					if ( eventLog.isTraceEnabled() ) {
-						eventLog.trace("Found magic bytes " +Arrays.toString(magicBytes)
+						eventLog.trace("Found magic bytes " +asciiDebugValue(magicBytes)
 								+" at buffer index " +magicIdx);
 					}
 					
@@ -315,9 +314,25 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		}
 		
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.trace("Buffer: " +sink.toString());
+			eventLog.trace("Need {} more bytes of data, buffer: {}", 
+					(readLength - sinkSize), asciiDebugValue(sink.toByteArray()));
 		}
 		return false;
+	}
+	
+	protected final String asciiDebugValue(byte[] data) {
+		if ( data == null || data.length < 1 ) {
+			return "";
+		}
+		StringBuilder buf = new StringBuilder();
+		for ( byte b : data ) {
+			if ( b >= 32 && b < 126 ) {
+				buf.append(Character.valueOf((char)b));
+			} else {
+				buf.append('~');
+			}
+		}
+		return buf.toString();
 	}
 
 	public SerialPort getSerialPort() {

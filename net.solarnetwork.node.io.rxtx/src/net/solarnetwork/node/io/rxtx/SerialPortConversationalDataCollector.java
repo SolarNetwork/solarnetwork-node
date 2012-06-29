@@ -34,7 +34,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollector;
@@ -137,6 +136,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				collecting = false;
 				timeoutStart();
 				out.write(data);
+				out.flush();
 				this.wait(getMaxWait()+TIMEOUT_PADDING);
 			}
 		} catch ( InterruptedException e ) {
@@ -175,6 +175,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 				collecting = true;
 				timeoutStart();
 				out.write(data);
+				out.flush();
 				
 				this.wait(getMaxWait()+TIMEOUT_PADDING);
 			}
@@ -192,6 +193,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	public void speak(byte[] data) {
 		try {
 			out.write(data);
+			out.flush();
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -228,7 +230,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 		}
 
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.trace("Finished reading data: {}", Arrays.toString(buffer.toByteArray()));
+			eventLog.trace("Finished reading data: {}", asciiDebugValue(buffer.toByteArray()));
 		}
 		synchronized (this) {
 			notifyAll();
