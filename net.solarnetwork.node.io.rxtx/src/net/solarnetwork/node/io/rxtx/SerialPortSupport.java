@@ -108,6 +108,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 			log.debug("Closing serial port {}", this.serialPort);
 			this.serialPort.close();
 			log.trace("Serial port closed");
+			if ( executor != null ) {
+				executor.shutdownNow();
+			}
 		}
 	}
 
