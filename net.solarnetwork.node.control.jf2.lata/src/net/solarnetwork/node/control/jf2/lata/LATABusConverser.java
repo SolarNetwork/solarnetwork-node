@@ -69,16 +69,19 @@ public class LATABusConverser extends Converser {
 	
 	@Override
 	public String conductConversation(ConversationalDataCollector dataCollector) {
-		//sets the Operational Mode in the LATA Bus
-		speakAndWait(dataCollector, Command.StartOperationalMode, 500);
+		// sets the Reset Mode in the LATA Bus
+		speakAndWait(dataCollector, Command.StartResetMode, 500);
 		
 		//sets the speed in the LATA Bus
 		speakAndWait(dataCollector, Command.SetSpeed, 500);
 		
+		//sets the Operational Mode in the LATA Bus
+		speakAndWait(dataCollector, Command.StartOperationalMode, 500);
+		
 		//send the actual command
 		
 		// TODO: what was this for, when we call this again immediately below?
-		// speakAndWait(dataCollector, getCommand(), 500);
+		//speakAndWait(dataCollector, getCommand(), 500);
 		
 		if ( getCommand().includesResponse() ) {
 			LOG.trace("Sending command {} ({}) and waiting for response", 
@@ -86,7 +89,8 @@ public class LATABusConverser extends Converser {
 			dataCollector.speakAndCollect(getCommand().getCommandData(), MAGIC, READ_LENGTH);
 			return dataCollector.getCollectedDataAsString();
 		}
-		
+
+		LOG.trace("Sending command {}: {}", getCommand(), getCommand().getData());
 		dataCollector.speak(getCommand().getCommandData());
 		return null;
 	}
@@ -94,6 +98,9 @@ public class LATABusConverser extends Converser {
 	private void speakAndWait(ConversationalDataCollector dataCollector,
 			CommandInterface command, long waitMillis) {
 		LOG.trace("Sending command {}: {}", command, command.getData());
+		dataCollector.speakAndListen(command.getCommandData());
+		
+		/* Original code: speak and just wait a little bit
 		dataCollector.speak(command.getCommandData());
 		synchronized (this) {
 			try {
@@ -102,6 +109,7 @@ public class LATABusConverser extends Converser {
 				// ignore
 			}
 		}
+		*/
 	}
 	
 }

@@ -37,6 +37,8 @@ public enum Command implements CommandInterface {
 	
 	GetVersionShort("V\r", true),
 	
+	StartResetMode("C\r"),
+	
 	StartOperationalMode("O\r"),
 	
 	SetSpeed("S4\r"),
