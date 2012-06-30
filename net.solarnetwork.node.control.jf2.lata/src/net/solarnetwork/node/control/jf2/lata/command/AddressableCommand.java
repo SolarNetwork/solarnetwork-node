@@ -81,7 +81,7 @@ public class AddressableCommand implements CommandInterface {
 
 	@Override
 	public byte[] getCommandData() {
-		return getData().getBytes();
+		return String.format(new String(command.getCommandData()), hexIdentifier).getBytes();
 	}
 
 	@Override

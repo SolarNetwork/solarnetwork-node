@@ -70,18 +70,21 @@ public class LATABusConverser extends Converser {
 	@Override
 	public String conductConversation(ConversationalDataCollector dataCollector) {
 		// sets the Reset Mode in the LATA Bus
-		speakAndWait(dataCollector, Command.StartResetMode, 500);
+		speakAndWait(dataCollector, Command.StartResetMode);
 		
 		//sets the speed in the LATA Bus
-		speakAndWait(dataCollector, Command.SetSpeed, 500);
+		speakAndWait(dataCollector, Command.SetSpeed);
 		
 		//sets the Operational Mode in the LATA Bus
-		speakAndWait(dataCollector, Command.StartOperationalMode, 500);
+		speakAndWait(dataCollector, Command.StartOperationalMode);
 		
-		//send the actual command
+		// drain the input buffer... the bus sometimes has stuff waiting around
+		LOG.trace("Drain the input buffer", getCommand());
+		dataCollector.listen();
+		LOG.trace("Drained buffer of {} bytes", dataCollector.getCollectedData().length);
 		
 		// TODO: what was this for, when we call this again immediately below?
-		//speakAndWait(dataCollector, getCommand(), 500);
+		//speakAndWait(dataCollector, getCommand());
 		
 		if ( getCommand().includesResponse() ) {
 			LOG.trace("Sending command {} ({}) and waiting for response", 
@@ -96,20 +99,17 @@ public class LATABusConverser extends Converser {
 	}
 	
 	private void speakAndWait(ConversationalDataCollector dataCollector,
-			CommandInterface command, long waitMillis) {
+			CommandInterface command) {
 		LOG.trace("Sending command {}: {}", command, command.getData());
-		dataCollector.speakAndListen(command.getCommandData());
-		
-		/* Original code: speak and just wait a little bit
+		//dataCollector.speakAndListen(command.getCommandData());	
 		dataCollector.speak(command.getCommandData());
 		synchronized (this) {
 			try {
-				this.wait(waitMillis);
+				this.wait(500);
 			} catch (InterruptedException e) {
 				// ignore
 			}
 		}
-		*/
 	}
 	
 }
