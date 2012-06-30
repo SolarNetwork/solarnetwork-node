@@ -68,6 +68,11 @@ public interface ConversationalDataCollector extends DataCollector {
 	public void speak(byte[] data);
 	
 	/**
+	 * Listen for a response, without first speaking.
+	 */
+	public void listen();
+	
+	/**
 	 * Speak and then listen for a response.
 	 * 
 	 * <p>Calling code can access the response by calling 

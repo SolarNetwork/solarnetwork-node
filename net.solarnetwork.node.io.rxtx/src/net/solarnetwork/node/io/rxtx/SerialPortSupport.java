@@ -96,7 +96,18 @@ public abstract class SerialPortSupport extends SerialPortBean {
 	 * {@code maxWait} value triggers a timeout.</p>
 	 */
 	protected void timeoutStart() {
-		timeout = System.currentTimeMillis();
+		if ( maxWait > 0 ) {
+			timeout = System.currentTimeMillis();
+		}
+	}
+	
+	/**
+	 * Clear the timeout flag, so no timeout used.
+	 * 
+	 * @see #timeoutStart()
+	 */
+	protected void timeoutClear() {
+		timeout = 0;
 	}
 	
 	/**
@@ -169,10 +180,15 @@ public abstract class SerialPortSupport extends SerialPortBean {
 				serialPort.disableReceiveThreshold();
 			}
 
+			if ( log.isDebugEnabled() ) {
+				log.debug("Setting serial port baud = {}, dataBits = {}, stopBits = {}, parity = {}",
+					new Object[] {getBaud(), getDataBits(), getStopBits(), getParity()});
+			}
 			serialPort.setSerialPortParams(getBaud(), getDataBits(),
 					getStopBits(), getParity());
 
 			if ( getFlowControl() >= 0 ) {
+				log.debug("Setting flow control to {}", getFlowControl());
 				serialPort.setFlowControlMode(getFlowControl());
 			}
 
@@ -318,6 +334,21 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					(readLength - sinkSize), asciiDebugValue(sink.toByteArray()));
 		}
 		return false;
+	}
+	
+	protected final void readAvailable(InputStream in, ByteArrayOutputStream sink) {
+		byte[] buf = new byte[1024];
+		try {
+			int len = -1;
+			while ( in.available() > 0 && (len = in.read(buf, 0, buf.length)) > 0 ) {
+				sink.write(buf, 0, len);
+			}
+		} catch ( IOException e ) {
+			log.warn("IOException reading serial data: {}", e.getMessage());
+		}
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Finished reading data: {}", asciiDebugValue(sink.toByteArray()));
+		}
 	}
 	
 	protected final String asciiDebugValue(byte[] data) {

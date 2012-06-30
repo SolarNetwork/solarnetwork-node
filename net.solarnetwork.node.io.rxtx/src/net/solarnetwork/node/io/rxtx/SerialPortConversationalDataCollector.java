@@ -148,6 +148,21 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 		}
 	}
 
+	@Override
+	public void listen() {
+		try {
+			synchronized (this) {
+				this.buffer.reset();
+				listening = true;
+				collecting = false;
+				timeoutStart();
+				this.wait(getMaxWait()+TIMEOUT_PADDING);
+			}
+		} catch ( InterruptedException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	/**
 	 * Speak and then collect data from the response.
 	 * 
@@ -192,8 +207,11 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	@Override
 	public void speak(byte[] data) {
 		try {
-			out.write(data);
-			out.flush();
+			synchronized (this) {
+				timeoutClear();
+				out.write(data);
+				out.flush();
+			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -201,7 +219,10 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 
 	@Override
 	public void serialEvent(SerialPortEvent event) {
-		eventLog.trace("SerialPortEvent {}", event.getEventType());
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("SerialPortEvent {}; listening {}; collecting {}", 
+				new Object[] {event.getEventType(), listening, collecting});
+		}
 		if ( !listening || event.getEventType() != SerialPortEvent.DATA_AVAILABLE) {
 			return;
 		}
@@ -219,19 +240,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			}
 			return;
 		}
-		byte[] buf = new byte[1024];
-		try {
-			int len = -1;
-			while ( (len = in.read(buf, 0, buf.length)) > 0 ) {
-				this.buffer.write(buf, 0, len);
-			}
-		} catch ( IOException e ) {
-			log.warn("IOException reading serial data: {}", e.getMessage());
-		}
-
-		if ( eventLog.isTraceEnabled() ) {
-			eventLog.trace("Finished reading data: {}", asciiDebugValue(buffer.toByteArray()));
-		}
+		readAvailable(in, this.buffer);
 		synchronized (this) {
 			notifyAll();
 		}
