@@ -22,10 +22,10 @@
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="RFXCOM energy consumption meter"/>
-		<property name="factoryUID" value="net.solarnetwork.node.consumption.rfxcom.energy"/>
+		<property name="factoryUID" value="net.solarnetwork.node.consumption.rfxcom"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.consumption.rfxcom.energy.EnergyConsumptionDatumDataSource"/>
+				<property name="basenames" value="net.solarnetwork.node.consumption.rfxcom.RFXCOMConsumptionDatumDataSource"/>
 			</bean>
 		</property>
 	</bean>
@@ -34,7 +34,7 @@
 	
 	<osgi:service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.consumption.rfxcom.energy" update-strategy="container-managed">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.consumption.rfxcom" update-strategy="container-managed">
 		<osgix:interfaces>
 			<value>net.solarnetwork.node.DatumDataSource</value>
 			<value>net.solarnetwork.node.MultiDatumDataSource</value>
@@ -42,11 +42,11 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
-			<entry key="settingPid" value="net.solarnetwork.node.consumption.rfxcom.energy"/>
+			<entry key="settingPid" value="net.solarnetwork.node.consumption.rfxcom"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
 			<property name="delegate">
-				<bean class="net.solarnetwork.node.consumption.rfxcom.energy.EnergyConsumptionDatumDataSource">
+				<bean class="net.solarnetwork.node.consumption.rfxcom.RFXCOMConsumptionDatumDataSource">
 					<property name="dataCollectorFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>
