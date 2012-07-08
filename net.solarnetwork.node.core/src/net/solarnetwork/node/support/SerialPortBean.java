@@ -90,8 +90,10 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @author matt
  * @version $Revision$
  */
-public class SerialPortBean {
+public class SerialPortBean implements Cloneable {
 
+	private static final SerialPortBean DEFAULTS = new SerialPortBean();
+	
 	private int baud = 19200;
 	private int dataBits = 8;
 	private int stopBits = 1;
@@ -106,23 +108,53 @@ public class SerialPortBean {
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param the
-	 *            bean prefix to use
+	 * @param prefix bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(String prefix) {
+		return getDefaultSettingSpecifiers(DEFAULTS, prefix);
+	}
+
+	/**
+	 * Get a list of setting specifiers for this bean.
+	 * 
+	 * @param defaults the default values to use
+	 * @param prefix the bean prefix to use
+	 * @return setting specifiers
+	 */
+	public static List<SettingSpecifier> getDefaultSettingSpecifiers(
+			SerialPortBean defaults, String prefix) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "baud", "19200"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataBits", "8"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "stopBits", "1"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "parity", "0"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "flowControl", "-1"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveThreshold", "40"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveTimeout", "-1"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveFraming", "-1"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dtrFlag", "1"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "rtsFlag", "0"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "baud", 
+				String.valueOf(defaults.getBaud())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataBits", 
+				String.valueOf(defaults.getDataBits())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "stopBits", 
+				String.valueOf(defaults.getStopBits())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "parity", 
+				String.valueOf(defaults.getParity())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "flowControl", 
+				String.valueOf(defaults.getFlowControl())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveThreshold", 
+				String.valueOf(defaults.getReceiveThreshold())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveTimeout", 
+				String.valueOf(defaults.getReceiveTimeout())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveFraming", 
+				String.valueOf(defaults.getReceiveFraming())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dtrFlag", 
+				String.valueOf(defaults.getDtrFlag())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "rtsFlag", 
+				String.valueOf(defaults.getRtsFlag())));
 		return results;
+	}
+
+	@Override
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	public boolean isDtr() {

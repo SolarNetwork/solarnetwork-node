@@ -57,21 +57,37 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class SerialPortBeanParameters extends SerialPortBean {
 
+	private static final SerialPortBeanParameters DEFAULTS = new SerialPortBeanParameters();
+	
 	private String serialPort = "/dev/ttyUSB0";
 	private String commPortAppName = "SolarNode";
-	private long maxWait;
+	private long maxWait = 0;
 
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param prefix
-	 *            the bean prefix
+	 * @param prefix the bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(String prefix) {
-		List<SettingSpecifier> results = SerialPortBean.getDefaultSettingSpecifiers(prefix);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "commPortAppName", "SolarNode"));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxWait", "0"));
+		return getDefaultSettingSpecifiers(DEFAULTS, prefix);
+	}
+
+	/**
+	 * Get a list of setting specifiers for this bean.
+	 * 
+	 * @param defaults the default values to use
+	 * @param prefix the bean prefix to use
+	 * @return setting specifiers
+	 */
+	public static List<SettingSpecifier> getDefaultSettingSpecifiers(
+			SerialPortBeanParameters defaults, String prefix) {
+		List<SettingSpecifier> results = SerialPortBean.getDefaultSettingSpecifiers(
+				defaults, prefix);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "commPortAppName", 
+				defaults.getCommPortAppName()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxWait", 
+				String.valueOf(defaults.getMaxWait())));
 		return results;
 	}
 

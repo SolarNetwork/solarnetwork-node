@@ -3,6 +3,7 @@
 	<dependencies>
 		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" />
 		<dependency org="org.apache.commons" name="com.springsource.org.apache.commons.beanutils" rev="1.8.0" />
+    	<dependency org="org.apache.commons" name="com.springsource.org.apache.commons.codec" rev="1.4.0" />
 		<dependency org="org.eclipse.osgi" name="org.eclipse.osgi" rev="3.5.1.R35x_v20091005" />
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0" >
     		<artifact name="org.osgi.compendium" type="jar" />
