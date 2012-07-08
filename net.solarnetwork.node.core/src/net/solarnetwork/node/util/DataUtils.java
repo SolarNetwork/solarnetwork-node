@@ -44,12 +44,24 @@ public final class DataUtils {
 	}
 	
 	/**
+	 * Convert a signed byte into an unsigned short value.
+	 * 
+	 * <p>The returned short will have a value between 0 and 255.</p>
+	 * 
+	 * @param data the byte
+	 * @return the unsigned value
+	 */
+	public static short unsigned(byte data) {
+		return (short)(data & 0xFF);
+	}
+	
+	/**
 	 * Convert signed bytes into unsigned short values.
 	 * 
-	 * <p>This is used 
+	 * <p>The returned shorts will have values between 0 and 255.</p>
 	 * 
-	 * @param data
-	 * @return
+	 * @param data the bytes
+	 * @return the unsigned values
 	 */
 	public static short[] getUnsignedValues(byte[] data) {
 		// convert bytes into "unsigned" integer values, i.e. 0..255
