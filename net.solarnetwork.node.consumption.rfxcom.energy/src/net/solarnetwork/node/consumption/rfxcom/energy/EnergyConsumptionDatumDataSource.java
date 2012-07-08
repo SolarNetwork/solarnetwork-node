@@ -24,6 +24,8 @@
 
 package net.solarnetwork.node.consumption.rfxcom.energy;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -39,8 +41,10 @@ import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.rfxcom.AddressSource;
 import net.solarnetwork.node.rfxcom.Command;
 import net.solarnetwork.node.rfxcom.CommandMessage;
+import net.solarnetwork.node.rfxcom.CurrentMessage;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
@@ -50,6 +54,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.util.DataUtils;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
 
@@ -67,13 +72,16 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  */
 public class EnergyConsumptionDatumDataSource 
 implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>, 
-ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProvider {
+ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 55;
 	
 	/** The default value for the {@code voltage} property. */
 	public static final float DEFAULT_VOLTAGE = 230.0F;
+	
+	/** The default value for the {@code currentSensorIndexFlags} property. */
+	public static final int DEFAULT_CURRENT_SENSOR_INDEX_FLAGS = 1;
 	
 	private static final SerialPortBeanParameters DEFAULT_SERIAL_PARAMS = new SerialPortBeanParameters();
 	private static final Object MONITOR = new Object();
@@ -98,6 +106,7 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
+	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
 	
 	private boolean rfxcomInitialized = false;
 
@@ -113,19 +122,70 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 		return ConsumptionDatum.class;
 	}
 
-	private ConsumptionDatum getConsumptionDatumInstance(EnergyMessage msg) {
-		final ConsumptionDatum d = new ConsumptionDatum();
-		d.setSourceId(msg.getAddress());
-		final double wh = msg.getUsageWattHours();
-		final double w = msg.getInstantWatts();
-		if ( wh > 0 ) {
-			d.setWattHourReading(Math.round(wh));
-		} else {
-			d.setAmps((float)w / voltage);
-			d.setVolts(voltage);
+	private ConsumptionDatum filterConsumptionDatumInstance(ConsumptionDatum d) {
+		String addr = d.getSourceId();
+		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr)) {
+			addr = getAddressSourceMapping().get(addr);
 		}
+		if ( getSourceIdFilter() != null && !getSourceIdFilter().contains(addr) ) {
+			if ( log.isInfoEnabled() ) {
+				log.info("Rejecting source [" +addr +"] not in source ID filter set");
+			}
+			return null;
+		}
+		d.setSourceId(addr);
 		d.setCreated(new Date());
 		return d;
+	}
+
+	private void addConsumptionDatumFromMessage(Message msg, List<ConsumptionDatum> results) {
+		final String address = ((AddressSource)msg).getAddress();
+		if ( msg instanceof EnergyMessage ) {
+			EnergyMessage emsg = (EnergyMessage)msg;
+			ConsumptionDatum d = new ConsumptionDatum();
+			d.setSourceId(address);
+			final double wh = emsg.getUsageWattHours();
+			final double w = emsg.getInstantWatts();
+			if ( wh > 0 ) {
+				d.setWattHourReading(Math.round(wh));
+			} else {
+				d.setAmps((float)w / voltage);
+				d.setVolts(voltage);
+			}
+			d = filterConsumptionDatumInstance(d);
+			if ( d != null ) {
+				results.add(d);
+			}
+		} else {
+			// assume CurrentMessage
+			CurrentMessage cmsg = (CurrentMessage)msg;
+			ConsumptionDatum d = new ConsumptionDatum();
+			d.setVolts(voltage);
+			
+			// we turn each sensor into its own ConsumptionDatum, the sensors we collect
+			// from are specified by the currentSensorIndexFlags property
+			for ( int i = 1; i <= 3; i++ ) {
+				if ( (i & currentSensorIndexFlags) != i ) {
+					continue;
+				}
+				d.setSourceId(address+"."+i);
+				switch ( i ) {
+					case 1:
+						d.setAmps((float)cmsg.getAmpReading1());
+						break;
+					case 2:
+						d.setAmps((float)cmsg.getAmpReading2());
+						break;
+					case 3:
+						d.setAmps((float)cmsg.getAmpReading3());
+						break;
+				}
+				ConsumptionDatum filtered = filterConsumptionDatumInstance(d);
+				if ( filtered != null ) { 
+					results.add(filtered);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -144,7 +204,7 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 			return null;
 		}
 		
-		final List<EnergyMessage> messages;
+		final List<Message> messages;
 		ConversationalDataCollector dc = null;
 		try {
 			dc = df.getConversationalDataCollectorInstance(getSerialParams());
@@ -160,15 +220,41 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 		}
 		
 		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(messages.size());
-		for ( EnergyMessage msg : messages ) {
-			results.add(getConsumptionDatumInstance(msg));
+		for ( Message msg : messages ) {
+			addConsumptionDatumFromMessage(msg, results);
 		}
 		return results;
 	}
+	
+	private class MessageListener implements ConversationalDataCollector.DataListener {
+		
+		private int packetSize = -1;
+
+		private void reset() {
+			packetSize = -1;
+		}
+		
+		@Override
+		public int getDesiredByteCount(ConversationalDataCollector dataCollector, int sinkSize) {
+			return (packetSize < 1 ? 1 : packetSize - sinkSize + 1);
+		}
+
+		@Override
+		public boolean receivedData(ConversationalDataCollector dataCollector,
+				byte[] data, int offset, int length, OutputStream sink, int sinkSize)
+		throws IOException {
+			if ( packetSize < 1 ) {
+				packetSize = DataUtils.unsigned(data[offset]);
+			}
+			sink.write(data, offset, length);
+			return (packetSize + 1 - sinkSize - length) > 0;
+		}
+		
+	}
 
 	@Override
-	public List<EnergyMessage> conductConversation(ConversationalDataCollector dc) {
-		final List<EnergyMessage> result = new ArrayList<EnergyMessage>(3);
+	public List<Message> conductConversation(ConversationalDataCollector dc) {
+		final List<Message> result = new ArrayList<Message>(3);
 		final long endTime = (isCollectAllSourceIds() 
 				&& getSourceIdFilter() != null 
 				&& getSourceIdFilter().size() > 1
@@ -178,6 +264,7 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
 		
 		final MessageFactory mf = new MessageFactory();
+		final MessageListener listener = new MessageListener();
 		
 		if ( !rfxcomInitialized ) {
 			// send reset, followed by status to see how rfxcom is configured
@@ -191,7 +278,7 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 			}
 			
 			dc.speakAndListen(new CommandMessage(Command.Status, 
-					mf.incrementAndGetSequenceNumber()).getMessagePacket());
+					mf.incrementAndGetSequenceNumber()).getMessagePacket(), listener);
 			
 			Message msg = mf.parseMessage(dc.getCollectedData(), 0);
 			if ( msg instanceof StatusMessage && log.isDebugEnabled() ) {
@@ -203,21 +290,23 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 				});
 			}
 			// TODO: add settings UI for configuring which RFXCOM devices are enabled
+			rfxcomInitialized = true;
 		}
 		
 		do {
-			dc.listen();
+			listener.reset();
+			dc.listen(listener);
 			byte[] data = dc.getCollectedData();
 			if ( data == null ) {
 				log.warn("Null serial data received, serial communications problem");
 				return null;
 			}
 			Message msg = mf.parseMessage(data, 0);
-			if ( msg instanceof EnergyMessage ) {
-				EnergyMessage emsg = (EnergyMessage)msg;
-				if ( !sourceIdSet.contains(emsg.getAddress()) ) {
-					result.add(emsg);
-					sourceIdSet.add(emsg.getAddress());
+			if ( msg instanceof EnergyMessage || msg instanceof CurrentMessage ) {
+				String address = ((AddressSource)msg).getAddress();
+				if ( !sourceIdSet.contains(address) ) {
+					result.add(msg);
+					sourceIdSet.add(address);
 				}
 			}
 		} while ( System.currentTimeMillis() < endTime && sourceIdSet.size() < 
@@ -271,6 +360,8 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 				defaults.collectAllSourceIds));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
 				String.valueOf(defaults.collectAllSourceIdsTimeout)));
+		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", 
+				String.valueOf(defaults.currentSensorIndexFlags)));
 		
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
 				DEFAULT_SERIAL_PARAMS, "serialParams."));
@@ -383,6 +474,14 @@ ConversationalDataCollector.Moderator<List<EnergyMessage>>, SettingSpecifierProv
 
 	public void setVoltage(float voltage) {
 		this.voltage = voltage;
+	}
+
+	public int getCurrentSensorIndexFlags() {
+		return currentSensorIndexFlags;
+	}
+
+	public void setCurrentSensorIndexFlags(int currentSensorIndexFlags) {
+		this.currentSensorIndexFlags = currentSensorIndexFlags;
 	}
 	
 }
