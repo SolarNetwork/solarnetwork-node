@@ -32,7 +32,7 @@ import static net.solarnetwork.node.util.DataUtils.unsigned;
  * @author matt
  * @version $Revision$
  */
-public class EnergyMessage extends BaseDataMessage {
+public class EnergyMessage extends BaseDataMessage implements AddressSource {
 
 	public static final byte SUB_TYPE_ELEC2 = 0x1;
 

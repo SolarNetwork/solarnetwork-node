@@ -56,7 +56,7 @@ public class MessageFactory {
 		}
 		
 		final short msgLength = data[offset];
-		if ( (msgLength + offset) >= data.length ) {
+		if ( msgLength < 4 || (msgLength + offset) >= data.length ) {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Insufficient data to parse message: " +Hex.encodeHexString(data));
 			}
@@ -75,6 +75,12 @@ public class MessageFactory {
 		switch ( data[offset+1] ) {
 			case 0x1:
 				// Command response
+				if ( msgLength < 13 ) {
+					if ( log.isDebugEnabled() ) {
+						log.debug("Insufficient data to parse command message: " +Hex.encodeHexString(data));
+					}
+					return null;
+				}
 				Command cmd = Command.valueOf(data[offset+4]);
 				if ( cmd == Command.Status ) {
 					result = new StatusMessage(sequenceNumber, msg);

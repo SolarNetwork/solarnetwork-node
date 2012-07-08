@@ -32,7 +32,7 @@ import static net.solarnetwork.node.util.DataUtils.unsigned;
  * @author matt
  * @version $Revision$
  */
-public class CurrentMessage extends BaseDataMessage {
+public class CurrentMessage extends BaseDataMessage implements AddressSource {
 
 	private static final short PACKET_SIZE = (short)13;
 	@SuppressWarnings("unused")
