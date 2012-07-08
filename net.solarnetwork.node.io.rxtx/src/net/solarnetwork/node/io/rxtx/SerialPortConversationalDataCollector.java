@@ -57,6 +57,7 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 	private byte[] magic;
 	private int readSize;
 
+	private DataListener listener;
 	private InputStream in;
 	private OutputStream out;
 	private ByteArrayOutputStream buffer;
@@ -163,21 +164,28 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 		}
 	}
 
-	/**
-	 * Speak and then collect data from the response.
-	 * 
-	 * <p>The {@code data} will be written to the serial port's
-	 * {@link OutputStream} and then this method will block until the
-	 * {@link #getMagic()} bytes are read, followed by {@link #getReadSize()}
-	 * more bytes. Each invocation of this method will first
-	 * clear the internal data buffer, and all received response data
-	 * will be stored on the internal data buffer. Calling code can
-	 * access this buffer by calling {@link #getCollectedData()}.</p>
-	 * 
-	 * @param data the data to write to the serial port
-	 * @param magicBytes the magic bytes to look for in the response
-	 * @param readLength the number of bytes to read, including the magic
-	 */
+	@Override
+	public void setListener(DataListener listener) {
+		this.listener = listener;
+	}
+
+	@Override
+	public void removeListener() {
+		this.listener = null;
+	}
+
+	@Override
+	public void listen(DataListener listener) {
+		setListener(listener);
+		listen();
+	}
+
+	@Override
+	public void speakAndListen(byte[] data, DataListener listener) {
+		setListener(listener);
+		speakAndListen(data);
+	}
+
 	@Override
 	public void speakAndCollect(byte[] data, byte[] magicBytes, int readLength) {
 		try {
@@ -240,11 +248,43 @@ public class SerialPortConversationalDataCollector extends SerialPortSupport imp
 			}
 			return;
 		}
-		readAvailable(in, this.buffer);
+		read(in, this.buffer, this.listener);
 		synchronized (this) {
 			notifyAll();
 		}
 	}
+
+	protected final void read(InputStream in, ByteArrayOutputStream sink, DataListener listener) {
+		final byte[] buf = new byte[1024];
+		try {
+			int len = -1;
+			boolean reading = true;
+			while ( reading ) {
+				final int sinkSize = sink.size();
+				final int readSize = (listener == null 
+						? buf.length 
+						: Math.min(buf.length, listener.getDesiredByteCount(this, sinkSize)));
+				if ( (len = in.read(buf, 0, readSize)) > 0 ) {
+					if ( listener == null ) {
+						sink.write(buf, 0, len);
+						reading = false;
+					} else {
+						if ( len > 0 && !listener.receivedData(this, buf, 0, len, sink, sink.size()) ) {
+							reading = false;;
+						}
+					}
+				} else if ( listener == null ) {
+					reading = false;
+				}
+			}
+		} catch ( IOException e ) {
+			log.warn("IOException reading serial data: {}", e.getMessage());
+		}
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Finished reading data: {}", asciiDebugValue(sink.toByteArray()));
+		}
+	}
+	
 
 	@Override
 	public int bytesRead() {

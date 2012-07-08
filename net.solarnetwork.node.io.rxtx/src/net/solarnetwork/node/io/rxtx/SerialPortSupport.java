@@ -45,6 +45,7 @@ import java.util.concurrent.TimeoutException;
 
 import net.solarnetwork.node.support.SerialPortBean;
 
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -356,6 +357,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 			return "";
 		}
 		StringBuilder buf = new StringBuilder();
+		buf.append(Hex.encodeHex(data)).append(" (");
 		for ( byte b : data ) {
 			if ( b >= 32 && b < 126 ) {
 				buf.append(Character.valueOf((char)b));
@@ -363,6 +365,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 				buf.append('~');
 			}
 		}
+		buf.append(")");
 		return buf.toString();
 	}
 

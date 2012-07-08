@@ -2,18 +2,20 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Rxtx IO
 Bundle-SymbolicName: net.solarnetwork.node.io.rxtx
-Bundle-Version: 1.2.2
+Bundle-Version: 1.2.3
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.io.rxtx;version="1.2.2"
+ net.solarnetwork.node.io.rxtx;version="1.2.3"
 Import-Package: 
  gnu.io,
- net.solarnetwork.node;version="1.5.0",
+ net.solarnetwork.node;version="1.5.3",
  net.solarnetwork.node.settings;version="1.0.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
  net.solarnetwork.node.support;version="1.5.0",
  net.solarnetwork.node.util;version="1.0.0",
+ org.apache.commons.codec;version="1.4.0",
+ org.apache.commons.codec.binary;version="1.4.0",
  org.slf4j;version="[1.5.0,2.0.0)",
  org.springframework.asm;version="[3.0,4.0)",
  org.springframework.beans;version="[3.0,4.0)",
