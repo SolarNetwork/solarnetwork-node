@@ -296,6 +296,9 @@ public class CASettingsService implements SettingsService {
 	public Object getSettingValue(SettingSpecifierProvider provider, SettingSpecifier setting) {
 		if ( setting instanceof KeyedSettingSpecifier<?> ) {
 			KeyedSettingSpecifier<?> keyedSetting = (KeyedSettingSpecifier<?>) setting;
+			if ( keyedSetting.isTransient() ) {
+				return keyedSetting.getDefaultValue();
+			}
 			final String providerUID = provider.getSettingUID();
 			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider ? ((FactorySettingSpecifierProvider) provider)
 					.getFactoryInstanceUID() : null);
