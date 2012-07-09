@@ -128,7 +128,7 @@ public class SetModeMessage extends StatusMessage {
 	}
 	
 	public void setACEnabled(boolean value) {
-		setBitFlag(4, (byte)0x4, value);
+		setBitFlag(5, (byte)0x4, value);
 	}
 	
 	public void setARCEnabled(boolean value) {
