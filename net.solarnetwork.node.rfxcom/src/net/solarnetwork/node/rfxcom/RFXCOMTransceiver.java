@@ -97,7 +97,16 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		if ( df == null ) {
 			return null;
 		}
-		return df.getConversationalDataCollectorInstance(getSerialParams());
+		ConversationalDataCollector dc = df.getConversationalDataCollectorInstance(getSerialParams());
+		if ( status == null ) {
+			status = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
+				@Override
+				public StatusMessage conductConversation(ConversationalDataCollector dataCollector) {
+					return getStatus(dataCollector);
+				}
+			});
+		}
+		return dc;
 	}
 
 	@Override
