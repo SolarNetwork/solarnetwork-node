@@ -48,6 +48,7 @@ import net.solarnetwork.node.rfxcom.CurrentMessage;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
+import net.solarnetwork.node.rfxcom.RFXCOMTransceiver;
 import net.solarnetwork.node.rfxcom.StatusMessage;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -83,24 +84,11 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	/** The default value for the {@code currentSensorIndexFlags} property. */
 	public static final int DEFAULT_CURRENT_SENSOR_INDEX_FLAGS = 1;
 	
-	private static final SerialPortBeanParameters DEFAULT_SERIAL_PARAMS = new SerialPortBeanParameters();
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 	
-	static {
-		DEFAULT_SERIAL_PARAMS.setBaud(38400);
-		DEFAULT_SERIAL_PARAMS.setDataBits(8);
-		DEFAULT_SERIAL_PARAMS.setStopBits(1);
-		DEFAULT_SERIAL_PARAMS.setParity(0);
-		DEFAULT_SERIAL_PARAMS.setDtrFlag(1);
-		DEFAULT_SERIAL_PARAMS.setRtsFlag(1);
-		DEFAULT_SERIAL_PARAMS.setReceiveThreshold(-1);
-		DEFAULT_SERIAL_PARAMS.setReceiveTimeout(60000);
-		DEFAULT_SERIAL_PARAMS.setMaxWait(65000);
-	}
-
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
-	private SerialPortBeanParameters serialParams = (SerialPortBeanParameters)DEFAULT_SERIAL_PARAMS.clone();
+	private SerialPortBeanParameters serialParams = RFXCOMTransceiver.getDefaultSerialParameters();
 	private Map<String,String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
@@ -230,32 +218,6 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		return results;
 	}
 	
-	private class MessageListener implements ConversationalDataCollector.DataListener {
-		
-		private int packetSize = -1;
-
-		private void reset() {
-			packetSize = -1;
-		}
-		
-		@Override
-		public int getDesiredByteCount(ConversationalDataCollector dataCollector, int sinkSize) {
-			return (packetSize < 1 ? 1 : packetSize - sinkSize + 1);
-		}
-
-		@Override
-		public boolean receivedData(ConversationalDataCollector dataCollector,
-				byte[] data, int offset, int length, OutputStream sink, int sinkSize)
-		throws IOException {
-			if ( packetSize < 1 ) {
-				packetSize = DataUtils.unsigned(data[offset]);
-			}
-			sink.write(data, offset, length);
-			return (packetSize + 1 - sinkSize - length) > 0;
-		}
-		
-	}
-
 	@Override
 	public List<Message> conductConversation(ConversationalDataCollector dc) {
 		final List<Message> result = new ArrayList<Message>(3);
@@ -268,7 +230,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
 		
 		final MessageFactory mf = new MessageFactory();
-		final MessageListener listener = new MessageListener();
+		final RFXCOMTransceiver.MessageListener listener = new RFXCOMTransceiver.MessageListener();
 		
 		if ( !rfxcomInitialized ) {
 			// send reset, followed by status to see how rfxcom is configured
@@ -368,7 +330,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 				String.valueOf(defaults.currentSensorIndexFlags)));
 		
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
-				DEFAULT_SERIAL_PARAMS, "serialParams."));
+				RFXCOMTransceiver.getDefaultSerialParameters(), "serialParams."));
 		return results;
 	}
 

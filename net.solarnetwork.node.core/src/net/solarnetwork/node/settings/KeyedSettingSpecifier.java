@@ -60,4 +60,15 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 	 */
 	SettingSpecifier mappedTo(String prefix);
 
+	/**
+	 * Get transient flag.
+	 * 
+	 * <p>If a setting is transient, its associated value is never actually persisted
+	 * and the {@link #getDefaultValue()} is treated as its "current" value. This 
+	 * can be used for 
+	 * 
+	 * @return
+	 */
+	boolean isTransient();
+	
 }

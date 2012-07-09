@@ -49,6 +49,7 @@
 												max: '${setting.maximumValue}',
 												step: '${setting.step}',
 												value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+												xint: '${setting["transient"]}',
 												provider: '${provider.settingUID}',
 												setting: '${setup:js(setting.key)}',
 												instance: '${provider.factoryInstanceUID}'
@@ -58,10 +59,10 @@
 									</c:when>
 									<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
 										<div id="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}" class="setting toggle">
-											<input type="radio" name="s${providerStatus.index}i${settingStatus.index}" id="s${providerStatus.index}i${settingStatus.index}t" value="${setting.trueValue}" />
-												<label for="s${providerStatus.index}i${settingStatus.index}t"><fmt:message key="settings.toggle.on"/></label>
-											<input type="radio" name="s${providerStatus.index}i${settingStatus.index}" id="s${providerStatus.index}i${settingStatus.index}f" value="${setting.falseValue}" />
-												<label for="s${providerStatus.index}i${settingStatus.index}f"><fmt:message key="settings.toggle.off"/></label>
+											<input type="radio" name="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}" id="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}t" value="${setting.trueValue}" />
+												<label for="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}t"><fmt:message key="settings.toggle.on"/></label>
+											<input type="radio" name="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}" id="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}f" value="${setting.falseValue}" />
+												<label for="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}f"><fmt:message key="settings.toggle.off"/></label>
 										</div>
 										<script>
 										$(function() {
@@ -72,7 +73,8 @@
 												key: 'm${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}',
 												on: '${setting.trueValue}',
 												off: '${setting.falseValue}',
-												value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>'
+												value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+												xint: '${setting["transient"]}'
 											});
 										});
 										</script>
@@ -87,10 +89,14 @@
 												provider: '${provider.settingUID}',
 												setting: '${setup:js(setting.key)}',
 												instance: '${provider.factoryInstanceUID}',
-												key: 'm${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}'
+												key: 'm${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}',
+												xint: '${setting["transient"]}'
 											});
 										});
 										</script>
+									</c:when>
+									<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
+										<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
 									</c:when>
 									<c:otherwise>
 									TODO: ${setting['class']}

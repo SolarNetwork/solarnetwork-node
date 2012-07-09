@@ -24,6 +24,8 @@
 
 package net.solarnetwork.node.rfxcom;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,12 +38,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MessageFactory {
 
-	private short sequenceNumber = 0;
+	private AtomicInteger sequenceNumber = new AtomicInteger();
 	
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
 	public short incrementAndGetSequenceNumber() {
-		return ++sequenceNumber;
+		return (short)sequenceNumber.incrementAndGet();
 	}
 	
 	public Message parseMessage(byte[] data, int offset) {
@@ -82,7 +84,7 @@ public class MessageFactory {
 					return null;
 				}
 				Command cmd = Command.valueOf(data[offset+4]);
-				if ( cmd == Command.Status ) {
+				if ( cmd == Command.Status || cmd == Command.SetMode ) {
 					result = new StatusMessage(sequenceNumber, msg);
 				} else {
 					result = new CommandMessage(sequenceNumber,  msg);
@@ -106,11 +108,11 @@ public class MessageFactory {
 		return result;
 	}
 
-	public short getSequenceNumber() {
+	public AtomicInteger getSequenceNumber() {
 		return sequenceNumber;
 	}
 
-	public void setSequenceNumber(short sequenceNumber) {
+	public void setSequenceNumber(AtomicInteger sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
 	}
 	

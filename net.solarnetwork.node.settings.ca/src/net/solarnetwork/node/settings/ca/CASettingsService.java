@@ -203,6 +203,9 @@ public class CASettingsService implements SettingsService {
 		final String settingKey = getFactoryInstanceSettingKey(pid, factoryInstanceKey);
 
 		List<KeyValuePair> settings = settingDao.getSettings(settingKey);
+		if ( settings.size() < 1 ) {
+			return;
+		}
 		SettingsCommand cmd = new SettingsCommand();
 		for (KeyValuePair pair : settings) {
 			SettingValueBean bean = new SettingValueBean();
@@ -317,39 +320,44 @@ public class CASettingsService implements SettingsService {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void updateSettings(SettingsCommand command) {
-		try {
-			Configuration conf = null;
-			Dictionary<String, Object> props = null;
-			if ( command.getProviderKey() != null ) {
-				conf = getConfiguration(command.getProviderKey(), command.getInstanceKey());
-				props = conf.getProperties();
-				if ( props == null ) {
-					props = new Hashtable<String, Object>();
+		// group all updates by provider+instance, to reduce the number of CA updates
+		// when multiple settings are changed
+		if ( command.getProviderKey() == null ) {
+			Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>();
+			for ( SettingValueBean bean : command.getValues() ) {
+				String groupKey = bean.getProviderKey()+(bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
+				SettingsCommand cmd = groups.get(groupKey);
+				if ( cmd == null ) {
+					cmd = new SettingsCommand();
+					cmd.setProviderKey(bean.getProviderKey());
+					cmd.setInstanceKey(bean.getInstanceKey());
+					groups.put(groupKey, cmd);
 				}
+				cmd.getValues().add(bean);
+			}
+			for ( SettingsCommand cmd : groups.values() ) {
+				updateSettings(cmd);
+			}
+			return;
+		}
+		
+		try {
+			Configuration conf = getConfiguration(command.getProviderKey(), command.getInstanceKey());
+			Dictionary<String, Object> props = conf.getProperties();
+			if ( props == null ) {
+				props = new Hashtable<String, Object>();
 			}
 			for ( SettingValueBean bean : command.getValues() ) {
-				if ( command.getProviderKey() == null ) {
-					conf = getConfiguration(bean.getProviderKey(), bean.getInstanceKey());
-					props = conf.getProperties();
-					if ( props == null ) {
-						props = new Hashtable<String, Object>();
-					}
-				}
-
-				String settingKey = command.getProviderKey() != null ? command.getProviderKey() : bean.getProviderKey();
-				String instanceKey = command.getInstanceKey() != null ? command.getInstanceKey() : bean.getInstanceKey();
+				String settingKey = command.getProviderKey();
+				String instanceKey = command.getInstanceKey();
 				if ( instanceKey != null ) {
 					settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
-					if ( command.getInstanceKey() == null ) {
-						props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
-					}
 				}
 				props.put(bean.getKey(), bean.getValue());
-				if ( command.getProviderKey() == null ) {
-					conf.update(props);
+				
+				if ( !bean.isTransient() ) {
+					settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
 				}
-
-				settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
 			}
 			if ( conf != null && props != null ) {
 				if ( command.getInstanceKey() != null ) {

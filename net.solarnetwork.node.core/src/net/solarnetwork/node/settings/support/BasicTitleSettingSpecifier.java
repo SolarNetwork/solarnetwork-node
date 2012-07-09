@@ -53,6 +53,20 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 		super(key, defaultValue);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *            the key
+	 * @param defaultValue
+	 *            the default value
+	 * @param trans
+	 *            the transient flag value
+	 */
+	public BasicTitleSettingSpecifier(String key, String defaultValue, boolean trans) {
+		super(key, defaultValue, trans);
+	}
+	
 	@Override
 	public Map<String, String> getValueTitles() {
 		return this.valueTitles;

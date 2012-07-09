@@ -25,8 +25,15 @@
 package net.solarnetwork.node.rfxcom.test;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import net.solarnetwork.node.rfxcom.Command;
+import net.solarnetwork.node.rfxcom.Message;
+import net.solarnetwork.node.rfxcom.MessageFactory;
+import net.solarnetwork.node.rfxcom.MessageType;
 import net.solarnetwork.node.rfxcom.SetModeMessage;
+import net.solarnetwork.node.rfxcom.StatusMessage;
 import net.solarnetwork.node.rfxcom.TransceiverType;
 
 import org.apache.commons.codec.binary.Hex;
@@ -65,5 +72,21 @@ public class SetModeMessageTest {
 		assertArrayEquals(TestUtils.bytesFromHexString("0D 00 00 22 03 53 00 80 00 20 00 00 00 00"), packet);	
 	}
 	
+	private void verifySaveSettingsResponse(Message m) {
+		assertTrue("StatusMessage instance", m instanceof StatusMessage);
+		StatusMessage msg = (StatusMessage)m;
+		assertEquals(4, msg.getSequenceNumber());
+		assertEquals(MessageType.CommandResponse, msg.getType());
+		assertEquals((byte)0, msg.getSubType());
+		assertEquals(Command.SetMode, msg.getCommand());
+	}
+	
+	@Test
+	public void decodeSetModeResponse() {
+		final byte[] packet = TestUtils.bytesFromHexString("0D01000403532A00002001000000");
+		final byte[] data = TestUtils.extractMessageBytes(packet);
+		verifySaveSettingsResponse(new StatusMessage(packet[3], data));
+		verifySaveSettingsResponse(new MessageFactory().parseMessage(packet, 0));
+	}
 
 }

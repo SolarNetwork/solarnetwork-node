@@ -37,6 +37,21 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 
 	private String key;
 	private T defaultValue;
+	private boolean trans;
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>The {@code transient} property will be set to <em>false</em></p>
+	 * 
+	 * @param key
+	 *            the key
+	 * @param defaultValue
+	 *            the default value
+	 */
+	public BaseKeyedSettingSpecifier(String key, T defaultValue) {
+		this(key, defaultValue, false);
+	}
 
 	/**
 	 * Constructor.
@@ -45,11 +60,14 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 	 *            the key
 	 * @param defaultValue
 	 *            the default value
+	 * @param trans
+	 *            the transient flag value
 	 */
-	public BaseKeyedSettingSpecifier(String key, T defaultValue) {
+	public BaseKeyedSettingSpecifier(String key, T defaultValue, boolean trans) {
 		super();
 		setKey(key);
 		setDefaultValue(defaultValue);
+		setTransient(trans);
 	}
 
 	@Override
@@ -62,6 +80,15 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 		return this.defaultValue;
 	}
 
+	@Override
+	public boolean isTransient() {
+		return trans;
+	}
+
+	public void setTransient(boolean value) {
+		this.trans = value;
+	}
+	
 	public void setKey(String key) {
 		this.key = key;
 	}

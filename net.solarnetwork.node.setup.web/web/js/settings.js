@@ -25,7 +25,11 @@ SolarNode.Settings.updateSetting = function(params, value) {
 	if ( updates[providerKey] === undefined ) {
 		updates[providerKey] = {};
 	}
-	updates[providerKey][params.setting] = {domID: params.key, provider: params.provider, instance: params.instance, value: value};
+	updates[providerKey][params.setting] = {domID: params.key, 
+			provider: params.provider, 
+			instance: params.instance, 
+			xint: params.xint === 'true' ? true : false,
+			value: value};
 	
 	$('#'+params.key+'v').addClass('dirty');
 
@@ -139,6 +143,7 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 			if ( updates[providerKey][key].instance !== undefined ) {
 				formData += '&values[' +i+'].instanceKey=' +encodeURIComponent(updates[providerKey][key].instance);
 			}
+			formData += '&values[' +i+'].transient=' +updates[providerKey][key].xint;
 			formData += '&values[' +i+'].key=' +encodeURIComponent(key);
 			formData += '&values[' +i+'].value=' +encodeURIComponent(updates[providerKey][key].value);
 			i++;

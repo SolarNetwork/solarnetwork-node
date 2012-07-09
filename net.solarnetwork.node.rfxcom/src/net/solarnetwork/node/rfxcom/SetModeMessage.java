@@ -60,7 +60,10 @@ public class SetModeMessage extends StatusMessage {
 	public SetModeMessage(short sequenceNumber, StatusMessage status) {
 		super(sequenceNumber, Command.SetMode);
 		mutableData = new byte[10];
-		System.arraycopy(status.getData(), 0, mutableData, 0, mutableData.length);
+		final byte[] srcData = (status == null ? null : status.getData());
+		if ( srcData != null ) {
+			System.arraycopy(srcData, 0, mutableData, 0, Math.min(mutableData.length, srcData.length));
+		}
 	}
 
 	@Override

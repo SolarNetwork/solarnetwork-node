@@ -99,6 +99,9 @@
 											});
 											</script>
 										</c:when>
+										<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
+											<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
+										</c:when>
 									</c:choose>
 								</td>
 								<td class="value" id="s${providerStatus.index}i${settingStatus.index}v">

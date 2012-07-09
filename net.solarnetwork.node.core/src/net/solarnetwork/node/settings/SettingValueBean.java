@@ -36,6 +36,15 @@ public class SettingValueBean {
 	private String instanceKey;
 	private String key;
 	private String value;
+	private boolean trans;
+
+	public boolean isTransient() {
+		return trans;
+	}
+
+	public void setTransient(boolean value) {
+		this.trans = value;
+	}
 
 	public String getProviderKey() {
 		return providerKey;

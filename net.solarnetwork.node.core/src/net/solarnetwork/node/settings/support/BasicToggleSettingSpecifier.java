@@ -51,6 +51,20 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 		super(key, defaultValue);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *            the key
+	 * @param defaultValue
+	 *            the default value
+	 * @param trans
+	 *            the transient flag value
+	 */
+	public BasicToggleSettingSpecifier(String key, Object defaultValue, boolean trans) {
+		super(key, defaultValue, trans);
+	}
+	
 	@Override
 	public Object getTrueValue() {
 		return this.trueValue;
