@@ -40,6 +40,8 @@ import net.solarnetwork.util.DynamicServiceTracker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -140,6 +142,11 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		}
 		return MESSAGE_SOURCE;
 	}
+	
+	private void addToggleSetting(List<SettingSpecifier> results, PropertyAccessor bean, String name) {
+		results.add(new BasicToggleSettingSpecifier(name, 
+				(bean == null ? Boolean.FALSE : bean.getPropertyValue(name)), true));
+	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -162,23 +169,98 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		results.add(new BasicTitleSettingSpecifier("transceiverType", 
 				(status == null ? "N/A" : status.getTransceiverType().getDescription()), true));
 		
-		results.add(new BasicToggleSettingSpecifier("oregonEnabled", 
-				(status == null ? Boolean.FALSE : status.isOregonEnabled()), true));
+		PropertyAccessor bean = (status == null ? null : PropertyAccessorFactory.forBeanPropertyAccess(status));
+		addToggleSetting(results, bean, "ACEnabled");
+		addToggleSetting(results, bean, "ADEnabled");
+		addToggleSetting(results, bean, "ARCEnabled");
+		addToggleSetting(results, bean, "ATIEnabled");
+		addToggleSetting(results, bean, "FS20Enabled");
+		addToggleSetting(results, bean, "hidekiEnabled");
+		addToggleSetting(results, bean, "homeEasyEUEnabled");
+		addToggleSetting(results, bean, "ikeaKopplaEnabled");
+		addToggleSetting(results, bean, "laCrosseEnabled");
+		addToggleSetting(results, bean, "mertikEnabled");
+		addToggleSetting(results, bean, "oregonEnabled");
+		addToggleSetting(results, bean, "proGuardEnabled");
+		addToggleSetting(results, bean, "visonicEnabled");
+		addToggleSetting(results, bean, "x10Enabled");
 		
+		addToggleSetting(results, bean, "undecodedMode");
+
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
 				RFXCOMTransceiver.getDefaultSerialParameters(), "serialParams."));
 		return results;
 	}
-
-	public void setOregonEnabled(boolean value) {
+	
+	public void updateModeSetting(String name, Object value) {
 		if ( this.status == null ) {
 			updateStatus();
 		}
-		if ( this.status != null && value != status.isOregonEnabled() ) {
+		if ( this.status != null ) {
 			SetModeMessage msg = new SetModeMessage(mf.incrementAndGetSequenceNumber(), this.status);
-			msg.setOregonEnabled(value);
-			setMode(msg);
+			PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(msg);
+			Object currValue = bean.getPropertyValue(name);
+			if ( value != null && !value.equals(currValue) ) {
+				bean.setPropertyValue(name, value);
+				setMode(msg);
+			}
 		}
+	}
+
+	public void setACEnabled(boolean value) {
+		updateModeSetting("ACEnabled", value);
+	}
+	
+	public void setADEnabled(boolean value) {
+		updateModeSetting("ADEnabled", value);
+	}
+	
+	public void setARCEnabled(boolean value) {
+		updateModeSetting("ARCEnabled", value);
+	}
+	
+	public void setATIEnabled(boolean value) {
+		updateModeSetting("ATIEnabled", value);
+	}
+	
+	public void setFS20Enabled(boolean value) {
+		updateModeSetting("FS20Enabled", value);
+	}
+	
+	public void setHidekiEnabled(boolean value) {
+		updateModeSetting("hidekiEnabled", value);
+	}
+	
+	public void setHomeEasyEUEnabled(boolean value) {
+		updateModeSetting("homeEasyEUEnabled", value);
+	}
+	
+	public void setIkeaKopplaEnabled(boolean value) {
+		updateModeSetting("ikeaKopplaEnabled", value);
+	}
+	
+	public void setLaCrosseEnabled(boolean value) {
+		updateModeSetting("laCrosseEnabled", value);
+	}
+	
+	public void setMertikEnabled(boolean value) {
+		updateModeSetting("mertikEnabled", value);
+	}
+	
+	public void setOregonEnabled(boolean value) {
+		updateModeSetting("oregonEnabled", value);
+	}
+	
+	public void setProGuardEnabled(boolean value) {
+		updateModeSetting("proGuardEnabled", value);
+	}
+	
+	public void setVisonicEnabled(boolean value) {
+		updateModeSetting("visonicEnabled", value);
+	}
+	
+	public void setX10Enabled(boolean value) {
+		updateModeSetting("x10Enabled", value);
 	}
 	
 	private void updateStatus() {
