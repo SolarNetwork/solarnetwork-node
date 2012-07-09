@@ -100,12 +100,16 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	public Class<? extends ConsumptionDatum> getDatumType() {
 		return ConsumptionDatum.class;
 	}
-
-	private ConsumptionDatum filterConsumptionDatumInstance(ConsumptionDatum d) {
-		String addr = d.getSourceId();
+	
+	private String getSourceIdForMessageAddress(String addr) {
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr)) {
 			addr = getAddressSourceMapping().get(addr);
 		}
+		return addr;
+	}
+
+	private ConsumptionDatum filterConsumptionDatumInstance(ConsumptionDatum d) {
+		String addr = getSourceIdForMessageAddress(d.getSourceId());
 		if ( getSourceIdFilter() != null && !getSourceIdFilter().contains(addr) ) {
 			if ( log.isInfoEnabled() ) {
 				log.info("Rejecting source [" +addr +"] not in source ID filter set");
@@ -232,10 +236,10 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 			}
 			Message msg = mf.parseMessage(data, 0);
 			if ( msg instanceof EnergyMessage || msg instanceof CurrentMessage ) {
-				String address = ((AddressSource)msg).getAddress();
-				if ( !sourceIdSet.contains(address) ) {
+				final String sourceId = getSourceIdForMessageAddress(((AddressSource)msg).getAddress());
+				if ( !sourceIdSet.contains(sourceId) ) {
 					result.add(msg);
-					sourceIdSet.add(address);
+					sourceIdSet.add(sourceId);
 				}
 			}
 		} while ( System.currentTimeMillis() < endTime && sourceIdSet.size() < 
