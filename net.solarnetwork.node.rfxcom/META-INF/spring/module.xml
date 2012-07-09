@@ -26,7 +26,8 @@
 	
 	<osgi:service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.rfxcom" update-strategy="container-managed">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.rfxcom" 
+			update-strategy="bean-managed" update-method="updateConfiguration">
 		<osgix:interfaces>
 			<value>net.solarnetwork.node.rfxcom.RFXCOM</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>

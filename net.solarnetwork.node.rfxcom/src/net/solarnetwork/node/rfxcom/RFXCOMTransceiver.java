@@ -25,6 +25,7 @@
 package net.solarnetwork.node.rfxcom;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -209,82 +210,61 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		}
 	}
 	
+	/**
+	 * Update the settings of this class.
+	 * 
+	 * <p>This method is designed to work with Spring's bean-managed OSGi Configuration
+	 * Admin service, rather than the container-managed approach of setting properties
+	 * directly. This is because many of the supported properties require communicating
+	 * with the RFXCOM device, but those can all be set via a single call. Thus the
+	 * supported properties of this method are those properties directly available on
+	 * this class itself, and those available on the {@link SetModeMessage} class.
+	 * 
+	 * @param properties the properties to change
+	 */
 	public void updateConfiguration(Map<String, ?> properties) {
-		// if this is NOT something that must be handled via a SetMode command, apply those directly...
+		Map<String, Object> setModeProperties = new HashMap<String, Object>(properties);
+		PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(this);
 		
-		// and now apply remaining properties via single SetMode
-		/*
+		// if this is NOT something that must be handled via a SetMode command, apply those directly...
+		for ( Map.Entry<String, ?> me : properties.entrySet() ) {
+			if ( bean.isWritableProperty(me.getKey()) ) {
+				bean.setPropertyValue(me.getKey(), me.getValue());
+			} else {
+				setModeProperties.put(me.getKey(), me.getValue());
+			}
+		}
+		
+		// and now apply remaining properties via single SetMode, so we only have to talk to
+		// device one time
+		
 		if ( this.status == null ) {
 			updateStatus();
 		}
 		if ( this.status != null ) {
 			SetModeMessage msg = new SetModeMessage(mf.incrementAndGetSequenceNumber(), this.status);
-			PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(msg);
-			Object currValue = bean.getPropertyValue(name);
-			if ( value != null && !value.equals(currValue) ) {
-				bean.setPropertyValue(name, value);
+			bean = PropertyAccessorFactory.forBeanPropertyAccess(msg);
+			boolean changed = false;
+			for ( Map.Entry<String, Object> me : setModeProperties.entrySet() ) {
+				if ( bean.isReadableProperty(me.getKey()) ) {
+					Object currValue = bean.getPropertyValue(me.getKey());
+					if ( me.getValue() != null && me.getValue().equals(currValue) ) {
+						continue;
+					}
+				}
+				if ( bean.isWritableProperty(me.getKey()) ) {
+					bean.setPropertyValue(me.getKey(), me.getValue());
+					changed = true;
+				}
+			}
+			if ( changed ) {
+				log.debug("Updating RFXCOM settings to {}", msg);
 				setMode(msg);
 			}
 		}
-		*/
+		
 	}
 
-	public void setACEnabled(boolean value) {
-		updateModeSetting("ACEnabled", value);
-	}
-	
-	public void setADEnabled(boolean value) {
-		updateModeSetting("ADEnabled", value);
-	}
-	
-	public void setARCEnabled(boolean value) {
-		updateModeSetting("ARCEnabled", value);
-	}
-	
-	public void setATIEnabled(boolean value) {
-		updateModeSetting("ATIEnabled", value);
-	}
-	
-	public void setFS20Enabled(boolean value) {
-		updateModeSetting("FS20Enabled", value);
-	}
-	
-	public void setHidekiEnabled(boolean value) {
-		updateModeSetting("hidekiEnabled", value);
-	}
-	
-	public void setHomeEasyEUEnabled(boolean value) {
-		updateModeSetting("homeEasyEUEnabled", value);
-	}
-	
-	public void setIkeaKopplaEnabled(boolean value) {
-		updateModeSetting("ikeaKopplaEnabled", value);
-	}
-	
-	public void setLaCrosseEnabled(boolean value) {
-		updateModeSetting("laCrosseEnabled", value);
-	}
-	
-	public void setMertikEnabled(boolean value) {
-		updateModeSetting("mertikEnabled", value);
-	}
-	
-	public void setOregonEnabled(boolean value) {
-		updateModeSetting("oregonEnabled", value);
-	}
-	
-	public void setProGuardEnabled(boolean value) {
-		updateModeSetting("proGuardEnabled", value);
-	}
-	
-	public void setVisonicEnabled(boolean value) {
-		updateModeSetting("visonicEnabled", value);
-	}
-	
-	public void setX10Enabled(boolean value) {
-		updateModeSetting("x10Enabled", value);
-	}
-	
 	private void updateStatus() {
 		final ConversationalDataCollector dc = getDataCollectorInstance();
 		if ( dc == null ) {
