@@ -52,7 +52,7 @@ public class SetModeMessageTest {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 		
 	@Test
-	public void testEncodeSetModeCommand1() {
+	public void encodeSetModeCommand1() {
 		SetModeMessage msg = new SetModeMessage((short)27, TransceiverType.Type43392a);
 		msg.setOregonEnabled(true);
 		final byte[] packet = msg.getMessagePacket();
@@ -62,7 +62,7 @@ public class SetModeMessageTest {
 	}
 	
 	@Test
-	public void testEncodeSetModeCommand2() {
+	public void encodeSetModeCommand2() {
 		SetModeMessage msg = new SetModeMessage((short)34, TransceiverType.Type43392a);
 		msg.setOregonEnabled(true);
 		msg.setUndecodedMode(true);
@@ -70,6 +70,17 @@ public class SetModeMessageTest {
 		log.debug("Got packet: " +Hex.encodeHexString(packet));
 		assertNotNull("Packet", packet);
 		assertArrayEquals(TestUtils.bytesFromHexString("0D 00 00 22 03 53 00 80 00 20 00 00 00 00"), packet);	
+	}
+	
+	@Test
+	public void encodeSetModeCommand3() {
+		SetModeMessage msg = new SetModeMessage((short)11, TransceiverType.Type43392a);
+		msg.setACEnabled(true);
+		msg.setFS20Enabled(true);
+		final byte[] packet = msg.getMessagePacket();
+		log.debug("Got packet: " +Hex.encodeHexString(packet));
+		assertNotNull("Packet", packet);
+		assertArrayEquals(TestUtils.bytesFromHexString("0D 00 00 0B 03 53 00 00 10 04 00 00 00 00"), packet);	
 	}
 	
 	private void verifySaveSettingsResponse(Message m) {
