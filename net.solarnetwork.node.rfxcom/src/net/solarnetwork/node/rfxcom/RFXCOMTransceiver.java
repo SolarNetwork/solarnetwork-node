@@ -24,15 +24,8 @@
 
 package net.solarnetwork.node.rfxcom;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
@@ -42,9 +35,13 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.DataUtils;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * {@link SettingSpecifierProvider} for RFXCOM transceiver, allowing
@@ -53,7 +50,7 @@ import net.solarnetwork.util.DynamicServiceTracker;
  * @author matt
  * @version $Revision$
  */
-public class RFXCOMTransceiver implements SettingSpecifierProvider {
+public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 
 	private static final SerialPortBeanParameters DEFAULT_SERIAL_PARAMS = new SerialPortBeanParameters();
 
@@ -88,6 +85,21 @@ public class RFXCOMTransceiver implements SettingSpecifierProvider {
 		return (SerialPortBeanParameters)DEFAULT_SERIAL_PARAMS.clone();
 	}
 	
+	@Override
+	public String getUID() {
+		return (dataCollectorFactory == null ? null : dataCollectorFactory.getPropertyFilters() == null ? null
+				: (String)dataCollectorFactory.getPropertyFilters().get("UID"));
+	}
+
+	@Override
+	public ConversationalDataCollector getDataCollectorInstance() {
+		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			return null;
+		}
+		return df.getConversationalDataCollectorInstance(getSerialParams());
+	}
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.rfxcom";
@@ -160,43 +172,12 @@ public class RFXCOMTransceiver implements SettingSpecifierProvider {
 		}
 	}
 	
-	public static class MessageListener implements ConversationalDataCollector.DataListener {
-		
-		private int packetSize = -1;
-
-		/**
-		 * Reset so another packet can be read.
-		 */
-		public void reset() {
-			packetSize = -1;
-		}
-		
-		@Override
-		public int getDesiredByteCount(ConversationalDataCollector dataCollector, int sinkSize) {
-			return (packetSize < 1 ? 1 : packetSize - sinkSize + 1);
-		}
-
-		@Override
-		public boolean receivedData(ConversationalDataCollector dataCollector,
-				byte[] data, int offset, int length, OutputStream sink, int sinkSize)
-		throws IOException {
-			if ( packetSize < 1 ) {
-				packetSize = DataUtils.unsigned(data[offset]);
-			}
-			sink.write(data, offset, length);
-			return (packetSize + 1 - sinkSize - length) > 0;
-		}
-		
-	}
-	
 	private void updateStatus() {
-		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
-		if ( df == null ) {
+		final ConversationalDataCollector dc = getDataCollectorInstance();
+		if ( dc == null ) {
 			return;
 		}
-		ConversationalDataCollector dc = null;
 		try {
-			dc = df.getConversationalDataCollectorInstance(getSerialParams());
 			status = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
 				@Override
 				public StatusMessage conductConversation(ConversationalDataCollector dataCollector) {
@@ -204,21 +185,17 @@ public class RFXCOMTransceiver implements SettingSpecifierProvider {
 				}
 			});
 		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
-			}
+			dc.stopCollecting();
 		}
 	}
 
 	private void setMode(final SetModeMessage msg) {
 		final MessageListener listener = new MessageListener();
-		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
-		if ( df == null ) {
+		final ConversationalDataCollector dc = getDataCollectorInstance();
+		if ( dc == null ) {
 			return;
 		}
-		ConversationalDataCollector dc = null;
 		try {
-			dc = df.getConversationalDataCollectorInstance(getSerialParams());
 			StatusMessage result = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
 				@Override
 				public StatusMessage conductConversation(ConversationalDataCollector dc) {
@@ -243,9 +220,7 @@ public class RFXCOMTransceiver implements SettingSpecifierProvider {
 				status = result;
 			}
 		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
-			}
+			dc.stopCollecting();
 		}
 	}
 	

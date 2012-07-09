@@ -28,6 +28,7 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.rfxcom" update-strategy="container-managed">
 		<osgix:interfaces>
+			<value>net.solarnetwork.node.rfxcom.RFXCOM</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</osgix:interfaces>
 		<osgix:service-properties>

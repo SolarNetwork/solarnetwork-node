@@ -24,8 +24,6 @@
 
 package net.solarnetwork.node.consumption.rfxcom;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -37,25 +35,21 @@ import java.util.Map;
 import java.util.Set;
 
 import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.rfxcom.AddressSource;
-import net.solarnetwork.node.rfxcom.Command;
-import net.solarnetwork.node.rfxcom.CommandMessage;
 import net.solarnetwork.node.rfxcom.CurrentMessage;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
-import net.solarnetwork.node.rfxcom.RFXCOMTransceiver;
-import net.solarnetwork.node.rfxcom.StatusMessage;
+import net.solarnetwork.node.rfxcom.MessageListener;
+import net.solarnetwork.node.rfxcom.RFXCOM;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.DataUtils;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
 
@@ -87,8 +81,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 	
-	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
-	private SerialPortBeanParameters serialParams = RFXCOMTransceiver.getDefaultSerialParameters();
+	private DynamicServiceTracker<RFXCOM> rfxcomTracker;
 	private Map<String,String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
@@ -96,8 +89,6 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	private float voltage = DEFAULT_VOLTAGE;
 	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
 	
-	private boolean rfxcomInitialized = false;
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 	
 	@Override
@@ -191,15 +182,14 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 
 	@Override
 	public Collection<ConsumptionDatum> readMultipleDatum() {
-		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
-		if ( df == null ) {
+		final RFXCOM r = getRfxcomTracker().service();
+		if ( r == null ) {
 			return null;
 		}
 		
 		final List<Message> messages;
-		ConversationalDataCollector dc = null;
+		final ConversationalDataCollector dc = r.getDataCollectorInstance();
 		try {
-			dc = df.getConversationalDataCollectorInstance(getSerialParams());
 			messages = dc.collectData(this);
 		} finally {
 			if ( dc != null ) {
@@ -230,34 +220,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
 		
 		final MessageFactory mf = new MessageFactory();
-		final RFXCOMTransceiver.MessageListener listener = new RFXCOMTransceiver.MessageListener();
-		
-		if ( !rfxcomInitialized ) {
-			// send reset, followed by status to see how rfxcom is configured
-			dc.speak(new CommandMessage(Command.Reset).getMessagePacket());
-			
-			// wait at least 50ms
-			try {
-				Thread.sleep(100);
-			} catch ( InterruptedException e ) {
-				// ignore
-			}
-			
-			dc.speakAndListen(new CommandMessage(Command.Status, 
-					mf.incrementAndGetSequenceNumber()).getMessagePacket(), listener);
-			
-			Message msg = mf.parseMessage(dc.getCollectedData(), 0);
-			if ( msg instanceof StatusMessage && log.isDebugEnabled() ) {
-				StatusMessage status = (StatusMessage)msg;
-				log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
-						status.getFirmwareVersion(),
-						status.getTransceiverType().getDescription(),
-						status.isOregonEnabled()
-				});
-			}
-			// TODO: add settings UI for configuring which RFXCOM devices are enabled
-			rfxcomInitialized = true;
-		}
+		final MessageListener listener = new MessageListener();
 		
 		do {
 			listener.reset();
@@ -329,8 +292,6 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", 
 				String.valueOf(defaults.currentSensorIndexFlags)));
 		
-		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
-				RFXCOMTransceiver.getDefaultSerialParameters(), "serialParams."));
 		return results;
 	}
 
@@ -385,21 +346,12 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		setSourceIdFilter(s);
 	}
 
-	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
-		return dataCollectorFactory;
+	public DynamicServiceTracker<RFXCOM> getRfxcomTracker() {
+		return rfxcomTracker;
 	}
 
-	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
-		this.dataCollectorFactory = dataCollectorFactory;
-	}
-
-	public SerialPortBeanParameters getSerialParams() {
-		return serialParams;
-	}
-
-	public void setSerialParams(SerialPortBeanParameters serialParams) {
-		this.serialParams = serialParams;
+	public void setRfxcomTracker(DynamicServiceTracker<RFXCOM> rfxcomTracker) {
+		this.rfxcomTracker = rfxcomTracker;
 	}
 
 	public Map<String, String> getAddressSourceMapping() {

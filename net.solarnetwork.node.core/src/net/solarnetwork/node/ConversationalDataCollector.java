@@ -61,6 +61,14 @@ public interface ConversationalDataCollector extends DataCollector {
 	interface DataListener {
 		
 		/**
+		 * Reset the listener.
+		 * 
+		 * <p>This method should be called when re-using an instance to handle
+		 * multiple messages.</p>
+		 */
+		void reset();
+		
+		/**
 		 * Get the number of bytes wanted from the serial port.
 		 * 
 		 * @param dataCollector the data collector invoked from
