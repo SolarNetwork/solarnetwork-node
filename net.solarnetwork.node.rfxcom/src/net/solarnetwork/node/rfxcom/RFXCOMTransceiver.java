@@ -26,6 +26,7 @@ package net.solarnetwork.node.rfxcom;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
@@ -157,35 +158,36 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		if ( status == null ) {
 			updateStatus();
 		}
-		
-		log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
-				status.getFirmwareVersion(),
-				status.getTransceiverType().getDescription(),
-				status.isOregonEnabled()
-		});
-		
-		results.add(new BasicTitleSettingSpecifier("firmwareVersion", 
-				(status == null ? "N/A" : String.valueOf(status.getFirmwareVersion())), true));
-		results.add(new BasicTitleSettingSpecifier("transceiverType", 
-				(status == null ? "N/A" : status.getTransceiverType().getDescription()), true));
-		
-		PropertyAccessor bean = (status == null ? null : PropertyAccessorFactory.forBeanPropertyAccess(status));
-		addToggleSetting(results, bean, "ACEnabled");
-		addToggleSetting(results, bean, "ADEnabled");
-		addToggleSetting(results, bean, "ARCEnabled");
-		addToggleSetting(results, bean, "ATIEnabled");
-		addToggleSetting(results, bean, "FS20Enabled");
-		addToggleSetting(results, bean, "hidekiEnabled");
-		addToggleSetting(results, bean, "homeEasyEUEnabled");
-		addToggleSetting(results, bean, "ikeaKopplaEnabled");
-		addToggleSetting(results, bean, "laCrosseEnabled");
-		addToggleSetting(results, bean, "mertikEnabled");
-		addToggleSetting(results, bean, "oregonEnabled");
-		addToggleSetting(results, bean, "proGuardEnabled");
-		addToggleSetting(results, bean, "visonicEnabled");
-		addToggleSetting(results, bean, "x10Enabled");
-		
-		addToggleSetting(results, bean, "undecodedMode");
+		if ( status != null ) {
+			log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
+					status.getFirmwareVersion(),
+					status.getTransceiverType().getDescription(),
+					status.isOregonEnabled()
+			});
+			
+			results.add(new BasicTitleSettingSpecifier("firmwareVersion", 
+					(status == null ? "N/A" : String.valueOf(status.getFirmwareVersion())), true));
+			results.add(new BasicTitleSettingSpecifier("transceiverType", 
+					(status == null ? "N/A" : status.getTransceiverType().getDescription()), true));
+			
+			PropertyAccessor bean = (status == null ? null : PropertyAccessorFactory.forBeanPropertyAccess(status));
+			addToggleSetting(results, bean, "ACEnabled");
+			addToggleSetting(results, bean, "ADEnabled");
+			addToggleSetting(results, bean, "ARCEnabled");
+			addToggleSetting(results, bean, "ATIEnabled");
+			addToggleSetting(results, bean, "FS20Enabled");
+			addToggleSetting(results, bean, "hidekiEnabled");
+			addToggleSetting(results, bean, "homeEasyEUEnabled");
+			addToggleSetting(results, bean, "ikeaKopplaEnabled");
+			addToggleSetting(results, bean, "laCrosseEnabled");
+			addToggleSetting(results, bean, "mertikEnabled");
+			addToggleSetting(results, bean, "oregonEnabled");
+			addToggleSetting(results, bean, "proGuardEnabled");
+			addToggleSetting(results, bean, "visonicEnabled");
+			addToggleSetting(results, bean, "x10Enabled");
+			
+			addToggleSetting(results, bean, "undecodedMode");
+		}
 
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
 				RFXCOMTransceiver.getDefaultSerialParameters(), "serialParams."));
@@ -205,6 +207,26 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				setMode(msg);
 			}
 		}
+	}
+	
+	public void updateConfiguration(Map<String, ?> properties) {
+		// if this is NOT something that must be handled via a SetMode command, apply those directly...
+		
+		// and now apply remaining properties via single SetMode
+		/*
+		if ( this.status == null ) {
+			updateStatus();
+		}
+		if ( this.status != null ) {
+			SetModeMessage msg = new SetModeMessage(mf.incrementAndGetSequenceNumber(), this.status);
+			PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(msg);
+			Object currValue = bean.getPropertyValue(name);
+			if ( value != null && !value.equals(currValue) ) {
+				bean.setPropertyValue(name, value);
+				setMode(msg);
+			}
+		}
+		*/
 	}
 
 	public void setACEnabled(boolean value) {
