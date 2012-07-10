@@ -72,7 +72,7 @@ DB_BAK_DIR=${VAR_DIR}/db-bak
 EQUINOX_JAR=org.eclipse.osgi_3.6.2.R36x_v20110210.jar
 EQUINOX_CONF=${RAM_DIR}
 EQUINOX_CONSOLE=4202
-PID_FILE=${SOLARNODE_HOME}/var/solarnode-equinox.pid
+PID_FILE=${RAM_DIR}/solarnode.pid
 APP_ARGS="-Dsn.home=${SOLARNODE_HOME} -Dderby.system.home=${DB_DIR} -Dsolarnetwork.pidfile=${PID_FILE}"
 JVM_ARGS="-Xmx48m -Djava.io.tmpdir=${TMP_DIR}"
 #JVM_ARGS="-Dcom.sun.management.jmxremote"
