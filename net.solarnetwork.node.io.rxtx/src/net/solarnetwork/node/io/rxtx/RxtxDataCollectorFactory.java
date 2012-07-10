@@ -25,17 +25,26 @@
 package net.solarnetwork.node.io.rxtx;
 
 import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
+import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.PortLockedConversationalDataCollector;
+import net.solarnetwork.node.PortLockedDataCollector;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -75,22 +84,46 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	/** The default value for the {@code portIdentifier} property. */
 	public static final String DEFAULT_PORT_IDENTIFIER = "/dev/USB0";
 	
+	private static final Map<String, Lock> PORT_LOCKS = new HashMap<String, Lock>(3);
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private String portIdentifier = DEFAULT_PORT_IDENTIFIER;
-
+	private long timeout = 30L;
+	private TimeUnit unit = TimeUnit.SECONDS;
+	
 	@Override
 	public String getUID() {
 		return portIdentifier;
 	}
 
+	private Lock acquireLock() throws LockTimeoutException {
+		log.debug("Acquiring lock on port {}; waiting at most {} {}", new Object[] {portIdentifier, timeout, unit});
+		synchronized (PORT_LOCKS) {
+			if ( !PORT_LOCKS.containsKey(portIdentifier) ) {
+				PORT_LOCKS.put(portIdentifier, new ReentrantLock());
+			}
+			Lock lock = PORT_LOCKS.get(portIdentifier);
+			try {
+				if ( lock.tryLock(timeout, unit) ) {
+					log.debug("Acquired port {} lock", portIdentifier);
+					return lock;
+				}
+				log.debug("Timeout acquiring port {} lock", portIdentifier);
+			} catch (InterruptedException e) {
+				log.debug("Interrupted waiting for port {} lock", portIdentifier);
+			}
+		}
+		throw new LockTimeoutException("Could not acquire port " +portIdentifier +" lock");
+	}
+
 	@Override
 	public DataCollector getDataCollectorInstance(SerialPortBeanParameters params) {
-		CommPortIdentifier portId = getCommPortIdentifier();
+		Lock lock = acquireLock();
 		try {
+			CommPortIdentifier portId = getCommPortIdentifier();
 			// establish the serial port connection
 			SerialPort port = (SerialPort) portId.open(params.getCommPortAppName(), 2000);
 			SerialPortDataCollector obj;
@@ -107,30 +140,40 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 				obj.setToggleDtr(dcParams.isToggleDtr());
 				obj.setToggleRts(dcParams.isToggleRts());
 			}
-			return obj;
+			return new PortLockedDataCollector(obj, portId.getName(), lock);
 		} catch (PortInUseException e) {
+			lock.unlock();
 			throw new RuntimeException(e);
+		} catch ( RuntimeException e ) {
+			lock.unlock();
+			throw e;
 		}
 	}
 
 	@Override
 	public ConversationalDataCollector getConversationalDataCollectorInstance(
 			SerialPortBeanParameters params) {
-		CommPortIdentifier portId = getCommPortIdentifier();
+		Lock lock = acquireLock();
 		try {
+			CommPortIdentifier portId = getCommPortIdentifier();
 			// establish the serial port connection
 			SerialPort port = (SerialPort) portId.open(params.getCommPortAppName(), 2000);
 			SerialPortConversationalDataCollector obj = new SerialPortConversationalDataCollector(
 					port, params.getMaxWait());
 			setupSerialPortSupport(obj, params);
-			return obj;
+			return new PortLockedConversationalDataCollector(obj, portId.getName(), lock);
 		} catch (PortInUseException e) {
+			lock.unlock();
 			throw new RuntimeException(e);
 		} catch (IllegalArgumentException e) {
+			lock.unlock();
 			throw new RuntimeException(e);
+		} catch ( RuntimeException e ) {
+			lock.unlock();
+			throw e;
 		}
 	}
-
+	
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.io.rxtx";
@@ -197,8 +240,18 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	 */
 	@SuppressWarnings("unchecked")
 	private CommPortIdentifier getCommPortIdentifier() {
-		Enumeration<CommPortIdentifier> portIdentifiers = CommPortIdentifier.getPortIdentifiers();
+		// first try directly
 		CommPortIdentifier commPortId = null;
+		try {
+			commPortId = CommPortIdentifier.getPortIdentifier(this.portIdentifier);
+			if ( commPortId != null ) {
+				log.debug("Found port identifier: {}", this.portIdentifier);
+				return commPortId;
+			}
+		} catch ( NoSuchPortException e ) {
+			log.warn("Port {} not found, inspecting available ports...", this.portIdentifier);
+		}
+		Enumeration<CommPortIdentifier> portIdentifiers = CommPortIdentifier.getPortIdentifiers();
 		List<String> foundNames = new ArrayList<String>(5);
 		while ( portIdentifiers.hasMoreElements() ) {
 			commPortId = portIdentifiers.nextElement();
@@ -206,9 +259,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 			foundNames.add(commPortId.getName());
 			if ( commPortId.getPortType() == CommPortIdentifier.PORT_SERIAL
 					&& this.portIdentifier.equals(commPortId.getName()) ) {
-				if ( log.isDebugEnabled() ) {
-					log.debug("Found port identifier: {}", this.portIdentifier);
-				}
+				log.debug("Found port identifier: {}", this.portIdentifier);
 				break;
 			}
 		}
@@ -225,6 +276,22 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 
 	public void setPortIdentifier(String portIdentifier) {
 		this.portIdentifier = portIdentifier;
+	}
+
+	public long getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
+	public TimeUnit getUnit() {
+		return unit;
+	}
+
+	public void setUnit(TimeUnit unit) {
+		this.unit = unit;
 	}
 
 }
