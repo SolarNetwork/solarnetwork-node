@@ -30,7 +30,6 @@ import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -91,7 +90,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private String portIdentifier = DEFAULT_PORT_IDENTIFIER;
-	private long timeout = 30L;
+	private long timeout = 50L;
 	private TimeUnit unit = TimeUnit.SECONDS;
 	
 	@Override
@@ -103,7 +102,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 		log.debug("Acquiring lock on port {}; waiting at most {} {}", new Object[] {portIdentifier, timeout, unit});
 		synchronized (PORT_LOCKS) {
 			if ( !PORT_LOCKS.containsKey(portIdentifier) ) {
-				PORT_LOCKS.put(portIdentifier, new ReentrantLock());
+				PORT_LOCKS.put(portIdentifier, new ReentrantLock(true));
 			}
 			Lock lock = PORT_LOCKS.get(portIdentifier);
 			try {
@@ -203,8 +202,11 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	}
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier(
-				"portIdentifier", DEFAULT_PORT_IDENTIFIER));
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
+		RxtxDataCollectorFactory defaults = new RxtxDataCollectorFactory();
+		results.add(new BasicTextFieldSettingSpecifier("portIdentifier", defaults.portIdentifier));
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		return results;
 	}
 
 	/**
