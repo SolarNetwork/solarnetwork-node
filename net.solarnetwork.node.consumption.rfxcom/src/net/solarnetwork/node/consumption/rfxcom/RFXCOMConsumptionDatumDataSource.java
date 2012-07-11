@@ -283,7 +283,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTextFieldSettingSpecifier(
-				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
+				"rfxcomTracker.propertyFilters['UID']", "/dev/ttyUSB0"));
 		
 		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
 		
