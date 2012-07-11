@@ -284,11 +284,12 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 
 	private void setMode(final SetModeMessage msg) {
 		final MessageListener listener = new MessageListener();
-		final ConversationalDataCollector dc = getDataCollectorInstance();
-		if ( dc == null ) {
-			return;
-		}
+		ConversationalDataCollector dc = null;
 		try {
+			dc = getDataCollectorInstance();
+			if ( dc == null ) {
+				return;
+			}
 			StatusMessage result = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
 				@Override
 				public StatusMessage conductConversation(ConversationalDataCollector dc) {
@@ -313,7 +314,9 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				status = result;
 			}
 		} finally {
-			dc.stopCollecting();
+			if ( dc != null ) {
+				dc.stopCollecting();
+			}
 		}
 	}
 	
