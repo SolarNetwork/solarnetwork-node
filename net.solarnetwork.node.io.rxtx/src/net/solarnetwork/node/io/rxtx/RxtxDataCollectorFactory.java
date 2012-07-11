@@ -251,7 +251,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 				return commPortId;
 			}
 		} catch ( NoSuchPortException e ) {
-			log.warn("Port {} not found, inspecting available ports...", this.portIdentifier);
+			log.debug("Port {} not found, inspecting available ports...", this.portIdentifier);
 		}
 		Enumeration<CommPortIdentifier> portIdentifiers = CommPortIdentifier.getPortIdentifiers();
 		List<String> foundNames = new ArrayList<String>(5);
