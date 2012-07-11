@@ -135,10 +135,9 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 			final double w = emsg.getInstantWatts();
 			if ( wh > 0 ) {
 				d.setWattHourReading(Math.round(wh));
-			} else {
-				d.setAmps((float)w / voltage);
-				d.setVolts(voltage);
 			}
+			d.setAmps((float)w / voltage);
+			d.setVolts(voltage);
 			d = filterConsumptionDatumInstance(d);
 			if ( d != null ) {
 				results.add(d);
