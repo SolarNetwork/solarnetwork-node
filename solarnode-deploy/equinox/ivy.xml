@@ -17,7 +17,9 @@
 		</dependency>
 		
 		<!-- JDBC connection pool -->
-		<dependency org="org.apache.tomcat" name="com.springsource.org.apache.tomcat.jdbc" rev="1.0.9.3" />
+		<dependency org="org.apache.tomcat" name="tomcat-jdbc" rev="7.0.29">
+    		<artifact name="tomcat-jdbc" type="jar" />
+		</dependency>
 		
 		<!-- Logging -->
 		<dependency org="org.apache.log4j" name="com.springsource.org.apache.log4j" rev="1.2.16" />
