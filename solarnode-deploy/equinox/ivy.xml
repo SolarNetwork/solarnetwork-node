@@ -19,7 +19,9 @@
 		<!-- JDBC connection pool -->
 		<dependency org="org.apache.tomcat" name="tomcat-jdbc" rev="7.0.29">
     		<artifact name="tomcat-jdbc" type="jar" />
+    		<exclude module="tomcat-juli"/><!-- Ignore Tomcat version, which isn't OSGi -->
 		</dependency>
+		<dependency org="org.apache.juli.springsource" name="com.springsource.org.apache.juli.extras.springsource" rev="6.0.32.S2-r1673" />
 		
 		<!-- Logging -->
 		<dependency org="org.apache.log4j" name="com.springsource.org.apache.log4j" rev="1.2.16" />
