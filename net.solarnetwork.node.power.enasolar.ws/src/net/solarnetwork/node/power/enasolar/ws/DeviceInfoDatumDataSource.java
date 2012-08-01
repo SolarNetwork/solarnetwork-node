@@ -24,10 +24,12 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.xpath.XPathExpression;
 
@@ -105,6 +107,9 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	
 	/** The default value for the {@code url} property. */
 	public static final String DEFAULT_URL = "http://localhost:8082/gs/deviceinfo.xml";
+
+	
+	private static final Pattern DATA_VALUE_XPATH_NAME = Pattern.compile("key='(\\w+)'");
 
 	private String url = DEFAULT_URL;
 	private String sourceId;
@@ -243,6 +248,39 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	public void setXpathMap(Map<String, String> xpathMap) {
 		setXpathMapping(getXPathExpressionMap(xpathMap));
 	}
+	
+	// for settings
+	private static String getDataMapping(Map<String, String> map) {
+		StringBuilder buf = new StringBuilder();
+		if ( map != null ) {
+			for ( Map.Entry<String, String> me : map.entrySet() ) {
+				Matcher m = DATA_VALUE_XPATH_NAME.matcher(me.getValue().toString());
+				if ( m.find() ) {
+					if ( buf.length() > 0 ) {
+						buf.append(", ");
+					}
+					buf.append(me.getKey()).append('=').append(m.group(1));
+				}
+			}
+		}
+		return buf.toString();
+	}
+	
+	public void setDataMapping(String mapping) {
+		if ( mapping == null || mapping.length() < 1 ) {
+			return;
+		}
+		String[] pairs = mapping.split("\\s*,\\s*");
+		Map<String, String> map = new LinkedHashMap<String, String>();
+		for ( String pair : pairs ) {
+			String[] kv = pair.split("\\s*=\\s*");
+			if ( kv == null || kv.length != 2 ) {
+				continue;
+			}
+			map.put(kv[0], "//data[@key='" +kv[1] +"']/@value");
+		}
+		setXpathMap(map);
+	}
 
 	@Override
 	public String getSettingUID() {
@@ -273,9 +311,12 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	}
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("url",
-				"http://localhost:8082/gs/deviceinfo.xml"),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("sourceId", ""));
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(10);
+		result.add(new BasicTextFieldSettingSpecifier("url", "http://localhost:8082/gs/deviceinfo.xml"));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		result.add(new BasicTextFieldSettingSpecifier("dataMapping", 
+				getDataMapping(defaultXpathMapping())));
+		return result;
 	}
 
 	public String getUrl() {
