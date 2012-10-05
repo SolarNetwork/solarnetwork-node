@@ -1,8 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Tomcat Configuration
-Bundle-SymbolicName: org.eclipse.gemini.web.tomcat.config
-Bundle-Version: 1.0.0
-Bundle-Vendor: SpringSource/SolarNetwork
-Fragment-Host: org.eclipse.gemini.web.tomcat
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
