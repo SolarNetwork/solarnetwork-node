@@ -1,6 +1,6 @@
 <project basedir=".">
 
-	<property name="dir.osgi.base" value="${basedir}/../solarnetwork-osgi-lib"/>
+	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
 	<import file="${dir.osgi.base}/lib-build.xml"/>
 	
 </project>
