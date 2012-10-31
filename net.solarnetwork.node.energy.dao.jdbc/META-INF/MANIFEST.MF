@@ -1,0 +1,30 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode JDBD Energy DAO
+Bundle-SymbolicName: net.solarnetwork.node.energy.dao.jdbc
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ javax.sql,
+ net.solarnetwork.node;version="1.0.0",
+ net.solarnetwork.node.dao;version="1.2.0",
+ net.solarnetwork.node.dao.jdbc;version="1.2.1",
+ net.solarnetwork.node.energy;version="1.0.0",
+ net.solarnetwork.node.support;version="1.0.0",
+ org.aopalliance.aop;version="1.0.0",
+ org.osgi.framework,
+ org.slf4j;version="[1.5.0,2.0.0)",
+ org.springframework.aop;version="[3.0,4.0)",
+ org.springframework.aop.framework;version="[3.0,4.0)",
+ org.springframework.beans.factory;version="[3.0,4.0)",
+ org.springframework.core.io;version="[3.0,4.0)",
+ org.springframework.context;version="[3.0,4.0)",
+ org.springframework.dao.support;version="[3.0,4.0)",
+ org.springframework.jdbc.core;version="[3.0,4.0)",
+ org.springframework.jdbc.core.simple;version="[3.0,4.0)",
+ org.springframework.jdbc.support;version="[3.0,4.0)",
+ org.springframework.osgi.compendium.cm;version="[1.2.0,2.0.0)",
+ org.springframework.osgi.compendium.config;version="[1.2.0,2.0.0)",
+ org.springframework.transaction;version="[3.0,4.0)",
+ org.springframework.transaction.annotation;version="[3.0,4.0)"
