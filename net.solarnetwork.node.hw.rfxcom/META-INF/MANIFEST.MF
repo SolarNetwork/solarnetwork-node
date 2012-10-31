@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode RFXCOM Support
-Bundle-SymbolicName: net.solarnetwork.node.rfxcom
+Bundle-SymbolicName: net.solarnetwork.node.hw.rfxcom
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
