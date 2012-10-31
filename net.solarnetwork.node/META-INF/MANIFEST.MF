@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Core
-Bundle-SymbolicName: net.solarnetwork.node.core
+Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Version: 1.7.3
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
