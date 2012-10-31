@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SMA Core Support
-Bundle-SymbolicName: net.solarnetwork.node.power.sma
+Bundle-SymbolicName: net.solarnetwork.node.hw.sma
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
