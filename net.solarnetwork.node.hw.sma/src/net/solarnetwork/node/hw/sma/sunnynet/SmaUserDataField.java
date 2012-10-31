@@ -1,7 +1,7 @@
 /* ===================================================================
- * SmaChannelParam.java
+ * SmaUserDataField.java
  * 
- * Created Sep 7, 2009 10:26:48 AM
+ * Created Sep 7, 2009 10:27:22 AM
  * 
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
  * 
@@ -24,24 +24,45 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl.sma;
+package net.solarnetwork.node.hw.sma.sunnynet;
 
 /**
- * An SMA channel parameter enumeration.
+ * A user data field enumeration.
  *
  * @author matt
  * @version $Revision$ $Date$
  */
-public enum SmaChannelParam {
+public enum SmaUserDataField {
 	
-	/** The unit of measurement this channel reports with. */
-	Unit,
+	/** The device serial number. */
+	DeviceSerialNumber,
 	
-	/** The gain. */
-	Gain,
+	/** The device type. */
+	DeviceType,
 	
-	/** The offset. */
-	Offset,
+	/** A List of {@link SmaChannel} objects. */
+	Channels,
+	
+	/** The channel index number. */
+	ChannelIndex,
+	
+	/** The channel type1 value. */
+	ChannelType1,
+	
+	/** The channel type2 value. */
+	ChannelType2,
+	
+	/** A data value. */
+	Value,
+	
+	/** The number of sets of data. */
+	DataSets,
+	
+	/** The seconds since value. */
+	SecondsSince,
+	
+	/** A time basis. */
+	TimeBasis,
 	
 	/** The "low" text value. */
 	TextLow,
@@ -49,7 +70,6 @@ public enum SmaChannelParam {
 	/** The "high" text value. */
 	TextHigh,
 	
-	/** A status message. */
-	Status;
-	
+	/** An error. */
+	Error;
 }

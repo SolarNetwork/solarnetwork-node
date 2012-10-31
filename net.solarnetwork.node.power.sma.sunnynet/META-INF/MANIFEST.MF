@@ -8,8 +8,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node;version="1.5.0",
  net.solarnetwork.node.dao;version="1.0.0",
+ net.solarnetwork.node.hw.sma.sunnynet;version="1.0.0",
  net.solarnetwork.node.power;version="1.0.0",
- net.solarnetwork.node.power.impl.sma;version="1.0.0",
  net.solarnetwork.node.util;version="1.0.0",
  org.apache.commons.codec.binary;version="[1.3.0,1.5.0)",
  org.slf4j;version="[1.5.0,2.0.0)",

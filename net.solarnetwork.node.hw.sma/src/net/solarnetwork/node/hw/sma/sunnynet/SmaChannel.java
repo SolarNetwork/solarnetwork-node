@@ -24,7 +24,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl.sma;
+package net.solarnetwork.node.hw.sma.sunnynet;
 
 import java.util.EnumMap;
 import java.util.Map;

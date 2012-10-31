@@ -24,7 +24,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl.sma;
+package net.solarnetwork.node.hw.sma.sunnynet;
 
 import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;

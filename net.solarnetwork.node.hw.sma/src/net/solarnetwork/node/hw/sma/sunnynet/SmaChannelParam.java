@@ -1,7 +1,7 @@
 /* ===================================================================
- * SmaControl.java
+ * SmaChannelParam.java
  * 
- * Created Sep 7, 2009 10:27:14 AM
+ * Created Sep 7, 2009 10:26:48 AM
  * 
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
  * 
@@ -24,67 +24,32 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl.sma;
+package net.solarnetwork.node.hw.sma.sunnynet;
 
 /**
- * SMA packet control enumeration.
- * 
- * <p>Each SMA packet contains a <em>control</em> byte that specifies 
- * the desired device to control, or if the packet is a response from
- * a device request.</p>
+ * An SMA channel parameter enumeration.
  *
  * @author matt
  * @version $Revision$ $Date$
  */
-public enum SmaControl {
+public enum SmaChannelParam {
 	
-	/** Request from a single device. */
-	RequestSingle(0),
+	/** The unit of measurement this channel reports with. */
+	Unit,
 	
-	/** Response. */
-	Response(64),
+	/** The gain. */
+	Gain,
 	
-	/** Request from all connected devices. */
-	RequestGroup(128),
+	/** The offset. */
+	Offset,
 	
-	/** Unknown. */
-	Unknown(-1);
+	/** The "low" text value. */
+	TextLow,
 	
-	private int code;
+	/** The "high" text value. */
+	TextHigh,
 	
-	private SmaControl(int code) {
-		this.code = code;
-	}
-	
-	/**
-	 * Get the code value for this control type.
-	 * 
-	 * @return code value
-	 */
-	public int getCode() {
-		return this.code;
-	}
-	
-	/**
-	 * Get a SmaControl instance from a code value.
-	 * 
-	 * @param code the code value
-	 * @return the SmaControl
-	 */
-	public static SmaControl forCode(int code) {
-		switch ( code ) {
-			case 0:
-				return RequestSingle;
-				
-			case 64:
-				return Response;
-				
-			case 128:
-				return RequestGroup;
-				
-			default:
-				return Unknown;
-		}
-	}
+	/** A status message. */
+	Status;
 	
 }

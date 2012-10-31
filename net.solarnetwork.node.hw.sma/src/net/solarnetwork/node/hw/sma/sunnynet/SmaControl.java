@@ -1,7 +1,7 @@
 /* ===================================================================
- * SmaCommand.java
+ * SmaControl.java
  * 
- * Created Sep 7, 2009 10:27:08 AM
+ * Created Sep 7, 2009 10:27:14 AM
  * 
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
  * 
@@ -24,42 +24,40 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl.sma;
+package net.solarnetwork.node.hw.sma.sunnynet;
 
 /**
- * An SMA command.
+ * SMA packet control enumeration.
  * 
+ * <p>Each SMA packet contains a <em>control</em> byte that specifies 
+ * the desired device to control, or if the packet is a response from
+ * a device request.</p>
+ *
  * @author matt
  * @version $Revision$ $Date$
  */
-public enum SmaCommand {
+public enum SmaControl {
 	
-	/** The "net start" command, to initiate communicaiton. */
-	NetStart(6),
+	/** Request from a single device. */
+	RequestSingle(0),
 	
-	/** Get all available channel info. */
-	GetChannelInfo(9),
+	/** Response. */
+	Response(64),
 	
-	/** Synchronize channels for reading data. */
-	SynOnline(10),
+	/** Request from all connected devices. */
+	RequestGroup(128),
 	
-	/** Read data from a channel. */
-	GetData(11),
-	
-	/** Set a data value on a channel. */
-	SetData(12),
-	
-	/** Unknown command. */
+	/** Unknown. */
 	Unknown(-1);
 	
 	private int code;
 	
-	private SmaCommand(int code) {
+	private SmaControl(int code) {
 		this.code = code;
 	}
 	
 	/**
-	 * Get the channel type code value.
+	 * Get the code value for this control type.
 	 * 
 	 * @return code value
 	 */
@@ -68,27 +66,21 @@ public enum SmaCommand {
 	}
 	
 	/**
-	 * Get a SmaCommand instance from a code value.
+	 * Get a SmaControl instance from a code value.
 	 * 
 	 * @param code the code value
-	 * @return the SmaCommand
+	 * @return the SmaControl
 	 */
-	public static SmaCommand forCode(int code) {
+	public static SmaControl forCode(int code) {
 		switch ( code ) {
-			case 6:
-				return NetStart;
+			case 0:
+				return RequestSingle;
 				
-			case 9:
-				return GetChannelInfo;
+			case 64:
+				return Response;
 				
-			case 10:
-				return SynOnline;
-				
-			case 11:
-				return GetData;
-				
-			case 12:
-				return SetData;
+			case 128:
+				return RequestGroup;
 				
 			default:
 				return Unknown;
