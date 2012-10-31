@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.springframework.org/schema/osgi"
+	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+	
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="core.cfg" persistent-id="net.solarnetwork.node.core">
+		<prop key="scheduler.startupDelay">60</prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+
+	<osgi:list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" cardinality="0..N">
+		<osgi:listener bind-method="onBind" unbind-method="onUnbind">
+			<bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
+				<property name="scheduler" ref="scheduler"/>
+				<property name="bundleContext" ref="bundleContext"/>
+			</bean>
+		</osgi:listener>
+	</osgi:list>
+
+	<osgi:list id="serializers" cardinality="0..N" filter="(!(delegating=true))"
+		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
+	
+	<!-- Published Services -->
+
+	<osgi:service ref="scheduler" interface="org.quartz.Scheduler"/>
+
+	<osgi:service ref="delegatingReactorSerialization" ranking="5"
+		interface="net.solarnetwork.node.reactor.ReactorSerializationService">
+		<osgi:service-properties>
+			<entry key="delegating" value="true"/>
+		</osgi:service-properties>
+	</osgi:service>
+
+</beans>
