@@ -52,6 +52,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -311,20 +312,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	 * @param mapping
 	 */
 	public void setAddressSourceMappingValue(String mapping) {
-		if ( mapping == null || mapping.length() < 1 ) {
-			setAddressSourceMapping(null);
-			return;
-		}
-		String[] pairs = mapping.split("\\s*,\\s*");
-		Map<String, String> map = new LinkedHashMap<String, String>();
-		for ( String pair : pairs ) {
-			String[] kv = pair.split("\\s*=\\s*");
-			if ( kv == null || kv.length != 2 ) {
-				continue;
-			}
-			map.put(kv[0], kv[1]);
-		}
-		setAddressSourceMapping(map);
+		setAddressSourceMapping(StringUtils.commaDelimitedStringToMap(mapping));
 	}
 	
 	/**
@@ -337,16 +325,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	 * @param filters
 	 */
 	public void setSourceIdFilterValue(String filters) {
-		if ( filters == null || filters.length() < 1 ) {
-			setSourceIdFilter(null);
-			return;
-		}
-		String[] data = filters.split("\\s*,\\s*");
-		Set<String> s = new LinkedHashSet<String>(data.length);
-		for ( String d : data ) {
-			s.add(d);
-		}
-		setSourceIdFilter(s);
+		setSourceIdFilter(StringUtils.commaDelimitedStringToSet(filters));
 	}
 
 	public DynamicServiceTracker<RFXCOM> getRfxcomTracker() {
