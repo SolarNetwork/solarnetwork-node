@@ -28,6 +28,7 @@ package net.solarnetwork.node.power.impl.sma.sunnynet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -38,8 +39,15 @@ import java.util.Map;
 import java.util.Set;
 
 import net.solarnetwork.node.ConversationalDataCollector;
+import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelParam;
@@ -48,13 +56,16 @@ import net.solarnetwork.node.hw.sma.sunnynet.SmaControl;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaPacket;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUserDataField;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUtils;
+import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.StringUtils;
 
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Implementation of {@link GenerationDataSource} for SMA controllers.
@@ -96,10 +107,6 @@ import org.springframework.beans.factory.ObjectFactory;
  *   <dd>The factory for creating {@link ConversationalDataCollector} instances with. 
  *   {@link GenericObjectFactory#getObject()} will be called on each invocation
  *   of {@link #readCurrentPowerDatum()}.</dd>
- *   
- *   <dt>channelNamesToMonitor</dt>
- *   <dd>A set of SMA channel names to read current values from. Defaults 
- *   to {@link #CHANNEL_NAME_PV_AMPS} and {@link #CHANNEL_NAME_PV_VOLTS}.</dd>
  *   
  *   <dt>synOnlineWaitMs</dt>
  *   <dd>Number of milliseconds to wait after issuing the SynOnline command.
@@ -148,7 +155,10 @@ import org.springframework.beans.factory.ObjectFactory;
  * @version $Revision$ $Date$
  */
 public class SMASunnyNetPowerDatumDataSource 
-implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<PowerDatum> {
+implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<PowerDatum>, SettingSpecifierProvider {
+
+	/** The default value for the {@code sourceId} property. */
+	public static final String DEFAULT_SOURCE_ID = "Main";
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -193,7 +203,25 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	/** The default value for the {@code synOnlineWaitMs} property. */
 	public static final long DEFAULT_SYN_ONLINE_WAIT_MS = 5000;
 	
-	private ObjectFactory<ConversationalDataCollector> dataCollectorFactory;
+	private static final String DEFAULT_SERIAL_PORT = "/dev/ttyS0";
+
+	private static final SerialPortBeanParameters DEFAULT_SERIAL_PARAMS = new SerialPortBeanParameters();
+
+	static {
+		DEFAULT_SERIAL_PARAMS.setBaud(1200);
+		DEFAULT_SERIAL_PARAMS.setDataBits(8);
+		DEFAULT_SERIAL_PARAMS.setStopBits(1);
+		DEFAULT_SERIAL_PARAMS.setParity(0);
+		DEFAULT_SERIAL_PARAMS.setDtrFlag(0);
+		DEFAULT_SERIAL_PARAMS.setRtsFlag(0);
+		DEFAULT_SERIAL_PARAMS.setReceiveThreshold(-1);
+		DEFAULT_SERIAL_PARAMS.setReceiveTimeout(2000);
+		DEFAULT_SERIAL_PARAMS.setMaxWait(65000);
+	}
+
+	private static final Object MONITOR = new Object();
+	private static MessageSource MESSAGE_SOURCE;
+
 	private Set<String> channelNamesToMonitor = DEFAULT_CHANNEL_NAMES_TO_MONITOR;
 	private Set<String> channelNamesToResetDaily = null;
 	private Set<String> channelNamesToOffsetDaily = DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY;
@@ -202,28 +230,62 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private long synOnlineWaitMs = DEFAULT_SYN_ONLINE_WAIT_MS;
 	private SettingDao settingDao = null;
-	
+	private String sourceId = DEFAULT_SOURCE_ID;
+
+	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
+	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
+
 	private int smaAddress = -1;
 	private Map<String, SmaChannel> channelMap = null;
 	
 	private final Logger log = LoggerFactory.getLogger(getClass());
+	
+	/**
+	 * Get the default serial parameters used for SMA inverters.
+	 * @return
+	 */
+	public static final SerialPortBeanParameters getDefaultSerialParameters() {
+		return (SerialPortBeanParameters)DEFAULT_SERIAL_PARAMS.clone();
+	}
 	
 	@Override
 	public Class<? extends PowerDatum> getDatumType() {
 		return PowerDatum.class;
 	}
 
+	private ConversationalDataCollector getDataCollectorInstance() {
+		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
+		if ( df == null ) {
+			return null;
+		}
+		return df.getConversationalDataCollectorInstance(getSerialParams());
+	}
+	
+	private void setupChannelNamesToMonitor() {
+		Set<String> s = new LinkedHashSet<String>(3);
+		s.add(getPvVoltsChannelName());
+		s.add(getPvAmpsChannelName());
+		s.add(getkWhChannelName());
+		if ( !s.equals(this.channelNamesToMonitor) ) {
+			this.channelNamesToMonitor = s;
+			this.channelMap = null;
+		}
+	}
+
 	@Override
 	public PowerDatum readCurrentDatum() {
 		ConversationalDataCollector dataCollector = null;
 		try {
-			dataCollector = this.dataCollectorFactory.getObject();
-			return dataCollector.collectData(this);
+			dataCollector = getDataCollectorInstance();
+			if ( dataCollector != null ) {
+				return dataCollector.collectData(this);
+			}
 		} finally {
 			if ( dataCollector != null ) {
 				dataCollector.stopCollecting();
 			}
 		}
+		return null;
 	}
 	
 	public PowerDatum conductConversation(ConversationalDataCollector dataCollector) {
@@ -601,8 +663,11 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 	private Map<String, SmaChannel> getSmaChannelMap(SmaPacket resp) {
 		Map<String, SmaChannel> channels = new LinkedHashMap<String, SmaChannel>();
 		Object o = resp.getUserDataField(SmaUserDataField.Channels);
-		if ( o != null ) {
+		if ( o instanceof List<?> ) {
 			List<SmaChannel> list = (List<SmaChannel>)o;
+			if ( log.isDebugEnabled() ) {
+				log.debug("Available SMA channels:\n{}", StringUtils.delimitedStringFromCollection(list, ",\n"));
+			}
 			for ( SmaChannel channel : list ) {
 				// prune out channels to only those we are interested in
 				if ( !this.channelNamesToMonitor.contains(channel.getName()) ) {
@@ -740,132 +805,165 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 		return curr;
 	}
 	
-	/**
-	 * @return the dataCollectorFactory
-	 */
-	public ObjectFactory<ConversationalDataCollector> 
-			getDataCollectorFactory() {
-		return dataCollectorFactory;
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.power.sma.sunnynet";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "SMA SunnyNet inverter";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		synchronized (MONITOR) {
+			if ( MESSAGE_SOURCE == null ) {
+				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
+				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
+				serial.setBasename(SerialPortBeanParameters.class.getName());
+
+				PrefixedMessageSource serialSource = new PrefixedMessageSource();
+				serialSource.setDelegate(serial);
+				serialSource.setPrefix("serialParams.");
+
+				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+				source.setBundleClassLoader(SMASunnyNetPowerDatumDataSource.class.getClassLoader());
+				source.setBasename(SMASunnyNetPowerDatumDataSource.class.getName());
+				source.setParentMessageSource(serialSource);
+				MESSAGE_SOURCE = source;
+			}
+		}
+		return MESSAGE_SOURCE;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		results.add(new BasicTitleSettingSpecifier("address", 
+				(smaAddress < 0 ? "N/A" : String.valueOf(smaAddress)), true));
+
+		results.add(new BasicTextFieldSettingSpecifier(
+				"dataCollectorFactory.propertyFilters['UID']", DEFAULT_SERIAL_PORT));
+		
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		
+		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
+		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
+		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
+		
+		results.add(new BasicTextFieldSettingSpecifier("channelNamesToOffsetDailyValue", 
+				StringUtils.commaDelimitedStringFromCollection(DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY)));
+		results.add(new BasicTextFieldSettingSpecifier("channelNamesToResetDailyValue", ""));
+		
+		results.add(new BasicTextFieldSettingSpecifier("synOnlineWaitMs", 
+				String.valueOf(DEFAULT_SYN_ONLINE_WAIT_MS)));
+
+		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
+				SMASunnyNetPowerDatumDataSource.getDefaultSerialParameters(), "serialParams."));
+		return results;
 	}
 	
 	/**
-	 * @param dataCollectorFactory the dataCollectorFactory to set
+	 * Set the channel names to monitor via a comma-delimited string.
+	 * 
+	 * @param list comma-delimited list of channel names to monitor
 	 */
-	public void setDataCollectorFactory(
-			ObjectFactory<ConversationalDataCollector> dataCollectorFactory) {
-		this.dataCollectorFactory = dataCollectorFactory;
+	public void setChannelNamesToOffsetDailyValue(String list) {
+		setChannelNamesToOffsetDaily(StringUtils.commaDelimitedStringToSet(list));
+	}
+
+	/**
+	 * Set the channel names to monitor via a comma-delimited string.
+	 * 
+	 * @param list comma-delimited list of channel names to monitor
+	 */
+	public void setChannelNamesToResetDailyValue(String list) {
+		setChannelNamesToResetDaily(StringUtils.commaDelimitedStringToSet(list));
 	}
 	
-	/**
-	 * @return the channelNamesToMonitor
-	 */
-	public Set<String> getChannelNamesToMonitor() {
-		return channelNamesToMonitor;
-	}
-	
-	/**
-	 * @param channelNamesToMonitor the channelNamesToMonitor to set
-	 */
-	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
-		this.channelNamesToMonitor = channelNamesToMonitor;
-	}
-	
-	/**
-	 * @return the synOnlineWaitMs
-	 */
 	public long getSynOnlineWaitMs() {
 		return synOnlineWaitMs;
 	}
 	
-	/**
-	 * @param synOnlineWaitMs the synOnlineWaitMs to set
-	 */
 	public void setSynOnlineWaitMs(long synOnlineWaitMs) {
 		this.synOnlineWaitMs = synOnlineWaitMs;
 	}
 	
-	/**
-	 * @return the pvVoltsChannelName
-	 */
 	public String getPvVoltsChannelName() {
 		return pvVoltsChannelName;
 	}
 	
-	/**
-	 * @param pvVoltsChannelName the pvVoltsChannelName to set
-	 */
 	public void setPvVoltsChannelName(String pvVoltsChannelName) {
 		this.pvVoltsChannelName = pvVoltsChannelName;
+		setupChannelNamesToMonitor();
 	}
 	
-	/**
-	 * @return the pvAmpsChannelName
-	 */
 	public String getPvAmpsChannelName() {
 		return pvAmpsChannelName;
 	}
 
-	/**
-	 * @param pvAmpsChannelName the pvAmpsChannelName to set
-	 */
 	public void setPvAmpsChannelName(String pvAmpsChannelName) {
 		this.pvAmpsChannelName = pvAmpsChannelName;
+		setupChannelNamesToMonitor();
 	}
 	
-	/**
-	 * @return the channelNamesToResetDaily
-	 */
 	public Set<String> getChannelNamesToResetDaily() {
 		return channelNamesToResetDaily;
 	}
 	
-	/**
-	 * @param channelNamesToResetDaily the channelNamesToResetDaily to set
-	 */
 	public void setChannelNamesToResetDaily(Set<String> channelNamesToResetDaily) {
 		this.channelNamesToResetDaily = channelNamesToResetDaily;
 	}
 	
-	/**
-	 * @return the kWhChannelName
-	 */
 	public String getkWhChannelName() {
 		return kWhChannelName;
 	}
 	
-	/**
-	 * @param kWhChannelName the kWhChannelName to set
-	 */
 	public void setkWhChannelName(String kWhChannelName) {
 		this.kWhChannelName = kWhChannelName;
+		setupChannelNamesToMonitor();
 	}
 	
-	/**
-	 * @return the settingDao
-	 */
 	public SettingDao getSettingDao() {
 		return settingDao;
 	}
 
-	/**
-	 * @param settingDao the settingDao to set
-	 */
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
 	}
 	
-	/**
-	 * @return the channelNamesToOffsetDaily
-	 */
 	public Set<String> getChannelNamesToOffsetDaily() {
 		return channelNamesToOffsetDaily;
 	}
 	
-	/**
-	 * @param channelNamesToOffsetDaily the channelNamesToOffsetDaily to set
-	 */
 	public void setChannelNamesToOffsetDaily(Set<String> channelNamesToOffsetDaily) {
 		this.channelNamesToOffsetDaily = channelNamesToOffsetDaily;
 	}
+
+	public SerialPortBeanParameters getSerialParams() {
+		return serialParams;
+	}
+
+	public void setSerialParams(SerialPortBeanParameters serialParams) {
+		this.serialParams = serialParams;
+	}
 	
+	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
+		return dataCollectorFactory;
+	}
+	
+	public void setDataCollectorFactory(
+			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
+		this.dataCollectorFactory = dataCollectorFactory;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
 }
