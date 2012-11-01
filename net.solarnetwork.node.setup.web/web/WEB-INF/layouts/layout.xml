@@ -10,4 +10,6 @@
 		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp" />
 	</definition>
 	
+	<definition name="bootstrap" template="/WEB-INF/layouts/bootstrap.jsp" />
+	
 </tiles-definitions>

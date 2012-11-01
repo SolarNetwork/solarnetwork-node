@@ -1,29 +1,130 @@
-<div class="intro">
+<section class="intro">
 	<fmt:message key="settings.intro"/>
-</div>
+</section>
 
 <c:if test="${fn:length(factories) > 0}">
-	<table class="factories">
-		<tbody>
+	<section id="factories">
+		<h2><fmt:message key="settings.factories.title"/></h2>
+		<p><fmt:message key="settings.factories.intro"/></p>	
+		<table class="table">
+			<tbody>
 			<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
 				<!--  ${factory.factoryUID} -->
 				<tr>
+					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
-					</td>
-					<td>
-						<form action="<c:url value='/settings/manage.do'/>" method="get">
-							<input type="hidden" name="uid" value="${factory.factoryUID}"/>
-							<button type="submit"><fmt:message key="settings.factory.manage.label"/></button>
-						</form>
+						<a class="btn" href="<c:url value='/settings/manage.do?uid=${factory.factoryUID}'/>">
+							<i class="icon-edit icon-large"></i> 
+							<fmt:message key="settings.factory.manage.label"/>
+						</a>
 					</td>
 				</tr>
 			</c:forEach>
-		</tbody>
-	</table>
+			</tbody>
+		</table>
+	</section>
 </c:if>
 
 <c:if test="${fn:length(providers) > 0}">
+	<section id="settings">
+		<h2><fmt:message key="settings.providers.title"/></h2>
+		<p><fmt:message key="settings.providers.intro"/></p>	
+
+		<form class="form-horizontal" action="<c:url value='/settings/save.do'/>" method="post">
+		<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
+			<!--  ${provider.settingUID} -->
+			<fieldset>
+				<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
+				<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+					<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}"/>
+					<c:choose>
+						<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
+							<div class="control-group" id="cg-${settingId}">
+								<label class="control-label" for="${settingId}">
+									<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
+								</label>
+								<div class="controls">
+									<c:choose>
+										<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SliderSettingSpecifier')}">
+											<div id="${settingId}" class="setting slider"></div>
+											<script>
+											$(function() {
+												SolarNode.Settings.addSlider({
+													key: '${settingId}',
+													min: '${setting.minimumValue}',
+													max: '${setting.maximumValue}',
+													step: '${setting.step}',
+													value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+													provider: '${provider.settingUID}',
+													setting: '${setting.key}'
+												});
+											});
+											</script>
+										</c:when>
+										<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
+											<div id="${settingId}" class="setting toggle">
+												<input type="radio" name="${settingId}" id="${settingId}t" value="${setting.trueValue}" />
+													<label for="${settingId}t"><fmt:message key="settings.toggle.on"/></label>
+												<input type="radio" name="${settingId}" id="${settingId}f" value="${setting.falseValue}" />
+													<label for="${settingId}f"><fmt:message key="settings.toggle.off"/></label>
+											</div>
+											<script>
+											$(function() {
+												SolarNode.Settings.addToggle({
+													provider: '${provider.settingUID}',
+													setting: '${setting.key}',
+													key: '${settingId}',
+													on: '${setting.trueValue}',
+													off: '${setting.falseValue}',
+													value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>'
+												});
+											});
+											</script>
+										</c:when>
+										<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
+											<input type="text" name="${settingId}" id="${settingId}" 
+												value="<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>" />
+											<script>
+											$(function() {
+												SolarNode.Settings.addTextField({
+													provider: '${provider.settingUID}',
+													setting: '${setting.key}',
+													key: '${settingId}'
+												});
+											});
+											</script>
+										</c:when>
+										<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
+											<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
+										</c:when>
+									</c:choose>
+									
+									<button type="button" class=" help-popover help-icon" tabindex="-1"
+											data-content="<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>"
+											data-html="true">
+										<i class="icon-question-sign"></i>
+									</button>
+
+									<span class="help-inline active-value clean"><span class="text-info">
+										<fmt:message key="settings.current.value.label"/>
+										<span class="value">
+											<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
+										</span>
+									</span></span>
+									
+								</div>
+							</div>
+						</c:when>
+					</c:choose>
+				</c:forEach>
+			</fieldset>
+		</c:forEach>
+			<div class="actions">
+				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+			</div>
+		</form>
+	</section>
+<%--
 	<form id="settings-form" action="<c:url value='/settings/save.do'/>" method="post">
 	<table class="settings">
 		<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
@@ -131,10 +232,11 @@
 		<button type="button" id="submit"><fmt:message key='settings.save'/></button>
 	</div>
 	</form>
+--%>
 	<script>
 	$(function() {
 		$('#submit').click(function() {
-			SolarNode.Settings.saveUpdates($('#settings-form').attr('action'), {
+			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
 				success: '<fmt:message key="settings.save.success.msg"/>',
 				error: '<fmt:message key="settings.save.error.msg"/>',
 				title: '<fmt:message key="settings.save.result.title"/>',

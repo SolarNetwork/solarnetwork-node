@@ -31,7 +31,8 @@ SolarNode.Settings.updateSetting = function(params, value) {
 			xint: params.xint === 'true' ? true : false,
 			value: value};
 	
-	$('#'+params.key+'v').addClass('dirty');
+	// show the "active value" element
+	$('#cg-'+params.key+' span.active-value').removeClass('clean');
 
 	$('#submit').removeAttr('disabled');
 };
@@ -155,7 +156,7 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 	};
 	if ( formData.length > 0 ) {
 		$.ajax({
-			type: 'POST',
+			type: 'post',
 			url: url,
 			data: formData,
 			success: function(data, textStatus, xhr) {
@@ -165,24 +166,18 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 					for ( providerKey in updates ) {
 						for ( key in updates[providerKey] ) {
 							domID = updates[providerKey][key].domID;
-							$('#'+domID+'v').text(updates[providerKey][key].value).removeClass('dirty');
+							$('#cg-'+domID+' span.active-value').addClass('clean').find('span.value').text(updates[providerKey][key].value);
 						}
 					}
 					SolarNode.Settings.reset();
-					$('<div>'+msg.success+'</div>').dialog({
-						modal: true,
-						title: msg.title,
-						buttons: buttons
-						});
+					$('<div class="alert alert-info fade in"><button class="close" data-dismiss="alert" type="button">×</button>'
+							+'<strong>'+msg.title+':</strong> ' +msg.success +'</div>').insertBefore('#settings form div.actions');
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 				if ( msg !== undefined && msg.error !== undefined ) {
-					$('<div>'+msg.error+'</div>').dialog({
-						modal: true,
-						title: msg.title,
-						buttons: buttons
-						});
+					$('<div class="alert alert-error fade in"><button class="close" data-dismiss="alert" type="button">×</button>'
+							+'<strong>'+msg.title+':</strong> ' +msg.error +'</div>').insertBefore('#settings form div.actions');
 				}
 			},
 			dataType: 'json'
@@ -214,3 +209,7 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 		buttons: buttons
 	});
 };
+
+$(document).ready(function() {
+	$('.help-popover').popover();
+});
