@@ -1,3 +1,3 @@
 <div class="header">
-	<img src="<c:url value='/images/SN_logo.png'/>" alt="Solar Network"/>
+	<img src="<c:url value='/images/logo.svg'/>" alt="SolarNetwork" width="400"/>
 </div>
