@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Centameter Core
-Bundle-SymbolicName: net.solarnetwork.node.centameter
+Bundle-SymbolicName: net.solarnetwork.node.hw.centameter
 Bundle-Version: 1.3.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
