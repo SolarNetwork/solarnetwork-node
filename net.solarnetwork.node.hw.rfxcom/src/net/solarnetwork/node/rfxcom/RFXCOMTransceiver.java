@@ -157,7 +157,11 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
 		
 		if ( status == null ) {
-			updateStatus();
+			try {
+				updateStatus();
+			} catch ( RuntimeException e ) {
+				log.warn("Unable to update RFXCOM status", e.getCause());
+			}
 		}
 		if ( status != null ) {
 			log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
