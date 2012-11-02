@@ -33,10 +33,14 @@
 		<form class="form-horizontal" action="<c:url value='/settings/save.do'/>" method="post">
 		<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 			<!--  ${provider.settingUID} -->
+			<c:set var="provider" value="${provider}" scope="request"/>
 			<fieldset>
 				<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
 				<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-					<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}"/>
+					<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}" scope="request"/>
+					<c:set var="setting" value="${setting}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+					<%--
 					<c:choose>
 						<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 							<div class="control-group" id="cg-${settingId}">
@@ -116,6 +120,7 @@
 							</div>
 						</c:when>
 					</c:choose>
+					--%>
 				</c:forEach>
 			</fieldset>
 		</c:forEach>
