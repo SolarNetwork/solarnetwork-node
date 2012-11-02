@@ -18,16 +18,17 @@ SolarNode.Settings.reset = function() {
 SolarNode.Settings.updateSetting = function(params, value) {
 	//providerKey, key, domID, value) {
 	var updates = SolarNode.Settings.updates;
+	var instance = (params.instance !== undefined && params.instance !== '' ? params.instance : undefined);
 	var providerKey = params.provider;
-	if ( params.instance !== undefined ) {
-		providerKey += '.'+params.instance;
+	if ( instance !== undefined ) {
+		providerKey += '.'+instance;
 	}
 	if ( updates[providerKey] === undefined ) {
 		updates[providerKey] = {};
 	}
 	updates[providerKey][params.setting] = {domID: params.key, 
 			provider: params.provider, 
-			instance: params.instance, 
+			instance: instance, 
 			xint: params.xint === 'true' ? true : false,
 			value: value};
 	
@@ -42,7 +43,7 @@ SolarNode.Settings.updateSetting = function(params, value) {
  * 
  * @param params.title {String} the dialog title
  * @param params.key {String} the DOM ID with the dialog content
- */
+ *
 SolarNode.Settings.addInfoDialog = function(params) {
 	var dialog = undefined;
 	var content = $('#'+params.key);
@@ -62,7 +63,7 @@ SolarNode.Settings.addInfoDialog = function(params) {
 			return false;
 		})
 		.before('<div class="dotdotdot">...</div>');
-};
+};*/
 
 /**
  * Setup a new Slider control.
@@ -187,27 +188,40 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 };
 
 SolarNode.Settings.addFactoryConfiguration = function(params) {
+	$(params.button).attr('disabled', 'disabled');
 	$.post(params.url, {uid: params.factoryUID}, function(data, textStatus) {
-		window.location.reload(true);
+		setTimeout(function() {
+			window.location.reload(true);
+		}, 500);
 	});
 };
 
+/**
+ * Show an alert element asking the user if they really want to delete
+ * the selected factory configuration, and allow them to dismiss the alert
+ * or confirm the deletion by clicking another button.
+ */
 SolarNode.Settings.deleteFactoryConfiguration = function(params) {
-	var buttons = {};
-	buttons[params['delete.label']] = function() {
+	var origButton = $(params.button);
+	origButton.attr('disabled', 'disabled');
+	var alert = $('#alert-delete').clone();
+	
+	var reallyDeleteButton = alert.find('button.submit');
+	reallyDeleteButton.click(function() {
+		$(this).attr('disabled', 'disabled');
 		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, function(data, textStatus) {
-			window.location.reload(true);
+			setTimeout(function() {
+				window.location.reload(true);
+			}, 500);
 		});
-	};
-	buttons[params['cancel.label']] = function() {
-		$(this).dialog('close');
-	};
-	$('#alert-delete').dialog({
-		title: params.title,
-		height: 140,
-		modal: true,
-		buttons: buttons
 	});
+	alert.bind('close', function(e) {
+		origButton.removeAttr('disabled');
+		origButton.removeClass('hidden');
+		reallyDeleteButton.unbind();
+	});
+	origButton.addClass('hidden');
+	alert.insertAfter(origButton).removeClass('hidden');
 };
 
 $(document).ready(function() {

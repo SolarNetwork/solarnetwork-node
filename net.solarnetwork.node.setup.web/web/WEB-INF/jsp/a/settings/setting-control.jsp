@@ -5,6 +5,7 @@
 	provider - the current provider
 	setting - the current setting
 	settingId - the ID to use for the setting input
+	instanceId - the instance ID to use
 --%>
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
@@ -24,8 +25,10 @@
 								max: '${setting.maximumValue}',
 								step: '${setting.step}',
 								value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+								xint: '${setting["transient"]}',
 								provider: '${provider.settingUID}',
-								setting: '${setting.key}'
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
 							});
 						});
 						</script>
@@ -40,25 +43,29 @@
 						<script>
 						$(function() {
 							SolarNode.Settings.addToggle({
-								provider: '${provider.settingUID}',
-								setting: '${setting.key}',
 								key: '${settingId}',
 								on: '${setting.trueValue}',
 								off: '${setting.falseValue}',
-								value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>'
+								value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
 							});
 						});
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
-						<input type="text" name="${settingId}" id="${settingId}" 
+						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
 							value="<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>" />
 						<script>
 						$(function() {
 							SolarNode.Settings.addTextField({
+								key: '${settingId}',
+								xint: '${setting["transient"]}',
 								provider: '${provider.settingUID}',
-								setting: '${setting.key}',
-								key: '${settingId}'
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
 							});
 						});
 						</script>
@@ -68,8 +75,11 @@
 					</c:when>
 				</c:choose>
 				
+				<c:set var="help">
+					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
+				</c:set>
 				<button type="button" class=" help-popover help-icon" tabindex="-1"
-						data-content="<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>"
+						data-content="${fn:escapeXml(help)}"
 						data-html="true">
 					<i class="icon-question-sign"></i>
 				</button>
