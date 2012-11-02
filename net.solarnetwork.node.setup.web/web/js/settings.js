@@ -103,7 +103,23 @@ SolarNode.Settings.addSlider = function(params) {
  * @param params.off {String} the "off" value
  * @param params.value {Number} the initial value
  */
-SolarNode.Settings.addToggle = function(params) {
+SolarNode.Settings.addToggle = function(params) {	
+	// boo
+	var toggle = $('#'+params.key);
+	toggle.button();
+	toggle.click(function() {
+		toggle.button('toggle');
+		var active = toggle.hasClass('active');
+		var value = (active ? params.on : params.off);
+		$(this).text(active ? params.onLabel : params.offLabel);
+		if ( active ) {
+			$(this).addClass('btn-success');
+		} else {
+			$(this).removeClass('btn-success');
+		}
+		SolarNode.Settings.updateSetting(params, value);
+	});
+	/*
 	var toggle = $('#'+params.key).buttonset();
 	var radios = $('input:radio[name='+params.key+']');
 	radios.filter('[value='+params.value+']').attr('checked', 'checked');
@@ -112,6 +128,7 @@ SolarNode.Settings.addToggle = function(params) {
 			var value = radios.filter(':checked').val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
+	*/
 };
 
 

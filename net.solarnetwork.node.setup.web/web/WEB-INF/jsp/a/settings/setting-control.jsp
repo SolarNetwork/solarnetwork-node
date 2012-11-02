@@ -7,6 +7,9 @@
 	settingId - the ID to use for the setting input
 	instanceId - the instance ID to use
 --%>
+<c:set var="settingValue" scope="page">
+	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'/>
+</c:set>
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">
@@ -24,7 +27,7 @@
 								min: '${setting.minimumValue}',
 								max: '${setting.maximumValue}',
 								step: '${setting.step}',
-								value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
 								provider: '${provider.settingUID}',
 								setting: '${setup:js(setting.key)}',
@@ -34,19 +37,35 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
-						<div id="${settingId}" class="setting toggle">
+						
+							<%--input type="hidden" name="${settingId}" id="${settingId}" value="${fn:escapeXml(settingValue)}"/--%>
+						    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>" 
+						    	id="${settingId}">
+						    	<c:choose>
+						    		<c:when test="${settingValue eq  setting.trueValue}">
+						    			<fmt:message key="settings.toggle.on"/>
+						    		</c:when>
+						    		<c:otherwise>
+						    			<fmt:message key="settings.toggle.off"/>
+						    		</c:otherwise>
+						    	</c:choose>
+						    </button>
+						    <%--
 							<input type="radio" name="${settingId}" id="${settingId}t" value="${setting.trueValue}" />
 								<label for="${settingId}t"><fmt:message key="settings.toggle.on"/></label>
 							<input type="radio" name="${settingId}" id="${settingId}f" value="${setting.falseValue}" />
 								<label for="${settingId}f"><fmt:message key="settings.toggle.off"/></label>
-						</div>
+							--%>
+						
 						<script>
 						$(function() {
 							SolarNode.Settings.addToggle({
 								key: '${settingId}',
 								on: '${setting.trueValue}',
+								onLabel: '<fmt:message key="settings.toggle.on"/>',
 								off: '${setting.falseValue}',
-								value: '<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>',
+								offLabel: '<fmt:message key="settings.toggle.off"/>',
+								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
 								provider: '${provider.settingUID}',
 								setting: '${setup:js(setting.key)}',
@@ -57,7 +76,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
-							value="<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>" />
+							value="${fn:escapeXml(settingValue)}" />
 						<script>
 						$(function() {
 							SolarNode.Settings.addTextField({
@@ -71,7 +90,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
-						<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
+						${fn:escapeXml(settingValue)}
 					</c:when>
 				</c:choose>
 				
@@ -87,7 +106,21 @@
 				<span class="help-inline active-value clean"><span class="text-info">
 					<fmt:message key="settings.current.value.label"/>
 					<span class="value">
-						<setup:settingValue service="${settingsService}" provider="${provider}" setting="${setting}"/>
+						<c:choose>
+							<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
+						    	<c:choose>
+						    		<c:when test="${settingValue eq  setting.trueValue}">
+						    			<fmt:message key="settings.toggle.on"/>
+						    		</c:when>
+						    		<c:otherwise>
+						    			<fmt:message key="settings.toggle.off"/>
+						    		</c:otherwise>
+						    	</c:choose>
+							</c:when>
+							<c:otherwise>
+								${settingValue}
+							</c:otherwise>
+						</c:choose>
 					</span>
 				</span></span>
 				
