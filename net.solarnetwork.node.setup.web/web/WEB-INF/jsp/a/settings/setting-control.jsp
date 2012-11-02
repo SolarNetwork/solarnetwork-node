@@ -118,7 +118,7 @@
 						    	</c:choose>
 							</c:when>
 							<c:otherwise>
-								${settingValue}
+								${fn:escapeXml(settingValue)}
 							</c:otherwise>
 						</c:choose>
 					</span>
