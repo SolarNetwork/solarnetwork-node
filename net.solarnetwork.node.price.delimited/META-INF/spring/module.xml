@@ -13,7 +13,7 @@
 
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="EnaSolar web service power generation"/>
+		<property name="displayName" value="Delimited energy price lookup"/>
 		<property name="factoryUID" value="net.solarnetwork.node.price.delimited"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
