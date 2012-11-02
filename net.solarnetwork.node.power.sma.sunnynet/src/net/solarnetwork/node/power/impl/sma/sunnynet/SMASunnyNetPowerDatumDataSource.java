@@ -191,15 +191,6 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 		= Collections.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(
 			CHANNEL_NAME_PV_AMPS, CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
 	
-	/** 
-	 * Default value for the {@code channelNamesToOffsetDaily} property.
-	 * 
-	 * <p>Contains the kWh channel.</p>
-	 */
-	public static final Set<String> DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY
-		= Collections.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(
-			CHANNEL_NAME_KWH)));
-
 	/** The default value for the {@code synOnlineWaitMs} property. */
 	public static final long DEFAULT_SYN_ONLINE_WAIT_MS = 5000;
 	
@@ -224,7 +215,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 
 	private Set<String> channelNamesToMonitor = DEFAULT_CHANNEL_NAMES_TO_MONITOR;
 	private Set<String> channelNamesToResetDaily = null;
-	private Set<String> channelNamesToOffsetDaily = DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY;
+	private Set<String> channelNamesToOffsetDaily = null;
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
@@ -852,8 +843,7 @@ implements DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<Po
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
 		
-		results.add(new BasicTextFieldSettingSpecifier("channelNamesToOffsetDailyValue", 
-				StringUtils.commaDelimitedStringFromCollection(DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY)));
+		results.add(new BasicTextFieldSettingSpecifier("channelNamesToOffsetDailyValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("channelNamesToResetDailyValue", ""));
 		
 		results.add(new BasicTextFieldSettingSpecifier("synOnlineWaitMs", 
