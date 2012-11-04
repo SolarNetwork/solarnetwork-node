@@ -21,7 +21,6 @@
 
 	<bean id="powerDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="powerDatumLoggerJob"/>
-		<property name="description" value="Capture power generation samples from registered PowerDatum data sources"/>
 		<property name="cronExpression" value="${job.powerDatumLogger.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
@@ -46,7 +45,6 @@
 
 	<bean id="powerDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="powerDatumCleanerJob"/>
-		<property name="description" value="Clean out old cached power data from the local database"/>
 		<property name="cronExpression" value="${job.powerDatumCleaner.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
