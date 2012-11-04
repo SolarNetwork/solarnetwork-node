@@ -23,6 +23,11 @@
 	<bean id="bulkDatumUploader" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="bulkDatumUploadTrigger"/>
 		<property name="jobDetail" ref="bulkDatumUploadJob"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.upload.bulkxmlwebpost.JOBS"/>
+			</bean>
+		</property>
 	</bean>
 	
 	<bean id="bulkDatumUploadTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
