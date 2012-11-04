@@ -39,33 +39,6 @@ SolarNode.Settings.updateSetting = function(params, value) {
 };
 
 /**
- * Setup a "info" dialog to display the full text of a setting.
- * 
- * @param params.title {String} the dialog title
- * @param params.key {String} the DOM ID with the dialog content
- *
-SolarNode.Settings.addInfoDialog = function(params) {
-	var dialog = undefined;
-	var content = $('#'+params.key);
-	$(content.clone())
-		.insertBefore(content)
-		.removeAttr('id')
-		.removeClass()
-		.addClass('description-brief')
-		.click(function() {
-			if ( dialog === undefined ) {
-				dialog = $(content).dialog({
-					autoOpen: false,
-					title: params.title
-				});
-			}
-			dialog.dialog('open');
-			return false;
-		})
-		.before('<div class="dotdotdot">...</div>');
-};*/
-
-/**
  * Setup a new Slider control.
  * 
  * @param params.key {String} the DOM element ID for the slider
@@ -93,22 +66,6 @@ SolarNode.Settings.addSlider = function(params) {
 			}
 	});
 	SolarNode.Settings.runtime.sliders.push(slider);
-	
-	/*
-	slider.slider({
-		min: (params.min != '' ? Number(params.min) : 0),
-		max: (params.max != '' ? Number(params.max) : 1),
-		step: (params.step != '' ? Number(params.step) : 1),
-		value: params.value,
-		change: function(event, ui) {
-				SolarNode.Settings.updateSetting(params, ui.value);
-			},
-		slide: function(event, ui) {
-		      $(this).find('a:first').text(ui.value);
-		    }
-	}).after('<div class="slider-min caption">'+params.min+'</div>')
-		.after('<div class="slider-max caption">'+params.max+'</div>');
-	*/
 };
 
 /**
