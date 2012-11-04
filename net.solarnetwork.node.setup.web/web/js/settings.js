@@ -184,7 +184,7 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 					for ( providerKey in updates ) {
 						for ( key in updates[providerKey] ) {
 							domID = updates[providerKey][key].domID;
-							$('#cg-'+domID+' span.active-value').addClass('clean').find('span.value').text(updates[providerKey][key].value);
+							$('#cg-'+domID+' span.active-value').addClass('clean').find('.value').text(updates[providerKey][key].value);
 						}
 					}
 					SolarNode.Settings.reset();

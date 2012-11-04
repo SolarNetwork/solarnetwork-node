@@ -67,7 +67,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
-							value="${fn:escapeXml(settingValue)}" />
+							value="${settingValue}" />
 						<script>
 						$(function() {
 							SolarNode.Settings.addTextField({
@@ -95,8 +95,8 @@
 				</button>
 
 				<span class="help-inline active-value clean"><span class="text-info">
-					<fmt:message key="settings.current.value.label"/>
-					<span class="value">
+					<fmt:message key="settings.current.value.label"/>:
+					<code class="value">
 						<c:choose>
 							<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
 						    	<c:choose>
@@ -109,10 +109,10 @@
 						    	</c:choose>
 							</c:when>
 							<c:otherwise>
-								${fn:escapeXml(settingValue)}
+								${settingValue}
 							</c:otherwise>
 						</c:choose>
-					</span>
+					</code>
 				</span></span>
 				
 			</div>
