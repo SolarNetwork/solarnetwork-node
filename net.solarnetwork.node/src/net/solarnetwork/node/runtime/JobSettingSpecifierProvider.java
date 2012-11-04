@@ -79,7 +79,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	public static final String SN_NODE_PREFIX = "net.solarnetwork.node.";
 
 	private String settingUID;
-	private MessageSource parentMessageSource = null;
+	private MessageSource messageSource = null;
 	private List<SettingSpecifier> specifiers = new ArrayList<SettingSpecifier>();
 	private Map<String, MessageFormat> messages = new HashMap<String, MessageFormat>();
 
@@ -100,13 +100,26 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 *            the setting UID
 	 * @param source a message source
 	 */
-	public JobSettingSpecifierProvider(String settingUID, MessageSource source ) {
+	public JobSettingSpecifierProvider(String settingUID, MessageSource source) {
 		super();
 		this.settingUID = settingUID;
-		this.parentMessageSource = source;
-		if ( source == null || source.getMessage("title", null, Locale.getDefault()) == null ) {
+		this.messageSource = source;
+		if ( source == null || !hasMessage(source, "title") ) {
 			messages.put("title", new MessageFormat(titleValue(settingUID)));
 		}
+
+		AbstractMessageSource msgSource = new AbstractMessageSource() {
+			@Override
+			protected MessageFormat resolveCode(String code, Locale locale) {
+				return messages.get(code);
+			}
+		};
+		msgSource.setParentMessageSource(source);
+		this.messageSource = msgSource;
+	}
+	
+	private static boolean hasMessage(MessageSource source, String key) {
+		return (source.getMessage("title", null, Locale.getDefault()) != null);
 	}
 
 	/**
@@ -199,9 +212,15 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 			BasicTextFieldSettingSpecifier tf = new BasicTextFieldSettingSpecifier(key,
 					ct.getCronExpression());
 			tf.setTitle(ct.getName());
-			messages.put(key + ".key", new MessageFormat(ct.getName()));
-			messages.put(key + ".desc", new MessageFormat(
+			final String labelKey = key + ".key";
+			final String descKey = key + ".desc";
+			if ( !hasMessage(this.messageSource, labelKey) ) {
+				messages.put(labelKey, new MessageFormat(ct.getName()));
+			}
+			if ( !hasMessage(this.messageSource, descKey) ) {
+				messages.put(descKey, new MessageFormat(
 					StringUtils.hasText(ct.getDescription()) ? ct.getDescription() : ""));
+			}
 			synchronized (specifiers) {
 				specifiers.add(tf);
 			}
@@ -251,15 +270,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		AbstractMessageSource result = new AbstractMessageSource() {
-
-			@Override
-			protected MessageFormat resolveCode(String code, Locale locale) {
-				return messages.get(code);
-			}
-		};
-		result.setParentMessageSource(parentMessageSource);
-		return result;
+		return messageSource;
 	}
 
 	@Override
