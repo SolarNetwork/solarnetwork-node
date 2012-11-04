@@ -88,12 +88,15 @@
 				<c:set var="help">
 					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
 				</c:set>
-				<button type="button" class=" help-popover help-icon" tabindex="-1"
-						data-content="${fn:escapeXml(help)}"
-						data-html="true">
-					<i class="icon-question-sign"></i>
-				</button>
 
+				<c:if test="${fn:length(help) > 0}">
+					<button type="button" class=" help-popover help-icon" tabindex="-1"
+							data-content="${fn:escapeXml(help)}"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+				</c:if>
+				
 				<span class="help-inline active-value clean"><span class="text-info">
 					<fmt:message key="settings.current.value.label"/>:
 					<code class="value">
