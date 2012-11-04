@@ -7,16 +7,20 @@
 	
 	<ctx:property-placeholder properties-ref="power.cfg"/>
 
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.power.JOBS"/>
+	</bean>
+
 	<!-- Logger job -->
 
 	<bean id="powerDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="powerDatumLoggerTrigger"/>
 		<property name="jobDetail" ref="powerDatumLoggerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="powerDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="powerDatumLoggerJob"/>
-		<property name="name" value="Power Logger"/>
 		<property name="description" value="Capture power generation samples from registered PowerDatum data sources"/>
 		<property name="cronExpression" value="${job.powerDatumLogger.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
@@ -37,11 +41,11 @@
 	<bean id="powerDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="powerDatumCleanerTrigger"/>
 		<property name="jobDetail" ref="powerDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="powerDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="powerDatumCleanerJob"/>
-		<property name="name" value="Power Cleaner"/>
 		<property name="description" value="Clean out old cached power data from the local database"/>
 		<property name="cronExpression" value="${job.powerDatumCleaner.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
