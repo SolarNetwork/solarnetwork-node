@@ -17,11 +17,15 @@
 	<bean id="syncBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="syncBackupTrigger"/>
 		<property name="jobDetail" ref="syncBackupJob"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.dao.jdbc.derby.JOBS"/>
+			</bean>
+		</property>
 	</bean>
 
 	<bean id="syncBackupTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
 		<property name="jobDetail" ref="syncBackupJob"/>
-		<property name="name" value="Derby Sync Backup"/>
 		<property name="cronExpression" value="${job.syncBackup.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 		<property name="randomSecond" value="true"/>
