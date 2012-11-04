@@ -37,26 +37,17 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
-						
-							<%--input type="hidden" name="${settingId}" id="${settingId}" value="${fn:escapeXml(settingValue)}"/--%>
-						    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>" 
-						    	id="${settingId}">
-						    	<c:choose>
-						    		<c:when test="${settingValue eq  setting.trueValue}">
-						    			<fmt:message key="settings.toggle.on"/>
-						    		</c:when>
-						    		<c:otherwise>
-						    			<fmt:message key="settings.toggle.off"/>
-						    		</c:otherwise>
-						    	</c:choose>
-						    </button>
-						    <%--
-							<input type="radio" name="${settingId}" id="${settingId}t" value="${setting.trueValue}" />
-								<label for="${settingId}t"><fmt:message key="settings.toggle.on"/></label>
-							<input type="radio" name="${settingId}" id="${settingId}f" value="${setting.falseValue}" />
-								<label for="${settingId}f"><fmt:message key="settings.toggle.off"/></label>
-							--%>
-						
+					    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>" 
+					    	id="${settingId}">
+					    	<c:choose>
+					    		<c:when test="${settingValue eq  setting.trueValue}">
+					    			<fmt:message key="settings.toggle.on"/>
+					    		</c:when>
+					    		<c:otherwise>
+					    			<fmt:message key="settings.toggle.off"/>
+					    		</c:otherwise>
+					    	</c:choose>
+					    </button>
 						<script>
 						$(function() {
 							SolarNode.Settings.addToggle({
