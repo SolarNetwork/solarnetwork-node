@@ -43,6 +43,7 @@ import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.Trigger;
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.AbstractMessageSource;
 import org.springframework.util.StringUtils;
 
@@ -119,7 +120,12 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	}
 	
 	private static boolean hasMessage(MessageSource source, String key) {
-		return (source.getMessage("title", null, Locale.getDefault()) != null);
+		try {
+			source.getMessage(key, null, Locale.getDefault());
+			return true;
+		} catch ( NoSuchMessageException e ) {
+			return false;
+		}
 	}
 
 	/**
