@@ -131,12 +131,12 @@ public class JobServiceRegistrationListener extends
 		String cronExpression = null;
 		String settingKey = null;
 		JobSettingSpecifierProvider provider = null;
-
+		
 		synchronized (providerMap) {
 			if ( pid != null ) {
 				provider = providerMap.get(pid);
 				if ( provider == null ) {
-					provider = new JobSettingSpecifierProvider(pid);
+					provider = new JobSettingSpecifierProvider(pid, trigJob.getMessageSource());
 					providerMap.put(pid, provider);
 				}
 

@@ -28,6 +28,7 @@ package net.solarnetwork.node.job;
 
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
+import org.springframework.context.MessageSource;
 
 /**
  * A bean that combines a trigger and a job.
@@ -56,4 +57,15 @@ public interface TriggerAndJobDetail {
 	 */
 	JobDetail getJobDetail();
 	
+	/**
+	 * Get a MessageSource to localize the setting text.
+	 * 
+	 * <p>
+	 * This method can return <em>null</em> if the provider does not have any
+	 * localized resources.
+	 * </p>
+	 * 
+	 * @return the MessageSource, or <em>null</em>
+	 */
+	MessageSource getMessageSource();
 }

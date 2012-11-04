@@ -26,6 +26,7 @@ package net.solarnetwork.node.job;
 
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
+import org.springframework.context.MessageSource;
 
 /**
  * Simple implementation of {@link TriggerAndJobDetail}.
@@ -37,6 +38,7 @@ public class SimpleTriggerAndJobDetail implements TriggerAndJobDetail {
 
 	private Trigger trigger;
 	private JobDetail jobDetail;
+	private MessageSource messageSource;
 	
 	@Override
 	public String toString() {
@@ -46,32 +48,28 @@ public class SimpleTriggerAndJobDetail implements TriggerAndJobDetail {
 			+'}';
 	}
 
-	/**
-	 * @return the trigger
-	 */
 	public Trigger getTrigger() {
 		return trigger;
 	}
 	
-	/**
-	 * @param trigger the trigger to set
-	 */
 	public void setTrigger(Trigger trigger) {
 		this.trigger = trigger;
 	}
 	
-	/**
-	 * @return the jobDetail
-	 */
 	public JobDetail getJobDetail() {
 		return jobDetail;
 	}
 	
-	/**
-	 * @param jobDetail the jobDetail to set
-	 */
 	public void setJobDetail(JobDetail jobDetail) {
 		this.jobDetail = jobDetail;
+	}
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

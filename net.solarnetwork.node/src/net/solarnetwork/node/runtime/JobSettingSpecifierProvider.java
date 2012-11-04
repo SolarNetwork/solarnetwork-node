@@ -79,6 +79,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	public static final String SN_NODE_PREFIX = "net.solarnetwork.node.";
 
 	private String settingUID;
+	private MessageSource parentMessageSource = null;
 	private List<SettingSpecifier> specifiers = new ArrayList<SettingSpecifier>();
 	private Map<String, MessageFormat> messages = new HashMap<String, MessageFormat>();
 
@@ -89,9 +90,23 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 *            the setting UID
 	 */
 	public JobSettingSpecifierProvider(String settingUID) {
+		this(settingUID, null);
+	}
+
+	/**
+	 * Construct with settings UID.
+	 * 
+	 * @param settingUID
+	 *            the setting UID
+	 * @param source a message source
+	 */
+	public JobSettingSpecifierProvider(String settingUID, MessageSource source ) {
 		super();
 		this.settingUID = settingUID;
-		messages.put("title", new MessageFormat(titleValue(settingUID)));
+		this.parentMessageSource = source;
+		if ( source == null || source.getMessage("title", null, Locale.getDefault()) == null ) {
+			messages.put("title", new MessageFormat(titleValue(settingUID)));
+		}
 	}
 
 	/**
@@ -236,13 +251,15 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		return new AbstractMessageSource() {
+		AbstractMessageSource result = new AbstractMessageSource() {
 
 			@Override
 			protected MessageFormat resolveCode(String code, Locale locale) {
 				return messages.get(code);
 			}
 		};
+		result.setParentMessageSource(parentMessageSource);
+		return result;
 	}
 
 	@Override
