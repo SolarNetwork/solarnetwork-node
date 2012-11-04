@@ -19,7 +19,7 @@
 			<div class="controls">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SliderSettingSpecifier')}">
-						<div id="${settingId}" class="setting slider"></div>
+						<div id="${settingId}" class="setting slider span5"></div>
 						<script>
 						$(function() {
 							SolarNode.Settings.addSlider({
@@ -114,7 +114,6 @@
 						</c:choose>
 					</code>
 				</span></span>
-				
 			</div>
 		</div>
 	</c:when>

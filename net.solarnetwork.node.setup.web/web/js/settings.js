@@ -77,7 +77,24 @@ SolarNode.Settings.addInfoDialog = function(params) {
  * @param params.setting {String} the setting key
  */
 SolarNode.Settings.addSlider = function(params) {
-	var slider = $('#'+params.key);
+	var el = $('#'+params.key);
+	if ( SolarNode.Settings.runtime.sliders === undefined ) {
+		SolarNode.Settings.runtime.sliders = [];
+	}
+	var slider = new SolarNode.Class.Slider(el, {
+		min: (params.min != '' ? Number(params.min) : 0),
+		max: (params.max != '' ? Number(params.max) : 1),
+		step: (params.step != '' ? Number(params.step) : 1),
+		value: params.value,
+		handleWidth: 42,
+		showValue: true,
+		change: function(event, ui) {
+				SolarNode.Settings.updateSetting(params, ui.value);
+			}
+	});
+	SolarNode.Settings.runtime.sliders.push(slider);
+	
+	/*
 	slider.slider({
 		min: (params.min != '' ? Number(params.min) : 0),
 		max: (params.max != '' ? Number(params.max) : 1),
@@ -91,6 +108,7 @@ SolarNode.Settings.addSlider = function(params) {
 		    }
 	}).after('<div class="slider-min caption">'+params.min+'</div>')
 		.after('<div class="slider-max caption">'+params.max+'</div>');
+	*/
 };
 
 /**

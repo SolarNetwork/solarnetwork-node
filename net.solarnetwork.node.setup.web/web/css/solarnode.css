@@ -35,3 +35,64 @@ span.active-value.clean {
 legend {
 	line-height: 21px;
 }
+
+/* slider */
+
+.ui-slider {
+    position: relative;
+    text-align: left;
+    margin-left: 0;
+}
+.ui-slider .progress {
+	margin-bottom: 4px;
+}
+
+.ui-slider .ui-slider-handle {
+    cursor: default;
+    height: 26px;
+    position: absolute;
+    min-width: 26px;
+    z-index: 2;
+}
+.ui-slider .ui-slider-range {
+/*
+	-moz-border-bottom-colors: none;
+    -moz-border-left-colors: none;
+    -moz-border-right-colors: none;
+    -moz-border-top-colors: none;
+    background-color: #0064CD;
+    background-image: -moz-linear-gradient(center top , #049CDB, #0064CD);
+    background-position: 0 0;
+    background-repeat: repeat-x;
+    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+    border-image: none;
+    border-style: none;
+    border-width: 0;
+    color: #FFFFFF;
+    display: block;
+    font-size: 0.7em;
+    position: absolute;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+*/
+    z-index: 1;
+  -webkit-transition: width 0s linear;
+     -moz-transition: width 0s linear;
+       -o-transition: width 0s linear;
+          transition: width 0s linear;
+}
+/*
+.ui-slider-horizontal .ui-slider-range {
+    height: 100%;
+    top: 0;
+}
+*/
+.ui-slider-horizontal {
+    height: 0.8em;
+}
+.ui-slider-horizontal .ui-slider-handle {
+    margin-left: -13px;
+    top: -3px;
+    font-size: 11px;
+	line-height: 11px;
+	font-weight: 700;
+}
