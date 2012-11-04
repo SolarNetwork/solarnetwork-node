@@ -2,22 +2,28 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:ctx="http://www.springframework.org/schema/context"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-						http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 	
 	<ctx:property-placeholder properties-ref="consumption.cfg"/>
+
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.consumption.JOBS"/>
+	</bean>
 
 	<!-- Logger job -->
 
 	<bean id="consumptionDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="consumptionDatumLoggerTrigger"/>
 		<property name="jobDetail" ref="consumptionDatumLoggerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="consumptionDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="consumptionDatumLoggerJob"/>
-		<property name="name" value="Consumption Logger"/>
-		<property name="description" value="Capture energy consumption samples from registered ConsumptionDatum data sources"/>
 		<property name="cronExpression" value="${job.consumptionDatumLogger.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
@@ -37,12 +43,11 @@
 	<bean id="consumptionDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="consumptionDatumCleanerTrigger"/>
 		<property name="jobDetail" ref="consumptionDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="consumptionDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
 		<property name="jobDetail" ref="consumptionDatumCleanerJob"/>
-		<property name="name" value="Consumption Cleaner"/>
-		<property name="description" value="Clean out old cached consumption data from the local database"/>
 		<property name="cronExpression" value="${job.consumptionDatumCleaner.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
