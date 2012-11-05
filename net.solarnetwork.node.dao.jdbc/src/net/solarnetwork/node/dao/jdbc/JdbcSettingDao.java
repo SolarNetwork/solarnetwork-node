@@ -33,11 +33,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.simple.SimpleJdbcDaoSupport;
-
+import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.KeyValuePair;
+
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Simple JDBC-based implemenation of {@link SettingDao}.
@@ -65,7 +65,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * @author matt
  * @version $Revision$ $Date$
  */
-public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
+public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
 	private static final String DEFAULT_SQL_GET = "SELECT svalue FROM " 
 		+SCHEMA_NAME +'.'+TABLE_SETTINGS
@@ -102,6 +102,10 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 	private static final String DEFAULT_TYPE_SQL_DELETE = "DELETE FROM " 
 		+SCHEMA_NAME +'.'+TABLE_SETTINGS
 		+" WHERE skey = ? AND tkey = ?";
+	
+	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue FROM " 
+			+SCHEMA_NAME +'.'+TABLE_SETTINGS +" ORDER BY skey,tkey";
+
 
 	private String sqlGet = DEFAULT_SQL_GET;
 	private String sqlInsert = DEFAULT_SQL_INSERT;
@@ -112,18 +116,15 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 	private String sqlTypeInsert = DEFAULT_TYPE_SQL_INSERT;
 	private String sqlTypeUpdate = DEFAULT_TYPE_SQL_UPDATE;
 	private String sqlTypeDelete = DEFAULT_TYPE_SQL_DELETE;
+	private String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#deleteSetting(java.lang.String)
-	 */
+	@Override
 	public boolean deleteSetting(String key) {
 		int res = getSimpleJdbcTemplate().update(this.sqlDelete, key);
 		return res > 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#getSetting(java.lang.String)
-	 */
+	@Override
 	public String getSetting(String key) {
 		List<String> res = getSimpleJdbcTemplate().query(this.sqlGet, new RowMapper<String>() {
 			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -136,9 +137,7 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#storeSetting(java.lang.String, java.lang.String)
-	 */
+	@Override
 	public void storeSetting(String key, String value) {
 		int updated = getSimpleJdbcTemplate().update(this.sqlUpdate, value, key);
 		if ( updated < 1 ) {
@@ -146,17 +145,13 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#deleteSetting(java.lang.String, java.lang.String)
-	 */
+	@Override
 	public boolean deleteSetting(String key, String type) {
 		int res = getSimpleJdbcTemplate().update(this.sqlTypeDelete, key, type);
 		return res > 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#getSetting(java.lang.String, java.lang.String)
-	 */
+	@Override
 	public String getSetting(String key, String type) {
 		List<String> res = getSimpleJdbcTemplate().query(this.sqlTypeGet, new RowMapper<String>() {
 			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -169,9 +164,7 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#getSettings(java.lang.String)
-	 */
+	@Override
 	public List<KeyValuePair> getSettings(String key) {
 		return getSimpleJdbcTemplate().query(this.sqlFind, 
 				new RowMapper<KeyValuePair>() {
@@ -181,14 +174,37 @@ public class JdbcSettingDao extends SimpleJdbcDaoSupport implements SettingDao {
 		}, key);
 	}
 
-	/* (non-Javadoc)
-	 * @see net.solarnetwork.node.dao.SettingDao#storeSetting(java.lang.String, java.lang.String, java.lang.String)
-	 */
+	@Override
 	public void storeSetting(String key, String type, String value) {
 		int updated = getSimpleJdbcTemplate().update(this.sqlTypeUpdate, value, key, type);
 		if ( updated < 1 ) {
 			updated = getSimpleJdbcTemplate().update(this.sqlTypeInsert, key, type, value);
 		}
+	}
+
+	// --- Batch support ---
+	
+	@Override
+	protected String getBatchJdbcStatement(BatchOptions options) {
+		return sqlBatchGet;
+	}
+
+	@Override
+	protected Setting getBatchRowEntity(BatchOptions options,
+			ResultSet resultSet, int rowCount) throws SQLException {
+		Setting s = new Setting();
+		s.setKey(resultSet.getString(1));
+		s.setType(resultSet.getString(2));
+		s.setValue(resultSet.getString(3));
+		return s;
+	}
+
+	@Override
+	protected void updateBatchRowEntity(BatchOptions options,
+			ResultSet resultSet, int rowCount, Setting entity) throws SQLException {
+		resultSet.updateString(1, entity.getKey());
+		resultSet.updateString(2, entity.getType());
+		resultSet.updateString(3, entity.getValue());
 	}
 
 }

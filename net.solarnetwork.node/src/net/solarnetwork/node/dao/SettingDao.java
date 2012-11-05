@@ -28,6 +28,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.List;
 
+import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.support.KeyValuePair;
 
 /**
@@ -43,7 +44,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * @author matt
  * @version $Revision$ $Date$
  */
-public interface SettingDao {
+public interface SettingDao extends BatchableDao<Setting> {
 	
 	/**
 	 * Persist a new key/value pair, or update an existing key.

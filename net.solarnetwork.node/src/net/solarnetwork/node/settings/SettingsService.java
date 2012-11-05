@@ -24,6 +24,9 @@
 
 package net.solarnetwork.node.settings;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -108,4 +111,16 @@ public interface SettingsService {
 	 *            the update command
 	 */
 	void updateSettings(SettingsCommand command);
+	
+	/**
+	 * Export all settings as CSV formatted text.
+	 * @param out the output stream
+	 */
+	void exportSettingsCSV(Writer out) throws IOException;
+	
+	/**
+	 * Import all settings from a CSV formatted text stream.
+	 * @param in the input stream
+	 */
+	void importSettingsCSV(Reader in) throws IOException;
 }
