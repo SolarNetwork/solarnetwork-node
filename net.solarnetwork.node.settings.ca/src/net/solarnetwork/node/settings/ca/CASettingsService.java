@@ -25,6 +25,8 @@
 package net.solarnetwork.node.settings.ca;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -33,6 +35,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.dao.BasicBatchOptions;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
@@ -51,6 +57,15 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.CsvBeanWriter;
+import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.io.ICsvBeanWriter;
+import org.supercsv.prefs.CsvPreference;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -79,6 +94,7 @@ public class CASettingsService implements SettingsService {
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
+	private TransactionTemplate transactionTemplate;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
 	// private final Map<String, SettingSpecifierProviderFactory> factories =
@@ -434,6 +450,77 @@ public class CASettingsService implements SettingsService {
 			}
 		}
 	}
+	
+	private static final String[] CSV_HEADERS = new String[] {"key", "type", "value"};
+	
+	@Override
+	public void exportSettingsCSV(Writer out) throws IOException {
+		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
+		final List<IOException> errors = new ArrayList<IOException>(1);
+		final CellProcessor[] processors = new CellProcessor[] {
+				new org.supercsv.cellprocessor.Optional(),
+				new org.supercsv.cellprocessor.Optional(),
+				new org.supercsv.cellprocessor.Optional(),
+		};
+		try {
+			writer.writeHeader(CSV_HEADERS);
+			settingDao.batchProcess(new BatchCallback<Setting>() {			
+				@Override
+				public BatchCallbackResult handle(Setting domainObject) {
+					try {
+						writer.write(domainObject, CSV_HEADERS, processors);
+					} catch ( IOException e ) {
+						errors.add(e);
+						return BatchCallbackResult.STOP;
+					}
+					return BatchCallbackResult.CONTINUE;
+				}
+			}, new BasicBatchOptions("Export Settings"));
+			if ( errors.size() > 0 ) {
+				throw errors.get(0);
+			}
+		} finally {
+			if ( writer != null ) {
+				try {
+					writer.flush();
+					writer.close();
+				} catch ( IOException e ) {
+					// ignore these
+				}
+			}
+		}
+	}
+
+	@Override
+	public void importSettingsCSV(Reader in) throws IOException {	
+		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
+		final CellProcessor[] processors = new CellProcessor[] { null, null, null, };
+		reader.getHeader(true);
+		transactionTemplate.execute(new TransactionCallbackWithoutResult() {			
+			@Override
+			protected void doInTransactionWithoutResult(final TransactionStatus status) {
+				Setting s;
+				try {
+					while ( (s = reader.read(Setting.class, CSV_HEADERS, processors)) != null ) {
+						// we skip internal properties
+						if ( s.getKey().toLowerCase().startsWith("solarnode") ) {
+							continue;
+						}
+						settingDao.storeSetting(s.getKey(), s.getType(), s.getValue());
+					}
+				} catch (IOException e) {
+					log.error("Unable to import settings: {}", e.getMessage());
+					status.setRollbackOnly();
+				} finally {
+					try {
+						reader.close();
+					} catch ( IOException e ) {
+						// ingore
+					}
+				}
+			}
+		});
+	}
 
 	private Configuration getConfiguration(String providerUID, String factoryInstanceUID)
 			throws IOException, InvalidSyntaxException {
@@ -466,12 +553,12 @@ public class CASettingsService implements SettingsService {
 		this.configurationAdmin = configurationAdmin;
 	}
 
-	public SettingDao getSettingDao() {
-		return settingDao;
-	}
-
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
+	}
+
+	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
 	}
 
 }
