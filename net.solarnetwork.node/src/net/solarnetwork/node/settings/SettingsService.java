@@ -27,6 +27,7 @@ package net.solarnetwork.node.settings;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -125,4 +126,30 @@ public interface SettingsService {
 	 * @param in the input stream
 	 */
 	void importSettingsCSV(Reader in) throws IOException;
+	
+	/**
+	 * Create a backup of all settings, and return a backup object if the backup was performed.
+	 * 
+	 * <p>A new backup need not be created if the settings are unchanged. In that case,
+	 * or if this method does not create a backup for any reason, this method should return
+	 * <em>null</em>.</p>
+	 * 
+	 * @return the backup object, or <em>null</em> if no backup created
+	 */
+	SettingsBackup backupSettings();
+	
+	/**
+	 * Get a collection of all known settings backups.
+	 * 
+	 * @return the backups, never <em>null</em>
+	 */
+	Collection<SettingsBackup> getAvailableBackups();
+	
+	/**
+	 * Get a {@link Reader} to the backup data for a given SettingsBackup object.
+	 * 
+	 * @param backup the backup to get the Reader for
+	 * @return the Reader, or <em>null</em> if the backup cannot be found
+	 */
+	Reader getReaderForBackup(SettingsBackup backup);
 }

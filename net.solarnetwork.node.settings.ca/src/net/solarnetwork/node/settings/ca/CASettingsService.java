@@ -24,16 +24,32 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.BasicBatchOptions;
@@ -46,6 +62,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
+import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
@@ -60,6 +77,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.CsvBeanWriter;
@@ -91,10 +109,19 @@ public class CASettingsService implements SettingsService {
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
+	private static final String SETTING_LAST_BACKUP_DATE = SettingsBackupJob.class.getName()+".lastBackupDate";
+	private static final String BACKUP_DATE_FORMAT = "yyyy-MM-dd-HHmmss";
+	private static final String BACKUP_FILENAME_PREFIX = "settings_";
+	private static final String BACKUP_FILENAME_EXT = "txt";
+	private static final Pattern BACKUP_FILENAME_PATTERN = Pattern.compile('^' +BACKUP_FILENAME_PREFIX
+			+"(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." +BACKUP_FILENAME_EXT +"$");
+	private static final int DEFAULT_BACKUP_MAX_COUNT = 5;
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
 	private TransactionTemplate transactionTemplate;
+	private String backupDestinationPath;
+	private int backupMaxCount = DEFAULT_BACKUP_MAX_COUNT;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
 	// private final Map<String, SettingSpecifierProviderFactory> factories =
@@ -494,7 +521,7 @@ public class CASettingsService implements SettingsService {
 	@Override
 	public void importSettingsCSV(Reader in) throws IOException {	
 		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
-		final CellProcessor[] processors = new CellProcessor[] { null, null, null, };
+		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null, };
 		reader.getHeader(true);
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {			
 			@Override
@@ -520,6 +547,123 @@ public class CASettingsService implements SettingsService {
 				}
 			}
 		});
+	}
+
+	@Override
+	public SettingsBackup backupSettings() {
+		final Date mrd = settingDao.getMostRecentModificationDate();
+		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_DATE_FORMAT);
+		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE, 
+				SettingDao.TYPE_IGNORE_MODIFICATION_DATE);
+		final Date lastBackupDate;
+		try {
+			lastBackupDate = (lastBackupDateStr == null ? null : sdf.parse(lastBackupDateStr));
+		} catch ( ParseException e ) {
+			throw new RuntimeException("Unable to parse backup last date: " + e.getMessage());
+		}
+		if ( mrd == null || (lastBackupDate != null && lastBackupDate.after(mrd)) ) {
+			log.debug("Settings unchanged since last backup on {}", lastBackupDateStr);
+			return null;
+		}
+		final Date backupDate = new Date();
+		final String backupDateKey = sdf.format(backupDate);
+		final File dir = new File(backupDestinationPath);
+		if ( !dir.exists() ) {
+			dir.mkdirs();
+		}
+		final File f = new File(dir, BACKUP_FILENAME_PREFIX+backupDateKey+'.'+BACKUP_FILENAME_EXT);
+		log.info("Backing up settings to {}", f.getPath());
+		Writer writer = null;
+		try {
+			writer = new BufferedWriter(new FileWriter(f));
+			exportSettingsCSV(writer);
+			settingDao.storeSetting(SETTING_LAST_BACKUP_DATE, 
+					SettingDao.TYPE_IGNORE_MODIFICATION_DATE, backupDateKey);
+		} catch ( IOException e ) {
+			log.error("Unable to create settings backup {}: {}", f.getPath(), e.getMessage());
+		} finally {
+			try {
+				writer.flush();
+				writer.close();
+			} catch ( IOException e ) {
+				// ignore
+			}
+		}
+		
+		// clean out older backups
+		File[] files = dir.listFiles(new RegexFileFilter(BACKUP_FILENAME_PATTERN));
+		if ( files != null && files.length > backupMaxCount ) {
+			// sort array 
+			Arrays.sort(files, new FilenameReverseComparator());
+			for ( int i = backupMaxCount; i < files.length; i++ ) {
+				if ( !files[i].delete() ) {
+					log.warn("Unable to delete old settings backup file {}", files[i]);
+				}
+			}
+		}
+		return new SettingsBackup(backupDateKey, backupDate);
+	}
+
+	@Override
+	public Collection<SettingsBackup> getAvailableBackups() {
+		final File dir = new File(backupDestinationPath);
+		File[] files = dir.listFiles(new RegexFileFilter(BACKUP_FILENAME_PATTERN));
+		if ( files == null || files.length == 0 ) {
+			return Collections.emptyList();
+		}
+		Arrays.sort(files, new FilenameReverseComparator());
+		List<SettingsBackup> list = new ArrayList<SettingsBackup>(files.length);
+		SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_DATE_FORMAT);
+		for ( File f : files ) {
+			Matcher m = BACKUP_FILENAME_PATTERN.matcher(f.getName());
+			if ( m.matches() ) {
+				String dateStr = m.group(1);
+				try {
+					list.add(new SettingsBackup(dateStr, sdf.parse(dateStr)));
+				} catch ( ParseException e ) {
+					log.warn("Unable to parse backup file date from filename {}: {}", f.getName(), e.getMessage());
+				}
+			}
+		}
+		return list;
+	}
+
+	@Override
+	public Reader getReaderForBackup(SettingsBackup backup) {
+		final File dir = new File(backupDestinationPath);
+		try {
+			final String fname = BACKUP_FILENAME_PREFIX +backup.getBackupKey()
+					+'.' +BACKUP_FILENAME_EXT;
+			final File f = new File(dir, fname);
+			if ( f.canRead() ) {
+				return new BufferedReader(new FileReader(f));
+			}
+		} catch (FileNotFoundException e) {
+			return null;
+		}
+		return null;
+	}
+	
+	private static class FilenameReverseComparator implements Comparator<File> {
+		@Override
+		public int compare(File o1, File o2) {
+			// order in reverse, and then we can delete all but maxBackupCount
+			return o2.getName().compareTo(o1.getName());
+		}
+	}
+
+	private static class RegexFileFilter implements FileFilter {
+		final Pattern p;
+		private RegexFileFilter(Pattern p) {
+			super();
+			this.p = p;
+		}
+		
+		@Override
+		public boolean accept(File pathname) {
+			Matcher m = p.matcher(pathname.getName());
+			return m.matches();
+		}
 	}
 
 	private Configuration getConfiguration(String providerUID, String factoryInstanceUID)
@@ -559,6 +703,14 @@ public class CASettingsService implements SettingsService {
 
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
+	}
+
+	public void setBackupDestinationPath(String backupDestinationPath) {
+		this.backupDestinationPath = backupDestinationPath;
+	}
+
+	public void setBackupMaxCount(int backupMaxCount) {
+		this.backupMaxCount = backupMaxCount;
 	}
 
 }

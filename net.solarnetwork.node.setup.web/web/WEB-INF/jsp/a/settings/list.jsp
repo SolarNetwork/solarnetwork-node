@@ -68,7 +68,7 @@
 <section>
 	<h2><fmt:message key="settings.io.title"/></h2>
 	<p><fmt:message key="settings.io.intro"/></p>
-	<form class="form-horizontal" action="<c:url value='/settings/import.do'/>" method="post" enctype="multipart/form-data">
+	<div class="form-horizontal">
 		<fieldset>
 			<div class="control-group">
 				<label class="control-label" for="export.btn">
@@ -84,11 +84,28 @@
 				<label class="control-label" for="import.field">
 					<fmt:message key="settings.io.import.label"/>
 				</label>
-				<div class="controls">
+				<form class="controls form-inline" action="<c:url value='/settings/import.do'/>" method="post" enctype="multipart/form-data">
   					<input class="span3" id="import.field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="settings.io.import.button"/></button>
-				</div>
+				</form>
 			</div>
+			<c:if test="${fn:length(settingsBackups) > 0}">
+				<div class="control-group">
+					<label class="control-label" for="auto-backups">
+						<fmt:message key="settings.autobackup.label"/>
+					</label>
+					<ul class="controls" id="auto-backups">
+						
+						<c:forEach items="${settingsBackups}" var="backup">
+							<li>
+		  					<a class="btn btn-small" id="export.btn" href="<c:url value='/settings/export.do'/>?backup=${backup.backupKey}">
+								<fmt:message key="settings.backup.download.button"/> ${backup.standardDateString}
+							</a>
+							</li>
+						</c:forEach>
+					</ul>
+				</div>
+			</c:if>
 		</fieldset>
-	</form>
+	</div>
 </section>

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SettingsBackupJob.java - Nov 5, 2012 7:54:10 PM
+ * SettingBackup.java - Nov 6, 2012 9:55:37 AM
  * 
  * Copyright 2007-2012 SolarNetwork.net Dev Team
  * 
@@ -22,32 +22,48 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.settings.ca;
+package net.solarnetwork.node.settings;
 
-import net.solarnetwork.node.job.AbstractJob;
-import net.solarnetwork.node.settings.SettingsService;
-
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
- * Job to backup the settings database table to a CSV text file.
+ * A backup domain object.
  * 
  * @author matt
- * @version 1.0
+ * @version $Revision$
  */
-public class SettingsBackupJob extends AbstractJob implements StatefulJob {
-	
-	private SettingsService settingsService;
-	
-	@Override
-	protected void executeInternal(JobExecutionContext jobContext)
-			throws Exception {
-		settingsService.backupSettings();
-	}
-	
-	public void setSettingsService(SettingsService settingsService) {
-		this.settingsService = settingsService;
-	}
+public class SettingsBackup {
 
+	private final String backupKey;
+	private final Date backupDate;
+	
+	/**
+	 * Construct with values.
+	 * 
+	 * @param backupKey the backup key
+	 * @param backupDate the backup date
+	 */
+	public SettingsBackup(String backupKey, Date backupDate) {
+		super();
+		this.backupKey = backupKey;
+		this.backupDate = backupDate;
+	}
+	
+	/**
+	 * Get a standardized representation of the backup date.
+	 * 
+	 * @return date string
+	 */
+	public String getStandardDateString() {
+		SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm");
+		return sdf.format(backupDate);
+	}
+	
+	public String getBackupKey() {
+		return backupKey;
+	}
+	public Date getBackupDate() {
+		return backupDate;
+	}
 }

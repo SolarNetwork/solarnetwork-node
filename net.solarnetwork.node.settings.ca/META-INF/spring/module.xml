@@ -23,8 +23,8 @@
 
 	<osgix:cm-properties id="settings.ca.cfg" persistent-id="net.solarnetwork.node.settings.ca">
 		<prop key="job.settingsBackup.cron">0 0/15 * * * ?</prop>
-		<prop key="job.settingsBackup.destinationPath">var/settings-bak</prop>
-		<prop key="job.settingsBackup.maxBackupCount">5</prop>
+		<prop key="settingsBackup.destinationPath">var/settings-bak</prop>
+		<prop key="settingsBackup.backupMaxCount">5</prop>
 	</osgix:cm-properties>
 	
 	<!-- Settings backup job -->
@@ -52,8 +52,6 @@
 			<map>
 				<entry key="settingDao" value-ref="settingDao"/>
 				<entry key="settingsService" value-ref="settingsService"/>
-				<entry key="destinationPath" value="${job.settingsBackup.destinationPath}"/>
-				<entry key="maxBackupCount" value="${job.settingsBackup.maxBackupCount}"/>
 			</map>
 		</property>
 	</bean>
@@ -61,6 +59,8 @@
 	<bean id="settingsService" class="net.solarnetwork.node.settings.ca.CASettingsService">
 		<property name="configurationAdmin" ref="ca"/>
 		<property name="settingDao" ref="settingDao"/>
+		<property name="backupDestinationPath" value="${settingsBackup.destinationPath}"/>
+		<property name="backupMaxCount" value="${settingsBackup.backupMaxCount}"/>
 		<property name="transactionTemplate">
 			<bean class="org.springframework.transaction.support.TransactionTemplate">
 				<constructor-arg ref="txManager"/>

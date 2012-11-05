@@ -26,9 +26,11 @@ package net.solarnetwork.node.setup.web;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 
 import javax.servlet.http.HttpServletResponse;
 
+import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.OptionalServiceTracker;
@@ -38,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,6 +60,7 @@ public class SettingsController {
 	private static final String KEY_PROVIDER_FACTORY = "factory";
 	private static final String KEY_PROVIDER_FACTORIES = "factories";
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
+	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -69,6 +73,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, service.getProviders());
 			model.put(KEY_PROVIDER_FACTORIES, service.getProviderFactories());
 			model.put(KEY_SETTINGS_SERVICE, service);
+			model.put(KEY_SETTINGS_BACKUPS, service.getAvailableBackups());
 		}
 		return "settings-list";
 	}
@@ -121,12 +126,21 @@ public class SettingsController {
 	
 	@RequestMapping(value = "/settings/export", method = RequestMethod.GET)
 	@ResponseBody
-	public void exportSettings(HttpServletResponse response) throws IOException {
+	public void exportSettings(@RequestParam(required = false, value = "backup")String backupKey,
+			HttpServletResponse response) throws IOException {
 		if ( settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
 			response.setContentType(MediaType.TEXT_PLAIN.toString());
-			response.setHeader("Content-Disposition", "attachment; filename=settings.txt");
-			service.exportSettingsCSV(response.getWriter());
+			response.setHeader("Content-Disposition", "attachment; filename=settings" 
+					+(backupKey == null ? "" : "_"+backupKey) +".txt");
+			if ( backupKey != null ) {
+				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
+				if ( r != null ) {
+					FileCopyUtils.copy(r, response.getWriter());
+				}
+			} else {
+				service.exportSettingsCSV(response.getWriter());
+			}
 		}
 	}
 	

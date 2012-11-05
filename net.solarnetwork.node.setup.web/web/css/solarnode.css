@@ -78,3 +78,15 @@ legend {
 	line-height: 11px;
 	font-weight: 700;
 }
+
+#auto-backups {
+	list-style-type: none;
+}
+
+#auto-backups li {
+	margin: 10px 0;
+}
+
+#auto-backups li:first-child {
+	margin-top: 0;
+}
