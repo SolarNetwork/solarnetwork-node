@@ -56,25 +56,6 @@ legend {
     z-index: 2;
 }
 .ui-slider .ui-slider-range {
-/*
-	-moz-border-bottom-colors: none;
-    -moz-border-left-colors: none;
-    -moz-border-right-colors: none;
-    -moz-border-top-colors: none;
-    background-color: #0064CD;
-    background-image: -moz-linear-gradient(center top , #049CDB, #0064CD);
-    background-position: 0 0;
-    background-repeat: repeat-x;
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
-    border-image: none;
-    border-style: none;
-    border-width: 0;
-    color: #FFFFFF;
-    display: block;
-    font-size: 0.7em;
-    position: absolute;
-    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-*/
     z-index: 1;
   -webkit-transition: width 0s linear;
      -moz-transition: width 0s linear;
