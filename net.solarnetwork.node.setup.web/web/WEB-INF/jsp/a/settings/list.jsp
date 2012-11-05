@@ -64,3 +64,31 @@
 	});
 	</script>
 </c:if>
+
+<section>
+	<h2><fmt:message key="settings.io.title"/></h2>
+	<p><fmt:message key="settings.io.intro"/></p>
+	<form class="form-horizontal" action="<c:url value='/settings/import.do'/>" method="post" enctype="multipart/form-data">
+		<fieldset>
+			<div class="control-group">
+				<label class="control-label" for="export.btn">
+					<fmt:message key="settings.io.export.label"/>
+				</label>
+				<div class="controls">
+					<a class="btn btn-primary" id="export.btn" href="<c:url value='/settings/export.do'/>">
+						<fmt:message key="settings.io.export.button"/>
+					</a>
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="import.field">
+					<fmt:message key="settings.io.import.label"/>
+				</label>
+				<div class="controls">
+  					<input class="span3" id="import.field" type="file" name="file"/>
+  					<button class="btn btn-primary" type="submit"><fmt:message key="settings.io.import.button"/></button>
+				</div>
+			</div>
+		</fieldset>
+	</form>
+</section>

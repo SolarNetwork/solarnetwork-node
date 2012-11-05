@@ -24,17 +24,30 @@
 
 package net.solarnetwork.node.setup.web;
 
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Writer;
+
+import javax.servlet.http.HttpServletResponse;
+
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.OptionalServiceTracker;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Web controller for the settings UI.
@@ -109,5 +122,27 @@ public class SettingsController {
 		}
 		model.put("success", Boolean.TRUE);
 		return "json";
+	}
+	
+	@RequestMapping(value = "/settings/export", method = RequestMethod.GET)
+	@ResponseBody
+	public void exportSettings(HttpServletResponse response) throws IOException {
+		if ( settingsService.isAvailable() ) {
+			SettingsService service = settingsService.getService();
+			response.setContentType(MediaType.TEXT_PLAIN.toString());
+			response.setHeader("Content-Disposition", "attachment; filename=settings.txt");
+			service.exportSettingsCSV(response.getWriter());
+		}
+	}
+	
+	@RequestMapping(value = "/settings/import", method = RequestMethod.POST)
+	public String importSettigns(@RequestParam("file") MultipartFile file) 
+	throws IOException {
+		if ( !file.isEmpty() && settingsService.isAvailable() ) {
+			SettingsService service = settingsService.getService();
+			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
+			service.importSettingsCSV(reader);
+		}
+		return "redirect:/settings.do";
 	}
 }

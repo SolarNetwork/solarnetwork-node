@@ -5,6 +5,8 @@
 		<dependency org="joda-time" name="joda-time" rev="2.1" >
     		<artifact name="joda-time" type="jar" />
 		</dependency>
+		<dependency org="commons-fileupload" name="commons-fileupload" rev="1.2.2" />
+		<dependency org="commons-io" name="commons-io" rev="2.4" />
     	<dependency org="org.osgi" name="org.osgi.core" rev="4.2.0"/>
     	<dependency org="org.slf4j" name="com.springsource.slf4j.org.apache.commons.logging" rev="1.5.0" />
 		<dependency org="org.springframework" name="org.springframework.beans" rev="3.0.5.RELEASE"/>
