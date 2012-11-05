@@ -26,6 +26,7 @@
 
 package net.solarnetwork.node.dao;
 
+import java.util.Date;
 import java.util.List;
 
 import net.solarnetwork.node.Setting;
@@ -111,5 +112,21 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * @return true if the key existed and was deleted
 	 */
 	boolean deleteSetting(String key, String type);
+	
+	/**
+	 * Get the modification date for a specific setting.
+	 * 
+	 * @param key the key
+	 * @param type the type
+	 * @return the date
+	 */
+	Date getSettingModificationDate(String key, String type);
+	
+	/**
+	 * Get the most recent modification date of all settings.
+	 * 
+	 * @return the modification date
+	 */
+	Date getMostRecentModificationDate();
 	
 }

@@ -34,7 +34,7 @@ import java.util.Map;
  * Service API for settings.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public interface SettingsService {
 
@@ -114,12 +114,14 @@ public interface SettingsService {
 	
 	/**
 	 * Export all settings as CSV formatted text.
+	 * 
 	 * @param out the output stream
 	 */
 	void exportSettingsCSV(Writer out) throws IOException;
 	
 	/**
 	 * Import all settings from a CSV formatted text stream.
+	 * 
 	 * @param in the input stream
 	 */
 	void importSettingsCSV(Reader in) throws IOException;

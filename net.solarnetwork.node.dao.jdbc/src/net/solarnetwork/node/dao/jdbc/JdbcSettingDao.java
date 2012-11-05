@@ -29,14 +29,20 @@ package net.solarnetwork.node.dao.jdbc;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.TABLE_SETTINGS;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.KeyValuePair;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -106,6 +112,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue FROM " 
 			+SCHEMA_NAME +'.'+TABLE_SETTINGS +" ORDER BY skey,tkey";
 
+	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " 
+			+SCHEMA_NAME +'.'+TABLE_SETTINGS
+			+" WHERE skey = ? AND tkey = ?";
+		
+	private static final String DEFAULT_SQL_GET_MOST_RECENT_DATE = "SELECT modified FROM " 
+			+SCHEMA_NAME +'.'+TABLE_SETTINGS
+			+" ORDER BY modified DESC";
+		
 
 	private String sqlGet = DEFAULT_SQL_GET;
 	private String sqlInsert = DEFAULT_SQL_INSERT;
@@ -117,6 +131,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private String sqlTypeUpdate = DEFAULT_TYPE_SQL_UPDATE;
 	private String sqlTypeDelete = DEFAULT_TYPE_SQL_DELETE;
 	private String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
+	private String sqlGetDate = DEFAULT_SQL_GET_DATE;
+	private String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
 	
 	@Override
 	public boolean deleteSetting(String key) {
@@ -184,6 +200,56 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	// --- Batch support ---
 	
+	@Override
+	public Date getSettingModificationDate(final String key, final String type) {
+		return getJdbcTemplate().query(new PreparedStatementCreator() {
+			
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con)
+					throws SQLException {
+				PreparedStatement stmt = con.prepareStatement(sqlGetDate);
+				stmt.setMaxRows(1);
+				stmt.setString(1, key);
+				stmt.setString(2, type);
+				return stmt;
+			}
+		}, new ResultSetExtractor<Date>() {
+
+			@Override
+			public Date extractData(ResultSet rs) throws SQLException,
+					DataAccessException {
+				if ( rs.next() ) {
+					return rs.getTimestamp(1);
+				}
+				return null;
+			}
+		});
+	}
+
+	@Override
+	public Date getMostRecentModificationDate() {
+		return getJdbcTemplate().query(new PreparedStatementCreator() {
+			
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con)
+					throws SQLException {
+				PreparedStatement stmt = con.prepareStatement(sqlGetMostRecentDate);
+				stmt.setMaxRows(1);
+				return stmt;
+			}
+		}, new ResultSetExtractor<Date>() {
+
+			@Override
+			public Date extractData(ResultSet rs) throws SQLException,
+					DataAccessException {
+				if ( rs.next() ) {
+					return rs.getTimestamp(1);
+				}
+				return null;
+			}
+		});
+	}
+
 	@Override
 	protected String getBatchJdbcStatement(BatchOptions options) {
 		return sqlBatchGet;
