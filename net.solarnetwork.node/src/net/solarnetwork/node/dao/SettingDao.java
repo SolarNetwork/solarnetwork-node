@@ -48,6 +48,12 @@ import net.solarnetwork.node.support.KeyValuePair;
 public interface SettingDao extends BatchableDao<Setting> {
 	
 	/**
+	 * A special {@code type} value to use when the associated row's modification date
+	 * should <strong>not</strong> be considered by the {@link #getMostRecentModificationDate()}.
+	 */
+	final String TYPE_IGNORE_MODIFICATION_DATE = "_modification_date_ignore";
+	
+	/**
 	 * Persist a new key/value pair, or update an existing key.
 	 * 
 	 * <p>The type key will be set to a default value.</p>
@@ -124,6 +130,10 @@ public interface SettingDao extends BatchableDao<Setting> {
 	
 	/**
 	 * Get the most recent modification date of all settings.
+	 * 
+	 * <p>The special {@code type} value {@link #TYPE_IGNORE_MODIFICATION_DATE}
+	 * is considered by this method, and rows with this type are ignored
+	 * when calculating the most recent modification date.</p>
 	 * 
 	 * @return the modification date
 	 */

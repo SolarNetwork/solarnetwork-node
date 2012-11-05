@@ -33,6 +33,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
 
@@ -44,9 +45,12 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Simple JDBC-based implemenation of {@link SettingDao}.
+ * Simple JDBC-based implementation of {@link SettingDao}.
  * 
  * <p>The configurable properties of this class are:</p>
  * 
@@ -54,14 +58,6 @@ import org.springframework.jdbc.core.RowMapper;
  *   <dt>sqlGet</dt>
  *   <dd>The SQL statement to use for getting a row based on a String primary
  *   key. Accepts a single parameter: the String primary key to retrieve.</dd>
- *   
- *   <dt>sqlInsert</dt>
- *   <dd>The SQL statement to use for inserting a new row. Accepts two
- *   parameters: a String primary key and a String value.</dd>
- *   
- *   <dt>sqlUpdate</dt>
- *   <dd>The SQL statement to use for updating an existing row. Accepts two
- *   parameters: a String value and a String primary key.</dd>
  *   
  *   <dt>sqlDelete</dt>
  *   <dd>The SQL statement to use for deleting an existing row. Accepts a
@@ -73,43 +69,19 @@ import org.springframework.jdbc.core.RowMapper;
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
-	private static final String DEFAULT_SQL_GET = "SELECT svalue FROM " 
+	private static final String DEFAULT_SQL_FIND = "SELECT tkey,svalue FROM " 
 		+SCHEMA_NAME +'.'+TABLE_SETTINGS
 		+" WHERE skey = ? ORDER BY tkey";
 	
-	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " 
+	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey FROM " 
 		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" (skey, svalue) VALUES (?,?)";
-	
-	private static final String DEFAULT_SQL_UPDATE = "UPDATE " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" SET svalue = ? WHERE skey = ?";
+		+" WHERE skey = ? AND tkey = ?";
 	
 	private static final String DEFAULT_SQL_DELETE = "DELETE FROM " 
 		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" WHERE skey = ?";
-
-	private static final String DEFAULT_SQL_FIND = "SELECT tkey, svalue FROM " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" WHERE skey = ? ORDER BY tkey";
-	
-	private static final String DEFAULT_TYPE_SQL_GET = "SELECT svalue FROM " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
 		+" WHERE skey = ? AND tkey = ?";
 	
-	private static final String DEFAULT_TYPE_SQL_INSERT = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" (skey, tkey, svalue) VALUES (?,?,?)";
-	
-	private static final String DEFAULT_TYPE_SQL_UPDATE = "UPDATE " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" SET svalue = ? WHERE skey = ? AND tkey = ?";
-	
-	private static final String DEFAULT_TYPE_SQL_DELETE = "DELETE FROM " 
-		+SCHEMA_NAME +'.'+TABLE_SETTINGS
-		+" WHERE skey = ? AND tkey = ?";
-	
-	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue FROM " 
+	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue,modified FROM " 
 			+SCHEMA_NAME +'.'+TABLE_SETTINGS +" ORDER BY skey,tkey";
 
 	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " 
@@ -118,58 +90,40 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		
 	private static final String DEFAULT_SQL_GET_MOST_RECENT_DATE = "SELECT modified FROM " 
 			+SCHEMA_NAME +'.'+TABLE_SETTINGS
-			+" ORDER BY modified DESC";
+			+" WHERE tkey <> ? ORDER BY modified DESC";
 		
 
 	private String sqlGet = DEFAULT_SQL_GET;
-	private String sqlInsert = DEFAULT_SQL_INSERT;
-	private String sqlUpdate = DEFAULT_SQL_UPDATE;
 	private String sqlDelete = DEFAULT_SQL_DELETE;
 	private String sqlFind = DEFAULT_SQL_FIND;
-	private String sqlTypeGet = DEFAULT_TYPE_SQL_GET;
-	private String sqlTypeInsert = DEFAULT_TYPE_SQL_INSERT;
-	private String sqlTypeUpdate = DEFAULT_TYPE_SQL_UPDATE;
-	private String sqlTypeDelete = DEFAULT_TYPE_SQL_DELETE;
 	private String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	private String sqlGetDate = DEFAULT_SQL_GET_DATE;
 	private String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
 	
 	@Override
 	public boolean deleteSetting(String key) {
-		int res = getSimpleJdbcTemplate().update(this.sqlDelete, key);
-		return res > 0;
+		return deleteSetting(key, "");
 	}
 
 	@Override
 	public String getSetting(String key) {
-		List<String> res = getSimpleJdbcTemplate().query(this.sqlGet, new RowMapper<String>() {
-			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-				return rs.getString(1);
-			}
-		}, key);
-		if ( res != null && res.size() > 0 ) {
-			return res.get(0);
-		}
-		return null;
+		return getSetting(key, "");
 	}
 
 	@Override
-	public void storeSetting(String key, String value) {
-		int updated = getSimpleJdbcTemplate().update(this.sqlUpdate, value, key);
-		if ( updated < 1 ) {
-			updated = getSimpleJdbcTemplate().update(this.sqlInsert, key, value);
-		}
+	public void storeSetting(final String key, final String value) {
+		storeSetting(key, "", value);
 	}
-
+	
 	@Override
 	public boolean deleteSetting(String key, String type) {
-		int res = getSimpleJdbcTemplate().update(this.sqlTypeDelete, key, type);
+		int res = getSimpleJdbcTemplate().update(this.sqlDelete, key, type);
 		return res > 0;
 	}
 
 	@Override
 	public String getSetting(String key, String type) {
-		List<String> res = getSimpleJdbcTemplate().query(this.sqlTypeGet, new RowMapper<String>() {
+		List<String> res = getSimpleJdbcTemplate().query(this.sqlGet, new RowMapper<String>() {
 			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
 				return rs.getString(1);
 			}
@@ -191,11 +145,58 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public void storeSetting(String key, String type, String value) {
-		int updated = getSimpleJdbcTemplate().update(this.sqlTypeUpdate, value, key, type);
-		if ( updated < 1 ) {
-			updated = getSimpleJdbcTemplate().update(this.sqlTypeInsert, key, type, value);
+	public void storeSetting(final String key, final String type, final String value) {
+		TransactionTemplate tt = getTransactionTemplate();
+		if ( tt != null ) {
+			tt.execute(new TransactionCallbackWithoutResult() {				
+				@Override
+				protected void doInTransactionWithoutResult(TransactionStatus status) {
+					storeSettingInternal(key, type, value);
+				}
+			});
+		} else {
+			storeSettingInternal(key, type, value);
 		}
+	}
+
+	private void storeSettingInternal(final String key, final String type, final String value) {
+		final Timestamp now = new Timestamp(System.currentTimeMillis());
+		// to avoid bumping modified date column when values haven't changed, we are careful here
+		// to compare before actually updating
+		getJdbcTemplate().query(new PreparedStatementCreator() {			
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con)
+					throws SQLException {
+				PreparedStatement queryStmt = con.prepareStatement(sqlGet, 
+							ResultSet.TYPE_SCROLL_SENSITIVE , 
+							ResultSet.CONCUR_UPDATABLE, 
+							ResultSet.CLOSE_CURSORS_AT_COMMIT);
+				queryStmt.setString(1, key);
+				queryStmt.setString(2, type);
+				return queryStmt;
+			}
+		}, new ResultSetExtractor<Object>() {
+			@Override
+			public Object extractData(ResultSet rs) throws SQLException,
+					DataAccessException {
+				if ( rs.next() ) {
+					String oldValue = rs.getString(1);
+					if ( !value.equals(oldValue) ) {
+						rs.updateString(1, value);
+						rs.updateTimestamp(2, now);
+						rs.updateRow();
+					}
+				} else {
+					rs.moveToInsertRow();
+					rs.updateString(1, value);
+					rs.updateTimestamp(2, now);
+					rs.updateString(3, key);
+					rs.updateString(4, type);
+					rs.insertRow();
+				}
+				return null;
+			}
+		});
 	}
 
 	// --- Batch support ---
@@ -235,6 +236,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 					throws SQLException {
 				PreparedStatement stmt = con.prepareStatement(sqlGetMostRecentDate);
 				stmt.setMaxRows(1);
+				stmt.setString(1, TYPE_IGNORE_MODIFICATION_DATE);
 				return stmt;
 			}
 		}, new ResultSetExtractor<Date>() {

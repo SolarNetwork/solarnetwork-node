@@ -36,6 +36,9 @@ import net.solarnetwork.node.dao.BatchableDao;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.simple.SimpleJdbcDaoSupport;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Base class for {@link BatchableDao} implementations.
@@ -46,6 +49,8 @@ import org.springframework.jdbc.core.simple.SimpleJdbcDaoSupport;
  */
 public abstract class AbstractBatchableJdbcDao<T> extends SimpleJdbcDaoSupport implements BatchableDao<T> {
 
+	private TransactionTemplate transactionTemplate;
+	
 	/**
 	 * Get the SQL statement to use for batch processing.
 	 * 
@@ -79,9 +84,23 @@ public abstract class AbstractBatchableJdbcDao<T> extends SimpleJdbcDaoSupport i
 	 */
 	protected abstract void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount, T entity) 
 			throws SQLException;
-	
+
 	@Override
 	public BatchResult batchProcess(final BatchCallback<T> callback, final BatchOptions options) {
+		if ( transactionTemplate != null ) {
+			return transactionTemplate.execute(new TransactionCallback<BatchResult>() {
+				@Override
+				public net.solarnetwork.node.dao.BatchableDao.BatchResult doInTransaction(
+						TransactionStatus status) {
+					return batchProcessInternal(callback, options);
+				}
+			});
+		} else {
+			return batchProcessInternal(callback, options);
+		}
+	}
+	
+	private BatchResult batchProcessInternal(final BatchCallback<T> callback, final BatchOptions options) {
 		final String querySql = getBatchJdbcStatement(options);
 		final AtomicInteger rowCount = new AtomicInteger(0);
 		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
@@ -130,6 +149,14 @@ public abstract class AbstractBatchableJdbcDao<T> extends SimpleJdbcDaoSupport i
 			}
 		});
 		return new BasicBatchResult(rowCount.intValue());
+	}
+
+	public TransactionTemplate getTransactionTemplate() {
+		return transactionTemplate;
+	}
+
+	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
 	}
 
 }

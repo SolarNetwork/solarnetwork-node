@@ -3,9 +3,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgi="http://www.springframework.org/schema/osgi"
 	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-						http://www.springframework.org/schema/osgi http://www.springframework.org/schema/osgi/spring-osgi.xsd
-						http://www.springframework.org/schema/osgi-compendium http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/osgi
+		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi-compendium
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
 
 	<!-- Configuration -->
 	
@@ -20,6 +24,7 @@
 		<prop key="jdbc.pool.maxWait">20000</prop>
 		<prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</prop>
 		<prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</prop>
+		<prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
