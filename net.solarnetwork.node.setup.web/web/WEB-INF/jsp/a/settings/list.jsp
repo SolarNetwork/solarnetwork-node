@@ -94,16 +94,24 @@
 					<label class="control-label" for="auto-backups">
 						<fmt:message key="settings.autobackup.label"/>
 					</label>
-					<ul class="controls" id="auto-backups">
-						
-						<c:forEach items="${settingsBackups}" var="backup">
-							<li>
-		  					<a class="btn btn-small" id="export.btn" href="<c:url value='/settings/export.do'/>?backup=${backup.backupKey}">
-								<fmt:message key="settings.backup.download.button"/> ${backup.standardDateString}
-							</a>
-							</li>
-						</c:forEach>
-					</ul>
+					<div class="controls">
+						<ul id="auto-backups">
+							<c:forEach items="${settingsBackups}" var="backup" varStatus="backupStatus">
+								<li>
+				  					<a class="btn btn-small" id="export.btn" href="<c:url value='/settings/export.do'/>?backup=${backup.backupKey}">
+										<fmt:message key="settings.autobackup.download.button"/> ${backup.standardDateString}
+									</a>
+									<c:if test="${backupStatus.first}">
+										<button type="button" class="help-popover help-icon" tabindex="-1"
+												data-content="<fmt:message key='settings.autobackup.info'/>"
+												data-html="true">
+											<i class="icon-question-sign"></i>
+										</button>
+									</c:if>
+								</li>
+							</c:forEach>
+						</ul>
+					</div>
 				</div>
 			</c:if>
 		</fieldset>
