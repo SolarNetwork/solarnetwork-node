@@ -35,7 +35,7 @@
 	
 	<!-- Published Services -->
 	
-	<osgi:service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	<osgi:service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao" depends-on="databaseSetup"/>
 	
 	<osgi:service ref="dataSource" interface="javax.sql.DataSource" depends-on="databaseSetup">
 		<osgi:service-properties>
