@@ -264,6 +264,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		int sinkSize = sink.size();
 		boolean append = sinkSize > 0;
 		byte[] buf = new byte[Math.min(readLength, 1024)];
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Sink contains {} bytes: {}", sinkSize, asciiDebugValue(sink.toByteArray()));
+		}
 		try {
 			int len = -1;
 			final int max = Math.min(in.available(), buf.length);
@@ -303,6 +306,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 				}
 
 				sink.reset();
+				sinkSize = 0;
 
 				if ( found ) {
 					// magic found!
@@ -318,6 +322,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					count = Math.min(readLength, sinkBuf.length - magicIdx);
 					sink.write(sinkBuf, magicIdx, count);
 					sinkSize += count;
+					if ( eventLog.isTraceEnabled() ) {
+						eventLog.trace("Sink contains {} bytes: {}", sinkSize, asciiDebugValue(sink.toByteArray()));
+					}
 					if ( sinkSize >= readLength ) {
 						// we got all the data here... we're done
 						return true;
