@@ -4,7 +4,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<%@include file="../../head-resources-bootstrap.jspf" %>
 	<pack:script>
-		/js/bootstrap.js
 		/js/global.js
 		/js/settings.js
 	</pack:script>
