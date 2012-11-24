@@ -28,7 +28,6 @@ import gnu.io.CommPortIdentifier;
 import gnu.io.NoSuchPortException;
 import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
-
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
@@ -49,7 +47,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -257,7 +254,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 		List<String> foundNames = new ArrayList<String>(5);
 		while ( portIdentifiers.hasMoreElements() ) {
 			commPortId = portIdentifiers.nextElement();
-			log.trace("Inspecting available port identifier: {}", commPortId);
+			log.trace("Inspecting available port identifier: {}", commPortId.getName());
 			foundNames.add(commPortId.getName());
 			if ( commPortId.getPortType() == CommPortIdentifier.PORT_SERIAL
 					&& this.portIdentifier.equals(commPortId.getName()) ) {
