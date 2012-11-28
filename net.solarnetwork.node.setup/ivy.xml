@@ -1,7 +1,7 @@
 <ivy-module version="2.0">
 	<info organisation="SolarNetwork" module="${bundle.name}" />
 	<dependencies>
-    	<dependency org="org.apache.commons" name="com.springsource.org.apache.commons.codec" rev="1.4.0" />
+    	<dependency org="commons-codec" name="commons-codec" rev="1.7" />
 		<dependency org="joda-time" name="joda-time" rev="2.1" >
     		<artifact name="joda-time" type="jar" />
 		</dependency>

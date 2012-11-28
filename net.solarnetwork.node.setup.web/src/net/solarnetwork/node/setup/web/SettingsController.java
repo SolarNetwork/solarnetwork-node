@@ -27,14 +27,11 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-
 import javax.servlet.http.HttpServletResponse;
-
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.OptionalServiceTracker;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -54,6 +51,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @version $Revision$
  */
 @Controller
+@RequestMapping("/settings")
 public class SettingsController {
 
 	private static final String KEY_PROVIDERS = "providers";
@@ -66,7 +64,7 @@ public class SettingsController {
 	@Qualifier("settingsService")
 	private OptionalServiceTracker<SettingsService> settingsService;
 
-	@RequestMapping(value = "/settings", method = RequestMethod.GET)
+	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
 		if ( settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
@@ -78,7 +76,7 @@ public class SettingsController {
 		return "settings-list";
 	}
 
-	@RequestMapping(value = "/settings/manage", method = RequestMethod.GET)
+	@RequestMapping(value = "/manage", method = RequestMethod.GET)
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUID,
 			ModelMap model) {
 		if ( settingsService.isAvailable() ) {
@@ -90,7 +88,7 @@ public class SettingsController {
 		return "factory-settings-list";
 	}
 
-	@RequestMapping(value = "/settings/manage/add", method = RequestMethod.POST)
+	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
 	public String addConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
 			ModelMap model) {
 		if ( settingsService.isAvailable() ) {
@@ -102,9 +100,8 @@ public class SettingsController {
 		return "json";
 	}
 
-	@RequestMapping(value = "/settings/manage/delete", method = RequestMethod.POST)
-	public String deleteConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUID,
+	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
+	public String deleteConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
 			@RequestParam(value = "instance", required = true) String instanceUID, ModelMap model) {
 		if ( settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
@@ -114,7 +111,7 @@ public class SettingsController {
 		return "json";
 	}
 
-	@RequestMapping(value = "/settings/save", method = RequestMethod.POST)
+	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	public String saveSettings(SettingsCommand command, ModelMap model) {
 		if ( settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
@@ -123,16 +120,16 @@ public class SettingsController {
 		model.put("success", Boolean.TRUE);
 		return "json";
 	}
-	
-	@RequestMapping(value = "/settings/export", method = RequestMethod.GET)
+
+	@RequestMapping(value = "/export", method = RequestMethod.GET)
 	@ResponseBody
-	public void exportSettings(@RequestParam(required = false, value = "backup")String backupKey,
+	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
 			HttpServletResponse response) throws IOException {
 		if ( settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
 			response.setContentType(MediaType.TEXT_PLAIN.toString());
-			response.setHeader("Content-Disposition", "attachment; filename=settings" 
-					+(backupKey == null ? "" : "_"+backupKey) +".txt");
+			response.setHeader("Content-Disposition", "attachment; filename=settings"
+					+ (backupKey == null ? "" : "_" + backupKey) + ".txt");
 			if ( backupKey != null ) {
 				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
 				if ( r != null ) {
@@ -143,10 +140,9 @@ public class SettingsController {
 			}
 		}
 	}
-	
-	@RequestMapping(value = "/settings/import", method = RequestMethod.POST)
-	public String importSettigns(@RequestParam("file") MultipartFile file) 
-	throws IOException {
+
+	@RequestMapping(value = "/import", method = RequestMethod.POST)
+	public String importSettigns(@RequestParam("file") MultipartFile file) throws IOException {
 		if ( !file.isEmpty() && settingsService.isAvailable() ) {
 			SettingsService service = settingsService.getService();
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");

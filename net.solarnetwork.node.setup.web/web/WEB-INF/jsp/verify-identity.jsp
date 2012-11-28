@@ -1,28 +1,28 @@
-<div class="intro">
-	<fmt:message key="node.setup.identity.intro"><fmt:param value="${details.hostName}"/></fmt:message>
-</div>
+<p>
+	<fmt:message key="node.setup.identity.intro"><fmt:param value="${details.host}"/></fmt:message>
+</p>
 
-<div>
-	<table>
-		<tr><td><fmt:message key="node.setup.identity.service"/></td><td>${details.hostName}</td></tr>
-		<tr><td><fmt:message key="node.setup.identity.identity"/></td><td>${details.identity}</td></tr>
-	</table>
-</div>
-	
-<div class="intro"><fmt:message key="node.setup.identity.intro.user"/></div>
+<table class="table">
+	<tbody>
+		<tr><th><fmt:message key="node.setup.identity.service"/></th><td>${details.host}</td></tr>
+		<tr><th><fmt:message key="node.setup.identity.identity"/></th><td>${details.identityKey}</td></tr>
+	</tbody>
+</table>
 
-<div>
-	<table>
-		<tr><td><fmt:message key="node.setup.identity.user"/></td><td>${details.userName}</td></tr>
-	</table>
-</div>
+<p><fmt:message key="node.setup.identity.intro.user"/></p>
 
-<div class="intro">
-<fmt:message key="node.setup.identity.end"/>
-	<c:url value="/node/associateNode" var="action"/>
+<table class="table">
+	<tbody>
+		<tr><th><fmt:message key="node.setup.identity.user"/></th><td>${details.username}</td></tr>
+	</tbody>
+</table>
+
+<p>
+	<fmt:message key="node.setup.identity.end"/>
+	<c:url value="/associate/confirm" var="action"/>
 	<form:form action="${action}" method="post">
-		<p><form:errors cssClass="error"/></p>
-		<input type="submit" value="<fmt:message key='node.setup.identity.confirm'/>" name="confirm"/>
-		<input type="submit" value="<fmt:message key='node.setup.identity.cancel'/>" name="cancel"/>
+		<form:errors cssClass="alert alert-error" element="div"/>
+		<button type="submit" name="confirm"><fmt:message key='node.setup.identity.confirm'/></button>
+		<button type="submit" name="cancel"><fmt:message key='node.setup.identity.cancel'/></button>
 	</form:form>
-</div>
+</p>

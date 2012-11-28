@@ -16,13 +16,11 @@
   along with this program; if not, write to the Free Software 
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
   02111-1307 USA
-
-  $Id: web.xml,v 1.58 2007/08/27 04:04:21 matt Exp $
 -->
-<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
-    version="2.4">
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	version="2.5">
 
 	<display-name>SolarNode Web Setup</display-name>
     <description>SolarNode Web Setup</description>
@@ -66,11 +64,7 @@
 	
 	<filter-mapping>
 		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.do</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>/u/*</url-pattern>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
 	<!-- Character encoding filter -->
@@ -88,6 +82,19 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>	
 	
+	<!-- pack:tag servlet for packed, cached resources -->
+	<servlet>
+		<description>This is the servlet needed for cache.type servlet, returns the packed resources</description>
+		<display-name>PackServlet</display-name>
+		<servlet-name>PackServlet</servlet-name>
+		<servlet-class>net.sf.packtag.servlet.PackServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>PackServlet</servlet-name>
+		<url-pattern>*.pack</url-pattern>
+	</servlet-mapping>
+	
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
@@ -103,38 +110,26 @@
 	</servlet>
 	
 	<servlet-mapping>
-		<servlet-name>setup</servlet-name>
-		<url-pattern>*.do</url-pattern>
+		<servlet-name>jsp</servlet-name>
+		<url-pattern>/WEB-INF/jsp/*</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>setup</servlet-name>
-		<url-pattern>/a/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>setup</servlet-name>
-		<url-pattern>/node/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<!-- This handles the welcome-file so Spring picks it up. -->
-		<servlet-name>setup</servlet-name>
-		<url-pattern>/verify-code</url-pattern>
-	</servlet-mapping>
-	
-	<!-- pack:tag servlet for packed, cached resources -->
-	<servlet>
-		<description>This is the servlet needed for cache.type servlet, returns the packed resources</description>
-		<display-name>PackServlet</display-name>
-		<servlet-name>PackServlet</servlet-name>
-		<servlet-class>net.sf.packtag.servlet.PackServlet</servlet-class>
-	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>PackServlet</servlet-name>
-		<url-pattern>*.pack</url-pattern>
+	    <servlet-name>default</servlet-name>
+	    <url-pattern>/css/*</url-pattern>
+	    <url-pattern>/font/*</url-pattern>
+	    <url-pattern>/img/*</url-pattern>
+	    <url-pattern>/js/*</url-pattern>
+	    <url-pattern>/js-lib/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>setup</servlet-name>
+		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 	
 	<welcome-file-list>
-		<welcome-file>verify-code</welcome-file>
+		<welcome-file>hello</welcome-file>
 	</welcome-file-list>
 	
 	<jsp-config>

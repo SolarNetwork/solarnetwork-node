@@ -3,7 +3,7 @@
     <wb-module deploy-name="nz.co.mypowercompany.console.web">
         <wb-resource deploy-path="/" source-path="/web"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="nz.co.mypowercompany.console.web"/>
         <property name="java-output-path" value="/nz.co.mypowercompany.console.web/web/WEB-INF/classes"/>
+        <property name="context-root" value="/setup"/>
     </wb-module>
 </project-modules>

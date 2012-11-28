@@ -1,7 +1,7 @@
 /* ==================================================================
- * InvalidVerificationCodeException.java - Sep 13, 2011 9:43:16 AM
+ * SetupException.java - Nov 28, 2012 5:27:13 PM
  * 
- * Copyright 2007-2011 SolarNetwork.net Dev Team
+ * Copyright 2007-2012 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -18,22 +18,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup;
 
 /**
- * Exception used to identify invalid verification codes, generally thrown when
- * an exception is encountered trying to decode a verification code.
+ * General setup runtime exception.
  * 
- * @author maxieduncan
+ * @author matt
  * @version 1.0
  */
-public class InvalidVerificationCodeException extends Exception {
+public class SetupException extends RuntimeException {
 
-	private static final long serialVersionUID = -3412491490707016756L;
+	private static final long serialVersionUID = 547923961008965723L;
 
 	/**
 	 * Construct with a message.
@@ -41,7 +38,7 @@ public class InvalidVerificationCodeException extends Exception {
 	 * @param message
 	 *        the message
 	 */
-	public InvalidVerificationCodeException(String message) {
+	public SetupException(String message) {
 		super(message);
 	}
 
@@ -53,8 +50,8 @@ public class InvalidVerificationCodeException extends Exception {
 	 * @param t
 	 *        the original exception
 	 */
-	public InvalidVerificationCodeException(String message, Throwable t) {
-		super(message, t);
+	public SetupException(String message, Throwable cause) {
+		super(message, cause);
 	}
 
 }

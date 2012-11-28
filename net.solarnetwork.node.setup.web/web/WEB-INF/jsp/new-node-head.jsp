@@ -1,4 +1,4 @@
 <head>
 	<title><fmt:message key="new-node.title"/></title>
-	<%@include file="default-head-resources.jspf" %>
+	<%@include file="head-resources-bootstrap.jspf" %>
 </head>

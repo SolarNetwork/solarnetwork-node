@@ -26,29 +26,35 @@ package net.solarnetwork.node.setup.web;
 
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.setup.SetupService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Base class for setup controllers.
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>setupBiz</dt>
- *   <dd>The {@link SetupService} to use for querying/storing application
- *   state information.</dd>
+ * <dt>setupBiz</dt>
+ * <dd>The {@link SetupService} to use for querying/storing application state
+ * information.</dd>
+ * 
+ * <dt>identityService</dt>
+ * <dd>The {@link IdentityService} to use for querying identity information.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
 public class BaseSetupController {
 
-	@Autowired private SetupService setupBiz;
-	@Autowired private IdentityService identityService;
+	@Autowired
+	private SetupService setupBiz;
 
-	
+	@Autowired
+	private IdentityService identityService;
+
 	public SetupService getSetupBiz() {
 		return setupBiz;
 	}

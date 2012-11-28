@@ -4,12 +4,12 @@
        "http://tiles.apache.org/dtds/tiles-config_2_0.dtd">
 <tiles-definitions>
 	
-	<definition name="defaultLayout" template="/WEB-INF/layouts/default.jsp" />
+	<definition name="defaultLayout" template="/WEB-INF/jsp/layout/default.jsp" />
 	
 	<definition name="default" extends="defaultLayout">
 		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp" />
 	</definition>
 	
-	<definition name="bootstrap" template="/WEB-INF/layouts/bootstrap.jsp" />
+	<definition name="bootstrap" extends="defaultLayout" />
 	
 </tiles-definitions>

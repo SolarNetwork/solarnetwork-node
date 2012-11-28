@@ -24,6 +24,7 @@
 
 package net.solarnetwork.node.setup;
 
+import net.solarnetwork.domain.NetworkAssociationDetails;
 
 /**
  * API for node setup support.
@@ -34,27 +35,37 @@ package net.solarnetwork.node.setup;
 public interface SetupService {
 
 	/**
-	 * Decode a SolarNet verification code to determine the service that the node
-	 * should register itself with.
+	 * Decode a SolarNet verification code to determine the service that the
+	 * node should register itself with.
 	 * 
-	 * @param verificationCode The verification code supplied by SolarNet to decode.
+	 * @param verificationCode
+	 *        The verification code supplied by SolarNet to decode.
 	 * @return details for the given SolarNet host
-	 * @throws InvalidVerificationCodeException thrown if an error is encountered decoding the verification code.
+	 * @throws InvalidVerificationCodeException
+	 *         thrown if an error is encountered decoding the verification code.
 	 */
-	SolarNetHostDetails decodeVerificationCode(String verificationCode) throws InvalidVerificationCodeException;
-	
+	NetworkAssociationDetails decodeVerificationCode(String verificationCode)
+			throws InvalidVerificationCodeException;
+
 	/**
 	 * Associate this node with a SolarNet central service.
 	 * 
-	 * @param details the host details to associate with
-	 * @throws Exception thrown if an error is encountered confirming the server association
+	 * @param details
+	 *        the host details to associate with
+	 * @throws SetupException
+	 *         thrown if an error is encountered confirming the server
+	 *         association
 	 */
-	void acceptSolarNetHost(SolarNetHostDetails details) throws Exception;
+	void acceptSolarNetHost(NetworkAssociationDetails details) throws SetupException;
 
 	/**
-	 * Should use the host settings in the supplied <code>details</code> to retrieve the server identity and terms of service and store them in <code>details</code>.
+	 * Should use the host settings in the supplied <code>details</code> to
+	 * retrieve the server identity and terms of service and store them in
+	 * <code>details</code>.
 	 * 
-	 * @param details Contains the host details and is where the identity key and TOS will be stored.
+	 * @param details
+	 *        Contains the host details and is where the identity key and TOS
+	 *        will be stored.
 	 */
-	void populateServerIdentity(SolarNetHostDetails details);
+	void populateServerIdentity(NetworkAssociationDetails details);
 }

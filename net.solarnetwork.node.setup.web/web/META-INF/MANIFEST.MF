@@ -8,6 +8,13 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
 Web-ContextPath: /setup
 Import-Package: 
+ net.solarnetwork.node;version="[1.6.0,2.0.0)",
+ net.solarnetwork.node.dao;version="[1.3.0,2.0.0)",
+ net.solarnetwork.node.settings;version="[1.0.1,2.0.0)",
+ net.solarnetwork.node.setup;version="[1.0.0,2.0.0)",
+ net.solarnetwork.web.support;version="[1.0.0,2.0.0)",
+ net.solarnetwork.domain;version="1.2.0",
+ net.solarnetwork.util;version="1.6.0",
  javax.activation,
  javax.el;version="[1.0,3.0)",
  javax.mail;version="[1.4,2.0)";resolution:=optional,
@@ -21,12 +28,6 @@ Import-Package:
  javax.servlet.resources;version="2.0.0",
  net.sf.packtag.servlet;version="3.8",
  net.sf.packtag.tag;version="3.8",
- net.solarnetwork.node;version="[1.6.0,2.0.0)",
- net.solarnetwork.node.dao;version="[1.3.0,2.0.0)",
- net.solarnetwork.node.settings;version="[1.0.1,2.0.0)",
- net.solarnetwork.node.setup;version="[1.0.0,2.0.0)",
- net.solarnetwork.web.support;version="[1.0.0,2.0.0)",
- net.solarnetwork.util;version="1.6.0",
  org.aopalliance.aop;version="[1.0,2.0)",
  org.apache.commons.fileupload;version="[1.2.2,2.0)",
  org.apache.el;version="[6.0,7.0)",
