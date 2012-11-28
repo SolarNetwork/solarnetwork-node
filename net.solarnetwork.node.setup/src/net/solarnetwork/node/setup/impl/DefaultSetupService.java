@@ -112,6 +112,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_IDENTITY_KEY = "identityKey";
 	private static final String VERIFICATION_CODE_TERMS_OF_SERVICE = "termsOfService";
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
+	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
 	private static final String VERIFICATION_CODE_NODE_ID_KEY = "nodeId";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
@@ -266,7 +267,17 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				throw new InvalidVerificationCodeException("Invalid expiration date value", e);
 			}
 
+			// Get the TLS setting
 			details.setForceTLS(forceTLS == null ? false : forceTLS.booleanValue());
+
+			// Get the security phrase
+			String phrase = (String) result.get(VERIFICATION_CODE_SECURITY_PHRASE);
+			if ( phrase == null ) {
+				throw new InvalidVerificationCodeException(VERIFICATION_CODE_SECURITY_PHRASE
+						+ " not found in verification code: " + verificationCode);
+			}
+			details.setSecurityPhrase(phrase);
+
 			return details;
 		} catch ( Exception e ) {
 			// Runtime/IO errors can come from webFormGetForBean
