@@ -5,7 +5,7 @@
     		<artifact name="joda-time" type="jar" />
 		</dependency>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.0.0-beta-1" />
-    	<dependency org="org.apache.commons" name="com.springsource.org.apache.commons.codec" rev="1.4.0" />
+    	<dependency org="commons-codec" name="commons-codec" rev="1.7" />
 		<dependency org="org.eclipse.osgi" name="org.eclipse.osgi" rev="3.5.1.R35x_v20091005" />
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0" >
     		<artifact name="org.osgi.compendium" type="jar" />
