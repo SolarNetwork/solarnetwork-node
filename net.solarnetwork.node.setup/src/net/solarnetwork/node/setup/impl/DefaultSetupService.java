@@ -36,8 +36,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.domain.BasicNetworkIdentity;
 import net.solarnetwork.domain.BasicRegistrationReceipt;
+import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
@@ -54,6 +54,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -159,6 +160,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		identityXpathMap.put(VERIFICATION_CODE_FORCE_TLS, "/*/@forceTLS");
 		identityXpathMap.put(VERIFICATION_CODE_IDENTITY_KEY, "/*/@identityKey");
 		identityXpathMap.put(VERIFICATION_CODE_TERMS_OF_SERVICE, "/*/@termsOfService");
+		identityXpathMap.put(VERIFICATION_CODE_SECURITY_PHRASE, "/*/@securityPhrase");
 		return getXPathExpressionMap(identityXpathMap);
 	}
 
@@ -246,6 +248,20 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			}
 			details.setConfirmationKey(confirmationKey);
 
+			// Get the identity key
+			String identityKey = (String) result.get(VERIFICATION_CODE_IDENTITY_KEY);
+			if ( identityKey == null ) {
+				throw new InvalidVerificationCodeException("Missing identity key");
+			}
+			details.setIdentityKey(identityKey);
+
+			// Get the TOS
+			String tos = (String) result.get(VERIFICATION_CODE_TERMS_OF_SERVICE);
+			if ( tos == null ) {
+				throw new InvalidVerificationCodeException("Missing TOS");
+			}
+			details.setTermsOfService(tos);
+
 			// Get the user name
 			String userName = (String) result.get(VERIFICATION_CODE_USER_NAME_KEY);
 			if ( userName == null ) {
@@ -268,17 +284,12 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			}
 
 			// Get the TLS setting
-			details.setForceTLS(forceTLS == null ? false : forceTLS.booleanValue());
-
-			// Get the security phrase
-			String phrase = (String) result.get(VERIFICATION_CODE_SECURITY_PHRASE);
-			if ( phrase == null ) {
-				throw new InvalidVerificationCodeException(VERIFICATION_CODE_SECURITY_PHRASE
-						+ " not found in verification code: " + verificationCode);
-			}
-			details.setSecurityPhrase(phrase);
+			String forceSSL = (String) result.get(VERIFICATION_CODE_FORCE_TLS);
+			details.setForceTLS(forceSSL == null ? false : Boolean.valueOf(forceSSL));
 
 			return details;
+		} catch ( InvalidVerificationCodeException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			// Runtime/IO errors can come from webFormGetForBean
 			throw new InvalidVerificationCodeException("Error while trying to decode verfication code: "
@@ -287,28 +298,19 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	}
 
 	@Override
-	public void populateServerIdentity(NetworkAssociationDetails details) {
-		// Get identity code from the server and store in details
-		BasicNetworkIdentity identity = new BasicNetworkIdentity();
-		this.webFormGetForBean(null, identity, this.getAbsoluteUrl(details, SOLAR_NET_IDENTITY_URL),
-				null, getIdentityPropertyMapping());
-
-		details.setIdentityKey(identity.getIdentityKey());
-		details.setTermsOfService(identity.getTermsOfService());
+	public NetworkAssociation retrieveNetworkAssociation(NetworkAssociationDetails details) {
+		NetworkAssociationDetails association = new NetworkAssociationDetails();
+		NetworkAssociationRequest req = new NetworkAssociationRequest();
+		req.setUsername(details.getUsername());
+		req.setKey(details.getConfirmationKey());
+		webFormGetForBean(new BeanWrapperImpl(req), association,
+				getAbsoluteUrl(details, SOLAR_NET_IDENTITY_URL), null, getIdentityPropertyMapping());
+		return association;
 	}
 
-	/**
-	 * Given a relative URL constructs an absolute URL using the supplied
-	 * details.
-	 * 
-	 * @param details
-	 *        Contains the host details
-	 * @param url
-	 *        The relative URL
-	 * @return the absolute URL
-	 */
 	private String getAbsoluteUrl(NetworkAssociationDetails details, String url) {
-		return "http://" + details.getHost() + ":" + details.getPort() + url;
+		return "http" + (details.getPort() == 443 || details.isForceTLS() ? "s" : "") + "://"
+				+ details.getHost() + ":" + details.getPort() + url;
 	}
 
 	@Override

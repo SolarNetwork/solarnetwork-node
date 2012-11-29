@@ -17,37 +17,4 @@
 		<put-attribute name="body" value="/WEB-INF/jsp/a/home.jsp"/>
 	</definition>
 	
-	<definition name="new-node" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/new-node-head.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/new-node.jsp"/>
-	</definition>
-	
-	<definition name="verify-network" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/new-node-head.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/verify-network.jsp"/>
-	</definition>
-	
-	<definition name="network-accepted" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/new-node-head.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/network-accepted.jsp"/>
-	</definition>
-	
-	<definition name="verify-code" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp"/>
-		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/verify-code.jsp"/>
-	</definition>
-	
-	<definition name="verify-identity" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp"/>
-		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/verify-identity.jsp"/>
-	</definition>
-	
-	<definition name="setup-success" extends="default">
-		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp"/>
-		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
-		<put-attribute name="body" value="/WEB-INF/jsp/setup-success.jsp"/>
-	</definition>
-	
 </tiles-definitions>

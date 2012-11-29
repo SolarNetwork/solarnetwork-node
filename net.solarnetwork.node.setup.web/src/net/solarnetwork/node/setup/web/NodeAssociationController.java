@@ -24,20 +24,18 @@
 
 package net.solarnetwork.node.setup.web;
 
-import javax.servlet.http.HttpServletRequest;
+import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-import org.springframework.validation.BindingResult;
+import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.util.WebUtils;
 
 /**
  * Controller used to associate a node with a SolarNet account.
@@ -50,73 +48,86 @@ import org.springframework.web.util.WebUtils;
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
+	private static final String PAGE_ENTER_CODE = "associate/enter-code";
 	private static final String KEY_DETAILS = "details";
 
 	/**
-	 * Request entry point.
+	 * Node association entry point.
 	 * 
-	 * @param cmd
-	 *        the command
-	 * @param request
-	 *        the request
-	 * @return the model and view
+	 * @param model
+	 *        the model
+	 * @return the view name
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
-	public String setupForm(HttpServletRequest request, ModelMap model) {
+	public String setupForm(Model model) {
+		model.addAttribute("command", new AssociateNodeCommand());
+		return PAGE_ENTER_CODE;
+	}
 
-		AssociateNodeCommand cmd = new AssociateNodeCommand();
-		// jump to initial setup
-		model.put("command", cmd);
+	/**
+	 * Decode the invitation code, and present the decoded information for the
+	 * user to verify.
+	 * 
+	 * @param command
+	 *        the command
+	 * @param result
+	 *        the binding result
+	 * @param model
+	 *        the model
+	 * @return the view name
+	 */
+	@RequestMapping(value = "/preview", method = RequestMethod.POST)
+	public String previewInvitation(@ModelAttribute("command") AssociateNodeCommand command,
+			Errors errors, Model model) {
+		ValidationUtils.rejectIfEmptyOrWhitespace(errors, "verificationCode", "field.required");
+		if ( errors.hasErrors() ) {
+			return PAGE_ENTER_CODE;
+		}
 
-		return "verify-code";
+		try {
+			NetworkAssociationDetails details = getSetupBiz().decodeVerificationCode(
+					command.getVerificationCode());
+			model.addAttribute(KEY_DETAILS, details);
+		} catch ( InvalidVerificationCodeException e ) {
+			errors.rejectValue("verificationCode", "verificationCode.invalid", null, null);
+			return PAGE_ENTER_CODE;
+		}
+		return "associate/preview-invitation";
 	}
 
 	/**
 	 * Decodes the supplied verification code storing the details for the user
 	 * to validation.
 	 * 
-	 * @param command
+	 * @param details
+	 *        the association details
 	 * @param result
-	 * @param request
+	 *        a binding result
 	 * @param model
-	 * @return
+	 *        the model
+	 * @return the view name
 	 */
 	@RequestMapping(value = "/verify", method = RequestMethod.POST)
-	public String verifyCode(@ModelAttribute("command") AssociateNodeCommand command,
-			BindingResult result, HttpServletRequest request, ModelMap model) {
-		String code = command.getVerificationCode();
-
-		ValidationUtils.rejectIfEmptyOrWhitespace(result, "verificationCode", "field.required");
-		if ( result.hasErrors() ) {
-			return "verify-code";
+	public String verifyCode(@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
+			Errors errors, Model model) {
+		// Check expiration date
+		if ( details.getExpiration().getTime() < System.currentTimeMillis() ) {
+			errors.rejectValue("verificationCode", "verificationCode.expired", null, null);
+			return setupForm(model);
 		}
 
 		try {
-			// Decode the verification code
-			NetworkAssociationDetails details = this.getSetupBiz().decodeVerificationCode(code);
-
-			// Check expiration date
-			if ( details.getExpiration().getTime() < System.currentTimeMillis() ) {
-				result.rejectValue("verificationCode", "verificationCode.expired", null, null);
-				return "verify-code";
-			}
-
-			try {
-				// Retrieve the identity from the server
-				this.getSetupBiz().populateServerIdentity(details);
-			} catch ( Exception e ) {
-				// We have to assume any exception thrown here is caused by the server being down (Runtime exception will be thrown), but there's no guarantee this is the case
-				result.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
-				return "verify-code";
-			}
-
-			model.put(KEY_DETAILS, details);
-			return "verify-identity";
-		} catch ( InvalidVerificationCodeException e ) {
-			// The verification code appears to be invalid
-			result.rejectValue("verificationCode", "verificationCode.invalid", null, null);
-			return "verify-code";
+			// Retrieve the identity from the server
+			NetworkAssociation na = getSetupBiz().retrieveNetworkAssociation(details);
+			model.addAttribute("association", na);
+		} catch ( RuntimeException e ) {
+			// We are assuming any exception thrown here is caused by the server being down,
+			// but there's no guarantee this is the case
+			errors.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
+			return setupForm(model);
 		}
+
+		return "associate/verify-identity";
 
 	}
 
@@ -124,28 +135,22 @@ public class NodeAssociationController extends BaseSetupController {
 	 * Confirms the node association with the SolarNet server supplied in the
 	 * verification code.
 	 * 
-	 * @param model
+	 * @param details
 	 * @param request
 	 * @return
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
-	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command,
-			Errors errors, HttpServletRequest request, ModelMap model) {
-		if ( WebUtils.hasSubmitParameter(request, "cancel") ) {
-			// If the operation has been cancelled we go back to the start
-			return this.setupForm(request, model);
-		}
-
-		NetworkAssociationDetails details = (NetworkAssociationDetails) model.get(KEY_DETAILS);
+	public String confirmIdentity(@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
+			Errors errors, Model model) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
-			this.getSetupBiz().acceptSolarNetHost(details);
+			getSetupBiz().acceptSolarNetHost(details);
 
-			return "setup-success";
+			return "association/setup-success";
 		} catch ( Exception e ) {
 			errors.reject("node.setup.success.error", new Object[] { details.getHost() }, null);
-			return "verify-identity";
+			return setupForm(model);
 		}
 	}
 

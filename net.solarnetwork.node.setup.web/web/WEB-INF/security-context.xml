@@ -8,10 +8,6 @@
 			http://www.springframework.org/schema/security/spring-security-3.1.xsd">
 
 	<http security="none" pattern="/*.do"/>
-	<http security="none" pattern="/css/**"/>
-	<http security="none" pattern="/img/**"/>
-	<http security="none" pattern="/js/**"/>
-	<http security="none" pattern="/js-lib/**"/>
 	
 	<!-- Configure Spring Security -->
 	<http auto-config="true">

@@ -1,4 +1,4 @@
 <head>
 	<title><fmt:message key="new-node.title"/></title>
-	<%@include file="head-resources-bootstrap.jspf" %>
+	<c:import url="/WEB-INF/jsp/default-head-resources.jsp"/>
 </head>

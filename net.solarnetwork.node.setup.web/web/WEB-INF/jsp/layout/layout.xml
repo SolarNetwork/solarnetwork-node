@@ -8,8 +8,7 @@
 	
 	<definition name="default" extends="defaultLayout">
 		<put-attribute name="head" value="/WEB-INF/jsp/default-head.jsp" />
+		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp" />
 	</definition>
-	
-	<definition name="bootstrap" extends="defaultLayout" />
 	
 </tiles-definitions>

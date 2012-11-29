@@ -24,7 +24,9 @@
 
 package net.solarnetwork.node.setup;
 
+import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkIdentity;
 
 /**
  * API for node setup support.
@@ -48,6 +50,18 @@ public interface SetupService {
 			throws InvalidVerificationCodeException;
 
 	/**
+	 * Use the {@link NetworkIdentity} settings in the supplied
+	 * <code>details</code> to retrieve the server identity, terms of service,
+	 * security phrase, etc.
+	 * 
+	 * @param details
+	 *        Contains the host details to determine where we retrieve the
+	 *        association from
+	 * @return the NetworkAssociation
+	 */
+	NetworkAssociation retrieveNetworkAssociation(NetworkAssociationDetails details);
+
+	/**
 	 * Associate this node with a SolarNet central service.
 	 * 
 	 * @param details
@@ -58,14 +72,4 @@ public interface SetupService {
 	 */
 	void acceptSolarNetHost(NetworkAssociationDetails details) throws SetupException;
 
-	/**
-	 * Should use the host settings in the supplied <code>details</code> to
-	 * retrieve the server identity and terms of service and store them in
-	 * <code>details</code>.
-	 * 
-	 * @param details
-	 *        Contains the host details and is where the identity key and TOS
-	 *        will be stored.
-	 */
-	void populateServerIdentity(NetworkAssociationDetails details);
 }

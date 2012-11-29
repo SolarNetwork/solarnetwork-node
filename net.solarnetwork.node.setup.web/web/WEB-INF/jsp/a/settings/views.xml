@@ -4,7 +4,7 @@
 	"http://tiles.apache.org/dtds/tiles-config_2_0.dtd">
 <tiles-definitions>
 
-	<definition name="settings" extends="bootstrap">
+	<definition name="settings" extends="default">
 		<put-attribute name="head" value="/WEB-INF/jsp/a/settings/settings-head.jsp"/>
 		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
 	</definition>
