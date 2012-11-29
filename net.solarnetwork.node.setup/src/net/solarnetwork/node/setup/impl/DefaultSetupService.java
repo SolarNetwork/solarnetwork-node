@@ -229,18 +229,6 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				throw new InvalidVerificationCodeException("Invalid host port value: " + hostPort, e);
 			}
 
-			// Get the NodeID
-			String nodeId = (String) result.get(VERIFICATION_CODE_NODE_ID_KEY);
-			if ( nodeId == null ) {
-				throw new InvalidVerificationCodeException(VERIFICATION_CODE_NODE_ID_KEY
-						+ " not found in verification code: " + verificationCode);
-			}
-			try {
-				details.setNodeId(Long.valueOf(nodeId));
-			} catch ( NumberFormatException e ) {
-				throw new InvalidVerificationCodeException("Invalid host node ID value: " + hostPort, e);
-			}
-
 			// Get the confirmation Key
 			String confirmationKey = (String) result.get(VERIFICATION_CODE_CONFIRMATION_KEY);
 			if ( confirmationKey == null ) {
@@ -358,7 +346,6 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			NetworkAssociationDetails details) {
 		NodeAssociationConfirmationBean bean = new NodeAssociationConfirmationBean();
 		bean.setKey(details.getConfirmationKey());
-		bean.setNodeId(details.getNodeId());
 		bean.setUsername(details.getUsername());
 		return bean;
 	}
