@@ -26,13 +26,14 @@ package net.solarnetwork.node.setup;
 
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.domain.NetworkIdentity;
 
 /**
  * API for node setup support.
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
 public interface SetupService {
 
@@ -62,14 +63,16 @@ public interface SetupService {
 	NetworkAssociation retrieveNetworkAssociation(NetworkAssociationDetails details);
 
 	/**
-	 * Associate this node with a SolarNet central service.
+	 * Associate this node with a SolarNet central service, using details
+	 * previously obtained via {@link #decodeVerificationCode(String)}.
 	 * 
 	 * @param details
 	 *        the host details to associate with
+	 * @return the resulting NetworkCertificate
 	 * @throws SetupException
 	 *         thrown if an error is encountered confirming the server
 	 *         association
 	 */
-	void acceptSolarNetHost(NetworkAssociationDetails details) throws SetupException;
+	NetworkCertificate acceptNetworkAssociation(NetworkAssociationDetails details) throws SetupException;
 
 }

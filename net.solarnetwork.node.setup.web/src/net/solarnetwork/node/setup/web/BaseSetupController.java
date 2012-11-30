@@ -26,6 +26,8 @@ package net.solarnetwork.node.setup.web;
 
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.setup.SetupService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -48,6 +50,8 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @version 1.0
  */
 public class BaseSetupController {
+
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	private SetupService setupBiz;

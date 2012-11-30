@@ -26,9 +26,9 @@ package net.solarnetwork.node.setup.impl;
 
 import static net.solarnetwork.node.SetupSettings.KEY_CONFIRMATION_CODE;
 import static net.solarnetwork.node.SetupSettings.KEY_NODE_ID;
+import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_FORCE_TLS;
 import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_NAME;
 import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_PORT;
-import static net.solarnetwork.node.SetupSettings.KEY_USER_NAME;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -36,9 +36,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.domain.BasicRegistrationReceipt;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.dao.SettingDao;
@@ -114,7 +114,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_TERMS_OF_SERVICE = "termsOfService";
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
 	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
-	private static final String VERIFICATION_CODE_NODE_ID_KEY = "nodeId";
+	private static final String VERIFICATION_CODE_NODE_ID_KEY = "networkId";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
 
@@ -123,31 +123,13 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
-	private String hostName = DEFAULT_HOST_NAME;
-	private Integer hostPort = DEFAULT_HOST_PORT;
-	private Boolean forceTLS = Boolean.FALSE;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@Override
-	public void init() {
-		super.init();
-
-		// cache host name value from settings
-		String host = getSetting(KEY_SOLARNETWORK_HOST_NAME);
-		if ( host != null ) {
-			hostName = host;
-		}
-		String port = getSetting(KEY_SOLARNETWORK_HOST_PORT);
-		if ( port != null ) {
-			hostPort = Integer.valueOf(port);
-		}
-	}
-
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
 		Map<String, String> xpathMap = new HashMap<String, String>();
-		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@nodeId");
+		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@networkId");
 		xpathMap.put(VERIFICATION_CODE_USER_NAME_KEY, "/*/@username");
 		xpathMap.put(VERIFICATION_CODE_CONFIRMATION_KEY, "/*/@confirmationKey");
 		return getXPathExpressionMap(xpathMap);
@@ -164,6 +146,22 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		return getXPathExpressionMap(identityXpathMap);
 	}
 
+	private boolean isForceTLS() {
+		String force = getSetting(KEY_SOLARNETWORK_FORCE_TLS);
+		if ( force == null ) {
+			return false;
+		}
+		return Boolean.parseBoolean(force);
+	}
+
+	private int getPort() {
+		Integer port = getSolarNetHostPort();
+		if ( port == null ) {
+			return 443;
+		}
+		return port.intValue();
+	}
+
 	@Override
 	public Long getNodeId() {
 		String nodeId = getSetting(KEY_NODE_ID);
@@ -175,12 +173,16 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	@Override
 	public String getSolarNetHostName() {
-		return hostName;
+		return getSetting(KEY_SOLARNETWORK_HOST_NAME);
 	}
 
 	@Override
 	public Integer getSolarNetHostPort() {
-		return hostPort;
+		String port = getSetting(KEY_SOLARNETWORK_HOST_PORT);
+		if ( port == null ) {
+			return 443;
+		}
+		return Integer.valueOf(port);
 	}
 
 	@Override
@@ -190,9 +192,9 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	@Override
 	public String getSolarInBaseUrl() {
-		return "http" + (hostPort == 443 || (forceTLS != null && forceTLS.booleanValue()) ? "s" : "")
-				+ "://" + hostName + (hostPort == 443 || hostPort == 80 ? "" : (":" + hostPort))
-				+ solarInUrlPrefix;
+		final int port = getPort();
+		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + getSolarNetHostName()
+				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
 	}
 
 	@Override
@@ -302,15 +304,18 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	}
 
 	@Override
-	public void acceptSolarNetHost(final NetworkAssociationDetails details) throws SetupException {
+	public NetworkCertificate acceptNetworkAssociation(final NetworkAssociationDetails details)
+			throws SetupException {
 		log.debug("Associating with SolarNet service {}", details);
 
 		try {
 			// Get confirmation code from the server
-			final NodeAssociationConfirmationBean bean = getNodeAssociationConfirmationBean(details);
-			final BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(bean);
-			final BasicRegistrationReceipt receipt = new BasicRegistrationReceipt();
-			webFormPostForBean(beanWrapper, receipt, getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
+			NetworkAssociationRequest req = new NetworkAssociationRequest();
+			req.setUsername(details.getUsername());
+			req.setKey(details.getConfirmationKey());
+			final BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(req);
+			final NetworkCertificate result = new NetworkAssociationDetails();
+			webFormPostForBean(beanWrapper, result, getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
 					getNodeAssociationPropertyMapping());
 
 			final TransactionTemplate tt = new TransactionTemplate(transactionManager);
@@ -319,35 +324,21 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
 					// Store the confirmation code and settings on the node
-					settingDao.storeSetting(KEY_CONFIRMATION_CODE, receipt.getConfirmationCode());
-					settingDao.storeSetting(KEY_USER_NAME, receipt.getUsername());
-					settingDao.storeSetting(KEY_NODE_ID, bean.getNodeId());
+					settingDao.storeSetting(KEY_CONFIRMATION_CODE, result.getConfirmationKey());
+					settingDao.storeSetting(KEY_NODE_ID, result.getNetworkId().toString());
 					settingDao.storeSetting(KEY_SOLARNETWORK_HOST_NAME, details.getHost());
 					settingDao.storeSetting(KEY_SOLARNETWORK_HOST_PORT, details.getPort().toString());
+					settingDao.storeSetting(KEY_SOLARNETWORK_FORCE_TLS,
+							String.valueOf(details.isForceTLS()));
 				}
 			});
 
+			return result;
 		} catch ( Exception e ) {
 			log.error("Error while confirming server details: {}", details, e);
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
-	}
-
-	/**
-	 * Creates a NodeAssociationConfirmationBean based on the values in the
-	 * supplied SolarNetHostDetails object.
-	 * 
-	 * @param details
-	 *        Contains the details to store in the returned bean.
-	 * @return the NodeAssociationConfirmationBean with the appropriate details.
-	 */
-	private NodeAssociationConfirmationBean getNodeAssociationConfirmationBean(
-			NetworkAssociationDetails details) {
-		NodeAssociationConfirmationBean bean = new NodeAssociationConfirmationBean();
-		bean.setKey(details.getConfirmationKey());
-		bean.setUsername(details.getUsername());
-		return bean;
 	}
 
 	private String getSetting(String key) {
@@ -358,20 +349,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		this.settingDao = settingDao;
 	}
 
-	public void setHostName(String hostName) {
-		this.hostName = hostName;
-	}
-
-	public void setHostPort(Integer hostPort) {
-		this.hostPort = hostPort;
-	}
-
 	public void setSolarInUrlPrefix(String solarInUrlPrefix) {
 		this.solarInUrlPrefix = solarInUrlPrefix;
-	}
-
-	public void setForceTLS(Boolean forceTLS) {
-		this.forceTLS = forceTLS;
 	}
 
 	public void setTransactionManager(PlatformTransactionManager transactionManager) {

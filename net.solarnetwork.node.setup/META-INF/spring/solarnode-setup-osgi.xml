@@ -5,23 +5,21 @@
 	xmlns:osgix="http://www.springframework.org/schema/osgi-compendium"
 	xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/osgi
-		http://www.springframework.org/schema/osgi/spring-osgi.xsd
+		http://www.springframework.org/schema/osgi/spring-osgi-1.2.xsd
 		http://www.springframework.org/schema/osgi-compendium
-		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium.xsd">
+		http://www.springframework.org/schema/osgi-compendium/spring-osgi-compendium-1.2.xsd">
 	
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="setup.cfg" persistent-id="net.solarnetwork.node.setup">
-		<prop key="SetupService.hostName">in.solarnetwork.net</prop>
-		<prop key="SetupService.hostPort">443</prop>
-		<prop key="SetupService.forceTLS">false</prop>
-		<prop key="SetupService.nodeId">-1</prop>
 		<prop key="SetupService.solarInUrlPrefix">/solarin</prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
+	
+	<osgi:reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"/>
 	
 	<osgi:reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	

@@ -90,3 +90,7 @@ legend {
 #auto-backups li:first-child {
 	margin-top: 0;
 }
+
+pre.pre-scrollable {
+	max-height: 160px;
+}

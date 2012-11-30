@@ -34,20 +34,20 @@ public final class SetupSettings {
 
 	/** A type key for setup settings. */
 	public static final String SETUP_TYPE_KEY = "solarnode.setup";
-	
+
 	/** The node ID. */
 	public static final String KEY_NODE_ID = "node.id";
-	
+
 	/** The SolarNetwork server host name. */
 	public static final String KEY_SOLARNETWORK_HOST_NAME = "solarnetwork.host";
-	
+
 	/** The SolarNetwork server host port. */
 	public static final String KEY_SOLARNETWORK_HOST_PORT = "solarnetwork.port";
-	
+
+	/** The SolarNetwork force TLS status. */
+	public static final String KEY_SOLARNETWORK_FORCE_TLS = "solarnetwork.forceTLS";
+
 	/** The confirmation code supplied by the SolarNetwork server. */
 	public static final String KEY_CONFIRMATION_CODE = "solarnetwork.confirmation";
-	
-	/** The user name for the SolarNetwork server. */
-	public static final String KEY_USER_NAME = "solarnetwork.username";
-	
+
 }

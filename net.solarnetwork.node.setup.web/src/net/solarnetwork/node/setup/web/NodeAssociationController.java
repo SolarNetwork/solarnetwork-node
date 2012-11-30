@@ -26,7 +26,9 @@ package net.solarnetwork.node.setup.web;
 
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
+import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -70,7 +72,7 @@ public class NodeAssociationController extends BaseSetupController {
 	 * 
 	 * @param command
 	 *        the command
-	 * @param result
+	 * @param errors
 	 *        the binding result
 	 * @param model
 	 *        the model
@@ -99,32 +101,38 @@ public class NodeAssociationController extends BaseSetupController {
 	 * Decodes the supplied verification code storing the details for the user
 	 * to validation.
 	 * 
+	 * @param command
+	 *        the associate comment, used only for reporting errors
+	 * @param errors
+	 *        the errors associated with the command
 	 * @param details
-	 *        the association details
-	 * @param result
-	 *        a binding result
+	 *        the session details objects
 	 * @param model
-	 *        the model
+	 *        the view model
 	 * @return the view name
 	 */
 	@RequestMapping(value = "/verify", method = RequestMethod.POST)
-	public String verifyCode(@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
-			Errors errors, Model model) {
+	public String verifyCode(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
+			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
 		// Check expiration date
 		if ( details.getExpiration().getTime() < System.currentTimeMillis() ) {
 			errors.rejectValue("verificationCode", "verificationCode.expired", null, null);
-			return setupForm(model);
+			return PAGE_ENTER_CODE;
 		}
 
 		try {
 			// Retrieve the identity from the server
 			NetworkAssociation na = getSetupBiz().retrieveNetworkAssociation(details);
 			model.addAttribute("association", na);
+		} catch ( SetupException e ) {
+			errors.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
+			return setupForm(model);
 		} catch ( RuntimeException e ) {
+			log.error("Unexpected exception processing /setup/verify", e);
 			// We are assuming any exception thrown here is caused by the server being down,
 			// but there's no guarantee this is the case
 			errors.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
-			return setupForm(model);
+			return PAGE_ENTER_CODE;
 		}
 
 		return "associate/verify-identity";
@@ -135,22 +143,28 @@ public class NodeAssociationController extends BaseSetupController {
 	 * Confirms the node association with the SolarNet server supplied in the
 	 * verification code.
 	 * 
+	 * @param command
+	 *        the associate comment, used only for reporting errors
+	 * @param errors
+	 *        the errors associated with the command
 	 * @param details
-	 * @param request
-	 * @return
+	 *        the session details objects
+	 * @param model
+	 *        the view model
+	 * @return the view name
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
-	public String confirmIdentity(@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
-			Errors errors, Model model) {
+	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command,
+			Errors errors, @ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
-			getSetupBiz().acceptSolarNetHost(details);
-
-			return "association/setup-success";
+			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(details);
+			details.setNetworkId(cert.getNetworkId());
+			return "associate/setup-success";
 		} catch ( Exception e ) {
 			errors.reject("node.setup.success.error", new Object[] { details.getHost() }, null);
-			return setupForm(model);
+			return PAGE_ENTER_CODE;
 		}
 	}
 

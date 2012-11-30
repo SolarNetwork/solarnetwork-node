@@ -4,7 +4,7 @@
 
 <c:url value="/associate/preview" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal">
-	<form:errors cssClass="alert alert-error" element="div"/>
+	<form:errors cssClass="alert alert-error" element="div" htmlEscape="false"/>
 	<fieldset>
 		<c:set var="err"><form:errors path="verificationCode" cssClass="help-inline" element="span"/></c:set>
 		<div class="control-group<c:if test='${not empty err}'> error</c:if>">
