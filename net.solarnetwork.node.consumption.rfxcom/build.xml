@@ -4,7 +4,7 @@
 	<dirset id="bundle.deps" dir="${basedir}/..">
 		<include name="net.solarnetwork.node"/>
 		<include name="net.solarnetwork.node.consumption"/>
-		<include name="net.solarnetwork.node.rfxcom"/>
+		<include name="net.solarnetwork.node.hw.rfxcom"/>
 	</dirset>
 	
 	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
