@@ -25,7 +25,6 @@
 package net.solarnetwork.node.rfxcom;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,72 +38,73 @@ import org.slf4j.LoggerFactory;
 public class MessageFactory {
 
 	private AtomicInteger sequenceNumber = new AtomicInteger();
-	
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	public short incrementAndGetSequenceNumber() {
-		return (short)sequenceNumber.incrementAndGet();
+		return (short) sequenceNumber.incrementAndGet();
 	}
-	
+
 	public Message parseMessage(byte[] data, int offset) {
 		if ( log.isTraceEnabled() ) {
-			log.trace("Parsing RFXCOM message: " +Hex.encodeHexString(data));
+			log.trace("Parsing RFXCOM message: " + Hex.encodeHexString(data));
 		}
 		if ( data == null || (data.length - offset) < 4 ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Insufficient data to parse message: " +Hex.encodeHexString(data));
+				log.debug("Insufficient data to parse message: " + Hex.encodeHexString(data));
 			}
 			return null;
 		}
-		
+
 		final short msgLength = data[offset];
-		if ( msgLength < 4 || (msgLength + offset) >= data.length ) {
+		if ( msgLength < 3 || (msgLength + offset) >= data.length ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Insufficient data to parse message: " +Hex.encodeHexString(data));
+				log.debug("Insufficient data to parse message: " + Hex.encodeHexString(data));
 			}
 			return null;
 		}
-		
+
 		// get offset-normalized message data, without packet header
-		final byte[] msg = new byte[msgLength-4];
-		System.arraycopy(data, (offset+4), msg, 0, (msgLength-4));
-		
-		final short sequenceNumber = data[offset+3];
-		
+		final byte[] msg = new byte[msgLength - 3];
+		System.arraycopy(data, (offset + 4), msg, 0, msg.length);
+
+		final short sequenceNumber = data[offset + 3];
+
 		Message result = null;
 
 		// packet type
-		switch ( data[offset+1] ) {
+		switch (data[offset + 1]) {
 			case 0x1:
 				// Command response
 				if ( msgLength < 13 ) {
 					if ( log.isDebugEnabled() ) {
-						log.debug("Insufficient data to parse command message: " +Hex.encodeHexString(data));
+						log.debug("Insufficient data to parse command message: "
+								+ Hex.encodeHexString(data));
 					}
 					return null;
 				}
-				Command cmd = Command.valueOf(data[offset+4]);
+				Command cmd = Command.valueOf(data[offset + 4]);
 				if ( cmd == Command.Status || cmd == Command.SetMode ) {
 					result = new StatusMessage(sequenceNumber, msg);
 				} else {
-					result = new CommandMessage(sequenceNumber,  msg);
+					result = new CommandMessage(sequenceNumber, msg);
 				}
 				break;
-				
+
 			case 0x59:
-				result = new CurrentMessage(data[offset+3], sequenceNumber, msg);
+				result = new CurrentMessage(data[offset + 2], sequenceNumber, msg);
 				break;
-				
+
 			case 0x5a:
-				result = new EnergyMessage(data[offset+3], sequenceNumber, msg);
+				result = new EnergyMessage(data[offset + 2], sequenceNumber, msg);
 				break;
-			
+
 			default:
 				if ( log.isDebugEnabled() ) {
-					log.debug("Unsupported message type: " +String.format("%x", msg[1]));
+					log.debug("Unsupported message type: " + String.format("%x", msg[1]));
 				}
 		}
-		
+
 		return result;
 	}
 
@@ -115,5 +115,5 @@ public class MessageFactory {
 	public void setSequenceNumber(AtomicInteger sequenceNumber) {
 		this.sequenceNumber = sequenceNumber;
 	}
-	
+
 }

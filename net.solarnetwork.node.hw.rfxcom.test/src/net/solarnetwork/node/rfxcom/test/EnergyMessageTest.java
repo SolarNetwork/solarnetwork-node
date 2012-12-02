@@ -28,7 +28,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
-
 import org.junit.Test;
 
 /**
@@ -44,6 +43,7 @@ public class EnergyMessageTest {
 		final byte[] packet = TestUtils.bytesFromHexString("115A010188F200000000000000000036B079");
 		final byte[] data = TestUtils.extractMessageBytes(packet);
 		EnergyMessage msg = new EnergyMessage(packet[2], packet[3], data);
+		assertEquals(1, msg.getSubType());
 		assertFalse("Battery low", msg.isBatteryLow());
 		assertEquals("Signal level", 7, msg.getSignalLevel());
 		assertEquals("ID", "88F2", msg.getAddress());
@@ -51,12 +51,13 @@ public class EnergyMessageTest {
 		assertEquals("Instant", 0, msg.getInstantWatts(), 0.0001);
 		assertEquals("Use", 62.5933311276636, msg.getUsageWattHours(), 0.00000001);
 	}
-	
+
 	@Test
 	public void parseMessage2() {
 		final byte[] packet = TestUtils.bytesFromHexString("115A013588F204000002C4000000003B4050");
 		final byte[] data = TestUtils.extractMessageBytes(packet);
 		EnergyMessage msg = new EnergyMessage(packet[2], packet[3], data);
+		assertEquals(1, msg.getSubType());
 		assertTrue("Battery low", msg.isBatteryLow());
 		assertEquals("Signal level", 5, msg.getSignalLevel());
 		assertEquals("ID", "88F2", msg.getAddress());
@@ -70,6 +71,7 @@ public class EnergyMessageTest {
 		final byte[] packet = TestUtils.bytesFromHexString("115A013588F204000002C4000000003B4050");
 		final byte[] data = TestUtils.extractMessageBytes(packet);
 		EnergyMessage msg = new EnergyMessage(packet[2], packet[3], data);
+		assertEquals(1, msg.getSubType());
 		assertTrue("Battery low", msg.isBatteryLow());
 		assertEquals("Signal level", 5, msg.getSignalLevel());
 		assertEquals("ID", "88F2", msg.getAddress());
@@ -77,12 +79,13 @@ public class EnergyMessageTest {
 		assertEquals("Instant", 708.0, msg.getInstantWatts(), 0.0001);
 		assertEquals("Use", 67.8154033246001, msg.getUsageWattHours(), 0.00000001);
 	}
-	
+
 	@Test
 	public void parseMessage4() {
 		final byte[] packet = TestUtils.bytesFromHexString("115A010288F200000002A400000000617F49");
 		final byte[] data = TestUtils.extractMessageBytes(packet);
 		EnergyMessage msg = new EnergyMessage(packet[2], packet[3], data);
+		assertEquals(1, msg.getSubType());
 		assertEquals("Sequence", 2, msg.getSequenceNumber());
 		assertFalse("Battery low", msg.isBatteryLow());
 		assertEquals("Signal level", 4, msg.getSignalLevel());
