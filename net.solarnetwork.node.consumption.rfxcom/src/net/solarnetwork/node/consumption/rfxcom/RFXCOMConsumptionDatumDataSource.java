@@ -28,12 +28,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
@@ -53,45 +50,44 @@ import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
- * {@link MultiDatumDataSource} for {@link ConsumptionDatum} entities
- * read from the supported energy formats of the RFXCOM transceiver.
+ * {@link MultiDatumDataSource} for {@link ConsumptionDatum} entities read from
+ * the supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
  * @version $Revision$
  */
-public class RFXCOMConsumptionDatumDataSource 
-implements DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>, 
-ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
+public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
+		MultiDatumDataSource<ConsumptionDatum>, ConversationalDataCollector.Moderator<List<Message>>,
+		SettingSpecifierProvider {
 
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 55;
-	
+
 	/** The default value for the {@code voltage} property. */
 	public static final float DEFAULT_VOLTAGE = 230.0F;
-	
+
 	/** The default value for the {@code currentSensorIndexFlags} property. */
 	public static final int DEFAULT_CURRENT_SENSOR_INDEX_FLAGS = 1;
-	
+
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
-	
+
 	private DynamicServiceTracker<RFXCOM> rfxcomTracker;
-	private Map<String,String> addressSourceMapping = null;
+	private Map<String, String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
 	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
-	
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	@Override
 	public Class<? extends ConsumptionDatum> getMultiDatumType() {
 		return ConsumptionDatum.class;
@@ -101,9 +97,9 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	public Class<? extends ConsumptionDatum> getDatumType() {
 		return ConsumptionDatum.class;
 	}
-	
+
 	private String getSourceIdForMessageAddress(String addr) {
-		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr)) {
+		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}
 		return addr;
@@ -113,23 +109,23 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		String addr = getSourceIdForMessageAddress(d.getSourceId());
 		if ( getSourceIdFilter() != null && !getSourceIdFilter().contains(addr) ) {
 			if ( log.isInfoEnabled() ) {
-				log.info("Rejecting source [" +addr +"] not in source ID filter set");
+				log.info("Rejecting source [" + addr + "] not in source ID filter set");
 			}
 			return null;
 		}
-		
+
 		// create a copy, because CurrentMessage might still be using input object for 
 		// other sensors...
-		ConsumptionDatum copy = (ConsumptionDatum)d.clone();
+		ConsumptionDatum copy = (ConsumptionDatum) d.clone();
 		copy.setSourceId(addr);
 		copy.setCreated(new Date());
 		return copy;
 	}
 
 	private void addConsumptionDatumFromMessage(Message msg, List<ConsumptionDatum> results) {
-		final String address = ((AddressSource)msg).getAddress();
+		final String address = ((AddressSource) msg).getAddress();
 		if ( msg instanceof EnergyMessage ) {
-			EnergyMessage emsg = (EnergyMessage)msg;
+			EnergyMessage emsg = (EnergyMessage) msg;
 			ConsumptionDatum d = new ConsumptionDatum();
 			d.setSourceId(address);
 			final double wh = emsg.getUsageWattHours();
@@ -137,7 +133,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 			if ( wh > 0 ) {
 				d.setWattHourReading(Math.round(wh));
 			}
-			d.setAmps((float)(w / voltage));
+			d.setAmps((float) (w / voltage));
 			d.setVolts(voltage);
 			d = filterConsumptionDatumInstance(d);
 			if ( d != null ) {
@@ -145,30 +141,30 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 			}
 		} else {
 			// assume CurrentMessage
-			CurrentMessage cmsg = (CurrentMessage)msg;
+			CurrentMessage cmsg = (CurrentMessage) msg;
 			ConsumptionDatum d = new ConsumptionDatum();
 			d.setVolts(voltage);
-			
+
 			// we turn each sensor into its own ConsumptionDatum, the sensors we collect
 			// from are specified by the currentSensorIndexFlags property
 			for ( int i = 1; i <= 3; i++ ) {
 				if ( (i & currentSensorIndexFlags) != i ) {
 					continue;
 				}
-				d.setSourceId(address+"."+i);
-				switch ( i ) {
+				d.setSourceId(address + "." + i);
+				switch (i) {
 					case 1:
-						d.setAmps((float)cmsg.getAmpReading1());
+						d.setAmps((float) cmsg.getAmpReading1());
 						break;
 					case 2:
-						d.setAmps((float)cmsg.getAmpReading2());
+						d.setAmps((float) cmsg.getAmpReading2());
 						break;
 					case 3:
-						d.setAmps((float)cmsg.getAmpReading3());
+						d.setAmps((float) cmsg.getAmpReading3());
 						break;
 				}
 				ConsumptionDatum filtered = filterConsumptionDatumInstance(d);
-				if ( filtered != null ) { 
+				if ( filtered != null ) {
 					results.add(filtered);
 				}
 			}
@@ -190,7 +186,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		if ( r == null ) {
 			return null;
 		}
-		
+
 		final List<Message> messages;
 		final ConversationalDataCollector dc = r.getDataCollectorInstance();
 		try {
@@ -200,32 +196,30 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 				dc.stopCollecting();
 			}
 		}
-		
+
 		if ( messages == null ) {
 			return null;
 		}
-		
+
 		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(messages.size());
 		for ( Message msg : messages ) {
 			addConsumptionDatumFromMessage(msg, results);
 		}
 		return results;
 	}
-	
+
 	@Override
 	public List<Message> conductConversation(ConversationalDataCollector dc) {
 		final List<Message> result = new ArrayList<Message>(3);
-		final long endTime = (isCollectAllSourceIds() 
-				&& getSourceIdFilter() != null 
-				&& getSourceIdFilter().size() > 1
-					? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000)
-					: 0);
-		final Set<String> sourceIdSet = new HashSet<String>(
-				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
-		
+		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
+				&& getSourceIdFilter().size() > 1 ? System.currentTimeMillis()
+				+ (getCollectAllSourceIdsTimeout() * 1000) : 0);
+		final Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter() == null ? 0
+				: getSourceIdFilter().size());
+
 		final MessageFactory mf = new MessageFactory();
 		final MessageListener listener = new MessageListener();
-		
+
 		do {
 			listener.reset();
 			dc.listen(listener);
@@ -236,14 +230,14 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 			}
 			Message msg = mf.parseMessage(data, 0);
 			if ( msg instanceof EnergyMessage || msg instanceof CurrentMessage ) {
-				final String sourceId = getSourceIdForMessageAddress(((AddressSource)msg).getAddress());
+				final String sourceId = getSourceIdForMessageAddress(((AddressSource) msg).getAddress());
 				if ( !sourceIdSet.contains(sourceId) ) {
 					result.add(msg);
 					sourceIdSet.add(sourceId);
 				}
 			}
-		} while ( System.currentTimeMillis() < endTime && sourceIdSet.size() < 
-				(getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()) );
+		} while ( System.currentTimeMillis() < endTime
+				&& sourceIdSet.size() < (getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()) );
 		return result;
 	}
 
@@ -259,7 +253,7 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
@@ -278,49 +272,56 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 		}
 		return MESSAGE_SOURCE;
 	}
-	
+
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(
-				"rfxcomTracker.propertyFilters['UID']", "/dev/ttyUSB0"));
-		
+		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
+
 		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
-		
+
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
-		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", 
-				defaults.collectAllSourceIds));
-		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
-				String.valueOf(defaults.collectAllSourceIdsTimeout)));
-		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", 
-				String.valueOf(defaults.currentSensorIndexFlags)));
-		
+		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", defaults.collectAllSourceIds));
+		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
+				.valueOf(defaults.collectAllSourceIdsTimeout)));
+		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", String
+				.valueOf(defaults.currentSensorIndexFlags)));
+
 		return results;
 	}
 
 	/**
 	 * Set a {@code addressSourceMapping} Map via an encoded String value.
 	 * 
-	 * <p>The format of the {@code mapping} String should be:</p>
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
 	 * 
-	 * <pre>key=val[,key=val,...]</pre>
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
 	 * 
-	 * <p>Whitespace is permitted around all delimiters, and will be stripped
-	 * from the keys and values.</p>
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
 	 * 
 	 * @param mapping
 	 */
 	public void setAddressSourceMappingValue(String mapping) {
 		setAddressSourceMapping(StringUtils.commaDelimitedStringToMap(mapping));
 	}
-	
+
 	/**
 	 * Set a {@link sourceIdFilter} List via an encoded String value.
 	 * 
-	 * <p>The format of the {@code filters} String should be a comma-delimited
-	 * list of values. Whitespace is permitted around the commas, and will be
-	 * stripped from the values.</p>
+	 * <p>
+	 * The format of the {@code filters} String should be a comma-delimited list
+	 * of values. Whitespace is permitted around the commas, and will be
+	 * stripped from the values.
+	 * </p>
 	 * 
 	 * @param filters
 	 */
@@ -383,5 +384,5 @@ ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 	public void setCurrentSensorIndexFlags(int currentSensorIndexFlags) {
 		this.currentSensorIndexFlags = currentSensorIndexFlags;
 	}
-	
+
 }
