@@ -48,7 +48,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +78,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
-	private DynamicServiceTracker<RFXCOM> rfxcomTracker;
+	private OptionalService<RFXCOM> rfxcomTracker;
 	private Map<String, String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
@@ -329,11 +329,11 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		setSourceIdFilter(StringUtils.commaDelimitedStringToSet(filters));
 	}
 
-	public DynamicServiceTracker<RFXCOM> getRfxcomTracker() {
+	public OptionalService<RFXCOM> getRfxcomTracker() {
 		return rfxcomTracker;
 	}
 
-	public void setRfxcomTracker(DynamicServiceTracker<RFXCOM> rfxcomTracker) {
+	public void setRfxcomTracker(OptionalService<RFXCOM> rfxcomTracker) {
 		this.rfxcomTracker = rfxcomTracker;
 	}
 
