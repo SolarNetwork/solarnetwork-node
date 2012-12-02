@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RFXCOM Energy Meter
-Bundle-SymbolicName: net.solarnetwork.node.consumption.rfxcom.energy
+Bundle-Name: RFXCOM Energy Meter Consumption
+Bundle-SymbolicName: net.solarnetwork.node.consumption.rfxcom
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
