@@ -69,12 +69,4 @@ public class MessageFactoryTest {
 		assertNull(result);
 	}
 
-	@Test
-	public void createBadMessage2() {
-		final byte[] packet = TestUtils.bytesFromHexString("115a01206b120200000152006b00115a0121");
-		MessageFactory mf = new MessageFactory();
-		Message result = mf.parseMessage(packet, 0);
-		assertNull(result);
-	}
-
 }

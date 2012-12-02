@@ -27,6 +27,7 @@ package net.solarnetwork.node.consumption.rfxcom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,15 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		MultiDatumDataSource<ConsumptionDatum>, ConversationalDataCollector.Moderator<List<Message>>,
 		SettingSpecifierProvider {
 
+	/**
+	 * The default value for the {@code maxWattHourSpikeVerificationDiff}
+	 * property.
+	 */
+	private static final long DEFAULT_MAX_WATT_HOUR_SPIKE_VERIFICATION_DIFF = 5000L;
+
+	/** The default value for the {@code maxWattHourVerificationDiff} property. */
+	private static final long DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF = 500L;
+
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 55;
 
@@ -85,6 +95,12 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
 	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
+
+	// some in-memory error correction support, map keys are source IDs
+	private long maxWattHourWarmupVerificationDiff = DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF;
+	private long maxWattHourSpikeVerificationDiff = DEFAULT_MAX_WATT_HOUR_SPIKE_VERIFICATION_DIFF;
+	private final Map<String, Long> previousWattHours = new HashMap<String, Long>();
+	private final Map<String, List<ConsumptionDatum>> datumBuffer = new HashMap<String, List<ConsumptionDatum>>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -122,6 +138,72 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		return copy;
 	}
 
+	private List<ConsumptionDatum> getDatumBufferForSource(String source) {
+		if ( !datumBuffer.containsKey(source) ) {
+			datumBuffer.put(source, new ArrayList<ConsumptionDatum>(5));
+		}
+		return datumBuffer.get(source);
+	}
+
+	private void addToResultsCheckingData(ConsumptionDatum datum, List<ConsumptionDatum> results) {
+		if ( datum == null ) {
+			return;
+		}
+		final String sourceId = (datum.getSourceId() == null ? "" : datum.getSourceId());
+		if ( sourceIdFilter != null && !sourceIdFilter.contains(sourceId) ) {
+			return;
+		}
+
+		if ( datum.getWattHourReading() != null ) {
+			// calculate what would be the Wh diff
+			Long prevGoodWh = previousWattHours.get(sourceId);
+			List<ConsumptionDatum> buffer = getDatumBufferForSource(sourceId);
+			if ( (prevGoodWh == null && buffer.size() < 2) || (buffer.size() > 0 && buffer.size() < 2) ) {
+				// don't know the Wh diff, or we've buffered one item, so buffer this value so we have
+				// two buffered, because Wh might go back to zero when the transmitter is reset
+				log.info("Buffering datum until enough collected for data verification: {}", datum);
+				buffer.add(datum);
+				return;
+			} else if ( buffer.size() == 2 ) {
+				// so we have 2 buffered items... and this new item. We expect this new item to have
+				// Wh >= the last buffered item >= the first buffered item
+				long diff = datum.getWattHourReading() - buffer.get(1).getWattHourReading();
+				long diff2 = buffer.get(1).getWattHourReading() - buffer.get(0).getWattHourReading();
+				if ( datum.getWattHourReading() >= buffer.get(1).getWattHourReading()
+						&& buffer.get(1).getWattHourReading() >= buffer.get(0).getWattHourReading()
+						&& (diff2 - diff) < maxWattHourWarmupVerificationDiff ) {
+					prevGoodWh = buffer.get(1).getWattHourReading();
+					results.addAll(buffer);
+					buffer.clear();
+				} else {
+					// discard the oldest buffered item, and buffer our new one
+					log.warn("Discarding datum that failed data validation: {}", buffer.get(0));
+					buffer.remove(0);
+					buffer.add(datum);
+					return;
+				}
+			}
+
+			if ( datum.getWattHourReading() < prevGoodWh ) {
+				log.info("Buffering datum to verify data with next read (Wh decreased): {}", datum);
+				buffer.add(datum);
+				return;
+			}
+
+			long whDiff = Math.abs(datum.getWattHourReading() - prevGoodWh);
+			if ( whDiff >= maxWattHourSpikeVerificationDiff ) {
+				log.info("Buffering datum to verify data with next read ({} Wh spike): {}", whDiff,
+						datum);
+				buffer.add(datum);
+				return;
+			}
+
+			previousWattHours.put(sourceId, datum.getWattHourReading());
+		}
+
+		results.add(datum);
+	}
+
 	private void addConsumptionDatumFromMessage(Message msg, List<ConsumptionDatum> results) {
 		final String address = ((AddressSource) msg).getAddress();
 		if ( msg instanceof EnergyMessage ) {
@@ -136,9 +218,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 			d.setAmps((float) (w / voltage));
 			d.setVolts(voltage);
 			d = filterConsumptionDatumInstance(d);
-			if ( d != null ) {
-				results.add(d);
-			}
+			addToResultsCheckingData(d, results);
 		} else {
 			// assume CurrentMessage
 			CurrentMessage cmsg = (CurrentMessage) msg;
@@ -164,9 +244,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 						break;
 				}
 				ConsumptionDatum filtered = filterConsumptionDatumInstance(d);
-				if ( filtered != null ) {
-					results.add(filtered);
-				}
+				addToResultsCheckingData(filtered, results);
 			}
 		}
 	}
@@ -288,6 +366,10 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 				.valueOf(defaults.collectAllSourceIdsTimeout)));
 		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", String
 				.valueOf(defaults.currentSensorIndexFlags)));
+		results.add(new BasicTextFieldSettingSpecifier("maxWattHourWarmupVerificationDiff", String
+				.valueOf(defaults.getMaxWattHourWarmupVerificationDiff())));
+		results.add(new BasicTextFieldSettingSpecifier("maxWattHourSpikeVerificationDiff", String
+				.valueOf(defaults.getMaxWattHourSpikeVerificationDiff())));
 
 		return results;
 	}
@@ -383,6 +465,22 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	public void setCurrentSensorIndexFlags(int currentSensorIndexFlags) {
 		this.currentSensorIndexFlags = currentSensorIndexFlags;
+	}
+
+	public long getMaxWattHourWarmupVerificationDiff() {
+		return maxWattHourWarmupVerificationDiff;
+	}
+
+	public void setMaxWattHourWarmupVerificationDiff(long maxWattHourVerificationDiff) {
+		this.maxWattHourWarmupVerificationDiff = maxWattHourVerificationDiff;
+	}
+
+	public long getMaxWattHourSpikeVerificationDiff() {
+		return maxWattHourSpikeVerificationDiff;
+	}
+
+	public void setMaxWattHourSpikeVerificationDiff(long maxWattHourSpikeVerificationDiff) {
+		this.maxWattHourSpikeVerificationDiff = maxWattHourSpikeVerificationDiff;
 	}
 
 }
