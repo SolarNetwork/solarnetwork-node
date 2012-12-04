@@ -28,7 +28,7 @@ package net.solarnetwork.node;
  * API for knowing information about the node's identity.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public interface IdentityService {
 
@@ -38,37 +38,39 @@ public interface IdentityService {
 	 * @return node ID, or <em>null</em> if the ID is not known
 	 */
 	Long getNodeId();
-	
+
 	/**
 	 * Get the host name for the SolarNet central service.
 	 * 
 	 * @return a host name
 	 */
 	String getSolarNetHostName();
-	
+
 	/**
 	 * Get the host port for the SolarNet central service.
 	 * 
 	 * @return a host name
 	 */
 	Integer getSolarNetHostPort();
-	
+
 	/**
 	 * Get the URL prefix for the SolarIn service.
 	 * 
 	 * @return a URL prefix
 	 */
 	String getSolarNetSolarInUrlPrefix();
-	
+
 	/**
 	 * Return an absolute URL to the SolarIn service.
 	 * 
-	 * <p>This is a convenience method for generating a URL for the
-	 * correct SolarNet host, SolarNet port, and SolarIn URL prefix
-	 * as a single absolute URL string.</p>
+	 * <p>
+	 * This is a convenience method for generating a URL for the correct
+	 * SolarNet host, SolarNet port, and SolarIn URL prefix as a single absolute
+	 * URL string.
+	 * </p>
 	 * 
 	 * @return SolarIn base URL
 	 */
 	String getSolarInBaseUrl();
-	
+
 }
