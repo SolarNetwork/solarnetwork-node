@@ -324,12 +324,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
 					// Store the confirmation code and settings on the node
-					settingDao.storeSetting(KEY_CONFIRMATION_CODE, result.getConfirmationKey());
-					settingDao.storeSetting(KEY_NODE_ID, result.getNetworkId().toString());
-					settingDao.storeSetting(KEY_SOLARNETWORK_HOST_NAME, details.getHost());
-					settingDao.storeSetting(KEY_SOLARNETWORK_HOST_PORT, details.getPort().toString());
-					settingDao.storeSetting(KEY_SOLARNETWORK_FORCE_TLS,
-							String.valueOf(details.isForceTLS()));
+					saveSetting(KEY_CONFIRMATION_CODE, result.getConfirmationKey());
+					saveSetting(KEY_NODE_ID, result.getNetworkId().toString());
+					saveSetting(KEY_SOLARNETWORK_HOST_NAME, details.getHost());
+					saveSetting(KEY_SOLARNETWORK_HOST_PORT, details.getPort().toString());
+					saveSetting(KEY_SOLARNETWORK_FORCE_TLS, String.valueOf(details.isForceTLS()));
 				}
 			});
 
@@ -343,6 +342,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	private String getSetting(String key) {
 		return settingDao.getSetting(key, SETUP_TYPE_KEY);
+	}
+
+	private void saveSetting(String key, String value) {
+		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
 	}
 
 	public void setSettingDao(SettingDao settingDao) {
