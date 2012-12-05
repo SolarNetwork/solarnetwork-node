@@ -42,7 +42,11 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import javax.annotation.Resource;
+import javax.security.auth.x500.X500Principal;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.support.CertificateService;
@@ -76,20 +80,43 @@ public class DefaultKeystoreService {
 	 * Check if the node's certificate is valid.
 	 * 
 	 * <p>
-	 * The certificate is considered valid if it is not self-signed and its
-	 * chain can be verified and it has not expired.
+	 * The certificate is considered valid if it is signed by the given
+	 * authority and its chain can be verified and it has not expired.
 	 * </p>
 	 * 
-	 * @return boolean
+	 * @param issuerDN
+	 *        the expected issuer subject DN
+	 * 
+	 * @return boolean <em>true</em> if considered valid
 	 */
-	public boolean isNodeCertificateValid() {
+	public boolean isNodeCertificateValid(String issuerDN) {
 		KeyStore keyStore = loadKeyStore();
+		X509Certificate x509 = null;
 		try {
-			// TODO: need to validate actual certificate, and not self-signed
-			return keyStore != null && keyStore.containsAlias(nodeAlias);
+			if ( keyStore == null || !keyStore.containsAlias(nodeAlias) ) {
+				return false;
+			}
+			Certificate cert = keyStore.getCertificate(nodeAlias);
+			if ( !(cert instanceof X509Certificate) ) {
+				return false;
+			}
+			x509 = (X509Certificate) cert;
+			x509.checkValidity();
+			X500Principal issuer = new X500Principal(issuerDN);
+			if ( !x509.getIssuerX500Principal().equals(issuer) ) {
+				log.debug("Certificate issuer {} not same as expected {}", x509.getIssuerX500Principal()
+						.getName(), issuer.getName());
+				return false;
+			}
+			return true;
 		} catch ( KeyStoreException e ) {
 			throw new SetupException("Error checking for node certificate", e);
+		} catch ( CertificateExpiredException e ) {
+			log.debug("Certificate {} has expired", x509.getSubjectDN().getName());
+		} catch ( CertificateNotYetValidException e ) {
+			log.debug("Certificate {} not valid yet", x509.getSubjectDN().getName());
 		}
+		return false;
 	}
 
 	/**
@@ -100,9 +127,61 @@ public class DefaultKeystoreService {
 	 *        the certificate subject DN
 	 * @return the Certificate
 	 */
-	public Certificate generateSelfSignedCertificate(String dn) {
+	public X509Certificate generateNodeSelfSignedCertificate(String dn) {
 		KeyStore keyStore = loadKeyStore();
-		return setupNodeAlias(keyStore, dn);
+		return createSelfSignedCertificate(keyStore, dn, nodeAlias);
+	}
+
+	/**
+	 * Generate a new self-signed certificate and save it to the key store.
+	 * 
+	 * @param dn
+	 *        the certificate DN
+	 * @param alias
+	 *        the key store alias to save the certificate to
+	 * @return the certificate
+	 */
+	public X509Certificate generateSelfSignedCertificate(String dn, String alias) {
+		KeyStore keyStore = loadKeyStore();
+		return createSelfSignedCertificate(keyStore, dn, alias);
+	}
+
+	private X509Certificate createSelfSignedCertificate(KeyStore keyStore, String dn, String alias) {
+		try {
+			// create new key pair for the node
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+			keyGen.initialize(keySize, new SecureRandom());
+			KeyPair keypair = keyGen.generateKeyPair();
+			PublicKey publicKey = keypair.getPublic();
+			PrivateKey privateKey = keypair.getPrivate();
+
+			Certificate cert = certificateService.generateCertificate(dn, publicKey, privateKey);
+			keyStore.setKeyEntry(alias, privateKey, new char[0], new Certificate[] { cert });
+			saveKeyStore(keyStore);
+			return (X509Certificate) cert;
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new SetupException("Error setting up node key pair", e);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error setting up node key pair", e);
+		}
+	}
+
+	/**
+	 * Save a trusted certificate into the key store.
+	 * 
+	 * @param cert
+	 *        the certificate
+	 * @param alias
+	 *        the alias
+	 */
+	public void saveTrustedCertificate(Certificate cert, String alias) {
+		KeyStore keyStore = loadKeyStore();
+		try {
+			keyStore.setCertificateEntry(alias, cert);
+			saveKeyStore(keyStore);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error saving trusted certificate", e);
+		}
 	}
 
 	private void saveKeyStore(KeyStore keyStore) {
@@ -136,26 +215,6 @@ public class DefaultKeystoreService {
 					throw new SetupException("Error closing KeyStore file: " + ksFile.getPath(), e);
 				}
 			}
-		}
-	}
-
-	private Certificate setupNodeAlias(KeyStore keyStore, String dn) {
-		try {
-			// create new key pair for the node
-			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-			keyGen.initialize(keySize, new SecureRandom());
-			KeyPair keypair = keyGen.generateKeyPair();
-			PublicKey publicKey = keypair.getPublic();
-			PrivateKey privateKey = keypair.getPrivate();
-
-			Certificate cert = certificateService.generateCertificate(dn, publicKey, privateKey);
-			keyStore.setKeyEntry(nodeAlias, privateKey, new char[0], new Certificate[] { cert });
-			saveKeyStore(keyStore);
-			return cert;
-		} catch ( NoSuchAlgorithmException e ) {
-			throw new SetupException("Error setting up node key pair", e);
-		} catch ( KeyStoreException e ) {
-			throw new SetupException("Error setting up node key pair", e);
 		}
 	}
 
@@ -198,16 +257,20 @@ public class DefaultKeystoreService {
 		return settingDao.getSetting(key, SETUP_TYPE_KEY);
 	}
 
-	private void saveSetting(String key, String value) {
-		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
-	}
-
 	public void setKeyStorePath(String keyStorePath) {
 		this.keyStorePath = keyStorePath;
 	}
 
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
+	}
+
+	public String getNodeAlias() {
+		return nodeAlias;
+	}
+
+	public String getCaAlias() {
+		return caAlias;
 	}
 
 	public void setNodeAlias(String nodeAlias) {
