@@ -7,4 +7,7 @@
 <pack:script> 
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
+	/js/global.js
+	/js/certs.js
+	/js/settings.js
 </pack:script>

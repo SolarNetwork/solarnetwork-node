@@ -1,5 +1,10 @@
 @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600);
 
+.navbar .brand {
+	padding-top: 4px !important;
+	padding-bottom: 5px !important;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight:400;
@@ -18,6 +23,10 @@ h2 {
 	text-rendering: optimizeLegibility;
 }
 
+label {
+	font-weight: 700;
+}
+
 img.logo-main {
  	margin: 20px 0;
  }
@@ -26,6 +35,10 @@ button.help-icon {
 	border: none;
 	background: none;
 	padding: 4px;
+}
+
+.row.form-horizontal label {
+	text-align: right;
 }
 
 span.active-value.clean {

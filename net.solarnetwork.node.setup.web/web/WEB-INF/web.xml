@@ -138,6 +138,7 @@
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<include-prelude>/WEB-INF/jsp/prelude.jsp</include-prelude>
+			<trim-directive-whitespaces>true</trim-directive-whitespaces>
 		</jsp-property-group>
 	</jsp-config>
 

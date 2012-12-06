@@ -160,3 +160,9 @@ SolarNode.Class.Slider = function(el, config) {
 SolarNode.Class.Slider.prototype = {
 	
 };
+
+$(document).ready(function() {
+	$('body').on('hidden', '.modal.dynamic', function () {
+		$(this).removeData('modal');
+	});
+});

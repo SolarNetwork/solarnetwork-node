@@ -5,6 +5,7 @@
 <tiles-definitions>
 
 	<definition name="settings" extends="default">
+		<put-attribute name="navloc" value="settings" type="string"/>
 		<put-attribute name="head" value="/WEB-INF/jsp/a/settings/settings-head.jsp"/>
 		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
 	</definition>

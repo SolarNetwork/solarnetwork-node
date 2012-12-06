@@ -34,9 +34,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class DefaultController {
 
-	@RequestMapping("/hello")
+	@RequestMapping({ "/", "/hello" })
 	public String hello() {
-		return "redirect:/node/verifyCode";
+		return "home";
 	}
 
 }

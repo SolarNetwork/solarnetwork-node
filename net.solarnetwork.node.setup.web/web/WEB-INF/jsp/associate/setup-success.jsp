@@ -13,7 +13,7 @@
 </p>
 
 <c:if test="${not empty csr}">
-	<h2><fmt:message key='node.setup.success.csr.title'/></h2>
-	<p><fmt:message key='node.setup.success.csr.intro'/></p>
+	<h2><fmt:message key='certs.csr.title'/></h2>
+	<p><fmt:message key='certs.csr.intro'/></p>
 	<pre class="cert well">${csr}</pre>
 </c:if>
