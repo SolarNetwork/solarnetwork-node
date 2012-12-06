@@ -1,6 +1,5 @@
 <h2><fmt:message key='certs.home.title'/></h2>
 <p><fmt:message key='certs.home.intro'/></p>
-<jsp:useBean class="java.util.Date" id="now"/>
 <div class="row form-horizontal">
 	<label class="span3" for=""><fmt:message key='certs.status.label'/></label>
 	<div class="span1">
