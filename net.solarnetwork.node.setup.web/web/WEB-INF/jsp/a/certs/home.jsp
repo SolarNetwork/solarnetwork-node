@@ -2,7 +2,7 @@
 <p><fmt:message key='certs.home.intro'/></p>
 <jsp:useBean class="java.util.Date" id="now"/>
 <div class="row form-horizontal">
-	<label class="span2" for=""><fmt:message key='certs.status.label'/></label>
+	<label class="span3" for=""><fmt:message key='certs.status.label'/></label>
 	<div class="span1">
 		<c:choose>
 			<c:when test="${nodeCertExpired}">

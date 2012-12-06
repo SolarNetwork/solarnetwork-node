@@ -6,10 +6,10 @@
 
 	<definition name="certs" extends="default">
 		<put-attribute name="navloc" value="cert" type="string"/>
-		<put-attribute name="head" value="/WEB-INF/jsp/a/cert/cert-head.jsp"/>
+		<put-attribute name="head" value="/WEB-INF/jsp/a/certs/certs-head.jsp"/>
 	</definition>
 	
-	<definition name="certs/*" extends="settings">
+	<definition name="certs/*" extends="certs">
 		<put-attribute name="body" value="/WEB-INF/jsp/a/certs/{1}.jsp" />
 	</definition>
 		
