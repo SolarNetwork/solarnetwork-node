@@ -16,4 +16,9 @@
 		p:solarInUrlPrefix="${SetupService.solarInUrlPrefix}"
 		p:transactionManager-ref="txManager"/>
 	
+	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService"
+		autowire="byType"  
+		p:keyStorePath="${PKIService.keyStorePath}"
+		p:certificateService-ref="certificateService"/>
+	
 </beans>

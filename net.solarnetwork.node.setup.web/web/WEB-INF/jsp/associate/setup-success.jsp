@@ -11,3 +11,9 @@
 		<fmt:param value="http${details.forceTLS or details.port == 443 ? 's' : ''}://${details.host}:${details.port}/solarreg/u/sec/my-nodes"/>
 	</fmt:message>
 </p>
+
+<c:if test="${not empty csr}">
+	<h2><fmt:message key='node.setup.success.csr.title'/></h2>
+	<p><fmt:message key='node.setup.success.csr.intro'/></p>
+	<pre class="cert well">${csr}</pre>
+</c:if>

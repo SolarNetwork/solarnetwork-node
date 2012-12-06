@@ -43,6 +43,7 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
+import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.support.XmlServiceSupport;
@@ -115,12 +116,14 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
 	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
 	private static final String VERIFICATION_CODE_NODE_ID_KEY = "networkId";
+	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
 
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solarreg/associate.xml";
 
+	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
@@ -130,6 +133,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
 		Map<String, String> xpathMap = new HashMap<String, String>();
 		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@networkId");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT_DN_KEY, "/*/@networkCertificateSubjectDN");
 		xpathMap.put(VERIFICATION_CODE_USER_NAME_KEY, "/*/@username");
 		xpathMap.put(VERIFICATION_CODE_CONFIRMATION_KEY, "/*/@confirmationKey");
 		return getXPathExpressionMap(xpathMap);
@@ -332,6 +336,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				}
 			});
 
+			// create the node's CSR based on the given subjectDN
+			log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
+
+			pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+
 			return result;
 		} catch ( Exception e ) {
 			log.error("Error while confirming server details: {}", details, e);
@@ -358,6 +367,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	public void setTransactionManager(PlatformTransactionManager transactionManager) {
 		this.transactionManager = transactionManager;
+	}
+
+	public void setPkiService(PKIService pkiService) {
+		this.pkiService = pkiService;
 	}
 
 }

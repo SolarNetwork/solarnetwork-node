@@ -29,25 +29,12 @@
 	<osgi:reference id="setupService"
 		interface="net.solarnetwork.node.setup.SetupService"/>
 		
+	<osgi:reference id="pkiService"
+		interface="net.solarnetwork.node.setup.PKIService"/>
+		
 	<osgi:reference id="settingsServiceRef" cardinality="0..1"
 		interface="net.solarnetwork.node.settings.SettingsService">
 		<osgi:listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
-	
-	<!--osgi:reference id="userBiz" depends-on="userValidator"
-		interface="net.solarnetwork.central.reg.biz.UserBiz"/>
-	
-	<osgi:reference id="mailSender" interface="org.springframework.mail.MailSender"/-->
-	
-	<!-- Published Services ->
-	
-	<osgi:service ref="userValidator" 
-		interface="org.springframework.validation.Validator"
-		ranking="1">
-		<osgi:service-properties>
-			<entry key="targetClassName" value="net.solarnetwork.central.user.domain.User"/>
-			<entry key="mode" value="Registration"/>
-		</osgi:service-properties>
-	</osgi:service-->
 	
 </beans>

@@ -28,8 +28,10 @@ import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
+import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
@@ -52,6 +54,9 @@ public class NodeAssociationController extends BaseSetupController {
 
 	private static final String PAGE_ENTER_CODE = "associate/enter-code";
 	private static final String KEY_DETAILS = "details";
+
+	@Autowired
+	private PKIService pkiService;
 
 	/**
 	 * Node association entry point.
@@ -161,11 +166,19 @@ public class NodeAssociationController extends BaseSetupController {
 			// now that the association has been confirmed get send confirmation to the server
 			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(details);
 			details.setNetworkId(cert.getNetworkId());
+
+			// generate certificate request
+			model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());
+
 			return "associate/setup-success";
 		} catch ( Exception e ) {
 			errors.reject("node.setup.success.error", new Object[] { details.getHost() }, null);
 			return PAGE_ENTER_CODE;
 		}
+	}
+
+	public void setPkiService(PKIService pkiService) {
+		this.pkiService = pkiService;
 	}
 
 }
