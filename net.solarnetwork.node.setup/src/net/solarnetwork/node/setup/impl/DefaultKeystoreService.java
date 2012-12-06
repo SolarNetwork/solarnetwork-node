@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -40,6 +41,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
@@ -174,13 +176,139 @@ public class DefaultKeystoreService {
 	 * @param alias
 	 *        the alias
 	 */
-	public void saveTrustedCertificate(Certificate cert, String alias) {
+	public void saveTrustedCertificate(X509Certificate cert, String alias) {
 		KeyStore keyStore = loadKeyStore();
 		try {
 			keyStore.setCertificateEntry(alias, cert);
 			saveKeyStore(keyStore);
 		} catch ( KeyStoreException e ) {
 			throw new SetupException("Error saving trusted certificate", e);
+		}
+	}
+
+	/**
+	 * Save the trusted CA certificate.
+	 * 
+	 * @param cert
+	 *        the certificate
+	 */
+	public void saveCACertificate(X509Certificate cert) {
+		saveTrustedCertificate(cert, caAlias);
+	}
+
+	/**
+	 * Generate a PKCS#10 certificate signing request (CSR) for the node's
+	 * certificate.
+	 * 
+	 * @return the PEM-encoded CSR
+	 */
+	public String generateNodePKCS10CertificateRequestString() {
+		KeyStore keyStore = loadKeyStore();
+		Key key;
+		try {
+			key = keyStore.getKey(nodeAlias, new char[0]);
+		} catch ( UnrecoverableKeyException e ) {
+			throw new SetupException("Error opening node private key", e);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node private key", e);
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new SetupException("Error opening node private key", e);
+		}
+		assert key instanceof PrivateKey;
+		Certificate cert;
+		try {
+			cert = keyStore.getCertificate(nodeAlias);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node certificate", e);
+		}
+		assert cert instanceof X509Certificate;
+		return certificateService.generatePKCS10CertificateRequestString((X509Certificate) cert,
+				(PrivateKey) key);
+	}
+
+	/**
+	 * Get the configured node certificate.
+	 * 
+	 * @return the node certificate, or <em>null</em> if not available
+	 */
+	public X509Certificate getNodeCertificate() {
+		return getNodeCertificate(loadKeyStore());
+	}
+
+	private X509Certificate getNodeCertificate(KeyStore keyStore) {
+		X509Certificate nodeCert;
+		try {
+			nodeCert = (X509Certificate) keyStore.getCertificate(nodeAlias);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node certificate", e);
+		}
+		return nodeCert;
+	}
+
+	/**
+	 * Get the configured CA certificate.
+	 * 
+	 * @return the CA certificate, or <em>null</em> if not available
+	 */
+	public X509Certificate getCACertificate() {
+		return getCACertificate(loadKeyStore());
+	}
+
+	private X509Certificate getCACertificate(KeyStore keyStore) {
+		X509Certificate nodeCert;
+		try {
+			nodeCert = (X509Certificate) keyStore.getCertificate(caAlias);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node certificate", e);
+		}
+		return nodeCert;
+	}
+
+	/**
+	 * Save a signed node certificate.
+	 * 
+	 * <p>
+	 * The issuer of the certificate must match the subject of the configured CA
+	 * certificate, and the certificate's subject must match the existing node
+	 * certificate's subject.
+	 * </p>
+	 * 
+	 * @param signedCert
+	 *        the signed certificate
+	 */
+	public void saveNodeSignedCertificate(X509Certificate signedCert) {
+		KeyStore keyStore = loadKeyStore();
+		Key key;
+		try {
+			key = keyStore.getKey(nodeAlias, new char[0]);
+		} catch ( UnrecoverableKeyException e ) {
+			throw new SetupException("Error opening node private key", e);
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node private key", e);
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new SetupException("Error opening node private key", e);
+		}
+		X509Certificate nodeCert = getNodeCertificate(keyStore);
+		X509Certificate caCert = getCACertificate(keyStore);
+
+		// the issuer must be our CA cert subject...
+		if ( !signedCert.getIssuerDN().equals(caCert.getSubjectDN()) ) {
+			throw new SetupException("Issuer " + signedCert.getIssuerDN().getName()
+					+ " does not match expected " + caCert.getSubjectDN().getName());
+		}
+
+		// the subject must be our node's existing subject...
+		if ( !signedCert.getSubjectDN().equals(nodeCert.getSubjectDN()) ) {
+			throw new SetupException("Subject " + signedCert.getIssuerDN().getName()
+					+ " does not match expected " + nodeCert.getSubjectDN().getName());
+		}
+
+		log.info("Saving signed node certificate reply {} issued by {}", signedCert.getSubjectDN()
+				.getName(), signedCert.getIssuerDN().getName());
+		try {
+			keyStore.setKeyEntry(nodeAlias, key, new char[0], new Certificate[] { signedCert, caCert });
+		} catch ( KeyStoreException e ) {
+			throw new SetupException("Error opening node certificate", e);
 		}
 	}
 
