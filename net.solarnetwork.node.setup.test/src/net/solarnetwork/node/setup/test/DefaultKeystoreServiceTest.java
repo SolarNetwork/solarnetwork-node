@@ -195,7 +195,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void saveCASignedCert() throws Exception {
 		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(6);
+				.andReturn(TEST_CONF_VALUE).times(7);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);

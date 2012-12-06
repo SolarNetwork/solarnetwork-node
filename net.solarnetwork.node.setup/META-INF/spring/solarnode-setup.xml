@@ -17,8 +17,9 @@
 		p:transactionManager-ref="txManager"/>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService"
-		autowire="byType"  
+		autowire="byType"  init-method="init"
 		p:keyStorePath="${PKIService.keyStorePath}"
-		p:certificateService-ref="certificateService"/>
+		p:certificateService-ref="certificateService"
+		p:manualKeyStorePassword="${PKIService.manualKeyStorePassword}"/>
 	
 </beans>

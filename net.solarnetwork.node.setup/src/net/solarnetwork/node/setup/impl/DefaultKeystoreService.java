@@ -47,6 +47,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.security.auth.x500.X500Principal;
 import net.solarnetwork.node.dao.SettingDao;
@@ -69,6 +70,7 @@ public class DefaultKeystoreService implements PKIService {
 	private String nodeAlias = "node";
 	private String caAlias = "ca";
 	private int keySize = 2048;
+	private String manualKeyStorePassword;
 
 	@Resource
 	private CertificateService certificateService;
@@ -77,6 +79,26 @@ public class DefaultKeystoreService implements PKIService {
 	private SettingDao settingDao;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	@PostConstruct
+	public void init() {
+		setSystemKeyStoreProperties();
+	}
+
+	private String getKeyStorePassword() {
+		return (manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ? manualKeyStorePassword
+				: getSetting(KEY_CONFIRMATION_CODE));
+	}
+
+	private void setSystemKeyStoreProperties() {
+		final String pass = getKeyStorePassword();
+		if ( pass != null ) {
+			System.setProperty("javax.net.ssl.trustStore", keyStorePath);
+			System.setProperty("javax.net.ssl.trustStorePassword", pass);
+			System.setProperty("javax.net.ssl.keyStore", keyStorePath);
+			System.setProperty("javax.net.ssl.keyStorePassword", pass);
+		}
+	}
 
 	@Override
 	public boolean isNodeCertificateValid(String issuerDN)
@@ -249,6 +271,8 @@ public class DefaultKeystoreService implements PKIService {
 		} catch ( KeyStoreException e ) {
 			throw new net.solarnetwork.support.CertificateException("Error opening node certificate", e);
 		}
+
+		setSystemKeyStoreProperties();
 	}
 
 	private void saveKeyStore(KeyStore keyStore) {
@@ -262,7 +286,7 @@ public class DefaultKeystoreService implements PKIService {
 		}
 		OutputStream out = null;
 		try {
-			String passwd = getSetting(KEY_CONFIRMATION_CODE);
+			String passwd = getKeyStorePassword();
 			out = new BufferedOutputStream(new FileOutputStream(ksFile));
 			keyStore.store(out, passwd.toCharArray());
 		} catch ( KeyStoreException e ) {
@@ -294,7 +318,7 @@ public class DefaultKeystoreService implements PKIService {
 		File ksFile = new File(keyStorePath);
 		InputStream in = null;
 		KeyStore keyStore = null;
-		String passwd = getSetting(KEY_CONFIRMATION_CODE);
+		String passwd = getKeyStorePassword();
 		if ( passwd == null ) {
 			log.info("Network association confirmation not available, cannot open key store");
 			return null;
@@ -341,14 +365,6 @@ public class DefaultKeystoreService implements PKIService {
 		this.settingDao = settingDao;
 	}
 
-	public String getNodeAlias() {
-		return nodeAlias;
-	}
-
-	public String getCaAlias() {
-		return caAlias;
-	}
-
 	public void setNodeAlias(String nodeAlias) {
 		this.nodeAlias = nodeAlias;
 	}
@@ -363,6 +379,10 @@ public class DefaultKeystoreService implements PKIService {
 
 	public void setCertificateService(CertificateService certificateService) {
 		this.certificateService = certificateService;
+	}
+
+	public void setManualKeyStorePassword(String manualKeyStorePassword) {
+		this.manualKeyStorePassword = manualKeyStorePassword;
 	}
 
 }
