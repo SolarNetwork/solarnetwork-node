@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.setup.web;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashMap;
@@ -30,8 +32,12 @@ import net.solarnetwork.node.setup.PKIService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Controller for node certificate management.
@@ -46,6 +52,13 @@ public class NodeCertificatesController extends BaseSetupController {
 	@Autowired
 	private PKIService pkiService;
 
+	/**
+	 * View the main certs page.
+	 * 
+	 * @param model
+	 *        the view model
+	 * @return
+	 */
 	@RequestMapping
 	public String home(Model model) {
 		X509Certificate nodeCert = pkiService.getNodeCertificate();
@@ -59,6 +72,11 @@ public class NodeCertificatesController extends BaseSetupController {
 		return "certs/home";
 	}
 
+	/**
+	 * Return a node's CSR based on its current certificate.
+	 * 
+	 * @return a map with the PEM encoded certificate on key {@code csr}
+	 */
 	@RequestMapping("/nodeCSR")
 	@ResponseBody
 	public Map<String, Object> nodeCSR() {
@@ -66,5 +84,25 @@ public class NodeCertificatesController extends BaseSetupController {
 		Map<String, Object> result = new HashMap<String, Object>(1);
 		result.put("csr", csr);
 		return result;
+	}
+
+	/**
+	 * Import a certificate reply (signed certificate chain).
+	 * 
+	 * @param file
+	 *        the CSR file to import
+	 * @return the destination view
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	@RequestMapping(value = "/import", method = RequestMethod.POST)
+	public String importSettigns(@RequestParam(value = "file", required = false) MultipartFile file,
+			@RequestParam(value = "text", required = false) String text) throws IOException {
+		String pem = text;
+		if ( file != null && !file.isEmpty() ) {
+			pem = FileCopyUtils.copyToString(new InputStreamReader(file.getInputStream(), "UTF-8"));
+		}
+		pkiService.saveNodeSignedCertificate(pem);
+		return "certs/home";
 	}
 }

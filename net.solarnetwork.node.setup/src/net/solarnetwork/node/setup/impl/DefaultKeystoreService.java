@@ -43,7 +43,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -52,6 +51,7 @@ import javax.annotation.Resource;
 import javax.security.auth.x500.X500Principal;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
+import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,8 +101,7 @@ public class DefaultKeystoreService implements PKIService {
 	}
 
 	@Override
-	public boolean isNodeCertificateValid(String issuerDN)
-			throws net.solarnetwork.support.CertificateException {
+	public boolean isNodeCertificateValid(String issuerDN) throws CertificateException {
 		KeyStore keyStore = loadKeyStore();
 		X509Certificate x509 = null;
 		try {
@@ -123,8 +122,7 @@ public class DefaultKeystoreService implements PKIService {
 			}
 			return true;
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error checking for node certificate", e);
+			throw new CertificateException("Error checking for node certificate", e);
 		} catch ( CertificateExpiredException e ) {
 			log.debug("Certificate {} has expired", x509.getSubjectDN().getName());
 		} catch ( CertificateNotYetValidException e ) {
@@ -134,8 +132,7 @@ public class DefaultKeystoreService implements PKIService {
 	}
 
 	@Override
-	public X509Certificate generateNodeSelfSignedCertificate(String dn)
-			throws net.solarnetwork.support.CertificateException {
+	public X509Certificate generateNodeSelfSignedCertificate(String dn) throws CertificateException {
 		KeyStore keyStore = loadKeyStore();
 		return createSelfSignedCertificate(keyStore, dn, nodeAlias);
 	}
@@ -154,49 +151,47 @@ public class DefaultKeystoreService implements PKIService {
 			saveKeyStore(keyStore);
 			return (X509Certificate) cert;
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error setting up node key pair", e);
+			throw new CertificateException("Error setting up node key pair", e);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error setting up node key pair", e);
+			throw new CertificateException("Error setting up node key pair", e);
 		}
 	}
 
 	private void saveTrustedCertificate(X509Certificate cert, String alias) {
 		KeyStore keyStore = loadKeyStore();
 		try {
+			log.info("Installing trusted CA certificate {}", cert.getSubjectDN());
 			keyStore.setCertificateEntry(alias, cert);
 			saveKeyStore(keyStore);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error saving trusted certificate",
-					e);
+			throw new CertificateException("Error saving trusted certificate", e);
 		}
 	}
 
 	@Override
-	public void saveCACertificate(X509Certificate cert)
-			throws net.solarnetwork.support.CertificateException {
+	public void saveCACertificate(X509Certificate cert) throws CertificateException {
 		saveTrustedCertificate(cert, caAlias);
 	}
 
 	@Override
-	public String generateNodePKCS10CertificateRequestString()
-			throws net.solarnetwork.support.CertificateException {
+	public String generateNodePKCS10CertificateRequestString() throws CertificateException {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
 			key = keyStore.getKey(nodeAlias, new char[0]);
 		} catch ( UnrecoverableKeyException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		}
 		assert key instanceof PrivateKey;
 		Certificate cert;
 		try {
 			cert = keyStore.getCertificate(nodeAlias);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node certificate", e);
+			throw new CertificateException("Error opening node certificate", e);
 		}
 		assert cert instanceof X509Certificate;
 		return certificateService.generatePKCS10CertificateRequestString((X509Certificate) cert,
@@ -204,7 +199,7 @@ public class DefaultKeystoreService implements PKIService {
 	}
 
 	@Override
-	public X509Certificate getNodeCertificate() throws net.solarnetwork.support.CertificateException {
+	public X509Certificate getNodeCertificate() throws CertificateException {
 		return getNodeCertificate(loadKeyStore());
 	}
 
@@ -213,13 +208,13 @@ public class DefaultKeystoreService implements PKIService {
 		try {
 			nodeCert = (X509Certificate) keyStore.getCertificate(nodeAlias);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node certificate", e);
+			throw new CertificateException("Error opening node certificate", e);
 		}
 		return nodeCert;
 	}
 
 	@Override
-	public X509Certificate getCACertificate() throws net.solarnetwork.support.CertificateException {
+	public X509Certificate getCACertificate() throws CertificateException {
 		return getCACertificate(loadKeyStore());
 	}
 
@@ -228,48 +223,90 @@ public class DefaultKeystoreService implements PKIService {
 		try {
 			nodeCert = (X509Certificate) keyStore.getCertificate(caAlias);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node certificate", e);
+			throw new CertificateException("Error opening node certificate", e);
 		}
 		return nodeCert;
 	}
 
 	@Override
-	public void saveNodeSignedCertificate(X509Certificate signedCert)
-			throws net.solarnetwork.support.CertificateException {
+	public void saveNodeSignedCertificate(String pem) throws CertificateException {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
 			key = keyStore.getKey(nodeAlias, new char[0]);
 		} catch ( UnrecoverableKeyException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node private key", e);
+			throw new CertificateException("Error opening node private key", e);
 		}
 		X509Certificate nodeCert = getNodeCertificate(keyStore);
 		X509Certificate caCert = getCACertificate(keyStore);
 
+		X509Certificate[] chain = certificateService.parsePKCS7CertificateChainString(pem);
+
+		if ( chain.length < 1 ) {
+			throw new CertificateException("No certificates avaialble");
+		}
+
+		if ( chain.length > 1 ) {
+			// we have to trust the parents... the end of the chain must be our CA
+			try {
+				final int caIdx = chain.length - 1;
+				if ( caCert == null ) {
+					// if we don't have a CA cert yet, install that now
+					log.info("Installing trusted CA certificate {}", chain[caIdx].getSubjectDN());
+					keyStore.setCertificateEntry(caAlias, chain[caIdx]);
+					caCert = chain[caIdx];
+				} else {
+					// verify CA is the same... maybe we shouldn't do this?
+					if ( !chain[caIdx].getSubjectDN().equals(caCert.getSubjectDN()) ) {
+						throw new CertificateException("Chain CA "
+								+ chain[caIdx].getSubjectDN().getName() + " does not match expected "
+								+ caCert.getSubjectDN().getName());
+					}
+					if ( !chain[caIdx].getIssuerDN().equals(caCert.getIssuerDN()) ) {
+						throw new CertificateException("Chain CA "
+								+ chain[caIdx].getIssuerDN().getName() + " does not match expected "
+								+ caCert.getIssuerDN().getName());
+					}
+				}
+				// install intermediate certs...
+				for ( int i = caIdx - 1, j = 1; i > 0; i--, j++ ) {
+					String alias = caAlias + "sub" + j;
+					log.info("Installing trusted intermediate certificate {}", chain[i].getSubjectDN());
+					keyStore.setCertificateEntry(alias, chain[i]);
+				}
+			} catch ( KeyStoreException e ) {
+				throw new CertificateException("Error storing CA chain", e);
+			}
+		} else {
+			// put CA at end of chain
+			if ( caCert == null ) {
+				throw new CertificateException("No CA certificate available");
+			}
+			chain = new X509Certificate[] { chain[0], caCert };
+		}
+
 		// the issuer must be our CA cert subject...
-		if ( !signedCert.getIssuerDN().equals(caCert.getSubjectDN()) ) {
-			throw new net.solarnetwork.support.CertificateException("Issuer "
-					+ signedCert.getIssuerDN().getName() + " does not match expected "
-					+ caCert.getSubjectDN().getName());
+		if ( !chain[0].getIssuerDN().equals(chain[1].getSubjectDN()) ) {
+			throw new CertificateException("Issuer " + chain[0].getIssuerDN().getName()
+					+ " does not match expected " + chain[1].getSubjectDN().getName());
 		}
 
 		// the subject must be our node's existing subject...
-		if ( !signedCert.getSubjectDN().equals(nodeCert.getSubjectDN()) ) {
-			throw new net.solarnetwork.support.CertificateException("Subject "
-					+ signedCert.getIssuerDN().getName() + " does not match expected "
-					+ nodeCert.getSubjectDN().getName());
+		if ( !chain[0].getSubjectDN().equals(nodeCert.getSubjectDN()) ) {
+			throw new CertificateException("Subject " + chain[0].getIssuerDN().getName()
+					+ " does not match expected " + nodeCert.getSubjectDN().getName());
 		}
 
-		log.info("Saving signed node certificate reply {} issued by {}", signedCert.getSubjectDN()
-				.getName(), signedCert.getIssuerDN().getName());
+		log.info("Installing node certificate reply {} issued by {}", chain[0].getSubjectDN().getName(),
+				chain[0].getIssuerDN().getName());
 		try {
-			keyStore.setKeyEntry(nodeAlias, key, new char[0], new Certificate[] { signedCert, caCert });
+			keyStore.setKeyEntry(nodeAlias, key, new char[0], chain);
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException("Error opening node certificate", e);
+			throw new CertificateException("Error opening node certificate", e);
 		}
 
 		setSystemKeyStoreProperties();
@@ -290,25 +327,20 @@ public class DefaultKeystoreService implements PKIService {
 			out = new BufferedOutputStream(new FileOutputStream(ksFile));
 			keyStore.store(out, passwd.toCharArray());
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
-		} catch ( CertificateException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
+		} catch ( java.security.cert.CertificateException e ) {
+			throw new CertificateException("Error creating certificate key store", e);
 		} catch ( IOException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
 		} finally {
 			if ( out != null ) {
 				try {
 					out.flush();
 					out.close();
 				} catch ( IOException e ) {
-					throw new net.solarnetwork.support.CertificateException(
-							"Error closing KeyStore file: " + ksFile.getPath(), e);
+					throw new CertificateException("Error closing KeyStore file: " + ksFile.getPath(), e);
 				}
 			}
 		}
@@ -331,17 +363,13 @@ public class DefaultKeystoreService implements PKIService {
 			keyStore.load(in, passwd.toCharArray());
 			return keyStore;
 		} catch ( KeyStoreException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
-		} catch ( CertificateException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
+		} catch ( java.security.cert.CertificateException e ) {
+			throw new CertificateException("Error creating certificate key store", e);
 		} catch ( IOException e ) {
-			throw new net.solarnetwork.support.CertificateException(
-					"Error creating certificate key store", e);
+			throw new CertificateException("Error creating certificate key store", e);
 		} finally {
 			if ( in != null ) {
 				try {

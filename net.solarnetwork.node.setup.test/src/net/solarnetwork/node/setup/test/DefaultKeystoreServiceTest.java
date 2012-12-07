@@ -42,10 +42,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
+import java.security.cert.CertPath;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.dao.SettingDao;
@@ -61,6 +64,7 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -89,11 +93,15 @@ import org.slf4j.LoggerFactory;
 public class DefaultKeystoreServiceTest {
 
 	private static final String TEST_CONF_VALUE = "password";
-	private static final String TEST_DN = "UID=1, O=SolarNetwork";
-	private static final String TEST_CA_DN = "CN=SolarNetwork Unit Test, OU=Unit Test, O=SolarNetwork Domain";
+	private static final String TEST_DN = "UID=1, OU=Development, O=SolarNetwork";
+	private static final String TEST_CA_DN = "CN=Developer CA, OU=SolarNetwork Developer Network, O=SolarNetwork Domain";
+	private static final String TEST_CA_SUB_DN = "CN=Unit Test CA, OU=SolarNetwork Developer Network, O=SolarNetwork Domain";
 
 	private static KeyPair CA_KEY_PAIR;
 	private static X509Certificate CA_CERT;
+
+	private static KeyPair CA_SUB_KEY_PAIR;
+	private static X509Certificate CA_SUB_CERT;
 
 	private SettingDao settingDao;
 	private BCCertificateService certService;
@@ -107,7 +115,11 @@ public class DefaultKeystoreServiceTest {
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
 		keyGen.initialize(2048, new SecureRandom());
 		CA_KEY_PAIR = keyGen.generateKeyPair();
-		CA_CERT = generateNewCACert(CA_KEY_PAIR);
+		CA_CERT = generateNewCACert(CA_KEY_PAIR.getPublic(), TEST_CA_DN, null, CA_KEY_PAIR.getPrivate());
+
+		CA_SUB_KEY_PAIR = keyGen.generateKeyPair();
+		CA_SUB_CERT = generateNewCACert(CA_SUB_KEY_PAIR.getPublic(), TEST_CA_SUB_DN, CA_CERT,
+				CA_KEY_PAIR.getPrivate());
 	}
 
 	@Before
@@ -205,29 +217,62 @@ public class DefaultKeystoreServiceTest {
 		try {
 			PemObject pem = pemReader.readPemObject();
 			PKCS10CertificationRequest req = new PKCS10CertificationRequest(pem.getContent());
-			X509Certificate signedCert = sign(req, CA_KEY_PAIR.getPrivate());
-			service.saveNodeSignedCertificate(signedCert);
+			X509Certificate signedCert = sign(req, CA_CERT, CA_KEY_PAIR.getPrivate());
+			String signedPem = getPKCS7Encoding(new X509Certificate[] { signedCert });
+			service.saveNodeSignedCertificate(signedPem);
 
-			debugCertificateAsPEM(signedCert, "Saved signed node certificate:\n{}");
+			log.debug("Saved signed node certificate:\n{}", signedPem);
 
 			verify(settingDao);
 			assertNotNull(csr);
 		} finally {
 			pemReader.close();
 		}
-
 	}
 
-	private void debugCertificateAsPEM(X509Certificate cert, String msg) throws IOException,
-			CertificateEncodingException {
+	@Test
+	public void saveCASubSignedCert() throws Exception {
+		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
+				.andReturn(TEST_CONF_VALUE).times(7);
+		replay(settingDao);
+		service.saveCACertificate(CA_CERT);
+		service.generateNodeSelfSignedCertificate(TEST_DN);
+		String csr = service.generateNodePKCS10CertificateRequestString();
+
+		PemReader pemReader = new PemReader(new StringReader(csr));
+		try {
+			PemObject pem = pemReader.readPemObject();
+			PKCS10CertificationRequest req = new PKCS10CertificationRequest(pem.getContent());
+			X509Certificate signedCert = sign(req, CA_SUB_CERT, CA_SUB_KEY_PAIR.getPrivate());
+			String signedPem = getPKCS7Encoding(new X509Certificate[] { signedCert, CA_SUB_CERT, CA_CERT });
+			service.saveNodeSignedCertificate(signedPem);
+
+			log.debug("Saved signed node certificate:\n{}", signedPem);
+
+			verify(settingDao);
+			assertNotNull(csr);
+		} finally {
+			pemReader.close();
+		}
+	}
+
+	private String getPKCS7Encoding(X509Certificate[] chain) throws IOException,
+			java.security.cert.CertificateException {
+		CertificateFactory cf = CertificateFactory.getInstance("X.509");
+		List<X509Certificate> chainList = Arrays.asList(chain);
+		log.debug("Cert chain:\n{}", chainList);
+		CertPath path = cf.generateCertPath(chainList);
 		StringWriter out = new StringWriter();
 		PemWriter writer = new PemWriter(out);
-		PemObject pemObj = new PemObject("CERTIFICATE", cert.getEncoded());
+		PemObject pemObj = new PemObject("CERTIFICATE CHAIN", path.getEncoded("PKCS7"));
 		writer.writeObject(pemObj);
 		writer.flush();
-		log.debug(msg, out.toString());
-		out.close();
 		writer.close();
+		out.close();
+		String result = out.toString();
+		log.debug("Generated cert chain:\n{}", result);
+		return result;
+
 	}
 
 	private static final AtomicLong serialCounter = new AtomicLong(0);
@@ -236,19 +281,26 @@ public class DefaultKeystoreServiceTest {
 		return new BigInteger(Long.valueOf(serialCounter.incrementAndGet()).toString());
 	}
 
-	private static X509Certificate generateNewCACert(KeyPair caKeyPair) throws Exception {
-		final PublicKey publicKey = caKeyPair.getPublic();
-		final PrivateKey privateKey = caKeyPair.getPrivate();
-
-		X500Name caDn = new X500Name(TEST_CA_DN);
+	private static X509Certificate generateNewCACert(PublicKey publicKey, String subject,
+			X509Certificate issuer, PrivateKey issuerKey) throws Exception {
+		final X500Name issuerDn = (issuer == null ? new X500Name(subject) : JcaX500NameUtil
+				.getSubject(issuer));
+		final X500Name subjectDn = new X500Name(subject);
 		final BigInteger serial = getNextSerialNumber();
 		final Date notBefore = new Date();
 		final Date notAfter = new Date(System.currentTimeMillis() + 1000L * 60L * 60L);
-		JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(caDn, serial, notBefore,
-				notAfter, caDn, publicKey);
+		JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuerDn, serial,
+				notBefore, notAfter, subjectDn, publicKey);
 
 		// add "CA" extension
-		builder.addExtension(X509Extension.basicConstraints, true, new BasicConstraints(true));
+		BasicConstraints basicConstraints;
+		if ( issuer == null ) {
+			basicConstraints = new BasicConstraints(true);
+		} else {
+			int issuerPathLength = issuer.getBasicConstraints();
+			basicConstraints = new BasicConstraints(issuerPathLength - 1);
+		}
+		builder.addExtension(X509Extension.basicConstraints, true, basicConstraints);
 
 		// add subjectKeyIdentifier
 		JcaX509ExtensionUtils utils = new JcaX509ExtensionUtils();
@@ -268,31 +320,32 @@ public class DefaultKeystoreServiceTest {
 		builder.addExtension(X509Extension.keyUsage, true, keyUsage);
 
 		JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
-		ContentSigner signer = signerBuilder.build(privateKey);
+		ContentSigner signer = signerBuilder.build(issuerKey);
 
 		X509CertificateHolder holder = builder.build(signer);
 		JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
 		return converter.getCertificate(holder);
 	}
 
-	private static X509Certificate sign(PKCS10CertificationRequest csr, PrivateKey caPrivateKey)
-			throws InvalidKeyException, NoSuchAlgorithmException, NoSuchProviderException,
-			SignatureException, IOException, OperatorCreationException, CertificateException,
-			java.security.cert.CertificateException {
+	private static X509Certificate sign(PKCS10CertificationRequest csr, X509Certificate issuer,
+			PrivateKey issuerPrivateKey) throws InvalidKeyException, NoSuchAlgorithmException,
+			NoSuchProviderException, SignatureException, IOException, OperatorCreationException,
+			CertificateException, java.security.cert.CertificateException {
 
 		final BigInteger serial = getNextSerialNumber();
 		final Date notBefore = new Date();
 		final Date notAfter = new Date(System.currentTimeMillis() + 24L * 60L * 60L * 1000L);
 
-		X509v3CertificateBuilder myCertificateGenerator = new X509v3CertificateBuilder(new X500Name(
-				TEST_CA_DN), serial, notBefore, notAfter, csr.getSubject(),
-				csr.getSubjectPublicKeyInfo());
+		X500Name issuerName = JcaX500NameUtil.getSubject(issuer);
+		X509v3CertificateBuilder myCertificateGenerator = new X509v3CertificateBuilder(issuerName,
+				serial, notBefore, notAfter, csr.getSubject(), csr.getSubjectPublicKeyInfo());
 
 		JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
-		ContentSigner signer = signerBuilder.build(caPrivateKey);
+		ContentSigner signer = signerBuilder.build(issuerPrivateKey);
 		X509CertificateHolder holder = myCertificateGenerator.build(signer);
 
 		JcaX509CertificateConverter converter = new JcaX509CertificateConverter();
 		return converter.getCertificate(holder);
 	}
+
 }

@@ -114,12 +114,12 @@ public interface PKIService {
 	 * certificate's subject.
 	 * </p>
 	 * 
-	 * @param signedCert
-	 *        the signed certificate
+	 * @param certificateChain
+	 *        the PKCS#7 signed certificate chain
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	public void saveNodeSignedCertificate(X509Certificate signedCert)
+	public void saveNodeSignedCertificate(String certificateChain)
 			throws net.solarnetwork.support.CertificateException;
 
 }
