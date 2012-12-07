@@ -27,6 +27,10 @@ label {
 	font-weight: 700;
 }
 
+label.checkbox {
+	font-weight: normal;
+}
+
 img.logo-main {
  	margin: 20px 0;
  }

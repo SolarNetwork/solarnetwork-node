@@ -3,9 +3,20 @@ $(document).ready(function() {
 		var a = this;
 		event.preventDefault();
 		$.getJSON(a.href, function(data) {
-			$('#modal-cert-container').text(data.csr);
-			$('#view-cert-modal').modal('show');
+			$('#modal-csr-container').text(data.csr);
+			$('#view-csr-modal').modal('show');
 		});
+	});
+	$('#btn-export-node-cert').click(function(event) {
+		var a = this;
+		event.preventDefault();
+		$.getJSON(a.href, function(data) {
+			$('#modal-cert-container').text(data.cert);
+			$('#export-cert-modal').modal('show');
+		});
+	});
+	$('#export-cert-modal').submit(function() {
+		$('#export-cert-modal').modal('hide');
 	});
 	/*
 	var importProgressBar = $('#import-cert-progress');

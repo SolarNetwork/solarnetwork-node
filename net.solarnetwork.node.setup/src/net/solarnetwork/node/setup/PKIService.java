@@ -106,6 +106,24 @@ public interface PKIService {
 	public String generateNodePKCS10CertificateRequestString() throws CertificateException;
 
 	/**
+	 * Generate a PKCS#7 PEM encoding of the node's certificate.
+	 * 
+	 * @return the PEM-encoded certificate
+	 * @throws CertificateException
+	 *         if any certificate related error occurs
+	 */
+	public String generateNodePKCS7CertificateString() throws CertificateException;
+
+	/**
+	 * Generate a PKCS#7 PEM encoding of the node's certificate chain.
+	 * 
+	 * @return the PEM-encoded certificate chain
+	 * @throws CertificateException
+	 *         if any certificate related error occurs
+	 */
+	public String generateNodePKCS7CertificateChainString() throws CertificateException;
+
+	/**
 	 * Save a signed node certificate.
 	 * 
 	 * <p>

@@ -199,6 +199,59 @@ public class DefaultKeystoreService implements PKIService {
 	}
 
 	@Override
+	public String generateNodePKCS7CertificateString() throws CertificateException {
+		KeyStore keyStore = loadKeyStore();
+		Key key;
+		try {
+			key = keyStore.getKey(nodeAlias, new char[0]);
+		} catch ( UnrecoverableKeyException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		} catch ( KeyStoreException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		}
+		assert key instanceof PrivateKey;
+		Certificate cert;
+		try {
+			cert = keyStore.getCertificate(nodeAlias);
+		} catch ( KeyStoreException e ) {
+			throw new CertificateException("Error opening node certificate", e);
+		}
+		assert cert instanceof X509Certificate;
+		return certificateService
+				.generatePKCS7CertificateChainString(new X509Certificate[] { (X509Certificate) cert });
+	}
+
+	@Override
+	public String generateNodePKCS7CertificateChainString() throws CertificateException {
+		KeyStore keyStore = loadKeyStore();
+		Key key;
+		try {
+			key = keyStore.getKey(nodeAlias, new char[0]);
+		} catch ( UnrecoverableKeyException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		} catch ( KeyStoreException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new CertificateException("Error opening node private key", e);
+		}
+		assert key instanceof PrivateKey;
+		Certificate[] chain;
+		try {
+			chain = keyStore.getCertificateChain(nodeAlias);
+		} catch ( KeyStoreException e ) {
+			throw new CertificateException("Error opening node certificate", e);
+		}
+		X509Certificate[] x509Chain = new X509Certificate[chain.length];
+		for ( int i = 0; i < chain.length; i++ ) {
+			assert chain[i] instanceof X509Certificate;
+			x509Chain[i] = (X509Certificate) chain[i];
+		}
+		return certificateService.generatePKCS7CertificateChainString(x509Chain);
+	}
+
+	@Override
 	public X509Certificate getNodeCertificate() throws CertificateException {
 		return getNodeCertificate(loadKeyStore());
 	}
@@ -309,6 +362,7 @@ public class DefaultKeystoreService implements PKIService {
 			throw new CertificateException("Error opening node certificate", e);
 		}
 
+		saveKeyStore(keyStore);
 		setSystemKeyStoreProperties();
 	}
 

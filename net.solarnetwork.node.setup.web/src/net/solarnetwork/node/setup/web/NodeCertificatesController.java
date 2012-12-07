@@ -30,6 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 import net.solarnetwork.node.setup.PKIService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.FileCopyUtils;
@@ -87,6 +91,40 @@ public class NodeCertificatesController extends BaseSetupController {
 	}
 
 	/**
+	 * Return a node's current certificate.
+	 * 
+	 * @return a map with the PEM encoded certificate on key {@code cert} if
+	 *         {@code download} is not <em>true</em>, otherwise the content is
+	 *         returned as a file attachment
+	 */
+	@RequestMapping(value = "/nodeCert", method = RequestMethod.GET)
+	@ResponseBody
+	public Object viewNodeCert(
+			@RequestParam(value = "download", required = false) final Boolean download,
+			@RequestParam(value = "chain", required = false) final Boolean asChain) {
+		final String cert = (Boolean.TRUE.equals(asChain) ? pkiService
+				.generateNodePKCS7CertificateChainString() : pkiService
+				.generateNodePKCS7CertificateString());
+
+		if ( !Boolean.TRUE.equals(download) ) {
+			Map<String, Object> result = new HashMap<String, Object>(1);
+			result.put("cert", cert);
+			return result;
+		}
+
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentLength(cert.length());
+		headers.setContentType(MediaType.parseMediaType("application/x-pem-file"));
+		headers.setLastModified(System.currentTimeMillis());
+		headers.setCacheControl("no-cache");
+
+		headers.set("Content-Disposition", "attachment; filename=solarnode-"
+				+ getIdentityService().getNodeId() + ".pem");
+
+		return new ResponseEntity<String>(cert, headers, HttpStatus.OK);
+	}
+
+	/**
 	 * Import a certificate reply (signed certificate chain).
 	 * 
 	 * @param file
@@ -96,13 +134,13 @@ public class NodeCertificatesController extends BaseSetupController {
 	 *         if an IO error occurs
 	 */
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
-	public String importSettigns(@RequestParam(value = "file", required = false) MultipartFile file,
+	public String importSettings(@RequestParam(value = "file", required = false) MultipartFile file,
 			@RequestParam(value = "text", required = false) String text) throws IOException {
 		String pem = text;
 		if ( file != null && !file.isEmpty() ) {
 			pem = FileCopyUtils.copyToString(new InputStreamReader(file.getInputStream(), "UTF-8"));
 		}
 		pkiService.saveNodeSignedCertificate(pem);
-		return "certs/home";
+		return "redirect:certs/home";
 	}
 }
