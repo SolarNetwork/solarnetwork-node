@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -43,7 +44,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
-
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -62,10 +62,8 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.util.ClassUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
@@ -80,31 +78,32 @@ import org.xml.sax.SAXException;
 /**
  * An abstract class to support services that use XML.
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>docBuilderFactory</dt>
- *   <dd>A JAXP {@link DocumentBuilderFactory} to use. If not configured,
- *   the {@link DocumentBuilderFactory#newInstance()} method will be used
- *   to create a default one.</p>
- *   
- *   <dt>transformerFactory</dt>
- *   <dd>A JAXP {@link TransformerFactory} for handling XSLT transformations
- *   with. If not configured, the 
- *   {@link TransformerFactory#newInstance()} method will be used to create
- *   a default one.</p>
- *   
- *   <dt>xpathFactory</dt>
- *   <dd>A JAXP {@link XPathFactory} for handling XPath operations with.
- *   If not configured the {@link XPathFactory#newInstance()} method will
- *   be used to create a default one.</dd>
- *   
- *   <dt>nsContext</dt>
- *   <dd>An optional {@link NamespaceContext} to use for proper XML
- *   namespace handling in some contexts, such as XPath.</dd>
- *   
- *   <dt>identityService</dt>
- *   <dd>The {@link IdentityService} for identifying node details.</dd>
+ * <dt>docBuilderFactory</dt>
+ * <dd>A JAXP {@link DocumentBuilderFactory} to use. If not configured, the
+ * {@link DocumentBuilderFactory#newInstance()} method will be used to create a
+ * default one.</p>
+ * 
+ * <dt>transformerFactory</dt>
+ * <dd>A JAXP {@link TransformerFactory} for handling XSLT transformations with.
+ * If not configured, the {@link TransformerFactory#newInstance()} method will
+ * be used to create a default one.</p>
+ * 
+ * <dt>xpathFactory</dt>
+ * <dd>A JAXP {@link XPathFactory} for handling XPath operations with. If not
+ * configured the {@link XPathFactory#newInstance()} method will be used to
+ * create a default one.</dd>
+ * 
+ * <dt>nsContext</dt>
+ * <dd>An optional {@link NamespaceContext} to use for proper XML namespace
+ * handling in some contexts, such as XPath.</dd>
+ * 
+ * <dt>identityService</dt>
+ * <dd>The {@link IdentityService} for identifying node details.</dd>
  * </dl>
  * 
  * @author matt.magoffin
@@ -114,16 +113,16 @@ public abstract class XmlServiceSupport {
 
 	/** The default value for the {@code connectionTimeout} property. */
 	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
-	
+
 	/** Special attribute key for a node ID value. */
 	public static final String ATTR_NODE_ID = "node-id";
-	
+
 	/** The HTTP method GET. */
 	public static final String HTTP_METHOD_GET = "GET";
-	
+
 	/** The HTTP method POST. */
 	public static final String HTTP_METHOD_POST = "POST";
-	
+
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private NamespaceContext nsContext = null;
 	private DocumentBuilderFactory docBuilderFactory = null;
@@ -149,11 +148,12 @@ public abstract class XmlServiceSupport {
 			this.transformerFactory = TransformerFactory.newInstance();
 		}
 	}
-	
+
 	/**
 	 * Compile XPathExpression mappings from String XPath expressions.
 	 * 
-	 * @param xpathMap the XPath string expressions
+	 * @param xpathMap
+	 *        the XPath string expressions
 	 * @return the XPathExperssion mapping
 	 */
 	protected Map<String, XPathExpression> getXPathExpressionMap(Map<String, String> xpathMap) {
@@ -165,7 +165,7 @@ public abstract class XmlServiceSupport {
 					xp.setNamespaceContext(getNsContext());
 				}
 				datumXPathMap.put(me.getKey(), xp.compile(me.getValue()));
-			} catch (XPathExpressionException e) {
+			} catch ( XPathExpressionException e ) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -175,35 +175,40 @@ public abstract class XmlServiceSupport {
 	/**
 	 * Get an XSLT Templates object from an XSLT Resource.
 	 * 
-	 * @param resource the XSLT Resource to load
+	 * @param resource
+	 *        the XSLT Resource to load
 	 * @return the compiled Templates
 	 */
 	protected Templates getTemplates(Resource resource) {
 		TransformerFactory tf = TransformerFactory.newInstance();
 		try {
 			return tf.newTemplates(new StreamSource(resource.getInputStream()));
-		} catch (TransformerConfigurationException e) {
-			throw new RuntimeException("Unable to load XSLT from resource ["
-					+resource +']');
-		} catch (IOException e) {
-			throw new RuntimeException("Unable to load XSLT from resource ["
-					+resource +']');
+		} catch ( TransformerConfigurationException e ) {
+			throw new RuntimeException("Unable to load XSLT from resource [" + resource + ']');
+		} catch ( IOException e ) {
+			throw new RuntimeException("Unable to load XSLT from resource [" + resource + ']');
 		}
 	}
-	
+
 	/**
 	 * Turn an object into a simple XML Document.
 	 * 
-	 * <p>The returned XML will be a single element with all JavaBean 
-	 * properties turned into attributed. For example:<p>
+	 * <p>
+	 * The returned XML will be a single element with all JavaBean properties
+	 * turned into attributed. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;powerDatum
+	 * <pre>
+	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param o the object to turn into XML
-	 * @param elementName the name of the XML element
+	 * @param o
+	 *        the object to turn into XML
+	 * @param elementName
+	 *        the name of the XML element
 	 * @return the element, as XSLT Source
 	 * @see #getSimpleDocument(Object, String)
 	 */
@@ -211,20 +216,26 @@ public abstract class XmlServiceSupport {
 		Document dom = getSimpleDocument(o, elementName);
 		return getSource(dom);
 	}
-	
+
 	/**
 	 * Turn an object into a simple XML Document.
 	 * 
-	 * <p>The returned XML will be a single element with all JavaBean 
-	 * properties turned into attributes. For example:<p>
+	 * <p>
+	 * The returned XML will be a single element with all JavaBean properties
+	 * turned into attributes. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;powerDatum
+	 * <pre>
+	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param o the object to turn into XML
-	 * @param elementName the name of the XML element
+	 * @param o
+	 *        the object to turn into XML
+	 * @param elementName
+	 *        the name of the XML element
 	 * @return the element, as an XML DOM Document
 	 */
 	protected Document getSimpleDocument(Object o, String elementName) {
@@ -239,38 +250,46 @@ public abstract class XmlServiceSupport {
 			for ( Map.Entry<String, Object> me : props.entrySet() ) {
 				Object val = me.getValue();
 				if ( val instanceof Date ) {
-					val = sdf.format((Date)val);
+					val = sdf.format((Date) val);
 				}
 				root.setAttribute(me.getKey(), val.toString());
-				
+
 				if ( log.isTraceEnabled() ) {
-					log.trace("attribute name: " +me.getKey() 
-							+ " attribute value: " + val.toString());
+					log.trace("attribute name: " + me.getKey() + " attribute value: " + val.toString());
 				}
-				
+
 			}
-		} catch (ParserConfigurationException e) {
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
 		return dom;
 	}
-	
+
 	/**
-	 * Turn an object into a simple XML Document, supporting custom property editors.
+	 * Turn an object into a simple XML Document, supporting custom property
+	 * editors.
 	 * 
-	 * <p>The returned XML will be a document with a single element with all JavaBean 
-	 * properties turned into attributes. For example:<p>
+	 * <p>
+	 * The returned XML will be a document with a single element with all
+	 * JavaBean properties turned into attributes. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;powerDatum
+	 * <pre>
+	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
-	 *   
-	 * <p>{@link PropertyEditor} instances can be registered with the supplied 
-	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.</p>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param bean the object to turn into XML
-	 * @param elementName the name of the XML element
+	 * <p>
+	 * {@link PropertyEditor} instances can be registered with the supplied
+	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
+	 * </p>
+	 * 
+	 * @param bean
+	 *        the object to turn into XML
+	 * @param elementName
+	 *        the name of the XML element
 	 * @return the element, as an XML DOM Document
 	 */
 	protected Document getDocument(BeanWrapper bean, String elementName) {
@@ -278,51 +297,68 @@ public abstract class XmlServiceSupport {
 		try {
 			dom = getDocBuilderFactory().newDocumentBuilder().newDocument();
 			dom.appendChild(getElement(bean, elementName, dom));
-		} catch (ParserConfigurationException e) {
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
 		return dom;
 	}
-	
+
 	/**
-	 * Turn an object into a simple XML Element, supporting custom property editors.
+	 * Turn an object into a simple XML Element, supporting custom property
+	 * editors.
 	 * 
-	 * <p>The returned XML will be a single element with all JavaBean 
-	 * properties turned into attributes and the element named after the bean
-	 * object's class name. For example:<p>
+	 * <p>
+	 * The returned XML will be a single element with all JavaBean properties
+	 * turned into attributes and the element named after the bean object's
+	 * class name. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;PowerDatum
+	 * <pre>
+	 * &lt;PowerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
-	 *   
-	 * <p>{@link PropertyEditor} instances can be registered with the supplied 
-	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.</p>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param bean the object to turn into XML
+	 * <p>
+	 * {@link PropertyEditor} instances can be registered with the supplied
+	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
+	 * </p>
+	 * 
+	 * @param bean
+	 *        the object to turn into XML
 	 * @return the element, as an XML DOM Document
 	 */
 	protected Element getElement(BeanWrapper bean, Document dom) {
 		String elementName = bean.getWrappedInstance().getClass().getSimpleName();
 		return getElement(bean, elementName, dom);
 	}
-	
+
 	/**
-	 * Turn an object into a simple XML Element, supporting custom property editors.
+	 * Turn an object into a simple XML Element, supporting custom property
+	 * editors.
 	 * 
-	 * <p>The returned XML will be a single element with all JavaBean 
-	 * properties turned into attributes. For example:<p>
+	 * <p>
+	 * The returned XML will be a single element with all JavaBean properties
+	 * turned into attributes. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;powerDatum
+	 * <pre>
+	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
-	 *   
-	 * <p>{@link PropertyEditor} instances can be registered with the supplied 
-	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.</p>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param bean the object to turn into XML
-	 * @param elementName the name of the XML element
+	 * <p>
+	 * {@link PropertyEditor} instances can be registered with the supplied
+	 * {@link BeanWrapper} for custom handling of properties, e.g. dates.
+	 * </p>
+	 * 
+	 * @param bean
+	 *        the object to turn into XML
+	 * @param elementName
+	 *        the name of the XML element
 	 * @return the element, as an XML DOM Element
 	 */
 	protected Element getElement(BeanWrapper bean, String elementName, Document dom) {
@@ -339,8 +375,7 @@ public abstract class XmlServiceSupport {
 				continue;
 			}
 			Object propValue = null;
-			PropertyEditor editor = bean.findCustomEditor(
-					prop.getPropertyType(), prop.getName());
+			PropertyEditor editor = bean.findCustomEditor(prop.getPropertyType(), prop.getName());
 			if ( editor != null ) {
 				editor.setValue(bean.getPropertyValue(propName));
 				propValue = editor.getAsText();
@@ -351,27 +386,33 @@ public abstract class XmlServiceSupport {
 				continue;
 			}
 			if ( log.isTraceEnabled() ) {
-				log.trace("attribute name: " 
-						+propName + " attribute value: " + propValue);
+				log.trace("attribute name: " + propName + " attribute value: " + propValue);
 			}
 			root.setAttribute(propName, propValue.toString());
 		}
 		return root;
 	}
-	
+
 	/**
-	 * Turn an object into a simple XML Document, supporting custom property editors.
+	 * Turn an object into a simple XML Document, supporting custom property
+	 * editors.
 	 * 
-	 * <p>The returned XML will be a single element with all JavaBean 
-	 * properties turned into attributed. For example:<p>
+	 * <p>
+	 * The returned XML will be a single element with all JavaBean properties
+	 * turned into attributed. For example:
+	 * <p>
 	 * 
-	 * <pre>&lt;powerDatum
+	 * <pre>
+	 * &lt;powerDatum
 	 *   id="123"
 	 *   pvVolts="123.123"
-	 *   ... /&gt;</pre>
+	 *   ... /&gt;
+	 * </pre>
 	 * 
-	 * @param bean the object to turn into XML
-	 * @param elementName the name of the XML element
+	 * @param bean
+	 *        the object to turn into XML
+	 * @param elementName
+	 *        the name of the XML element
 	 * @return the element, as XSLT Source
 	 * @see #getDocument(BeanWrapper, String)
 	 */
@@ -379,28 +420,33 @@ public abstract class XmlServiceSupport {
 		Document dom = getDocument(bean, elementName);
 		return getSource(dom);
 	}
-	
+
 	/**
 	 * Turn a Document into a Source.
 	 * 
-	 * <p>This method will log the XML document at the FINEST level.</p>
+	 * <p>
+	 * This method will log the XML document at the FINEST level.
+	 * </p>
 	 * 
-	 * @param dom the Document to turn into XSLT source
+	 * @param dom
+	 *        the Document to turn into XSLT source
 	 * @return the document, as XSLT Source
 	 */
 	protected Source getSource(Document dom) {
 		DOMSource result = new DOMSource(dom);
 		if ( log.isDebugEnabled() ) {
-			log.debug("XML: " +getXmlAsString(result, true));
+			log.debug("XML: " + getXmlAsString(result, true));
 		}
 		return result;
 	}
-	
+
 	/**
 	 * Turn an XML Source into a String.
 	 * 
-	 * @param source the XML Source
-	 * @param indent if <em>true</em> then indent the result
+	 * @param source
+	 *        the XML Source
+	 * @param indent
+	 *        if <em>true</em> then indent the result
 	 * @return the XML, as a String
 	 */
 	protected String getXmlAsString(Source source, boolean indent) {
@@ -409,8 +455,7 @@ public abstract class XmlServiceSupport {
 			Transformer xform = getTransformerFactory().newTransformer();
 			if ( indent ) {
 				xform.setOutputProperty(OutputKeys.INDENT, "yes");
-				xform.setOutputProperty(
-						"{http://xml.apache.org/xslt}indent-amount", "2");
+				xform.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
 			}
 			xform.transform(source, new StreamResult(byos));
 		} catch ( TransformerConfigurationException e ) {
@@ -420,81 +465,138 @@ public abstract class XmlServiceSupport {
 		}
 		return byos.toString();
 	}
-	
+
 	/**
 	 * Populate JavaBean properties via XPath extraction.
 	 * 
-	 * <p>This method will call {@link #registerCustomEditors(BeanWrapper)}
-	 * so custom editors can be registered if desired.</p>
+	 * <p>
+	 * This method will call {@link #registerCustomEditors(BeanWrapper)} so
+	 * custom editors can be registered if desired.
+	 * </p>
 	 * 
-	 * @param obj the object to set properties on, or a BeanWrapper
-	 * @param xml the XML
-	 * @param xpathMap the mapping of JavaBean property names to XPaths
+	 * @param obj
+	 *        the object to set properties on, or a BeanWrapper
+	 * @param xml
+	 *        the XML
+	 * @param xpathMap
+	 *        the mapping of JavaBean property names to XPaths
 	 */
-	protected void extractBeanDataFromXml(Object obj, Node xml, 
-			Map<String, XPathExpression> xpathMap) {
+	protected void extractBeanDataFromXml(Object obj, Node xml, Map<String, XPathExpression> xpathMap) {
 		BeanWrapper bean;
 		if ( obj instanceof BeanWrapper ) {
-			bean = (BeanWrapper)obj;
+			bean = (BeanWrapper) obj;
 		} else {
 			bean = PropertyAccessorFactory.forBeanPropertyAccess(obj);
 		}
 		registerCustomEditors(bean);
 		for ( Map.Entry<String, XPathExpression> me : xpathMap.entrySet() ) {
 			try {
-				String val = (String)me.getValue().evaluate(xml, 
-						XPathConstants.STRING);
+				String val = (String) me.getValue().evaluate(xml, XPathConstants.STRING);
 				if ( val != null && !"".equals(val) ) {
 					bean.setPropertyValue(me.getKey(), val);
 				}
-			} catch (XPathExpressionException e) {
+			} catch ( XPathExpressionException e ) {
 				throw new RuntimeException(e);
 			}
 		}
 	}
-	
+
 	/**
-	 * Extending classes can override this method to register custom bean editors.
+	 * Extending classes can override this method to register custom bean
+	 * editors.
 	 * 
-	 * <p>This method does nothing itself, and is designed to have custom implementation
-	 * in extending classes.</p>
+	 * <p>
+	 * This method does nothing itself, and is designed to have custom
+	 * implementation in extending classes.
+	 * </p>
 	 * 
-	 * @param bean the bean in question
+	 * @param bean
+	 *        the bean in question
 	 */
 	protected void registerCustomEditors(BeanWrapper bean) {
 		// nothing here... bean.registerCustomEditor(...)
 	}
-	
+
+	/**
+	 * Get an InputStream from a URLConnection response, handling compression.
+	 * 
+	 * <p>
+	 * This method handles decompressing the response if the encoding is set to
+	 * {@code gzip} or {@code deflate}.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the URLConnection
+	 * @return the InputStream
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	protected InputStream getInputStreamFromURLConnection(URLConnection conn) throws IOException {
+		String enc = conn.getContentEncoding();
+		String type = conn.getContentType();
+
+		log.trace("Got content type [{}] encoded as [{}]", type, enc);
+
+		InputStream is = conn.getInputStream();
+		if ( "gzip".equalsIgnoreCase(enc) ) {
+			is = new GZIPInputStream(is);
+		} else if ( "deflate".equalsIgnoreCase("enc") ) {
+			is = new DeflaterInputStream(is);
+		}
+		return is;
+	}
+
+	/**
+	 * Get a Reader for a Unicode encoded URL connection response.
+	 * 
+	 * <p>
+	 * This calls {@link #getInputStreamFromURLConnection(URLConnection)} so
+	 * compressed responses are handled appropriately.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the URLConnection
+	 * @return the Reader
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	protected Reader getUnicodeReaderFromURLConnection(URLConnection conn) throws IOException {
+		return new BufferedReader(new UnicodeReader(getInputStreamFromURLConnection(conn), null));
+	}
+
 	/**
 	 * Get a SAX InputSource from a URLConnection's InputStream.
 	 * 
-	 * <p>This method handles {@code gzip} and {@code deflate} decoding
-	 * automatically, if the {@code contentType} is reported as such.</p>
+	 * <p>
+	 * This method handles {@code gzip} and {@code deflate} decoding
+	 * automatically, if the {@code contentType} is reported as such.
+	 * </p>
 	 * 
-	 * @param conn the URLConnection
+	 * @param conn
+	 *        the URLConnection
 	 * @return the InputSource
-	 * @throws IOException if any IO error occurs
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	protected InputSource getInputSourceFromURLConnection(URLConnection conn)
-	throws IOException {
+	protected InputSource getInputSourceFromURLConnection(URLConnection conn) throws IOException {
 		BufferedReader resp = null;
 		try {
 			InputStream is = conn.getInputStream();
-			
+
 			// look for gzip/deflate encoding
 			String enc = conn.getContentEncoding();
 			String type = conn.getContentType();
-			
+
 			log.trace("Got content type [{}] encoded as [{}]", type, enc);
-			
+
 			if ( "gzip".equalsIgnoreCase(enc) ) {
 				is = new GZIPInputStream(is);
 			} else if ( "deflate".equalsIgnoreCase("enc") ) {
 				is = new DeflaterInputStream(is);
 			}
-			
+
 			resp = new BufferedReader(new UnicodeReader(is, null));
-		
+
 			// for now we are reading entire response into memory... might want
 			// to save to a temporary file if response very large, but we assume
 			// for now the responses will be fairly small
@@ -507,54 +609,56 @@ public abstract class XmlServiceSupport {
 			log.trace("Got response XML from URL [{}]:\n{}", conn.getURL(), respXml);
 			if ( respXml.length() < 1 ) {
 				// no data in response... can't be valid so throw IOException
-				throw new IOException("Empty response from [" +conn.getURL() +"]");
+				throw new IOException("Empty response from [" + conn.getURL() + "]");
 			}
 			return new InputSource(new StringReader(respXml));
 		} finally {
 			if ( resp != null ) {
 				try {
 					resp.close();
-				} catch ( IOException e) {
+				} catch ( IOException e ) {
 					// ignore me
 				}
 			}
 		}
 	}
-	
+
 	/**
 	 * Send a bean as a web form POST and return an XML InputSource from the
 	 * response content.
 	 * 
-	 * @param bean the bean
-	 * @param url the URL to POST to
-	 * @param attributes extra POST attributes and bean override values
+	 * @param bean
+	 *        the bean
+	 * @param url
+	 *        the URL to POST to
+	 * @param attributes
+	 *        extra POST attributes and bean override values
 	 * @return an InputSource to the response content XML
 	 */
 	protected InputSource webFormPost(BeanWrapper bean, String url, Map<String, ?> attributes) {
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_POST);
-			
-			OutputStreamWriter out = new OutputStreamWriter(
-                    conn.getOutputStream(), "UTF-8");
+
+			OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
 			writeURLEncodedBeanProperties(bean, attributes, out);
-			
+
 			return getInputSourceFromURLConnection(conn);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
-				log.trace("IOException posting " +bean + " to " +url, e);
+				log.trace("IOException posting " + bean + " to " + url, e);
 			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " +e.getMessage());
+				log.debug("Unable to post data: " + e.getMessage());
 			}
 			throw new RuntimeException(e);
 		}
 	}
-	
-	private void writeURLEncodedBeanProperties(BeanWrapper bean, Map<String, ?> attributes, 
-			Writer out) throws IOException {
+
+	private void writeURLEncodedBeanProperties(BeanWrapper bean, Map<String, ?> attributes, Writer out)
+			throws IOException {
 		PropertyDescriptor[] props = bean.getPropertyDescriptors();
 		boolean propsWritten = false;
 		if ( attributes != null && attributes.containsKey(ATTR_NODE_ID) ) {
-			out.write("nodeId=" +attributes.get(ATTR_NODE_ID));
+			out.write("nodeId=" + attributes.get(ATTR_NODE_ID));
 			propsWritten = true;
 		}
 		for ( int i = 0; i < props.length; i++ ) {
@@ -570,8 +674,7 @@ public abstract class XmlServiceSupport {
 			if ( attributes != null && attributes.containsKey(propName) ) {
 				propValue = attributes.get(propName);
 			} else {
-				PropertyEditor editor = bean.findCustomEditor(
-						prop.getPropertyType(), prop.getName());
+				PropertyEditor editor = bean.findCustomEditor(prop.getPropertyType(), prop.getName());
 				if ( editor != null ) {
 					editor.setValue(bean.getPropertyValue(propName));
 					propValue = editor.getAsText();
@@ -593,29 +696,36 @@ public abstract class XmlServiceSupport {
 		out.flush();
 		out.close();
 	}
-	
+
 	/**
 	 * Get a URLConnection for a specific URL and HTTP method.
 	 * 
-	 * <p>If the httpMethod equals {@code POST} then the connection's 
-	 * {@code doOutput} property will be set to <em>true</em>, otherwise
-	 * it will be set to <em>false</em>. The {@code doInput} property
-	 * is always set to <em>true</em>.</p>
+	 * <p>
+	 * If the httpMethod equals {@code POST} then the connection's
+	 * {@code doOutput} property will be set to <em>true</em>, otherwise it will
+	 * be set to <em>false</em>. The {@code doInput} property is always set to
+	 * <em>true</em>.
+	 * </p>
 	 * 
-	 * <p>This method also sets up the request property 
-	 * {@code Accept-Encoding: gzip,deflate} so the response can be
-	 * compressed. The {@link #getInputSourceFromURLConnection(URLConnection)}
-	 * automatically handles compressed responses.</p>
+	 * <p>
+	 * This method also sets up the request property
+	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
+	 * The {@link #getInputSourceFromURLConnection(URLConnection)} automatically
+	 * handles compressed responses.
+	 * </p>
 	 * 
-	 * @param url the URL to connect to
-	 * @param httpMethod the HTTP method
+	 * @param url
+	 *        the URL to connect to
+	 * @param httpMethod
+	 *        the HTTP method
 	 * @return the URLConnection
-	 * @throws IOException if any IO error occurs
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod) throws IOException {
 		URLConnection conn = new URL(url).openConnection();
 		if ( conn instanceof HttpURLConnection ) {
-			HttpURLConnection hConn = (HttpURLConnection)conn;
+			HttpURLConnection hConn = (HttpURLConnection) conn;
 			hConn.setRequestMethod(httpMethod);
 		}
 		conn.setRequestProperty("Accept", "text/*");
@@ -626,14 +736,18 @@ public abstract class XmlServiceSupport {
 		conn.setReadTimeout(connectionTimeout);
 		return conn;
 	}
-	
+
 	/**
 	 * Send a bean as a web form GET and return an XML InputSource from the
 	 * response content.
 	 * 
-	 * @param bean the bean to extract GET parameters from, or <em>null</em> for no parameters
-	 * @param url the URL to GET to
-	 * @param attributes extra GET attributes and bean override values
+	 * @param bean
+	 *        the bean to extract GET parameters from, or <em>null</em> for no
+	 *        parameters
+	 * @param url
+	 *        the URL to GET to
+	 * @param attributes
+	 *        extra GET attributes and bean override values
 	 * @return an InputSource to the response content XML
 	 */
 	protected InputSource webFormGet(BeanWrapper bean, String url, Map<String, ?> attributes) {
@@ -642,92 +756,108 @@ public abstract class XmlServiceSupport {
 			if ( bean != null ) {
 				StringWriter out = new StringWriter();
 				writeURLEncodedBeanProperties(bean, attributes, out);
-				getUrl = getUrl + '?' +out.toString();
+				getUrl = getUrl + '?' + out.toString();
 			}
-			
+
 			URLConnection conn = getURLConnection(getUrl, HTTP_METHOD_GET);
-			
+
 			return getInputSourceFromURLConnection(conn);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
-				log.trace("IOException getting " +bean + " from " +url, e);
+				log.trace("IOException getting " + bean + " from " + url, e);
 			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to get data: " +e.getMessage());
+				log.debug("Unable to get data: " + e.getMessage());
 			}
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	/**
-	 * Send a bean as a web form POST and parse the XML response as bean properties.
+	 * Send a bean as a web form POST and parse the XML response as bean
+	 * properties.
 	 * 
-	 * @param bean the bean to POST
-	 * @param obj the result bean to populate from the HTTP response XML
-	 * @param url the URL to POST to
-	 * @param attributes extra POST attributes and bean override values
-	 * @param xpathMap the mapping of JavaBean property names to XPaths
+	 * @param bean
+	 *        the bean to POST
+	 * @param obj
+	 *        the result bean to populate from the HTTP response XML
+	 * @param url
+	 *        the URL to POST to
+	 * @param attributes
+	 *        extra POST attributes and bean override values
+	 * @param xpathMap
+	 *        the mapping of JavaBean property names to XPaths
 	 */
-	protected void webFormPostForBean(BeanWrapper bean, Object obj, String url, 
+	protected void webFormPostForBean(BeanWrapper bean, Object obj, String url,
 			Map<String, ?> attributes, Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormPost(bean, url, attributes);
 		Document doc;
 		try {
 			doc = getDocBuilderFactory().newDocumentBuilder().parse(is);
-		} catch (SAXException e) {
+		} catch ( SAXException e ) {
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		} catch ( IOException e ) {
 			throw new RuntimeException(e);
-		} catch (ParserConfigurationException e) {
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
-		
+
 		extractBeanDataFromXml(obj, doc.getDocumentElement(), xpathMap);
 	}
-	
+
 	/**
 	 * Send a bean as a web GET and parse the XML response as bean properties.
 	 * 
-	 * <p>This method calls {@link #webFormGet(BeanWrapper, String, Map)} 
-	 * followed by {@link #extractBeanDataFromXml(Object, Node, Map)}.</p>
+	 * <p>
+	 * This method calls {@link #webFormGet(BeanWrapper, String, Map)} followed
+	 * by {@link #extractBeanDataFromXml(Object, Node, Map)}.
+	 * </p>
 	 * 
-	 * @param bean the bean whose properties to send as GET parameters, or <em>null</em>
-	 * for no parameters
-	 * @param obj the result bean to populate from the HTTP response XML
-	 * @param url the URL to GET
-	 * @param attributes extra GET attributes and bean override values
-	 * @param xpathMap the mapping of JavaBean property names to XPaths
+	 * @param bean
+	 *        the bean whose properties to send as GET parameters, or
+	 *        <em>null</em> for no parameters
+	 * @param obj
+	 *        the result bean to populate from the HTTP response XML
+	 * @param url
+	 *        the URL to GET
+	 * @param attributes
+	 *        extra GET attributes and bean override values
+	 * @param xpathMap
+	 *        the mapping of JavaBean property names to XPaths
 	 * @see #webFormGet(BeanWrapper, String, Map)
 	 */
-	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url, 
+	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url,
 			Map<String, ?> attributes, Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormGet(bean, url, attributes);
 		Document doc;
 		try {
 			doc = getDocBuilderFactory().newDocumentBuilder().parse(is);
-		} catch (SAXException e) {
+		} catch ( SAXException e ) {
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		} catch ( IOException e ) {
 			throw new RuntimeException(e);
-		} catch (ParserConfigurationException e) {
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
-		
+
 		extractBeanDataFromXml(obj, doc.getDocumentElement(), xpathMap);
 	}
-	
+
 	/**
 	 * Extract a tracking ID from an XML string.
 	 * 
-	 * @param xml the XML to extract from
-	 * @param xp the XPath to use that returns a number
-	 * @param xpath the XPath as a string (for debugging)
+	 * @param xml
+	 *        the XML to extract from
+	 * @param xp
+	 *        the XPath to use that returns a number
+	 * @param xpath
+	 *        the XPath as a string (for debugging)
 	 * @return the tracking ID, or <em>null</em> if not found
 	 */
 	protected Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
 		Double tid;
 		try {
-			tid = (Double)xp.evaluate(xml, XPathConstants.NUMBER);
-		} catch (XPathExpressionException e) {
+			tid = (Double) xp.evaluate(xml, XPathConstants.NUMBER);
+		} catch ( XPathExpressionException e ) {
 			throw new RuntimeException(e);
 		}
 		if ( tid.isNaN() ) {
@@ -736,62 +866,76 @@ public abstract class XmlServiceSupport {
 		}
 		return tid.longValue();
 	}
-	
+
 	/**
-	 * Send a bean as a web form POST and parse the XML response for 
-	 * a bean.
+	 * Send a bean as a web form POST and parse the XML response for a bean.
 	 * 
-	 * @param bean the bean
-	 * @param url the URL to POST to
-	 * @param trackingIdXPath the XPath for extracting the tracking ID
-	 * @param xpath the trackingIdXPath as a String (for debugging)
-	 * @param attributes extra POST attributes and bean override values
+	 * @param bean
+	 *        the bean
+	 * @param url
+	 *        the URL to POST to
+	 * @param trackingIdXPath
+	 *        the XPath for extracting the tracking ID
+	 * @param xpath
+	 *        the trackingIdXPath as a String (for debugging)
+	 * @param attributes
+	 *        extra POST attributes and bean override values
 	 * @return the extracted tracking ID, or <em>null</em> if none found
 	 */
-	protected Long webFormPostForTrackingId(BeanWrapper bean, String url, 
-			XPathExpression trackingIdXPath, 
-			String xpath, Map<String, ?> attributes) {
+	protected Long webFormPostForTrackingId(BeanWrapper bean, String url,
+			XPathExpression trackingIdXPath, String xpath, Map<String, ?> attributes) {
 		InputSource is = webFormPost(bean, url, attributes);
-		
+
 		// extract the returned tracking ID via XPath
 		return extractTrackingId(is, trackingIdXPath, xpath);
 	}
-	
+
 	public NamespaceContext getNsContext() {
 		return nsContext;
 	}
+
 	public void setNsContext(NamespaceContext nsContext) {
 		this.nsContext = nsContext;
 	}
+
 	public DocumentBuilderFactory getDocBuilderFactory() {
 		return docBuilderFactory;
 	}
+
 	public void setDocBuilderFactory(DocumentBuilderFactory docBuilderFactory) {
 		this.docBuilderFactory = docBuilderFactory;
 	}
+
 	public XPathFactory getXpathFactory() {
 		return xpathFactory;
 	}
+
 	public void setXpathFactory(XPathFactory xpathFactory) {
 		this.xpathFactory = xpathFactory;
 	}
+
 	public TransformerFactory getTransformerFactory() {
 		return transformerFactory;
 	}
+
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
 	}
+
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
+
 	public int getConnectionTimeout() {
 		return connectionTimeout;
 	}
+
 	public IdentityService getIdentityService() {
 		return identityService;
 	}
+
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
 	}
-	
+
 }
