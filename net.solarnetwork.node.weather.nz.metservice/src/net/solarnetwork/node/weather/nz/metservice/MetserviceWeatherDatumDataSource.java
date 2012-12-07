@@ -33,13 +33,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.weather.WeatherDatum;
-
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -100,21 +98,20 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 	/** The default value for the {@code oneMinObs} property. */
 	public static final String DEFAULT_ONE_MIN_OBS_SET = "oneMinObs93437";
-	
+
 	/** The default value for the {@code oneMinObs} property. */
 	public static final String DEFAULT_LOCAL_OBS_SET = "localObs93437";
-	
+
 	/** The default value for the {@code oneMinObs} property. */
 	public static final String DEFAULT_UV_SET = "uvIndexWellington";
-	
+
 	/** The default value for the {@code localForecast} property. */
 	public static final String DEFAULT_LOCAL_FORECAST_SET = "localForecastWellington";
-	
+
 	/** The default value for the {@code timestampDateFormat} property. */
 	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "h:mma EEEE d MMM yyyy";
 
-	public static final String DEFAULT_LOCAL_FORECAST_DAY_PATTERN 
-		= "\"?days\"?\\s*:\\s*\\[([^}]+})";
+	public static final String DEFAULT_LOCAL_FORECAST_DAY_PATTERN = "\"?days\"?\\s*:\\s*\\[([^}]+})";
 
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
@@ -125,7 +122,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 	private String uv;
 	private String localForecast;
 	private Pattern localForecastDayPattern;
-	
+
 	public MetserviceWeatherDatumDataSource() {
 		super();
 		timestampDateFormat = DEFAULT_TIMESTAMP_DATE_FORMAT;
@@ -135,7 +132,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 		localForecast = DEFAULT_LOCAL_FORECAST_SET;
 		setLocalForecastDayPattern(DEFAULT_LOCAL_FORECAST_DAY_PATTERN);
 	}
-	
+
 	@Override
 	public Class<? extends WeatherDatum> getDatumType() {
 		return WeatherDatum.class;
@@ -145,16 +142,15 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 	public WeatherDatum readCurrentDatum() {
 		WeatherDatum result = null;
 
-		String url = getBaseUrl()+'/' +oneMinObs;
+		String url = getBaseUrl() + '/' + oneMinObs;
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(getTimestampDateFormat());
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
-			Map<String, String> data = parseSimpleJavaScriptObjectProperties(
-					conn.getInputStream());
-			
+			Map<String, String> data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
+
 			Date infoDate = parseDateAttribute("time", data, tsFormat);
 			Double temp = parseDoubleAttribute("temperature", data);
-			
+
 			if ( infoDate != null && temp != null ) {
 				result = new WeatherDatum();
 				result.setInfoDate(infoDate);
@@ -162,10 +158,10 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 				// get UV data
 				try {
-					url = getBaseUrl()+'/'+uv;
+					url = getBaseUrl() + '/' + uv;
 					conn = getURLConnection(url, HTTP_METHOD_GET);
 					data = parseSimpleJavaScriptObjectProperties(conn.getInputStream());
-				
+
 					Double uvMax = parseDoubleAttribute("uvMax", data);
 					if ( uvMax != null ) {
 						result.setUvIndex(uvMax.intValue());
@@ -173,22 +169,22 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 				} catch ( IOException e ) {
 					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
 				}
-				
+
 				// get local obs data
 				try {
-					url = getBaseUrl()+'/'+localObs;
+					url = getBaseUrl() + '/' + localObs;
 					conn = getURLConnection(url, HTTP_METHOD_GET);
 					data = parseSimpleJavaScriptObjectProperties(conn.getInputStream());
-				
+
 					result.setHumidity(parseDoubleAttribute("humidity", data));
 					result.setBarometricPressure(parseDoubleAttribute("pressure", data));
 				} catch ( IOException e ) {
 					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
 				}
-				
+
 				// get local forecast
 				try {
-					url = getBaseUrl()+'/'+localForecast;
+					url = getBaseUrl() + '/' + localForecast;
 					conn = getURLConnection(url, HTTP_METHOD_GET);
 					String localForecast = readUnicodeInputStream(conn.getInputStream());
 					if ( localForecast != null ) {
@@ -196,7 +192,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 						Matcher m = localForecastDayPattern.matcher(localForecast);
 						if ( m.find() ) {
 							localForecast = m.group(1);
-							
+
 							data = parseSimpleJavaScriptObjectProperties(localForecast);
 							result.setSkyConditions(data.get("forecastWord"));
 						}
@@ -204,7 +200,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 				} catch ( IOException e ) {
 					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
 				}
-				
+
 				log.debug("Obtained WeatherDatum: {}", result);
 			}
 
@@ -226,7 +222,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 				source.setBundleClassLoader(getClass().getClassLoader());
@@ -239,23 +235,25 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
-				DEFAULT_BASE_URL), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-				"localForecast",
-				DEFAULT_LOCAL_FORECAST_SET), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-				"localForecastDayPattern", DEFAULT_LOCAL_FORECAST_DAY_PATTERN),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("localObs",
-						DEFAULT_LOCAL_OBS_SET),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("oneMinObs",
-						DEFAULT_ONE_MIN_OBS_SET),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("timestampDateFormat",
-						DEFAULT_TIMESTAMP_DATE_FORMAT),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("uv", DEFAULT_UV_SET));
+		return Arrays
+				.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
+						DEFAULT_BASE_URL), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
+						"localForecast", DEFAULT_LOCAL_FORECAST_SET),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecastDayPattern",
+								DEFAULT_LOCAL_FORECAST_DAY_PATTERN),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localObs",
+								DEFAULT_LOCAL_OBS_SET),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("oneMinObs",
+								DEFAULT_ONE_MIN_OBS_SET),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("timestampDateFormat",
+								DEFAULT_TIMESTAMP_DATE_FORMAT),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("uv", DEFAULT_UV_SET));
 	}
 
 	public String getLocalForecastDayPattern() {
 		return localForecastDayPattern.pattern();
 	}
+
 	public void setLocalForecastDayPattern(String localForecastDayPattern) {
 		this.localForecastDayPattern = Pattern.compile(localForecastDayPattern);
 	}
@@ -267,27 +265,35 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 	public void setTimestampDateFormat(String timestampDateFormat) {
 		this.timestampDateFormat = timestampDateFormat;
 	}
+
 	public String getOneMinObs() {
 		return oneMinObs;
 	}
+
 	public void setOneMinObs(String oneMinObs) {
 		this.oneMinObs = oneMinObs;
 	}
+
 	public String getLocalObs() {
 		return localObs;
 	}
+
 	public void setLocalObs(String localObs) {
 		this.localObs = localObs;
 	}
+
 	public String getUv() {
 		return uv;
 	}
+
 	public void setUv(String uv) {
 		this.uv = uv;
 	}
+
 	public String getLocalForecast() {
 		return localForecast;
 	}
+
 	public void setLocalForecast(String localForecast) {
 		this.localForecast = localForecast;
 	}

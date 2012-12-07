@@ -32,37 +32,39 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.weather.DayDatum;
-
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * MetService implementation of a {@link DayDatum} {@link DatumDataSource}.
  * 
- * <p>This implementation reads public data available on the MetService website
- * to collect day information (sunrise, sunset, etc.).</p>
+ * <p>
+ * This implementation reads public data available on the MetService website to
+ * collect day information (sunrise, sunset, etc.).
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>dayDateFormat</dt>
- *   <dd>The {@link SimpleDateFormat} date format to use to parse the day date.
- *   Defaluts to {@link #DEFAULT_DAY_DATE_FORMAT}.</dd>
- *   
- *   <dt>timeDateFormat</dt>
- *   The {@link SimpleDateFormat} time format to use to parse sunrise/sunset
- *   times. Defaults to {@link #DEFAULT_TIME_DATE_FORMAT}.</dd>
- *   
- *   <dt>riseSet</dt>
- *   <dd>The name of the "riseSet" file to parse. This file is expected 
- *   to contain a single JSON object declaration with the sunrise,
- *   sunset, and date attributes. Defaults to {@link #DEFAULT_RISE_SET}.</dd>
+ * <dt>dayDateFormat</dt>
+ * <dd>The {@link SimpleDateFormat} date format to use to parse the day date.
+ * Defaluts to {@link #DEFAULT_DAY_DATE_FORMAT}.</dd>
+ * 
+ * <dt>timeDateFormat</dt>
+ * The {@link SimpleDateFormat} time format to use to parse sunrise/sunset
+ * times. Defaults to {@link #DEFAULT_TIME_DATE_FORMAT}.</dd>
+ * 
+ * <dt>riseSet</dt>
+ * <dd>The name of the "riseSet" file to parse. This file is expected to contain
+ * a single JSON object declaration with the sunrise, sunset, and date
+ * attributes. Defaults to {@link #DEFAULT_RISE_SET}.</dd>
  * </dl>
  * 
  * @author matt
@@ -73,13 +75,13 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	/** The default value for the {@code riseSet} property. */
 	public static final String DEFAULT_RISE_SET = "riseSet93434M";
-	
+
 	/** The default value for the {@code dayDateFormat} property. */
 	public static final String DEFAULT_DAY_DATE_FORMAT = "d MMMM yyyy";
-	
+
 	/** The default value for the {@code timeDateFormat} property. */
 	public static final String DEFAULT_TIME_DATE_FORMAT = "h:mma";
-	
+
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -104,7 +106,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	@Override
 	public DayDatum readCurrentDatum() {
-		
+
 		// first see if we have cached data
 		DayDatum result = getDatumCache().get(LAST_DATUM_CACHE_KEY);
 		if ( result != null ) {
@@ -116,40 +118,39 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 				// cached data is for same date, so return that
 				return result;
 			}
-			
+
 			// invalid cached data, remove now
 			getDatumCache().remove(LAST_DATUM_CACHE_KEY);
 		}
-	
-		final String url = getBaseUrl()+'/' +riseSet;
+
+		final String url = getBaseUrl() + '/' + riseSet;
 		final SimpleDateFormat timeFormat = new SimpleDateFormat(getTimeDateFormat());
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(getDayDateFormat());
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
-			Map<String, String> data = parseSimpleJavaScriptObjectProperties(
-					conn.getInputStream());
-			
+			Map<String, String> data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
+
 			Date day = parseDateAttribute("day", data, dayFormat);
 			Date sunrise = parseDateAttribute("sunRise", data, timeFormat);
 			Date sunset = parseDateAttribute("sunSet", data, timeFormat);
-			
+
 			if ( day != null && sunrise != null && sunset != null ) {
 				result = new DayDatum();
 				result.setDay(day);
 				result.setSunrise(sunrise);
 				result.setSunset(sunset);
 				result.setTimeZoneId("Pacific/Auckland");
-				
+
 				log.debug("Obtained new DayDatum: {}", result);
 				getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
 			}
-			
+
 		} catch ( IOException e ) {
 			log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
 		}
 		return result;
 	}
-	
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.weather.nz.metservice.day";
@@ -162,7 +163,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 				source.setBundleClassLoader(getClass().getClassLoader());
@@ -186,18 +187,23 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 	public String getRiseSet() {
 		return riseSet;
 	}
+
 	public void setRiseSet(String riseSet) {
 		this.riseSet = riseSet;
 	}
+
 	public String getDayDateFormat() {
 		return dayDateFormat;
 	}
+
 	public void setDayDateFormat(String dayDateFormat) {
 		this.dayDateFormat = dayDateFormat;
 	}
+
 	public String getTimeDateFormat() {
 		return timeDateFormat;
 	}
+
 	public void setTimeDateFormat(String timeDateFormat) {
 		this.timeDateFormat = timeDateFormat;
 	}
