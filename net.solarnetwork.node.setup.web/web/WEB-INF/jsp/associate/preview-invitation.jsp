@@ -22,12 +22,6 @@
 				<span class="uneditable-input span6">${details.identityKey}</span>
 			</div>
 		</div>
-		<div class="control-group">
-			<label class="control-label" for="invitation-tos"><fmt:message key="node.setup.identity.tos"/></label>
-			<div class="controls" id="invitation-tos">
-				<pre class="pre-scrollable">${details.termsOfService}</pre>
-			</div>
-		</div>
 		<div class="form-actions">
 			<a href="<c:url value='/associate'/>" class="btn"><fmt:message key='cancel.label'/></a>
 			<button type="submit" class="btn btn-primary"><fmt:message key='continue.label'/></button>

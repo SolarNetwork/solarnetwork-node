@@ -141,6 +141,6 @@ public class NodeCertificatesController extends BaseSetupController {
 			pem = FileCopyUtils.copyToString(new InputStreamReader(file.getInputStream(), "UTF-8"));
 		}
 		pkiService.saveNodeSignedCertificate(pem);
-		return "redirect:certs/home";
+		return "redirect:/certs";
 	}
 }

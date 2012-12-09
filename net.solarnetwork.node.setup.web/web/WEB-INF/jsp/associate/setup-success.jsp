@@ -9,6 +9,7 @@
 <p>
 	<fmt:message key="node.setup.success.visit">
 		<fmt:param value="http${details.forceTLS or details.port == 443 ? 's' : ''}://${details.host}:${details.port}/solarreg/u/sec/my-nodes"/>
+		<fmt:param><c:url value='/certs'/></fmt:param>
 	</fmt:message>
 </p>
 

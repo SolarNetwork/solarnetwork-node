@@ -249,13 +249,6 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			}
 			details.setIdentityKey(identityKey);
 
-			// Get the TOS
-			String tos = (String) result.get(VERIFICATION_CODE_TERMS_OF_SERVICE);
-			if ( tos == null ) {
-				throw new InvalidVerificationCodeException("Missing TOS");
-			}
-			details.setTermsOfService(tos);
-
 			// Get the user name
 			String userName = (String) result.get(VERIFICATION_CODE_USER_NAME_KEY);
 			if ( userName == null ) {
