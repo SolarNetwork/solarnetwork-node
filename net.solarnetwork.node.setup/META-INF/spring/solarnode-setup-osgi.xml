@@ -15,7 +15,7 @@
 	
 	<osgix:cm-properties id="setup.cfg" persistent-id="net.solarnetwork.node.setup">
 		<prop key="SetupService.solarInUrlPrefix">/solarin</prop>
-		<prop key="PKIService.keyStorePath">conf/pki/node.jks</prop>
+		<prop key="PKIService.keyStorePath">conf/tls/node.jks</prop>
 		<prop key="PKIService.manualKeyStorePassword"></prop>
 	</osgix:cm-properties>
 	

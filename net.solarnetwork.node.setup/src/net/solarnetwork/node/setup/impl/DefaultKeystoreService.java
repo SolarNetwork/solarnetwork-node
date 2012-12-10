@@ -64,7 +64,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DefaultKeystoreService implements PKIService {
 
-	public static final String DEFAULT_KEY_STORE_PATH = "conf/pki/node.jks";
+	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
 
 	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
 	private String nodeAlias = "node";
