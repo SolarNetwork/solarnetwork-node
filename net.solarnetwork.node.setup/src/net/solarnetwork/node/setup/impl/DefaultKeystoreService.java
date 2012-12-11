@@ -67,6 +67,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Service for managing a {@link KeyStore}.
  * 
+ * <p>
+ * This implementation maintains a key store with two primary aliases:
+ * {@code ca} and {@code node}. The key store is created as needed, and a random
+ * password is generated and assigned to the key store. The password is stored
+ * in the Settings database, using the {@link #KEY_PASSWORD} key. This key store
+ * is then used to implement {@link SSLService} and is used as both the key and
+ * trust store for SSL connections returned by that API.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
@@ -75,7 +84,8 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
 
-	private static final String KEY_PASSWORD = "solarnode.keystore.pw";
+	/** The settings key for the key store password. */
+	public static final String KEY_PASSWORD = "solarnode.keystore.pw";
 
 	private static final int PASSWORD_LENGTH = 20;
 
@@ -119,15 +129,6 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		}
 		return result;
 	}
-
-	/*
-	 * private void setSystemKeyStoreProperties() { final String pass =
-	 * getKeyStorePassword(); if ( pass != null ) {
-	 * System.setProperty("javax.net.ssl.trustStore", keyStorePath);
-	 * System.setProperty("javax.net.ssl.trustStorePassword", pass);
-	 * System.setProperty("javax.net.ssl.keyStore", keyStorePath);
-	 * System.setProperty("javax.net.ssl.keyStorePassword", pass); } }
-	 */
 
 	@Override
 	public boolean isNodeCertificateValid(String issuerDN) throws CertificateException {
@@ -393,7 +394,6 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		}
 
 		saveKeyStore(keyStore);
-		resetFromKeyStoreChange();
 	}
 
 	private synchronized void resetFromKeyStoreChange() {
@@ -468,6 +468,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 			String passwd = getKeyStorePassword();
 			out = new BufferedOutputStream(new FileOutputStream(ksFile));
 			keyStore.store(out, passwd.toCharArray());
+			resetFromKeyStoreChange();
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error creating certificate key store", e);
 		} catch ( NoSuchAlgorithmException e ) {
@@ -493,10 +494,6 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		InputStream in = null;
 		KeyStore keyStore = null;
 		String passwd = getKeyStorePassword();
-		if ( passwd == null ) {
-			log.info("Network association confirmation not available, cannot open key store");
-			return null;
-		}
 		try {
 			keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 			if ( ksFile.isFile() ) {

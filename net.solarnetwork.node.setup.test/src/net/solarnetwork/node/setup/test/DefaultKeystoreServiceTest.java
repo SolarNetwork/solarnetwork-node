@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.setup.test;
 
+import static net.solarnetwork.node.setup.impl.DefaultKeystoreService.KEY_PASSWORD;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
@@ -129,17 +132,19 @@ public class DefaultKeystoreServiceTest {
 		service = new DefaultKeystoreService();
 		service.setSettingDao(settingDao);
 		service.setCertificateService(certService);
+		service.setKeyStorePath("conf/test.jks");
 	}
 
 	@After
 	public void cleanup() {
-		new File("conf/pki/node.jks").delete();
+		new File("conf/test.jks").delete();
 	}
 
 	@Test
 	public void checkForCertificateNoConfKey() {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(null);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(null);
+		settingDao.storeSetting(eq(KEY_PASSWORD), eq(SetupSettings.SETUP_TYPE_KEY),
+				anyObject(String.class));
 		replay(settingDao);
 		final boolean result = service.isNodeCertificateValid(TEST_DN);
 		verify(settingDao);
@@ -148,8 +153,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void checkForCertificateFileMissing() {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE);
 		replay(settingDao);
 		final boolean result = service.isNodeCertificateValid(TEST_DN);
 		verify(settingDao);
@@ -158,8 +163,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void generateNodeSelfSignedCertificate() {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(2);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(3);
 		replay(settingDao);
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		log.debug("Got self-signed cert: {}", result);
@@ -169,8 +174,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void validateNodeSelfSignedCertificate() {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(4);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(5);
 		replay(settingDao);
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		final boolean valid = service.isNodeCertificateValid(TEST_DN);
@@ -183,8 +188,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void saveTrustedCert() throws Exception {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(2);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(2);
 		log.debug("Saving CA Cert: {}", CA_CERT);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
@@ -193,8 +198,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void generateCSR() throws Exception {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(5);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(7);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
@@ -206,8 +211,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void saveCASignedCert() throws Exception {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(7);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(11);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
@@ -232,8 +237,8 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void saveCASubSignedCert() throws Exception {
-		expect(settingDao.getSetting(SetupSettings.KEY_CONFIRMATION_CODE, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(7);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(11);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
