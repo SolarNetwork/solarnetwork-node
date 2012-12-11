@@ -208,7 +208,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
-			key = keyStore.getKey(nodeAlias, new char[0]);
+			key = keyStore.getKey(nodeAlias, getKeyStorePassword().toCharArray());
 		} catch ( UnrecoverableKeyException e ) {
 			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
@@ -233,7 +233,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
-			key = keyStore.getKey(nodeAlias, new char[0]);
+			key = keyStore.getKey(nodeAlias, getKeyStorePassword().toCharArray());
 		} catch ( UnrecoverableKeyException e ) {
 			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
@@ -258,7 +258,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
-			key = keyStore.getKey(nodeAlias, new char[0]);
+			key = keyStore.getKey(nodeAlias, getKeyStorePassword().toCharArray());
 		} catch ( UnrecoverableKeyException e ) {
 			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
@@ -316,7 +316,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
 		try {
-			key = keyStore.getKey(nodeAlias, new char[0]);
+			key = keyStore.getKey(nodeAlias, getKeyStorePassword().toCharArray());
 		} catch ( UnrecoverableKeyException e ) {
 			throw new CertificateException("Error opening node private key", e);
 		} catch ( KeyStoreException e ) {
@@ -387,7 +387,7 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 		log.info("Installing node certificate reply {} issued by {}", chain[0].getSubjectDN().getName(),
 				chain[0].getIssuerDN().getName());
 		try {
-			keyStore.setKeyEntry(nodeAlias, key, new char[0], chain);
+			keyStore.setKeyEntry(nodeAlias, key, getKeyStorePassword().toCharArray(), chain);
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error opening node certificate", e);
 		}
