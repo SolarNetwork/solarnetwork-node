@@ -34,6 +34,15 @@
 		<property name="service" ref="reactorServiceRef"/>
 	</bean>
 
+	<osgi:reference id="sslServiceRef" cardinality="0..1"
+		interface="net.solarnetwork.node.SSLService">
+		<osgi:listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
+	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="sslServiceRef"/>
+	</bean>
+	
 	<!-- Published Services -->
 	
 	<osgi:service ref="bulkDatumUploader" 

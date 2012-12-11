@@ -15,6 +15,7 @@
 		init-method="init">
 		<property name="identityService" ref="identityService"/>
 		<property name="reactorService" ref="reactorService"/>
+		<property name="sslService" ref="sslService"/>
 		<property name="url" value="/bulkCollector.do"/>
 	</bean>
 	
