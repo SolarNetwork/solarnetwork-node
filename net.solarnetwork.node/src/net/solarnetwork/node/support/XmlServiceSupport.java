@@ -44,6 +44,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -63,7 +65,9 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
@@ -129,6 +133,7 @@ public abstract class XmlServiceSupport {
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
 	private IdentityService identityService = null;
+	private OptionalService<SSLService> sslService = null;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -714,6 +719,12 @@ public abstract class XmlServiceSupport {
 	 * handles compressed responses.
 	 * </p>
 	 * 
+	 * <p>
+	 * If the {@link #getSslService()} property is configured and the URL
+	 * represents an HTTPS connection, then that factory will be used to for the
+	 * connection.
+	 * </p>
+	 * 
 	 * @param url
 	 *        the URL to connect to
 	 * @param httpMethod
@@ -723,10 +734,21 @@ public abstract class XmlServiceSupport {
 	 *         if any IO error occurs
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod) throws IOException {
-		URLConnection conn = new URL(url).openConnection();
+		URL connUrl = new URL(url);
+		URLConnection conn = connUrl.openConnection();
 		if ( conn instanceof HttpURLConnection ) {
 			HttpURLConnection hConn = (HttpURLConnection) conn;
 			hConn.setRequestMethod(httpMethod);
+		}
+		if ( sslService != null && conn instanceof HttpsURLConnection ) {
+			SSLService service = sslService.service();
+			if ( service != null ) {
+				SSLSocketFactory factory = service.getSolarInSocketFactory();
+				if ( factory != null ) {
+					HttpsURLConnection hConn = (HttpsURLConnection) conn;
+					hConn.setSSLSocketFactory(factory);
+				}
+			}
 		}
 		conn.setRequestProperty("Accept", "text/*");
 		conn.setRequestProperty("Accept-Encoding", "gzip,deflate");
@@ -936,6 +958,14 @@ public abstract class XmlServiceSupport {
 
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
+	}
+
+	public OptionalService<SSLService> getSslService() {
+		return sslService;
+	}
+
+	public void setSslService(OptionalService<SSLService> sslService) {
+		this.sslService = sslService;
 	}
 
 }
