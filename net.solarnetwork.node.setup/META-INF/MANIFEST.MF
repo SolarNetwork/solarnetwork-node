@@ -10,7 +10,7 @@ Export-Package:
 Import-Package: 
  javax.xml.xpath,
  net.solarnetwork.domain;version="[1.2.0,2.0.0)",
- net.solarnetwork.node;version="[1.6.1,2.0.0)",
+ net.solarnetwork.node;version="[1.7.0,2.0.0)",
  net.solarnetwork.node.dao;version="[1.0.0,2.0.0)",
  net.solarnetwork.node.support;version="[1.4.0,2.0.0)",
  net.solarnetwork.support;version="[1.0.0,2.0.0)",

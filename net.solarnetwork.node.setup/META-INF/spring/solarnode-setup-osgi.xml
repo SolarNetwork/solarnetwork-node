@@ -36,6 +36,11 @@
 		</osgi:interfaces>
 	</osgi:service>
 
-	<osgi:service ref="pkiService" interface="net.solarnetwork.node.setup.PKIService"/>
+	<osgi:service ref="pkiService">
+		<osgi:interfaces>
+			<value>net.solarnetwork.node.SSLService</value>
+			<value>net.solarnetwork.node.setup.PKIService</value>
+		</osgi:interfaces>
+	</osgi:service>
 
 </beans>

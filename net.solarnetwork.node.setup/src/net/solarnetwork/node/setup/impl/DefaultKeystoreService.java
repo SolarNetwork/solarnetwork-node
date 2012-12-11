@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.setup.impl;
 
-import static net.solarnetwork.node.SetupSettings.KEY_CONFIRMATION_CODE;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
+import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -46,9 +46,17 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
+import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
@@ -62,9 +70,14 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.0
  */
-public class DefaultKeystoreService implements PKIService {
+public class DefaultKeystoreService implements PKIService, SSLService {
 
+	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
+
+	private static final String KEY_PASSWORD = "solarnode.keystore.pw";
+
+	private static final int PASSWORD_LENGTH = 20;
 
 	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
 	private String nodeAlias = "node";
@@ -78,27 +91,43 @@ public class DefaultKeystoreService implements PKIService {
 	@Resource
 	private SettingDao settingDao;
 
+	private SSLSocketFactory solarInSocketFactory;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@PostConstruct
-	public void init() {
-		setSystemKeyStoreProperties();
-	}
-
 	private String getKeyStorePassword() {
-		return (manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ? manualKeyStorePassword
-				: getSetting(KEY_CONFIRMATION_CODE));
+		if ( manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ) {
+			return manualKeyStorePassword;
+		}
+		String result = getSetting(KEY_PASSWORD);
+		if ( result == null ) {
+			// generate new random password
+			try {
+				SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+				final int start = 32;
+				final int end = 126;
+				final int range = end - start;
+				char[] passwd = new char[PASSWORD_LENGTH];
+				for ( int i = 0; i < PASSWORD_LENGTH; i++ ) {
+					passwd[i] = (char) (random.nextInt(range) + start);
+				}
+				result = new String(passwd);
+				saveSetting(KEY_PASSWORD, result);
+			} catch ( NoSuchAlgorithmException e ) {
+				throw new CertificateException("Error creating random key store password", e);
+			}
+		}
+		return result;
 	}
 
-	private void setSystemKeyStoreProperties() {
-		final String pass = getKeyStorePassword();
-		if ( pass != null ) {
-			System.setProperty("javax.net.ssl.trustStore", keyStorePath);
-			System.setProperty("javax.net.ssl.trustStorePassword", pass);
-			System.setProperty("javax.net.ssl.keyStore", keyStorePath);
-			System.setProperty("javax.net.ssl.keyStorePassword", pass);
-		}
-	}
+	/*
+	 * private void setSystemKeyStoreProperties() { final String pass =
+	 * getKeyStorePassword(); if ( pass != null ) {
+	 * System.setProperty("javax.net.ssl.trustStore", keyStorePath);
+	 * System.setProperty("javax.net.ssl.trustStorePassword", pass);
+	 * System.setProperty("javax.net.ssl.keyStore", keyStorePath);
+	 * System.setProperty("javax.net.ssl.keyStorePassword", pass); } }
+	 */
 
 	@Override
 	public boolean isNodeCertificateValid(String issuerDN) throws CertificateException {
@@ -147,7 +176,8 @@ public class DefaultKeystoreService implements PKIService {
 			PrivateKey privateKey = keypair.getPrivate();
 
 			Certificate cert = certificateService.generateCertificate(dn, publicKey, privateKey);
-			keyStore.setKeyEntry(alias, privateKey, new char[0], new Certificate[] { cert });
+			keyStore.setKeyEntry(alias, privateKey, getKeyStorePassword().toCharArray(),
+					new Certificate[] { cert });
 			saveKeyStore(keyStore);
 			return (X509Certificate) cert;
 		} catch ( NoSuchAlgorithmException e ) {
@@ -363,10 +393,68 @@ public class DefaultKeystoreService implements PKIService {
 		}
 
 		saveKeyStore(keyStore);
-		setSystemKeyStoreProperties();
+		resetFromKeyStoreChange();
 	}
 
-	private void saveKeyStore(KeyStore keyStore) {
+	private synchronized void resetFromKeyStoreChange() {
+		solarInSocketFactory = null;
+	}
+
+	@Override
+	public synchronized SSLSocketFactory getSolarInSocketFactory() {
+		if ( solarInSocketFactory == null ) {
+			try {
+				KeyStore keyStore = loadKeyStore();
+				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
+				trustManagerFactory.init(keyStore);
+
+				X509TrustManager x509TrustManager = null;
+				for ( TrustManager trustManager : trustManagerFactory.getTrustManagers() ) {
+					if ( trustManager instanceof X509TrustManager ) {
+						x509TrustManager = (X509TrustManager) trustManager;
+						break;
+					}
+				}
+
+				if ( x509TrustManager == null ) {
+					throw new CertificateException("No X509 TrustManager available");
+				}
+
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory
+						.getDefaultAlgorithm());
+				keyManagerFactory.init(keyStore, getKeyStorePassword().toCharArray());
+
+				X509KeyManager x509KeyManager = null;
+				for ( KeyManager keyManager : keyManagerFactory.getKeyManagers() ) {
+					if ( keyManager instanceof X509KeyManager ) {
+						x509KeyManager = (X509KeyManager) keyManager;
+						break;
+					}
+				}
+
+				if ( x509KeyManager == null ) {
+					throw new CertificateException("No X509 KeyManager available");
+				}
+
+				SSLContext sslContext = SSLContext.getInstance("TLS");
+				sslContext.init(new KeyManager[] { x509KeyManager },
+						new TrustManager[] { x509TrustManager }, null);
+				solarInSocketFactory = sslContext.getSocketFactory();
+
+			} catch ( NoSuchAlgorithmException e ) {
+				throw new CertificateException("Error creating SSLContext", e);
+			} catch ( KeyStoreException e ) {
+				throw new CertificateException("Error creating SSLContext", e);
+			} catch ( UnrecoverableKeyException e ) {
+				throw new CertificateException("Error creating SSLContext", e);
+			} catch ( KeyManagementException e ) {
+				throw new CertificateException("Error creating SSLContext", e);
+			}
+		}
+		return solarInSocketFactory;
+	}
+
+	private synchronized void saveKeyStore(KeyStore keyStore) {
 		if ( keyStore == null ) {
 			return;
 		}
@@ -400,7 +488,7 @@ public class DefaultKeystoreService implements PKIService {
 		}
 	}
 
-	private KeyStore loadKeyStore() {
+	private synchronized KeyStore loadKeyStore() {
 		File ksFile = new File(keyStorePath);
 		InputStream in = null;
 		KeyStore keyStore = null;
@@ -437,6 +525,10 @@ public class DefaultKeystoreService implements PKIService {
 
 	private String getSetting(String key) {
 		return settingDao.getSetting(key, SETUP_TYPE_KEY);
+	}
+
+	private void saveSetting(String key, String value) {
+		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
 	}
 
 	public void setKeyStorePath(String keyStorePath) {
