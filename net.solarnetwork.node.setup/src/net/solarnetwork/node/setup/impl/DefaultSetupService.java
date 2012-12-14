@@ -121,7 +121,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
 
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
-	private static final String SOLAR_NET_REG_URL = "/solarreg/associate.xml";
+	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
