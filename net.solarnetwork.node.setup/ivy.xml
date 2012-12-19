@@ -1,12 +1,19 @@
 <ivy-module version="2.0">
 	<info organisation="SolarNetwork" module="${bundle.name}" />
-	<dependencies>
-    	<dependency org="commons-codec" name="commons-codec" rev="1.7" />
+	<configurations defaultconf="compile,runtime">
+		<conf name="compile" visibility="public" description="Build dependencies"/>
+		<conf name="runtime" visibility="public" description="Runtime dependencies"/>
+	</configurations>
+	<dependencies defaultconfmapping="runtime->runtime(default);compile->compile(default)">
+    	<dependency org="commons-codec" name="commons-codec" rev="1.7" >
+    		<artifact name="commons-codec" type="jar"/>
+    	</dependency>
 		<dependency org="joda-time" name="joda-time" rev="2.1" >
     		<artifact name="joda-time" type="jar" />
 		</dependency>
 		<dependency org="org.slf4j" name="com.springsource.slf4j.api" rev="1.5.10" />
 		<dependency org="org.springframework" name="org.springframework.beans" rev="3.0.5.RELEASE"/>
 		<dependency org="org.springframework" name="org.springframework.core" rev="3.0.5.RELEASE"/>
+		<dependency org="org.springframework" name="org.springframework.transaction" rev="3.0.5.RELEASE"/>
 	</dependencies>
 </ivy-module>
