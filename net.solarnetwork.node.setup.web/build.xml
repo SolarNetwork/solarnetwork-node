@@ -1,11 +1,9 @@
 <project basedir=".">
 
 	<property name="bundle.deps" value="true"/>
-	<dirset id="bundle.deps" dir="${basedir}/..">
-		<include name="net.solarnetwork.common"/>
-		<include name="net.solarnetwork.common.web"/>
-		<include name="net.solarnetwork.node"/>
-		<include name="net.solarnetwork.node.setup"/>
+	<dirset id="bundle.deps" dir="${basedir}/../..">
+		<include name="solarnetwork-common/net.solarnetwork.common.web"/>
+		<include name="solarnetwork-node/net.solarnetwork.node.setup"/>
 	</dirset>
 	
 	<property name="dir.resources" value="web"/>
