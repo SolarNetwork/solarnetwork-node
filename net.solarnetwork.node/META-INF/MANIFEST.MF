@@ -18,6 +18,7 @@ Export-Package:
 Import-Package: 
  net.solarnetwork.domain;version="1.2.0",
  net.solarnetwork.util;version="1.6.0",
+ javax.net.ssl,
  javax.xml.namespace,
  javax.xml.parsers,
  javax.xml.transform,
