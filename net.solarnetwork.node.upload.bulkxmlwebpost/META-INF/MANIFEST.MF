@@ -15,6 +15,7 @@ Import-Package:
  net.solarnetwork.node.support;version="1.5.3",
  net.solarnetwork.node.util;version="1.0.0",
  net.solarnetwork.util;version="1.9.0",
+ javax.net.ssl,
  javax.xml.parsers,
  javax.xml.transform,
  javax.xml.transform.stream,
