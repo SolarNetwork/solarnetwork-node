@@ -81,7 +81,7 @@ public class NodeCertificatesController extends BaseSetupController {
 	 * 
 	 * @return a map with the PEM encoded certificate on key {@code csr}
 	 */
-	@RequestMapping("/nodeCSR")
+	@RequestMapping(value = "/nodeCSR", method = RequestMethod.GET)
 	@ResponseBody
 	public Map<String, Object> nodeCSR() {
 		String csr = pkiService.generateNodePKCS10CertificateRequestString();
