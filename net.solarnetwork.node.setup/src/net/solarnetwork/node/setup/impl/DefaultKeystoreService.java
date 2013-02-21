@@ -403,6 +403,11 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 	@Override
 	public synchronized SSLSocketFactory getSolarInSocketFactory() {
 		if ( solarInSocketFactory == null ) {
+			File ksFile = new File(keyStorePath);
+			if ( !ksFile.isFile() ) {
+				log.debug("Using default SSLSocketFactory as no keystore exists.");
+				return (SSLSocketFactory) SSLSocketFactory.getDefault();
+			}
 			try {
 				KeyStore keyStore = loadKeyStore();
 				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
