@@ -94,7 +94,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
