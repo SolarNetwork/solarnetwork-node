@@ -156,25 +156,13 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 				result.setInfoDate(infoDate);
 				result.setTemperatureCelcius(temp);
 
-				// get UV data
-				try {
-					url = getBaseUrl() + '/' + uv;
-					conn = getURLConnection(url, HTTP_METHOD_GET);
-					data = parseSimpleJavaScriptObjectProperties(conn.getInputStream());
-
-					Double uvMax = parseDoubleAttribute("uvMax", data);
-					if ( uvMax != null ) {
-						result.setUvIndex(uvMax.intValue());
-					}
-				} catch ( IOException e ) {
-					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
-				}
+				// UV data discontinued? Removed for now.
 
 				// get local obs data
 				try {
 					url = getBaseUrl() + '/' + localObs;
 					conn = getURLConnection(url, HTTP_METHOD_GET);
-					data = parseSimpleJavaScriptObjectProperties(conn.getInputStream());
+					data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
 
 					result.setHumidity(parseDoubleAttribute("humidity", data));
 					result.setBarometricPressure(parseDoubleAttribute("pressure", data));
@@ -186,7 +174,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 				try {
 					url = getBaseUrl() + '/' + localForecast;
 					conn = getURLConnection(url, HTTP_METHOD_GET);
-					String localForecast = readUnicodeInputStream(conn.getInputStream());
+					String localForecast = readUnicodeInputStream(getInputStreamFromURLConnection(conn));
 					if ( localForecast != null ) {
 						// we have to extract just the current day to get the "conditions" value
 						Matcher m = localForecastDayPattern.matcher(localForecast);
