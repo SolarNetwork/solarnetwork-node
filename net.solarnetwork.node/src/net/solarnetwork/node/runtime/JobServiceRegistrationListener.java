@@ -30,17 +30,16 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TreeMap;
-
 import net.solarnetwork.node.job.RandomizedCronTriggerBean;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.util.BaseServiceListener;
 import net.solarnetwork.node.util.RegisteredService;
-
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -96,18 +95,17 @@ import org.springframework.scheduling.quartz.CronTriggerBean;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date: 2012-03-22 09:35:02 +1300 (Thu, 22 Mar
- *          2012) $
+ * @version $Revision$ $Date: 2012-03-22 09:35:02 +1300 (Thu, 22 Mar 2012) $
  */
 public class JobServiceRegistrationListener extends
 		BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>> implements
 		ConfigurationListener {
 
 	private Scheduler scheduler;
-	
-	private ServiceRegistration configurationListenerRef;
 
-	private Map<String, JobSettingSpecifierProvider> providerMap = new TreeMap<String, JobSettingSpecifierProvider>();
+	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
+
+	private final Map<String, JobSettingSpecifierProvider> providerMap = new TreeMap<String, JobSettingSpecifierProvider>();
 
 	private String pidForSymbolicName(String name) {
 		return name + ".JOBS";
@@ -116,12 +114,14 @@ public class JobServiceRegistrationListener extends
 	/**
 	 * Callback when a trigger has been registered.
 	 * 
-	 * @param trigJob the trigger and job
-	 * @param properties the service properties
+	 * @param trigJob
+	 *        the trigger and job
+	 * @param properties
+	 *        the service properties
 	 */
 	public void onBind(TriggerAndJobDetail trigJob, Map<String, ?> properties) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Bind called on [" +trigJob +"] with props " +properties);
+			log.debug("Bind called on [" + trigJob + "] with props " + properties);
 		}
 
 		JobDetail job = trigJob.getJobDetail();
@@ -131,8 +131,8 @@ public class JobServiceRegistrationListener extends
 		String cronExpression = null;
 		String settingKey = null;
 		JobSettingSpecifierProvider provider = null;
-		
-		synchronized (providerMap) {
+
+		synchronized ( providerMap ) {
 			if ( pid != null ) {
 				provider = providerMap.get(pid);
 				if ( provider == null ) {
@@ -142,7 +142,7 @@ public class JobServiceRegistrationListener extends
 
 				if ( configurationListenerRef == null ) {
 					configurationListenerRef = getBundleContext().registerService(
-							ConfigurationListener.class.getName(), this, null);
+							ConfigurationListener.class, this, null);
 				}
 
 				// check for ConfigurationAdmin cron setting for this trigger,
@@ -152,8 +152,7 @@ public class JobServiceRegistrationListener extends
 				if ( trigger instanceof CronTrigger ) {
 					cronExpression = ((CronTrigger) trigger).getCronExpression();
 					ConfigurationAdmin ca = (ConfigurationAdmin) getBundleContext().getService(
-							getBundleContext().getServiceReference(
-									ConfigurationAdmin.class.getName()));
+							getBundleContext().getServiceReference(ConfigurationAdmin.class.getName()));
 					if ( ca != null ) {
 						try {
 							Configuration conf = ca.getConfiguration(pid, null);
@@ -167,7 +166,7 @@ public class JobServiceRegistrationListener extends
 									}
 								}
 							}
-						} catch (IOException e) {
+						} catch ( IOException e ) {
 							log.warn("Unable to get configuration for {}", pid, e);
 						}
 					}
@@ -182,7 +181,7 @@ public class JobServiceRegistrationListener extends
 					provider.addSpecifier(trigJob);
 					RegisteredService<TriggerAndJobDetail> rs = new RegisteredService<TriggerAndJobDetail>(
 							trigJob, properties);
-					Properties serviceProps = new Properties();
+					Hashtable<String, Object> serviceProps = new Hashtable<String, Object>();
 					serviceProps.put("settingPid", provider.getSettingUID());
 					addRegisteredService(rs, provider,
 							new String[] { SettingSpecifierProvider.class.getName() }, serviceProps);
@@ -195,18 +194,24 @@ public class JobServiceRegistrationListener extends
 					trigger.getJobName(), e });
 		}
 	}
-	
+
 	/**
 	 * Callback when a trigger has been un-registered.
 	 * 
-	 * @param trigJob the trigger and job
-	 * @param properties the service properties
+	 * @param trigJob
+	 *        the trigger and job
+	 * @param properties
+	 *        the service properties
 	 */
 	public void onUnbind(TriggerAndJobDetail trigJob, Map<String, ?> properties) {
+		if ( trigJob == null ) {
+			// gemini blueprint calls this when availability="optional" and there are no services
+			return;
+		}
 		try {
 			scheduler.deleteJob(trigJob.getJobDetail().getName(), trigJob.getJobDetail().getGroup());
 		} catch ( SchedulerException e ) {
-			log.error("Unable to un-schedule job " +trigJob);
+			log.error("Unable to un-schedule job " + trigJob);
 			throw new RuntimeException(e);
 		}
 
@@ -215,7 +220,7 @@ public class JobServiceRegistrationListener extends
 		final String pid = pidForSymbolicName((String) properties.get("Bundle-SymbolicName"));
 
 		JobSettingSpecifierProvider provider = null;
-		synchronized (providerMap) {
+		synchronized ( providerMap ) {
 			provider = providerMap.get(pid);
 			if ( provider != null ) {
 				provider.removeSpecifier(trigJob);
@@ -227,12 +232,13 @@ public class JobServiceRegistrationListener extends
 	public void configurationEvent(ConfigurationEvent event) {
 		if ( event.getType() == ConfigurationEvent.CM_UPDATED ) {
 			JobSettingSpecifierProvider provider = null;
-			synchronized (providerMap) {
+			synchronized ( providerMap ) {
 				provider = providerMap.get(event.getPid());
 			}
 			if ( provider != null ) {
-				ConfigurationAdmin ca = (ConfigurationAdmin) getBundleContext().getService(
-						event.getReference());
+				@SuppressWarnings("unchecked")
+				ServiceReference<ConfigurationAdmin> caRef = event.getReference();
+				ConfigurationAdmin ca = getBundleContext().getService(caRef);
 				try {
 					Configuration config = ca.getConfiguration(event.getPid(), null);
 					@SuppressWarnings("unchecked")
@@ -242,37 +248,34 @@ public class JobServiceRegistrationListener extends
 					while ( keys.hasMoreElements() ) {
 						String key = keys.nextElement();
 						List<RegisteredService<TriggerAndJobDetail>> tjList = getRegisteredServices();
-						synchronized (tjList) {
+						synchronized ( tjList ) {
 							for ( RegisteredService<TriggerAndJobDetail> rs : tjList ) {
 								TriggerAndJobDetail tj = rs.getConfig();
-								if ( key.equals(JobSettingSpecifierProvider.triggerKey(tj
-										.getTrigger())) ) {
+								if ( key.equals(JobSettingSpecifierProvider.triggerKey(tj.getTrigger())) ) {
 									scheduleJobForSetting(key, (String) props.get(key), tj);
 								}
 							}
 
 						}
 					}
-				} catch (IOException e) {
+				} catch ( IOException e ) {
 					log.warn("Exception processing configuration update event", e);
 				}
 			}
 		}
 	}
 
-	private void scheduleJobForSetting(String key, String newCronExpression,
-			TriggerAndJobDetail tj) {
+	private void scheduleJobForSetting(String key, String newCronExpression, TriggerAndJobDetail tj) {
 		// has the trigger value actually changed?
 		CronTrigger ct = (CronTrigger) tj.getTrigger();
 		boolean reschedule = false;
 		try {
-			CronTrigger runtimeTrigger = (CronTrigger) scheduler.getTrigger(ct.getName(),
-					ct.getGroup());
+			CronTrigger runtimeTrigger = (CronTrigger) scheduler.getTrigger(ct.getName(), ct.getGroup());
 			if ( runtimeTrigger != null ) {
 				reschedule = true;
 				ct = runtimeTrigger;
 			}
-		} catch (SchedulerException e) {
+		} catch ( SchedulerException e ) {
 			log.warn("Error getting trigger {}.{}", new Object[] { ct.getGroup(), ct.getName(), e });
 		}
 		String currentCronExpression = ct.getCronExpression();
@@ -282,7 +285,7 @@ public class JobServiceRegistrationListener extends
 		if ( !reschedule || !newCronExpression.equals(currentCronExpression) ) {
 			if ( reschedule ) {
 				log.info("Trigger {} cron changed from {} to {}", new Object[] { key,
-					currentCronExpression, newCronExpression });
+						currentCronExpression, newCronExpression });
 				CronTriggerBean newTrigger;
 				if ( ct instanceof RandomizedCronTriggerBean ) {
 					RandomizedCronTriggerBean oldR = (RandomizedCronTriggerBean) ct;
@@ -301,20 +304,20 @@ public class JobServiceRegistrationListener extends
 				try {
 					newTrigger.setCronExpression(newCronExpression);
 					scheduler.rescheduleJob(ct.getName(), ct.getGroup(), newTrigger);
-				} catch (ParseException e) {
+				} catch ( ParseException e ) {
 					log.error("Error in cron expression [{}]", newCronExpression, e);
-				} catch (SchedulerException e) {
-					log.error("Error re-scheduling trigger {} for job {}",
-							new Object[] { ct.getName(), ct.getJobName(), e });
+				} catch ( SchedulerException e ) {
+					log.error("Error re-scheduling trigger {} for job {}", new Object[] { ct.getName(),
+							ct.getJobName(), e });
 				}
 			} else {
-				log.info("Scheduling trigger {} as cron {}", new Object[] { key,
-						currentCronExpression, newCronExpression });
+				log.info("Scheduling trigger {} as cron {}", new Object[] { key, currentCronExpression,
+						newCronExpression });
 				try {
 					scheduler.scheduleJob(tj.getJobDetail(), ct);
-				} catch (SchedulerException e) {
-					log.error("Error scheduling trigger {} for job {}", new Object[] {
-							ct.getName(), ct.getJobName(), e });
+				} catch ( SchedulerException e ) {
+					log.error("Error scheduling trigger {} for job {}",
+							new Object[] { ct.getName(), ct.getJobName(), e });
 				}
 			}
 		}

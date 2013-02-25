@@ -24,11 +24,10 @@
 
 package net.solarnetwork.node.util;
 
+import java.util.Dictionary;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.slf4j.Logger;
@@ -54,7 +53,7 @@ public abstract class BaseServiceListener<T, R extends RegisteredService<T>> {
 
 	private BundleContext bundleContext = null;
 
-	private List<R> registeredServices = new LinkedList<R>();
+	private final List<R> registeredServices = new LinkedList<R>();
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -63,27 +62,27 @@ public abstract class BaseServiceListener<T, R extends RegisteredService<T>> {
 	 * Register a new OSGi service.
 	 * 
 	 * @param tracked
-	 *            the RegisteredService instance
+	 *        the RegisteredService instance
 	 * @param service
-	 *            the service to register with OSGi
+	 *        the service to register with OSGi
 	 * @param serviceInterfaces
-	 *            the interfaces to publish the OSGi service as
+	 *        the interfaces to publish the OSGi service as
 	 * @param serviceProps
-	 *            properties for the OSGi service
+	 *        properties for the OSGi service
 	 */
 	protected void addRegisteredService(R tracked, Object service, String[] serviceInterfaces,
-			Properties serviceProps) {
+			Dictionary<String, ?> serviceProps) {
 		log.debug("Registering service [{}] with props {}", service, serviceProps);
-		synchronized (registeredServices) {
-			ServiceRegistration reg = bundleContext.registerService(serviceInterfaces, service,
-				serviceProps);
+		synchronized ( registeredServices ) {
+			ServiceRegistration<?> reg = bundleContext.registerService(serviceInterfaces, service,
+					serviceProps);
 			tracked.setReg(reg);
 			registeredServices.add(tracked);
 		}
 	}
 
 	protected void removeRegisteredService(T tracked, Map<String, ?> properties) {
-		synchronized (registeredServices) {
+		synchronized ( registeredServices ) {
 			for ( R regService : registeredServices ) {
 				if ( regService.isSameAs(tracked, properties) ) {
 					log.debug("Unregistering service [{}] with props {}", tracked);

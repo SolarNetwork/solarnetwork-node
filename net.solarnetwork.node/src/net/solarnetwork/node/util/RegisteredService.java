@@ -26,7 +26,6 @@ package net.solarnetwork.node.util;
 
 import java.util.Arrays;
 import java.util.Map;
-
 import org.osgi.framework.ServiceRegistration;
 
 /**
@@ -37,9 +36,9 @@ import org.osgi.framework.ServiceRegistration;
  */
 public class RegisteredService<T> {
 
-	private T config;
-	private Map<String, ?> props;
-	private ServiceRegistration reg;
+	private final T config;
+	private final Map<String, ?> props;
+	private ServiceRegistration<?> reg;
 
 	public RegisteredService(T config, Map<String, ?> properties) {
 		if ( config == null || properties == null ) {
@@ -77,7 +76,7 @@ public class RegisteredService<T> {
 		if ( m1.size() != m2.size() ) {
 			return false;
 		}
-		for (Map.Entry<String, ?> me : m1.entrySet()) {
+		for ( Map.Entry<String, ?> me : m1.entrySet() ) {
 			if ( !m2.containsKey(me.getKey()) ) {
 				return false;
 			}
@@ -111,11 +110,11 @@ public class RegisteredService<T> {
 		return props;
 	}
 
-	public ServiceRegistration getReg() {
+	public ServiceRegistration<?> getReg() {
 		return reg;
 	}
 
-	public void setReg(ServiceRegistration reg) {
+	public void setReg(ServiceRegistration<?> reg) {
 		this.reg = reg;
 	}
 

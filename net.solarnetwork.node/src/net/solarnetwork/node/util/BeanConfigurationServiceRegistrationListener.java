@@ -24,43 +24,53 @@
 
 package net.solarnetwork.node.util;
 
+import java.util.Hashtable;
 import java.util.Map;
-import java.util.Properties;
-
 import net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
 /**
  * An OSGi service registration listener for {@link BeanConfiguration} objects,
- * so they can be used to dynamically configure and publish other OSGi
- * services.
+ * so they can be used to dynamically configure and publish other OSGi services.
  * 
- * <p>This object acts like a dynamic OSGi service factory. You configure the
- * type of service this factory should create, and when 
- * {@link BeanConfiguration} are found new instances of the service will be
- * created and configured from the discovered {@link BeanConfiguration}. This
- * allows the bundle the configuration came from to be completely isolated
- * and unaware of the implementation bundle using that configuration.</p>
+ * <p>
+ * This object acts like a dynamic OSGi service factory. You configure the type
+ * of service this factory should create, and when {@link BeanConfiguration} are
+ * found new instances of the service will be created and configured from the
+ * discovered {@link BeanConfiguration}. This allows the bundle the
+ * configuration came from to be completely isolated and unaware of the
+ * implementation bundle using that configuration.
+ * </p>
  * 
- * <p>The {@link BeanConfiguration#getConfiguration()} Map will be used to
+ * <p>
+ * The {@link BeanConfiguration#getConfiguration()} Map will be used to
  * configure the properties on instantiated service objects. The keys of this
- * Map should be standard Spring JavaBean property names.</p>
+ * Map should be standard Spring JavaBean property names.
+ * </p>
  * 
- * <p>The {@link BeanConfiguration#getAttributes()} Map will be used to create
- * OSGi service properties when the service is registered.</p>
+ * <p>
+ * The {@link BeanConfiguration#getAttributes()} Map will be used to create OSGi
+ * service properties when the service is registered.
+ * </p>
  * 
- * <p>The {@Link BeanConfiguration#getOrdering()} Integer will be used to 
- * assign an OSGi ranking to the service when it is registered.</p>
+ * <p>
+ * The {@Link BeanConfiguration#getOrdering()} Integer will be used to
+ * assign an OSGi ranking to the service when it is registered.
+ * </p>
  * 
- * <p>When the {@link BeanConfiguration} is unregistered and the 
+ * <p>
+ * When the {@link BeanConfiguration} is unregistered and the
  * {@link #onUnbind(BeanConfiguration, Map)} method is called, the associated
- * service created by this factory will be unregistered as well.</p>
+ * service created by this factory will be unregistered as well.
+ * </p>
  * 
- * <p>For example, this might be configured via Spring DM like this:</p>
+ * <p>
+ * For example, this might be configured via Spring DM like this:
+ * </p>
  * 
- * <pre> &lt;osgi:list id="myConfigurationList"
+ * <pre>
+ * &lt;osgi:list id="myConfigurationList"
  * 		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N">
  * 		&lt;osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="myServiceBean"/>
  * &lt;/osgi:list>
@@ -72,20 +82,23 @@ import org.springframework.beans.PropertyAccessorFactory;
  * 		&lt;property name="serviceInterfaces"
  * 			value="net.solarnetwork.node.MyService"/>
  * 		&lt;property name="bundleContext" ref="bundleContext"/>
- * &lt;/bean></pre>
+ * &lt;/bean>
+ * </pre>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>serviceClass</dt>
- *   <dd>The type of service to create when 
- *   {@link #onBind(BeanConfiguration, Map)} is called.</dd>
- *   
- *   <dt>serviceInterfaces</dt>
- *   <dd>An array of interface names to register the OSGi service as.</dd>
- *   
- *   <dt>serviceProperties</dt>
- *   <dd>An optional Map of properties to register the OSGi service with.</dd>
+ * <dt>serviceClass</dt>
+ * <dd>The type of service to create when
+ * {@link #onBind(BeanConfiguration, Map)} is called.</dd>
+ * 
+ * <dt>serviceInterfaces</dt>
+ * <dd>An array of interface names to register the OSGi service as.</dd>
+ * 
+ * <dt>serviceProperties</dt>
+ * <dd>An optional Map of properties to register the OSGi service with.</dd>
  * </dl>
  * 
  * @author matt
@@ -97,35 +110,38 @@ public class BeanConfigurationServiceRegistrationListener extends
 	private Class<?> serviceClass = null;
 	private String[] serviceInterfaces = null;
 	private Map<String, Object> serviceProperties = null;
-	
+
 	/**
 	 * Callback when an object has been registered.
 	 * 
-	 * <p>This method will instantiate a new instance of 
-	 * {@link #getServiceClass()} and configure its properties via the Map
-	 * returned by {@link BeanConfiguration#getConfiguration()}. Afterwards it
-	 * will register the instance as a service, using the 
-	 * {@link #getServiceInterfaces()} as the service interfaces and 
-	 * {@link #getServiceProperties()} as the service properties (if 
-	 * available) combined with the {@link BeanConfiguration#getAttributes()}
-	 * (if available).</p>
+	 * <p>
+	 * This method will instantiate a new instance of {@link #getServiceClass()}
+	 * and configure its properties via the Map returned by
+	 * {@link BeanConfiguration#getConfiguration()}. Afterwards it will register
+	 * the instance as a service, using the {@link #getServiceInterfaces()} as
+	 * the service interfaces and {@link #getServiceProperties()} as the service
+	 * properties (if available) combined with the
+	 * {@link BeanConfiguration#getAttributes()} (if available).
+	 * </p>
 	 * 
-	 * @param config the configuration object
-	 * @param properties the service properties
+	 * @param config
+	 *        the configuration object
+	 * @param properties
+	 *        the service properties
 	 */
 	public void onBind(BeanConfiguration config, Map<String, ?> properties) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Bind called on [" +config +"] with props " +properties);
+			log.debug("Bind called on [" + config + "] with props " + properties);
 		}
 		Object service;
 		try {
 			service = serviceClass.newInstance();
-		} catch (InstantiationException e) {
+		} catch ( InstantiationException e ) {
 			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
+		} catch ( IllegalAccessException e ) {
 			throw new RuntimeException(e);
 		}
-		Properties props = new Properties();
+		Hashtable<String, Object> props = new Hashtable<String, Object>();
 		if ( serviceProperties != null ) {
 			props.putAll(serviceProperties);
 		}
@@ -133,8 +149,7 @@ public class BeanConfigurationServiceRegistrationListener extends
 			props.putAll(config.getAttributes());
 		}
 		props.put(org.osgi.framework.Constants.SERVICE_RANKING, config.getOrdering());
-		BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(
-				service);
+		BeanWrapper wrapper = PropertyAccessorFactory.forBeanPropertyAccess(service);
 		wrapper.setPropertyValues(config.getConfiguration());
 
 		addRegisteredService(new BeanConfigurationRegisteredService(config, properties), service,
@@ -144,30 +159,30 @@ public class BeanConfigurationServiceRegistrationListener extends
 	/**
 	 * Callback when a trigger has been un-registered.
 	 * 
-	 * <p>This method will attempt to un-register a previously registered
-	 * service.</p>
+	 * <p>
+	 * This method will attempt to un-register a previously registered service.
+	 * </p>
 	 * 
-	 * @param config the configuration object
-	 * @param properties the service properties
+	 * @param config
+	 *        the configuration object
+	 * @param properties
+	 *        the service properties
 	 */
 	public void onUnbind(BeanConfiguration config, Map<String, ?> properties) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Unbind called on [" +config +"] with props " 
-					+properties);
+			log.debug("Unbind called on [" + config + "] with props " + properties);
 		}
 		removeRegisteredService(config, properties);
 	}
-	
-	public static class BeanConfigurationRegisteredService extends
-			RegisteredService<BeanConfiguration> {
-		
-		public BeanConfigurationRegisteredService(BeanConfiguration config,
-				Map<String, ?> properties) {
+
+	public static class BeanConfigurationRegisteredService extends RegisteredService<BeanConfiguration> {
+
+		public BeanConfigurationRegisteredService(BeanConfiguration config, Map<String, ?> properties) {
 			super(config, properties);
 		}
 
-		public boolean isSameAs(BeanConfiguration other,
-				Map<String, ?> properties) {
+		@Override
+		public boolean isSameAs(BeanConfiguration other, Map<String, ?> properties) {
 			if ( super.isSameAs(other, properties) ) {
 				if ( !areMapsSame(getConfig().getConfiguration(), other.getConfiguration()) ) {
 					return false;

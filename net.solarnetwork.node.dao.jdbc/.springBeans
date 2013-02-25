@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beansProjectDescription>
 	<version>1</version>
-	<pluginVersion><![CDATA[2.3.1.201002081353-CI-R3688-B636]]></pluginVersion>
+	<pluginVersion><![CDATA[3.1.0.201210040510-RELEASE]]></pluginVersion>
 	<configSuffixes>
 		<configSuffix><![CDATA[xml]]></configSuffix>
 	</configSuffixes>
 	<enableImports><![CDATA[false]]></enableImports>
 	<configs>
-		<config>META-INF/spring/solarnode-dao-jdbc.xml</config>
-		<config>META-INF/spring/solarnode-dao-jdbc-osgi.xml</config>
+		<config>OSGI-INF/blueprint/solarnode-dao-jdbc-osgi.xml</config>
+		<config>OSGI-INF/blueprint/solarnode-dao-jdbc.xml</config>
 	</configs>
 	<configSets>
 		<configSet>
@@ -16,9 +16,11 @@
 			<allowBeanDefinitionOverriding>true</allowBeanDefinitionOverriding>
 			<incomplete>false</incomplete>
 			<configs>
-				<config>META-INF/spring/solarnode-dao-jdbc.xml</config>
-				<config>META-INF/spring/solarnode-dao-jdbc-osgi.xml</config>
+				<config>OSGI-INF/blueprint/solarnode-dao-jdbc-osgi.xml</config>
+				<config>OSGI-INF/blueprint/solarnode-dao-jdbc.xml</config>
 			</configs>
+			<profiles>
+			</profiles>
 		</configSet>
 	</configSets>
 </beansProjectDescription>
