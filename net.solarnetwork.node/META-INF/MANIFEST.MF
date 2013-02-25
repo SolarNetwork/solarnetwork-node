@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Core
 Bundle-SymbolicName: net.solarnetwork.node
-Bundle-Version: 1.9.3
+Bundle-Version: 1.10.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
@@ -14,7 +14,7 @@ Export-Package:
  net.solarnetwork.node.settings;version="1.1.0",
  net.solarnetwork.node.settings.support;version="1.0.1",
  net.solarnetwork.node.support;version="1.5.3",
- net.solarnetwork.node.util;version="1.1.1"
+ net.solarnetwork.node.util;version="1.2.0"
 Import-Package: 
  net.solarnetwork.domain;version="1.2.0",
  net.solarnetwork.util;version="1.6.0",
