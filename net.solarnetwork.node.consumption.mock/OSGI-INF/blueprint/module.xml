@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+	<!-- Service References -->
+	
+	<reference id="priceLocationServiceRef" availability="optional"
+		interface="net.solarnetwork.node.PriceLocationService">
+		<reference-listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
+	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="priceLocationServiceRef"/>
+	</bean>
+
+	<!-- Published Services -->
+
+	<service id="mockConsumptionDatumDataSourceService" ref="mockPriceConsumptionDatumDataSource" 
+		interface="net.solarnetwork.node.DatumDataSource" ranking="-1">
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
+		</service-properties>
+	</service>
+	
+	<!-- Mock supporting services -->
+	
+	<bean id="mockConsumptionDatumDao" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDao"/>
+		
+	<bean id="mockConsumptionDatumDataSource" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource"/>
+
+	<bean id="mockPriceConsumptionDatumDataSource" class="net.solarnetwork.node.PriceLocationDatumDataSource"
+		factory-method="getInstance">
+		<argument ref="mockConsumptionDatumDataSource"/>
+		<argument ref="priceLocationService"/>
+	</bean>
+	
+</blueprint>
