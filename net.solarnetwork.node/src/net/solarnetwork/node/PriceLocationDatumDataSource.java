@@ -28,14 +28,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.OptionalServiceTracker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
@@ -47,53 +45,59 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * {@link DatumDataSource} that augments some other data source's datum values
  * with price location IDs.
  * 
- * <p>This is to be used to easily augment various datum that relate to price
- * with the necessary {@link PriceLocation} ID. This class also implements the
+ * <p>
+ * This is to be used to easily augment various datum that relate to price with
+ * the necessary {@link PriceLocation} ID. This class also implements the
  * {@link MultiDatumDataSource} API, and will call the methods of that API on
- * the configured {@code delegate} if that also implements {@link MultiDatumDataSource}.
- * If the {@code delegate} does not implement {@link MultiDatumDataSource} this
- * class will "fake" that API by calling {@link DatumDataSource#readCurrentDatum()}
- * and returning that object in a Collection.</p>
+ * the configured {@code delegate} if that also implements
+ * {@link MultiDatumDataSource}. If the {@code delegate} does not implement
+ * {@link MultiDatumDataSource} this class will "fake" that API by calling
+ * {@link DatumDataSource#readCurrentDatum()} and returning that object in a
+ * Collection.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>delegate</dt>
- *   <dd>The {@link DatumDataSource} to delegate to.</dd>
- *   
- *   <dt>priceLocationService</dt>
- *   <dd>The {@link PriceLocationService} to use to lookup {@link PriceLocation}
- *   instances via the configured {@code priceSource} and {@code priceLocation}
- *   properties.</dd>
- *   
- *   <dt>priceSource</dt>
- *   <dd>The {@link PriceLocation} source to look up.</dd>
- *   
- *   <dt>priceLocation</dt>
- *   <dd>The {@link PriceLocation} location to look up.</dd>
- *   
- *   <dt>priceLocationIdPropertyName</dt>
- *   <dd>The JavaBean property name to set the found {@link PriceLocation#getLocationId()}
- *   to on the {@link Datum} returned from the configured {@code delegate}. The object
- *   must support a JavaBean setter method for this property. Defaults to 
- *   {@link #DEFAULT_PRICE_LOCATION_ID_PROP_NAME}.</dd>
- *   
- *   <dt>requirePriceLocationService</dt>
- *   <dd>If configured as <em>true</em> then return <em>null</em> data only instead
- *   of calling the delegate. This is designed for services that require a price
- *   location ID to be set, for example a PriceDatum logger. Defaults to <em>false</em>.</dd>
+ * <dt>delegate</dt>
+ * <dd>The {@link DatumDataSource} to delegate to.</dd>
+ * 
+ * <dt>priceLocationService</dt>
+ * <dd>The {@link PriceLocationService} to use to lookup {@link PriceLocation}
+ * instances via the configured {@code priceSource} and {@code priceLocation}
+ * properties.</dd>
+ * 
+ * <dt>priceSource</dt>
+ * <dd>The {@link PriceLocation} source to look up.</dd>
+ * 
+ * <dt>priceLocation</dt>
+ * <dd>The {@link PriceLocation} location to look up.</dd>
+ * 
+ * <dt>priceLocationIdPropertyName</dt>
+ * <dd>The JavaBean property name to set the found
+ * {@link PriceLocation#getLocationId()} to on the {@link Datum} returned from
+ * the configured {@code delegate}. The object must support a JavaBean setter
+ * method for this property. Defaults to
+ * {@link #DEFAULT_PRICE_LOCATION_ID_PROP_NAME}.</dd>
+ * 
+ * <dt>requirePriceLocationService</dt>
+ * <dd>If configured as <em>true</em> then return <em>null</em> data only
+ * instead of calling the delegate. This is designed for services that require a
+ * price location ID to be set, for example a PriceDatum logger. Defaults to
+ * <em>false</em>.</dd>
  * </dl>
  * 
  * @author matt
  * @version $Revision$
  */
-public class PriceLocationDatumDataSource<T extends Datum>
- implements DatumDataSource<T>,
+public class PriceLocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
-	
+
 	/** Default value for the {@code priceLocationIdPropertyName} property. */
 	public static final String DEFAULT_PRICE_LOCATION_ID_PROP_NAME = "locationId";
-	
+
 	private DatumDataSource<T> delegate;
 	private OptionalServiceTracker<PriceLocationService> priceLocationService;
 	private String priceSource = PriceLocationService.UNKNOWN_SOURCE;
@@ -104,7 +108,33 @@ public class PriceLocationDatumDataSource<T extends Datum>
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+
+	/**
+	 * Factory method.
+	 * 
+	 * <p>
+	 * This method exists to work around issues with wiring this class via
+	 * Gemini Blueprint 2.2. It throws a
+	 * {@code SpringBlueprintConverterService$BlueprintConverterException} if
+	 * the delegate parameter is defined as {@code DatumDataSource}.
+	 * </p>
+	 * 
+	 * @param delegate
+	 *        the delegate, must implement
+	 *        {@code DatumDataSource<? extends Datum>}
+	 * @param priceLocationService
+	 *        the price location service
+	 * @return the data source
+	 */
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public static PriceLocationDatumDataSource<? extends Datum> getInstance(Object delegate,
+			OptionalServiceTracker<PriceLocationService> priceLocationService) {
+		PriceLocationDatumDataSource<? extends Datum> ds = new PriceLocationDatumDataSource<Datum>();
+		ds.setDelegate((DatumDataSource) delegate);
+		ds.setPriceLocationService(priceLocationService);
+		return ds;
+	}
+
 	@Override
 	public Class<? extends T> getDatumType() {
 		return delegate.getDatumType();
@@ -114,7 +144,7 @@ public class PriceLocationDatumDataSource<T extends Datum>
 	@Override
 	public Class<? extends T> getMultiDatumType() {
 		if ( delegate instanceof MultiDatumDataSource ) {
-			return ((MultiDatumDataSource<T>)delegate).getMultiDatumType();
+			return ((MultiDatumDataSource<T>) delegate).getMultiDatumType();
 		}
 		return delegate.getDatumType();
 	}
@@ -124,7 +154,7 @@ public class PriceLocationDatumDataSource<T extends Datum>
 	public Collection<T> readMultipleDatum() {
 		Collection<T> results = null;
 		if ( delegate instanceof MultiDatumDataSource ) {
-			results = ((MultiDatumDataSource<T>)delegate).readMultipleDatum();
+			results = ((MultiDatumDataSource<T>) delegate).readMultipleDatum();
 		} else {
 			// fake multi API
 			results = new ArrayList<T>(1);
@@ -133,10 +163,9 @@ public class PriceLocationDatumDataSource<T extends Datum>
 				results.add(datum);
 			}
 		}
-		
-		if ( results != null && priceLocationService.isAvailable() 
-				&& priceLocation != null && priceLocation.length() > 0
-				&& priceSource != null && priceLocation.length() > 0 ) {
+
+		if ( results != null && priceLocationService.isAvailable() && priceLocation != null
+				&& priceLocation.length() > 0 && priceSource != null && priceLocation.length() > 0 ) {
 			for ( T datum : results ) {
 				populatePriceLocation(datum);
 			}
@@ -158,13 +187,12 @@ public class PriceLocationDatumDataSource<T extends Datum>
 		}
 		return datum;
 	}
-	
+
 	private void populatePriceLocation(T datum) {
-		PriceLocation loc = priceLocationService.getService().findLocation(
-				priceSource, priceLocation);
+		PriceLocation loc = priceLocationService.getService().findLocation(priceSource, priceLocation);
 		if ( loc != null ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Augmenting datum " +datum +" with PriceLocation " +loc);
+				log.debug("Augmenting datum " + datum + " with PriceLocation " + loc);
 			}
 			BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
 			bean.setPropertyValue(priceLocationIdPropertyName, loc.getLocationId());
@@ -173,8 +201,7 @@ public class PriceLocationDatumDataSource<T extends Datum>
 
 	@Override
 	public String toString() {
-		return delegate != null 
-				? delegate.toString()+"[PriceLocationDatumDataSource proxy]"
+		return delegate != null ? delegate.toString() + "[PriceLocationDatumDataSource proxy]"
 				: "PriceLocationDatumDataSource";
 	}
 
@@ -245,37 +272,47 @@ public class PriceLocationDatumDataSource<T extends Datum>
 	public DatumDataSource<T> getDelegate() {
 		return delegate;
 	}
+
 	public void setDelegate(DatumDataSource<T> delegate) {
 		this.delegate = delegate;
 	}
+
 	public OptionalServiceTracker<PriceLocationService> getPriceLocationService() {
 		return priceLocationService;
 	}
-	public void setPriceLocationService(
-			OptionalServiceTracker<PriceLocationService> priceLocationService) {
+
+	public void setPriceLocationService(OptionalServiceTracker<PriceLocationService> priceLocationService) {
 		this.priceLocationService = priceLocationService;
 	}
+
 	public String getPriceSource() {
 		return priceSource;
 	}
+
 	public void setPriceSource(String priceSource) {
 		this.priceSource = priceSource;
 	}
+
 	public String getPriceLocation() {
 		return priceLocation;
 	}
+
 	public void setPriceLocation(String priceLocation) {
 		this.priceLocation = priceLocation;
 	}
+
 	public String getPriceLocationIdPropertyName() {
 		return priceLocationIdPropertyName;
 	}
+
 	public void setPriceLocationIdPropertyName(String priceLocationIdPropertyName) {
 		this.priceLocationIdPropertyName = priceLocationIdPropertyName;
 	}
+
 	public boolean isRequirePriceLocationService() {
 		return requirePriceLocationService;
 	}
+
 	public void setRequirePriceLocationService(boolean requirePriceLocationService) {
 		this.requirePriceLocationService = requirePriceLocationService;
 	}
