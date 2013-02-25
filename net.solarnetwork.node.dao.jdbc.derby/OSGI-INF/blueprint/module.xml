@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="dao.jdbc.derby.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.derby">
+		<beans:prop key="job.syncBackup.cron">0 0 0/2 * * ? 2099</beans:prop>
+		<beans:prop key="job.syncBackup.destinationPath">var/db-bak</beans:prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<reference id="scheduler" interface="org.quartz.Scheduler"/>
+	
+	<reference id="jdbcOps" interface="org.springframework.jdbc.core.JdbcOperations"
+		filter="(db=node)"/>
+
+	<!-- Published Services -->
+	
+	<service ref="syncBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<!-- Supporting services -->
+
+	<reference-list id="jdbcDaos" interface="net.solarnetwork.node.dao.jdbc.JdbcDao" availability="optional">
+		<reference-listener bind-method="onBind" unbind-method="onUnbind">
+			<bean class="net.solarnetwork.node.dao.jdbc.derby.DerbyMaintenanceRegistrationListener">
+				<property name="scheduler" ref="scheduler"/>
+				<property name="jdbcOperations" ref="jdbcOps"/>
+				<property name="maintenanceProperties" ref="dao.jdbc.derby.cfg"/>
+			</bean>
+		</reference-listener>
+	</reference-list>
+
+	<ctx:property-placeholder properties-ref="dao.jdbc.derby.cfg"/>
+
+	<!-- Sync backup job -->
+
+	<bean id="syncBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="syncBackupTrigger"/>
+		<property name="jobDetail" ref="syncBackupJob"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.dao.jdbc.derby.JOBS"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="syncBackupTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+		<property name="jobDetail" ref="syncBackupJob"/>
+		<property name="cronExpression" value="${job.syncBackup.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+		<property name="randomSecond" value="true"/>
+	</bean>
+	
+	<bean id="syncBackupJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="jdbcOperations" value-ref="jdbcOps"/>
+				<!--entry key="syncCommand" value="${job.syncBackup.syncCommand}"/-->
+				<entry key="destinationPath" value="${job.syncBackup.destinationPath}"/>
+			</map>
+		</property>
+	</bean>
+
+</blueprint>
