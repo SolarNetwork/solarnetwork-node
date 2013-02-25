@@ -51,7 +51,7 @@
 			<fmt:message key='certs.action.import'/>
 		</a>
 		<a class="btn${nodeCertValid ? ' btn-primary' : ''}" id="btn-export-node-cert" href="<c:url value='/certs/nodeCert'/>">
-			<fmt:message key='certs.action.export'/>
+			<fmt:message key='certs.action.view'/>
 		</a>
 	</div>
 </div>
