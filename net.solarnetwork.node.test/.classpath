@@ -4,6 +4,6 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="environment/local"/>
-	<classpathentry kind="lib" path="/solarnetwork-osgi-target/platform/slf4j-log4j12-1.6.4.jar"/>
+	<classpathentry kind="lib" path="/solarnetwork-osgi-target/support/slf4j-log4j12-1.7.2.jar"/>
 	<classpathentry kind="output" path="build/eclipse"/>
 </classpath>

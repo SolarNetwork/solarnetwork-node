@@ -46,10 +46,4 @@
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 
-	<bean id="databaseSetup" class="net.solarnetwork.node.dao.jdbc.DatabaseSetup"
-			init-method="init">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql"/>
-	</bean>
-
 </beans>
