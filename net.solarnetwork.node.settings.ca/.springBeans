@@ -7,7 +7,7 @@
 	</configSuffixes>
 	<enableImports><![CDATA[false]]></enableImports>
 	<configs>
-		<config>META-INF/spring/module.xml</config>
+		<config>OSGI-INF/blueprint/module.xml</config>
 	</configs>
 	<configSets>
 		<configSet>
@@ -15,7 +15,7 @@
 			<allowBeanDefinitionOverriding>true</allowBeanDefinitionOverriding>
 			<incomplete>false</incomplete>
 			<configs>
-				<config>META-INF/spring/module.xml</config>
+				<config>OSGI-INF/blueprint/module.xml</config>
 			</configs>
 			<profiles>
 			</profiles>

@@ -12,7 +12,9 @@
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.0.0-beta-1">
     		<artifact name="super-csv" type="jar" />
 		</dependency>
-		<dependency org="org.eclipse.osgi" name="org.eclipse.osgi" rev="3.5.1.R35x_v20091005" />
+		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0">
+			<artifact name="org.osgi.core" type="jar"/>
+		</dependency>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0" >
     		<artifact name="org.osgi.compendium" type="jar" />
 		</dependency>
