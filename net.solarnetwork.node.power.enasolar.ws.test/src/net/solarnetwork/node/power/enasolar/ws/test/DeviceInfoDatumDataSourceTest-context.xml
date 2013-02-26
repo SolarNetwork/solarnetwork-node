@@ -25,8 +25,14 @@
 		</property>
 	</bean>
 
-	<bean id="datumDataSource" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource"
+	<bean id="databaseSetup" class="net.solarnetwork.node.dao.jdbc.DatabaseSetup"
 			init-method="init">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initSqlResource" value="classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql"/>
+	</bean>
+	
+	<bean id="datumDataSource" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource"
+			init-method="init" depends-on="databaseSetup">
 		<property name="url" value="${enasolar.url}"/>
 		<property name="settingDao" ref="settingDao"/>
 	</bean>
