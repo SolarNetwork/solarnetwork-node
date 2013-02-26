@@ -13,8 +13,4 @@
 		<put-attribute name="body" value="/WEB-INF/jsp/loggedout.jsp"/>
 	</definition>
 	
-	<definition name="home" extends="default">
-		<put-attribute name="body" value="/WEB-INF/jsp/a/home.jsp"/>
-	</definition>
-	
 </tiles-definitions>
