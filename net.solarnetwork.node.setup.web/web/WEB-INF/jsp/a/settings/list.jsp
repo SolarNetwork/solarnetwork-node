@@ -99,7 +99,9 @@
 							<c:forEach items="${settingsBackups}" var="backup" varStatus="backupStatus">
 								<li>
 				  					<a class="btn btn-small" id="export.btn" href="<c:url value='/settings/export.do'/>?backup=${backup.backupKey}">
-										<fmt:message key="settings.autobackup.download.button"/> ${backup.standardDateString}
+										<fmt:message key="settings.autobackup.download.button">
+											<fmt:param value="${backup.standardDateString}"/>
+										</fmt:message>
 									</a>
 									<c:if test="${backupStatus.first}">
 										<button type="button" class="help-popover help-icon" tabindex="-1"
