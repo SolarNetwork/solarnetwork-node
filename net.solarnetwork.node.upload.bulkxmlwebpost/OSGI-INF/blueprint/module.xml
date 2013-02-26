@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
+
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="upload.cfg" persistent-id="net.solarnetwork.node.upload.bulkxmlwebpost">
+		<beans:prop key="job.bulkDatumUploader.cron">20 * * * * ?</beans:prop>
+	</osgix:cm-properties>
+	
+	<!-- Service References -->
+	
+	<reference-list id="datumDaoCollection" availability="optional"
+		interface="net.solarnetwork.node.dao.DatumDao"/>
+	
+	<reference id="identityService" availability="optional"
+		interface="net.solarnetwork.node.IdentityService"/>
+	
+	<reference id="reactorServiceRef" availability="optional"
+		interface="net.solarnetwork.node.reactor.ReactorService">
+		<reference-listener ref="reactorService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
+	<bean id="reactorService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="reactorServiceRef"/>
+	</bean>
+
+	<reference id="sslServiceRef" availability="optional"
+		interface="net.solarnetwork.node.SSLService">
+		<reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
+	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="sslServiceRef"/>
+	</bean>
+	
+	<!-- Published Services -->
+	
+	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+	<service ref="bulkXmlWebPostUploadService"
+		interface="net.solarnetwork.node.reactor.InstructionAcknowledgementService"/>
+	
+	<!-- Supporting Services -->
+	
+	<ctx:property-placeholder properties-ref="upload.cfg"/>
+	
+	<bean id="bulkXmlWebPostUploadService"
+		class="net.solarnetwork.node.upload.BulkXmlWebPostUploadService"
+		init-method="init">
+		<property name="identityService" ref="identityService"/>
+		<property name="reactorService" ref="reactorService"/>
+		<property name="sslService" ref="sslService"/>
+		<property name="url" value="/bulkCollector.do"/>
+	</bean>
+	
+	<!-- Upload job -->
+	
+	<bean id="bulkDatumUploader" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="bulkDatumUploadTrigger"/>
+		<property name="jobDetail" ref="bulkDatumUploadJob"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.upload.bulkxmlwebpost.JOBS"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="bulkDatumUploadTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+		<property name="jobDetail" ref="bulkDatumUploadJob"/>
+		<property name="name" value="Bulk Datum Uploader"/>
+		<property name="description" value="Upload locally collected data to SolarNetwork"/>
+		<property name="cronExpression" value="${job.bulkDatumUploader.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+		<property name="randomSecond" value="true"/>
+	</bean>
+	
+	<bean id="bulkDatumUploadJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoBulkUploadJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="daos" value-ref="datumDaoCollection"/>
+				<entry key="uploadService" value-ref="bulkXmlWebPostUploadService"/>
+			</map>
+		</property>
+	</bean>
+	
+</blueprint>
