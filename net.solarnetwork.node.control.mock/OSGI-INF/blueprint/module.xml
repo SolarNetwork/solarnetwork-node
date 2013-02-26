@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.control.mock">
+		<prop key="MockNodeControlProvider.booleanControlIds">
+			/power/switch/1,
+			/power/switch/2,
+			/power/switch/3,
+			/power/switch/grid
+		</prop>
+	</osgix:cm-properties>
+
+	<!-- Published Services -->
+
+	<service ref="mockProvider" ranking="-1">
+		<interfaces>
+			<value>net.solarnetwork.node.NodeControlProvider</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+		</interfaces>
+	</service>
+	
+	<!-- Supporting Services -->
+
+	<ctx:property-placeholder properties-ref="cfg"/>
+	
+	<bean id="mockProvider" class="net.solarnetwork.node.control.mock.MockNodeControlProvider">
+		<property name="booleanControlIds" value="${MockNodeControlProvider.booleanControlIds}"/>
+	</bean>
+	
+</blueprint>
