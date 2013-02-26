@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Reactor JDBC DAO
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -16,19 +16,17 @@ Import-Package:
  org.aopalliance.aop;version="1.0.0",
  org.osgi.framework,
  org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.aop;version="[3.0,4.0)",
- org.springframework.aop.framework;version="[3.0,4.0)",
- org.springframework.beans.factory;version="[3.0,4.0)",
- org.springframework.core;version="[3.0,4.0)",
- org.springframework.core.io;version="[3.0,4.0)",
- org.springframework.context;version="[3.0,4.0)",
- org.springframework.dao;version="[3.0,4.0)",
- org.springframework.dao.support;version="[3.0,4.0)",
- org.springframework.jdbc.core;version="[3.0,4.0)",
- org.springframework.jdbc.core.simple;version="[3.0,4.0)",
- org.springframework.jdbc.core.support;version="[3.0,4.0)",
- org.springframework.jdbc.support;version="[3.0,4.0)",
- org.springframework.osgi.compendium.cm;version="[1.2.0,2.0.0)",
- org.springframework.osgi.compendium.config;version="[1.2.0,2.0.0)",
- org.springframework.transaction;version="[3.0,4.0)",
- org.springframework.transaction.annotation;version="[3.0,4.0)"
+ org.springframework.aop;version="[3.1,4.0)",
+ org.springframework.aop.framework;version="[3.1,4.0)",
+ org.springframework.beans.factory;version="[3.1,4.0)",
+ org.springframework.core;version="[3.1,4.0)",
+ org.springframework.core.io;version="[3.1,4.0)",
+ org.springframework.context;version="[3.1,4.0)",
+ org.springframework.dao;version="[3.1,4.0)",
+ org.springframework.dao.support;version="[3.1,4.0)",
+ org.springframework.jdbc.core;version="[3.1,4.0)",
+ org.springframework.jdbc.core.simple;version="[3.1,4.0)",
+ org.springframework.jdbc.core.support;version="[3.1,4.0)",
+ org.springframework.jdbc.support;version="[3.1,4.0)",
+ org.springframework.transaction;version="[3.1,4.0)",
+ org.springframework.transaction.annotation;version="[3.1,4.0)"
