@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
@@ -67,7 +66,6 @@ import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
 import net.solarnetwork.node.support.KeyValuePair;
-
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
@@ -100,7 +98,7 @@ import org.supercsv.prefs.CsvPreference;
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class CASettingsService implements SettingsService {
 
@@ -109,12 +107,13 @@ public class CASettingsService implements SettingsService {
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
-	private static final String SETTING_LAST_BACKUP_DATE = SettingsBackupJob.class.getName()+".lastBackupDate";
+	private static final String SETTING_LAST_BACKUP_DATE = SettingsBackupJob.class.getName()
+			+ ".lastBackupDate";
 	private static final String BACKUP_DATE_FORMAT = "yyyy-MM-dd-HHmmss";
 	private static final String BACKUP_FILENAME_PREFIX = "settings_";
 	private static final String BACKUP_FILENAME_EXT = "txt";
-	private static final Pattern BACKUP_FILENAME_PATTERN = Pattern.compile('^' +BACKUP_FILENAME_PREFIX
-			+"(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." +BACKUP_FILENAME_EXT +"$");
+	private static final Pattern BACKUP_FILENAME_PATTERN = Pattern.compile('^' + BACKUP_FILENAME_PREFIX
+			+ "(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." + BACKUP_FILENAME_EXT + "$");
 	private static final int DEFAULT_BACKUP_MAX_COUNT = 5;
 
 	private ConfigurationAdmin configurationAdmin;
@@ -145,23 +144,22 @@ public class CASettingsService implements SettingsService {
 	 * registered.
 	 * 
 	 * @param provider
-	 *            the provider object
+	 *        the provider object
 	 * @param properties
-	 *            the service properties
+	 *        the service properties
 	 */
 	public void onBindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
 		log.debug("Bind called on factory {} with props {}", provider, properties);
 		final String factoryPid = provider.getFactoryUID();
 
-		synchronized (factories) {
+		synchronized ( factories ) {
 			factories.put(factoryPid, new FactoryHelper(provider));
 
 			// find all configured factory instances, and publish those
 			// configurations now. First we look up all registered factory
 			// instances, so each returned result returns a configured instance
 			// key
-			List<KeyValuePair> instanceKeys = settingDao
-					.getSettings(getFactorySettingKey(factoryPid));
+			List<KeyValuePair> instanceKeys = settingDao.getSettings(getFactorySettingKey(factoryPid));
 			for ( KeyValuePair instanceKey : instanceKeys ) {
 				SettingsCommand cmd = new SettingsCommand();
 				cmd.setProviderKey(factoryPid);
@@ -186,14 +184,14 @@ public class CASettingsService implements SettingsService {
 	 * un-registered.
 	 * 
 	 * @param config
-	 *            the configuration object
+	 *        the configuration object
 	 * @param properties
-	 *            the service properties
+	 *        the service properties
 	 */
 	public void onUnbindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
 		log.debug("Unbind called on factory {} with props {}", provider, properties);
 		final String pid = provider.getFactoryUID();
-		synchronized (factories) {
+		synchronized ( factories ) {
 			factories.remove(pid);
 		}
 	}
@@ -202,9 +200,9 @@ public class CASettingsService implements SettingsService {
 	 * Callback when a {@link SettingSpecifierProvider} has been registered.
 	 * 
 	 * @param provider
-	 *            the provider object
+	 *        the provider object
 	 * @param properties
-	 *            the service properties
+	 *        the service properties
 	 */
 	public void onBind(SettingSpecifierProvider provider, Map<String, ?> properties) {
 		log.debug("Bind called on {} with props {}", provider, properties);
@@ -212,7 +210,7 @@ public class CASettingsService implements SettingsService {
 
 		List<SettingSpecifierProvider> factoryList = null;
 		String factoryInstanceKey = null;
-		synchronized (factories) {
+		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
 			if ( helper != null ) {
 				// Note: SERVICE_PID not normally provided by Spring: requires
@@ -231,14 +229,14 @@ public class CASettingsService implements SettingsService {
 						factoryList = helper.getInstanceProviders(factoryInstanceKey);
 						factoryList.add(provider);
 					}
-				} catch (IOException e) {
+				} catch ( IOException e ) {
 					log.error("Error getting factory instance configuration {}", instancePid, e);
 				}
 			}
 		}
 
 		if ( factoryList == null ) {
-			synchronized (providers) {
+			synchronized ( providers ) {
 				providers.put(pid, provider);
 			}
 		}
@@ -250,7 +248,7 @@ public class CASettingsService implements SettingsService {
 			return;
 		}
 		SettingsCommand cmd = new SettingsCommand();
-		for (KeyValuePair pair : settings) {
+		for ( KeyValuePair pair : settings ) {
 			SettingValueBean bean = new SettingValueBean();
 			bean.setProviderKey(provider.getSettingUID());
 			bean.setInstanceKey(factoryInstanceKey);
@@ -265,15 +263,15 @@ public class CASettingsService implements SettingsService {
 	 * Callback when a {@link SettingSpecifierProvider} has been un-registered.
 	 * 
 	 * @param config
-	 *            the configuration object
+	 *        the configuration object
 	 * @param properties
-	 *            the service properties
+	 *        the service properties
 	 */
 	public void onUnbind(SettingSpecifierProvider provider, Map<String, ?> properties) {
 		log.debug("Unbind called on {} with props {}", provider, properties);
 		final String pid = provider.getSettingUID();
 
-		synchronized (factories) {
+		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
 			if ( helper != null ) {
 				helper.removeProvider(provider);
@@ -281,14 +279,14 @@ public class CASettingsService implements SettingsService {
 			}
 		}
 
-		synchronized (providers) {
+		synchronized ( providers ) {
 			providers.remove(pid);
 		}
 	}
 
 	@Override
 	public List<SettingSpecifierProvider> getProviders() {
-		synchronized (providers) {
+		synchronized ( providers ) {
 			return new ArrayList<SettingSpecifierProvider>(providers.values());
 		}
 	}
@@ -296,7 +294,7 @@ public class CASettingsService implements SettingsService {
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories() {
 		List<SettingSpecifierProviderFactory> results;
-		synchronized (factories) {
+		synchronized ( factories ) {
 			results = new ArrayList<SettingSpecifierProviderFactory>(factories.size());
 			for ( FactoryHelper helper : factories.values() ) {
 				results.add(helper.getFactory());
@@ -307,7 +305,7 @@ public class CASettingsService implements SettingsService {
 
 	@Override
 	public SettingSpecifierProviderFactory getProviderFactory(String factoryUID) {
-		synchronized (factories) {
+		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(factoryUID);
 			if ( helper != null ) {
 				return helper.getFactory();
@@ -317,10 +315,9 @@ public class CASettingsService implements SettingsService {
 	}
 
 	@Override
-	public Map<String, List<FactorySettingSpecifierProvider>> getProvidersForFactory(
-			String factoryUID) {
+	public Map<String, List<FactorySettingSpecifierProvider>> getProvidersForFactory(String factoryUID) {
 		Map<String, List<FactorySettingSpecifierProvider>> results = new LinkedHashMap<String, List<FactorySettingSpecifierProvider>>();
-		synchronized (factories) {
+		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(factoryUID);
 			for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper.instanceEntrySet() ) {
 				String instanceUID = me.getKey();
@@ -354,9 +351,9 @@ public class CASettingsService implements SettingsService {
 					val = keyedSetting.getDefaultValue();
 				}
 				return val;
-			} catch (IOException e) {
+			} catch ( IOException e ) {
 				throw new RuntimeException(e);
-			} catch (InvalidSyntaxException e) {
+			} catch ( InvalidSyntaxException e ) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -371,7 +368,8 @@ public class CASettingsService implements SettingsService {
 		if ( command.getProviderKey() == null ) {
 			Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>();
 			for ( SettingValueBean bean : command.getValues() ) {
-				String groupKey = bean.getProviderKey()+(bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
+				String groupKey = bean.getProviderKey()
+						+ (bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
 				SettingsCommand cmd = groups.get(groupKey);
 				if ( cmd == null ) {
 					cmd = new SettingsCommand();
@@ -386,7 +384,7 @@ public class CASettingsService implements SettingsService {
 			}
 			return;
 		}
-		
+
 		try {
 			Configuration conf = getConfiguration(command.getProviderKey(), command.getInstanceKey());
 			Dictionary<String, Object> props = conf.getProperties();
@@ -400,7 +398,7 @@ public class CASettingsService implements SettingsService {
 					settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
 				}
 				props.put(bean.getKey(), bean.getValue());
-				
+
 				if ( !bean.isTransient() ) {
 					settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
 				}
@@ -412,18 +410,17 @@ public class CASettingsService implements SettingsService {
 				conf.update(props);
 			}
 
-		} catch (IOException e) {
+		} catch ( IOException e ) {
 			throw new RuntimeException(e);
-		} catch (InvalidSyntaxException e) {
+		} catch ( InvalidSyntaxException e ) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	@Override
 	public String addProviderFactoryInstance(String factoryUID) {
-		synchronized (factories) {
-			List<KeyValuePair> instanceKeys = settingDao
-					.getSettings(getFactorySettingKey(factoryUID));
+		synchronized ( factories ) {
+			List<KeyValuePair> instanceKeys = settingDao.getSettings(getFactorySettingKey(factoryUID));
 			int next = instanceKeys.size() + 1;
 			// verify key doesn't exist
 			boolean done = false;
@@ -437,8 +434,7 @@ public class CASettingsService implements SettingsService {
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			settingDao.storeSetting(getFactorySettingKey(factoryUID), newInstanceKey,
-					newInstanceKey);
+			settingDao.storeSetting(getFactorySettingKey(factoryUID), newInstanceKey, newInstanceKey);
 			try {
 				Configuration conf = getConfiguration(factoryUID, newInstanceKey);
 				@SuppressWarnings("unchecked")
@@ -449,9 +445,9 @@ public class CASettingsService implements SettingsService {
 				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, newInstanceKey);
 				conf.update(props);
 				return newInstanceKey;
-			} catch (IOException e) {
+			} catch ( IOException e ) {
 				throw new RuntimeException(e);
-			} catch (InvalidSyntaxException e) {
+			} catch ( InvalidSyntaxException e ) {
 				throw new RuntimeException(e);
 			}
 		}
@@ -459,7 +455,7 @@ public class CASettingsService implements SettingsService {
 
 	@Override
 	public void deleteProviderFactoryInstance(String factoryUID, String instanceUID) {
-		synchronized (factories) {
+		synchronized ( factories ) {
 			// delete factory reference
 			settingDao.deleteSetting(getFactorySettingKey(factoryUID), instanceUID);
 
@@ -470,28 +466,27 @@ public class CASettingsService implements SettingsService {
 			try {
 				Configuration conf = getConfiguration(factoryUID, instanceUID);
 				conf.delete();
-			} catch (IOException e) {
+			} catch ( IOException e ) {
 				throw new RuntimeException(e);
-			} catch (InvalidSyntaxException e) {
+			} catch ( InvalidSyntaxException e ) {
 				throw new RuntimeException(e);
 			}
 		}
 	}
-	
-	private static final String[] CSV_HEADERS = new String[] {"key", "type", "value"};
-	
+
+	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value" };
+
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
 		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
 		final List<IOException> errors = new ArrayList<IOException>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
-				new org.supercsv.cellprocessor.Optional(),
-				new org.supercsv.cellprocessor.Optional(),
-				new org.supercsv.cellprocessor.Optional(),
-		};
+				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
+				new org.supercsv.cellprocessor.Optional(), };
 		try {
 			writer.writeHeader(CSV_HEADERS);
-			settingDao.batchProcess(new BatchCallback<Setting>() {			
+			settingDao.batchProcess(new BatchCallback<Setting>() {
+
 				@Override
 				public BatchCallbackResult handle(Setting domainObject) {
 					try {
@@ -519,11 +514,12 @@ public class CASettingsService implements SettingsService {
 	}
 
 	@Override
-	public void importSettingsCSV(Reader in) throws IOException {	
+	public void importSettingsCSV(Reader in) throws IOException {
 		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
 		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null, };
 		reader.getHeader(true);
-		transactionTemplate.execute(new TransactionCallbackWithoutResult() {			
+		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+
 			@Override
 			protected void doInTransactionWithoutResult(final TransactionStatus status) {
 				Setting s;
@@ -535,7 +531,7 @@ public class CASettingsService implements SettingsService {
 						}
 						settingDao.storeSetting(s.getKey(), s.getType(), s.getValue());
 					}
-				} catch (IOException e) {
+				} catch ( IOException e ) {
 					log.error("Unable to import settings: {}", e.getMessage());
 					status.setRollbackOnly();
 				} finally {
@@ -553,7 +549,7 @@ public class CASettingsService implements SettingsService {
 	public SettingsBackup backupSettings() {
 		final Date mrd = settingDao.getMostRecentModificationDate();
 		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_DATE_FORMAT);
-		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE, 
+		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE,
 				SettingDao.TYPE_IGNORE_MODIFICATION_DATE);
 		final Date lastBackupDate;
 		try {
@@ -571,14 +567,14 @@ public class CASettingsService implements SettingsService {
 		if ( !dir.exists() ) {
 			dir.mkdirs();
 		}
-		final File f = new File(dir, BACKUP_FILENAME_PREFIX+backupDateKey+'.'+BACKUP_FILENAME_EXT);
+		final File f = new File(dir, BACKUP_FILENAME_PREFIX + backupDateKey + '.' + BACKUP_FILENAME_EXT);
 		log.info("Backing up settings to {}", f.getPath());
 		Writer writer = null;
 		try {
 			writer = new BufferedWriter(new FileWriter(f));
 			exportSettingsCSV(writer);
-			settingDao.storeSetting(SETTING_LAST_BACKUP_DATE, 
-					SettingDao.TYPE_IGNORE_MODIFICATION_DATE, backupDateKey);
+			settingDao.storeSetting(SETTING_LAST_BACKUP_DATE, SettingDao.TYPE_IGNORE_MODIFICATION_DATE,
+					backupDateKey);
 		} catch ( IOException e ) {
 			log.error("Unable to create settings backup {}: {}", f.getPath(), e.getMessage());
 		} finally {
@@ -589,7 +585,7 @@ public class CASettingsService implements SettingsService {
 				// ignore
 			}
 		}
-		
+
 		// clean out older backups
 		File[] files = dir.listFiles(new RegexFileFilter(BACKUP_FILENAME_PATTERN));
 		if ( files != null && files.length > backupMaxCount ) {
@@ -621,7 +617,8 @@ public class CASettingsService implements SettingsService {
 				try {
 					list.add(new SettingsBackup(dateStr, sdf.parse(dateStr)));
 				} catch ( ParseException e ) {
-					log.warn("Unable to parse backup file date from filename {}: {}", f.getName(), e.getMessage());
+					log.warn("Unable to parse backup file date from filename {}: {}", f.getName(),
+							e.getMessage());
 				}
 			}
 		}
@@ -632,19 +629,20 @@ public class CASettingsService implements SettingsService {
 	public Reader getReaderForBackup(SettingsBackup backup) {
 		final File dir = new File(backupDestinationPath);
 		try {
-			final String fname = BACKUP_FILENAME_PREFIX +backup.getBackupKey()
-					+'.' +BACKUP_FILENAME_EXT;
+			final String fname = BACKUP_FILENAME_PREFIX + backup.getBackupKey() + '.'
+					+ BACKUP_FILENAME_EXT;
 			final File f = new File(dir, fname);
 			if ( f.canRead() ) {
 				return new BufferedReader(new FileReader(f));
 			}
-		} catch (FileNotFoundException e) {
+		} catch ( FileNotFoundException e ) {
 			return null;
 		}
 		return null;
 	}
-	
+
 	private static class FilenameReverseComparator implements Comparator<File> {
+
 		@Override
 		public int compare(File o1, File o2) {
 			// order in reverse, and then we can delete all but maxBackupCount
@@ -653,12 +651,14 @@ public class CASettingsService implements SettingsService {
 	}
 
 	private static class RegexFileFilter implements FileFilter {
+
 		final Pattern p;
+
 		private RegexFileFilter(Pattern p) {
 			super();
 			this.p = p;
 		}
-		
+
 		@Override
 		public boolean accept(File pathname) {
 			Matcher m = p.matcher(pathname.getName());
@@ -680,8 +680,7 @@ public class CASettingsService implements SettingsService {
 		return conf;
 	}
 
-	private Configuration findExistingConfiguration(String pid, String instanceKey)
-			throws IOException,
+	private Configuration findExistingConfiguration(String pid, String instanceKey) throws IOException,
 			InvalidSyntaxException {
 		String filter = "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + pid + ")("
 				+ OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY + "=" + instanceKey + "))";
