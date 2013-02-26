@@ -15,5 +15,4 @@ Import-Package:
  org.quartz;version="[1.6.2,2.0.0)",
  org.quartz.simpl;version="[1.6.2,2.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.osgi.config;version="[1.2.0,2.0.0)",
- org.springframework.scheduling.quartz;version="[3.0,4.0)"
+ org.springframework.scheduling.quartz;version="[3.1,4.0)"
