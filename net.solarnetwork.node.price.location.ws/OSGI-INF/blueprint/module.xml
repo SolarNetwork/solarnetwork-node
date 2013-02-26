@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="ws.cfg" persistent-id="net.solarnetwork.node.price.location.ws">
+		<beans:prop key="WebServicePriceLocationService.cacheTtl">14400000</beans:prop>
+	</osgix:cm-properties>
+	
+	<!-- Referenced Services -->
+	
+	<reference id="identityService" availability="optional"
+		interface="net.solarnetwork.node.IdentityService"/>
+
+	<!-- Published Services -->
+
+	<service ref="wsPriceLocationServiceService" 
+		interface="net.solarnetwork.node.PriceLocationService"
+		ranking="1"/>
+
+	<!-- Supporting Services -->
+	
+	<ctx:property-placeholder properties-ref="ws.cfg"/>
+	
+	<bean id="wsPriceLocationServiceService"
+		class="net.solarnetwork.node.price.location.WebServicePriceLocationService"
+		init-method="init">
+		<property name="identityService" ref="identityService"/>
+		<property name="url" value="/priceLocationLookup.do"/>
+		<property name="cacheTtl" value="${WebServicePriceLocationService.cacheTtl}"/>
+	</bean>
+	
+</blueprint>
