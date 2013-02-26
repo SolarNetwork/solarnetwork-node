@@ -343,10 +343,13 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	}
 
 	private String getSetting(String key) {
-		return settingDao.getSetting(key, SETUP_TYPE_KEY);
+		return (settingDao == null ? null : settingDao.getSetting(key, SETUP_TYPE_KEY));
 	}
 
 	private void saveSetting(String key, String value) {
+		if ( settingDao == null ) {
+			return;
+		}
 		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
 	}
 
