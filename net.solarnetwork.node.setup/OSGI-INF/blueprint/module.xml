@@ -54,9 +54,11 @@
 	<ctx:property-placeholder properties-ref="setup.cfg"/>
 	
 	<bean id="setupService" class="net.solarnetwork.node.setup.impl.DefaultSetupService" 
-		init-method="init">
+		init-method="init" >
 		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
 		<property name="transactionManager" ref="txManager"/>
+		<property name="settingDao" ref="settingDao"/>
+		<property name="pkiService" ref="pkiService"/>
 	</bean>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService">
