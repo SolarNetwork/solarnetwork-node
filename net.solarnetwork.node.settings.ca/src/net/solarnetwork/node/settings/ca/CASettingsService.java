@@ -189,6 +189,10 @@ public class CASettingsService implements SettingsService {
 	 *        the service properties
 	 */
 	public void onUnbindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
+		if ( provider == null ) {
+			// gemini blueprint calls this when availability="optional" and there are no services
+			return;
+		}
 		log.debug("Unbind called on factory {} with props {}", provider, properties);
 		final String pid = provider.getFactoryUID();
 		synchronized ( factories ) {
@@ -268,6 +272,10 @@ public class CASettingsService implements SettingsService {
 	 *        the service properties
 	 */
 	public void onUnbind(SettingSpecifierProvider provider, Map<String, ?> properties) {
+		if ( provider == null ) {
+			// gemini blueprint calls this when availability="optional" and there are no services
+			return;
+		}
 		log.debug("Unbind called on {} with props {}", provider, properties);
 		final String pid = provider.getSettingUID();
 
