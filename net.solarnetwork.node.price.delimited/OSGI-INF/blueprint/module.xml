@@ -27,8 +27,8 @@
 	
 	<!-- Service References -->
 	
-	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker" factory-method="getInstance">
-		<argument ref="priceLocationServiceRef"/>
+	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="priceLocationServiceRef"/>
 	</bean>
 	
 	<reference id="priceLocationServiceRef" availability="optional"
