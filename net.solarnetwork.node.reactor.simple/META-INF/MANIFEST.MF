@@ -2,13 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Simple Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
-Bundle-Version: 1.0.1
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node.job;version="1.3.0",
  net.solarnetwork.node.reactor;version="1.0.0",
  org.aopalliance.aop;version="1.0.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.quartz;version="[1.6.2,2.0.0)",
  org.quartz.simpl;version="[1.6.2,2.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
