@@ -13,6 +13,7 @@ Import-Package:
  net.solarnetwork.node.settings.support;version="1.0.0",
  net.solarnetwork.node.support;version="1.0.0",
  net.solarnetwork.util;version="1.6.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.quartz;version="[1.6.2,2.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
  org.springframework.beans.factory;version="[3.1,4.0)",

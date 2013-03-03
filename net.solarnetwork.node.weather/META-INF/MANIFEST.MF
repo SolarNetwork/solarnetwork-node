@@ -11,6 +11,7 @@ Import-Package:
  net.solarnetwork.node.dao;version="1.2.0",
  net.solarnetwork.node.job;version="1.5.0",
  net.solarnetwork.node.support;version="1.2.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.quartz;version="[1.6.2,2.0.0)",
  org.quartz.simpl;version="[1.6.2,2.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
