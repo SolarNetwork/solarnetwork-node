@@ -14,7 +14,7 @@ Import-Package:
  net.solarnetwork.node.setup;version="[1.0.0,2.0.0)",
  net.solarnetwork.web.support;version="[1.0.0,2.0.0)",
  net.solarnetwork.domain;version="1.2.0",
- net.solarnetwork.util;version="1.6.0",
+ net.solarnetwork.util;version="1.10.0",
  javax.activation,
  javax.el;version="[1.0,3.0)",
  javax.mail;version="[1.4,2.0)";resolution:=optional,
