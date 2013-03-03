@@ -17,12 +17,12 @@
 	<!-- Configuration -->
 
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.control.mock">
-		<prop key="MockNodeControlProvider.booleanControlIds">
+		<beans:prop key="MockNodeControlProvider.booleanControlIds">
 			/power/switch/1,
 			/power/switch/2,
 			/power/switch/3,
 			/power/switch/grid
-		</prop>
+		</beans:prop>
 	</osgix:cm-properties>
 
 	<!-- Published Services -->
