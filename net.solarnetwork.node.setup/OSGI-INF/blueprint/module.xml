@@ -65,6 +65,7 @@
 		<property name="keyStorePath" value="${PKIService.keyStorePath}"/>
 		<property name="certificateService" ref="certificateService"/>
 		<property name="manualKeyStorePassword" value="${PKIService.manualKeyStorePassword}"/>
+		<property name="settingDao" ref="settingDao"/>
 	</bean>
 
 </blueprint>
