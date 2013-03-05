@@ -43,56 +43,63 @@ public abstract class AbstractJob implements Job {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	private String name = ClassUtils.getShortName(getClass());
-	
+
 	@Override
-	public final void execute(JobExecutionContext jobContext) 
-	throws JobExecutionException {
+	public final void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		try {
 			executeInternal(jobContext);
 		} catch ( Throwable e ) {
 			logThrowable(e);
 		}
 	}
-	
+
 	/**
 	 * Helper method for logging a Throwable.
 	 * 
-	 * @param e the throwable
+	 * @param e
+	 *        the exception
 	 */
-	protected void logThrowable(Throwable e ) {
-		Object[] logParams;
+	protected void logThrowable(Throwable e) {
+		final String name = (getName() == null ? getClass().getSimpleName() : getName());
+		Throwable root = e;
+		while ( root.getCause() != null ) {
+			root = root.getCause();
+		}
+		final Object[] logParams;
 		if ( log.isDebugEnabled() ) {
 			// include stack trace with log message in Debug
-			logParams = new Object[] {getName(), e.toString(), e};
+			logParams = new Object[] { root.getClass().getSimpleName(), name, e.toString(), e };
 		} else {
-			logParams = new Object[] {getName(), e.getMessage()};
+			logParams = new Object[] { root.getClass().getSimpleName(), name, e.getMessage() };
 		}
-		log.error("Exception in job [{}]: {}", logParams);
+		log.error("{} in job {}: {}", logParams);
 	}
 
 	/**
 	 * Execute the job.
 	 * 
-	 * @param jobContext the job context
-	 * @throws Exception for any error
+	 * @param jobContext
+	 *        the job context
+	 * @throws Exception
+	 *         for any error
 	 */
-	protected abstract void executeInternal(JobExecutionContext jobContext)
-	throws Exception;
-	
+	protected abstract void executeInternal(JobExecutionContext jobContext) throws Exception;
+
 	/**
 	 * @return the name
 	 */
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
-	 * @param name the name to set
+	 * @param name
+	 *        the name to set
 	 */
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 }
