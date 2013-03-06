@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.io.rxtx;
@@ -72,14 +70,14 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPortBeanParameters>,
 		SettingSpecifierProvider {
 
 	/** The default value for the {@code portIdentifier} property. */
-	public static final String DEFAULT_PORT_IDENTIFIER = "/dev/USB0";
-	
+	public static final String DEFAULT_PORT_IDENTIFIER = "/dev/ttyUSB0";
+
 	private static final Map<String, Lock> PORT_LOCKS = new HashMap<String, Lock>(3);
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
@@ -89,15 +87,16 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	private String portIdentifier = DEFAULT_PORT_IDENTIFIER;
 	private long timeout = 50L;
 	private TimeUnit unit = TimeUnit.SECONDS;
-	
+
 	@Override
 	public String getUID() {
 		return portIdentifier;
 	}
 
 	private Lock acquireLock() throws LockTimeoutException {
-		log.debug("Acquiring lock on port {}; waiting at most {} {}", new Object[] {portIdentifier, timeout, unit});
-		synchronized (PORT_LOCKS) {
+		log.debug("Acquiring lock on port {}; waiting at most {} {}", new Object[] { portIdentifier,
+				timeout, unit });
+		synchronized ( PORT_LOCKS ) {
 			if ( !PORT_LOCKS.containsKey(portIdentifier) ) {
 				PORT_LOCKS.put(portIdentifier, new ReentrantLock(true));
 			}
@@ -108,11 +107,11 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 					return lock;
 				}
 				log.debug("Timeout acquiring port {} lock", portIdentifier);
-			} catch (InterruptedException e) {
+			} catch ( InterruptedException e ) {
 				log.debug("Interrupted waiting for port {} lock", portIdentifier);
 			}
 		}
-		throw new LockTimeoutException("Could not acquire port " +portIdentifier +" lock");
+		throw new LockTimeoutException("Could not acquire port " + portIdentifier + " lock");
 	}
 
 	@Override
@@ -125,8 +124,8 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 			SerialPortDataCollector obj;
 			if ( params instanceof DataCollectorSerialPortBeanParameters ) {
 				DataCollectorSerialPortBeanParameters dcParams = (DataCollectorSerialPortBeanParameters) params;
-				obj = new SerialPortDataCollector(port, dcParams.getBufferSize(),
-						dcParams.getMagic(), dcParams.getReadSize(), dcParams.getMaxWait());
+				obj = new SerialPortDataCollector(port, dcParams.getBufferSize(), dcParams.getMagic(),
+						dcParams.getReadSize(), dcParams.getMaxWait());
 			} else {
 				obj = new SerialPortDataCollector(port);
 			}
@@ -137,7 +136,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 				obj.setToggleRts(dcParams.isToggleRts());
 			}
 			return new PortLockedDataCollector(obj, portId.getName(), lock);
-		} catch (PortInUseException e) {
+		} catch ( PortInUseException e ) {
 			lock.unlock();
 			throw new RuntimeException(e);
 		} catch ( RuntimeException e ) {
@@ -154,14 +153,14 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 			CommPortIdentifier portId = getCommPortIdentifier();
 			// establish the serial port connection
 			SerialPort port = (SerialPort) portId.open(params.getCommPortAppName(), 2000);
-			SerialPortConversationalDataCollector obj = new SerialPortConversationalDataCollector(
-					port, params.getMaxWait());
+			SerialPortConversationalDataCollector obj = new SerialPortConversationalDataCollector(port,
+					params.getMaxWait());
 			setupSerialPortSupport(obj, params);
 			return new PortLockedConversationalDataCollector(obj, portId.getName(), lock);
-		} catch (PortInUseException e) {
+		} catch ( PortInUseException e ) {
 			lock.unlock();
 			throw new RuntimeException(e);
-		} catch (IllegalArgumentException e) {
+		} catch ( IllegalArgumentException e ) {
 			lock.unlock();
 			throw new RuntimeException(e);
 		} catch ( RuntimeException e ) {
@@ -169,7 +168,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 			throw e;
 		}
 	}
-	
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.io.rxtx";
@@ -187,7 +186,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 				source.setBundleClassLoader(getClass().getClassLoader());
@@ -210,9 +209,9 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	 * Configure base properties on a {@link SerialPortSupport} instance.
 	 * 
 	 * @param obj
-	 *            the object to configure
+	 *        the object to configure
 	 * @param params
-	 *            the parameters to copy
+	 *        the parameters to copy
 	 */
 	private void setupSerialPortSupport(SerialPortSupport obj, SerialPortBeanParameters params) {
 		obj.setBaud(params.getBaud());
