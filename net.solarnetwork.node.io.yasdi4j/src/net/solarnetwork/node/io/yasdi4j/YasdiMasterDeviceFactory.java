@@ -37,6 +37,7 @@ import java.util.WeakHashMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -44,6 +45,7 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import de.michaeldenk.yasdi4j.YasdiDevice;
+import de.michaeldenk.yasdi4j.YasdiDriver;
 
 /**
  * Factory for {@link YasdiMaster} instances configured to use a serial port.
@@ -121,11 +123,33 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 			MASTER = de.michaeldenk.yasdi4j.YasdiMaster.getInstance();
 			try {
 				MASTER.initialize(INI_FILE.getAbsolutePath());
+				YasdiDriver[] drivers = MASTER.getDrivers();
+				for ( YasdiDriver d : MASTER.getDrivers() ) {
+					MASTER.setDriverOnline(d);
+				}
+				log.debug("Initialized {} drivers", drivers.length);
 			} catch ( IOException e ) {
 				throw new RuntimeException("Unable to initialize YasdiMaster", e);
 			}
+
 		} else {
 			MASTER.reset();
+		}
+
+		// detect devices
+		try {
+			MASTER.detectDevices(FACTORIES.size());
+		} catch ( IOException e ) {
+			throw new RuntimeException("Unable to detect devices", e);
+		}
+
+		if ( log.isInfoEnabled() ) {
+			List<String> deviceNames = new ArrayList<String>();
+			for ( YasdiDevice dev : MASTER.getDevices() ) {
+				deviceNames.add(dev.getName());
+			}
+			log.info("Detected {} SMA devices: {}", deviceNames.size(),
+					StringUtils.commaDelimitedStringFromCollection(deviceNames));
 		}
 
 		if ( MASTER.getNrDevices() == 1 ) {
