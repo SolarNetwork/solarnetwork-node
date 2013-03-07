@@ -98,6 +98,15 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		}
 	}
 
+	/**
+	 * Get a UID for this factory, based on the {@code device} value.
+	 * 
+	 * @return the UID
+	 */
+	public String getUID() {
+		return device;
+	}
+
 	@Override
 	public synchronized YasdiMaster getObject() throws BeansException {
 		if ( master != null ) {
@@ -107,9 +116,8 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		// generate our configuration, based on all configured factories
 		setupConfigIniFile();
 
-		log.debug("Initializing YASDI from config {}", INI_FILE.getAbsolutePath());
-
 		if ( MASTER == null ) {
+			log.debug("Initializing YASDI from config {}", INI_FILE.getAbsolutePath());
 			MASTER = de.michaeldenk.yasdi4j.YasdiMaster.getInstance();
 			try {
 				MASTER.initialize(INI_FILE.getAbsolutePath());
@@ -122,19 +130,19 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 
 		if ( MASTER.getNrDevices() == 1 ) {
 			// simple case
-			master = new YasdiMasterDevice(MASTER.getDevices()[0]);
+			master = new YasdiMasterDevice(MASTER.getDevices()[0], device);
 		} else {
 			// look for a YasdiDevice that isn't already associated with a factory
-			for ( YasdiDevice device : MASTER.getDevices() ) {
+			for ( YasdiDevice yDevice : MASTER.getDevices() ) {
 				boolean found = false;
 				for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
-					if ( factory.master != null && device == factory.master.getDevice() ) {
+					if ( factory.master != null && yDevice == factory.master.getDevice() ) {
 						found = true;
 						break;
 					}
 				}
 				if ( !found ) {
-					master = new YasdiMasterDevice(device);
+					master = new YasdiMasterDevice(yDevice, this.device);
 					break;
 				}
 			}
@@ -160,7 +168,12 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		PrintWriter writer = null;
 		try {
 			if ( INI_FILE == null ) {
-				INI_FILE = File.createTempFile("yasdi", "ini");
+				String filePath = System.getProperty("sn.home", "");
+				if ( filePath.length() > 0 ) {
+					filePath += '/';
+				}
+				filePath += "var/yasdi.ini";
+				INI_FILE = new File(filePath);
 				INI_FILE.deleteOnExit();
 			}
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(INI_FILE)), false);
@@ -168,32 +181,40 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 			throw new RuntimeException("Unable to create YASDI ini file", e);
 		}
 
-		log.debug("Generating YASDI configuratino file {}", INI_FILE.getAbsolutePath());
+		log.debug("Generating YASDI configuration file {}", INI_FILE.getAbsolutePath());
 
 		int i = 0;
 		try {
 			writer.println("[DriverModules]");
 			for ( String driver : drivers ) {
-				writer.printf("Driver%d=%s\\n", i++, driver);
+				writer.printf("Driver%d=%s\n", i++, driver);
 			}
 			writer.println();
 
-			i = 1;
-			for ( YasdiMasterDeviceFactory factory : comDevices ) {
-				writer.printf("[COM%d]\\n", i++);
-				writer.printf("Device=%s\\n", factory.device);
-				writer.printf("Media=%s\\n", factory.media);
-				writer.printf("Baudrate=%d\\n", factory.baud);
-				writer.printf("Protocol=%s\\n", factory.protocol);
+			if ( comDevices.size() > 0 ) {
+				i = 1;
+				for ( YasdiMasterDeviceFactory factory : comDevices ) {
+					writer.printf("[COM%d]\n", i++);
+					writer.printf("Device=%s\n", factory.device);
+					writer.printf("Media=%s\n", factory.media);
+					writer.printf("Baudrate=%d\n", factory.baud);
+					writer.printf("Protocol=%s\n", factory.protocol);
+				}
+				writer.println();
 			}
-			writer.println();
 
-			i = 1;
-			for ( YasdiMasterDeviceFactory factory : ipDevices ) {
-				writer.printf("[IP%d]\\n", i++);
-				writer.printf("Device=%s\\n", factory.device);
-				writer.printf("Protocol=%s\\n", factory.protocol);
+			if ( ipDevices.size() > 0 ) {
+				i = 1;
+				for ( YasdiMasterDeviceFactory factory : ipDevices ) {
+					writer.printf("[IP%d]\n", i++);
+					writer.printf("Device=%s\n", factory.device);
+					writer.printf("Protocol=%s\n", factory.protocol);
+				}
+				writer.println();
 			}
+
+			writer.println("[Misc]");
+			writer.println("DebugOutput=/dev/stderr");
 		} finally {
 			writer.flush();
 			writer.close();

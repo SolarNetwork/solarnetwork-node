@@ -43,6 +43,13 @@ public interface YasdiMaster {
 	 * 
 	 * @return unique identifier
 	 */
+	String getUID();
+
+	/**
+	 * Get the {@link YasdiDevice}.
+	 * 
+	 * @return YasdiDevice
+	 */
 	YasdiDevice getDevice();
 
 }

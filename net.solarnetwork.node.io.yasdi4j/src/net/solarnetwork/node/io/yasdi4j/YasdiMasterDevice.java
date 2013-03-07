@@ -33,6 +33,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
 public class YasdiMasterDevice implements YasdiMaster {
 
 	private final YasdiDevice device;
+	private final String uid;
 
 	/**
 	 * Constructor.
@@ -40,14 +41,20 @@ public class YasdiMasterDevice implements YasdiMaster {
 	 * @param device
 	 *        the device
 	 */
-	public YasdiMasterDevice(YasdiDevice device) {
+	public YasdiMasterDevice(YasdiDevice device, String uid) {
 		super();
 		this.device = device;
+		this.uid = uid;
 	}
 
 	@Override
 	public YasdiDevice getDevice() {
 		return device;
+	}
+
+	@Override
+	public String getUID() {
+		return uid;
 	}
 
 }

@@ -5,6 +5,8 @@ Bundle-SymbolicName: net.solarnetwork.node.io.yasdi4j
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: 
+ net.solarnetwork.node.io.yasdi4j;version="1.0.0"
 Import-Package: 
  de.michaeldenk.yasdi4j;version="0.1.5",
  net.solarnetwork.node;version="1.7.1",
