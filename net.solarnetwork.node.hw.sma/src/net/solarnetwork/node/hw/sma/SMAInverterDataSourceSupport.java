@@ -94,6 +94,9 @@ public abstract class SMAInverterDataSourceSupport {
 		Number lastKnownValue = lastKnownValueStr == null ? currValue : parseNumber(
 				currValue.getClass(), lastKnownValueStr);
 
+		log.trace("Handling {} daily channel {} offset for {}; curr value = {}; last known value = {}",
+				(newDay ? "new" : "same"), channelName, getDayOfYearValue(), currValue, lastKnownValue);
+
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
 		// on single day, so we verify that current value is not less 
@@ -166,7 +169,7 @@ public abstract class SMAInverterDataSourceSupport {
 	 */
 	protected final Calendar getLastKnownDay() {
 		String lastKnownDayOfYear = getLastKnownDayOfYearValue();
-		Calendar day = Calendar.getInstance();
+		Calendar day = null;
 		if ( lastKnownDayOfYear != null ) {
 			int dot = lastKnownDayOfYear.indexOf('.');
 			day = Calendar.getInstance();
