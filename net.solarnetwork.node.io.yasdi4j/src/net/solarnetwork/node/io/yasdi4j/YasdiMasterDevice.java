@@ -63,4 +63,9 @@ public class YasdiMasterDevice implements YasdiMaster {
 		return commDevice;
 	}
 
+	@Override
+	public String getName() {
+		return device.getName();
+	}
+
 }

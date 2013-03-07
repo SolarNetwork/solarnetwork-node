@@ -33,10 +33,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +94,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	private String media = "RS485";
 	private String protocol = "SMANet";
 	private int expectedDeviceCount = 1;
+	private boolean debugYasdi = false;
 
 	private YasdiMaster master;
 
@@ -105,12 +109,14 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	}
 
 	/**
-	 * Get a UID for this factory, based on the {@code device} value.
+	 * Get a UID for this factory, based on the {@link YasdiMaster#getUID()}
+	 * value.
 	 * 
 	 * @return the UID
 	 */
 	public String getUID() {
-		return device;
+		YasdiMaster master = getObject();
+		return (master == null ? null : master.getUID());
 	}
 
 	@Override
@@ -246,8 +252,10 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 				writer.println();
 			}
 
-			writer.println("[Misc]");
-			writer.println("DebugOutput=/dev/stderr");
+			if ( debugYasdi ) {
+				writer.println("[Misc]");
+				writer.println("DebugOutput=/dev/stderr");
+			}
 		} finally {
 			writer.flush();
 			writer.close();
@@ -285,6 +293,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		results.add(new BasicTextFieldSettingSpecifier("baud", String.valueOf(defaults.baud)));
 		results.add(new BasicTextFieldSettingSpecifier("media", String.valueOf(defaults.media)));
 		results.add(new BasicTextFieldSettingSpecifier("protocol", String.valueOf(defaults.protocol)));
+		results.add(new BasicToggleSettingSpecifier("debugYasdi", Boolean.FALSE));
 		return results;
 	}
 
@@ -321,7 +330,24 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
+		List<SettingSpecifier> results = getDefaultSettingSpecifiers();
+
+		// add in read-only device UIDs
+		Set<String> deviceNames = new TreeSet<String>();
+
+		// call getObject() to initialize
+		getObject();
+
+		for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
+			YasdiMaster master = factory.getObject();
+			deviceNames.add(master.getName());
+		}
+
+		for ( String deviceName : deviceNames ) {
+			results.add(0, new BasicTitleSettingSpecifier("availableDevice", deviceName, true));
+		}
+
+		return results;
 	}
 
 	public void setDriver(String driver) {
@@ -346,6 +372,10 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 
 	public void setExpectedDeviceCount(int expectedDeviceCount) {
 		this.expectedDeviceCount = expectedDeviceCount;
+	}
+
+	public void setDebugYasdi(boolean debugYasdi) {
+		this.debugYasdi = debugYasdi;
 	}
 
 }

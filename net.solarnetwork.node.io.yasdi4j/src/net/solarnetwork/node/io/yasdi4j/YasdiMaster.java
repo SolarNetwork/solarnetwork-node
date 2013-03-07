@@ -33,6 +33,13 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
 public interface YasdiMaster {
 
 	/**
+	 * Get a descriptive name for this instance.
+	 * 
+	 * @return the name
+	 */
+	String getName();
+
+	/**
 	 * Get a unique identifier for this instance.
 	 * 
 	 * <p>
