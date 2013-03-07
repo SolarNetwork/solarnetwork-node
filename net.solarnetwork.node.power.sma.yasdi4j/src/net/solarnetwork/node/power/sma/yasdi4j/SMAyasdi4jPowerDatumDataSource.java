@@ -96,7 +96,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	public static final String CHANNEL_NAME_KWH = "E-Total";
 
 	/** The default UID filter value. */
-	public static final String DEFAULT_UID_FILTER = "/dev/ttyS0";
+	public static final Long DEFAULT_UID_FILTER = 1000L;
 
 	/**
 	 * Default value for the {@code channelNamesToMonitor} property.
@@ -158,10 +158,22 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		captureNumericDataValue(master, this.pvAmpsChannelName, "pvAmps", bean, newDay);
 		captureNumericDataValue(master, this.kWhChannelName, "KWattHoursToday", bean, newDay);
 
+		if ( !isValidDatum(datum) ) {
+			log.debug("No valid data available.");
+			return null;
+		}
+
 		if ( newDay ) {
 			storeLastKnownDay();
 		}
 		return datum;
+	}
+
+	private boolean isValidDatum(PowerDatum d) {
+		if ( d.getPvVolts() < 0.001 && d.getPvAmps() < 0.001 && d.getKWattHoursToday() < 0.001 ) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -232,8 +244,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("address", (service == null ? "N/A" : service
 				.getObject().getDevice().getName()), true));
 
-		results.add(new BasicTextFieldSettingSpecifier("yasdi.propertyFilters['UID']",
-				DEFAULT_UID_FILTER));
+		results.add(new BasicTextFieldSettingSpecifier("yasdi.propertyFilters['UID']", String
+				.valueOf(DEFAULT_UID_FILTER)));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 

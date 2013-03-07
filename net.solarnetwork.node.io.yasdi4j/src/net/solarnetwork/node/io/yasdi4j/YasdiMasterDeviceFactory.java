@@ -66,6 +66,9 @@ import de.michaeldenk.yasdi4j.YasdiDriver;
  * 
  * <dt>protocol</dt>
  * <dd>The packet format. Defaults to <b>SMANet</b>.</dd>
+ * 
+ * <dt>expectedDeviceCount</dt>
+ * <dd>The number of expected devices for a given device. Defaults to <b>1</b>.</dd>
  * </dl>
  * 
  * @author matt
@@ -87,6 +90,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	private int baud = 1200;
 	private String media = "RS485";
 	private String protocol = "SMANet";
+	private int expectedDeviceCount = 1;
 
 	private YasdiMaster master;
 
@@ -137,8 +141,13 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		}
 
 		// detect devices
+		int expectedCount = 0;
+		for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
+			expectedCount += factory.expectedDeviceCount;
+		}
+		log.debug("Detecting devices, looking for {}", expectedCount);
 		try {
-			MASTER.detectDevices(FACTORIES.size());
+			MASTER.detectDevices(expectedCount);
 		} catch ( IOException e ) {
 			throw new RuntimeException("Unable to detect devices", e);
 		}
@@ -333,6 +342,10 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
+	}
+
+	public void setExpectedDeviceCount(int expectedDeviceCount) {
+		this.expectedDeviceCount = expectedDeviceCount;
 	}
 
 }

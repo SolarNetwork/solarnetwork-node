@@ -33,7 +33,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
 public interface YasdiMaster {
 
 	/**
-	 * Get a unique identifier for this factory.
+	 * Get a unique identifier for this instance.
 	 * 
 	 * <p>
 	 * This should be meaningful to the factory implementation. For example a
@@ -44,6 +44,18 @@ public interface YasdiMaster {
 	 * @return unique identifier
 	 */
 	String getUID();
+
+	/**
+	 * Get the communication device used by this instance.
+	 * 
+	 * <p>
+	 * For serial connections, this will be the serial port, for example
+	 * {@code /dev/ttyS0}. For IP connections, this will be the IP address.
+	 * </p>
+	 * 
+	 * @return the communication ID
+	 */
+	String getCommDevice();
 
 	/**
 	 * Get the {@link YasdiDevice}.
