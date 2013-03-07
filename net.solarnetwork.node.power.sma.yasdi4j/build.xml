@@ -1,0 +1,14 @@
+<project basedir=".">
+
+	<property name="bundle.deps" value="true"/>
+	<dirset id="bundle.deps" dir="${basedir}/../..">
+		<include name="solarnetwork-node/net.solarnetwork.node"/>
+		<include name="solarnetwork-node/net.solarnetwork.node.hw.sma"/>
+		<include name="solarnetwork-node/net.solarnetwork.node.power"/>
+		<include name="solarnetwork-node/net.solarnetwork.node.io.yasdi4j"/>
+	</dirset>
+	
+	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
+	<import file="${dir.osgi.base}/lib-build.xml"/>
+	
+</project>
