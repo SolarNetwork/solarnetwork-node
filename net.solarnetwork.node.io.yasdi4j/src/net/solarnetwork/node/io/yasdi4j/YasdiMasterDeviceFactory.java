@@ -288,6 +288,8 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
 		YasdiMasterDeviceFactory defaults = new YasdiMasterDeviceFactory();
+		results.add(new BasicTextFieldSettingSpecifier("expectedDeviceCount", String
+				.valueOf(defaults.expectedDeviceCount)));
 		results.add(new BasicTextFieldSettingSpecifier("driver", defaults.driver));
 		results.add(new BasicTextFieldSettingSpecifier("device", defaults.device));
 		results.add(new BasicTextFieldSettingSpecifier("baud", String.valueOf(defaults.baud)));
