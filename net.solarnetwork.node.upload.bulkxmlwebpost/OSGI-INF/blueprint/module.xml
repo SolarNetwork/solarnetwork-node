@@ -17,7 +17,7 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="upload.cfg" persistent-id="net.solarnetwork.node.upload.bulkxmlwebpost">
-		<beans:prop key="job.bulkDatumUploader.cron">20 * * * * ?</beans:prop>
+		<beans:prop key="job.bulkDatumUploader.cron">20 0/5 * * * ?</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
