@@ -194,6 +194,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 */
 	private void captureNumericDataValue(YasdiMaster service, String channelName, String beanProperty,
 			PropertyAccessor accessor, final boolean newDay) {
+		log.trace("Capturing channel {} as property {}", channelName, beanProperty);
 		YasdiChannel channel = service.getDevice().getChannel(channelName);
 		try {
 			channel.updateValue(60); // get updated value, at most 60s old
@@ -201,7 +202,9 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			log.debug("Exception updating channel {} value: {}", channelName, e.toString());
 		}
 		Number n = Double.valueOf(channel.getValue());
+		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, n);
 		n = handleDailyChannelOffset(channelName, n, newDay);
+		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, n);
 		if ( n != null ) {
 			Class<?> propType = accessor.getPropertyType(beanProperty);
 			Number value = n;
