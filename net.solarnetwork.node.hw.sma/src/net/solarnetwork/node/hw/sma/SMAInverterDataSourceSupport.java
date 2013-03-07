@@ -78,6 +78,35 @@ public abstract class SMAInverterDataSourceSupport {
 	}
 
 	/**
+	 * Get a "volatile" setting, that is one that does not trigger an automatic
+	 * settings backup.
+	 * 
+	 * @param key
+	 *        the setting key
+	 * @return the setting value, or <em>null</em> if not found
+	 */
+	protected final String getVolatileSetting(String key) {
+		return (settingDao == null ? null : settingDao.getSetting(key,
+				SettingDao.TYPE_IGNORE_MODIFICATION_DATE));
+	}
+
+	/**
+	 * Save a "volatile" setting.
+	 * 
+	 * @param key
+	 *        the setting key
+	 * @param value
+	 *        the setting value
+	 * @see #getVolatileSetting(String)
+	 */
+	protected final void saveVolatileSetting(String key, String value) {
+		if ( settingDao == null ) {
+			return;
+		}
+		settingDao.storeSetting(key, SettingDao.TYPE_IGNORE_MODIFICATION_DATE, value);
+	}
+
+	/**
 	 * Handle channels that accumulate overall as if they reset daily.
 	 * 
 	 * @param channelName
@@ -98,7 +127,7 @@ public abstract class SMAInverterDataSourceSupport {
 		String lastKnownKey = getSettingPrefixLastKnownValue() + channelName;
 		Number result;
 
-		String lastKnownValueStr = settingDao.getSetting(lastKnownKey);
+		String lastKnownValueStr = getVolatileSetting(lastKnownKey);
 		Number lastKnownValue = lastKnownValueStr == null ? currValue : parseNumber(
 				currValue.getClass(), lastKnownValueStr);
 
@@ -124,15 +153,15 @@ public abstract class SMAInverterDataSourceSupport {
 				log.debug("Last known day has changed, resetting offset value for channel ["
 						+ channelName + "] to [" + lastKnownValue + ']');
 			}
-			settingDao.storeSetting(dayStartKey, lastKnownValue.toString());
+			saveVolatileSetting(dayStartKey, lastKnownValue.toString());
 		} else {
-			String dayStartValueStr = settingDao.getSetting(dayStartKey);
+			String dayStartValueStr = getVolatileSetting(dayStartKey);
 			Number dayStartValue = dayStartValueStr == null ? currValue : parseNumber(
 					currValue.getClass(), dayStartValueStr);
 			result = diff(currValue, dayStartValue);
 		}
 
-		settingDao.storeSetting(lastKnownKey, currValue.toString());
+		saveVolatileSetting(lastKnownKey, currValue.toString());
 
 		// we've seen negative values calculated sometimes at the start of the day,
 		// so we prevent that from happening here
@@ -160,14 +189,11 @@ public abstract class SMAInverterDataSourceSupport {
 	 * @see #getDayOfYearValue()
 	 */
 	protected final void storeLastKnownDay() {
-		if ( settingDao == null ) {
-			return;
-		}
 		String dayOfYear = getDayOfYearValue();
 		if ( log.isDebugEnabled() ) {
 			log.debug("Saving last known day as [" + dayOfYear + ']');
 		}
-		settingDao.storeSetting(getSettingKeyLastKnownDay(), dayOfYear);
+		saveVolatileSetting(getSettingKeyLastKnownDay(), dayOfYear);
 	}
 
 	/**
@@ -188,7 +214,7 @@ public abstract class SMAInverterDataSourceSupport {
 	}
 
 	protected final String getLastKnownDayOfYearValue() {
-		return settingDao.getSetting(getSettingKeyLastKnownDay());
+		return getVolatileSetting(getSettingKeyLastKnownDay());
 	}
 
 	/**
