@@ -308,7 +308,7 @@ public abstract class SMAInverterDataSourceSupport {
 	 * @param list
 	 *        comma-delimited list of channel names to monitor
 	 */
-	public void setChannelNamesToOffsetDailyValue(String list) {
+	public final void setChannelNamesToOffsetDailyValue(String list) {
 		setChannelNamesToOffsetDaily(StringUtils.commaDelimitedStringToSet(list));
 	}
 
@@ -317,7 +317,7 @@ public abstract class SMAInverterDataSourceSupport {
 	 * 
 	 * @return comma-delimited list of channel names to offset daily
 	 */
-	public String getChannelNamesToOffsetDailyValue() {
+	public final String getChannelNamesToOffsetDailyValue() {
 		return StringUtils.commaDelimitedStringFromCollection(getChannelNamesToOffsetDaily());
 	}
 
