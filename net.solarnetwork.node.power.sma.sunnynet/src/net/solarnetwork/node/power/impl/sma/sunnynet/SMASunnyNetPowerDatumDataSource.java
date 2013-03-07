@@ -28,7 +28,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -39,6 +38,7 @@ import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelParam;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaCommand;
@@ -159,11 +159,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDatum>,
-		ConversationalDataCollector.Moderator<PowerDatum>, SettingSpecifierProvider {
-
-	/** The default value for the {@code sourceId} property. */
-	public static final String DEFAULT_SOURCE_ID = "Main";
+public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport implements
+		DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<PowerDatum>,
+		SettingSpecifierProvider {
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -173,15 +171,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 
 	/** The accumulative kWh channel name. */
 	public static final String CHANNEL_NAME_KWH = "E-Total";
-
-	/** The {@link SettingDao} key for the last-known-day value. */
-	public static final String SETTING_LAST_KNOWN_DAY = "SMASunnyNetPowerDatumDataSource.known.day";
-
-	/** The {@link SettingDao} key for a channel last-known-value value. */
-	public static final String SETTING_LAST_KNOWN_VALUE_PREFIX = "SMASunnyNetPowerDatumDataSource.value:";
-
-	/** The {@link SettingDao} key for a channel day-start-value value. */
-	public static final String SETTING_DAY_START_VALUE_PREFIX = "SMASunnyNetPowerDatumDataSource.start:";
 
 	/**
 	 * Default value for the {@code channelNamesToMonitor} property.
@@ -216,15 +205,10 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
-	private Set<String> channelNamesToMonitor = DEFAULT_CHANNEL_NAMES_TO_MONITOR;
-	private Set<String> channelNamesToResetDaily = null;
-	private Set<String> channelNamesToOffsetDaily = null;
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private long synOnlineWaitMs = DEFAULT_SYN_ONLINE_WAIT_MS;
-	private SettingDao settingDao = null;
-	private String sourceId = DEFAULT_SOURCE_ID;
 
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
@@ -233,6 +217,11 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	private Map<String, SmaChannel> channelMap = null;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	public SMASunnyNetPowerDatumDataSource() {
+		super();
+		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
+	}
 
 	/**
 	 * Get the default serial parameters used for SMA inverters.
@@ -261,8 +250,8 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 		s.add(getPvVoltsChannelName());
 		s.add(getPvAmpsChannelName());
 		s.add(getkWhChannelName());
-		if ( !s.equals(this.channelNamesToMonitor) ) {
-			this.channelNamesToMonitor = s;
+		if ( !s.equals(this.getChannelNamesToMonitor()) ) {
+			setChannelNamesToMonitor(s);
 			this.channelMap = null;
 		}
 	}
@@ -332,7 +321,7 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 			// ignore this one
 		}
 
-		if ( channelNamesToResetDaily != null && settingDao != null ) {
+		if ( getChannelNamesToResetDaily() != null && getSettingDao() != null ) {
 			handleDailyChannelReset(dataCollector);
 		}
 
@@ -397,215 +386,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	}
 
 	/**
-	 * Divide two {@link Number} instances using a specific implementation of
-	 * Number.
-	 * 
-	 * <p>
-	 * Really the {@code numberType} argument should be considered a
-	 * {@code Class<? extends Number>} but to simplify calling this method any
-	 * Class is allowed.
-	 * </p>
-	 * 
-	 * @param numberType
-	 *        the type of Number to treat the dividend and divisor as
-	 * @param dividend
-	 *        the dividend value
-	 * @param divisor
-	 *        the divisor value
-	 * @return a Number instance of type {@code numberType}
-	 */
-	private Number divide(Class<?> numberType, Number dividend, Number divisor) {
-		if ( Integer.class.isAssignableFrom(numberType) ) {
-			return dividend.intValue() / divisor.intValue();
-		} else if ( Float.class.isAssignableFrom(numberType) ) {
-			return dividend.floatValue() / divisor.floatValue();
-		} else if ( Long.class.isAssignableFrom(numberType) ) {
-			return dividend.longValue() / divisor.longValue();
-		}
-		return dividend.doubleValue() / divisor.doubleValue();
-	}
-
-	/**
-	 * Handle channels that accumulate overall as if they reset daily.
-	 * 
-	 * @param channelName
-	 *        the channel name to calculate the offset for
-	 * @param currValue
-	 *        the current value reported for this channel
-	 * @param newDay
-	 *        <em>true</em> if this is a different day from the last known day
-	 */
-	private Number handleDailyChannelOffset(String channelName, Number currValue, final boolean newDay) {
-		if ( currValue == null || this.channelNamesToOffsetDaily == null
-				|| !this.channelNamesToOffsetDaily.contains(channelName) ) {
-			return currValue;
-		}
-
-		String dayStartKey = SETTING_DAY_START_VALUE_PREFIX + channelName;
-		String lastKnownKey = SETTING_LAST_KNOWN_VALUE_PREFIX + channelName;
-		Number result;
-
-		String lastKnownValueStr = settingDao.getSetting(lastKnownKey);
-		Number lastKnownValue = lastKnownValueStr == null ? currValue : parseNumber(
-				currValue.getClass(), lastKnownValueStr);
-
-		// we've seen values reported less than last known value after
-		// a power outage (i.e. after inverter turns off, then back on)
-		// on single day, so we verify that current value is not less 
-		// than last known value
-		if ( currValue.doubleValue() < lastKnownValue.doubleValue() ) {
-			// just return last known value, not curr value
-			log.warn("Channel [" + channelName + "] reported value [" + currValue
-					+ "] -- less than last known value [" + lastKnownValue + "]. "
-					+ "Using last known value in place of reported value.");
-			currValue = lastKnownValue;
-		}
-
-		if ( newDay ) {
-			result = diff(currValue, lastKnownValue);
-
-			if ( log.isDebugEnabled() ) {
-				log.debug("Last known day has changed, resetting offset value for channel ["
-						+ channelName + "] to [" + lastKnownValue + ']');
-			}
-			settingDao.storeSetting(dayStartKey, lastKnownValue.toString());
-		} else {
-			String dayStartValueStr = settingDao.getSetting(dayStartKey);
-			Number dayStartValue = dayStartValueStr == null ? currValue : parseNumber(
-					currValue.getClass(), dayStartValueStr);
-			result = diff(currValue, dayStartValue);
-		}
-
-		settingDao.storeSetting(lastKnownKey, currValue.toString());
-
-		// we've seen negative values calculated sometimes at the start of the day,
-		// so we prevent that from happening here
-		if ( result.doubleValue() < 0 ) {
-			result = Double.valueOf(0.0);
-		}
-
-		return result;
-	}
-
-	private void storeLastKnownDay() {
-		if ( settingDao == null ) {
-			return;
-		}
-		Calendar now = Calendar.getInstance();
-		String dayOfYear = String.valueOf(now.get(Calendar.YEAR)) + "."
-				+ String.valueOf(now.get(Calendar.DAY_OF_YEAR));
-		if ( log.isDebugEnabled() ) {
-			log.debug("Saving last known day as [" + dayOfYear + ']');
-		}
-		settingDao.storeSetting(SETTING_LAST_KNOWN_DAY, dayOfYear);
-	}
-
-	private Calendar getLastKnownDay() {
-		Calendar day = null;
-		String lastKnownDayOfYear = settingDao.getSetting(SETTING_LAST_KNOWN_DAY);
-		if ( lastKnownDayOfYear != null ) {
-			int dot = lastKnownDayOfYear.indexOf('.');
-			day = Calendar.getInstance();
-			day.set(Calendar.YEAR, Integer.parseInt(lastKnownDayOfYear.substring(0, dot)));
-			day.set(Calendar.DAY_OF_YEAR, Integer.parseInt(lastKnownDayOfYear.substring(dot + 1)));
-		}
-		return day;
-	}
-
-	/**
-	 * Test if today is a different day from the last known day.
-	 * 
-	 * <p>
-	 * If the {@code settingDao} to be configured, this method will use that to
-	 * load a "last known day" value. If that value is not found, or is
-	 * different from the current execution day, <em>true</em> will be returned.
-	 * Otherwise, <em>false</em> is returned.
-	 * </p>
-	 * 
-	 * @return boolean
-	 */
-	private boolean isNewDay() {
-		if ( this.settingDao == null ) {
-			return false;
-		}
-		Calendar now = Calendar.getInstance();
-		Calendar then = getLastKnownDay();
-		if ( then == null || (now.get(Calendar.YEAR) != then.get(Calendar.YEAR))
-				|| (now.get(Calendar.DAY_OF_YEAR) != then.get(Calendar.DAY_OF_YEAR)) ) {
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * Parse a String into a Number of a specific type.
-	 * 
-	 * @param numberType
-	 *        the type of Number to return
-	 * @param numberString
-	 *        the String to parse
-	 * @return the new Number instance
-	 */
-	private Number parseNumber(Class<? extends Number> numberType, String numberString) {
-		if ( Integer.class.isAssignableFrom(numberType) ) {
-			return Integer.valueOf(numberString);
-		} else if ( Float.class.isAssignableFrom(numberType) ) {
-			return Float.valueOf(numberString);
-		} else if ( Long.class.isAssignableFrom(numberType) ) {
-			return Long.valueOf(numberString);
-		}
-		return Double.valueOf(numberString);
-	}
-
-	/**
-	 * Subtract two Number instances.
-	 * 
-	 * <p>
-	 * The returned Number will be an instance of the {@code start} class.
-	 * </p>
-	 * 
-	 * @param start
-	 *        the starting number to subtract from
-	 * @param offset
-	 *        the amount to subtract
-	 * @return a Number instance of the same type as {@code start}
-	 */
-	private Number diff(Number start, Number offset) {
-		if ( start instanceof Integer ) {
-			return Integer.valueOf(start.intValue() - offset.intValue());
-		} else if ( start instanceof Float ) {
-			return Float.valueOf(start.floatValue() - offset.floatValue());
-		} else if ( start instanceof Long ) {
-			return Long.valueOf(start.longValue() - offset.longValue());
-		}
-		return Double.valueOf(start.doubleValue() - offset.doubleValue());
-	}
-
-	/**
-	 * Multiply two Number instances.
-	 * 
-	 * <p>
-	 * The returned Number will be an instance of the {@code a} class.
-	 * </p>
-	 * 
-	 * @param a
-	 *        first number
-	 * @param b
-	 *        second number
-	 * @return a Number instance of the same type as {@code a}
-	 */
-	private Number mult(Number a, Number b) {
-		if ( a instanceof Integer ) {
-			return Integer.valueOf(a.intValue() * b.intValue());
-		} else if ( a instanceof Float ) {
-			return Float.valueOf(a.floatValue() * b.floatValue());
-		} else if ( a instanceof Long ) {
-			return Long.valueOf(a.longValue() * b.longValue());
-		}
-		return Double.valueOf(a.doubleValue() * b.doubleValue());
-	}
-
-	/**
 	 * Issue a SetData command for channels configured to reset daily.
 	 * 
 	 * <p>
@@ -614,18 +394,16 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	 * (or is not found) then this method will issue a {@code SetData} command
 	 * for each channel configured in the {@link #getChannelNamesToResetDaily()}
 	 * set with a value of zero. If the reset is successful, the current day
-	 * value will be persistd back into {@link SettingDao} so the reset will not
-	 * be attempted again until the next day.
+	 * value will be persisted back into {@link SettingDao} so the reset will
+	 * not be attempted again until the next day.
 	 * </p>
 	 * 
 	 * @param dataCollector
 	 *        the data collector to issue the SetData commands with
 	 */
 	private void handleDailyChannelReset(ConversationalDataCollector dataCollector) {
-		Calendar now = Calendar.getInstance();
-		String dayOfYear = String.valueOf(now.get(Calendar.DAY_OF_YEAR));
-
-		String lastKnownDayOfYear = settingDao.getSetting(SETTING_LAST_KNOWN_DAY);
+		final String dayOfYear = getDayOfYearValue();
+		final String lastKnownDayOfYear = getLastKnownDayOfYearValue();
 		if ( dayOfYear.equals(lastKnownDayOfYear) ) {
 			if ( log.isTraceEnabled() ) {
 				log.trace("Last known day of year [" + lastKnownDayOfYear
@@ -638,7 +416,7 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 			log.info("Day changed from [" + lastKnownDayOfYear + "] to [ " + dayOfYear
 					+ "], will reset daily channels now");
 		}
-		for ( String channelName : this.channelNamesToResetDaily ) {
+		for ( String channelName : this.getChannelNamesToResetDaily() ) {
 			if ( !this.channelMap.containsKey(channelName) ) {
 				continue;
 			}
@@ -688,7 +466,7 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 			}
 			for ( SmaChannel channel : list ) {
 				// prune out channels to only those we are interested in
-				if ( !this.channelNamesToMonitor.contains(channel.getName()) ) {
+				if ( !this.getChannelNamesToMonitor().contains(channel.getName()) ) {
 					continue;
 				}
 				channels.put(channel.getName(), channel);
@@ -912,16 +690,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	 * @param list
 	 *        comma-delimited list of channel names to monitor
 	 */
-	public void setChannelNamesToOffsetDailyValue(String list) {
-		setChannelNamesToOffsetDaily(StringUtils.commaDelimitedStringToSet(list));
-	}
-
-	/**
-	 * Set the channel names to monitor via a comma-delimited string.
-	 * 
-	 * @param list
-	 *        comma-delimited list of channel names to monitor
-	 */
 	public void setChannelNamesToResetDailyValue(String list) {
 		setChannelNamesToResetDaily(StringUtils.commaDelimitedStringToSet(list));
 	}
@@ -952,14 +720,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 		setupChannelNamesToMonitor();
 	}
 
-	public Set<String> getChannelNamesToResetDaily() {
-		return channelNamesToResetDaily;
-	}
-
-	public void setChannelNamesToResetDaily(Set<String> channelNamesToResetDaily) {
-		this.channelNamesToResetDaily = channelNamesToResetDaily;
-	}
-
 	public String getkWhChannelName() {
 		return kWhChannelName;
 	}
@@ -967,22 +727,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	public void setkWhChannelName(String kWhChannelName) {
 		this.kWhChannelName = kWhChannelName;
 		setupChannelNamesToMonitor();
-	}
-
-	public SettingDao getSettingDao() {
-		return settingDao;
-	}
-
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
-	public Set<String> getChannelNamesToOffsetDaily() {
-		return channelNamesToOffsetDaily;
-	}
-
-	public void setChannelNamesToOffsetDaily(Set<String> channelNamesToOffsetDaily) {
-		this.channelNamesToOffsetDaily = channelNamesToOffsetDaily;
 	}
 
 	public SerialPortBeanParameters getSerialParams() {
@@ -1000,14 +744,6 @@ public class SMASunnyNetPowerDatumDataSource implements DatumDataSource<PowerDat
 	public void setDataCollectorFactory(
 			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
-	}
-
-	public String getSourceId() {
-		return sourceId;
-	}
-
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
 	}
 
 }
