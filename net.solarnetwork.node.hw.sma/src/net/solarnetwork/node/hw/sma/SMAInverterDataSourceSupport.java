@@ -37,8 +37,16 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>channelNamesToOffsetDaily</dt>
+ * <dd>A set of channel names to be calculated as daily offsets. See the
+ * {@link #handleDailyChannelOffset(String, Number, boolean)} method.</dd>
+ * 
+ * <dt>settingDao</dt>
+ * <dd>The {@link SettingDao} to persist settings with.</dd>
+ * 
+ * <dt>sourceId</dt>
+ * <dd>A source ID value to use for captured datums. Defaults to
+ * {@link #DEFAULT_SOURCE_ID}.</dd>
  * </dl>
  * 
  * @author matt
