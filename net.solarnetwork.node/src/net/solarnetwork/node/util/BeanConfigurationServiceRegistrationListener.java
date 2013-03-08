@@ -169,6 +169,10 @@ public class BeanConfigurationServiceRegistrationListener extends
 	 *        the service properties
 	 */
 	public void onUnbind(BeanConfiguration config, Map<String, ?> properties) {
+		if ( config == null ) {
+			// Gemini Blueprint calls this when availability="optional" and no services available
+			return;
+		}
 		if ( log.isDebugEnabled() ) {
 			log.debug("Unbind called on [" + config + "] with props " + properties);
 		}

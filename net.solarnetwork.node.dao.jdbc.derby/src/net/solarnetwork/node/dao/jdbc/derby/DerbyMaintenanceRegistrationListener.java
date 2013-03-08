@@ -20,21 +20,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.derby;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import net.solarnetwork.node.dao.jdbc.JdbcDao;
+import net.solarnetwork.node.job.RandomizedCronTriggerBean;
+import net.solarnetwork.node.job.SimpleTriggerAndJobDetail;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
+import net.solarnetwork.node.util.BaseServiceListener;
+import net.solarnetwork.node.util.RegisteredService;
+import org.osgi.framework.ServiceRegistration;
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -102,15 +107,13 @@ import org.springframework.scheduling.quartz.JobDetailBean;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class DerbyMaintenanceRegistrationListener {
+public class DerbyMaintenanceRegistrationListener extends
+		BaseServiceListener<JdbcDao, RegisteredService<JdbcDao>> {
 
 	/** The name of the {@link DerbyCompressTableJob} task. */
 	public static final String TASK_COMPRESS = "compress";
-
-	/** The Quartz job group used to schedule all jobs. */
-	public static final String JOB_GROUP = "derby.maintenance";
 
 	/**
 	 * The default value for the {@code compressTableCronExpression} property.
@@ -119,7 +122,6 @@ public class DerbyMaintenanceRegistrationListener {
 
 	private final Logger log = LoggerFactory.getLogger(DerbyMaintenanceRegistrationListener.class);
 
-	private Scheduler scheduler = null;
 	private JdbcOperations jdbcOperations = null;
 	private Properties maintenanceProperties = null;
 	private String compressTableCronExpression = DEFAULT_COMPRESS_TABLE_CRON_EXPRESSION;
@@ -136,6 +138,10 @@ public class DerbyMaintenanceRegistrationListener {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Bind called on [" + jdbcDao + "] with props " + properties);
 		}
+		List<ServiceRegistration<?>> services = new ArrayList<ServiceRegistration<?>>();
+		Hashtable<String, Object> serviceProps = new Hashtable<String, Object>();
+		serviceProps.put("Bundle-SymbolicName", getBundleContext().getBundle().getSymbolicName());
+
 		for ( String tableName : jdbcDao.getTableNames() ) {
 			JobDetailBean jobDetail = getCompressJobDetail(jdbcDao.getSchemaName(), tableName,
 					getJobName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS));
@@ -143,14 +149,15 @@ public class DerbyMaintenanceRegistrationListener {
 					getTaskPropertyValue(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS + ".cron",
 							compressTableCronExpression), jobDetail,
 					getTriggerName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS));
-			try {
-				scheduler.scheduleJob(jobDetail, trigger);
-			} catch ( SchedulerException e ) {
-				log.error("Unable to schedule compress job for " + jdbcDao.getSchemaName() + '.'
-						+ tableName);
-				throw new RuntimeException(e);
-			}
+			SimpleTriggerAndJobDetail tjd = new SimpleTriggerAndJobDetail();
+			tjd.setJobDetail(jobDetail);
+			tjd.setTrigger(trigger);
+			tjd.setMessageSource(jdbcDao.getMessageSource());
+			ServiceRegistration<TriggerAndJobDetail> reg = getBundleContext().registerService(
+					TriggerAndJobDetail.class, tjd, serviceProps);
+			services.add(reg);
 		}
+		this.addRegisteredService(new RegisteredService<JdbcDao>(jdbcDao, properties), services);
 	}
 
 	/**
@@ -169,22 +176,13 @@ public class DerbyMaintenanceRegistrationListener {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Unbind called on [" + jdbcDao + "] with props " + properties);
 		}
-		for ( String tableName : jdbcDao.getTableNames() ) {
-			String jobName = getJobName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS);
-			try {
-				scheduler.deleteJob(jobName, JOB_GROUP);
-			} catch ( SchedulerException e ) {
-				log.error("Unable to un-schedule compress job " + JOB_GROUP + '.' + jobName);
-				throw new RuntimeException(e);
-			}
-		}
+		removeRegisteredService(jdbcDao, properties);
 	}
 
 	private JobDetailBean getCompressJobDetail(String schema, String table, String name) {
 		JobDetailBean jobDetail = new JobDetailBean();
 		jobDetail.setJobClass(DerbyCompressTableJob.class);
 		jobDetail.setName(name);
-		jobDetail.setGroup(JOB_GROUP);
 
 		Map<String, Object> jobData = new HashMap<String, Object>();
 		jobData.put("schema", schema.toUpperCase());
@@ -195,7 +193,7 @@ public class DerbyMaintenanceRegistrationListener {
 	}
 
 	private CronTriggerBean getCronTrigger(String cronExpression, JobDetailBean jobDetail, String name) {
-		CronTriggerBean cronTrigger = new CronTriggerBean();
+		RandomizedCronTriggerBean cronTrigger = new RandomizedCronTriggerBean();
 		cronTrigger.setName(name);
 		try {
 			cronTrigger.setCronExpression(cronExpression);
@@ -204,15 +202,16 @@ public class DerbyMaintenanceRegistrationListener {
 		}
 		cronTrigger.setJobDetail(jobDetail);
 		cronTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+		cronTrigger.setRandomSecond(true);
 		return cronTrigger;
 	}
 
 	private String getJobName(String schema, String table, String task) {
-		return schema + '.' + table + ' ' + task;
+		return schema + '.' + table + '.' + task;
 	}
 
 	private String getTriggerName(String schema, String table, String task) {
-		return schema + '.' + table + ' ' + task;
+		return schema + '.' + table + '.' + task;
 	}
 
 	private String getTaskPropertyValue(String schema, String table, String task, String defaultValue) {
@@ -223,62 +222,26 @@ public class DerbyMaintenanceRegistrationListener {
 		return maintenanceProperties.getProperty(propKey, defaultValue);
 	}
 
-	/**
-	 * @return the scheduler
-	 */
-	public Scheduler getScheduler() {
-		return scheduler;
-	}
-
-	/**
-	 * @param scheduler
-	 *        the scheduler to set
-	 */
-	public void setScheduler(Scheduler scheduler) {
-		this.scheduler = scheduler;
-	}
-
-	/**
-	 * @return the maintenanceProperties
-	 */
 	public Properties getMaintenanceProperties() {
 		return maintenanceProperties;
 	}
 
-	/**
-	 * @param maintenanceProperties
-	 *        the maintenanceProperties to set
-	 */
 	public void setMaintenanceProperties(Properties maintenanceProperties) {
 		this.maintenanceProperties = maintenanceProperties;
 	}
 
-	/**
-	 * @return the compressTableCronExpression
-	 */
 	public String getCompressTableCronExpression() {
 		return compressTableCronExpression;
 	}
 
-	/**
-	 * @param compressTableCronExpression
-	 *        the compressTableCronExpression to set
-	 */
 	public void setCompressTableCronExpression(String compressTableCronExpression) {
 		this.compressTableCronExpression = compressTableCronExpression;
 	}
 
-	/**
-	 * @return the jdbcOperations
-	 */
 	public JdbcOperations getJdbcOperations() {
 		return jdbcOperations;
 	}
 
-	/**
-	 * @param jdbcOperations
-	 *        the jdbcOperations to set
-	 */
 	public void setJdbcOperations(JdbcOperations jdbcOperations) {
 		this.jdbcOperations = jdbcOperations;
 	}

@@ -32,13 +32,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
 import net.solarnetwork.node.job.TriggerAndJobDetail;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.Trigger;
@@ -82,13 +80,13 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	private String settingUID;
 	private MessageSource messageSource = null;
 	private List<SettingSpecifier> specifiers = new ArrayList<SettingSpecifier>();
-	private Map<String, MessageFormat> messages = new HashMap<String, MessageFormat>();
+	private final Map<String, MessageFormat> messages = new HashMap<String, MessageFormat>();
 
 	/**
 	 * Construct with settings UID.
 	 * 
 	 * @param settingUID
-	 *            the setting UID
+	 *        the setting UID
 	 */
 	public JobSettingSpecifierProvider(String settingUID) {
 		this(settingUID, null);
@@ -98,8 +96,9 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * Construct with settings UID.
 	 * 
 	 * @param settingUID
-	 *            the setting UID
-	 * @param source a message source
+	 *        the setting UID
+	 * @param source
+	 *        a message source
 	 */
 	public JobSettingSpecifierProvider(String settingUID, MessageSource source) {
 		super();
@@ -110,6 +109,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 		}
 
 		AbstractMessageSource msgSource = new AbstractMessageSource() {
+
 			@Override
 			protected MessageFormat resolveCode(String code, Locale locale) {
 				return messages.get(code);
@@ -118,7 +118,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 		msgSource.setParentMessageSource(source);
 		this.messageSource = msgSource;
 	}
-	
+
 	private static boolean hasMessage(MessageSource source, String key) {
 		try {
 			source.getMessage(key, null, Locale.getDefault());
@@ -142,16 +142,14 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * 
 	 * 
 	 * @param settingUID
-	 *            the setting UID value
+	 *        the setting UID value
 	 * @return the generated title value
 	 */
 	private static String titleValue(String settingUID) {
 		if ( settingUID.startsWith(SN_NODE_PREFIX) && settingUID.length() > SN_NODE_PREFIX.length() ) {
 			String subPackage = settingUID.substring(SN_NODE_PREFIX.length());
-			if ( subPackage.endsWith(JOBS_PID_SUFFIX)
-					&& subPackage.length() > JOBS_PID_SUFFIX.length() ) {
-				subPackage = subPackage
-						.substring(0, subPackage.length() - JOBS_PID_SUFFIX.length());
+			if ( subPackage.endsWith(JOBS_PID_SUFFIX) && subPackage.length() > JOBS_PID_SUFFIX.length() ) {
+				subPackage = subPackage.substring(0, subPackage.length() - JOBS_PID_SUFFIX.length());
 			}
 			if ( subPackage.indexOf('.') < 0 ) {
 				// capitalize first letter
@@ -179,7 +177,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * </ol>
 	 * 
 	 * @param t
-	 *            the trigger to generate the key from
+	 *        the trigger to generate the key from
 	 * @return the setting key
 	 */
 	public static String triggerKey(Trigger t) {
@@ -187,14 +185,22 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 		if ( t.getJobGroup() != null && !Scheduler.DEFAULT_GROUP.equals(t.getJobGroup()) ) {
 			buf.append(t.getJobGroup());
 		}
+		if ( t.getJobName() != null ) {
+			if ( buf.length() > 0 ) {
+				buf.append('.');
+			}
+			buf.append(t.getJobName());
+		}
+		if ( t.getGroup() != null && !Scheduler.DEFAULT_GROUP.equals(t.getGroup()) ) {
+			if ( buf.length() > 0 ) {
+				buf.append('.');
+			}
+			buf.append(t.getGroup());
+		}
 		if ( buf.length() > 0 ) {
 			buf.append('.');
 		}
-		buf.append(t.getJobName());
-		if ( t.getGroup() != null && !Scheduler.DEFAULT_GROUP.equals(t.getGroup()) ) {
-			buf.append('.').append(t.getGroup());
-		}
-		buf.append('.').append(t.getName());
+		buf.append(t.getName());
 		return buf.toString();
 	}
 
@@ -208,7 +214,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * </p>
 	 * 
 	 * @param trigJob
-	 *            the service to generate specifiers for
+	 *        the service to generate specifiers for
 	 */
 	public void addSpecifier(TriggerAndJobDetail trigJob) {
 		Trigger trig = trigJob.getTrigger();
@@ -221,13 +227,27 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 			final String labelKey = key + ".key";
 			final String descKey = key + ".desc";
 			if ( !hasMessage(this.messageSource, labelKey) ) {
-				messages.put(labelKey, new MessageFormat(ct.getName()));
+				if ( hasMessage(trigJob.getMessageSource(), labelKey) ) {
+					messages.put(
+							labelKey,
+							new MessageFormat(trigJob.getMessageSource().getMessage(labelKey, null,
+									Locale.getDefault())));
+				} else {
+					messages.put(labelKey, new MessageFormat(ct.getName()));
+				}
 			}
 			if ( !hasMessage(this.messageSource, descKey) ) {
-				messages.put(descKey, new MessageFormat(
-					StringUtils.hasText(ct.getDescription()) ? ct.getDescription() : ""));
+				if ( hasMessage(trigJob.getMessageSource(), labelKey) ) {
+					messages.put(
+							descKey,
+							new MessageFormat(trigJob.getMessageSource().getMessage(descKey, null,
+									Locale.getDefault())));
+				} else {
+					messages.put(descKey, new MessageFormat(
+							StringUtils.hasText(ct.getDescription()) ? ct.getDescription() : ""));
+				}
 			}
-			synchronized (specifiers) {
+			synchronized ( specifiers ) {
 				specifiers.add(tf);
 			}
 		}
@@ -244,16 +264,15 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * </p>
 	 * 
 	 * @param trigJob
-	 *            the service to generate specifiers for
+	 *        the service to generate specifiers for
 	 */
 	public void removeSpecifier(TriggerAndJobDetail trigJob) {
 		Trigger trig = trigJob.getTrigger();
 		if ( trig instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trig;
 			final String key = triggerKey(ct);
-			synchronized (specifiers) {
-				for ( Iterator<SettingSpecifier> itr = specifiers.iterator(); itr
-						.hasNext(); ) {
+			synchronized ( specifiers ) {
+				for ( Iterator<SettingSpecifier> itr = specifiers.iterator(); itr.hasNext(); ) {
 					TextFieldSettingSpecifier tf = (TextFieldSettingSpecifier) itr.next();
 					if ( tf.getKey().equals(key) ) {
 						itr.remove();
@@ -281,7 +300,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		synchronized (specifiers) {
+		synchronized ( specifiers ) {
 			return Collections.unmodifiableList(specifiers);
 		}
 	}

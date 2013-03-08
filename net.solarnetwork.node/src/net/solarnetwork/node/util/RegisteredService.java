@@ -18,27 +18,29 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.osgi.framework.ServiceRegistration;
 
 /**
  * A class to help with tracking registered services.
  * 
+ * @param <T>
+ *        the service object type
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class RegisteredService<T> {
 
 	private final T config;
 	private final Map<String, ?> props;
-	private ServiceRegistration<?> reg;
+	private List<ServiceRegistration<?>> regList;
 
 	public RegisteredService(T config, Map<String, ?> properties) {
 		if ( config == null || properties == null ) {
@@ -99,7 +101,12 @@ public class RegisteredService<T> {
 	}
 
 	public void unregister() {
-		reg.unregister();
+		if ( regList == null ) {
+			return;
+		}
+		for ( ServiceRegistration<?> reg : regList ) {
+			reg.unregister();
+		}
 	}
 
 	public T getConfig() {
@@ -110,12 +117,49 @@ public class RegisteredService<T> {
 		return props;
 	}
 
+	/**
+	 * Get the first registration.
+	 * 
+	 * @return the registration, or <em>null</em> if none available
+	 */
 	public ServiceRegistration<?> getReg() {
-		return reg;
+		return (regList == null || regList.size() < 1 ? null : regList.get(0));
 	}
 
+	/**
+	 * Set a single service registration.
+	 * 
+	 * @param reg
+	 *        the registration
+	 */
 	public void setReg(ServiceRegistration<?> reg) {
-		this.reg = reg;
+		if ( regList == null ) {
+			regList = new ArrayList<ServiceRegistration<?>>(1);
+		} else {
+			regList.clear();
+		}
+		regList.add(reg);
 	}
 
+	/**
+	 * Get the list of registrations.
+	 * 
+	 * @return the registrations, or <em>null</em> if none set
+	 */
+	public List<ServiceRegistration<?>> getRegList() {
+		return regList;
+	}
+
+	/**
+	 * Add a new registration.
+	 * 
+	 * @param reg
+	 *        the registration
+	 */
+	public void addReg(ServiceRegistration<?> reg) {
+		if ( regList == null ) {
+			regList = new ArrayList<ServiceRegistration<?>>(1);
+		}
+		regList.add(reg);
+	}
 }

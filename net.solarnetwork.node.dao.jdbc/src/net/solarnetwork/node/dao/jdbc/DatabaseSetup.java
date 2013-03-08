@@ -27,51 +27,53 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import javax.sql.DataSource;
-
 import net.solarnetwork.node.Datum;
-
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 /**
  * Class to initialize a database for first-time use by a Solar Node.
  * 
- * <p>The {@link DatabaseSetup#init()} method should be called once during
+ * <p>
+ * The {@link DatabaseSetup#init()} method should be called once during
  * application startup, before any other JDBC-based DAOs attempt to initialize
- * or access the database.</p>
+ * or access the database.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>dataSource</dt>
- *   <dd>The DataSource to use for accessing the database with.</dd>
- *   
- *   <dt>initSqlResource</dt>
- *   <dd>A Resource to a SQL script that will initialize the database for
- *   the first time, when it is not found to exist already. Defaults to a
- *   classpath-relative resource named {@link #DEFAULT_INIT_SQL_RESOURCE}.</dd>
+ * <dt>dataSource</dt>
+ * <dd>The DataSource to use for accessing the database with.</dd>
+ * 
+ * <dt>initSqlResource</dt>
+ * <dd>A Resource to a SQL script that will initialize the database for the
+ * first time, when it is not found to exist already. Defaults to a
+ * classpath-relative resource named {@link #DEFAULT_INIT_SQL_RESOURCE}.</dd>
  * </dl>
- *
+ * 
  * @author matt
  * @version $Revision$ $Date$
  */
 public class DatabaseSetup {
-	
+
 	/** The default classpath resource for the {@code initSqlResource} property. */
 	public static final String DEFAULT_INIT_SQL_RESOURCE = "derby-init.sql";
-	
+
 	/** The default value for the {@code sqlGetTablesVersion} property. */
-	public static final String DEFAULT_SQL_GET_TABLES_VERSION 
-		= "SELECT svalue FROM " +JdbcDaoConstants.SCHEMA_NAME
-		+"." +JdbcDaoConstants.TABLE_SETTINGS +" WHERE skey = "
-		+ "'solarnode.sn_settings.version'";
-	
+	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM "
+			+ JdbcDaoConstants.SCHEMA_NAME + "." + JdbcDaoConstants.TABLE_SETTINGS + " WHERE skey = "
+			+ "'solarnode.sn_settings.version'";
+
 	private static final int TABLES_VERSION = 4;
 
 	private DataSource dataSource = null;
-	private Resource initSqlResource = new ClassPathResource(
-			DEFAULT_INIT_SQL_RESOURCE, DatabaseSetup.class);
-	
+	private Resource initSqlResource = new ClassPathResource(DEFAULT_INIT_SQL_RESOURCE,
+			DatabaseSetup.class);
+
 	/**
 	 * Check for the existence of the database, and if not found create and
 	 * initialize it.
@@ -96,7 +98,12 @@ public class DatabaseSetup {
 			setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
 			setSqlResourcePrefix("derby-init");
 		}
-		
+
+		@Override
+		public MessageSource getMessageSource() {
+			return null;
+		}
+
 	}
 
 	/**
@@ -107,7 +114,8 @@ public class DatabaseSetup {
 	}
 
 	/**
-	 * @param dataSource the dataSource to set
+	 * @param dataSource
+	 *        the dataSource to set
 	 */
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
@@ -121,10 +129,11 @@ public class DatabaseSetup {
 	}
 
 	/**
-	 * @param initSqlResource the initSqlResource to set
+	 * @param initSqlResource
+	 *        the initSqlResource to set
 	 */
 	public void setInitSqlResource(Resource initSqlResource) {
 		this.initSqlResource = initSqlResource;
 	}
-	
+
 }

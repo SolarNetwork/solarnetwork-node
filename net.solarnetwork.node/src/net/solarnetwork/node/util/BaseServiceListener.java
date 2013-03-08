@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.util;
 
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,8 +45,12 @@ import org.slf4j.LoggerFactory;
  * <dd>The {@link BundleContext} to manage services with.</dd>
  * </dl>
  * 
+ * @param <T>
+ *        the service type
+ * @param <R>
+ *        the registered service type
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public abstract class BaseServiceListener<T, R extends RegisteredService<T>> {
 
@@ -81,6 +84,31 @@ public abstract class BaseServiceListener<T, R extends RegisteredService<T>> {
 		}
 	}
 
+	/**
+	 * Track a collection of registered OSGi services.
+	 * 
+	 * @param tracked
+	 *        the RegisteredService instance
+	 * @param services
+	 *        the service already registered with OSGi
+	 */
+	protected void addRegisteredService(R tracked, Collection<ServiceRegistration<?>> services) {
+		synchronized ( registeredServices ) {
+			for ( ServiceRegistration<?> reg : services ) {
+				tracked.addReg(reg);
+			}
+			registeredServices.add(tracked);
+		}
+	}
+
+	/**
+	 * Remove the registered service associated with a specific service.
+	 * 
+	 * @param tracked
+	 *        the tracked service to remove
+	 * @param properties
+	 *        the service properties
+	 */
 	protected void removeRegisteredService(T tracked, Map<String, ?> properties) {
 		synchronized ( registeredServices ) {
 			for ( R regService : registeredServices ) {
