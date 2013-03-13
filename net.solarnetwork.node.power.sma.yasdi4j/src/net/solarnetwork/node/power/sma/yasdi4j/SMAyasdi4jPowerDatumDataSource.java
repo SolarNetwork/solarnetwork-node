@@ -125,6 +125,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
+	private int channelMaxAgeSeconds = 30;
 
 	private DynamicServiceTracker<ObjectFactory<YasdiMaster>> yasdi;
 
@@ -197,7 +198,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		log.trace("Capturing channel {} as property {}", channelName, beanProperty);
 		YasdiChannel channel = service.getDevice().getChannel(channelName);
 		try {
-			channel.updateValue(60); // get updated value, at most 60s old
+			// get updated value, at most channelMaxAgeSeconds old
+			channel.updateValue(channelMaxAgeSeconds);
 		} catch ( IOException e ) {
 			log.debug("Exception updating channel {} value: {}", channelName, e.toString());
 		}
@@ -307,6 +309,10 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public void setYasdi(DynamicServiceTracker<ObjectFactory<YasdiMaster>> yasdi) {
 		this.yasdi = yasdi;
+	}
+
+	public void setChannelMaxAgeSeconds(int channelMaxAgeSeconds) {
+		this.channelMaxAgeSeconds = channelMaxAgeSeconds;
 	}
 
 }
