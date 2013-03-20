@@ -43,11 +43,16 @@
 	
 	<ctx:property-placeholder properties-ref="price.cfg"/>
 
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.price.JOBS"/>
+	</bean>
+
 	<!-- Logger job -->
 
 	<bean id="priceDatumLogger" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="priceDatumLoggerTrigger"/>
 		<property name="jobDetail" ref="priceDatumLoggerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="priceDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
@@ -73,6 +78,7 @@
 	<bean id="priceDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="priceDatumCleanerTrigger"/>
 		<property name="jobDetail" ref="priceDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="priceDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
