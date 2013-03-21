@@ -18,29 +18,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Revision$
- * ==================================================================
  */
 
 package net.solarnetwork.node.centameter;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -49,103 +50,106 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 /**
  * Base class for reading Centameter sensor data.
  * 
- * <p>The Centameter packet contains a "magic" byte prefix (0x78) followed
- * by 15 message bytes.</p>
+ * <p>
+ * The Centameter packet contains a "magic" byte prefix (0x78) followed by 15
+ * message bytes.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>dataCollectorFactory</dt>
- *   <dd>The factory for creating {@link DataCollector} instances with.</dd>
- *   
- *   <dt>serialParams</dt>
- *   <dd>The serial port parameters to use.</dd>
- *   
- *   <dt>voltage</dt>
- *   <dd>A hard-coded voltage value to use for the Cent-a-meter, since it
- *   only measures current. Defaults to {@link #DEFAULT_VOLTAGE}.</dd>
- *   
- *   <dt>ampSensorIndex</dt>
- *   <dd>The Cent-a-meter can report on 3 different currents. This index value
- *   is the desired current to read. Possible values for this property are 1,
- *   2, or 3. Defaults to {@code 1}.</dd>
- *   
- *   <dt>sourceIdFormat</dt>
- *   <dd>A string format pattern for generating the {@code sourceId} value in
- *   returned {@link PowerDatum} instances. This format will be passed
- *   the Centameter address (as a <em>short</em>) and the Centameter amp sensor
- *   index (as a <em>int</em>). Defaults to {@link #DEFAULT_SOURCE_ID_FORMAT}.
- *   </dd>
- *   
- *   <dt>multiAmpSensorIndexFlags</dt>
- *   <dd>A bitmask flag for which amp sensor index readings to return from 
- *   {@link #readMultipleDatum()}. The amp sensors number 1 - 3. Enable
- *   reading each index by adding together each index as 2 ^ (index - 1).
- *   Thus to enable reading from all 3 indexes set this value to <em>7</em>
- *   (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
- *   
- *   <dt>addressSourceMapping</dt>
- *   <dd>If configured, a mapping of Centameter address ID values to
- *   PowerDatum sourceId values. This can be used to consistently collect
- *   data from Centameters, even after the Centameter has been reset and
- *   it generates a new random address ID value for itself.</dd>
- *   
- *   <dt>sourceIdFilter</dt>
- *   <dd>If configured, a set of PowerDatum sourceId values to accept
- *   data for, rejecting all others. Sometimes bogus data can be received
- *   or some other Centameter not part of this node might be received.
- *   Configuring this field prevents data from sources other than those
- *   configured here from being collected. Note the source values configured
- *   here should be the values <em>after</em> any {@code addressSourceMapping}
- *   translation has occurred.</dd>
- *   
- *   <dt>collectAllSourceIds</dt>
- *   <dd>If <em>true</em> and the {@link net.solarnetwork.node.MultiDatumDataSource}
- *   API is used, then attempt to read values for all sources configured in the
- *   {@code sourceIdFilter} property and return all the data collected. The 
- *   {@code collectAllSourceIdsTimeout}
- *   property is used to limit the amount of time spent collecting data, as 
- *   there is no guarantee the application can read from all sources: the Centamter
- *   data is captured somewhat randomly. Defaults to <em>true</em>.</dd>
- *   
- *   <dt>collectAllSourceIdsTimeout</dt>
- *   <dd>When {@code collectAllSourceIds} is configured as <em>true</em> this
- *   is a timeout value, in seconds, the application should spend attempting to
- *   collect data from all configured sources. If this amount of time is passed
- *   before data for all sources has been collected, the application will give
- *   up and just return whatever data it has collected at that point. Defaults
- *   to {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
+ * <dt>dataCollectorFactory</dt>
+ * <dd>The factory for creating {@link DataCollector} instances with.</dd>
+ * 
+ * <dt>serialParams</dt>
+ * <dd>The serial port parameters to use.</dd>
+ * 
+ * <dt>voltage</dt>
+ * <dd>A hard-coded voltage value to use for the Cent-a-meter, since it only
+ * measures current. Defaults to {@link #DEFAULT_VOLTAGE}.</dd>
+ * 
+ * <dt>ampSensorIndex</dt>
+ * <dd>The Cent-a-meter can report on 3 different currents. This index value is
+ * the desired current to read. Possible values for this property are 1, 2, or
+ * 3. Defaults to {@code 1}.</dd>
+ * 
+ * <dt>sourceIdFormat</dt>
+ * <dd>A string format pattern for generating the {@code sourceId} value in
+ * returned {@link PowerDatum} instances. This format will be passed the
+ * Centameter address (as a <em>short</em>) and the Centameter amp sensor index
+ * (as a <em>int</em>). Defaults to {@link #DEFAULT_SOURCE_ID_FORMAT}.</dd>
+ * 
+ * <dt>multiAmpSensorIndexFlags</dt>
+ * <dd>A bitmask flag for which amp sensor index readings to return from
+ * {@link #readMultipleDatum()}. The amp sensors number 1 - 3. Enable reading
+ * each index by adding together each index as 2 ^ (index - 1). Thus to enable
+ * reading from all 3 indexes set this value to <em>7</em> (2^0 + 2^1 + 2^2) =
+ * 7). Defaults to 7.</dd>
+ * 
+ * <dt>addressSourceMapping</dt>
+ * <dd>If configured, a mapping of Centameter address ID values to PowerDatum
+ * sourceId values. This can be used to consistently collect data from
+ * Centameters, even after the Centameter has been reset and it generates a new
+ * random address ID value for itself.</dd>
+ * 
+ * <dt>sourceIdFilter</dt>
+ * <dd>If configured, a set of PowerDatum sourceId values to accept data for,
+ * rejecting all others. Sometimes bogus data can be received or some other
+ * Centameter not part of this node might be received. Configuring this field
+ * prevents data from sources other than those configured here from being
+ * collected. Note the source values configured here should be the values
+ * <em>after</em> any {@code addressSourceMapping} translation has occurred.</dd>
+ * 
+ * <dt>collectAllSourceIds</dt>
+ * <dd>If <em>true</em> and the
+ * {@link net.solarnetwork.node.MultiDatumDataSource} API is used, then attempt
+ * to read values for all sources configured in the {@code sourceIdFilter}
+ * property and return all the data collected. The
+ * {@code collectAllSourceIdsTimeout} property is used to limit the amount of
+ * time spent collecting data, as there is no guarantee the application can read
+ * from all sources: the Centamter data is captured somewhat randomly. Defaults
+ * to <em>true</em>.</dd>
+ * 
+ * <dt>collectAllSourceIdsTimeout</dt>
+ * <dd>When {@code collectAllSourceIds} is configured as <em>true</em> this is a
+ * timeout value, in seconds, the application should spend attempting to collect
+ * data from all configured sources. If this amount of time is passed before
+ * data for all sources has been collected, the application will give up and
+ * just return whatever data it has collected at that point. Defaults to
+ * {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class CentameterSupport {
 
 	/** The data byte index for the Centameter's address ID. */
 	public static final int CENTAMETER_ADDRESS_IDX = 2;
-	
-	/** 
-	 * The data byte index for the Centameter's amp reading, as integer 
-	 * (amps * 10) value.
+
+	/**
+	 * The data byte index for the Centameter's amp reading, as integer (amps *
+	 * 10) value.
 	 */
 	public static final int CENTAMETER_AMPS_IDX = 7;
-	
+
 	/** The default value for the {@code voltage} property. */
 	public static final float DEFAULT_VOLTAGE = 230.0F;
-	
+
 	/** The default value for the {@code sourceIdFormat} property. */
 	public static final String DEFAULT_SOURCE_ID_FORMAT = "%X.%d";
-	
+
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 30;
-	
+
 	/** The default value for the {@code multiAmpSensorIndexFlags} property. */
 	public static final int DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS = (1 | 2 | 4);
-	
+
 	/** The default value for the {@code ampSensorIndex} property. */
 	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
-	
+
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -159,20 +163,73 @@ public class CentameterSupport {
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
 	private int multiAmpSensorIndexFlags = DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS;
 	private String sourceIdFormat = DEFAULT_SOURCE_ID_FORMAT;
-	private Map<String,String> addressSourceMapping = null;
+	private Map<String, String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
-	
+	private final SortedSet<CentameterDatum> knownAddresses = new ConcurrentSkipListSet<CentameterDatum>();
+
+	/**
+	 * Add a new cached "known" address value.
+	 * 
+	 * <p>
+	 * This adds the address to the cached set of <em>known</em> addresses,
+	 * which are shown as a read-only setting property to aid in mapping the
+	 * right Cent-a-meter address.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to add
+	 */
+	protected void addKnownAddress(CentameterDatum datum) {
+		knownAddresses.add(datum);
+	}
+
+	/**
+	 * Get a read-only set of known addresses.
+	 * 
+	 * <p>
+	 * This will contain all the addresses previously passed to
+	 * {@link #addKnownAddress(String)} and that have not been removed via
+	 * {@link #clearKnownAddresses(Collection)}.
+	 * </p>
+	 * 
+	 * @return a read-only set of known addresses
+	 */
+	protected SortedSet<CentameterDatum> getKnownAddresses() {
+		return Collections.unmodifiableSortedSet(knownAddresses);
+	}
+
+	/**
+	 * Remove known address values from the known address cache.
+	 * 
+	 * <p>
+	 * You can clear out the entire cache by passing in the result of
+	 * {@link #getKnownAddresses()}.
+	 * </p>
+	 * 
+	 * @param toRemove
+	 *        the collection of addresses to remove
+	 */
+	protected void clearKnownAddresses(Collection<CentameterDatum> toRemove) {
+		knownAddresses.removeAll(toRemove);
+	}
+
 	/**
 	 * Set a {@code addressSourceMapping} Map via an encoded String value.
 	 * 
-	 * <p>The format of the {@code mapping} String should be:</p>
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
 	 * 
-	 * <pre>key=val[,key=val,...]</pre>
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
 	 * 
-	 * <p>Whitespace is permitted around all delimiters, and will be stripped
-	 * from the keys and values.</p>
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
 	 * 
 	 * @param mapping
 	 */
@@ -192,13 +249,15 @@ public class CentameterSupport {
 		}
 		setAddressSourceMapping(map);
 	}
-	
+
 	/**
 	 * Set a {@link sourceIdFilter} List via an encoded String value.
 	 * 
-	 * <p>The format of the {@code filters} String should be a comma-delimited
-	 * list of values. Whitespace is permitted around the commas, and will be
-	 * stripped from the values.</p>
+	 * <p>
+	 * The format of the {@code filters} String should be a comma-delimited list
+	 * of values. Whitespace is permitted around the commas, and will be
+	 * stripped from the values.
+	 * </p>
 	 * 
 	 * @param filters
 	 */
@@ -217,33 +276,40 @@ public class CentameterSupport {
 
 	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(
-				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
+		StringBuilder status = new StringBuilder();
+		for ( CentameterDatum datum : knownAddresses ) {
+			if ( status.length() > 0 ) {
+				status.append(",\n");
+			}
+			status.append(datum.getStatusMessage());
+		}
+		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
+		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 		// the multiAmpSensorIndexFlags override this settings, so let's not expose it
 		// results.add(new BasicTextFieldSettingSpecifier("ampSensorIndex", 
 		//		String.valueOf(DEFAULT_AMP_SENSOR_INDEX)));
-		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", 
-				String.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
+		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", String
+				.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
-		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", 
-				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
-		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
+		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
+				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
+		results.addAll(DataCollectorSerialPortBeanParameters
+				.getDefaultSettingSpecifiers("serialParams."));
 		return results;
 	}
 
 	public MessageSource getDefaultSettingsMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-				serial.setBasenames(new String[] {
-						SerialPortBeanParameters.class.getName(),
-						DataCollectorSerialPortBeanParameters.class.getName()
-				});
+				serial.setBasenames(new String[] { SerialPortBeanParameters.class.getName(),
+						DataCollectorSerialPortBeanParameters.class.getName() });
 
 				PrefixedMessageSource serialSource = new PrefixedMessageSource();
 				serialSource.setDelegate(serial);
@@ -339,5 +405,5 @@ public class CentameterSupport {
 	public void setCollectAllSourceIdsTimeout(int collectAllSourceIdsTimeout) {
 		this.collectAllSourceIdsTimeout = collectAllSourceIdsTimeout;
 	}
-		
+
 }
