@@ -67,7 +67,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </p>
  * 
  * <pre>
- * magicBytes = x
+ * magicBytes = x (0x78)
  * baud = 4800
  * bufferSize = 16
  * readSize = 15
