@@ -18,35 +18,30 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.support;
 
 import java.util.List;
-
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
-
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * Configuration bean for {@link DataCollector}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParameters {
 
-	private static final DataCollectorSerialPortBeanParameters DEFAULTS
-		= new DataCollectorSerialPortBeanParameters();
-	
+	private static final DataCollectorSerialPortBeanParameters DEFAULTS = new DataCollectorSerialPortBeanParameters();
+
 	private int bufferSize = 4096;
-	private byte[] magic = new byte[] {0x13};
+	private byte[] magic = new byte[] { 0x13 };
 	private int readSize = 8;
 	private boolean toggleDtr = true;
 	private boolean toggleRts = true;
@@ -54,7 +49,8 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param prefix the bean prefix to use
+	 * @param prefix
+	 *        the bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(String prefix) {
@@ -64,24 +60,24 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param defaults the default values to use
-	 * @param prefix the bean prefix to use
+	 * @param defaults
+	 *        the default values to use
+	 * @param prefix
+	 *        the bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(
 			DataCollectorSerialPortBeanParameters defaults, String prefix) {
-		List<SettingSpecifier> results = SerialPortBeanParameters
-				.getDefaultSettingSpecifiers(defaults, prefix);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", 
-				String.valueOf(defaults.getBufferSize())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", 
-				new String(defaults.getMagicHex())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "readSize", 
-				String.valueOf(defaults.getReadSize())));
-		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", 
-				defaults.isToggleDtr()));
-		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", 
-				defaults.isToggleRts()));
+		List<SettingSpecifier> results = SerialPortBeanParameters.getDefaultSettingSpecifiers(defaults,
+				prefix);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", String.valueOf(defaults
+				.getBufferSize())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", new String(defaults
+				.getMagicHex())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "readSize", String.valueOf(defaults
+				.getReadSize())));
+		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", defaults.isToggleDtr()));
+		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", defaults.isToggleRts()));
 		return results;
 	}
 
@@ -92,21 +88,21 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 	public void setBufferSize(int bufferSize) {
 		this.bufferSize = bufferSize;
 	}
-	
-	public char[] getMagicHex() {
+
+	public String getMagicHex() {
 		if ( getMagic() == null ) {
 			return null;
 		}
-		return Hex.encodeHex(getMagic());
+		return Hex.encodeHexString(getMagic());
 	}
-	
+
 	public void setMagicHex(String hex) {
 		if ( hex == null || (hex.length() % 2) == 1 ) {
 			setMagic(null);
 		}
 		try {
 			setMagic(Hex.decodeHex(hex.toCharArray()));
-		} catch (DecoderException e) {
+		} catch ( DecoderException e ) {
 			// fail silently, sorry
 		}
 	}
