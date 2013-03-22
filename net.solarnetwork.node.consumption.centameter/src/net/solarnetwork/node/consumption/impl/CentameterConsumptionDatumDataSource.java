@@ -148,6 +148,14 @@ public class CentameterConsumptionDatumDataSource extends CentameterSupport impl
 					return null;
 				}
 				short[] unsigned = DataUtils.getUnsignedValues(data);
+
+				// add a known address for this reading
+				addKnownAddress(new CentameterDatum(
+						String.format("%X", unsigned[CENTAMETER_ADDRESS_IDX]),
+						(float) CentameterUtils.getAmpReading(unsigned, 1),
+						(float) CentameterUtils.getAmpReading(unsigned, 2),
+						(float) CentameterUtils.getAmpReading(unsigned, 3)));
+
 				for ( int ampIndex = 1; ampIndex <= 3; ampIndex++ ) {
 					ConsumptionDatum datum = getConsumptionDatumInstance(unsigned, ampIndex);
 					if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
@@ -176,10 +184,6 @@ public class CentameterConsumptionDatumDataSource extends CentameterSupport impl
 		// report the Centameter address as upper-case hex value
 		String addr = String.format(getSourceIdFormat(), unsigned[CENTAMETER_ADDRESS_IDX], ampIndex);
 		float amps = (float) CentameterUtils.getAmpReading(unsigned, ampIndex);
-
-		addKnownAddress(new CentameterDatum(addr, (float) CentameterUtils.getAmpReading(unsigned, 1),
-				(float) CentameterUtils.getAmpReading(unsigned, 2),
-				(float) CentameterUtils.getAmpReading(unsigned, 3)));
 
 		if ( log.isDebugEnabled() ) {
 			log.debug(String.format("Centameter address %s, count %d, amp1 %.1f, amp2 %.1f, amp3 %.1f",
