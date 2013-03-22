@@ -75,7 +75,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </p>
  * 
  * <pre>
- * magicBytes = x
+ * magicBytes = x (0x78)
  * baud = 4800
  * bufferSize = 16
  * readSize = 15
@@ -176,6 +176,23 @@ public class CentameterPowerDatumDataSource extends CentameterSupport implements
 					return null;
 				}
 				short[] unsigned = DataUtils.getUnsignedValues(data);
+
+				// add a known address for this reading
+				addKnownAddress(new CentameterDatum(
+						String.format("%X", unsigned[CENTAMETER_ADDRESS_IDX]),
+						(float) CentameterUtils.getAmpReading(unsigned, 1),
+						(float) CentameterUtils.getAmpReading(unsigned, 2),
+						(float) CentameterUtils.getAmpReading(unsigned, 3)));
+
+				if ( log.isDebugEnabled() ) {
+					log.debug(String.format(
+							"Centameter address %X, count %d, amp1 %.1f, amp2 %.1f, amp3 %.1f",
+							unsigned[CENTAMETER_ADDRESS_IDX], (unsigned[1] & 0xF),
+							CentameterUtils.getAmpReading(unsigned, 1),
+							CentameterUtils.getAmpReading(unsigned, 2),
+							CentameterUtils.getAmpReading(unsigned, 3)));
+				}
+
 				for ( int ampIndex = 1; ampIndex <= 3; ampIndex++ ) {
 					PowerDatum datum = getPowerDatumInstance(unsigned, ampIndex);
 					if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
@@ -203,17 +220,6 @@ public class CentameterPowerDatumDataSource extends CentameterSupport implements
 		// report the Centameter address as upper-case hex value
 		String addr = String.format(getSourceIdFormat(), unsigned[CENTAMETER_ADDRESS_IDX], ampIndex);
 		float amps = (float) CentameterUtils.getAmpReading(unsigned, ampIndex);
-
-		addKnownAddress(new CentameterDatum(addr, (float) CentameterUtils.getAmpReading(unsigned, 1),
-				(float) CentameterUtils.getAmpReading(unsigned, 2),
-				(float) CentameterUtils.getAmpReading(unsigned, 3)));
-
-		if ( log.isDebugEnabled() ) {
-			log.debug(String.format("Centameter address %s, count %d, amp1 %.1f, amp2 %.1f, amp3 %.1f",
-					addr, (unsigned[1] & 0xF), CentameterUtils.getAmpReading(unsigned, 1),
-					CentameterUtils.getAmpReading(unsigned, 2),
-					CentameterUtils.getAmpReading(unsigned, 3)));
-		}
 
 		PowerDatum datum = new PowerDatum();
 
