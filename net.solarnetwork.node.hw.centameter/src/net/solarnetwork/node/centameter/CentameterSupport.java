@@ -157,7 +157,7 @@ public class CentameterSupport {
 	private static MessageSource MESSAGE_SOURCE;
 
 	private DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory;
-	private DataCollectorSerialPortBeanParameters serialParams = new DataCollectorSerialPortBeanParameters();
+	private DataCollectorSerialPortBeanParameters serialParams = getDefaultSerialParams();
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -168,6 +168,17 @@ public class CentameterSupport {
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private final SortedSet<CentameterDatum> knownAddresses = new ConcurrentSkipListSet<CentameterDatum>();
+
+	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
+		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
+		defaults.setMagic(new byte[] { 120 });
+		defaults.setBaud(4800);
+		defaults.setBufferSize(16);
+		defaults.setReadSize(15);
+		defaults.setReceiveThreshold(-1);
+		defaults.setMaxWait(90000);
+		return defaults;
+	}
 
 	/**
 	 * Add a new cached "known" address value.
@@ -298,8 +309,8 @@ public class CentameterSupport {
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
 				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
-		results.addAll(DataCollectorSerialPortBeanParameters
-				.getDefaultSettingSpecifiers("serialParams."));
+		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultSettingSpecifiers(
+				getDefaultSerialParams(), "serialParams."));
 		return results;
 	}
 
