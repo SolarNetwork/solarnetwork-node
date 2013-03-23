@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -28,9 +26,9 @@ package net.solarnetwork.node.rfxcom;
  * API for an object with an address, for example a sensor address.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
-public interface AddressSource {
+public interface AddressSource extends Comparable<AddressSource> {
 
 	/**
 	 * Get the address associated with this object.
@@ -38,5 +36,5 @@ public interface AddressSource {
 	 * @return the address
 	 */
 	String getAddress();
-	
+
 }

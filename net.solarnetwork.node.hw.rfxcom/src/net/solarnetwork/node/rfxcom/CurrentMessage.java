@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -30,46 +28,48 @@ import static net.solarnetwork.node.util.DataUtils.unsigned;
  * A current meter message, e.g. Owl CM113, Electrisave, Cent-a-meter.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
-public class CurrentMessage extends BaseDataMessage implements AddressSource {
+public class CurrentMessage extends BaseAddressSourceDataMessage {
 
-	private static final short PACKET_SIZE = (short)13;
+	private static final short PACKET_SIZE = (short) 13;
 	@SuppressWarnings("unused")
 	private static final byte SUB_TYPE_ELEC1 = 0x1;
 	private static final int IDX_BATTERY = 9; // bits 3-0
 	private static final int IDX_SIGNAL = 9; // bits 7-4
-	
+
 	public CurrentMessage(short subType, short sequenceNumber, byte[] data) {
 		super(PACKET_SIZE, MessageType.CurrentMeter, subType, sequenceNumber, data);
 	}
-	
+
 	public boolean isBatteryLow() {
 		return (getData()[IDX_BATTERY] & 0xF) == 0;
 	}
-	
+
 	public int getSignalLevel() {
 		return (getData()[IDX_SIGNAL] >> 4);
 	}
-	
-	public String getAddress() {
-		return String.format("%X", unsigned(getData()[0]) << 8 | unsigned(getData()[1]));
-	}
-	
+
 	public int getCount() {
 		return unsigned(getData()[2]);
 	}
-	
+
 	public double getAmpReading1() {
 		return (unsigned(getData()[3]) << 8 | unsigned(getData()[4])) / 10.0;
 	}
-	
+
 	public double getAmpReading2() {
 		return (unsigned(getData()[5]) << 8 | unsigned(getData()[6])) / 10.0;
 	}
-	
+
 	public double getAmpReading3() {
 		return (unsigned(getData()[7]) << 8 | unsigned(getData()[8])) / 10.0;
 	}
-		
+
+	@Override
+	public String toString() {
+		return String.format("CurrentMessage[%s; 1 = %f, 2 = %f, 3 = %f, s = %d]", getAddress(),
+				getAmpReading1(), getAmpReading2(), getAmpReading3(), getSignalLevel());
+	}
+
 }

@@ -30,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
@@ -44,6 +46,7 @@ import net.solarnetwork.node.rfxcom.RFXCOM;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
@@ -100,7 +103,26 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	private final Map<String, Long> previousWattHours = new HashMap<String, Long>();
 	private final Map<String, List<ConsumptionDatum>> datumBuffer = new HashMap<String, List<ConsumptionDatum>>();
 
+	// in-memory listing of "seen" addresses, to support device discovery
+	private final SortedSet<AddressSource> knownAddresses = new ConcurrentSkipListSet<AddressSource>();
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Add a new cached "known" address value.
+	 * 
+	 * <p>
+	 * This adds the address to the cached set of <em>known</em> addresses,
+	 * which are shown as a read-only setting property to aid in mapping the
+	 * right RFXCOM-recognized device address.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to add
+	 */
+	private void addKnownAddress(AddressSource datum) {
+		knownAddresses.add(datum);
+	}
 
 	@Override
 	public Class<? extends ConsumptionDatum> getMultiDatumType() {
@@ -305,6 +327,10 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 				return null;
 			}
 			Message msg = mf.parseMessage(data, 0);
+			if ( msg instanceof AddressSource ) {
+				// add a known address for this reading
+				addKnownAddress((AddressSource) msg);
+			}
 			if ( msg instanceof EnergyMessage || msg instanceof CurrentMessage ) {
 				final String sourceId = getSourceIdForMessageAddress(((AddressSource) msg).getAddress());
 				if ( !sourceIdSet.contains(sourceId) ) {
@@ -351,9 +377,18 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(21);
 		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
+
+		StringBuilder status = new StringBuilder();
+		for ( AddressSource datum : knownAddresses ) {
+			if ( status.length() > 0 ) {
+				status.append(",\n");
+			}
+			status.append(datum.toString());
+		}
+		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 
 		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
 

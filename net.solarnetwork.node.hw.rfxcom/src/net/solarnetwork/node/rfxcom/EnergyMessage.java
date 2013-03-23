@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -30,16 +28,14 @@ import static net.solarnetwork.node.util.DataUtils.unsigned;
  * An energy message, e.g. Owl CM119, CM160.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
-public class EnergyMessage extends BaseDataMessage implements AddressSource {
+public class EnergyMessage extends BaseAddressSourceDataMessage {
 
 	public static final byte SUB_TYPE_ELEC2 = 0x1;
 
-	private static final short PACKET_SIZE = (short)17;
-	
-	private static final int IDX_ID1 = 0;
-	private static final int IDX_ID2 = 1;
+	private static final short PACKET_SIZE = (short) 17;
+
 	private static final int IDX_COUNT = 2;
 	private static final int IDX_INSTANT1 = 3;
 	private static final int IDX_INSTANT2 = 4;
@@ -57,39 +53,37 @@ public class EnergyMessage extends BaseDataMessage implements AddressSource {
 	public EnergyMessage(short subType, short sequenceNumber, byte[] data) {
 		super(PACKET_SIZE, MessageType.Energy, subType, sequenceNumber, data);
 	}
-	
-	public String getAddress() {
-		int h = unsigned(getData()[IDX_ID1]);
-		int l = unsigned(getData()[IDX_ID2]);
-		return String.format("%X", h << 8 | l);
-	}
-	
+
 	public int getCount() {
 		return unsigned(getData()[IDX_COUNT]);
 	}
-	
+
 	public double getInstantWatts() {
-		return (unsigned(getData()[IDX_INSTANT1]) * 0x1000000) 
+		return (unsigned(getData()[IDX_INSTANT1]) * 0x1000000)
 				+ (unsigned(getData()[IDX_INSTANT2]) * 0x10000)
-				+ (unsigned(getData()[IDX_INSTANT3]) * 0x100)
-				+ unsigned(getData()[IDX_INSTANT4]);
+				+ (unsigned(getData()[IDX_INSTANT3]) * 0x100) + unsigned(getData()[IDX_INSTANT4]);
 	}
-	
+
 	public double getUsageWattHours() {
-		return ((unsigned(getData()[IDX_TOTAL1]) * 0x10000000000L) 
+		return ((unsigned(getData()[IDX_TOTAL1]) * 0x10000000000L)
 				+ (unsigned(getData()[IDX_TOTAL2]) * 0x100000000L)
 				+ (unsigned(getData()[IDX_TOTAL3]) * 0x1000000)
 				+ (unsigned(getData()[IDX_TOTAL4]) * 0x10000)
-				+ (unsigned(getData()[IDX_TOTAL5]) * 0x100)
-				+ unsigned(getData()[IDX_TOTAL6])) / 223.666;
+				+ (unsigned(getData()[IDX_TOTAL5]) * 0x100) + unsigned(getData()[IDX_TOTAL6])) / 223.666;
 	}
-	
+
 	public boolean isBatteryLow() {
 		return (unsigned(getData()[IDX_BATTERY]) & 0xF) == 0;
 	}
-	
+
 	public int getSignalLevel() {
 		return (unsigned(getData()[IDX_SIGNAL]) >> 4);
 	}
-	
+
+	@Override
+	public String toString() {
+		return String.format("EnergyMessage[%s; i = %f, u = %f, s = %d]", getAddress(),
+				getInstantWatts(), getUsageWattHours(), getSignalLevel());
+	}
+
 }
