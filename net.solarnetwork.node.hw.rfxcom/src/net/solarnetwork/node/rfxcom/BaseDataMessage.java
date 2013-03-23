@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -27,26 +25,17 @@ package net.solarnetwork.node.rfxcom;
 import java.util.Arrays;
 
 /**
- * FIXME
- * 
- * <p>TODO</p>
- * 
- * <p>The configurable properties of this class are:</p>
- * 
- * <dl class="class-properties">
- *   <dt></dt>
- *   <dd></dd>
- * </dl>
+ * Base data message.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class BaseDataMessage extends BaseMessage {
 
 	private final byte[] data;
 
-	public BaseDataMessage(short dataSize, MessageType type, short subType, 
-			short sequenceNumber, byte[] data) {
+	public BaseDataMessage(short dataSize, MessageType type, short subType, short sequenceNumber,
+			byte[] data) {
 		super(dataSize, type, subType, sequenceNumber);
 		this.data = data;
 	}
@@ -58,12 +47,12 @@ public class BaseDataMessage extends BaseMessage {
 
 	@Override
 	public byte[] getMessagePacket() {
-		byte[] msg = new byte[getPacketSize()+1];
-		Arrays.fill(msg, (byte)0);
-		msg[0] = (byte)getPacketSize();
+		byte[] msg = new byte[getPacketSize() + 1];
+		Arrays.fill(msg, (byte) 0);
+		msg[0] = (byte) getPacketSize();
 		msg[1] = getType().getMessageValue();
-		msg[2] = (byte)getSubType();
-		msg[3] = (byte)getSequenceNumber();
+		msg[2] = (byte) getSubType();
+		msg[3] = (byte) getSequenceNumber();
 		if ( getData() != null ) {
 			System.arraycopy(getData(), 0, msg, 4, getData().length);
 		}
