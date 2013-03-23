@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.consumption.rfxcom;
@@ -61,7 +59,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * the supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
 		MultiDatumDataSource<ConsumptionDatum>, ConversationalDataCollector.Moderator<List<Message>>,
