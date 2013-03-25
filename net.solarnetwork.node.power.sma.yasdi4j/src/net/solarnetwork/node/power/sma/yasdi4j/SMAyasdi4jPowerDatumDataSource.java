@@ -150,6 +150,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		final YasdiMaster master = service.getObject();
 
 		PowerDatum datum = new PowerDatum();
+		datum.setSourceId(getSourceId());
 		PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
 
 		final boolean newDay = isNewDay();
