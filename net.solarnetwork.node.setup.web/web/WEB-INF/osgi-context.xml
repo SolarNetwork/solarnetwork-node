@@ -34,4 +34,9 @@
 		<osgi:listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
 	
+	<osgi:reference id="backupManagerRef" availability="optional"
+		interface="net.solarnetwork.node.backup.BackupManager">
+		<osgi:listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
 </beans>

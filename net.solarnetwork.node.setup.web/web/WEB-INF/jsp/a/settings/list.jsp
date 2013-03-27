@@ -65,6 +65,44 @@
 	</script>
 </c:if>
 
+<c:if test="${not empty backupManager}">
+<section>
+	<h2><fmt:message key="backup.title"/></h2>
+	<p><fmt:message key="backup.intro"/></p>
+	<div class="form-horizontal">
+		<fieldset>
+			<c:set var="provider" value="${backupManager}" scope="request"/>
+			<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+				<c:set var="settingId" value="bm${providerStatus.index}i${settingStatus.index}" scope="request"/>
+				<c:set var="setting" value="${setting}" scope="request"/>
+				<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+			</c:forEach>
+			<c:if test="${not empty backupService}">
+				<c:set var="provider" value="${backupService.settingSpecifierProvider}" scope="request"/>
+				<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+					<c:set var="settingId" value="bs${providerStatus.index}i${settingStatus.index}" scope="request"/>
+					<c:set var="setting" value="${setting}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+				</c:forEach>
+			</c:if>
+		</fieldset>
+
+		<fieldset>
+			<div class="control-group">
+				<label class="control-label" for="backup.export.btn">
+					<fmt:message key="settings.io.export.label"/>
+				</label>
+				<div class="controls">
+					<a class="btn btn-primary" id="backup.export.btn" href="<c:url value='/settings/backup/export.do'/>">
+						<fmt:message key="settings.io.export.button"/>
+					</a>
+				</div>
+			</div>
+		</fieldset>
+	</div>
+</section>
+</c:if>
+
 <section>
 	<h2><fmt:message key="settings.io.title"/></h2>
 	<p><fmt:message key="settings.io.intro"/></p>

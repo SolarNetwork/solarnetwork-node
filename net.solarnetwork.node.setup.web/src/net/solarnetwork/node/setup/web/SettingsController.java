@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web;
@@ -28,10 +26,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import javax.servlet.http.HttpServletResponse;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
-import net.solarnetwork.util.OptionalServiceTracker;
+import net.solarnetwork.util.OptionalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -48,7 +47,7 @@ import org.springframework.web.multipart.MultipartFile;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 @Controller
 @RequestMapping("/settings")
@@ -59,19 +58,30 @@ public class SettingsController {
 	private static final String KEY_PROVIDER_FACTORIES = "factories";
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
+	private static final String KEY_BACKUP_MANAGER = "backupManager";
+	private static final String KEY_BACKUP_SERVICE = "backupService";
 
 	@Autowired
 	@Qualifier("settingsService")
-	private OptionalServiceTracker<SettingsService> settingsService;
+	private OptionalService<SettingsService> settingsServiceTracker;
+
+	@Autowired
+	@Qualifier("backupManager")
+	private OptionalService<BackupManager> backupManagerTracker;
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
-			model.put(KEY_PROVIDERS, service.getProviders());
-			model.put(KEY_PROVIDER_FACTORIES, service.getProviderFactories());
-			model.put(KEY_SETTINGS_SERVICE, service);
-			model.put(KEY_SETTINGS_BACKUPS, service.getAvailableBackups());
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( settingsService != null ) {
+			model.put(KEY_PROVIDERS, settingsService.getProviders());
+			model.put(KEY_PROVIDER_FACTORIES, settingsService.getProviderFactories());
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
+			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
+		}
+		final BackupManager backupManager = backupManagerTracker.service();
+		if ( backupManager != null ) {
+			model.put(KEY_BACKUP_MANAGER, backupManager);
+			model.put(KEY_BACKUP_SERVICE, backupManager.activeBackupService());
 		}
 		return "settings-list";
 	}
@@ -79,8 +89,8 @@ public class SettingsController {
 	@RequestMapping(value = "/manage", method = RequestMethod.GET)
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUID,
 			ModelMap model) {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
 			model.put(KEY_PROVIDERS, service.getProvidersForFactory(factoryUID));
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
 			model.put(KEY_SETTINGS_SERVICE, service);
@@ -91,8 +101,8 @@ public class SettingsController {
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
 	public String addConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
 			ModelMap model) {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
 			String result = service.addProviderFactoryInstance(factoryUID);
 			model.put("result", result);
 		}
@@ -103,8 +113,8 @@ public class SettingsController {
 	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
 	public String deleteConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
 			@RequestParam(value = "instance", required = true) String instanceUID, ModelMap model) {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
 			service.deleteProviderFactoryInstance(factoryUID, instanceUID);
 		}
 		model.put("success", Boolean.TRUE);
@@ -113,8 +123,8 @@ public class SettingsController {
 
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	public String saveSettings(SettingsCommand command, ModelMap model) {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
 			service.updateSettings(command);
 		}
 		model.put("success", Boolean.TRUE);
@@ -125,8 +135,8 @@ public class SettingsController {
 	@ResponseBody
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
 			HttpServletResponse response) throws IOException {
-		if ( settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
 			response.setContentType(MediaType.TEXT_PLAIN.toString());
 			response.setHeader("Content-Disposition", "attachment; filename=settings"
 					+ (backupKey == null ? "" : "_" + backupKey) + ".txt");
@@ -143,8 +153,8 @@ public class SettingsController {
 
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
 	public String importSettigns(@RequestParam("file") MultipartFile file) throws IOException {
-		if ( !file.isEmpty() && settingsService.isAvailable() ) {
-			SettingsService service = settingsService.getService();
+		final SettingsService service = settingsServiceTracker.service();
+		if ( !file.isEmpty() && service != null ) {
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
 			service.importSettingsCSV(reader);
 		}
