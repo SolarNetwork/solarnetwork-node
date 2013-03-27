@@ -54,12 +54,7 @@
 	
 	<service ref="fsBackupService" interface="net.solarnetwork.node.backup.BackupService"/>
 	
-	<service ref="backupManager">
-		<interfaces>
-			<value>net.solarnetwork.node.backup.BackupManager</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-		</interfaces>
-	</service>
+	<service ref="backupManager" interface="net.solarnetwork.node.backup.BackupManager"/>
 	
 	<service ref="backupJob" 
 		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
