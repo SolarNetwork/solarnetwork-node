@@ -57,14 +57,15 @@ public class BackupJob extends AbstractJob implements StatefulJob {
 		final BackupServiceInfo info = service.getInfo();
 		final BackupStatus status = info.getStatus();
 		if ( status != BackupStatus.Configured ) {
-			log.info("BackupService {} is in the {} state; cannot perform backup", info.getKey(), status);
+			log.info("BackupService {} is in the {} state; cannot perform backup", service.getKey(),
+					status);
 			return;
 		}
 
-		log.info("Initiating backup to service {}", info.getKey());
+		log.info("Initiating backup to service {}", service.getKey());
 		final Backup backup = service.performBackup(manager.resourcesForBackup());
 		log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
-				: "initiated"), info.getKey());
+				: "initiated"), service.getKey());
 	}
 
 }

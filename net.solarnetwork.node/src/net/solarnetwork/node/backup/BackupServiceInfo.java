@@ -33,18 +33,6 @@ import java.util.Date;
 public interface BackupServiceInfo {
 
 	/**
-	 * Get a unique key for this service.
-	 * 
-	 * <p>
-	 * This key should be unique among all possible implementations of
-	 * BackupService.
-	 * </p>
-	 * 
-	 * @return a unique key
-	 */
-	String getKey();
-
-	/**
 	 * Get the overall backup service status.
 	 * 
 	 * @return the current status

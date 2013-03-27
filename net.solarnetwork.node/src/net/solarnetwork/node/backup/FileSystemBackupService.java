@@ -82,8 +82,10 @@ import org.springframework.util.FileCopyUtils;
  */
 public class FileSystemBackupService implements BackupService, SettingSpecifierProvider {
 
+	/** The value returned by {@link #getKey()}. */
+	public static final String KEY = FileSystemBackupService.class.getName();
+
 	private static final MessageSource MESSAGE_SOURCE = getMessageSourceInstance();
-	private static final String KEY = FileSystemBackupService.class.getName();
 	private static final String ARCHIVE_NAME_FORMAT = "node-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
 	private static final String ARCHIVE_KEY_NAME_FORMAT = "node-backup-%s.zip";
 	private static final Pattern ARCHIVE_NAME_PAT = Pattern.compile("node-backup-(\\d{8}T\\d{6})\\.zip");
@@ -129,8 +131,13 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	}
 
 	@Override
+	public String getKey() {
+		return KEY;
+	}
+
+	@Override
 	public BackupServiceInfo getInfo() {
-		return new SimpleBackupServiceInfo(KEY, null, getStatus());
+		return new SimpleBackupServiceInfo(null, getStatus());
 	}
 
 	private String getArchiveKey(String archiveName) {

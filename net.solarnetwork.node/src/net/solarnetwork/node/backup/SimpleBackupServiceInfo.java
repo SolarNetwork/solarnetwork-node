@@ -32,30 +32,21 @@ import java.util.Date;
  */
 public class SimpleBackupServiceInfo implements BackupServiceInfo {
 
-	private final String key;
 	private final Date mostRecentBackupDate;
 	private final BackupStatus status;
 
 	/**
 	 * Construct with values.
 	 * 
-	 * @param key
-	 *        the key
 	 * @param mostRecentBackupDate
 	 *        the backup date
 	 * @param status
 	 *        the status
 	 */
-	public SimpleBackupServiceInfo(String key, Date mostRecentBackupDate, BackupStatus status) {
+	public SimpleBackupServiceInfo(Date mostRecentBackupDate, BackupStatus status) {
 		super();
-		this.key = key;
 		this.mostRecentBackupDate = mostRecentBackupDate;
 		this.status = status;
-	}
-
-	@Override
-	public String getKey() {
-		return key;
 	}
 
 	@Override

@@ -70,7 +70,7 @@ public class FileSystemBackupServiceTest {
 	public void getInitialInfo() {
 		BackupServiceInfo info = service.getInfo();
 		assertNotNull(info);
-		assertEquals(FileSystemBackupService.class.getName(), info.getKey());
+		assertEquals(FileSystemBackupService.KEY, service.getKey());
 		assertNull("No backup has been made", info.getMostRecentBackupDate());
 		assertEquals(BackupStatus.Configured, info.getStatus());
 	}

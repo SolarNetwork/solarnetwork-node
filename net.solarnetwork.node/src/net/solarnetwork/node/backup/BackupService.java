@@ -34,6 +34,18 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 public interface BackupService {
 
 	/**
+	 * Get a unique key for this service.
+	 * 
+	 * <p>
+	 * This key should be unique among all possible implementations of
+	 * BackupService.
+	 * </p>
+	 * 
+	 * @return a unique key
+	 */
+	String getKey();
+
+	/**
 	 * Get general status information about the service.
 	 * 
 	 * @return status info (never <em>null</em>)

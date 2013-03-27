@@ -23,12 +23,14 @@
 package net.solarnetwork.node.backup;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.util.DynamicServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -42,8 +44,8 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>backupServiceTracker</dt>
+ * <dd>A tracker for the desired backup service to use.</dd>
  * </dl>
  * 
  * @author matt
@@ -55,7 +57,8 @@ public class DefaultBackupManager implements BackupManager {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private OptionalService<BackupService> backupServiceTracker;
+	private Collection<BackupService> backupServices;
+	private DynamicServiceTracker<BackupService> backupServiceTracker;
 
 	private static MessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
@@ -82,11 +85,15 @@ public class DefaultBackupManager implements BackupManager {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
-		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
-		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
+		BasicRadioGroupSettingSpecifier serviceSpec = new BasicRadioGroupSettingSpecifier(
+				"backupServiceTracker.propertyFilters['key']", FileSystemBackupService.KEY);
+		Map<String, String> serviceSpecValues = new TreeMap<String, String>();
+		for ( BackupService service : backupServices ) {
+			serviceSpecValues.put(service.getKey(), service.getSettingSpecifierProvider()
+					.getDisplayName());
+		}
+		serviceSpec.setValueTitles(serviceSpecValues);
+		results.add(serviceSpec);
 		return results;
 	}
 
@@ -103,8 +110,8 @@ public class DefaultBackupManager implements BackupManager {
 			return Collections.emptyList();
 		}
 		if ( service.getInfo().getStatus() != BackupStatus.Configured ) {
-			log.info("BackupService {} in {} state, can't find resources for backup", service.getInfo()
-					.getKey(), service.getInfo().getStatus());
+			log.info("BackupService {} in {} state, can't find resources for backup", service.getKey(),
+					service.getInfo().getStatus());
 			return Collections.emptyList();
 		}
 
@@ -115,8 +122,12 @@ public class DefaultBackupManager implements BackupManager {
 		return resources;
 	}
 
-	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
+	public void setBackupServiceTracker(DynamicServiceTracker<BackupService> backupServiceTracker) {
 		this.backupServiceTracker = backupServiceTracker;
+	}
+
+	public void setBackupServices(Collection<BackupService> backupServices) {
+		this.backupServices = backupServices;
 	}
 
 }

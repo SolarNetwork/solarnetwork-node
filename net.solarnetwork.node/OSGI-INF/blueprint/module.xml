@@ -34,6 +34,9 @@
 	<reference-list id="serializers" availability="optional" filter="(!(delegating=true))"
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
 	
+	<reference-list id="backupServices" availability="optional"
+		interface="net.solarnetwork.node.backup.BackupService"/>
+	
 	<!-- Published Services -->
 
 	<service ref="scheduler" interface="org.quartz.Scheduler"/>
@@ -43,6 +46,15 @@
 		<service-properties>
 			<entry key="delegating" value="true"/>
 		</service-properties>
+	</service>
+	
+	<service ref="fsBackupService" interface="net.solarnetwork.node.backup.BackupService"/>
+	
+	<service ref="backupManager">
+		<interfaces>
+			<value>net.solarnetwork.node.backup.BackupManager</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
 	</service>
 	
 	<!-- Supporting Services -->
@@ -68,6 +80,24 @@
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
 		<property name="serializers" ref="serializers"/>
+	</bean>
+	
+	<bean id="backupManager" class="net.solarnetwork.node.backup.DefaultBackupManager">
+		<property name="backupServices" ref="backupServices"/>
+		<property name="backupServiceTracker">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupService"/>
+			</bean>	
+		</property>
+	</bean>
+
+	<bean id="fsBackupService" class="net.solarnetwork.node.backup.FileSystemBackupService">
+		<osgix:managed-properties 
+			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService" 
+			autowire-on-update="true"/>
+		<property name="backupDir" value="#{T(java.lang.System).getProperty('java.io.tmpdir')}"/>
+		<property name="additionalBackupCount" value="0"/>
 	</bean>
 
 </blueprint>
