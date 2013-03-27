@@ -8,6 +8,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
  net.solarnetwork.node.test;version="1.0.0"
 Import-Package: 
+ net.solarnetwork.node.backup;version="1.0",
  javax.sql,
  org.apache.commons.logging;version="[1.1,1.2)",
  org.apache.derby.jdbc;resolution:="optional",
@@ -22,6 +23,7 @@ Import-Package:
  org.springframework.beans;version="[3.0,4.0)",
  org.springframework.context;version="[3.0,4.0)",
  org.springframework.core;version="[3.0,4.0)",
+ org.springframework.core.io;version="[3.0,4.0)",
  org.springframework.dao;version="[3.0,4.0)",
  org.springframework.expression;version="[3.0,4.0)",
  org.springframework.jdbc.core.simple;version="[3.0,4.0)",
@@ -31,4 +33,5 @@ Import-Package:
  org.springframework.test.context.junit4;version="[3.0,4.0)",
  org.springframework.test.context.support;version="[3.0,4.0)",
  org.springframework.test.context.transaction;version="[3.0,4.0)",
- org.springframework.transaction.annotation;version="[3.0,4.0)"
+ org.springframework.transaction.annotation;version="[3.0,4.0)",
+ org.springframework.util;version="[3.0,4.0)"
