@@ -79,7 +79,6 @@ SolarNode.Settings.addSlider = function(params) {
  * @param params.value {Number} the initial value
  */
 SolarNode.Settings.addToggle = function(params) {	
-	// boo
 	var toggle = $('#'+params.key);
 	toggle.button();
 	toggle.click(function() {
@@ -94,19 +93,32 @@ SolarNode.Settings.addToggle = function(params) {
 		}
 		SolarNode.Settings.updateSetting(params, value);
 	});
-	/*
-	var toggle = $('#'+params.key).buttonset();
+};
+
+/**
+ * Setup a new radio control.
+ * 
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the slider
+ */
+SolarNode.Settings.addRadio = function(params) {
 	var radios = $('input:radio[name='+params.key+']');
-	radios.filter('[value='+params.value+']').attr('checked', 'checked');
-	toggle.buttonset('refresh');
+	//radios.filter('[value='+params.value+']').attr('checked', 'checked');
 	radios.change(function() {
 			var value = radios.filter(':checked').val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
-	*/
 };
 
-
+/**
+ * Setup a new text field.
+ * 
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the slider
+ * @param params.value {String} the initial value
+ */
 SolarNode.Settings.addTextField = function(params) {
 	var field = $('#'+params.key);
 	field.change(function() {

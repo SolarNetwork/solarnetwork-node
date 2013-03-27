@@ -65,6 +65,39 @@
 						});
 						</script>
 					</c:when>
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.RadioGroupSettingSpecifier')}">
+						<c:forEach items="${setting.valueTitles}" var="entry">
+							<label class="radio inline">
+								<input type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
+									<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
+									/>
+								${entry.value}
+							</label>							
+							<c:set var="help">
+								<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
+							</c:set>
+			
+							<c:if test="${fn:length(help) > 0}">
+								<button type="button" class=" help-popover help-icon" tabindex="-1"
+										data-content="${fn:escapeXml(help)}"
+										data-html="true">
+									<i class="icon-question-sign"></i>
+								</button>
+							</c:if>
+							<br/>
+						</c:forEach>
+						<script>
+						$(function() {
+							SolarNode.Settings.addRadio({
+								key: '${settingId}',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
+							});
+						});
+						</script>
+					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
 							value="${settingValue}" />
