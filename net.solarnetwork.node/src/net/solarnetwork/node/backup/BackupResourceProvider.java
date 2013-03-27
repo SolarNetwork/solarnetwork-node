@@ -1,5 +1,5 @@
 /* ==================================================================
- * BackupManager.java - Mar 27, 2013 9:10:39 AM
+ * BackupResourceProvider.java - Mar 28, 2013 6:07:43 AM
  * 
  * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
@@ -23,28 +23,47 @@
 package net.solarnetwork.node.backup;
 
 import java.util.Iterator;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
- * Manager API for node-level backups.
+ * A provider of {@link BackupResource} instances.
+ * 
+ * <p>
+ * Any system component can register {@link BackupResourceProvider} instances to
+ * include additional resources in backups.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public interface BackupManager extends SettingSpecifierProvider {
+public interface BackupResourceProvider {
 
 	/**
-	 * Get the active {@link BackupService}.
+	 * Get a key, unique among all other {@link BackupResourceProvider}
+	 * instances.
 	 * 
-	 * @return the BackupService, or <em>null</em> if none configured
+	 * <p>
+	 * The key should contain only alpha-numeric and/or the period characters. A
+	 * good candidate is the full class name of the provider.
+	 * </p>
+	 * 
+	 * @return the provider key
 	 */
-	BackupService activeBackupService();
+	String getKey();
 
 	/**
-	 * Get a {@link Iterator} of {@link BackupResource} needing to be backed up.
+	 * Get the resources that should be backed up.
 	 * 
-	 * @return
+	 * @return the resources
 	 */
-	Iterable<BackupResource> resourcesForBackup();
+	Iterator<BackupResource> getBackupResources();
+
+	/**
+	 * Restore a {@link BackupResoruce}.
+	 * 
+	 * @param resource
+	 *        the resource to restore
+	 * @return <em>true</em> if successful, <em>false</em> otherwise
+	 */
+	boolean restoreBackupResource(BackupResource resource);
 
 }

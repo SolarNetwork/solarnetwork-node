@@ -25,12 +25,14 @@ package net.solarnetwork.node.backup;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.UnionIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -46,6 +48,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dl class="class-properties">
  * <dt>backupServiceTracker</dt>
  * <dd>A tracker for the desired backup service to use.</dd>
+ * 
+ * <dt>resourceProviders</dt>
+ * <dd>The collection of {@link BackupResourceProvider} instances that provide
+ * the resources to be backed up.</dd>
  * </dl>
  * 
  * @author matt
@@ -59,6 +65,7 @@ public class DefaultBackupManager implements BackupManager {
 
 	private Collection<BackupService> backupServices;
 	private DynamicServiceTracker<BackupService> backupServiceTracker;
+	private Collection<BackupResourceProvider> resourceProviders;
 
 	private static MessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
@@ -115,11 +122,18 @@ public class DefaultBackupManager implements BackupManager {
 			return Collections.emptyList();
 		}
 
-		//final Date lastBackupDate = service.getInfo().getMostRecentBackupDate();
+		final List<Iterator<BackupResource>> resources = new ArrayList<Iterator<BackupResource>>(10);
+		for ( BackupResourceProvider provider : resourceProviders ) {
+			resources.add(provider.getBackupResources());
+		}
+		return new Iterable<BackupResource>() {
 
-		// TODO see if any settings have been changed and back those up
-		final List<BackupResource> resources = new ArrayList<BackupResource>(50);
-		return resources;
+			@Override
+			public Iterator<BackupResource> iterator() {
+				return new UnionIterator<BackupResource>(resources);
+			}
+
+		};
 	}
 
 	public void setBackupServiceTracker(DynamicServiceTracker<BackupService> backupServiceTracker) {
@@ -128,6 +142,10 @@ public class DefaultBackupManager implements BackupManager {
 
 	public void setBackupServices(Collection<BackupService> backupServices) {
 		this.backupServices = backupServices;
+	}
+
+	public void setResourceProviders(Collection<BackupResourceProvider> resourceProviders) {
+		this.resourceProviders = resourceProviders;
 	}
 
 }

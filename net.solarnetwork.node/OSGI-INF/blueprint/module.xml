@@ -18,6 +18,7 @@
 
 	<osgix:cm-properties id="core.cfg" persistent-id="net.solarnetwork.node.core">
 		<beans:prop key="scheduler.startupDelay">60</beans:prop>
+		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
@@ -36,6 +37,9 @@
 	
 	<reference-list id="backupServices" availability="optional"
 		interface="net.solarnetwork.node.backup.BackupService"/>
+	
+	<reference-list id="backupResourceProviders" availability="optional"
+		interface="net.solarnetwork.node.backup.BackupResourceProvider"/>
 	
 	<!-- Published Services -->
 
@@ -56,6 +60,9 @@
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
+	
+	<service ref="backupJob" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	
 	<!-- Supporting Services -->
 
@@ -90,6 +97,7 @@
 				<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupService"/>
 			</bean>	
 		</property>
+		<property name="resourceProviders" ref="backupResourceProviders"/>
 	</bean>
 
 	<bean id="fsBackupService" class="net.solarnetwork.node.backup.FileSystemBackupService">
@@ -98,6 +106,35 @@
 			autowire-on-update="true"/>
 		<property name="backupDir" value="#{T(java.lang.System).getProperty('java.io.tmpdir')}"/>
 		<property name="additionalBackupCount" value="0"/>
+	</bean>
+
+	<!-- Jobs -->
+
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.JOBS"/>
+	</bean>
+
+	<bean id="backupJob" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger">
+			<bean class="org.springframework.scheduling.quartz.CronTriggerBean">
+				<property name="name" value="backupTrigger"/>
+				<property name="description" value="Backup node configuration data."/>
+				<property name="cronExpression" value="${job.backup.cron}"/>
+				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+			</bean>
+		</property>
+		<property name="jobDetail">
+			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+				<property name="name" value="backupJob"/>
+				<property name="jobClass" value="net.solarnetwork.node.job.BackupJob"/>
+				<property name="jobDataAsMap">
+					<map>
+						<entry key="backupManager" value-ref="backupManager"/>
+					</map>
+				</property>
+			</bean>
+		</property>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 </blueprint>
