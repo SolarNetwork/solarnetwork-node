@@ -25,14 +25,15 @@
 package net.solarnetwork.node.settings.playpen;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-
+import java.util.Map;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -46,15 +47,17 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
-	
+
 	private static final String DEFAULT_STRING = "simple";
 	private static final Integer DEFAULT_INTEGER = 42;
 	private static final Double DEFAULT_SLIDE = 5.0;
-	
+	private static final String[] DEFAULT_RADIO = new String[] { "One", "Two", "Three" };
+
 	private String string = DEFAULT_STRING;
 	private Integer integer = DEFAULT_INTEGER;
 	private Boolean toggle = Boolean.FALSE;
 	private Double slide = DEFAULT_SLIDE;
+	private String radio = DEFAULT_RADIO[0];
 
 	@Override
 	public String getSettingUID() {
@@ -68,7 +71,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 				source.setBundleClassLoader(SettingsPlaypen.class.getClassLoader());
@@ -83,10 +86,21 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
-		results.add(new BasicTextFieldSettingSpecifier("string", DEFAULT_STRING));
-		results.add(new BasicTextFieldSettingSpecifier("integer", DEFAULT_INTEGER.toString()));
-		results.add(new BasicToggleSettingSpecifier("toggle", Boolean.FALSE));
-		results.add(new BasicSliderSettingSpecifier("slide", DEFAULT_SLIDE, 0.0, 10.0, 0.5));
+		SettingsPlaypen defaults = new SettingsPlaypen();
+
+		results.add(new BasicTextFieldSettingSpecifier("string", defaults.getString()));
+		results.add(new BasicTextFieldSettingSpecifier("integer", defaults.getInteger().toString()));
+		results.add(new BasicToggleSettingSpecifier("toggle", defaults.getToggle()));
+		results.add(new BasicSliderSettingSpecifier("slide", defaults.getSlide(), 0.0, 10.0, 0.5));
+
+		BasicRadioGroupSettingSpecifier radioSpec = new BasicRadioGroupSettingSpecifier("radio",
+				defaults.getRadio());
+		Map<String, String> radioValues = new LinkedHashMap<String, String>(3);
+		for ( String s : DEFAULT_RADIO ) {
+			radioValues.put(s, s);
+		}
+		radioSpec.setValueTitles(radioValues);
+		results.add(radioSpec);
 
 		return results;
 	}
@@ -121,6 +135,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	public void setSlide(Double slide) {
 		this.slide = slide;
+	}
+
+	public String getRadio() {
+		return radio;
+	}
+
+	public void setRadio(String radio) {
+		this.radio = radio;
 	}
 
 }
