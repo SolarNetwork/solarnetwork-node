@@ -31,10 +31,12 @@ import java.util.Map;
 import java.util.TreeMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.UnionIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -59,15 +61,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  */
 public class DefaultBackupManager implements BackupManager {
 
-	private static final MessageSource MESSAGE_SOURCE = getMessageSourceInstance();
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private Collection<BackupService> backupServices;
 	private DynamicServiceTracker<BackupService> backupServiceTracker;
 	private Collection<BackupResourceProvider> resourceProviders;
 
-	private static MessageSource getMessageSourceInstance() {
+	private static HierarchicalMessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 		source.setBundleClassLoader(DefaultBackupManager.class.getClassLoader());
 		source.setBasename(DefaultBackupManager.class.getName());
@@ -86,7 +86,17 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public MessageSource getMessageSource() {
-		return MESSAGE_SOURCE;
+		HierarchicalMessageSource source = getMessageSourceInstance();
+		HierarchicalMessageSource child = source;
+		for ( BackupService backupService : backupServices ) {
+			PrefixedMessageSource ps = new PrefixedMessageSource();
+			ps.setDelegate(backupService.getSettingSpecifierProvider().getMessageSource());
+			ps.setPrefix(backupService.getKey() + ".");
+			child.setParentMessageSource(ps);
+			child = ps;
+		}
+
+		return source;
 	}
 
 	@Override
