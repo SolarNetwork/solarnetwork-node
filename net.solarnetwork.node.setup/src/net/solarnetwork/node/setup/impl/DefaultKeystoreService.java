@@ -46,6 +46,9 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.annotation.Resource;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -57,12 +60,17 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 import net.solarnetwork.node.SSLService;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.util.FileCopyUtils;
 
 /**
  * Service for managing a {@link KeyStore}.
@@ -79,7 +87,9 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.0
  */
-public class DefaultKeystoreService implements PKIService, SSLService {
+public class DefaultKeystoreService implements PKIService, SSLService, BackupResourceProvider {
+
+	private static final String BACKUP_RESOURCE_NAME_KEYSTORE = "node.jks";
 
 	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
@@ -104,6 +114,50 @@ public class DefaultKeystoreService implements PKIService, SSLService {
 	private SSLSocketFactory solarInSocketFactory;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	@Override
+	public String getKey() {
+		return DefaultKeystoreService.class.getName();
+	}
+
+	@Override
+	public Iterable<BackupResource> getBackupResources() {
+		File ksFile = new File(keyStorePath);
+		if ( !(ksFile.isFile() && ksFile.canRead()) ) {
+			return Collections.emptyList();
+		}
+		List<BackupResource> result = new ArrayList<BackupResource>(1);
+		result.add(new ResourceBackupResource(new FileSystemResource(ksFile),
+				BACKUP_RESOURCE_NAME_KEYSTORE));
+		return result;
+	}
+
+	@Override
+	public boolean restoreBackupResource(BackupResource resource) {
+		if ( resource != null
+				&& BACKUP_RESOURCE_NAME_KEYSTORE.equalsIgnoreCase(resource.getBackupPath()) ) {
+			final File ksFile = new File(keyStorePath);
+			final File ksDir = ksFile.getParentFile();
+			if ( !ksDir.isDirectory() ) {
+				if ( !ksDir.mkdirs() ) {
+					log.warn("Error creating keystore directory {}", ksDir.getAbsolutePath());
+					return false;
+				}
+			}
+			synchronized ( this ) {
+				try {
+					FileCopyUtils.copy(resource.getInputStream(), new FileOutputStream(ksFile));
+					ksFile.setLastModified(resource.getModificationDate());
+					return true;
+				} catch ( IOException e ) {
+					log.error("IO error restoring keystore resource {}: {}", ksFile.getAbsolutePath(),
+							e.getMessage());
+					return false;
+				}
+			}
+		}
+		return false;
+	}
 
 	private String getKeyStorePassword() {
 		if ( manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ) {
