@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,7 +34,7 @@ import java.util.TreeMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.UnionIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +66,7 @@ public class DefaultBackupManager implements BackupManager {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private Collection<BackupService> backupServices;
-	private DynamicServiceTracker<BackupService> backupServiceTracker;
+	private OptionalService<BackupService> backupServiceTracker;
 	private Collection<BackupResourceProvider> resourceProviders;
 
 	private static HierarchicalMessageSource getMessageSourceInstance() {
@@ -134,7 +136,10 @@ public class DefaultBackupManager implements BackupManager {
 
 		final List<Iterator<BackupResource>> resources = new ArrayList<Iterator<BackupResource>>(10);
 		for ( BackupResourceProvider provider : resourceProviders ) {
-			resources.add(provider.getBackupResources());
+			// map each resource into a sub directory
+			Iterator<BackupResource> itr = provider.getBackupResources().iterator();
+			resources.add(new PrefixedBackupResourceIterator(itr, provider.getKey()));
+
 		}
 		return new Iterable<BackupResource>() {
 
@@ -146,7 +151,123 @@ public class DefaultBackupManager implements BackupManager {
 		};
 	}
 
-	public void setBackupServiceTracker(DynamicServiceTracker<BackupService> backupServiceTracker) {
+	@Override
+	public Backup createBackup() {
+		final BackupService service = activeBackupService();
+		if ( service == null ) {
+			log.debug("No active backup service available, cannot perform backup");
+			return null;
+		}
+		final BackupServiceInfo info = service.getInfo();
+		final BackupStatus status = info.getStatus();
+		if ( status != BackupStatus.Configured ) {
+			log.info("BackupService {} is in the {} state; cannot perform backup", service.getKey(),
+					status);
+			return null;
+		}
+
+		log.info("Initiating backup to service {}", service.getKey());
+		final Backup backup = service.performBackup(resourcesForBackup());
+		log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
+				: "initiated"), service.getKey());
+		return backup;
+	}
+
+	@Override
+	public void restoreBackup(Backup backup) {
+		BackupService service = backupServiceTracker.service();
+		if ( service == null ) {
+			return;
+		}
+		BackupResourceIterable resources = service.getBackupResources(backup);
+		try {
+			for ( final BackupResource r : resources ) {
+				// top-level dir is the  key of the provider
+				final String path = r.getBackupPath();
+				log.debug("Restoring backup {} resource {}", backup.getKey(), path);
+				final int providerIndex = path.indexOf('/');
+				if ( providerIndex != -1 ) {
+					final String providerKey = path.substring(0, providerIndex);
+					for ( BackupResourceProvider provider : resourceProviders ) {
+						if ( providerKey.equals(provider.getKey()) ) {
+							provider.restoreBackupResource(new BackupResource() {
+
+								@Override
+								public String getBackupPath() {
+									return path.substring(providerIndex + 1);
+								}
+
+								@Override
+								public InputStream getInputStream() throws IOException {
+									return r.getInputStream();
+								}
+
+								@Override
+								public long getModificationDate() {
+									return r.getModificationDate();
+								}
+
+							});
+							break;
+						}
+					}
+				}
+			}
+		} finally {
+			try {
+				resources.close();
+			} catch ( IOException e ) {
+				// ignore
+			}
+		}
+	}
+
+	private static class PrefixedBackupResourceIterator implements Iterator<BackupResource> {
+
+		private final Iterator<BackupResource> delegate;
+		private final String prefix;
+
+		private PrefixedBackupResourceIterator(Iterator<BackupResource> delegate, String prefix) {
+			super();
+			this.delegate = delegate;
+			this.prefix = prefix;
+		}
+
+		@Override
+		public boolean hasNext() {
+			return delegate.hasNext();
+		}
+
+		@Override
+		public BackupResource next() {
+			final BackupResource r = delegate.next();
+			return new BackupResource() {
+
+				@Override
+				public String getBackupPath() {
+					return prefix + '/' + r.getBackupPath();
+				}
+
+				@Override
+				public InputStream getInputStream() throws IOException {
+					return r.getInputStream();
+				}
+
+				@Override
+				public long getModificationDate() {
+					return r.getModificationDate();
+				}
+
+			};
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+	}
+
+	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
 		this.backupServiceTracker = backupServiceTracker;
 	}
 

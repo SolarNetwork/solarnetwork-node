@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.backup;
 
-import java.util.Iterator;
-
 /**
  * A provider of {@link BackupResource} instances.
  * 
@@ -53,9 +51,9 @@ public interface BackupResourceProvider {
 	/**
 	 * Get the resources that should be backed up.
 	 * 
-	 * @return the resources
+	 * @return the resources, never <em>null</em>
 	 */
-	Iterator<BackupResource> getBackupResources();
+	Iterable<BackupResource> getBackupResources();
 
 	/**
 	 * Restore a {@link BackupResoruce}.

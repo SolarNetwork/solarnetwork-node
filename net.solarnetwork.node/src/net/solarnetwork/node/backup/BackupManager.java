@@ -47,4 +47,19 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 */
 	Iterable<BackupResource> resourcesForBackup();
 
+	/**
+	 * Create a new Backup, using the active backup service.
+	 * 
+	 * @return the backup, or <em>null</em> if none could be created
+	 */
+	Backup createBackup();
+
+	/**
+	 * Restore all resources from a given backup.
+	 * 
+	 * @param backup
+	 *        the backup to restore
+	 */
+	void restoreBackup(Backup backup);
+
 }

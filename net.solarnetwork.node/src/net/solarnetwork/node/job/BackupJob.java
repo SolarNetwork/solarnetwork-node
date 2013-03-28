@@ -22,11 +22,7 @@
 
 package net.solarnetwork.node.job;
 
-import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.backup.BackupService;
-import net.solarnetwork.node.backup.BackupServiceInfo;
-import net.solarnetwork.node.backup.BackupStatus;
 import net.solarnetwork.util.OptionalService;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
@@ -49,23 +45,6 @@ public class BackupJob extends AbstractJob implements StatefulJob {
 			return;
 		}
 
-		final BackupService service = manager.activeBackupService();
-		if ( service == null ) {
-			log.debug("No active backup service available, cannot perform backup");
-			return;
-		}
-		final BackupServiceInfo info = service.getInfo();
-		final BackupStatus status = info.getStatus();
-		if ( status != BackupStatus.Configured ) {
-			log.info("BackupService {} is in the {} state; cannot perform backup", service.getKey(),
-					status);
-			return;
-		}
-
-		log.info("Initiating backup to service {}", service.getKey());
-		final Backup backup = service.performBackup(manager.resourcesForBackup());
-		log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
-				: "initiated"), service.getKey());
+		manager.createBackup();
 	}
-
 }
