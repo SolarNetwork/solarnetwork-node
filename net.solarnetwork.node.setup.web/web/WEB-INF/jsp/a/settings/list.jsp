@@ -112,6 +112,20 @@
 					</form>
 				</div>
 			</c:if>
+			<div class="control-group">
+				<label class="control-label" for="backup-import-field">
+					<fmt:message key="backup.import.label"/>
+				</label>
+				<form class="controls form-inline" action="<c:url value='/settings/importBackup.do'/>" method="post" enctype="multipart/form-data">
+  					<input class="span3" id="backup-import-field" type="file" name="file"/>
+  					<button class="btn btn-primary" type="submit"><fmt:message key="backup.import.button"/></button>
+					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-content="<fmt:message key='backup.import.info'/>"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+				</form>
+			</div>
 		</fieldset>
 		<div class="form-actions">
 			<form class="form-inline" action="<c:url value='/settings/backupNow.do'/>" method="post">

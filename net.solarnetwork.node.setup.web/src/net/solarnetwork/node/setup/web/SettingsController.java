@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.setup.web;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -30,13 +29,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.backup.BackupResource;
-import net.solarnetwork.node.backup.BackupResourceIterable;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
@@ -207,40 +202,22 @@ public class SettingsController {
 		if ( manager == null ) {
 			return;
 		}
-		final BackupService service = manager.activeBackupService();
-		if ( service == null ) {
-			return;
-		}
-
-		final Backup backup = service.backupForKey(backupKey);
-		if ( backup == null ) {
-			return;
-		}
 
 		// create the zip archive for the backup files
 		response.setContentType("application/zip");
 		response.setHeader("Content-Disposition", "attachment; filename=node-backup"
 				+ (backupKey == null ? "" : "_" + backupKey) + ".zip");
-		ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
-		try {
-			BackupResourceIterable resources = service.getBackupResources(backup);
-			for ( BackupResource r : resources ) {
-				zos.putNextEntry(new ZipEntry(r.getBackupPath()));
-				FileCopyUtils.copy(r.getInputStream(), new FilterOutputStream(zos) {
+		manager.exportBackupArchive(backupKey, response.getOutputStream());
+	}
 
-					@Override
-					public void close() throws IOException {
-						// FileCopyUtils closed the stream, which we don't want here
-					}
-
-				});
-			}
-			resources.close();
-		} finally {
-			zos.flush();
-			zos.finish();
-			zos.close();
+	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
+	public String importBackup(@RequestParam("file") MultipartFile file) throws IOException {
+		final BackupManager manager = backupManagerTracker.service();
+		if ( manager == null ) {
+			return "redirect:/settings.do";
 		}
+		manager.importBackupArchive(file.getInputStream());
+		return "redirect:/settings.do";
 	}
 
 }
