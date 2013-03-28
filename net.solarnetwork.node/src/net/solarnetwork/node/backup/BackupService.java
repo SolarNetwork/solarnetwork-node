@@ -66,6 +66,15 @@ public interface BackupService {
 	Backup performBackup(Iterable<BackupResource> resources);
 
 	/**
+	 * Get a backup for a given backup key.
+	 * 
+	 * @param key
+	 *        the key
+	 * @return the backup
+	 */
+	Backup backupForKey(String key);
+
+	/**
 	 * Get a collection of Backup instances known by this service.
 	 * 
 	 * <p>

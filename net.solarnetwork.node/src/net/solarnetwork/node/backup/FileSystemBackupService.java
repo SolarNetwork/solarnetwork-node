@@ -83,6 +83,8 @@ import org.springframework.util.FileCopyUtils;
  */
 public class FileSystemBackupService implements BackupService, SettingSpecifierProvider {
 
+	private static final String ARCHIVE_NAME_DATE_FORMAT = "yyyyMMdd'T'HHmmss";
+
 	/** The value returned by {@link #getKey()}. */
 	public static final String KEY = FileSystemBackupService.class.getName();
 
@@ -152,6 +154,15 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			return m.group(1);
 		}
 		return archiveName;
+	}
+
+	@Override
+	public Backup backupForKey(String key) {
+		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT, key));
+		if ( !archiveFile.canRead() ) {
+			return null;
+		}
+		return createBackupForFile(archiveFile, new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT));
 	}
 
 	@Override
@@ -302,6 +313,19 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		return archives;
 	}
 
+	private SimpleBackup createBackupForFile(File f, SimpleDateFormat sdf) {
+		Matcher m = ARCHIVE_NAME_PAT.matcher(f.getName());
+		if ( m.matches() ) {
+			try {
+				Date d = sdf.parse(m.group(1));
+				return new SimpleBackup(d, m.group(1), f.length(), true);
+			} catch ( ParseException e ) {
+				log.error("Error parsing date from archive " + f.getName() + ": " + e.getMessage());
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public Collection<Backup> getAvailableBackups() {
 		File[] archives = getAvailableBackupFiles();
@@ -309,16 +333,11 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			return Collections.emptyList();
 		}
 		List<Backup> result = new ArrayList<Backup>(archives.length);
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+		SimpleDateFormat sdf = new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT);
 		for ( File f : archives ) {
-			Matcher m = ARCHIVE_NAME_PAT.matcher(f.getName());
-			if ( m.matches() ) {
-				try {
-					Date d = sdf.parse(m.group(1));
-					result.add(new SimpleBackup(d, m.group(1), f.length(), true));
-				} catch ( ParseException e ) {
-					log.error("Error parsing date from archive " + f.getName() + ": " + e.getMessage());
-				}
+			SimpleBackup b = createBackupForFile(f, sdf);
+			if ( b != null ) {
+				result.add(b);
 			}
 		}
 		return result;
