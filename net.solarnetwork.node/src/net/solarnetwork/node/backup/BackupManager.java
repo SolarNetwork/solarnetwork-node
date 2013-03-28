@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
@@ -62,4 +65,30 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 */
 	void restoreBackup(Backup backup);
 
+	/**
+	 * Export a backup zip archive.
+	 * 
+	 * @param backupKey
+	 *        the backup to export
+	 * @param out
+	 *        the output stream to export to
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	public void exportBackupArchive(String backupKey, OutputStream out) throws IOException;
+
+	/**
+	 * Import a backup zip archive.
+	 * 
+	 * <p>
+	 * This method can import an archive exported via
+	 * {@link #exportBackupArchive(String, OutputStream)}.
+	 * </p>
+	 * 
+	 * @param archive
+	 *        the archive input stream to import
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	public void importBackupArchive(InputStream archive) throws IOException;
 }

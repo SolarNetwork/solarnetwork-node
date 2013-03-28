@@ -22,8 +22,11 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,6 +34,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
@@ -41,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.util.FileCopyUtils;
 
 /**
  * Default implementation of {@link BackupManager}.
@@ -173,6 +180,88 @@ public class DefaultBackupManager implements BackupManager {
 					: "initiated"), service.getKey());
 		}
 		return backup;
+	}
+
+	@Override
+	public void exportBackupArchive(String backupKey, OutputStream out) throws IOException {
+		final BackupService service = activeBackupService();
+		if ( service == null ) {
+			return;
+		}
+
+		final Backup backup = service.backupForKey(backupKey);
+		if ( backup == null ) {
+			return;
+		}
+
+		// create the zip archive for the backup files
+		ZipOutputStream zos = new ZipOutputStream(out);
+		try {
+			BackupResourceIterable resources = service.getBackupResources(backup);
+			for ( BackupResource r : resources ) {
+				zos.putNextEntry(new ZipEntry(r.getBackupPath()));
+				FileCopyUtils.copy(r.getInputStream(), new FilterOutputStream(zos) {
+
+					@Override
+					public void close() throws IOException {
+						// FileCopyUtils closed the stream, which we don't want here
+					}
+
+				});
+			}
+			resources.close();
+		} finally {
+			zos.flush();
+			zos.finish();
+			zos.close();
+		}
+	}
+
+	@Override
+	public void importBackupArchive(InputStream archive) throws IOException {
+		final ZipInputStream zin = new ZipInputStream(archive);
+		while ( true ) {
+			final ZipEntry entry = zin.getNextEntry();
+			if ( entry == null ) {
+				break;
+			}
+			final String path = entry.getName();
+			log.debug("Restoring backup resource {}", path);
+			final int providerIndex = path.indexOf('/');
+			if ( providerIndex != -1 ) {
+				final String providerKey = path.substring(0, providerIndex);
+				for ( BackupResourceProvider provider : resourceProviders ) {
+					if ( providerKey.equals(provider.getKey()) ) {
+						provider.restoreBackupResource(new BackupResource() {
+
+							@Override
+							public String getBackupPath() {
+								return path.substring(providerIndex + 1);
+							}
+
+							@Override
+							public InputStream getInputStream() throws IOException {
+								return new FilterInputStream(zin) {
+
+									@Override
+									public void close() throws IOException {
+										// don't close me
+									}
+
+								};
+							}
+
+							@Override
+							public long getModificationDate() {
+								return entry.getTime();
+							}
+
+						});
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	@Override
