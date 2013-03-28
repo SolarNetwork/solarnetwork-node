@@ -85,9 +85,14 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	/** The value returned by {@link #getKey()}. */
 	public static final String KEY = FileSystemBackupService.class.getName();
 
+	/**
+	 * A format for turning a {@link Backup#getKey()} value into a zip file
+	 * name.
+	 */
+	public static final String ARCHIVE_KEY_NAME_FORMAT = "node-backup-%s.zip";
+
 	private static final MessageSource MESSAGE_SOURCE = getMessageSourceInstance();
 	private static final String ARCHIVE_NAME_FORMAT = "node-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
-	private static final String ARCHIVE_KEY_NAME_FORMAT = "node-backup-%s.zip";
 	private static final Pattern ARCHIVE_NAME_PAT = Pattern.compile("node-backup-(\\d{8}T\\d{6})\\.zip");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -168,6 +173,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		final File archiveFile = new File(backupDir, archiveName);
 		final String archiveKey = getArchiveKey(archiveName);
 		log.info("Starting backup to archive {}", archiveName);
+		log.trace("Backup archive: {}", archiveFile.getAbsolutePath());
 		Backup backup = null;
 		ZipOutputStream zos = null;
 		try {
@@ -190,8 +196,10 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			log.info("Backup complete to archive {}", archiveName);
 			backup = new SimpleBackup(now.getTime(), archiveKey, archiveFile.length(), true);
 		} catch ( IOException e ) {
+			log.error("IO error creating backup: {}", e.getMessage());
 			setStatus(Error);
 		} catch ( RuntimeException e ) {
+			log.error("Error creating backup: {}", e.getMessage());
 			setStatus(Error);
 		} finally {
 			if ( zos != null ) {
@@ -248,6 +256,9 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	 */
 	public void removeAllBackups() {
 		File[] archives = backupDir.listFiles(new ArchiveFilter());
+		if ( archives == null ) {
+			return;
+		}
 		for ( File archive : archives ) {
 			log.debug("Deleting backup archive {}", archive.getName());
 			if ( !archive.delete() ) {
