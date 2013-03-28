@@ -152,7 +152,7 @@ public class SettingsController {
 	}
 
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
-	public String importSettigns(@RequestParam("file") MultipartFile file) throws IOException {
+	public String importSettings(@RequestParam("file") MultipartFile file) throws IOException {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( !file.isEmpty() && service != null ) {
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
