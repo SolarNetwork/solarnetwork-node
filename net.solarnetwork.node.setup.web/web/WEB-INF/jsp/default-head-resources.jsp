@@ -7,6 +7,8 @@
 <pack:script> 
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
+	/js-lib/spin.js
+	/js-lib/jquery.spin.js
 	/js/global.js
 	/js/certs.js
 	/js/settings.js

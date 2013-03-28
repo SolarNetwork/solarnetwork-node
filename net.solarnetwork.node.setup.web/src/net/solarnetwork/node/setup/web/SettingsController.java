@@ -160,4 +160,18 @@ public class SettingsController {
 		}
 		return "redirect:/settings.do";
 	}
+
+	@RequestMapping(value = "/backupNow", method = RequestMethod.POST)
+	public String initiateBackup(ModelMap model) {
+		BackupManager manager = backupManagerTracker.service();
+		boolean result = false;
+		if ( manager != null ) {
+			manager.createBackup();
+			result = true;
+		}
+		model.put("success", result);
+		return "json";
+
+	}
+
 }

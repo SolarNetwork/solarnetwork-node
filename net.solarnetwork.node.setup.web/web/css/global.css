@@ -11,6 +11,10 @@ body {
 	font-size: 11pt;
 }
 
+.btn .spinner{
+    margin:0 auto 0 auto;
+}
+
 div.content {
 	background-color: #F0F0F0;
 	margin: 20px auto;

@@ -89,6 +89,15 @@
 
 		<fieldset>
 			<div class="control-group">
+				<label class="control-label" for="backup-now-btn">
+					<fmt:message key="backup.now.label"/>
+				</label>
+				<form class="controls form-inline" action="<c:url value='/settings/backupNow.do'/>" method="post">
+  					<button class="btn btn-primary" type="submit" id="backup-now-btn"
+  						data-loading-text=" "><fmt:message key="backup.now.button"/></button>
+				</form>
+			</div>
+			<div class="control-group">
 				<label class="control-label" for="backup.export.btn">
 					<fmt:message key="settings.io.export.label"/>
 				</label>
