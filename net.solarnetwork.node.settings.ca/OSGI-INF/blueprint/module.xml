@@ -30,29 +30,30 @@
 	<!-- Settings backup job -->
 
 	<bean id="settingsBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="settingsBackupTrigger"/>
-		<property name="jobDetail" ref="settingsBackupJob"/>
+		<property name="trigger">
+			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+				<property name="name" value="settingsBackupTrigger"/>
+				<property name="cronExpression" value="${job.settingsBackup.cron}"/>
+				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+				<property name="randomSecond" value="true"/>
+			</bean>
+		</property>
+		<property name="jobDetail">
+			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+				<property name="name" value="settingsBackupJob"/>
+				<property name="jobClass" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
+				<property name="jobDataAsMap">
+					<map>
+						<entry key="settingDao" value-ref="settingDao"/>
+						<entry key="settingsService" value-ref="settingsService"/>
+					</map>
+				</property>
+			</bean>
+		</property>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames" value="net.solarnetwork.node.settings.ca.JOBS"/>
 			</bean>
-		</property>
-	</bean>
-
-	<bean id="settingsBackupTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
-		<property name="jobDetail" ref="settingsBackupJob"/>
-		<property name="cronExpression" value="${job.settingsBackup.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-		<property name="randomSecond" value="true"/>
-	</bean>
-	
-	<bean id="settingsBackupJob" class="org.springframework.scheduling.quartz.JobDetailBean">
-		<property name="jobClass" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="settingDao" value-ref="settingDao"/>
-				<entry key="settingsService" value-ref="settingsService"/>
-			</map>
 		</property>
 	</bean>
 	
@@ -79,7 +80,12 @@
 	
 	<service ref="settingsBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	
-	<service ref="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
+	<service ref="settingsService">
+		<interfaces>
+			<value>net.solarnetwork.node.settings.SettingsService</value>
+			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
+		</interfaces>
+	</service>
 	
 	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">
 		<reference-listener ref="settingsService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>

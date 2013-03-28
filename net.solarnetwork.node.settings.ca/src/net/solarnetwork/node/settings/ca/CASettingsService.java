@@ -26,12 +26,15 @@ package net.solarnetwork.node.settings.ca;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.text.ParseException;
@@ -51,6 +54,9 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
@@ -72,6 +78,7 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -100,7 +107,7 @@ import org.supercsv.prefs.CsvPreference;
  * @author matt
  * @version 1.0
  */
-public class CASettingsService implements SettingsService {
+public class CASettingsService implements SettingsService, BackupResourceProvider {
 
 	/** The OSGi service property key for the setting PID. */
 	public static final String OSGI_PROPERTY_KEY_SETTING_PID = "settingPid";
@@ -647,6 +654,43 @@ public class CASettingsService implements SettingsService {
 			return null;
 		}
 		return null;
+	}
+
+	@Override
+	public String getKey() {
+		return CASettingsService.class.getName();
+	}
+
+	private static final String BACKUP_RESOURCE_SETTINGS_CSV = "settings.csv";
+
+	@Override
+	public Iterable<BackupResource> getBackupResources() {
+		// create resource from our settings CSV data
+		ByteArrayOutputStream byos = new ByteArrayOutputStream();
+		try {
+			OutputStreamWriter writer = new OutputStreamWriter(byos, "UTF-8");
+			exportSettingsCSV(writer);
+		} catch ( IOException e ) {
+			log.error("Unable to create settings backup resource", e);
+		}
+		List<BackupResource> resources = new ArrayList<BackupResource>(1);
+		resources.add(new ResourceBackupResource(new ByteArrayResource(byos.toByteArray()),
+				BACKUP_RESOURCE_SETTINGS_CSV));
+		return resources;
+	}
+
+	@Override
+	public boolean restoreBackupResource(BackupResource resource) {
+		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(resource.getBackupPath()) ) {
+			try {
+				InputStreamReader reader = new InputStreamReader(resource.getInputStream(), "UTF-8");
+				importSettingsCSV(reader);
+				return true;
+			} catch ( IOException e ) {
+				log.error("Unable to restore settings backup resource", e);
+			}
+		}
+		return false;
 	}
 
 	private static class FilenameReverseComparator implements Comparator<File> {
