@@ -88,26 +88,37 @@
 		</fieldset>
 
 		<fieldset>
-			<div class="control-group">
-				<label class="control-label" for="backup-now-btn">
-					<fmt:message key="backup.now.label"/>
-				</label>
-				<form class="controls form-inline" action="<c:url value='/settings/backupNow.do'/>" method="post">
-  					<button class="btn btn-primary" type="submit" id="backup-now-btn"
-  						data-loading-text=" "><fmt:message key="backup.now.button"/></button>
-				</form>
-			</div>
-			<div class="control-group">
-				<label class="control-label" for="backup.export.btn">
-					<fmt:message key="settings.io.export.label"/>
-				</label>
-				<div class="controls">
-					<a class="btn btn-primary" id="backup.export.btn" href="<c:url value='/settings/backup/export.do'/>">
-						<fmt:message key="settings.io.export.button"/>
-					</a>
+			<c:if test="${fn:length(backups) > 0}">
+				<div class="control-group">
+					<label class="control-label" for="backup-backups">
+						<fmt:message key="backup.backups.label"/>
+					</label>
+					<form class="controls form-inline" action="<c:url value='/settings/exportBackup.do'/>">
+						<select name="backup" class="span3" id="backup-backups">
+							<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
+								<option value="${backup.key}">
+									<fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/>
+								</option>
+							</c:forEach>
+						</select>
+						<button type="submit" class="btn btn-primary">
+							<fmt:message key="backup.download.button"/>
+						</button>
+						<button type="button" class="help-popover help-icon" tabindex="-1"
+								data-content="<fmt:message key='backup.backups.info'/>"
+								data-html="true">
+							<i class="icon-question-sign"></i>
+						</button>
+					</form>
 				</div>
-			</div>
+			</c:if>
 		</fieldset>
+		<div class="form-actions">
+			<form class="form-inline" action="<c:url value='/settings/backupNow.do'/>" method="post">
+ 				<button class="btn btn-primary" type="submit" id="backup-now-btn"
+ 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
+			</form>
+		</div>
 	</div>
 </section>
 </c:if>

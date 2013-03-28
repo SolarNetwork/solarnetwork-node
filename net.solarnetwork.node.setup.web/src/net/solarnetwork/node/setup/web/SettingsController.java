@@ -25,8 +25,14 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
@@ -60,6 +66,7 @@ public class SettingsController {
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
+	private static final String KEY_BACKUPS = "backups";
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -81,7 +88,20 @@ public class SettingsController {
 		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
-			model.put(KEY_BACKUP_SERVICE, backupManager.activeBackupService());
+			BackupService service = backupManager.activeBackupService();
+			model.put(KEY_BACKUP_SERVICE, service);
+			if ( service != null ) {
+				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
+				Collections.sort(backups, new Comparator<Backup>() {
+
+					@Override
+					public int compare(Backup o1, Backup o2) {
+						// sort in reverse chronological order (newest to oldest)
+						return o2.getDate().compareTo(o1.getDate());
+					}
+				});
+				model.put(KEY_BACKUPS, backups);
+			}
 		}
 		return "settings-list";
 	}
