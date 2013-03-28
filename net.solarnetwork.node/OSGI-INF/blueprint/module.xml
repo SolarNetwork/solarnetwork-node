@@ -99,8 +99,6 @@
 		<osgix:managed-properties 
 			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService" 
 			autowire-on-update="true"/>
-		<property name="backupDir" value="#{T(java.lang.System).getProperty('java.io.tmpdir')}"/>
-		<property name="additionalBackupCount" value="0"/>
 	</bean>
 
 	<!-- Jobs -->

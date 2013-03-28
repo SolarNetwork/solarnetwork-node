@@ -168,8 +168,10 @@ public class DefaultBackupManager implements BackupManager {
 
 		log.info("Initiating backup to service {}", service.getKey());
 		final Backup backup = service.performBackup(resourcesForBackup());
-		log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
-				: "initiated"), service.getKey());
+		if ( backup != null ) {
+			log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
+					: "initiated"), service.getKey());
+		}
 		return backup;
 	}
 

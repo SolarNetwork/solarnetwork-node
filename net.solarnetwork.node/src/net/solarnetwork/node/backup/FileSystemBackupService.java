@@ -52,6 +52,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import org.slf4j.Logger;
@@ -97,7 +98,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private File backupDir = new File("/var/tmp");
+	private File backupDir = new File(System.getProperty("java.io.tmpdir"));
 	private int additionalBackupCount = 0;
 	private BackupStatus status = Configured;
 
@@ -130,8 +131,8 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		results.add(new BasicTitleSettingSpecifier("status", getStatus().toString(), true));
 		results.add(new BasicTextFieldSettingSpecifier("backupDir", defaults.getBackupDir()
 				.getAbsolutePath()));
-		results.add(new BasicTextFieldSettingSpecifier("additionalBackupCount", String.valueOf(defaults
-				.getAdditionalBackupCount())));
+		results.add(new BasicSliderSettingSpecifier("additionalBackupCount", (double) defaults
+				.getAdditionalBackupCount(), 0.0, 10.0, 1.0));
 		return results;
 	}
 
