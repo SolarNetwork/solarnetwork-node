@@ -106,7 +106,15 @@ SolarNode.Class.Slider = function(el, config) {
 	var tracking = false;
 	
 	var layoutSubviews = function(percent) {
-		var cssPos = (100 * (percent === undefined ? value / (max - min) : percent))+'%';
+		if ( percent === undefined ) {
+			percent = value / (max - min);
+		}
+		var barWidth = ui.width();
+		var handleWidth = uiHandle.width();
+		var usableWidth = barWidth - handleWidth;
+		var offsetPercent = (handleWidth * 0.5) / barWidth;
+		var viewPercent = ((usableWidth * percent) / barWidth) + offsetPercent;
+		var cssPos = (100 * viewPercent)+'%';
 		uiRange.css('width', cssPos);
 		uiHandle.css('left', cssPos);
 		if ( showValue === true ) {
@@ -122,7 +130,10 @@ SolarNode.Class.Slider = function(el, config) {
 		if ( !tracking ) {
 			return;
 		}
-		var percent = (event.clientX - ui.offset().left) / ui.width();
+		var barWidth = ui.width();
+		var handleWidth = uiHandle.width();
+		var usableWidth = barWidth - handleWidth;
+		var percent = (event.clientX - ui.offset().left - handleWidth) / usableWidth;
 		if ( percent > 1 ) {
 			percent = 1;
 		} else if ( percent < 0 ) {
