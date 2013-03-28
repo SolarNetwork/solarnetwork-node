@@ -68,6 +68,10 @@ public interface BackupService {
 	/**
 	 * Get a collection of Backup instances known by this service.
 	 * 
+	 * <p>
+	 * These should be ideally ordered in newest to oldest order.
+	 * </p>
+	 * 
 	 * @return the available backups, never <em>null</em>
 	 */
 	Collection<Backup> getAvailableBackups();
