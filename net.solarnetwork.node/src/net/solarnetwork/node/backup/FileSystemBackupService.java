@@ -99,7 +99,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private File backupDir = new File(System.getProperty("java.io.tmpdir"));
-	private int additionalBackupCount = 0;
+	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
 
 	private static MessageSource getMessageSourceInstance() {
@@ -196,6 +196,18 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			zos.finish();
 			log.info("Backup complete to archive {}", archiveName);
 			backup = new SimpleBackup(now.getTime(), archiveKey, archiveFile.length(), true);
+
+			// clean out older backups
+			File[] backupFiles = getAvailableBackupFiles();
+			if ( backupFiles != null && backupFiles.length > additionalBackupCount + 1 ) {
+				// delete older files
+				for ( int i = additionalBackupCount + 1; i < backupFiles.length; i++ ) {
+					log.info("Deleting old backup archive {}", backupFiles[i].getName());
+					if ( !backupFiles[i].delete() ) {
+						log.warn("Unable to delete backup archive {}", backupFiles[i].getAbsolutePath());
+					}
+				}
+			}
 		} catch ( IOException e ) {
 			log.error("IO error creating backup: {}", e.getMessage());
 			setStatus(Error);
@@ -268,16 +280,34 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		}
 	}
 
+	/**
+	 * Get all available backup files, ordered in desending backup order (newest
+	 * to oldest).
+	 * 
+	 * @return ordered array of backup files, or <em>null</em> if directory does
+	 *         not exist
+	 */
+	private File[] getAvailableBackupFiles() {
+		File[] archives = backupDir.listFiles(new ArchiveFilter());
+		if ( archives != null ) {
+			Arrays.sort(archives, new Comparator<File>() {
+
+				@Override
+				public int compare(File o1, File o2) {
+					// sort in reverse order, so most recent backup first
+					return o2.getName().compareTo(o1.getName());
+				}
+			});
+		}
+		return archives;
+	}
+
 	@Override
 	public Collection<Backup> getAvailableBackups() {
-		File[] archives = backupDir.listFiles(new ArchiveFilter());
-		Arrays.sort(archives, new Comparator<File>() {
-
-			@Override
-			public int compare(File o1, File o2) {
-				return o1.getName().compareTo(o2.getName());
-			}
-		});
+		File[] archives = getAvailableBackupFiles();
+		if ( archives == null ) {
+			return Collections.emptyList();
+		}
 		List<Backup> result = new ArrayList<Backup>(archives.length);
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
 		for ( File f : archives ) {
