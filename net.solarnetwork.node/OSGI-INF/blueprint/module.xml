@@ -58,6 +58,14 @@
 	
 	<service ref="backupJob" 
 		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+		
+	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
+		<bean class="net.solarnetwork.node.backup.FileBackupResourceProvider">
+			<osgix:managed-properties 
+				persistent-id="net.solarnetwork.node.backup.FileBackupResourceProvider" 
+				autowire-on-update="true"/>
+		</bean>
+	</service>
 	
 	<!-- Supporting Services -->
 
