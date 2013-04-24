@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * A base class with properties to support {@link SerialPort} communication.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class SerialPortSupport extends SerialPortBean {
 
@@ -307,7 +307,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 				int magicIdx = 0;
 				byte[] sinkBuf = sink.toByteArray();
 				boolean found = false;
-				for ( ; magicIdx < (sinkBuf.length - magicBytes.length); magicIdx++ ) {
+				for ( ; magicIdx < (sinkBuf.length - magicBytes.length + 1); magicIdx++ ) {
 					found = true;
 					for ( int j = 0; j < magicBytes.length; j++ ) {
 						if ( sinkBuf[magicIdx + j] != magicBytes[j] ) {
@@ -319,9 +319,6 @@ public abstract class SerialPortSupport extends SerialPortBean {
 						break;
 					}
 				}
-
-				sink.reset();
-				sinkSize = 0;
 
 				if ( found ) {
 					// magic found!
@@ -335,8 +332,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 
 					int count = readLength;
 					count = Math.min(readLength, sinkBuf.length - magicIdx);
+					sink.reset();
 					sink.write(sinkBuf, magicIdx, count);
-					sinkSize += count;
+					sinkSize = count;
 					if ( eventLog.isTraceEnabled() ) {
 						eventLog.trace("Sink contains {} bytes: {}", sinkSize,
 								asciiDebugValue(sink.toByteArray()));
@@ -347,6 +345,12 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					}
 					eventLog.trace("Need {} more bytes of data", (readLength - sinkSize));
 					append = true;
+				} else if ( sinkBuf.length > magicBytes.length ) {
+					// haven't found the magic yet, and the sink is larger than magic size, so 
+					// trim sink down to just magic size
+					sink.reset();
+					sink.write(sinkBuf, sinkBuf.length - magicBytes.length - 1, magicBytes.length);
+					sinkSize = magicBytes.length;
 				}
 			}
 		} catch ( IOException e ) {
@@ -374,6 +378,183 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.trace("Finished reading data: {}", asciiDebugValue(sink.toByteArray()));
 		}
+	}
+
+	private boolean findEOFBytes(ByteArrayOutputStream sink, int appendedLength, byte[] eofBytes) {
+		byte[] sinkBuf = sink.toByteArray();
+		int eofIdx = Math.max(0, sinkBuf.length - appendedLength - eofBytes.length);
+		boolean foundEOF = false;
+		for ( ; eofIdx < (sinkBuf.length - eofBytes.length); eofIdx++ ) {
+			foundEOF = true;
+			for ( int j = 0; j < eofBytes.length; j++ ) {
+				if ( sinkBuf[eofIdx + j] != eofBytes[j] ) {
+					foundEOF = false;
+					break;
+				}
+			}
+			if ( foundEOF ) {
+				break;
+			}
+		}
+		if ( foundEOF ) {
+			if ( eventLog.isDebugEnabled() ) {
+				eventLog.debug("Found desired {} EOF bytes at index {}: {}", asciiDebugValue(eofBytes),
+						eofIdx, asciiDebugValue(sink.toByteArray()));
+			}
+			sink.reset();
+			sink.write(sinkBuf, 0, eofIdx + eofBytes.length);
+			return true;
+		}
+		eventLog.debug("Looking for EOF bytes {}", asciiDebugValue(eofBytes));
+		return false;
+	}
+
+	/**
+	 * Handle a SerialEvent, looking for "magic" start and end data markers.
+	 * 
+	 * <p>
+	 * <b>Note</b> that the <em>magic</em> bytes <em>are</em> returned by this
+	 * method.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event
+	 * @param in
+	 *        the InputStream to read data from
+	 * @param sink
+	 *        the output buffer to store the collected bytes
+	 * @param magicBytes
+	 *        the "magic" bytes to look for in the event stream
+	 * @param eofBytes
+	 *        the "end of file" bytes, that signals the end of the message to
+	 *        read
+	 * @return <em>true</em> if the data has been found
+	 * @throws TimeoutException
+	 *         if {@code maxWait} is configured and that amount of time passes
+	 *         before the requested serial data is read
+	 */
+	protected boolean handleSerialEvent(final SerialPortEvent event, final InputStream in,
+			final ByteArrayOutputStream sink, final byte[] magicBytes, final byte[] eofBytes)
+			throws TimeoutException, InterruptedException, ExecutionException {
+		if ( timeout < 1 ) {
+			return handleSerialEventWithoutTimeout(event, in, sink, magicBytes, eofBytes);
+		}
+
+		Callable<Boolean> task = new Callable<Boolean>() {
+
+			@Override
+			public Boolean call() throws Exception {
+				return handleSerialEventWithoutTimeout(event, in, sink, magicBytes, eofBytes);
+			}
+		};
+		Future<Boolean> future = executor.submit(task);
+		boolean result = false;
+		final long maxMs = Math.max(1, this.maxWait - System.currentTimeMillis() + timeout);
+		eventLog.trace("Waiting at most {}ms for data", maxMs);
+		try {
+			result = future.get(maxMs, TimeUnit.MILLISECONDS);
+		} catch ( InterruptedException e ) {
+			log.debug("Interrupted waiting for serial data");
+			throw e;
+		} catch ( ExecutionException e ) {
+			// log stack trace in DEBUG
+			log.debug("Exception thrown reading from serial port", e.getCause());
+			throw e;
+		} catch ( TimeoutException e ) {
+			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
+			future.cancel(true);
+			throw e;
+		}
+		return result;
+	}
+
+	private boolean handleSerialEventWithoutTimeout(SerialPortEvent event, InputStream in,
+			ByteArrayOutputStream sink, byte[] magicBytes, byte[] eofBytes) {
+		int sinkSize = sink.size();
+		boolean append = sinkSize > 0;
+		byte[] buf = new byte[1024];
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Sink contains {} bytes: {}", sinkSize, asciiDebugValue(sink.toByteArray()));
+		}
+		try {
+			int len = -1;
+			final int max = Math.min(in.available(), buf.length);
+			eventLog.trace("Attempting to read {} bytes from serial port", max);
+			while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
+				sink.write(buf, 0, len);
+				sinkSize += len;
+
+				if ( append ) {
+					// look for eofBytes, starting where we last appended
+					if ( findEOFBytes(sink, len, eofBytes) ) {
+						if ( eventLog.isDebugEnabled() ) {
+							eventLog.debug("Found desired EOF bytes: {}", asciiDebugValue(eofBytes));
+						}
+						return true;
+					}
+					eventLog.debug("Looking for EOF bytes {}", asciiDebugValue(eofBytes));
+					return false;
+				} else {
+					eventLog.trace("Looking for {} magic bytes {} in buffer {}", magicBytes.length,
+							asciiDebugValue(magicBytes), asciiDebugValue(sink.toByteArray()));
+				}
+
+				// look for magic in the buffer
+				int magicIdx = 0;
+				byte[] sinkBuf = sink.toByteArray();
+				boolean found = false;
+				for ( ; magicIdx < (sinkBuf.length - magicBytes.length + 1); magicIdx++ ) {
+					found = true;
+					for ( int j = 0; j < magicBytes.length; j++ ) {
+						if ( sinkBuf[magicIdx + j] != magicBytes[j] ) {
+							found = false;
+							break;
+						}
+					}
+					if ( found ) {
+						break;
+					}
+				}
+
+				if ( found ) {
+					// magic found!
+					if ( eventLog.isTraceEnabled() ) {
+						eventLog.trace("Found magic bytes " + asciiDebugValue(magicBytes)
+								+ " at buffer index " + magicIdx);
+					}
+
+					int count = buf.length;
+					count = Math.min(buf.length, sinkBuf.length - magicIdx);
+					sink.reset();
+					sink.write(sinkBuf, magicIdx, count);
+					sinkSize = count;
+					if ( eventLog.isTraceEnabled() ) {
+						eventLog.trace("Sink contains {} bytes: {}", sinkSize,
+								asciiDebugValue(sink.toByteArray()));
+					}
+					if ( findEOFBytes(sink, len, eofBytes) ) {
+						// we got all the data here... we're done
+						return true;
+					}
+					append = true;
+				} else if ( sinkBuf.length > magicBytes.length ) {
+					// haven't found the magic yet, and the sink is larger than magic size, so 
+					// trim sink down to just magic size
+					sink.reset();
+					sink.write(sinkBuf, sinkBuf.length - magicBytes.length - 1, magicBytes.length);
+					sinkSize = magicBytes.length;
+				}
+			}
+		} catch ( IOException e ) {
+			log.error("Error reading from serial port: {}", e.getMessage());
+			throw new RuntimeException(e);
+		}
+
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.debug("Looking for EOF bytes {}, buffer: {}", asciiDebugValue(eofBytes),
+					asciiDebugValue(sink.toByteArray()));
+		}
+		return false;
 	}
 
 	protected final String asciiDebugValue(byte[] data) {
