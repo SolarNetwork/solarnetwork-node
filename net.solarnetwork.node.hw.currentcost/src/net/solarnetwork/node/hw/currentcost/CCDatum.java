@@ -56,7 +56,7 @@ public class CCDatum implements Comparable<CCDatum> {
 
 	@Override
 	public String toString() {
-		return "CentameterDatum{" + getStatusMessage() + "}";
+		return "CCDatum{" + getStatusMessage() + "}";
 	}
 
 	/**
@@ -68,8 +68,8 @@ public class CCDatum implements Comparable<CCDatum> {
 	public String getStatusMessage() {
 		return (deviceAddress + ": 1 = " + (channel1Watts == null ? "N/A" : channel1Watts) + ", 2 = "
 				+ (channel2Watts == null ? "N/A" : channel2Watts) + ", 3 = "
-				+ (channel3Watts == null ? "N/A" : channel3Watts) + (time == null ? "" : "; " + time) + new SimpleDateFormat(
-				"yyyy-MM-dd HH:mm").format(new Date(created)));
+				+ (channel3Watts == null ? "N/A" : channel3Watts) + (time == null ? "" : "; " + time)
+				+ "; " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(created)));
 	}
 
 	@Override
