@@ -42,6 +42,7 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 
 	private int bufferSize = 4096;
 	private byte[] magic = new byte[] { 0x13 };
+	private byte[] magicEOF = null;
 	private int readSize = 8;
 	private boolean toggleDtr = true;
 	private boolean toggleRts = true;
@@ -58,7 +59,8 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 	}
 
 	/**
-	 * Get a list of setting specifiers for this bean.
+	 * Get a list of setting specifiers for this bean, with fixed size message
+	 * support.
 	 * 
 	 * @param defaults
 	 *        the default values to use
@@ -72,10 +74,32 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 				prefix);
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", String.valueOf(defaults
 				.getBufferSize())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", new String(defaults
-				.getMagicHex())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", defaults.getMagicHex()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "readSize", String.valueOf(defaults
 				.getReadSize())));
+		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", defaults.isToggleDtr()));
+		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", defaults.isToggleRts()));
+		return results;
+	}
+
+	/**
+	 * Get a list of setting specifiers for this bean, with variable message
+	 * size support.
+	 * 
+	 * @param defaults
+	 *        the default values to use
+	 * @param prefix
+	 *        the bean prefix to use
+	 * @return setting specifiers
+	 */
+	public static List<SettingSpecifier> getDefaultVariableSettingSpecifiers(
+			DataCollectorSerialPortBeanParameters defaults, String prefix) {
+		List<SettingSpecifier> results = SerialPortBeanParameters.getDefaultSettingSpecifiers(defaults,
+				prefix);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", String.valueOf(defaults
+				.getBufferSize())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", defaults.getMagicHex()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicEOFHex", defaults.getMagicEOFHex()));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", defaults.isToggleDtr()));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", defaults.isToggleRts()));
 		return results;
@@ -113,6 +137,32 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 
 	public void setMagic(byte[] magic) {
 		this.magic = magic;
+	}
+
+	public String getMagicEOFHex() {
+		if ( getMagicEOF() == null ) {
+			return null;
+		}
+		return Hex.encodeHexString(getMagicEOF());
+	}
+
+	public void setMagicEOFHex(String hex) {
+		if ( hex == null || (hex.length() % 2) == 1 ) {
+			setMagicEOF(null);
+		}
+		try {
+			setMagicEOF(Hex.decodeHex(hex.toCharArray()));
+		} catch ( DecoderException e ) {
+			// fail silently, sorry
+		}
+	}
+
+	public byte[] getMagicEOF() {
+		return magicEOF;
+	}
+
+	public void setMagicEOF(byte[] magicEOF) {
+		this.magicEOF = magicEOF;
 	}
 
 	public int getReadSize() {

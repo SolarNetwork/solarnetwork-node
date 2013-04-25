@@ -121,11 +121,16 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 			CommPortIdentifier portId = getCommPortIdentifier();
 			// establish the serial port connection
 			SerialPort port = (SerialPort) portId.open(params.getCommPortAppName(), 2000);
-			SerialPortDataCollector obj;
+			AbstractSerialPortDataCollector obj;
 			if ( params instanceof DataCollectorSerialPortBeanParameters ) {
 				DataCollectorSerialPortBeanParameters dcParams = (DataCollectorSerialPortBeanParameters) params;
-				obj = new SerialPortDataCollector(port, dcParams.getBufferSize(), dcParams.getMagic(),
-						dcParams.getReadSize(), dcParams.getMaxWait());
+				if ( dcParams.getMagicEOF() != null ) {
+					obj = new SerialPortVariableDataCollector(port, dcParams.getBufferSize(),
+							dcParams.getMagic(), dcParams.getMagicEOF(), dcParams.getMaxWait());
+				} else {
+					obj = new SerialPortDataCollector(port, dcParams.getBufferSize(),
+							dcParams.getMagic(), dcParams.getReadSize(), dcParams.getMaxWait());
+				}
 			} else {
 				obj = new SerialPortDataCollector(port);
 			}
