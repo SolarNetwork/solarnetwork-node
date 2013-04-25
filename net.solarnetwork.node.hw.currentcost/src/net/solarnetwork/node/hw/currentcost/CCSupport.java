@@ -299,7 +299,7 @@ public class CCSupport {
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
 				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
-		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultSettingSpecifiers(
+		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultVariableSettingSpecifiers(
 				getDefaultSerialParams(), "serialParams."));
 		return results;
 	}
