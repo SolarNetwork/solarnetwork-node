@@ -140,10 +140,15 @@ public class CCSupport {
 	/** The default value for the {@code ampSensorIndex} property. */
 	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
 
+	private static MessageSource MESSAGE_SOURCE;
+
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	private static MessageSource MESSAGE_SOURCE;
+	/** A CCMessageParser instance. */
+	protected final CCMessageParser messageParser = new CCMessageParser();
+
+	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
 
 	private DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory;
 	private DataCollectorSerialPortBeanParameters serialParams = getDefaultSerialParams();
@@ -156,7 +161,6 @@ public class CCSupport {
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
-	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
 
 	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
 		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
