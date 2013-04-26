@@ -85,10 +85,10 @@ public class CCMessageParser extends XmlServiceSupport {
 							new ByteArrayInputStream(messageXML)), xpathMapping);
 		} catch ( Exception e ) {
 			try {
-				log.error("XML parsing exception: {}; message: {}", e.getMessage(), new String(
+				log.debug("XML parsing exception: {}; message: {}", e.getMessage(), new String(
 						messageXML, "US-ASCII"));
 			} catch ( UnsupportedEncodingException e1 ) {
-				log.error("XML parsing exception: {}", e.getMessage());
+				log.debug("XML parsing exception: {}", e.getMessage());
 			}
 			return null;
 		}
