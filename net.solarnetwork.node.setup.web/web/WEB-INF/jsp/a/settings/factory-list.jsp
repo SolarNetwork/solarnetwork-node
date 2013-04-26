@@ -35,6 +35,7 @@
 					<fieldset>
 						<legend>
 							<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
+							${' '}
 							${instance.key}
 						</legend>
 						
