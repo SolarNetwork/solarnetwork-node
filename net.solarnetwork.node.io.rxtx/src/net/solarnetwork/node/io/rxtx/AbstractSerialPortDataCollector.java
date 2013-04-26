@@ -10,7 +10,6 @@ import gnu.io.SerialPortEventListener;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import net.solarnetwork.node.DataCollector;
 
 /**
@@ -93,16 +92,16 @@ public abstract class AbstractSerialPortDataCollector extends SerialPortSupport 
 	@Override
 	public void collectData() {
 		setupSerialPortParameters(this);
-
-		// open the input stream
 		try {
-			this.in = serialPort.getInputStream();
-			this.buffer.reset();
-
-			// sleep until we have data
 			synchronized ( this ) {
+				this.buffer.reset();
+
+				// open the input stream
+				this.in = serialPort.getInputStream();
+
 				this.doneCollecting = false;
 				this.collectData = true;
+				// sleep until we have data
 				this.wait(getMaxWait());
 				this.collectData = false;
 			}
@@ -135,7 +134,13 @@ public abstract class AbstractSerialPortDataCollector extends SerialPortSupport 
 	@Override
 	public final void serialEvent(SerialPortEvent event) {
 		eventLog.trace("SerialPortEvent {}", event.getEventType());
-		if ( !collectData || event.getEventType() != SerialPortEvent.DATA_AVAILABLE ) {
+		if ( event.getEventType() != SerialPortEvent.DATA_AVAILABLE ) {
+			return;
+		}
+
+		if ( !collectData ) {
+			// drain the buffer
+			drainInputStream(in);
 			return;
 		}
 
@@ -151,10 +156,6 @@ public abstract class AbstractSerialPortDataCollector extends SerialPortSupport 
 				notifyAll();
 			}
 			return;
-		}
-
-		if ( eventLog.isTraceEnabled() ) {
-			log.trace("Buffer: {}", Arrays.toString(buffer.toByteArray()));
 		}
 	}
 
