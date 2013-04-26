@@ -108,6 +108,7 @@ public abstract class AbstractSerialPortDataCollector extends SerialPortSupport 
 			}
 			if ( log.isWarnEnabled() && !doneCollecting ) {
 				log.warn("Timeout collecting serial data");
+				buffer.reset();
 			}
 		} catch ( InterruptedException e ) {
 			log.warn("Interrupted, stopping data collection");
