@@ -73,9 +73,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * 
  * <dt>sourceIdFormat</dt>
  * <dd>A string format pattern for generating the {@code sourceId} value in
- * returned Datum instances. This format will be passed the device address and
- * the device sensor index as <em>int</em> parameters. Defaults to
- * {@link #DEFAULT_SOURCE_ID_FORMAT}.</dd>
+ * returned Datum instances. This format will be passed the device address (as a
+ * <em>string</em>) and the device sensor index (as an <em>integer</em>).
+ * Defaults to {@link #DEFAULT_SOURCE_ID_FORMAT}.</dd>
  * 
  * <dt>multiAmpSensorIndexFlags</dt>
  * <dd>A bitmask flag for which amp sensor index readings to return from
@@ -129,7 +129,7 @@ public class CCSupport {
 	public static final float DEFAULT_VOLTAGE = 240.0F;
 
 	/** The default value for the {@code sourceIdFormat} property. */
-	public static final String DEFAULT_SOURCE_ID_FORMAT = "%X.%d";
+	public static final String DEFAULT_SOURCE_ID_FORMAT = "%s.%d";
 
 	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 30;
@@ -171,9 +171,11 @@ public class CCSupport {
 			// should never get here
 		}
 		defaults.setBaud(9600);
-		defaults.setBufferSize(4);
-		defaults.setReceiveThreshold(-1);
+		defaults.setBufferSize(2048);
+		defaults.setReceiveThreshold(4);
 		defaults.setMaxWait(15000);
+		defaults.setToggleDtr(true);
+		defaults.setToggleRts(false);
 		return defaults;
 	}
 
@@ -303,8 +305,12 @@ public class CCSupport {
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
 				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
-		results.addAll(DataCollectorSerialPortBeanParameters.getDefaultVariableSettingSpecifiers(
-				getDefaultSerialParams(), "serialParams."));
+
+		// we don't need to provide magic byte configuration: we know what that is, so don't
+		// bother exposing that here
+		List<SettingSpecifier> serialSpecs = SerialPortBeanParameters.getDefaultSettingSpecifiers(
+				getDefaultSerialParams(), "serialParams.");
+		results.addAll(serialSpecs);
 		return results;
 	}
 
