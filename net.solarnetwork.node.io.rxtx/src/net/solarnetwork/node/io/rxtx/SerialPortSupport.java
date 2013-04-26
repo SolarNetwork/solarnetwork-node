@@ -398,11 +398,14 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		}
 		if ( foundEOF ) {
 			if ( eventLog.isDebugEnabled() ) {
-				eventLog.debug("Found desired {} EOF bytes at index {}: {}", asciiDebugValue(eofBytes),
-						eofIdx, asciiDebugValue(sink.toByteArray()));
+				eventLog.debug("Found desired {} EOF bytes at index {}", asciiDebugValue(eofBytes),
+						eofIdx);
 			}
 			sink.reset();
 			sink.write(sinkBuf, 0, eofIdx + eofBytes.length);
+			if ( eventLog.isDebugEnabled() ) {
+				eventLog.debug("Buffer message at EOF: {}", asciiDebugValue(sink.toByteArray()));
+			}
 			return true;
 		}
 		eventLog.debug("Looking for EOF bytes {}", asciiDebugValue(eofBytes));
