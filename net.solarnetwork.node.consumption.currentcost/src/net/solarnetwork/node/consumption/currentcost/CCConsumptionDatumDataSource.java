@@ -24,6 +24,7 @@ package net.solarnetwork.node.consumption.currentcost;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -110,7 +111,7 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory()
 				.service();
 		if ( df == null ) {
-			return null;
+			return Collections.emptyList();
 		}
 
 		List<ConsumptionDatum> result = new ArrayList<ConsumptionDatum>(3);
@@ -127,7 +128,7 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 				byte[] data = dc.getCollectedData();
 				if ( data == null ) {
 					log.warn("Null serial data received, serial communications problem");
-					return null;
+					return Collections.emptyList();
 				}
 				CCDatum ccDatum = messageParser.parseMessage(data);
 
@@ -163,10 +164,13 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 			}
 		}
 
-		return result.size() < 1 ? null : result;
+		return result;
 	}
 
 	private ConsumptionDatum getConsumptionDatumInstance(CCDatum datum, int ampIndex) {
+		if ( datum == null ) {
+			return null;
+		}
 		String addr = datum.getDeviceAddress();
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
