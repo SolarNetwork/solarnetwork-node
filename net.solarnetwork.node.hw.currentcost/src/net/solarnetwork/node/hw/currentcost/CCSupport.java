@@ -173,6 +173,7 @@ public class CCSupport {
 		defaults.setBaud(9600);
 		defaults.setBufferSize(2048);
 		defaults.setReceiveThreshold(4);
+		defaults.setReceiveTimeout(9000);
 		defaults.setMaxWait(90000);
 		defaults.setToggleDtr(true);
 		defaults.setToggleRts(false);
