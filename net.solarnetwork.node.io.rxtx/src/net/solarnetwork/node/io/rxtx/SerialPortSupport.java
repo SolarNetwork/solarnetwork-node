@@ -471,6 +471,28 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		return result;
 	}
 
+	/**
+	 * Read from the InputStream until it is empty.
+	 * 
+	 * @param in
+	 */
+	protected void drainInputStream(InputStream in) {
+		byte[] buf = new byte[1024];
+		int len = -1;
+		int total = 0;
+		try {
+			final int max = Math.min(in.available(), buf.length);
+			eventLog.trace("Attempting to drain {} bytes from serial port", max);
+			while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
+				// keep draining
+				total += len;
+			}
+		} catch ( IOException e ) {
+			// ignore this
+		}
+		eventLog.trace("Drained {} bytes from serial port", total);
+	}
+
 	private boolean handleSerialEventWithoutTimeout(SerialPortEvent event, InputStream in,
 			ByteArrayOutputStream sink, byte[] magicBytes, byte[] eofBytes) {
 		int sinkSize = sink.size();
@@ -544,7 +566,7 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					// haven't found the magic yet, and the sink is larger than magic size, so 
 					// trim sink down to just magic size
 					sink.reset();
-					sink.write(sinkBuf, sinkBuf.length - magicBytes.length - 1, magicBytes.length);
+					sink.write(sinkBuf, sinkBuf.length - magicBytes.length, magicBytes.length);
 					sinkSize = magicBytes.length;
 				}
 			}
@@ -554,8 +576,8 @@ public abstract class SerialPortSupport extends SerialPortBean {
 		}
 
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.debug("Looking for EOF bytes {}, buffer: {}", asciiDebugValue(eofBytes),
-					asciiDebugValue(sink.toByteArray()));
+			eventLog.debug("Looking for bytes {}, buffer: {}", (append ? asciiDebugValue(eofBytes)
+					: asciiDebugValue(magicBytes)), asciiDebugValue(sink.toByteArray()));
 		}
 		return false;
 	}
