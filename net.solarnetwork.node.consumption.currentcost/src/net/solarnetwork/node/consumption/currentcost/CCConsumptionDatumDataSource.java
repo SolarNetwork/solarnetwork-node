@@ -131,6 +131,10 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 				}
 				CCDatum ccDatum = messageParser.parseMessage(data);
 
+				if ( ccDatum == null ) {
+					continue;
+				}
+
 				// add a known address for this reading
 				addKnownAddress(ccDatum);
 
