@@ -171,7 +171,7 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = datum.getDeviceAddress();
+		String addr = String.format(getSourceIdFormat(), datum.getDeviceAddress(), ampIndex);
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}
