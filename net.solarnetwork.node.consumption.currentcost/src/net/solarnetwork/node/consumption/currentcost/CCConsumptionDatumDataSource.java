@@ -144,10 +144,10 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 				}
 
 				for ( int ampIndex = 1; ampIndex <= 3; ampIndex++ ) {
-					ConsumptionDatum datum = getConsumptionDatumInstance(ccDatum, ampIndex);
 					if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
 						continue;
 					}
+					ConsumptionDatum datum = getConsumptionDatumInstance(ccDatum, ampIndex);
 					if ( datum != null ) {
 						if ( !sourceIdSet.contains(datum.getSourceId()) ) {
 							result.add(datum);
