@@ -9,7 +9,7 @@
 			<fmt:param>${controlId}</fmt:param>
 		</fmt:message>
 	</p>
-	<a href="<c:url value='/settings.do'/>" class="btn">
+	<a href="<c:url value='/controls'/>" class="btn">
 		<i class="icon-arrow-left"></i>
 		<fmt:message key="back.label"/>
 	</a>
@@ -59,4 +59,30 @@
 		</tbody>
 	</table>
 </section>
-</c:if>
+<c:if test="${!info.readonly}">
+<section id="instruct">
+	<h2><fmt:message key="controls.manage.SetControlParameter.title"/></h2>
+	<p>
+		<fmt:message key="controls.manage.SetControlParameter.intro"/>
+	</p>
+	<form class="form-horizontal" action="<c:url value='/controls/setControlParameter'/>" method="post">
+		<fieldset>
+			<div class="control-group">
+				<label class="control-label" for="SetControlParameter-parameterValue">
+					<fmt:message key="controls.manage.SetControlParameter.parameterValue"/>
+				</label>
+				<div class="controls">
+					<input type="text" name="parameterValue" id="SetControlParameter-parameterValue" 
+						class="span5" maxLength="255" value="" />
+				</div>
+			</div>
+		</fieldset>
+
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary" id="submit"><fmt:message key='controls.manage.SetControlParameter.submit'/></button>
+		</div>
+		<input type="hidden" name="controlId" value="${controlId}"/>
+	</form>
+</section>
+</c:if><%-- !info.readonly --%>
+</c:if><%-- not empty info --%>

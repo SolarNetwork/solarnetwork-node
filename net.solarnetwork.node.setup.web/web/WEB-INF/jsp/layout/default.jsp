@@ -32,12 +32,12 @@
 				<div class="alert alert-error">
 					<fmt:message key="${errorMessageKey}">
 						<c:if test="${not empty errorMessageKey}">
-							<fmt:param value="${errorMessageKeyParam0}"/>
+							<fmt:param value="${errorMessageParam0}"/>
 						</c:if>
 					</fmt:message>
 				</div>
 				<c:remove var="errorMessageKey" scope="session"/>
-				<c:remove var="errorMessageKeyParam0" scope="session"/>
+				<c:remove var="errorMessageParam0" scope="session"/>
 			</c:if>
 			<tiles:insertAttribute name="body" />
 		</div>

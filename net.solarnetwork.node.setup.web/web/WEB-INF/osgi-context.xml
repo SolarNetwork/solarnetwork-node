@@ -41,5 +41,8 @@
 
 	<osgi:list id="nodeControlProviderList" availability="optional"
 		interface="net.solarnetwork.node.NodeControlProvider"/>
-	
+
+	<osgi:list id="instructionHandlerList" availability="optional"
+		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+
 </beans>

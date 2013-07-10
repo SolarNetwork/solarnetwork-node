@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -54,12 +56,13 @@ public class InstructorController {
 	private static final String KEY_CONTROL_ID = "controlId";
 	private static final String KEY_CONTROL_INFO = "info";
 	private static final String KEY_CONTROL_IDS = "controlIds";
-	private static final String KEY_INSTRUCTION_STATUS = "instructionStatus";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Resource(name = "nodeControlProviderList")
 	private Collection<NodeControlProvider> providers = Collections.emptyList();
+
+	@Resource(name = "instructionHandlerList")
 	private Collection<InstructionHandler> handlers = Collections.emptyList();
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
@@ -102,24 +105,34 @@ public class InstructorController {
 	}
 
 	@RequestMapping(value = "/setControlParameter", method = RequestMethod.POST)
-	public String setControlParameter(SetControlParameterInstruction instruction, ModelMap model) {
+	public String setControlParameter(SetControlParameterInstruction instruction, ModelMap model,
+			HttpServletRequest request) {
 		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
 				new Date(), "LOCAL", "LOCAL", null);
+		instr.addParameter(instruction.getControlId(), instruction.getParameterValue());
 		InstructionStatus.InstructionState result = null;
-		for ( InstructionHandler handler : handlers ) {
-			if ( handler.handlesTopic(instr.getTopic()) ) {
-				result = handler.processInstruction(instr);
+		try {
+			for ( InstructionHandler handler : handlers ) {
+				if ( handler.handlesTopic(instr.getTopic()) ) {
+					result = handler.processInstruction(instr);
+				}
+				if ( result != null ) {
+					break;
+				}
 			}
-			if ( result != null ) {
-				break;
-			}
+		} catch ( RuntimeException e ) {
+			log.error("Exception setting control parameter {} to {}", instruction.getControlId(),
+					instruction.getParameterValue(), e);
 		}
 		if ( result == null ) {
 			// nobody handled it!
 			result = InstructionStatus.InstructionState.Declined;
 		}
-		model.put(KEY_INSTRUCTION_STATUS, result);
-		return "control/manage";
+		String keyPrefix = (result == InstructionStatus.InstructionState.Completed ? "status" : "error");
+		HttpSession session = request.getSession();
+		session.setAttribute(keyPrefix + "MessageKey", "controls.manage.SetControlParameter.result");
+		session.setAttribute(keyPrefix + "MessageParam0", result);
+		return "redirect:/controls/manage?id=" + instruction.getControlId();
 	}
 
 	public void setProviders(Collection<NodeControlProvider> providers) {

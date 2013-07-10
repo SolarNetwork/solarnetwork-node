@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.setup.web;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Bean for a SetControlParameter instruction.
@@ -34,35 +32,7 @@ import java.util.List;
 public class SetControlParameterInstruction {
 
 	private String controlId;
-	private List<InstructionParameter> params;
-
-	private InstructionParameter getOrCreateInstructionParam(int index) {
-		if ( params == null ) {
-			params = new ArrayList<InstructionParameter>(3);
-		}
-		while ( params.size() <= index ) {
-			params.add(new InstructionParameter());
-		}
-		return params.get(index);
-	}
-
-	public void setParameterName(String name) {
-		InstructionParameter p = getOrCreateInstructionParam(0);
-		p.setName(name);
-	}
-
-	public String getParameterName() {
-		return (params != null && params.size() > 0 ? params.get(0).getName() : null);
-	}
-
-	public void setParameterValue(String value) {
-		InstructionParameter p = getOrCreateInstructionParam(0);
-		p.setValue(value);
-	}
-
-	public String getParameterValue() {
-		return (params != null && params.size() > 0 ? params.get(0).getValue() : null);
-	}
+	private String parameterValue;
 
 	public String getControlId() {
 		return controlId;
@@ -72,12 +42,12 @@ public class SetControlParameterInstruction {
 		this.controlId = controlId;
 	}
 
-	public List<InstructionParameter> getParams() {
-		return params;
+	public String getParameterValue() {
+		return parameterValue;
 	}
 
-	public void setParams(List<InstructionParameter> params) {
-		this.params = params;
+	public void setParameterValue(String parameterValue) {
+		this.parameterValue = parameterValue;
 	}
 
 }
