@@ -7,6 +7,7 @@
 			<li ${navloc == 'home' ? 'class="active"' : ''}><a href="<c:url value='/hello'/>"><fmt:message key='link.home'/></a></li>
 			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<c:url value='/certs'/>"><fmt:message key='link.cert'/></a></li>
 			<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<c:url value='/settings'/>"><fmt:message key='link.settings'/></a></li>
+			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<c:url value='/controls'/>"><fmt:message key='link.controls'/></a></li>
  		</ul>
 	</div>
 </div>
