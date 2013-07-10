@@ -299,7 +299,12 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		try {
 			BitSet bits = currentDiscreetValue();
 			Integer val = integerValueForBitSet(bits);
-			status.setDefaultValue(String.format("%s - %d%%", Integer.toBinaryString(val),
+			String binValue = Integer.toBinaryString(val);
+			String padding = "";
+			if ( binValue.length() < 4 ) {
+				padding = String.format("%0" + (4 - binValue.length()) + "d", 0);
+			}
+			status.setDefaultValue(String.format("%s%s - %d%%", padding, binValue,
 					percentValueForIntegerValue(val)));
 		} catch ( RuntimeException e ) {
 			log.debug("Error reading PCM status: {}", e.getMessage());
@@ -308,6 +313,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d1Address", defaults.d1Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d2Address", defaults.d2Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
