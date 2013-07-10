@@ -264,9 +264,9 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		for ( String paramName : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", paramName);
 			if ( controlId.equals(paramName) ) {
-				// treat parameter value as a base-2 Integer
+				// treat parameter value as a decimal integer, value between 0-15
 				String str = instruction.getParameterValue(controlId);
-				Integer desiredValue = Integer.parseInt(str, 2);
+				Integer desiredValue = Integer.parseInt(str);
 				if ( setPCMStatus(desiredValue) ) {
 					result = InstructionState.Completed;
 				} else {
