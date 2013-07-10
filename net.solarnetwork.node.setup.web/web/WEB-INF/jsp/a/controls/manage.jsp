@@ -1,9 +1,18 @@
 <section class="intro">
+	<h2>
+		<fmt:message key="controls.manage.title">
+			<fmt:param value="${controlId}"/>
+		</fmt:message>
+	</h2>
 	<p>
 		<fmt:message key="controls.manage.intro">
 			<fmt:param>${controlId}</fmt:param>
 		</fmt:message>
 	</p>
+	<a href="<c:url value='/settings.do'/>" class="btn">
+		<i class="icon-arrow-left"></i>
+		<fmt:message key="back.label"/>
+	</a>
 </section>
 <c:if test="${not empty info}">
 <section id="status">

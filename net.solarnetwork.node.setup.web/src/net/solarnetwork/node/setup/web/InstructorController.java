@@ -25,10 +25,14 @@ package net.solarnetwork.node.setup.web;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import javax.annotation.Resource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -50,11 +54,13 @@ public class InstructorController {
 	private static final String KEY_CONTROL_ID = "controlId";
 	private static final String KEY_CONTROL_INFO = "info";
 	private static final String KEY_CONTROL_IDS = "controlIds";
+	private static final String KEY_INSTRUCTION_STATUS = "instructionStatus";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Resource(name = "nodeControlProviderList")
 	private Collection<NodeControlProvider> providers = Collections.emptyList();
+	private Collection<InstructionHandler> handlers = Collections.emptyList();
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
@@ -95,8 +101,33 @@ public class InstructorController {
 		return "control/manage";
 	}
 
+	@RequestMapping(value = "/setControlParameter", method = RequestMethod.POST)
+	public String setControlParameter(SetControlParameterInstruction instruction, ModelMap model) {
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				new Date(), "LOCAL", "LOCAL", null);
+		InstructionStatus.InstructionState result = null;
+		for ( InstructionHandler handler : handlers ) {
+			if ( handler.handlesTopic(instr.getTopic()) ) {
+				result = handler.processInstruction(instr);
+			}
+			if ( result != null ) {
+				break;
+			}
+		}
+		if ( result == null ) {
+			// nobody handled it!
+			result = InstructionStatus.InstructionState.Declined;
+		}
+		model.put(KEY_INSTRUCTION_STATUS, result);
+		return "control/manage";
+	}
+
 	public void setProviders(Collection<NodeControlProvider> providers) {
 		this.providers = providers;
+	}
+
+	public void setHandlers(Collection<InstructionHandler> handlers) {
+		this.handlers = handlers;
 	}
 
 }
