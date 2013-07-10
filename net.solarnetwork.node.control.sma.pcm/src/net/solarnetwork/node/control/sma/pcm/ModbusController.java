@@ -31,6 +31,9 @@ import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -41,6 +44,8 @@ import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadCoilsResponse;
+import net.wimpi.modbus.msg.WriteCoilRequest;
+import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,7 +74,8 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class ModbusController implements SettingSpecifierProvider, NodeControlProvider {
+public class ModbusController implements SettingSpecifierProvider, NodeControlProvider,
+		InstructionHandler {
 
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -120,7 +126,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	}
 
 	/**
-	 * Get the current value of the PCM, as an Integer.
+	 * Get the status value of the PCM, as an Integer.
 	 * 
 	 * <p>
 	 * This returns the overall vale of the PCM, as an integer between 0 and 15.
@@ -132,6 +138,84 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	private Integer integerValueForBitSet(BitSet bits) {
 		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2) | ((bits
 				.get(3) ? 1 : 0) << 3));
+	}
+
+	/**
+	 * Get the approximate power output setting, from 0 to 100.
+	 * 
+	 * <p>
+	 * These values are described in the SMA documentation, it is not a direct
+	 * percentage value derived from the value itself.
+	 * </p>
+	 */
+	private Integer percentValueForIntegerValue(Integer val) {
+		switch (val) {
+			case 1:
+				return 5;
+			case 2:
+				return 10;
+			case 3:
+				return 16;
+			case 4:
+				return 23;
+			case 5:
+				return 30;
+			case 6:
+				return 36;
+			case 7:
+				return 42;
+			case 8:
+				return 50;
+			case 9:
+				return 57;
+			case 10:
+				return 65;
+			case 11:
+				return 72;
+			case 12:
+				return 80;
+			case 13:
+				return 86;
+			case 14:
+				return 93;
+			default:
+				return (val < 1 ? 0 : 100);
+		}
+	}
+
+	private boolean setPCMStatus(Integer desiredValue) {
+		boolean result = false;
+		final ModbusSerialConnectionFactory factory = (connectionFactory == null ? null
+				: connectionFactory.service());
+		final BitSet bits = new BitSet(4);
+		final int v = desiredValue;
+		for ( int i = 0; i < 4; i++ ) {
+			bits.set(i, ((v >> i) & 1) == 1);
+		}
+		if ( factory != null ) {
+			log.info("Setting PCM status to {} ({}%)", desiredValue,
+					percentValueForIntegerValue(desiredValue));
+			SerialConnection conn = factory.getSerialConnection();
+			Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
+			for ( int i = 0; i < addresses.length; i++ ) {
+				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+				WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
+				req.setUnitID(this.unitId);
+				req.setHeadless();
+				trans.setRequest(req);
+				try {
+					trans.execute();
+				} catch ( ModbusException e ) {
+					throw new RuntimeException(e);
+				}
+				WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
+				if ( log.isDebugEnabled() ) {
+					log.debug("Got write {} response [{}]", addresses[i], res);
+				}
+			}
+			result = true;
+		}
+		return result;
 	}
 
 	// NodeControlProvider
@@ -165,6 +249,34 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		return info;
 	}
 
+	// InstructionHandler
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+	}
+
+	@Override
+	public InstructionState processInstruction(Instruction instruction) {
+		// look for a parameter name that matches a control ID
+		InstructionState result = null;
+		log.debug("Inspecting instruction {} against control {}", instruction.getId(), controlId);
+		for ( String paramName : instruction.getParameterNames() ) {
+			log.trace("Got instruction parameter {}", paramName);
+			if ( controlId.equals(paramName) ) {
+				// treat parameter value as a base-2 Integer
+				String str = instruction.getParameterValue(controlId);
+				Integer desiredValue = Integer.parseInt(str, 2);
+				if ( setPCMStatus(desiredValue) ) {
+					result = InstructionState.Completed;
+				} else {
+					result = InstructionState.Declined;
+				}
+			}
+		}
+		return result;
+	}
+
 	// SettingSpecifierProvider
 
 	@Override
@@ -187,7 +299,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		try {
 			BitSet bits = currentDiscreetValue();
 			Integer val = integerValueForBitSet(bits);
-			status.setDefaultValue(String.format("%s - %.0f%%", Integer.toBinaryString(val), val));
+			status.setDefaultValue(String.format("%s - %d%%", Integer.toBinaryString(val),
+					percentValueForIntegerValue(val)));
 		} catch ( RuntimeException e ) {
 			log.debug("Error reading PCM status: {}", e.getMessage());
 		}

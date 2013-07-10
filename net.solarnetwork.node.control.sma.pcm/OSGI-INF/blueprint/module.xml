@@ -33,7 +33,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.sma.pcm" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
-			<!--beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value-->
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
