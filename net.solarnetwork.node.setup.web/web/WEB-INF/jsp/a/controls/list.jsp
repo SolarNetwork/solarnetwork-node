@@ -1,7 +1,7 @@
-<c:if test="${fn:length(providerIds) < 1}">
-	<p><fmt:message key="controls.providers.none.message"/>
+<c:if test="${fn:length(controlIds) < 1}">
+	<p><fmt:message key="controls.none.message"/>
 </c:if>
-<c:if test="${fn:length(providerIds) > 0}">
+<c:if test="${fn:length(controlIds) > 0}">
 	<section class="intro">
 		<p>
 			<fmt:message key="controls.intro"/>
@@ -10,13 +10,13 @@
 	<section id="providers">
 		<table class="table">
 			<tbody>
-			<c:forEach items="${providerIds}" var="providerId" varStatus="providerIdStatus">
+			<c:forEach items="${controlIds}" var="controlId">
 				<tr>
-					<td><strong>${providerId}</strong></td>
+					<td><strong>${controlId}</strong></td>
 					<td>
-						<a class="btn" href="<c:url value='/controls/manage?id=${providerId}'/>">
+						<a class="btn" href="<c:url value='/controls/manage?id=${controlId}'/>">
 							<i class="icon-edit icon-large"></i> 
-							<fmt:message key="controls.provider.manage.label"/>
+							<fmt:message key="controls.manage.label"/>
 						</a>
 					</td>
 				</tr>

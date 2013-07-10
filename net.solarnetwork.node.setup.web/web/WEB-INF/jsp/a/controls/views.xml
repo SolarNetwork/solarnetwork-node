@@ -10,8 +10,8 @@
 		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
 	</definition>
 	
-	<definition name="control-provider-list" extends="controls">
-		<put-attribute name="body" value="/WEB-INF/jsp/a/controls/list.jsp" />
+	<definition name="control/*" extends="controls">
+		<put-attribute name="body" value="/WEB-INF/jsp/a/controls/{1}.jsp" />
 	</definition>
 		
 </tiles-definitions>

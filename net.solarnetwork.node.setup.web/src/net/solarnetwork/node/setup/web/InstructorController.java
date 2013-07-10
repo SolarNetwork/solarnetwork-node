@@ -27,11 +27,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Resource;
+import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
  * Controller to act as a local Instructor to the local node.
@@ -43,10 +47,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @RequestMapping("/controls")
 public class InstructorController {
 
-	private static final String KEY_PROVIDER_IDS = "providerIds";
+	private static final String KEY_CONTROL_ID = "controlId";
+	private static final String KEY_CONTROL_INFO = "info";
+	private static final String KEY_CONTROL_IDS = "controlIds";
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Resource(name = "nodeControlProviderList")
-	private final Collection<NodeControlProvider> providers = Collections.emptyList();
+	private Collection<NodeControlProvider> providers = Collections.emptyList();
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
@@ -54,8 +62,41 @@ public class InstructorController {
 		for ( NodeControlProvider provider : providers ) {
 			providerIds.addAll(provider.getAvailableControlIds());
 		}
-		model.put(KEY_PROVIDER_IDS, providerIds);
-		return "control-provider-list";
+		model.put(KEY_CONTROL_IDS, providerIds);
+		return "control/list";
+	}
+
+	@RequestMapping(value = "/manage", method = RequestMethod.GET)
+	public String manage(@RequestParam("id") String controlId, ModelMap model) {
+		NodeControlProvider provider = null;
+		for ( NodeControlProvider p : providers ) {
+			for ( String s : p.getAvailableControlIds() ) {
+				if ( s.equals(controlId) ) {
+					provider = p;
+					break;
+				}
+			}
+			if ( provider != null ) {
+				break;
+			}
+		}
+		if ( provider != null ) {
+			model.put(KEY_CONTROL_ID, controlId);
+			NodeControlInfo info = null;
+			try {
+				info = provider.getCurrentControlInfo(controlId);
+			} catch ( RuntimeException e ) {
+				log.warn("Error getting control {} info: {}", controlId, e.getMessage());
+			}
+			if ( info != null ) {
+				model.put(KEY_CONTROL_INFO, info);
+			}
+		}
+		return "control/manage";
+	}
+
+	public void setProviders(Collection<NodeControlProvider> providers) {
+		this.providers = providers;
 	}
 
 }
