@@ -24,12 +24,18 @@ package net.solarnetwork.node.control.sma.pcm;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.NodeControlInfoDatum;
 import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
@@ -63,7 +69,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class ModbusController implements SettingSpecifierProvider {
+public class ModbusController implements SettingSpecifierProvider, NodeControlProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -73,6 +79,7 @@ public class ModbusController implements SettingSpecifierProvider {
 	private Integer d4Address = 0x4008;
 
 	private Integer unitId = 1;
+	private String controlId = "/power/pcm/1";
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 
@@ -84,7 +91,7 @@ public class ModbusController implements SettingSpecifierProvider {
 	 * @return BitSet, with index 0 representing D1 and index 1 representing D2,
 	 *         etc.
 	 */
-	private BitSet currentDiscreetValue() {
+	private synchronized BitSet currentDiscreetValue() {
 		BitSet result = new BitSet(4);
 		ModbusSerialConnectionFactory factory = (connectionFactory == null ? null : connectionFactory
 				.service());
@@ -125,6 +132,37 @@ public class ModbusController implements SettingSpecifierProvider {
 	private Integer integerValueForBitSet(BitSet bits) {
 		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2) | ((bits
 				.get(3) ? 1 : 0) << 3));
+	}
+
+	// NodeControlProvider
+
+	@Override
+	public List<String> getAvailableControlIds() {
+		return Collections.singletonList(controlId);
+	}
+
+	@Override
+	public NodeControlInfo getCurrentControlInfo(String controlId) {
+		// read the control's current status
+		log.debug("Reading PCM {} status", controlId);
+		NodeControlInfoDatum result = null;
+		try {
+			Integer value = integerValueForBitSet(currentDiscreetValue());
+			result = newNodeControlInfoDatum(controlId, value);
+		} catch ( RuntimeException e ) {
+			log.error("Error reading PCM {} status: {}", controlId, e.getMessage());
+		}
+		return result;
+	}
+
+	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Integer status) {
+		NodeControlInfoDatum info = new NodeControlInfoDatum();
+		info.setCreated(new Date());
+		info.setSourceId(controlId);
+		info.setType(NodeControlPropertyType.Integer);
+		info.setReadonly(false);
+		info.setValue(status.toString());
+		return info;
 	}
 
 	// SettingSpecifierProvider
@@ -222,6 +260,14 @@ public class ModbusController implements SettingSpecifierProvider {
 
 	public void setUnitId(Integer unitId) {
 		this.unitId = unitId;
+	}
+
+	public String getControlId() {
+		return controlId;
+	}
+
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
 }
