@@ -28,7 +28,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
-import net.wimpi.modbus.util.SerialParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -53,16 +52,17 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectionFactory, SettingSpecifierProvider {
+public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectionFactory,
+		SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 
-	private static SerialParameters getDefaultSerialParametersInstance() {
-		SerialParameters params = new SerialParameters();
+	private static SerialParametersBean getDefaultSerialParametersInstance() {
+		SerialParametersBean params = new SerialParametersBean();
 		params.setPortName("/dev/ttyS0");
 		params.setBaudRate(9600);
 		params.setDatabits(8);
-		params.setParity("None");
+		params.setParityString("None");
 		params.setStopbits(1);
 		params.setEncoding("rtu");
 		params.setEcho(false);
@@ -72,7 +72,7 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private SerialParameters serialParams = getDefaultSerialParametersInstance();
+	private SerialParametersBean serialParams = getDefaultSerialParametersInstance();
 
 	@Override
 	public String getUID() {
@@ -147,8 +147,8 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 				.valueOf(defaults.serialParams.getDatabits())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.stopbits", String
 				.valueOf(defaults.serialParams.getStopbits())));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.parity", defaults.serialParams
-				.getParityString()));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.parityString",
+				defaults.serialParams.getParityString()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.encoding", defaults.serialParams
 				.getEncoding()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.receiveTimeout", String
@@ -164,11 +164,11 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 		return results;
 	}
 
-	public SerialParameters getSerialParams() {
+	public SerialParametersBean getSerialParams() {
 		return serialParams;
 	}
 
-	public void setSerialParams(SerialParameters serialParams) {
+	public void setSerialParams(SerialParametersBean serialParams) {
 		this.serialParams = serialParams;
 	}
 
