@@ -39,7 +39,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.NodeControlInfoDatum;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.DynamicServiceTracker;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
@@ -87,7 +87,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";
 
-	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
+	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -366,11 +366,12 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		this.d4Address = d4Address;
 	}
 
-	public OptionalService<ModbusSerialConnectionFactory> getConnectionFactory() {
+	public DynamicServiceTracker<ModbusSerialConnectionFactory> getConnectionFactory() {
 		return connectionFactory;
 	}
 
-	public void setConnectionFactory(OptionalService<ModbusSerialConnectionFactory> connectionFactory) {
+	public void setConnectionFactory(
+			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
 		this.connectionFactory = connectionFactory;
 	}
 
