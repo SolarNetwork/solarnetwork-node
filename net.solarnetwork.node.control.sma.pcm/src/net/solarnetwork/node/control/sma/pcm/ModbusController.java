@@ -118,13 +118,16 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 					}
 					ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
 					if ( log.isDebugEnabled() ) {
-						log.debug("Got {} response [{}]", addresses[i], res);
+						log.debug("Got {} response [{}]", addresses[i], res.getCoils());
 					}
 					result.set(i, res.getCoilStatus(0));
 				}
 			} finally {
 				conn.close();
 			}
+		}
+		if ( log.isInfoEnabled() ) {
+			log.info("Read discreet PCM values: {}", result);
 		}
 		return result;
 	}
