@@ -103,23 +103,27 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 				.service());
 		if ( factory != null ) {
 			SerialConnection conn = factory.getSerialConnection();
-			Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
-			for ( int i = 0; i < addresses.length; i++ ) {
-				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-				ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
-				req.setUnitID(this.unitId);
-				req.setHeadless();
-				trans.setRequest(req);
-				try {
-					trans.execute();
-				} catch ( ModbusException e ) {
-					throw new RuntimeException(e);
+			try {
+				Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
+				for ( int i = 0; i < addresses.length; i++ ) {
+					ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+					ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
+					req.setUnitID(this.unitId);
+					req.setHeadless();
+					trans.setRequest(req);
+					try {
+						trans.execute();
+					} catch ( ModbusException e ) {
+						throw new RuntimeException(e);
+					}
+					ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
+					if ( log.isDebugEnabled() ) {
+						log.debug("Got {} response [{}]", addresses[i], res);
+					}
+					result.set(i, res.getCoilStatus(0));
 				}
-				ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
-				if ( log.isDebugEnabled() ) {
-					log.debug("Got {} response [{}]", addresses[i], res);
-				}
-				result.set(i, res.getCoilStatus(0));
+			} finally {
+				conn.close();
 			}
 		}
 		return result;
@@ -196,24 +200,28 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 			log.info("Setting PCM status to {} ({}%)", desiredValue,
 					percentValueForIntegerValue(desiredValue));
 			SerialConnection conn = factory.getSerialConnection();
-			Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
-			for ( int i = 0; i < addresses.length; i++ ) {
-				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-				WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
-				req.setUnitID(this.unitId);
-				req.setHeadless();
-				trans.setRequest(req);
-				try {
-					trans.execute();
-				} catch ( ModbusException e ) {
-					throw new RuntimeException(e);
+			try {
+				Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
+				for ( int i = 0; i < addresses.length; i++ ) {
+					ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+					WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
+					req.setUnitID(this.unitId);
+					req.setHeadless();
+					trans.setRequest(req);
+					try {
+						trans.execute();
+					} catch ( ModbusException e ) {
+						throw new RuntimeException(e);
+					}
+					WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
+					if ( log.isDebugEnabled() ) {
+						log.debug("Got write {} response [{}]", addresses[i], res);
+					}
 				}
-				WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
-				if ( log.isDebugEnabled() ) {
-					log.debug("Got write {} response [{}]", addresses[i], res);
-				}
+				result = true;
+			} finally {
+				conn.close();
 			}
-			result = true;
 		}
 		return result;
 	}
