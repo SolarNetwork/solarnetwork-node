@@ -161,7 +161,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		}
 	}
 
-	private boolean setPCMStatus(Integer desiredValue) {
+	private synchronized boolean setPCMStatus(Integer desiredValue) {
 		final BitSet bits = new BitSet(4);
 		final int v = desiredValue;
 		for ( int i = 0; i < 4; i++ ) {
