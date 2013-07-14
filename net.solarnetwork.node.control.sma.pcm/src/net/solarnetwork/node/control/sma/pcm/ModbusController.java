@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.sma.pcm;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -30,6 +31,8 @@ import java.util.List;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusHelper.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -40,12 +43,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.NodeControlInfoDatum;
 import net.solarnetwork.util.DynamicServiceTracker;
-import net.wimpi.modbus.ModbusException;
-import net.wimpi.modbus.io.ModbusSerialTransaction;
-import net.wimpi.modbus.msg.ReadCoilsRequest;
-import net.wimpi.modbus.msg.ReadCoilsResponse;
-import net.wimpi.modbus.msg.WriteCoilRequest;
-import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,34 +95,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	 *         etc.
 	 */
 	private synchronized BitSet currentDiscreetValue() {
-		BitSet result = new BitSet(4);
-		ModbusSerialConnectionFactory factory = (connectionFactory == null ? null : connectionFactory
-				.service());
-		if ( factory != null ) {
-			SerialConnection conn = factory.getSerialConnection();
-			try {
-				Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
-				for ( int i = 0; i < addresses.length; i++ ) {
-					ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-					ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
-					req.setUnitID(this.unitId);
-					req.setHeadless();
-					trans.setRequest(req);
-					try {
-						trans.execute();
-					} catch ( ModbusException e ) {
-						throw new RuntimeException(e);
-					}
-					ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
-					if ( log.isDebugEnabled() ) {
-						log.debug("Got {} response [{}]", addresses[i], res.getCoils());
-					}
-					result.set(i, res.getCoilStatus(0));
-				}
-			} finally {
-				conn.close();
-			}
-		}
+		BitSet result = ModbusHelper.readDiscreetValues(connectionFactory, new Integer[] { d1Address,
+				d2Address, d3Address, d4Address }, 1, this.unitId);
 		if ( log.isInfoEnabled() ) {
 			log.info("Read discreet PCM values: {}", result);
 		}
@@ -191,42 +162,22 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	}
 
 	private boolean setPCMStatus(Integer desiredValue) {
-		boolean result = false;
-		final ModbusSerialConnectionFactory factory = (connectionFactory == null ? null
-				: connectionFactory.service());
 		final BitSet bits = new BitSet(4);
 		final int v = desiredValue;
 		for ( int i = 0; i < 4; i++ ) {
 			bits.set(i, ((v >> i) & 1) == 1);
 		}
-		if ( factory != null ) {
-			log.info("Setting PCM status to {} ({}%)", desiredValue,
-					percentValueForIntegerValue(desiredValue));
-			SerialConnection conn = factory.getSerialConnection();
-			try {
-				Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
-				for ( int i = 0; i < addresses.length; i++ ) {
-					ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-					WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
-					req.setUnitID(this.unitId);
-					req.setHeadless();
-					trans.setRequest(req);
-					try {
-						trans.execute();
-					} catch ( ModbusException e ) {
-						throw new RuntimeException(e);
-					}
-					WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
-					if ( log.isDebugEnabled() ) {
-						log.debug("Got write {} response [{}]", addresses[i], res);
-					}
-				}
-				result = true;
-			} finally {
-				conn.close();
+		log.info("Setting PCM status to {} ({}%)", desiredValue,
+				percentValueForIntegerValue(desiredValue));
+		final Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
+		return ModbusHelper.execute(connectionFactory, new ModbusConnectionCallback<Boolean>() {
+
+			@Override
+			public Boolean doInConnection(SerialConnection conn) throws IOException {
+				return ModbusHelper.writeDiscreetValues(conn, addresses, bits, unitId);
 			}
-		}
-		return result;
+
+		});
 	}
 
 	// NodeControlProvider
