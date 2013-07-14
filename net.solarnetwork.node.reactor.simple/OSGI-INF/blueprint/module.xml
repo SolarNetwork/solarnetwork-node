@@ -60,7 +60,11 @@
 
 	<!-- Supporting Services -->
 	
-		<ctx:property-placeholder properties-ref="cfg"/>
+	<ctx:property-placeholder properties-ref="cfg"/>
+
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.reactor.simple.JOBS"/>
+	</bean>
 
 	<bean id="simpleReactorService" class="net.solarnetwork.node.reactor.simple.SimpleReactorService">
 		<property name="instructionDao" ref="instructionDao"/>
@@ -75,6 +79,7 @@
 	<bean id="instructionAck" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="instructionAckTrigger"/>
 		<property name="jobDetail" ref="instructionAckJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 	
 	<bean id="instructionAckTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
@@ -100,6 +105,7 @@
 	<bean id="instructionExecution" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="instructionExecutionTrigger"/>
 		<property name="jobDetail" ref="instructionExecutionJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 	
 	<bean id="instructionExecutionTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
@@ -126,6 +132,7 @@
 	<bean id="instructionCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="instructionCleanerTrigger"/>
 		<property name="jobDetail" ref="instructionCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 	
 	<bean id="instructionCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">

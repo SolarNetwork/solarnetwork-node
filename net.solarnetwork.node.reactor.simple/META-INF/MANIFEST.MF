@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Simple Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
-Bundle-Version: 1.1.0
+Bundle-Version: 1.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -19,6 +19,7 @@ Import-Package:
  org.springframework.core;version="[3.0,4.0)",
  org.springframework.core.io;version="[3.0,4.0)",
  org.springframework.context;version="[3.0,4.0)",
+ org.springframework.context.support;version="[3.1,4.0)",
  org.springframework.dao;version="[3.0,4.0)",
  org.springframework.dao.support;version="[3.0,4.0)",
  org.springframework.jdbc.core;version="[3.0,4.0)",
