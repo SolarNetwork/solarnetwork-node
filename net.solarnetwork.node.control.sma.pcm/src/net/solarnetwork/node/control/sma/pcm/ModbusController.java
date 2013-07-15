@@ -78,8 +78,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	private Integer d1Address = 0x4000;
 	private Integer d2Address = 0x4002;
-	private Integer d3Address = 0x4006;
-	private Integer d4Address = 0x4008;
+	private Integer d3Address = 0x4004;
+	private Integer d4Address = 0x4006;
 
 	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";

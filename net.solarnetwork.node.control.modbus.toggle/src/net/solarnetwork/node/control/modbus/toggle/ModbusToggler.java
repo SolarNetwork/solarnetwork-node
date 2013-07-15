@@ -74,7 +74,7 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 
 	private static MessageSource MESSAGE_SOURCE;
 
-	private Integer address = 0x4010;
+	private Integer address = 0x4008;
 
 	private Integer unitId = 1;
 	private String controlId = "/switch/1";
