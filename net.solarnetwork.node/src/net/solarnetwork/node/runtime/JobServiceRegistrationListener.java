@@ -64,21 +64,23 @@ import org.quartz.Trigger;
  * 
  * <p>
  * This class will also register {@link JobSettingSpecifierProvider} for every
- * unique bundle symbolic name
+ * unique bundle symbolic name. This allows the settings UI to expose the
+ * registered jobs as configurable components.
+ * </p>
  * 
  * <p>
- * For example, this might be configured via Spring DM like this:
+ * For example, this might be configured via OSGi Blueprint like this:
  * </p>
  * 
  * <pre>
- * &lt;osgi:list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail">
- * 		&lt;osgi:listener bind-method="onBind" unbind-method="onUnbind">
+ * &lt;reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail">
+ * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind">
  * 			&lt;bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
  * 				&lt;property name="scheduler" ref="scheduler"/>
  *              &lt;property name="bundleContext" ref="bundleContext"/>
  * 			&lt;/bean>
- * 		&lt;/osgi:listener>
- * &lt;/osgi:list>
+ * 		&lt;/reference-listener>
+ * &lt;/reference-list>
  * </pre>
  * 
  * <p>
@@ -92,7 +94,9 @@ import org.quartz.Trigger;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date: 2012-03-22 09:35:02 +1300 (Thu, 22 Mar 2012) $
+ * @version 1.1
+ * @see ManagedJobServiceRegistrationListener for alternative using
+ *      settings-based jobs
  */
 public class JobServiceRegistrationListener extends
 		BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>> implements

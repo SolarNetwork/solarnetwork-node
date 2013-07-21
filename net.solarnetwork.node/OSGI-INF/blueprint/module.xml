@@ -32,6 +32,16 @@
 		</reference-listener>
 	</reference-list>
 
+	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail" availability="optional">
+		<reference-listener bind-method="onBind" unbind-method="onUnbind" ref="managedJobsListener"/>
+	</reference-list>
+	<bean id="managedJobsListener" class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"
+		destroy-method="finish">
+		<property name="scheduler" ref="scheduler"/>
+		<property name="bundleContext" ref="bundleContext"/>
+	</bean>
+	
+
 	<reference-list id="serializers" availability="optional" filter="(!(delegating=true))"
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
 	
