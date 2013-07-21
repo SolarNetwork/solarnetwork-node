@@ -175,13 +175,11 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		HttpRequesterJob defaults = new HttpRequesterJob();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
-		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['url']", defaults.url));
-		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['controlId']",
-				defaults.controlId));
-		results.add(new BasicTextFieldSettingSpecifier(
-				"jobDetail.jobDataMap['connectionTimeoutSeconds']", String
-						.valueOf(defaults.connectionTimeoutSeconds)));
-		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['sleepSeconds']", String
+		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds", String
+				.valueOf(defaults.connectionTimeoutSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds", String
 				.valueOf(defaults.sleepSeconds)));
 
 		return results;
