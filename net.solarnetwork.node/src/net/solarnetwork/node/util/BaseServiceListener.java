@@ -24,6 +24,7 @@ package net.solarnetwork.node.util;
 
 import java.util.Collection;
 import java.util.Dictionary;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,10 +112,13 @@ public abstract class BaseServiceListener<T, R extends RegisteredService<T>> {
 	 */
 	protected void removeRegisteredService(T tracked, Map<String, ?> properties) {
 		synchronized ( registeredServices ) {
-			for ( R regService : registeredServices ) {
+			for ( Iterator<R> itr = registeredServices.iterator(); itr.hasNext(); ) {
+				R regService = itr.next();
 				if ( regService.isSameAs(tracked, properties) ) {
 					log.debug("Unregistering service [{}] with props {}", tracked);
 					regService.unregister();
+					itr.remove();
+					break;
 				}
 			}
 		}
