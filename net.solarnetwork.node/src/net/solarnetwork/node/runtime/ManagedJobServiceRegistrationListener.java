@@ -22,12 +22,17 @@
 
 package net.solarnetwork.node.runtime;
 
+import java.io.IOException;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 import net.solarnetwork.node.job.ManagedTriggerAndJobDetail;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ConfigurationEvent;
 import org.osgi.service.cm.ConfigurationListener;
 import org.quartz.CronTrigger;
@@ -178,8 +183,25 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 				trigJob = pidMap.get(pid);
 			}
 			if ( trigJob != null ) {
-				CronTrigger ct = (CronTrigger) trigJob.getTrigger();
-				JobUtils.scheduleCronJob(scheduler, ct, trigJob.getJobDetail(), ct.getCronExpression());
+				final CronTrigger ct = (CronTrigger) trigJob.getTrigger();
+
+				// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
+				// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
+				String newCronExpression = null;
+				@SuppressWarnings("unchecked")
+				ServiceReference<ConfigurationAdmin> caRef = event.getReference();
+				ConfigurationAdmin ca = bundleContext.getService(caRef);
+				try {
+					Configuration config = ca.getConfiguration(pid, null);
+					@SuppressWarnings("unchecked")
+					Dictionary<String, ?> props = config.getProperties();
+					newCronExpression = (String) props.get("trigger.cronExpression");
+				} catch ( IOException e ) {
+					log.warn("Exception processing configuration update event", e);
+				}
+				if ( newCronExpression != null ) {
+					JobUtils.scheduleCronJob(scheduler, ct, trigJob.getJobDetail(), newCronExpression);
+				}
 			}
 		}
 	}
