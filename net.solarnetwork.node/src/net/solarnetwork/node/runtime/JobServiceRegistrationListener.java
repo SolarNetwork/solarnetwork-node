@@ -27,14 +27,12 @@
 package net.solarnetwork.node.runtime;
 
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import net.solarnetwork.node.job.RandomizedCronTriggerBean;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.util.BaseServiceListener;
@@ -50,7 +48,6 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
-import org.springframework.scheduling.quartz.CronTriggerBean;
 
 /**
  * An OSGi service registration listener for jobs, so they can be automatically
@@ -176,7 +173,8 @@ public class JobServiceRegistrationListener extends
 
 		try {
 			if ( cronExpression != null && settingKey != null ) {
-				scheduleJobForSetting(settingKey, cronExpression, trigJob);
+				JobUtils.scheduleCronJob(scheduler, (CronTrigger) trigJob.getTrigger(),
+						trigJob.getJobDetail(), cronExpression);
 				if ( provider != null ) {
 					provider.addSpecifier(trigJob);
 					RegisteredService<TriggerAndJobDetail> rs = new RegisteredService<TriggerAndJobDetail>(
@@ -252,7 +250,8 @@ public class JobServiceRegistrationListener extends
 							for ( RegisteredService<TriggerAndJobDetail> rs : tjList ) {
 								TriggerAndJobDetail tj = rs.getConfig();
 								if ( key.equals(JobUtils.triggerKey(tj.getTrigger())) ) {
-									scheduleJobForSetting(key, (String) props.get(key), tj);
+									JobUtils.scheduleCronJob(scheduler, (CronTrigger) tj.getTrigger(),
+											tj.getJobDetail(), (String) props.get(key));
 								}
 							}
 
@@ -260,64 +259,6 @@ public class JobServiceRegistrationListener extends
 					}
 				} catch ( IOException e ) {
 					log.warn("Exception processing configuration update event", e);
-				}
-			}
-		}
-	}
-
-	private void scheduleJobForSetting(String key, String newCronExpression, TriggerAndJobDetail tj) {
-		// has the trigger value actually changed?
-		CronTrigger ct = (CronTrigger) tj.getTrigger();
-		boolean reschedule = false;
-		try {
-			CronTrigger runtimeTrigger = (CronTrigger) scheduler.getTrigger(ct.getName(), ct.getGroup());
-			if ( runtimeTrigger != null ) {
-				reschedule = true;
-				ct = runtimeTrigger;
-			}
-		} catch ( SchedulerException e ) {
-			log.warn("Error getting trigger {}.{}", new Object[] { ct.getGroup(), ct.getName(), e });
-		}
-		String currentCronExpression = ct.getCronExpression();
-		if ( ct instanceof RandomizedCronTriggerBean ) {
-			currentCronExpression = ((RandomizedCronTriggerBean) ct).getBaseCronExpression();
-		}
-		if ( !reschedule || !newCronExpression.equals(currentCronExpression) ) {
-			if ( reschedule ) {
-				log.info("Trigger {} cron changed from {} to {}", new Object[] { key,
-						currentCronExpression, newCronExpression });
-				CronTriggerBean newTrigger;
-				if ( ct instanceof RandomizedCronTriggerBean ) {
-					RandomizedCronTriggerBean oldR = (RandomizedCronTriggerBean) ct;
-					RandomizedCronTriggerBean r = new RandomizedCronTriggerBean();
-					r.setRandomSecond(oldR.isRandomSecond());
-					newTrigger = r;
-				} else {
-					newTrigger = new CronTriggerBean();
-				}
-				newTrigger.setName(ct.getName());
-				newTrigger.setGroup(ct.getGroup());
-				newTrigger.setJobName(ct.getJobName());
-				newTrigger.setJobGroup(ct.getJobGroup());
-				newTrigger.setDescription(ct.getDescription());
-				newTrigger.setMisfireInstruction(ct.getMisfireInstruction());
-				try {
-					newTrigger.setCronExpression(newCronExpression);
-					scheduler.rescheduleJob(ct.getName(), ct.getGroup(), newTrigger);
-				} catch ( ParseException e ) {
-					log.error("Error in cron expression [{}]", newCronExpression, e);
-				} catch ( SchedulerException e ) {
-					log.error("Error re-scheduling trigger {} for job {}", new Object[] { ct.getName(),
-							ct.getJobName(), e });
-				}
-			} else {
-				log.info("Scheduling trigger {} as cron {}", new Object[] { key, currentCronExpression,
-						newCronExpression });
-				try {
-					scheduler.scheduleJob(tj.getJobDetail(), ct);
-				} catch ( SchedulerException e ) {
-					log.error("Error scheduling trigger {} for job {}",
-							new Object[] { ct.getName(), ct.getJobName(), e });
 				}
 			}
 		}
