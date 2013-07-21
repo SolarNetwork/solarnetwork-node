@@ -25,9 +25,11 @@ package net.solarnetwork.node.control.ping;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import javax.annotation.Resource;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.Instruction;
@@ -35,8 +37,13 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Make a HTTP request to test for network connectivity, and toggle a control
@@ -77,7 +84,9 @@ import org.quartz.StatefulJob;
  * @author matt
  * @version 1.0
  */
-public class HttpRequesterJob extends AbstractJob implements StatefulJob {
+public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+
+	private static MessageSource MESSAGE_SOURCE;
 
 	private String controlId;
 	private int sleepSeconds = 5;
@@ -93,7 +102,13 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob {
 			log.warn("No configured InstructionHandler collection");
 			return;
 		}
-		if ( !ping() ) {
+		if ( controlId == null ) {
+			log.debug("No control ID configured.");
+			return;
+		}
+		if ( ping() ) {
+			log.info("Ping {} successful", url);
+		} else {
 			toggleControl(false);
 			if ( sleepSeconds > 0 ) {
 				log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds, controlId);
@@ -142,6 +157,45 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob {
 			log.warn("Unable to set {} to {}; result is {}", controlId, value, result);
 		}
 		return result;
+	}
+
+	// SettingSpecifierProvider
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.control.ping.http";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "HTTP Ping";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		HttpRequesterJob defaults = new HttpRequesterJob();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
+		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['url']", defaults.url));
+		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['controlId']",
+				defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier(
+				"jobDetail.jobDataMap['connectionTimeoutSeconds']", String
+						.valueOf(defaults.connectionTimeoutSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("jobDetail.jobDataMap['sleepSeconds']", String
+				.valueOf(defaults.sleepSeconds)));
+
+		return results;
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		if ( MESSAGE_SOURCE == null ) {
+			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+			source.setBundleClassLoader(getClass().getClassLoader());
+			source.setBasename(getClass().getName());
+			MESSAGE_SOURCE = source;
+		}
+		return MESSAGE_SOURCE;
 	}
 
 	public void setControlId(String controlId) {
