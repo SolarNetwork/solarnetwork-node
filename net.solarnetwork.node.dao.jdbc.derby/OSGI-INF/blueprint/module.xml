@@ -20,7 +20,7 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="dao.jdbc.derby.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.derby">
-		<beans:prop key="job.syncBackup.cron">0 0 1 * * ? 2099</beans:prop>
+		<beans:prop key="job.syncBackup.cron">3 0 1 ? * WED</beans:prop>
 		<beans:prop key="job.syncBackup.destinationPath">var/db-bak</beans:prop>
 	</osgix:cm-properties>
 	
