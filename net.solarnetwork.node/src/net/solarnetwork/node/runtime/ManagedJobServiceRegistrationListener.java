@@ -135,6 +135,11 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 		final CronTrigger trigger = (CronTrigger) trigJob.getTrigger();
 		final String pid = (String) properties.get(Constants.SERVICE_PID);
 
+		// rename job name and trigger name to account for instance
+		trigJob.getJobDetail().setName(pid);
+		trigJob.getTrigger().setJobName(pid);
+		trigJob.getTrigger().setName(pid);
+
 		synchronized ( this ) {
 			if ( configurationListenerRef == null ) {
 				configurationListenerRef = bundleContext.registerService(ConfigurationListener.class,
