@@ -36,7 +36,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.quartz.CronTrigger;
-import org.quartz.Scheduler;
 import org.quartz.Trigger;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
@@ -164,48 +163,6 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	}
 
 	/**
-	 * Get the setting key for a Trigger.
-	 * 
-	 * <p>
-	 * The key is named after these elements, joined with a period character:
-	 * </p>
-	 * 
-	 * <ol>
-	 * <li>job group (omitted if set to {@link Scheduler#DEFAULT_GROUP})</li>
-	 * <li>job name</li>
-	 * <li>trigger group (omitted if set to {@link Scheduler#DEFAULT_GROUP})</li>
-	 * <li>trigger name</li>
-	 * </ol>
-	 * 
-	 * @param t
-	 *        the trigger to generate the key from
-	 * @return the setting key
-	 */
-	public static String triggerKey(Trigger t) {
-		StringBuilder buf = new StringBuilder();
-		if ( t.getJobGroup() != null && !Scheduler.DEFAULT_GROUP.equals(t.getJobGroup()) ) {
-			buf.append(t.getJobGroup());
-		}
-		if ( t.getJobName() != null ) {
-			if ( buf.length() > 0 ) {
-				buf.append('.');
-			}
-			buf.append(t.getJobName());
-		}
-		if ( t.getGroup() != null && !Scheduler.DEFAULT_GROUP.equals(t.getGroup()) ) {
-			if ( buf.length() > 0 ) {
-				buf.append('.');
-			}
-			buf.append(t.getGroup());
-		}
-		if ( buf.length() > 0 ) {
-			buf.append('.');
-		}
-		buf.append(t.getName());
-		return buf.toString();
-	}
-
-	/**
 	 * Create appropriate {@link SettingSpecifier} instances for a given
 	 * {@link TriggerAndJobDetail}.
 	 * 
@@ -221,7 +178,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 		Trigger trig = trigJob.getTrigger();
 		if ( trig instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trig;
-			final String key = triggerKey(ct);
+			final String key = JobUtils.triggerKey(ct);
 			BasicTextFieldSettingSpecifier tf = new BasicTextFieldSettingSpecifier(key,
 					ct.getCronExpression());
 			tf.setTitle(ct.getName());
@@ -271,7 +228,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 		Trigger trig = trigJob.getTrigger();
 		if ( trig instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trig;
-			final String key = triggerKey(ct);
+			final String key = JobUtils.triggerKey(ct);
 			synchronized ( specifiers ) {
 				for ( Iterator<SettingSpecifier> itr = specifiers.iterator(); itr.hasNext(); ) {
 					TextFieldSettingSpecifier tf = (TextFieldSettingSpecifier) itr.next();

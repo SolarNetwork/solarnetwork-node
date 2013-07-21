@@ -148,7 +148,7 @@ public class JobServiceRegistrationListener extends
 				// check for ConfigurationAdmin cron setting for this trigger,
 				// and
 				// use that if available
-				settingKey = JobSettingSpecifierProvider.triggerKey(trigger);
+				settingKey = JobUtils.triggerKey(trigger);
 				if ( trigger instanceof CronTrigger ) {
 					cronExpression = ((CronTrigger) trigger).getCronExpression();
 					ConfigurationAdmin ca = (ConfigurationAdmin) getBundleContext().getService(
@@ -251,7 +251,7 @@ public class JobServiceRegistrationListener extends
 						synchronized ( tjList ) {
 							for ( RegisteredService<TriggerAndJobDetail> rs : tjList ) {
 								TriggerAndJobDetail tj = rs.getConfig();
-								if ( key.equals(JobSettingSpecifierProvider.triggerKey(tj.getTrigger())) ) {
+								if ( key.equals(JobUtils.triggerKey(tj.getTrigger())) ) {
 									scheduleJobForSetting(key, (String) props.get(key), tj);
 								}
 							}
