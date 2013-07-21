@@ -43,9 +43,9 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BasicToggleSettingSpecifier(String key, Object defaultValue) {
 		super(key, defaultValue);
@@ -55,16 +55,16 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 * @param trans
-	 *            the transient flag value
+	 *        the transient flag value
 	 */
 	public BasicToggleSettingSpecifier(String key, Object defaultValue, boolean trans) {
 		super(key, defaultValue, trans);
 	}
-	
+
 	@Override
 	public Object getTrueValue() {
 		return this.trueValue;
@@ -76,9 +76,9 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicToggleSettingSpecifier spec = new BasicToggleSettingSpecifier(prefix + getKey(),
-				getDefaultValue());
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicToggleSettingSpecifier spec = new BasicToggleSettingSpecifier(String.format(template,
+				getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setTrueValue(trueValue);
 		spec.setFalseValue(falseValue);

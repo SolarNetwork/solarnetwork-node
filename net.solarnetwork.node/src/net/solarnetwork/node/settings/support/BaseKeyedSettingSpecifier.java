@@ -25,6 +25,7 @@
 package net.solarnetwork.node.settings.support;
 
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
 
 /**
  * Base implementation of {@link KeyedSettingSpecifier}.
@@ -42,12 +43,14 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 	/**
 	 * Constructor.
 	 * 
-	 * <p>The {@code transient} property will be set to <em>false</em></p>
+	 * <p>
+	 * The {@code transient} property will be set to <em>false</em>
+	 * </p>
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BaseKeyedSettingSpecifier(String key, T defaultValue) {
 		this(key, defaultValue, false);
@@ -57,11 +60,11 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 * @param trans
-	 *            the transient flag value
+	 *        the transient flag value
 	 */
 	public BaseKeyedSettingSpecifier(String key, T defaultValue, boolean trans) {
 		super();
@@ -85,10 +88,15 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 		return trans;
 	}
 
+	@Override
+	public SettingSpecifier mappedTo(String prefix) {
+		return mappedWithPlaceholer(prefix + "%s");
+	}
+
 	public void setTransient(boolean value) {
 		this.trans = value;
 	}
-	
+
 	public void setKey(String key) {
 		this.key = key;
 	}

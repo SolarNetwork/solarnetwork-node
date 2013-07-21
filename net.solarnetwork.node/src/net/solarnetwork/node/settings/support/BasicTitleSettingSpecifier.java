@@ -26,7 +26,6 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.Collections;
 import java.util.Map;
-
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.TitleSettingSpecifier;
 
@@ -45,9 +44,9 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BasicTitleSettingSpecifier(String key, String defaultValue) {
 		super(key, defaultValue);
@@ -57,25 +56,25 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 * @param trans
-	 *            the transient flag value
+	 *        the transient flag value
 	 */
 	public BasicTitleSettingSpecifier(String key, String defaultValue, boolean trans) {
 		super(key, defaultValue, trans);
 	}
-	
+
 	@Override
 	public Map<String, String> getValueTitles() {
 		return this.valueTitles;
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(prefix + getKey(),
-				getDefaultValue());
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(String.format(template,
+				getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(valueTitles);
 		return spec;

@@ -44,15 +44,15 @@ public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Doubl
 	 * Construct with values.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 * @param minValue
-	 *            the minimum value
+	 *        the minimum value
 	 * @param maxValue
-	 *            the maximum value
+	 *        the maximum value
 	 * @param step
-	 *            the step value
+	 *        the step value
 	 */
 	public BasicSliderSettingSpecifier(String key, Double defaultValue, Double minValue,
 			Double maxValue, Double step) {
@@ -78,10 +78,9 @@ public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Doubl
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicSliderSettingSpecifier spec = new BasicSliderSettingSpecifier(prefix + getKey(),
-				getDefaultValue(), minimumValue,
-				maximumValue, step);
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicSliderSettingSpecifier spec = new BasicSliderSettingSpecifier(String.format(template,
+				getKey()), getDefaultValue(), minimumValue, maximumValue, step);
 		spec.setTitle(getTitle());
 		return spec;
 	}

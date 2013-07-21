@@ -40,18 +40,18 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier i
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BasicTextFieldSettingSpecifier(String key, String defaultValue) {
 		super(key, defaultValue);
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(prefix + getKey(),
-				getDefaultValue());
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(String.format(template,
+				getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;

@@ -1,5 +1,5 @@
 /* ==================================================================
- * ManagedTriggerAndJobDetail.java - Jul 21, 2013 1:08:03 PM
+ * ManagedTriggerAndJobDetail.java - Jul 22, 2013 6:53:49 AM
  * 
  * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
@@ -22,53 +22,31 @@
 
 package net.solarnetwork.node.job;
 
-import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
 
 /**
- * Extension of {@link SimpleTriggerAndJobDetail} that supports a
- * {@link SettingSpecifierProvider} to manage the job at runtime.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl>
- * <dt>settingSpecifierProvider</dt>
- * <dd>The {@link SettingSpecifierProvider} that this class proxies all methods
- * for.</dd>
- * </dl>
+ * A bean that combines a trigger and a job, designed to be managed via
+ * settings.
  * 
  * @author matt
  * @version 1.0
  */
-public class ManagedTriggerAndJobDetail extends SimpleTriggerAndJobDetail implements
-		SettingSpecifierProvider {
+public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider {
 
-	private SettingSpecifierProvider settingSpecifierProvider;
+	/**
+	 * Get the Trigger.
+	 * 
+	 * @return the trigger
+	 */
+	Trigger getTrigger();
 
-	@Override
-	public String getSettingUID() {
-		return settingSpecifierProvider.getSettingUID();
-	}
-
-	@Override
-	public String getDisplayName() {
-		return settingSpecifierProvider.getDisplayName();
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		return settingSpecifierProvider.getSettingSpecifiers();
-	}
-
-	public SettingSpecifierProvider getSettingSpecifierProvider() {
-		return settingSpecifierProvider;
-	}
-
-	public void setSettingSpecifierProvider(SettingSpecifierProvider settingSpecifierProvider) {
-		this.settingSpecifierProvider = settingSpecifierProvider;
-	}
+	/**
+	 * Get the JobDetail.
+	 * 
+	 * @return the jobDetail
+	 */
+	JobDetail getJobDetail();
 
 }

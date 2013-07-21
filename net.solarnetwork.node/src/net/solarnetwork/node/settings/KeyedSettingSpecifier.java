@@ -27,7 +27,8 @@ package net.solarnetwork.node.settings;
 /**
  * A setting specifier that can store a value associated with a key.
  * 
- * @param <T> the type of value stored by this setting
+ * @param <T>
+ *        the type of value stored by this setting
  * @author matt
  * @version $Revision$
  */
@@ -55,20 +56,30 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 	 * </p>
 	 * 
 	 * @param prefix
-	 *            the new prefix to add to the key
+	 *        the new prefix to add to the key
 	 * @return the new instance
 	 */
 	SettingSpecifier mappedTo(String prefix);
 
 	/**
+	 * Return a setting specifier mapped to a new path, using a format template.
+	 * 
+	 * @param template
+	 *        the format template
+	 * @return the new instance
+	 */
+	SettingSpecifier mappedWithPlaceholer(String template);
+
+	/**
 	 * Get transient flag.
 	 * 
-	 * <p>If a setting is transient, its associated value is never actually persisted
-	 * and the {@link #getDefaultValue()} is treated as its "current" value. This 
-	 * can be used for 
+	 * <p>
+	 * If a setting is transient, its associated value is never actually
+	 * persisted and the {@link #getDefaultValue()} is treated as its "current"
+	 * value. This can be used for
 	 * 
 	 * @return
 	 */
 	boolean isTransient();
-	
+
 }
