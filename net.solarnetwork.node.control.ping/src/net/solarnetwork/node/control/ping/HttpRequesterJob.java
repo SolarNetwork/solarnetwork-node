@@ -111,8 +111,8 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob {
 		log.debug("Attempting to ping {}", url);
 		try {
 			HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-			connection.setConnectTimeout(connectionTimeoutSeconds);
-			connection.setReadTimeout(connectionTimeoutSeconds);
+			connection.setConnectTimeout(connectionTimeoutSeconds * 1000);
+			connection.setReadTimeout(connectionTimeoutSeconds * 1000);
 			connection.setRequestMethod("HEAD");
 			int responseCode = connection.getResponseCode();
 			return (responseCode >= 200 && responseCode < 400);
