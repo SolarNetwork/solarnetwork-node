@@ -161,7 +161,8 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 				// treat parameter value as a boolean String
 				String str = instruction.getParameterValue(controlId);
 				Boolean desiredValue = Boolean.parseBoolean(str);
-				if ( setValue(desiredValue) ) {
+				final Boolean modbusResult = setValue(desiredValue);
+				if ( modbusResult != null && modbusResult.booleanValue() ) {
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
