@@ -178,7 +178,7 @@ public class JobServiceRegistrationListener extends
 		try {
 			if ( cronExpression != null && settingKey != null ) {
 				JobUtils.scheduleCronJob(scheduler, (CronTrigger) trigJob.getTrigger(),
-						trigJob.getJobDetail(), cronExpression);
+						trigJob.getJobDetail(), cronExpression, null);
 				if ( provider != null ) {
 					provider.addSpecifier(trigJob);
 					RegisteredService<TriggerAndJobDetail> rs = new RegisteredService<TriggerAndJobDetail>(
@@ -255,7 +255,7 @@ public class JobServiceRegistrationListener extends
 								TriggerAndJobDetail tj = rs.getConfig();
 								if ( key.equals(JobUtils.triggerKey(tj.getTrigger())) ) {
 									JobUtils.scheduleCronJob(scheduler, (CronTrigger) tj.getTrigger(),
-											tj.getJobDetail(), (String) props.get(key));
+											tj.getJobDetail(), (String) props.get(key), null);
 								}
 							}
 

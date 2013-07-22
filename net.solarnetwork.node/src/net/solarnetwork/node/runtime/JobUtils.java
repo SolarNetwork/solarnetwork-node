@@ -25,6 +25,7 @@ package net.solarnetwork.node.runtime;
 import java.text.ParseException;
 import net.solarnetwork.node.job.RandomizedCronTriggerBean;
 import org.quartz.CronTrigger;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -112,7 +113,7 @@ public class JobUtils {
 	 *        scheduled
 	 */
 	public static void scheduleCronJob(Scheduler scheduler, CronTrigger trigger, JobDetail jobDetail,
-			String newCronExpression) {
+			String newCronExpression, JobDataMap newJobDataMap) {
 		// has the trigger value actually changed?
 		CronTrigger ct = trigger;
 		boolean reschedule = false;
@@ -131,10 +132,18 @@ public class JobUtils {
 		if ( ct instanceof RandomizedCronTriggerBean ) {
 			currentCronExpression = ((RandomizedCronTriggerBean) ct).getBaseCronExpression();
 		}
-		if ( !reschedule || !newCronExpression.equals(currentCronExpression) ) {
+		boolean triggerChanged = false;
+		if ( !newCronExpression.equals(currentCronExpression) ) {
+			log.info("Trigger {} cron changed from {} to {}", new Object[] { triggerKey(trigger),
+					currentCronExpression, newCronExpression });
+			triggerChanged = true;
+		}
+		if ( newJobDataMap != null && !newJobDataMap.equals(ct.getJobDataMap()) ) {
+			log.info("Trigger {} job data changed", triggerKey(trigger));
+			triggerChanged = true;
+		}
+		if ( !reschedule || triggerChanged ) {
 			if ( reschedule ) {
-				log.info("Trigger {} cron changed from {} to {}", new Object[] { triggerKey(trigger),
-						currentCronExpression, newCronExpression });
 				CronTriggerBean newTrigger;
 				if ( ct instanceof RandomizedCronTriggerBean ) {
 					RandomizedCronTriggerBean oldR = (RandomizedCronTriggerBean) ct;
@@ -150,6 +159,9 @@ public class JobUtils {
 				newTrigger.setJobGroup(ct.getJobGroup());
 				newTrigger.setDescription(ct.getDescription());
 				newTrigger.setMisfireInstruction(ct.getMisfireInstruction());
+				if ( newJobDataMap != null ) {
+					newTrigger.setJobDataMap(newJobDataMap);
+				}
 				try {
 					newTrigger.setCronExpression(newCronExpression);
 					scheduler.rescheduleJob(ct.getName(), ct.getGroup(), newTrigger);

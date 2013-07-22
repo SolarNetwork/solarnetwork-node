@@ -94,6 +94,8 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		// we map the managed properties to the trigger, so when we update the values 
+		// we can reschedule the job with the updated values
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		if ( trigger instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trigger;
@@ -103,7 +105,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		for ( SettingSpecifier spec : settingSpecifierProvider.getSettingSpecifiers() ) {
 			if ( spec instanceof KeyedSettingSpecifier<?> ) {
 				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-				result.add(keyedSpec.mappedWithPlaceholer("jobDetail.jobDataMap['%s']"));
+				result.add(keyedSpec.mappedWithPlaceholer("trigger.jobDataMap['%s']"));
 			} else {
 				result.add(spec);
 			}
@@ -116,7 +118,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		if ( messageSource == null ) {
 			TemplatedMessageSource tSource = new TemplatedMessageSource();
 			tSource.setDelegate(settingSpecifierProvider.getMessageSource());
-			tSource.setRegex("jobDetail\\.jobDataMap\\['(.*)'\\](.*)");
+			tSource.setRegex("trigger\\.jobDataMap\\['(.*)'\\](.*)");
 			messageSource = tSource;
 		}
 		return messageSource;

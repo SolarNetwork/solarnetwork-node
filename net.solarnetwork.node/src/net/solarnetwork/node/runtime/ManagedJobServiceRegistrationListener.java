@@ -24,8 +24,11 @@ package net.solarnetwork.node.runtime;
 
 import java.io.IOException;
 import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.node.job.ManagedTriggerAndJobDetail;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -36,6 +39,7 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ConfigurationEvent;
 import org.osgi.service.cm.ConfigurationListener;
 import org.quartz.CronTrigger;
+import org.quartz.JobDataMap;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.slf4j.Logger;
@@ -149,7 +153,8 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			pidMap.put(pid, trigJob);
 		}
 
-		JobUtils.scheduleCronJob(scheduler, trigger, trigJob.getJobDetail(), trigger.getCronExpression());
+		JobUtils.scheduleCronJob(scheduler, trigger, trigJob.getJobDetail(),
+				trigger.getCronExpression(), trigger.getJobDataMap());
 	}
 
 	/**
@@ -192,7 +197,8 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 
 				// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
 				// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
-				String newCronExpression = null;
+				String newCronExpression = ct.getCronExpression();
+				JobDataMap newJobDataMap = (JobDataMap) ct.getJobDataMap().clone();
 				@SuppressWarnings("unchecked")
 				ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 				ConfigurationAdmin ca = bundleContext.getService(caRef);
@@ -200,12 +206,27 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 					Configuration config = ca.getConfiguration(pid, null);
 					@SuppressWarnings("unchecked")
 					Dictionary<String, ?> props = config.getProperties();
-					newCronExpression = (String) props.get("trigger.cronExpression");
+					String propCronExpression = (String) props.get("trigger.cronExpression");
+					if ( propCronExpression != null ) {
+						newCronExpression = propCronExpression;
+					}
+
+					// get JobDataMap
+					Enumeration<String> keyEnum = props.keys();
+					Pattern pat = Pattern.compile("trigger\\.jobDataMap\\['(.*)'\\]");
+					while ( keyEnum.hasMoreElements() ) {
+						String key = keyEnum.nextElement();
+						Matcher m = pat.matcher(key);
+						if ( m.matches() ) {
+							newJobDataMap.put(m.group(1), props.get(key));
+						}
+					}
 				} catch ( IOException e ) {
 					log.warn("Exception processing configuration update event", e);
 				}
 				if ( newCronExpression != null ) {
-					JobUtils.scheduleCronJob(scheduler, ct, trigJob.getJobDetail(), newCronExpression);
+					JobUtils.scheduleCronJob(scheduler, ct, trigJob.getJobDetail(), newCronExpression,
+							newJobDataMap);
 				}
 			}
 		}
