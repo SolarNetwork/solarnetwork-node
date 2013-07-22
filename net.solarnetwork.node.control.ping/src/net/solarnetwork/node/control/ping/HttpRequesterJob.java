@@ -30,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import javax.annotation.Resource;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -92,8 +91,6 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 	private int sleepSeconds = 5;
 	private int connectionTimeoutSeconds = 15;
 	private String url = "http://www.google.com/";
-
-	@Resource(name = "instructionHandlerList")
 	private Collection<InstructionHandler> handlers = Collections.emptyList();
 
 	@Override
