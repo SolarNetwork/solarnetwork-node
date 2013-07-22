@@ -34,20 +34,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
- * </dl>
+ * Default implementation of {@link ModbusSerialConnectionFactory}.
  * 
  * @author matt
  * @version 1.0
