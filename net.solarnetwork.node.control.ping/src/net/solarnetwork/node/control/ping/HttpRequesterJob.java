@@ -109,16 +109,18 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		if ( ping() ) {
 			log.info("Ping {} successful", url);
 		} else {
-			toggleControl(false);
-			if ( sleepSeconds > 0 ) {
-				log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds, controlId);
-				try {
-					Thread.sleep(sleepSeconds * 1000L);
-				} catch ( InterruptedException e ) {
-					log.warn("Interrupted while sleeping");
+			if ( toggleControl(false) == InstructionState.Completed ) {
+				if ( sleepSeconds > 0 ) {
+					log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds,
+							controlId);
+					try {
+						Thread.sleep(sleepSeconds * 1000L);
+					} catch ( InterruptedException e ) {
+						log.warn("Interrupted while sleeping");
+					}
 				}
+				toggleControl(true);
 			}
-			toggleControl(true);
 		}
 	}
 
@@ -151,6 +153,7 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		if ( result == null ) {
 			// nobody handled it!
 			result = InstructionState.Declined;
+			log.warn("No InstructionHandler found for control {}", controlId);
 		} else if ( result == InstructionState.Completed ) {
 			log.info("Set {} value to {}", controlId, value);
 		} else {
