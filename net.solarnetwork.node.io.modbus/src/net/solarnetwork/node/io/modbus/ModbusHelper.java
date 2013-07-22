@@ -46,36 +46,6 @@ public final class ModbusHelper {
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusHelper.class);
 
 	/**
-	 * Callback API for performing an action with a Modbus
-	 * {@link SerialConnection}.
-	 * 
-	 * <p>
-	 * If no result object is needed, simply use {@link Object} as the parameter
-	 * type and return <em>null</em> from
-	 * {@link #doInConnection(SerialConnection)}.
-	 * </p>
-	 * 
-	 * @param <T>
-	 *        the action return type
-	 */
-	public static interface ModbusConnectionCallback<T> {
-
-		/**
-		 * Perform an action with a Modbus {@link SerialConnection}.
-		 * 
-		 * <p>
-		 * If no result object is needed, simply return <em>null</em>.
-		 * </p>
-		 * 
-		 * @param conn
-		 *        the connection
-		 * @return the result
-		 * @throws IOException
-		 */
-		T doInConnection(SerialConnection conn) throws IOException;
-	}
-
-	/**
 	 * Perform some work with a Modbus {@link SerialConnection}.
 	 * 
 	 * <p>
