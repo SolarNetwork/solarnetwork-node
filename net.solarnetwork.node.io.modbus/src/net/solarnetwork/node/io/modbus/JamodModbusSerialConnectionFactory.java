@@ -22,12 +22,18 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
+import net.wimpi.modbus.util.SerialParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -43,6 +49,7 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 		SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
+	private final ReentrantLock lock = new ReentrantLock();
 
 	private static SerialParametersBean getDefaultSerialParametersInstance() {
 		SerialParametersBean params = new SerialParametersBean();
@@ -60,6 +67,8 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private SerialParametersBean serialParams = getDefaultSerialParametersInstance();
+	private long timeout = 10L;
+	private TimeUnit unit = TimeUnit.SECONDS;
 
 	@Override
 	public String getUID() {
@@ -68,31 +77,112 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 
 	@Override
 	public SerialConnection getSerialConnection() {
-		return openConnection(2);
+		LockingSerialConnection conn = new LockingSerialConnection(serialParams);
+		openConnection(conn, 2);
+		return conn;
 	}
 
-	private SerialConnection openConnection(int tries) {
+	/**
+	 * Internal extension of {@link SerialConnection} that utilizes a
+	 * {@link Lock} to serialize access to the connection between threads.
+	 */
+	private class LockingSerialConnection extends SerialConnection {
+
+		/**
+		 * Construct with {@link SerialParameters}.
+		 * 
+		 * @param parameters
+		 *        the parameters
+		 */
+		private LockingSerialConnection(SerialParameters parameters) {
+			super(parameters);
+		}
+
+		@Override
+		public void open() throws Exception {
+			if ( !isOpen() ) {
+				acquireLock();
+				super.open();
+			}
+		}
+
+		@Override
+		public void close() {
+			if ( isOpen() ) {
+				try {
+					super.close();
+				} finally {
+					releaseLock();
+				}
+			}
+		}
+	}
+
+	/**
+	 * Acquire the port lock, returning if lock acquired.
+	 * 
+	 * @throws LockTimeoutException
+	 *         if the lock cannot be obtained
+	 */
+	private void acquireLock() throws LockTimeoutException {
+		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}", serialParams.getPortName(),
+				timeout, unit);
+		try {
+			if ( lock.tryLock(timeout, unit) ) {
+				log.debug("Acquired port {} lock", serialParams.getPortName());
+				return;
+			}
+			log.debug("Timeout acquiring port {} lock", serialParams.getPortName());
+		} catch ( InterruptedException e ) {
+			log.debug("Interrupted waiting for port {} lock", serialParams.getPortName());
+		}
+		throw new LockTimeoutException("Could not acquire port " + serialParams.getPortName() + " lock");
+	}
+
+	/**
+	 * Release the lock previously obtained via {@link #acquireLock()}.
+	 */
+	private void releaseLock() {
+		log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
+		lock.unlock();
+	}
+
+	private void openConnection(SerialConnection conn, int tries) {
+		if ( conn.isOpen() ) {
+			return;
+		}
 		if ( log.isDebugEnabled() ) {
 			log.debug("Opening serial connection to [" + serialParams.getPortName() + "], " + tries
 					+ " tries remaining");
 		}
-		try {
-			SerialConnection conn = new SerialConnection(serialParams);
-			if ( log.isTraceEnabled() ) {
-				log.trace("just before opening connection status:[" + conn.isOpen() + "]");
+		Exception exception = null;
+		do {
+			try {
+				conn.open();
+				return;
+			} catch ( Exception e ) {
+				exception = e;
+				tries--;
 			}
-			conn.open();
-			if ( log.isTraceEnabled() ) {
-				log.trace("just after opening connection status:[" + conn.isOpen() + "]");
+		} while ( tries > 0 );
+		throw new RuntimeException("Unable to open serial connection to [" + serialParams.getPortName()
+				+ "]", exception);
+	}
+
+	@Override
+	public <T> T execute(ModbusConnectionCallback<T> action) {
+		T result = null;
+		SerialConnection conn = getSerialConnection();
+		if ( conn != null ) {
+			try {
+				result = action.doInConnection(conn);
+			} catch ( IOException e ) {
+				throw new RuntimeException(e);
+			} finally {
+				conn.close();
 			}
-			return conn;
-		} catch ( Exception e ) {
-			if ( tries > 1 ) {
-				return openConnection(tries - 1);
-			}
-			throw new RuntimeException("Unable to open serial connection to ["
-					+ serialParams.getPortName() + "]", e);
 		}
+		return result;
 	}
 
 	// SettingSpecifierProvider
@@ -126,6 +216,7 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		JamodModbusSerialConnectionFactory defaults = new JamodModbusSerialConnectionFactory();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", defaults.serialParams
 				.getPortName()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate", String
@@ -157,6 +248,14 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 
 	public void setSerialParams(SerialParametersBean serialParams) {
 		this.serialParams = serialParams;
+	}
+
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
+	public void setUnit(TimeUnit unit) {
+		this.unit = unit;
 	}
 
 }

@@ -74,16 +74,7 @@ public final class ModbusHelper {
 		ModbusSerialConnectionFactory factory = (connectionFactory == null ? null : connectionFactory
 				.service());
 		if ( factory != null ) {
-			SerialConnection conn = factory.getSerialConnection();
-			if ( conn != null ) {
-				try {
-					result = action.doInConnection(conn);
-				} catch ( IOException e ) {
-					throw new RuntimeException(e);
-				} finally {
-					conn.close();
-				}
-			}
+			result = factory.execute(action);
 		}
 		return result;
 	}
