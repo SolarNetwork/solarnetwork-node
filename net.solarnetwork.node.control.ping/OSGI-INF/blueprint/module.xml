@@ -16,7 +16,12 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<!-- Published Services -->
+	<!-- Service references -->
+
+	<reference-list id="instructionHandlerList" availability="optional"
+		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+
+	<!-- Supporting Services -->
 	
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
@@ -56,6 +61,11 @@
 				<bean class="org.springframework.scheduling.quartz.JobDetailBean">
 					<property name="name" value="pingJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.control.ping.HttpRequesterJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="handlers" value-ref="instructionHandlerList"/>
+						</map>
+					</property>
 				</bean>
 			</property>
 			<property name="settingSpecifierProvider">
