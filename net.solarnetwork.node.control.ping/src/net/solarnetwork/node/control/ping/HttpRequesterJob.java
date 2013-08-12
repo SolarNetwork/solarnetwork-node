@@ -30,6 +30,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
+import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -39,6 +42,7 @@ import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.OptionalService;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 import org.springframework.context.MessageSource;
@@ -81,7 +85,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
 
@@ -92,6 +96,7 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 	private int connectionTimeoutSeconds = 15;
 	private String url = "http://www.google.com/";
 	private Collection<InstructionHandler> handlers = Collections.emptyList();
+	private OptionalService<SSLService> sslService;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
@@ -128,6 +133,18 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			connection.setConnectTimeout(connectionTimeoutSeconds * 1000);
 			connection.setReadTimeout(connectionTimeoutSeconds * 1000);
 			connection.setRequestMethod("HEAD");
+
+			if ( sslService != null && connection instanceof HttpsURLConnection ) {
+				SSLService service = sslService.service();
+				if ( service != null ) {
+					SSLSocketFactory factory = service.getSolarInSocketFactory();
+					if ( factory != null ) {
+						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
+						sslConnection.setSSLSocketFactory(factory);
+					}
+				}
+			}
+
 			int responseCode = connection.getResponseCode();
 			return (responseCode >= 200 && responseCode < 400);
 		} catch ( IOException e ) {
@@ -214,6 +231,10 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 
 	public void setConnectionTimeoutSeconds(int connectionTimeout) {
 		this.connectionTimeoutSeconds = connectionTimeout;
+	}
+
+	public void setSslService(OptionalService<SSLService> sslService) {
+		this.sslService = sslService;
 	}
 
 }

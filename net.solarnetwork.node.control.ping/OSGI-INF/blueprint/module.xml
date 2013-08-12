@@ -21,7 +21,16 @@
 	<reference-list id="instructionHandlerList" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
 
+	<reference id="sslServiceRef" availability="optional"
+		interface="net.solarnetwork.node.SSLService">
+		<reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
 	<!-- Supporting Services -->
+	
+	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="sslServiceRef"/>
+	</bean>
 	
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
@@ -64,6 +73,7 @@
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="handlers" value-ref="instructionHandlerList"/>
+							<entry key="sslService" value-ref="sslService"/>
 						</map>
 					</property>
 				</bean>
