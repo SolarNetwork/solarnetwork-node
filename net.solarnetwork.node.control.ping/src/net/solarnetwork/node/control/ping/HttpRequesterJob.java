@@ -61,12 +61,28 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </p>
  * 
  * <p>
+ * Alternatively, or in addition to to, toggling a control two OS-specific
+ * commands can be executed if the URL cannot be reached. The
+ * {@code osCommandToggleOff} command will be executed when the URL fails,
+ * followed by the configured pause, followed by the {@code osCommandToggleOn}
+ * command.
+ * </p>
+ * 
+ * <p>
  * The configurable properties of this class are:
  * </p>
  * 
  * <dl class="class-properties">
  * <dt>controlId</dt>
  * <dd>The ID of the boolean control to toggle.</dd>
+ * 
+ * <dt>osCommandToggleOff</dt>
+ * <dd>If configured, an OS-specific command to run after the URL cannot be
+ * reached.</dd>
+ * 
+ * <dt>osCommandToggleOn</dt>
+ * <dd>If configured, an OS-specific command to run after the URL was not
+ * reached and the configured pause time has elapsed.</dd>
  * 
  * <dt>sleepSeconds</dt>
  * <dd>The number of seconds to wait after toggling the control to
@@ -85,13 +101,15 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 
 	private String controlId;
+	private String osCommandToggleOff;
+	private String osCommandToggleOn;
 	private int sleepSeconds = 5;
 	private int connectionTimeoutSeconds = 15;
 	private String url = "http://www.google.com/";
@@ -104,24 +122,51 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			log.warn("No configured InstructionHandler collection");
 			return;
 		}
-		if ( controlId == null ) {
-			log.debug("No control ID configured.");
+		if ( controlId == null && osCommandToggleOff == null && osCommandToggleOn == null ) {
+			log.debug("No control ID or OS commands configured.");
 			return;
 		}
 		if ( ping() ) {
 			log.info("Ping {} successful", url);
 		} else {
-			if ( toggleControl(false) == InstructionState.Completed ) {
-				if ( sleepSeconds > 0 ) {
-					log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds,
-							controlId);
-					try {
-						Thread.sleep(sleepSeconds * 1000L);
-					} catch ( InterruptedException e ) {
-						log.warn("Interrupted while sleeping");
-					}
-				}
+			handleOSCommand(osCommandToggleOff);
+			if ( controlId != null && toggleControl(false) == InstructionState.Completed ) {
+				handleSleep();
 				toggleControl(true);
+			} else if ( osCommandToggleOn != null ) {
+				handleSleep();
+			}
+			handleOSCommand(osCommandToggleOn);
+		}
+	}
+
+	private void handleOSCommand(String command) {
+		if ( command == null ) {
+			return;
+		}
+		ProcessBuilder pb = new ProcessBuilder(command.split("\\s+"));
+		try {
+			Process pr = pb.start();
+			pr.waitFor();
+			if ( pr.exitValue() == 0 ) {
+				log.debug("Command [{}] executed", command);
+			} else {
+				log.error("Error executing [{}], exit status: {}", command, pr.exitValue());
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		} catch ( InterruptedException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void handleSleep() {
+		if ( sleepSeconds > 0 ) {
+			log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds, controlId);
+			try {
+				Thread.sleep(sleepSeconds * 1000L);
+			} catch ( InterruptedException e ) {
+				log.warn("Interrupted while sleeping");
 			}
 		}
 	}
@@ -194,6 +239,8 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
 		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", defaults.osCommandToggleOn));
 		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds", String
 				.valueOf(defaults.connectionTimeoutSeconds)));
 		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds", String
@@ -213,8 +260,11 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		return MESSAGE_SOURCE;
 	}
 
-	public void setControlId(String controlId) {
-		this.controlId = controlId;
+	public void setControlId(String value) {
+		if ( value != null && value.length() < 1 ) {
+			value = null;
+		}
+		this.controlId = value;
 	}
 
 	public void setSleepSeconds(int sleepSeconds) {
@@ -235,6 +285,20 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 
 	public void setSslService(OptionalService<SSLService> sslService) {
 		this.sslService = sslService;
+	}
+
+	public void setOsCommandToggleOff(String value) {
+		if ( value != null && value.length() < 1 ) {
+			value = null;
+		}
+		this.osCommandToggleOff = value;
+	}
+
+	public void setOsCommandToggleOn(String value) {
+		if ( value != null && value.length() < 1 ) {
+			value = null;
+		}
+		this.osCommandToggleOn = value;
 	}
 
 }
