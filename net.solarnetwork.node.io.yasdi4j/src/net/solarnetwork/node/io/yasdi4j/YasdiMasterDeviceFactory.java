@@ -337,16 +337,20 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 		// add in read-only device UIDs
 		Set<String> deviceNames = new TreeSet<String>();
 
-		// call getObject() to initialize
-		getObject();
+		try {
+			// call getObject() to initialize
+			getObject();
 
-		for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
-			YasdiMaster master = factory.getObject();
-			deviceNames.add(master.getName());
-		}
+			for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
+				YasdiMaster master = factory.getObject();
+				deviceNames.add(master.getName());
+			}
 
-		for ( String deviceName : deviceNames ) {
-			results.add(0, new BasicTitleSettingSpecifier("availableDevice", deviceName, true));
+			for ( String deviceName : deviceNames ) {
+				results.add(0, new BasicTitleSettingSpecifier("availableDevice", deviceName, true));
+			}
+		} catch ( RuntimeException e ) {
+			log.warn("Exception getting YASDI device names: {}", e.getMessage());
 		}
 
 		return results;

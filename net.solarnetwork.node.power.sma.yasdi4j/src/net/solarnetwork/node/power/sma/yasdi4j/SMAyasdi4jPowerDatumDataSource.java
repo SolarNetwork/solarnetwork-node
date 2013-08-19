@@ -246,9 +246,17 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		SMAyasdi4jPowerDatumDataSource defaults = new SMAyasdi4jPowerDatumDataSource();
-		final ObjectFactory<YasdiMaster> service = yasdi.service();
-		results.add(new BasicTitleSettingSpecifier("address", (service == null ? "N/A" : service
-				.getObject().getDevice().getName()), true));
+
+		String yasdiDeviceName = "N/A";
+		try {
+			final ObjectFactory<YasdiMaster> service = yasdi.service();
+			if ( service != null ) {
+				yasdiDeviceName = service.getObject().getDevice().getName();
+			}
+		} catch ( RuntimeException e ) {
+			log.warn("Exception getting YASDI device name: {}", e.getMessage());
+		}
+		results.add(new BasicTitleSettingSpecifier("address", yasdiDeviceName, true));
 
 		results.add(new BasicTextFieldSettingSpecifier("yasdi.propertyFilters['UID']", String
 				.valueOf(DEFAULT_UID_FILTER)));
