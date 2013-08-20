@@ -198,6 +198,10 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			PropertyAccessor accessor, final boolean newDay) {
 		log.trace("Capturing channel {} as property {}", channelName, beanProperty);
 		YasdiChannel channel = service.getDevice().getChannel(channelName);
+		if ( channel == null ) {
+			log.warn("Channel {} not available from YASDI device", channelName);
+			return;
+		}
 		try {
 			// get updated value, at most channelMaxAgeSeconds old
 			channel.updateValue(channelMaxAgeSeconds);
