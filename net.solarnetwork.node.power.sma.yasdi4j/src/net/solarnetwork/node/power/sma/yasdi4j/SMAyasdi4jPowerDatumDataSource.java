@@ -172,7 +172,9 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	private boolean isValidDatum(PowerDatum d) {
-		if ( d.getPvVolts() < 0.001 && d.getPvAmps() < 0.001 && d.getKWattHoursToday() < 0.001 ) {
+		if ( (d.getPvVolts() == null || d.getPvVolts() < 0.001)
+				&& (d.getPvAmps() == null || d.getPvAmps() < 0.001)
+				&& (d.getKWattHoursToday() == null || d.getKWattHoursToday() < 0.001) ) {
 			return false;
 		}
 		return true;
