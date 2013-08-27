@@ -68,8 +68,9 @@ public class NodeCertificatesController extends BaseSetupController {
 		X509Certificate nodeCert = pkiService.getNodeCertificate();
 		final Date now = new Date();
 		final boolean expired = (nodeCert != null && now.after(nodeCert.getNotAfter()));
-		final boolean valid = (!nodeCert.getIssuerDN().equals(nodeCert.getSubjectDN())
-				&& !now.before(nodeCert.getNotBefore()) && !expired);
+		final boolean valid = (nodeCert != null && (!nodeCert.getIssuerDN().equals(
+				nodeCert.getSubjectDN())
+				&& !now.before(nodeCert.getNotBefore()) && !expired));
 		model.addAttribute("nodeCert", nodeCert);
 		model.addAttribute("nodeCertExpired", expired);
 		model.addAttribute("nodeCertValid", valid);
