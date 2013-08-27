@@ -114,8 +114,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
-	private static final String SETTING_LAST_BACKUP_DATE = SettingsBackupJob.class.getName()
-			+ ".lastBackupDate";
+	private static final String SETTING_LAST_BACKUP_DATE = "solarnode.settings.lastBackupDate";
 	private static final String BACKUP_DATE_FORMAT = "yyyy-MM-dd-HHmmss";
 	private static final String BACKUP_FILENAME_PREFIX = "settings_";
 	private static final String BACKUP_FILENAME_EXT = "txt";
