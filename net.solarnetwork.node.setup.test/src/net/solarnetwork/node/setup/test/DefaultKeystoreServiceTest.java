@@ -173,6 +173,22 @@ public class DefaultKeystoreServiceTest {
 	}
 
 	@Test
+	public void generateNodeSelfSignedCertificateExistingKeyStoreBadPassword() {
+		generateNodeSelfSignedCertificate();
+		EasyMock.reset(settingDao);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				"this.is.not.the.password");
+		expect(settingDao.deleteSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(true);
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
+				TEST_CONF_VALUE).times(3);
+		replay(settingDao);
+		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
+		log.debug("Got self-signed cert: {}", result);
+		verify(settingDao);
+		assertNotNull("Node certificate should exist", result);
+	}
+
+	@Test
 	public void validateNodeSelfSignedCertificate() {
 		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(
 				TEST_CONF_VALUE).times(5);

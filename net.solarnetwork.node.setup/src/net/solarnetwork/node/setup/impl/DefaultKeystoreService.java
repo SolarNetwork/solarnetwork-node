@@ -217,7 +217,32 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	@Override
 	public X509Certificate generateNodeSelfSignedCertificate(String dn) throws CertificateException {
-		KeyStore keyStore = loadKeyStore();
+		KeyStore keyStore = null;
+		try {
+			keyStore = loadKeyStore();
+		} catch ( CertificateException e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			if ( root instanceof UnrecoverableKeyException ) {
+				// bad password... we shall assume here that a new node association is underway,
+				// so delete the existing key store and re-create
+				File ksFile = new File(keyStorePath);
+				if ( ksFile.isFile() ) {
+					log.info("Deleting existing certificate store due to invalid password, will create new store");
+					if ( ksFile.delete() ) {
+						// clear out old key store password, so we generate a new one
+						deleteSetting(KEY_PASSWORD);
+						keyStore = loadKeyStore();
+					}
+				}
+			}
+			if ( keyStore == null ) {
+				// re-throw, we didn't handle it
+				throw e;
+			}
+		}
 		return createSelfSignedCertificate(keyStore, dn, nodeAlias);
 	}
 
@@ -529,13 +554,13 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			keyStore.store(out, passwd.toCharArray());
 			resetFromKeyStoreChange();
 		} catch ( KeyStoreException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error saving certificate key store", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error saving certificate key store", e);
 		} catch ( java.security.cert.CertificateException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error saving certificate key store", e);
 		} catch ( IOException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error saving certificate key store", e);
 		} finally {
 			if ( out != null ) {
 				try {
@@ -561,13 +586,19 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			keyStore.load(in, passwd.toCharArray());
 			return keyStore;
 		} catch ( KeyStoreException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error loading certificate key store", e);
 		} catch ( NoSuchAlgorithmException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error loading certificate key store", e);
 		} catch ( java.security.cert.CertificateException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			throw new CertificateException("Error loading certificate key store", e);
 		} catch ( IOException e ) {
-			throw new CertificateException("Error creating certificate key store", e);
+			String msg;
+			if ( e.getCause() instanceof UnrecoverableKeyException ) {
+				msg = "Invalid password loading key store";
+			} else {
+				msg = "Error loading certificate key store";
+			}
+			throw new CertificateException(msg, e);
 		} finally {
 			if ( in != null ) {
 				try {
@@ -585,6 +616,10 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	private void saveSetting(String key, String value) {
 		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
+	}
+
+	private void deleteSetting(String key) {
+		settingDao.deleteSetting(key, SETUP_TYPE_KEY);
 	}
 
 	public void setKeyStorePath(String keyStorePath) {
