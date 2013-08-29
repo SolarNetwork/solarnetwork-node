@@ -527,16 +527,45 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
+	/**
+	 * A callback API for allowing the settings import process to decide which
+	 * settings should be imported.
+	 */
+	private interface ImportCallback {
+
+		/**
+		 * Test if a specific should be imported at all.
+		 * 
+		 * @param key
+		 *        the setting key
+		 * @param type
+		 *        the setting value
+		 * @param value
+		 *        the setting value
+		 * @return <em>true</em> to allow the setting to be imported,
+		 *         <em>false</em> to skip
+		 */
+		boolean shouldImportSetting(String key, String type, String value);
+
+	}
+
 	@Override
 	public void importSettingsCSV(Reader in) throws IOException {
+		// TODO: need a better way to organize settings into "do not restore" category
+		final Pattern allowed = Pattern.compile("^(?!solarnode).*", Pattern.CASE_INSENSITIVE);
+		importSettingsCSV(in, new ImportCallback() {
+
+			@Override
+			public boolean shouldImportSetting(String key, String type, String value) {
+				return allowed.matcher(key).matches();
+			}
+		});
+	}
+
+	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
 		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
 		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null, };
 		reader.getHeader(true);
-
-		// TODO: need a better way to organize settings into "do not restore" category
-		final Pattern allowed = Pattern.compile("^((?!solarnode)|solarnode\\.(id|keystore|solarnet)).*",
-				Pattern.CASE_INSENSITIVE);
-
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override
@@ -544,8 +573,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				Setting s;
 				try {
 					while ( (s = reader.read(Setting.class, CSV_HEADERS, processors)) != null ) {
-						// we skip internal properties
-						if ( !allowed.matcher(s.getKey()).matches() ) {
+						if ( !callback.shouldImportSetting(s.getKey(), s.getType(), s.getValue()) ) {
 							continue;
 						}
 						if ( s.getValue() == null ) {
@@ -691,8 +719,18 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	public boolean restoreBackupResource(BackupResource resource) {
 		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(resource.getBackupPath()) ) {
 			try {
+				// TODO: need a better way to organize settings into "do not restore" category
+				final Pattern allowed = Pattern.compile(
+						"^((?!solarnode)|solarnode\\.(id|keystore|solarnet)).*",
+						Pattern.CASE_INSENSITIVE);
 				InputStreamReader reader = new InputStreamReader(resource.getInputStream(), "UTF-8");
-				importSettingsCSV(reader);
+				importSettingsCSV(reader, new ImportCallback() {
+
+					@Override
+					public boolean shouldImportSetting(String key, String type, String value) {
+						return allowed.matcher(key).matches();
+					}
+				});
 				return true;
 			} catch ( IOException e ) {
 				log.error("Unable to restore settings backup resource", e);
