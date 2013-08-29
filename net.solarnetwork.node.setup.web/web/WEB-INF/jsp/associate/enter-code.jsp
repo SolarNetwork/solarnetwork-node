@@ -2,6 +2,10 @@
 
 <p><fmt:message key="node.setup.code.intro"/></p>
 
+<p><fmt:message key="node.setup.restore.option">
+	<fmt:param><c:url value="/associate/restore"/></fmt:param>
+</fmt:message></p>
+
 <c:url value="/associate/preview" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal">
 	<form:errors cssClass="alert alert-error" element="div" htmlEscape="false"/>
