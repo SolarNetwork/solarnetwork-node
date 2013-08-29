@@ -532,6 +532,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
 		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null, };
 		reader.getHeader(true);
+
+		// TODO: need a better way to organize settings into "do not restore" category
+		final Pattern allowed = Pattern.compile("^((?!solarnode)|solarnode\\.(id|keystore|solarnet)).*",
+				Pattern.CASE_INSENSITIVE);
+
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override
@@ -540,7 +545,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				try {
 					while ( (s = reader.read(Setting.class, CSV_HEADERS, processors)) != null ) {
 						// we skip internal properties
-						if ( s.getKey().toLowerCase().startsWith("solarnode") ) {
+						if ( !allowed.matcher(s.getKey()).matches() ) {
 							continue;
 						}
 						if ( s.getValue() == null ) {
