@@ -543,7 +543,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						if ( s.getKey().toLowerCase().startsWith("solarnode") ) {
 							continue;
 						}
-						settingDao.storeSetting(s.getKey(), s.getType(), s.getValue());
+						if ( s.getValue() == null ) {
+							settingDao.deleteSetting(s.getKey(), s.getType());
+						} else {
+							settingDao.storeSetting(s.getKey(), s.getType(), s.getValue());
+						}
 					}
 				} catch ( IOException e ) {
 					log.error("Unable to import settings: {}", e.getMessage());
