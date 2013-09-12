@@ -178,6 +178,7 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			connection.setConnectTimeout(connectionTimeoutSeconds * 1000);
 			connection.setReadTimeout(connectionTimeoutSeconds * 1000);
 			connection.setRequestMethod("HEAD");
+			connection.setInstanceFollowRedirects(false);
 
 			if ( sslService != null && connection instanceof HttpsURLConnection ) {
 				SSLService service = sslService.service();
