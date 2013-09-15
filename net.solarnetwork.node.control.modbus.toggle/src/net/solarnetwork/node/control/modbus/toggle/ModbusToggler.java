@@ -84,7 +84,7 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
-	 * Get the values of the discreet values, as a Boolen.
+	 * Get the values of the discreet values, as a Boolean.
 	 * 
 	 * @return Boolean for the switch status
 	 */
