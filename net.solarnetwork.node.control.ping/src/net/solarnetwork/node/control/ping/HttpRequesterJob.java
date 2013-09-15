@@ -42,6 +42,7 @@ import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
@@ -55,9 +56,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <p>
  * The idea behind this class is to test for network reachability of a
  * configured HTTP URL. If the URL cannot be reached, the configured control
- * will be set to <em>false</em>, followed by a pause, followed by setting the
- * control back to <em>true</em>. The control might cycle the power of a mobile
- * modem, for example.
+ * will be set to {@code failedToggleValue}, followed by a pause, followed by
+ * setting the control back to the opposite of {@code failedToggleValue}. The
+ * control might cycle the power of a mobile modem, for example.
  * </p>
  * 
  * <p>
@@ -76,6 +77,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dt>controlId</dt>
  * <dd>The ID of the boolean control to toggle.</dd>
  * 
+ * <dt>failedToggleValue</dt>
+ * <dd>The value to set the configured control to if the ping fails. The
+ * opposite value will then be used to toggle the control back again.</dd>
+ * 
  * <dt>osCommandToggleOff</dt>
  * <dd>If configured, an OS-specific command to run after the URL cannot be
  * reached.</dd>
@@ -83,6 +88,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dt>osCommandToggleOn</dt>
  * <dd>If configured, an OS-specific command to run after the URL was not
  * reached and the configured pause time has elapsed.</dd>
+ * 
+ * <dt>osCommandSleepSeconds</dt>
+ * <dd>The number of seconds to sleep after successfully executing either the
+ * {@code osCommandToggleOn} or {@code osCommandToggleOff} commands. Defaults to
+ * <b>5</b></dd>
  * 
  * <dt>sleepSeconds</dt>
  * <dd>The number of seconds to wait after toggling the control to
@@ -101,7 +111,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
 
@@ -110,6 +120,8 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 	private String controlId;
 	private String osCommandToggleOff;
 	private String osCommandToggleOn;
+	private int osCommandSleepSeconds = 5;
+	private boolean failedToggleValue = true;
 	private int sleepSeconds = 5;
 	private int connectionTimeoutSeconds = 15;
 	private String url = "http://www.google.com/";
@@ -130,9 +142,9 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			log.info("Ping {} successful", url);
 		} else {
 			handleOSCommand(osCommandToggleOff);
-			if ( controlId != null && toggleControl(false) == InstructionState.Completed ) {
+			if ( controlId != null && toggleControl(failedToggleValue) == InstructionState.Completed ) {
 				handleSleep();
-				toggleControl(true);
+				toggleControl(!failedToggleValue);
 			} else if ( osCommandToggleOn != null ) {
 				handleSleep();
 			}
@@ -150,6 +162,7 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			pr.waitFor();
 			if ( pr.exitValue() == 0 ) {
 				log.debug("Command [{}] executed", command);
+				handleCommandSleep();
 			} else {
 				log.error("Error executing [{}], exit status: {}", command, pr.exitValue());
 			}
@@ -165,6 +178,17 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			log.info("Sleeping for {} seconds before toggling {} to true", sleepSeconds, controlId);
 			try {
 				Thread.sleep(sleepSeconds * 1000L);
+			} catch ( InterruptedException e ) {
+				log.warn("Interrupted while sleeping");
+			}
+		}
+	}
+
+	private void handleCommandSleep() {
+		if ( osCommandSleepSeconds > 0 ) {
+			log.info("Sleeping for {} seconds before continuing", osCommandSleepSeconds, controlId);
+			try {
+				Thread.sleep(osCommandSleepSeconds * 1000L);
 			} catch ( InterruptedException e ) {
 				log.warn("Interrupted while sleeping");
 			}
@@ -240,12 +264,15 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
 		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
-		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
-		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", defaults.osCommandToggleOn));
+		results.add(new BasicToggleSettingSpecifier("failedToggleValue", defaults.failedToggleValue));
 		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds", String
 				.valueOf(defaults.connectionTimeoutSeconds)));
 		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds", String
 				.valueOf(defaults.sleepSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", defaults.osCommandToggleOn));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandSleepSeconds", String
+				.valueOf(defaults.osCommandSleepSeconds)));
 
 		return results;
 	}
@@ -300,6 +327,14 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			value = null;
 		}
 		this.osCommandToggleOn = value;
+	}
+
+	public void setFailedToggleValue(boolean failedToggleValue) {
+		this.failedToggleValue = failedToggleValue;
+	}
+
+	public void setOsCommandSleepSeconds(int osCommandSleepSeconds) {
+		this.osCommandSleepSeconds = osCommandSleepSeconds;
 	}
 
 }

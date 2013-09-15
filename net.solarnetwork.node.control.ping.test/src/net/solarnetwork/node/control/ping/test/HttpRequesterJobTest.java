@@ -138,8 +138,8 @@ public class HttpRequesterJobTest extends AbstractNodeTest {
 		assertEquals(0, httpHandler.getCount());
 		assertEquals(2, instructions.getValues().size());
 		BasicInstruction instr1 = instructions.getValues().get(0);
-		assertEquals(Boolean.FALSE.toString(), instr1.getParameterValue(TEST_CONTROL_ID));
+		assertEquals(Boolean.TRUE.toString(), instr1.getParameterValue(TEST_CONTROL_ID));
 		BasicInstruction instr2 = instructions.getValues().get(1);
-		assertEquals(Boolean.TRUE.toString(), instr2.getParameterValue(TEST_CONTROL_ID));
+		assertEquals(Boolean.FALSE.toString(), instr2.getParameterValue(TEST_CONTROL_ID));
 	}
 }
