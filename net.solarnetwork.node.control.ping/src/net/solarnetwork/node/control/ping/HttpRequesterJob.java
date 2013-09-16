@@ -23,6 +23,7 @@
 package net.solarnetwork.node.control.ping;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import net.solarnetwork.node.SSLService;
@@ -159,6 +161,8 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		ProcessBuilder pb = new ProcessBuilder(command.split("\\s+"));
 		try {
 			Process pr = pb.start();
+			logInputStream(pr.getInputStream(), false);
+			logInputStream(pr.getErrorStream(), true);
 			pr.waitFor();
 			if ( pr.exitValue() == 0 ) {
 				log.debug("Command [{}] executed", command);
@@ -171,6 +175,23 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void logInputStream(final InputStream src, final boolean errorStream) {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				Scanner sc = new Scanner(src);
+				while ( sc.hasNextLine() ) {
+					if ( errorStream ) {
+						log.error(sc.nextLine());
+					} else {
+						log.info(sc.nextLine());
+					}
+				}
+			}
+		}).start();
 	}
 
 	private void handleSleep() {
