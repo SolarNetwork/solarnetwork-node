@@ -4,7 +4,7 @@ CREATE TABLE solarnode.sn_weather_datum (
 	source_id 		VARCHAR(255),
 	info_date		TIMESTAMP NOT NULL,
 	sky_cond		VARCHAR(255),
-	temperature		DOUBLE,
+	temperature		DOUBLE NOT NULL,
 	humidity		DOUBLE,
 	bar_pressure	DOUBLE,
 	bar_delta		VARCHAR(255),
@@ -18,7 +18,7 @@ CREATE TABLE solarnode.sn_weather_datum (
 CREATE INDEX weather_datum_created_idx ON solarnode.sn_weather_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_weather_datum.version', '1');
+VALUES ('solarnode.sn_weather_datum.version', '2');
 
 CREATE TABLE solarnode.sn_weather_datum_upload (
 	datum_id		BIGINT NOT NULL,
