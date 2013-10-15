@@ -24,11 +24,15 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadCoilsResponse;
+import net.wimpi.modbus.msg.ReadInputRegistersRequest;
+import net.wimpi.modbus.msg.ReadInputRegistersResponse;
 import net.wimpi.modbus.msg.WriteCoilRequest;
 import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
@@ -39,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * Helper methods for working with Modbus.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public final class ModbusHelper {
 
@@ -185,6 +189,97 @@ public final class ModbusHelper {
 			}
 
 		});
+	}
+
+	/**
+	 * Get the values of specific "input" type registers.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the number of Modbus "words" to read from each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param unitId
+	 * @return map of integer addresses to corresponding integer values, there
+	 *         should be {@code count} values for each {@code address} read
+	 */
+	public static Map<Integer, Integer> readInputValues(SerialConnection conn,
+			final Integer[] addresses, final int count, final int unitId) {
+		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>((addresses == null ? 0
+				: addresses.length) * count);
+		try {
+			for ( int i = 0; i < addresses.length; i++ ) {
+				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+				ReadInputRegistersRequest req = new ReadInputRegistersRequest(addresses[i], count);
+				req.setUnitID(unitId);
+				req.setHeadless();
+				trans.setRequest(req);
+				try {
+					trans.execute();
+				} catch ( ModbusException e ) {
+					throw new RuntimeException(e);
+				}
+				ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
+				for ( int w = 0; w < res.getWordCount(); w++ ) {
+					if ( LOG.isTraceEnabled() ) {
+						LOG.trace("Got Modbus read input {} response {}", addresses[i],
+								res.getRegisterValue(w));
+					}
+					result.put(i + w, res.getRegisterValue(w));
+				}
+			}
+		} finally {
+			conn.close();
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus input registers {} values: {}", addresses, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Get the values of specific "input" type registers.
+	 * 
+	 * @param connectionFactory
+	 *        the connection factory to obtain a connection with
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the number of Modbus "words" to read from each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param unitId
+	 * @return list of integer values, there should be {@code count} values for
+	 *         each {@code address} read
+	 */
+	public static Map<Integer, Integer> readInputValues(
+			OptionalService<ModbusSerialConnectionFactory> connectionFactory, final Integer[] addresses,
+			final int count, final int unitId) {
+		return execute(connectionFactory, new ModbusConnectionCallback<Map<Integer, Integer>>() {
+
+			@Override
+			public Map<Integer, Integer> doInConnection(SerialConnection conn) throws IOException {
+				return readInputValues(conn, addresses, count, unitId);
+			}
+
+		});
+	}
+
+	/**
+	 * Get a 32-bit Modbus long word from a 16-bit high word and a 16-bit low
+	 * word.
+	 * 
+	 * @param hiWord
+	 *        the high word
+	 * @param loWord
+	 *        the low word
+	 * @return a 32-bit long word value
+	 */
+	public static int getLongWord(int hiWord, int loWord) {
+		return ((hiWord & 0xFFFF) << 16 | (loWord & 0xFFFF));
 	}
 
 }
