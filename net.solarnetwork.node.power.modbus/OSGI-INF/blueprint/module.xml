@@ -17,45 +17,63 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<!-- Configuration -->
-	
-	<osgix:cm-properties id="jamod.cfg" persistent-id="net.solarnetwork.node.power.jamod">
-		<beans:prop key="JamodPowerDatumDataSource.unitId">1</beans:prop>
-		<beans:prop key="JamodPowerDatumDataSource.register">8</beans:prop>
-		<beans:prop key="JamodPowerDatumDataSource.count">5</beans:prop>
-		<beans:prop key="JamodPowerDatumDataSource.transactionRepeat">1</beans:prop>
-	</osgix:cm-properties>
-	
+	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="priceLocationServiceRef"/>
+	</bean>
+
+	<bean id="settingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="Modbus power generation"/>
+		<property name="factoryUID" value="net.solarnetwork.node.power.modbus"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource"/>
+			</bean>
+		</property>
+	</bean>
+
 	<!-- Service References -->
 	
-	<reference id="jamodSerialConfiguration" 
-		interface="net.solarnetwork.node.util.BeanConfiguration"
-		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.wimpi.modbus.util.SerialParameters))"/>
+	<reference id="priceLocationServiceRef" availability="optional"
+		interface="net.solarnetwork.node.PriceLocationService">
+		<reference-listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
 	<!-- Published Services -->
 	
-	<service ref="jamodPowerDatumDataSource" interface="net.solarnetwork.node.DatumDataSource" ranking="1">
-		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
-		</service-properties>
-	</service>
+	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<!-- Supporting Services -->
-	
-	<ctx:property-placeholder properties-ref="jamod.cfg"/>
-	
-	<bean id="jamodSerialParametersFactory" class="net.solarnetwork.node.util.BeanConfigurationFactoryBean">
-		<property name="beanClass" value="net.wimpi.modbus.util.SerialParameters"/>
-		<property name="config" ref="jamodSerialConfiguration"/>
-	</bean>
-	
-	<bean id="jamodPowerDatumDataSource" 
-		class="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource">
-		<property name="unitId" value="${JamodPowerDatumDataSource.unitId}"/>
-		<property name="register" value="${JamodPowerDatumDataSource.register}"/>
-		<property name="count" value="${JamodPowerDatumDataSource.count}"/>
-		<property name="transactionRepeat" value="${JamodPowerDatumDataSource.transactionRepeat}"/>
-		<property name="serialParameters" ref="jamodSerialParametersFactory"/>
-	</bean>
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.power.modbus" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.power.modbus"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
+			<property name="delegate">
+				<bean class="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource">
+					<property name="settingDao" ref="settingDao"/>
+					<property name="connectionFactory">
+						<bean class="net.solarnetwork.util.DynamicServiceTracker">
+							<property name="bundleContext" ref="bundleContext"/>
+							<property name="serviceClassName" 
+								value="net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory"/>
+							<property name="propertyFilters">
+								<map>
+									<entry key="UID" value="/dev/ttyUSB0"/>
+								</map>
+							</property>
+						</bean>	
+					</property>
+				</bean>
+			</property>
+			<property name="priceLocationService" ref="priceLocationService"/>
+		</bean>
+	</osgix:managed-service-factory>
 	
 </blueprint>

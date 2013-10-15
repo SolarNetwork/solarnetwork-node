@@ -16,64 +16,96 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.power.impl;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.power.PowerDatum;
-import net.wimpi.modbus.ModbusException;
-import net.wimpi.modbus.io.ModbusSerialTransaction;
-import net.wimpi.modbus.msg.ReadInputRegistersRequest;
-import net.wimpi.modbus.msg.ReadInputRegistersResponse;
-import net.wimpi.modbus.net.SerialConnection;
-import net.wimpi.modbus.util.SerialParameters;
-
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
+import org.springframework.beans.PropertyAccessException;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
- * {@link GenerationDataSource} implementation using the Jamod modbus
- * serial communication implementation.
+ * {@link GenerationDataSource} implementation using the Jamod modbus serial
+ * communication implementation.
  * 
- * <p>This implementation is not very refined, and was written to support one
- * specific Morningstar TS-45 charge controller, but ideally this class could
- * be cleaned up to support any Modbus-based controller. As of now there are
- * many hard-coded constants in this class that probably make this useless for
- * other controllers besides the TS-45.</p>
+ * <p>
+ * This implementation was written to support one specific Morningstar TS-45
+ * charge controller, but ideally this class could be used to support any
+ * Modbus-based controller.
+ * </p>
  * 
- * <p>Pass -Dnet.wimpi.modbus.debug=true to the JVM to enable Jamod debug
- * communication output to STDOUT.</p>
+ * <p>
+ * Pass -Dnet.wimpi.modbus.debug=true to the JVM to enable Jamod debug
+ * communication output to STDOUT.
+ * </p>
+ * 
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
+ * 
+ * <dl class="class-properties">
+ * <dt>address</dt>
+ * <dd>The Modbus address of the coil-type register to read from.</dd>
+ * 
+ * <dt>unitId</dt>
+ * <dd>The Modbus unit ID to use.</dd>
+ * 
+ * <dt>connectionFactory</dt>
+ * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
+ * 
+ * <dt>addressesToOffsetDaily</dt>
+ * <dd>If configured, a set of Modbus addresses to treat as ever-accumulating
+ * numbers that should be treated as daily-resetting values. This can be used,
+ * for example, to calculate a "Ah generated today" value from a register that
+ * is not reset by the device itself. When reading values on the start of a new
+ * day, the value of that address is persisted so subsequent readings on the
+ * same day can be calculated as an offset from that initial value. Requires the
+ * {@code settingDao} property to also be configured.</dd>
+ * </dl>
  * 
  * @author matt.magoffin
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum> {
-	
-	private static final SerialParameters DEFAULT_SERIAL_PARAMS = new SerialParameters();
-	
-	static {
-		DEFAULT_SERIAL_PARAMS.setPortName("/dev/ttyS0");
-		DEFAULT_SERIAL_PARAMS.setBaudRate(9600);
-		DEFAULT_SERIAL_PARAMS.setDatabits(8);
-		DEFAULT_SERIAL_PARAMS.setParity("None");
-		DEFAULT_SERIAL_PARAMS.setStopbits(2);
-		DEFAULT_SERIAL_PARAMS.setEncoding("rtu");
-		DEFAULT_SERIAL_PARAMS.setEcho(false);
-		DEFAULT_SERIAL_PARAMS.setReceiveTimeout(1600);
-	}
-	
-	private int unitId = 1;
-	private int register = 8;
-	private int count = 5;
-	private int transactionRepeat = 1;
-	private SerialParameters serialParameters;
-	
+public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
+
+	private static MessageSource MESSAGE_SOURCE;
+
+	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
+
+	private Integer unitId = 1;
+	private Integer[] addresses = new Integer[] { 0x8, 0x10 };
+	private Integer count = 5;
+	private String sourceId = "Main";
+	private Map<Integer, String> registerMapping = defaultRegisterMapping();
+	private Map<Integer, Double> registerScaleFactor = defaultRegisterScaleFactor();
+	private Map<Integer, String> hiLoRegisterMapping = defaultHiLoRegisterMapping();
+	private Set<Integer> addressesToOffsetDaily = defaultAddressesToOffsetDaily();
+	private SettingDao settingDao;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	@Override
 	public Class<? extends PowerDatum> getDatumType() {
 		return PowerDatum.class;
@@ -81,279 +113,614 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum> {
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		SerialConnection conn = null;
-		try {
-			conn = openConnection(2);
-			return getSample(conn);
-		} finally {
-			if ( conn != null ) {
-				conn.close();
+		final boolean newDay = isNewDay();
+		Map<Integer, Integer> words = ModbusHelper.readInputValues(connectionFactory, addresses, count,
+				unitId);
+		if ( words == null ) {
+			return null;
+		}
+		PowerDatum datum = new PowerDatum();
+		datum.setSourceId(sourceId);
+		PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
+		if ( registerMapping != null ) {
+			for ( Map.Entry<Integer, String> me : registerMapping.entrySet() ) {
+				final Integer addr = me.getKey();
+				if ( words.containsKey(addr) ) {
+					final Integer word = words.get(addr);
+					setRegisterAddressValue(bean, addr, me.getValue(), word, newDay);
+				} else {
+					log.warn("Register value {} not available", addr);
+				}
 			}
 		}
-	}
-	
-	private PowerDatum getSample(SerialConnection conn) {
-		final PowerDatum datum = new PowerDatum();
-		
-		// first transaction: pv volts, pv amps, and battery volts
-		readInputRegister(conn, 
-			new ReadInputRegistersRequest(this.register, this.count), 
-			this.transactionRepeat, 
-			new ReadInputRegisterTransactionCallback() {
-				public void doInTransaction(
-						ReadInputRegistersResponse res, int transactionIdx) {
-					
-					if ( log.isDebugEnabled() ) {
-						log.debug("res.getWordCount(): " +res.getWordCount() );
-					}
-					
-					FOR: for ( int n = 0; n < res.getWordCount(); n++) {
-						int regVal = res.getRegisterValue(n);
-						
-						if ( log.isDebugEnabled() ) {
-							log.debug("regVal: " + n + " = " + regVal );
-						}
-						
-						// FIXME define configurable properties for 'n' values
-						switch ( n ) {
-						case 0:
-							// FIXME define constants for these values
-							datum.setBatteryVolts((float)((regVal * 96.667) / 32768));
-							
-							if ( log.isDebugEnabled() ) {
-								log.debug("setBatteryVolts: " +((regVal * 96.667) / 32768) );
-							}
-							
-							break ;
-							
-						case 2:
-							datum.setPvVolts((float)((regVal * 139.15) / 32768));
-							
-							if ( log.isDebugEnabled() ) {
-								log.debug("setPvVolts: " +((regVal * 139.15) / 32768) );
-							}
-							break ;
-							
-						case 3:
-							datum.setPvAmps((float)((regVal * 66.667) / 32768));
-							
-							if ( log.isDebugEnabled() ) {
-								log.debug("setPvAmps: " +((regVal * 66.667) / 32768));
-							}
-							break ;
-	
-						case 4:
-							datum.setDcOutputAmps((float)((regVal * 316.667) / 32768));
-							break FOR;
-							
-						}
-					}
+		if ( hiLoRegisterMapping != null ) {
+			for ( Map.Entry<Integer, String> me : hiLoRegisterMapping.entrySet() ) {
+				final int hiAddr = me.getKey();
+				final int loAddr = hiAddr + 1;
+				if ( words.containsKey(hiAddr) && words.containsKey(loAddr) ) {
+					final int hiWord = words.get(hiAddr);
+					final int loWord = words.get(loAddr);
+					final int word = ModbusHelper.getLongWord(hiWord, loWord);
+					setRegisterAddressValue(bean, hiAddr, me.getValue(), word, newDay);
+				} else {
+					log.warn("Register value {} out of bounds, {} available", me.getKey(), words.size());
 				}
-			});
-		
-		readInputRegister(conn, 
-			// FIXME define configurable properties for these values
-			new ReadInputRegistersRequest(16, 5), 
-			this.transactionRepeat, 
-			new ReadInputRegisterTransactionCallback() {
-				public void doInTransaction(
-						ReadInputRegistersResponse res, int transactionIdx) {
-					
-					//grab both high and low amp hour registers
-					double theResettableHighAmpHourWord = 0;
-					double theResettableLowAmpHourWord = 0;
-					
-					if ( log.isDebugEnabled() ) {
-						log.debug("amphour res.getWordCount(): " + res.getWordCount() );
-					}
-					
-					FOR: for ( int n = 0; n < res.getWordCount(); n++) {
-						int regVal = res.getRegisterValue(n);
-						
-						if ( log.isDebugEnabled() ) {
-							log.debug("for amp hours regVal: " + n + " = " + regVal );
-						}
-						
-						// FIXME define configurable properties for 'n' values
-						switch ( n ) {
-						case 1:
-							if ( log.isDebugEnabled() ) {
-								log.debug("High amp hour word: " +regVal);
-							}
-							theResettableHighAmpHourWord = regVal * 0.1;
-							break ;
-							
-						case 2:
-							if ( log.isDebugEnabled() ) {
-								log.debug("Low amp hour word: " +regVal);
-							}
-							theResettableLowAmpHourWord = regVal;
-							break FOR;
-							
-						}
-					}
-				
-					if ( log.isDebugEnabled() ) {
-						log.debug("theResettableHighAmpHourWord: " +theResettableHighAmpHourWord);
-						log.debug("theResettableLowAmpHourWord: " +theResettableLowAmpHourWord);
-					}
-					
-					//add the two values together  FIXME should use the system voltage not 12
-					datum.setAmpHoursToday(theResettableHighAmpHourWord + theResettableLowAmpHourWord);
-					datum.setKWattHoursToday((theResettableHighAmpHourWord + theResettableLowAmpHourWord) * 12 / 1000);
-				
-					if ( log.isDebugEnabled() ) {
-						log.debug("getAmpHoursToday: " +datum.getAmpHoursToday());
-						log.debug("getKWattHoursToday: " +datum.getKWattHoursToday());
-					}
-				
-				}
-			});
-		
+			}
+		}
+
+		if ( newDay ) {
+			storeLastKnownDay();
+		}
 		return datum;
 	}
-	
-	private void readInputRegister(SerialConnection conn, 
-			ReadInputRegistersRequest req, 
-			int txRepeat,
-			ReadInputRegisterTransactionCallback callback) {
-		if ( log.isInfoEnabled() ) {
-			log.info("Starting modbus transaction for request [" +req +']');
-		}
-		
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		req.setUnitID(this.unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		for ( int i = 0; i < txRepeat; i++ ) {
+
+	private void setRegisterAddressValue(final PropertyAccessor bean, final Integer addr,
+			final String propertyName, final Integer propertyValue, final boolean newDay) {
+		if ( bean.isWritableProperty(propertyName) ) {
+			Number value = propertyValue;
+			if ( addressesToOffsetDaily != null && addressesToOffsetDaily.contains(addr) ) {
+				value = handleDailyChannelOffset(addr, propertyValue, newDay);
+			}
+			if ( registerScaleFactor != null && registerScaleFactor.containsKey(addr) ) {
+				value = Double.valueOf(value.intValue() * registerScaleFactor.get(addr));
+			}
 			try {
-				trans.execute();
-			} catch (ModbusException e) {
-				throw new RuntimeException(e);
+				bean.setPropertyValue(propertyName, value);
+			} catch ( PropertyAccessException e ) {
+				log.warn("Unable to set property {} to {} for address {}: {}", propertyName, value,
+						addr, e.getMostSpecificCause().getMessage());
 			}
-			ReadInputRegistersResponse res = (ReadInputRegistersResponse)trans.getResponse();
-			if ( log.isDebugEnabled() ) {
-				log.debug("Got response [" +res +']');
-			}
-			callback.doInTransaction(res, i);
-		}
-	}
-	
-	private SerialConnection openConnection(int tries) {
-		SerialParameters serialParams = null;
-		if ( serialParameters != null ) {
-			serialParams = serialParameters;
 		} else {
-			serialParams = getDefaultSerialParametersInstance();
-		}
-		if ( log.isDebugEnabled() ) {
-			log.debug("Opening serial connection to ["
-					+serialParams.getPortName() +"], " +tries +" tries remaining");
-		}
-		try {
-			SerialConnection conn = new SerialConnection(serialParams);
-			if ( log.isTraceEnabled() ) {
-				log.trace("just before opening connection status:["+ conn.isOpen() +"]");
-			}
-			conn.open();
-			if ( log.isTraceEnabled() ) {
-				log.trace("just after opening connection status:["+ conn.isOpen() +"]");
-			}
-			return conn;
-		} catch ( Exception e ) {
-			if ( tries > 1 ) {
-				return openConnection(tries - 1);
-			}
-			throw new RuntimeException("Unable to open serial connection to ["
-						+serialParams.getPortName() +"]", e);
+			log.warn("Property {} not available; bad configuration", propertyName);
 		}
 	}
 
-	private static SerialParameters getDefaultSerialParametersInstance() {
-		SerialParameters params = new SerialParameters();
-		BeanUtils.copyProperties(DEFAULT_SERIAL_PARAMS, params);
-		return params;
+	private static Set<Integer> defaultAddressesToOffsetDaily() {
+		return Collections.singleton(0x13);
 	}
 
-	private static interface ReadInputRegisterTransactionCallback {
-		
-		/**
-		 * Execute within a ReadInputRegister transaction.
-		 * @param res the response
-		 * @param transactionIdx the transaction index
-		 */
-		void doInTransaction(ReadInputRegistersResponse res, int transactionIdx);
-		
+	private static Map<Integer, Double> defaultRegisterScaleFactor() {
+		// these are for the Morningstar TS-45
+		Map<Integer, Double> map = new LinkedHashMap<Integer, Double>(5);
+		map.put(0x8, 96.667 / 32768.0); // battery volts
+		map.put(0xA, 139.15 / 32768.0); // pv volts
+		map.put(0XB, 66.667 / 32768.0); // pv amps
+		map.put(0xC, 316.667 / 32768.0); // dc output amps
+		map.put(0x13, 0.1); // amp hours total
+		return map;
+	}
+
+	private static Map<Integer, String> defaultHiLoRegisterMapping() {
+		Map<Integer, String> map = new LinkedHashMap<Integer, String>(1);
+		map.put(0x13, "ampHoursToday");
+		return map;
+	}
+
+	private static Map<Integer, String> defaultRegisterMapping() {
+		Map<Integer, String> map = new LinkedHashMap<Integer, String>(1);
+		map.put(0x8, "batteryVolts");
+		map.put(0xA, "pvVolts");
+		map.put(0xB, "pvAmps");
+		map.put(0xC, "dcOutputAmps");
+		return map;
 	}
 
 	/**
-	 * @return the unitId
+	 * Set the hi/lo register mapping via a comma and equal delimited string.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the mapping value
 	 */
-	public int getUnitId() {
+	public void setHiLoRegisterMappingValue(String value) {
+		Map<String, String> map = StringUtils.commaDelimitedStringToMap(value);
+		Map<Integer, String> regMap = new LinkedHashMap<Integer, String>(map.size());
+		for ( Map.Entry<String, String> me : map.entrySet() ) {
+			try {
+				regMap.put(Integer.valueOf(me.getKey(), 16), me.getValue());
+			} catch ( NumberFormatException e ) {
+				log.warn("HiLo register mapping keys must be hexidecimal integers); {} ignored",
+						me.getKey());
+			}
+		}
+		setHiLoRegisterMapping(regMap);
+	}
+
+	/**
+	 * Get the high/low register mapping as a comma and equal delimited string.
+	 * 
+	 * @return
+	 * @see #setHiLoRegisterMappingValue(String)
+	 */
+	public String getHiLoRegisterMappingValue() {
+		return hexAddressMappingValue(hiLoRegisterMapping);
+	}
+
+	/**
+	 * Set the register mapping via a comma and equal delimited string.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the mapping value
+	 */
+	public void setRegisterMappingValue(String value) {
+		Map<String, String> map = StringUtils.commaDelimitedStringToMap(value);
+		Map<Integer, String> regMap = new LinkedHashMap<Integer, String>(map.size());
+		for ( Map.Entry<String, String> me : map.entrySet() ) {
+			try {
+				regMap.put(Integer.valueOf(me.getKey(), 16), me.getValue());
+			} catch ( NumberFormatException e ) {
+				log.warn("Register mapping keys must be hexideciaml integers); {} ignored", me.getKey());
+			}
+		}
+		setRegisterMapping(regMap);
+	}
+
+	/**
+	 * Get the register mapping as a comma and equal delimited string.
+	 * 
+	 * @return
+	 * @see #setRegisterMappingValue(String)
+	 */
+	public String getRegisterMappingValue() {
+		return hexAddressMappingValue(registerMapping);
+	}
+
+	/**
+	 * Set the register mapping via a comma and equal delimited string.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the mapping value
+	 */
+	public void setRegisterScaleFactorValue(String value) {
+		Map<String, String> map = StringUtils.commaDelimitedStringToMap(value);
+		Map<Integer, Double> regMap = new LinkedHashMap<Integer, Double>(map.size());
+		for ( Map.Entry<String, String> me : map.entrySet() ) {
+			try {
+				regMap.put(Integer.valueOf(me.getKey(), 16), Double.valueOf(me.getValue()));
+			} catch ( NumberFormatException e ) {
+				log.warn(
+						"Register mapping keys must be hexidecimal integers and values doubles); {} -> {} ignored",
+						me.getKey(), me.getValue());
+			}
+		}
+		setRegisterScaleFactor(regMap);
+	}
+
+	/**
+	 * Get the register mapping as a comma and equal delimited string.
+	 * 
+	 * @return
+	 * @see #setRegisterScaleFactorValue(String)
+	 */
+	public String getRegisterScaleFactorValue() {
+		return hexAddressMappingValue(registerScaleFactor);
+	}
+
+	/**
+	 * Set the Modbus addresses to read via a comma-delimited string of
+	 * hexidecimal numbers.
+	 * 
+	 * @param value
+	 *        the list of addresses
+	 */
+	public void setAddressesValue(String value) {
+		Set<String> addressSet = StringUtils.commaDelimitedStringToSet(value);
+		List<Integer> addressList = new ArrayList<Integer>(addressSet.size());
+		for ( String addr : addressSet ) {
+			try {
+				addressList.add(Integer.valueOf(addr, 16));
+			} catch ( NumberFormatException e ) {
+				log.warn("Address values must be hexidecimal integers; {} ignored", addr);
+			}
+		}
+		setAddresses(addressList.toArray(new Integer[addressList.size()]));
+	}
+
+	/**
+	 * Get the Modbus addresses to read as a comma-delimited string of
+	 * hexidecimal numbers.
+	 * 
+	 * @return the list of addresses
+	 */
+	public String getAddressessValue() {
+		List<String> addressList = new ArrayList<String>(addresses == null ? 0 : addresses.length);
+		if ( addresses != null ) {
+			for ( Integer addr : addresses ) {
+				addressList.add(Integer.toHexString(addr));
+			}
+		}
+		return StringUtils.delimitedStringFromCollection(addressList, ",");
+	}
+
+	/**
+	 * Set the Modbus addresses to treat as daily offsets via a comma-delimited
+	 * string of hexidecimal numbers.
+	 * 
+	 * @param value
+	 *        the list of addresses
+	 */
+	public void setAddressesToOffsetDailyValue(String value) {
+		Set<String> addressSet = StringUtils.commaDelimitedStringToSet(value);
+		Set<Integer> result = new HashSet<Integer>(addressSet.size());
+		for ( String addr : addressSet ) {
+			try {
+				result.add(Integer.valueOf(addr, 16));
+			} catch ( NumberFormatException e ) {
+				log.warn("Address values must be hexidecimal integers; {} ignored", addr);
+			}
+		}
+		setAddressesToOffsetDaily(result);
+	}
+
+	/**
+	 * Get the Modbus addresses to treat as daily offsets as a comma-delimited
+	 * string of hexidecimal numbers.
+	 * 
+	 * @return the list of addresses
+	 */
+	public String getAddressessToOffsetDailyValue() {
+		List<String> addressList = new ArrayList<String>(addressesToOffsetDaily == null ? 0
+				: addressesToOffsetDaily.size());
+		if ( addressesToOffsetDaily != null ) {
+			for ( Integer addr : addressesToOffsetDaily ) {
+				addressList.add(Integer.toHexString(addr));
+			}
+		}
+		return StringUtils.delimitedStringFromCollection(addressList, ",");
+	}
+
+	private String hexAddressMappingValue(Map<Integer, ?> map) {
+		StringBuilder buf = new StringBuilder();
+		if ( map != null ) {
+			for ( Map.Entry<Integer, ?> me : map.entrySet() ) {
+				if ( buf.length() > 0 ) {
+					buf.append(",");
+				}
+				buf.append(Integer.toHexString(me.getKey())).append('=')
+						.append(me.getValue().toString());
+			}
+		}
+		return buf.toString();
+	}
+
+	// daily offset calculations
+
+	protected final String getSettingPrefixDayStartValue() {
+		return getClass().getSimpleName() + "." + sourceId + ".start:";
+	}
+
+	protected final String getSettingPrefixLastKnownValue() {
+		return getClass().getSimpleName() + "." + sourceId + ".value:";
+	}
+
+	protected final String getSettingKeyLastKnownDay() {
+		return getClass().getSimpleName() + "." + sourceId + ".knownDay";
+	}
+
+	/**
+	 * Get a "volatile" setting, that is one that does not trigger an automatic
+	 * settings backup.
+	 * 
+	 * @param key
+	 *        the setting key
+	 * @return the setting value, or <em>null</em> if not found
+	 */
+	private final String getVolatileSetting(String key) {
+		return (settingDao == null ? null : settingDao.getSetting(key,
+				SettingDao.TYPE_IGNORE_MODIFICATION_DATE));
+	}
+
+	/**
+	 * Save a "volatile" setting.
+	 * 
+	 * @param key
+	 *        the setting key
+	 * @param value
+	 *        the setting value
+	 * @see #getVolatileSetting(String)
+	 */
+	private final void saveVolatileSetting(String key, String value) {
+		if ( settingDao == null ) {
+			return;
+		}
+		settingDao.storeSetting(key, SettingDao.TYPE_IGNORE_MODIFICATION_DATE, value);
+	}
+
+	/**
+	 * Handle addresses that accumulate overall as if they reset daily.
+	 * 
+	 * @param address
+	 *        the address to calculate the offset for
+	 * @param currValue
+	 *        the current value reported for this channel
+	 * @param newDay
+	 *        <em>true</em> if this is a different day from the last known day
+	 */
+	protected final Integer handleDailyChannelOffset(final Integer address, Integer currValue,
+			final boolean newDay) {
+		String dayStartKey = getSettingPrefixDayStartValue() + address;
+		String lastKnownKey = getSettingPrefixLastKnownValue() + address;
+		Integer result;
+
+		String lastKnownValueStr = getVolatileSetting(lastKnownKey);
+		Integer lastKnownValue = (lastKnownValueStr == null ? currValue : Integer
+				.valueOf(lastKnownValueStr));
+
+		log.trace("Handling {} daily address {} offset for {}; curr value = {}; last known value = {}",
+				(newDay ? "new" : "same"), address, getDayOfYearValue(), currValue, lastKnownValue);
+
+		// we've seen values reported less than last known value after
+		// a power outage (i.e. after inverter turns off, then back on)
+		// on single day, so we verify that current value is not less 
+		// than last known value
+		if ( currValue.doubleValue() < lastKnownValue.doubleValue() ) {
+			// just return last known value, not curr value
+			log.warn("Address [" + address + "] reported value [" + currValue
+					+ "] -- less than last known value [" + lastKnownValue + "]. "
+					+ "Using last known value in place of reported value.");
+			currValue = lastKnownValue;
+		}
+
+		if ( newDay ) {
+			result = currValue - lastKnownValue;
+
+			if ( log.isDebugEnabled() ) {
+				log.debug("Last known day has changed, resetting offset value for address [" + address
+						+ "] to [" + lastKnownValue + ']');
+			}
+			saveVolatileSetting(dayStartKey, lastKnownValue.toString());
+		} else {
+			String dayStartValueStr = getVolatileSetting(dayStartKey);
+			Integer dayStartValue = (dayStartValueStr == null ? currValue : Integer
+					.valueOf(dayStartValueStr));
+			result = currValue - dayStartValue;
+		}
+
+		saveVolatileSetting(lastKnownKey, currValue.toString());
+
+		// we've seen negative values calculated sometimes at the start of the day,
+		// so we prevent that from happening here
+		if ( result < 0 ) {
+			result = null;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Get the current day of the year as a String value.
+	 * 
+	 * @return the day of the year
+	 */
+	private String getDayOfYearValue() {
+		Calendar now = Calendar.getInstance();
+		return String.valueOf(now.get(Calendar.YEAR)) + "."
+				+ String.valueOf(now.get(Calendar.DAY_OF_YEAR));
+	}
+
+	/**
+	 * Save today as the last known day.
+	 * 
+	 * @see #getDayOfYearValue()
+	 */
+	private final void storeLastKnownDay() {
+		String dayOfYear = getDayOfYearValue();
+		if ( log.isDebugEnabled() ) {
+			log.debug("Saving last known day as [" + dayOfYear + ']');
+		}
+		saveVolatileSetting(getSettingKeyLastKnownDay(), dayOfYear);
+	}
+
+	/**
+	 * Get the last known day value, or <em>null</em> if not known.
+	 * 
+	 * @return the date, or <em>null</em> if not known
+	 */
+	private final Calendar getLastKnownDay() {
+		String lastKnownDayOfYear = getLastKnownDayOfYearValue();
+		Calendar day = null;
+		if ( lastKnownDayOfYear != null ) {
+			int dot = lastKnownDayOfYear.indexOf('.');
+			day = Calendar.getInstance();
+			day.set(Calendar.YEAR, Integer.parseInt(lastKnownDayOfYear.substring(0, dot)));
+			day.set(Calendar.DAY_OF_YEAR, Integer.parseInt(lastKnownDayOfYear.substring(dot + 1)));
+		}
+		return day;
+	}
+
+	private final String getLastKnownDayOfYearValue() {
+		return getVolatileSetting(getSettingKeyLastKnownDay());
+	}
+
+	/**
+	 * Test if today is a different day from the last known day.
+	 * 
+	 * <p>
+	 * If the {@code settingDao} to be configured, this method will use that to
+	 * load a "last known day" value. If that value is not found, or is
+	 * different from the current execution day, <em>true</em> will be returned.
+	 * Otherwise, <em>false</em> is returned.
+	 * </p>
+	 * 
+	 * @return boolean
+	 */
+	private final boolean isNewDay() {
+		if ( this.settingDao == null ) {
+			return false;
+		}
+		Calendar now = Calendar.getInstance();
+		Calendar then = getLastKnownDay();
+		if ( then == null || (now.get(Calendar.YEAR) != then.get(Calendar.YEAR))
+				|| (now.get(Calendar.DAY_OF_YEAR) != then.get(Calendar.DAY_OF_YEAR)) ) {
+			return true;
+		}
+		return false;
+	}
+
+	// SettingSpecifierProvider
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.power.modbus";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Modbus power generation";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		JamodPowerDatumDataSource defaults = new JamodPowerDatumDataSource();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+
+		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", (defaults.sourceId == null ? ""
+				: defaults.sourceId.toString())));
+		results.add(new BasicTextFieldSettingSpecifier("addressesValue", defaults.getAddressessValue()));
+		results.add(new BasicTextFieldSettingSpecifier("count", (defaults.getCount() == null ? ""
+				: defaults.getCount().toString())));
+		results.add(new BasicTextFieldSettingSpecifier("registerMappingValue", defaults
+				.getRegisterMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("hiLoRegisterMappingValue", defaults
+				.getHiLoRegisterMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("registerScaleFactorValue", defaults
+				.getRegisterScaleFactorValue()));
+		results.add(new BasicTextFieldSettingSpecifier("addressesToOffsetDailyValue", defaults
+				.getAddressessToOffsetDailyValue()));
+		return results;
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		if ( MESSAGE_SOURCE == null ) {
+			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+			source.setBundleClassLoader(getClass().getClassLoader());
+			source.setBasename(getClass().getName());
+			MESSAGE_SOURCE = source;
+		}
+		return MESSAGE_SOURCE;
+	}
+
+	public Integer getUnitId() {
 		return unitId;
 	}
 
-	/**
-	 * @param unitId the unitId to set
-	 */
-	public void setUnitId(int unitId) {
+	public void setUnitId(Integer unitId) {
 		this.unitId = unitId;
 	}
 
-	/**
-	 * @return the register
-	 */
-	public int getRegister() {
-		return register;
+	public Integer[] getAddresses() {
+		return addresses;
 	}
 
-	/**
-	 * @param register the register to set
-	 */
-	public void setRegister(int register) {
-		this.register = register;
+	public void setAddresses(Integer[] addresses) {
+		this.addresses = addresses;
 	}
 
-	/**
-	 * @return the transactionRepeat
-	 */
-	public int getTransactionRepeat() {
-		return transactionRepeat;
+	public DynamicServiceTracker<ModbusSerialConnectionFactory> getConnectionFactory() {
+		return connectionFactory;
 	}
 
-	/**
-	 * @param transactionRepeat the transactionRepeat to set
-	 */
-	public void setTransactionRepeat(int transactionRepeat) {
-		this.transactionRepeat = transactionRepeat;
+	public void setConnectionFactory(
+			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
+		this.connectionFactory = connectionFactory;
 	}
-	
-	/**
-	 * @return the count
-	 */
-	public int getCount() {
+
+	public Integer getCount() {
 		return count;
 	}
-	
-	/**
-	 * @param count the count to set
-	 */
-	public void setCount(int count) {
+
+	public void setCount(Integer count) {
 		this.count = count;
 	}
 
-	/**
-	 * @return the serialParameters
-	 */
-	public SerialParameters getSerialParameters() {
-		return serialParameters;
+	public Map<Integer, String> getRegisterMapping() {
+		return registerMapping;
 	}
 
-	/**
-	 * @param serialParameters the serialParameters to set
-	 */
-	public void setSerialParameters(SerialParameters serialParameters) {
-		this.serialParameters = serialParameters;
+	public void setRegisterMapping(Map<Integer, String> registerMapping) {
+		this.registerMapping = registerMapping;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
+	public Map<Integer, Double> getRegisterScaleFactor() {
+		return registerScaleFactor;
+	}
+
+	public void setRegisterScaleFactor(Map<Integer, Double> registerScaleFactor) {
+		this.registerScaleFactor = registerScaleFactor;
+	}
+
+	public Map<Integer, String> getHiLoRegisterMapping() {
+		return hiLoRegisterMapping;
+	}
+
+	public void setHiLoRegisterMapping(Map<Integer, String> hiLoRegisterMapping) {
+		this.hiLoRegisterMapping = hiLoRegisterMapping;
+	}
+
+	public SettingDao getSettingDao() {
+		return settingDao;
+	}
+
+	public void setSettingDao(SettingDao settingDao) {
+		this.settingDao = settingDao;
+	}
+
+	public Set<Integer> getAddressesToOffsetDaily() {
+		return addressesToOffsetDaily;
+	}
+
+	public void setAddressesToOffsetDaily(Set<Integer> addressesToOffsetDaily) {
+		this.addressesToOffsetDaily = addressesToOffsetDaily;
 	}
 
 }
