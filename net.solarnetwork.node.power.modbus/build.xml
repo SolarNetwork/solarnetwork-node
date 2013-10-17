@@ -4,6 +4,7 @@
 	<dirset id="bundle.deps" dir="${basedir}/../..">
 		<include name="solarnetwork-external/net.solarnetwork.net.wimpi.modbus"/>
 		<include name="solarnetwork-node/net.solarnetwork.node"/>
+		<include name="solarnetwork-node/net.solarnetwork.node.io.modbus"/>
 		<include name="solarnetwork-node/net.solarnetwork.node.power"/>
 	</dirset>
 	
