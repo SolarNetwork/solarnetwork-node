@@ -287,6 +287,9 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 		final List<Message> messages;
 		final ConversationalDataCollector dc = r.getDataCollectorInstance();
+		if ( dc == null ) {
+			return null;
+		}
 		try {
 			messages = dc.collectData(this);
 		} finally {
