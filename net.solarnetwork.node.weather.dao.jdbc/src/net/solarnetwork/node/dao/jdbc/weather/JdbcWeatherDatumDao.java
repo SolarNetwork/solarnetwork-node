@@ -172,7 +172,7 @@ public class JdbcWeatherDatumDao extends AbstractJdbcDatumDao<WeatherDatum> {
 				datum.setSkyConditions(rs.getString(col++));
 
 				Number val = (Number) rs.getObject(col++);
-				datum.setTemperatureCelcius(val == null ? null : val.doubleValue());
+				datum.setTemperatureCelsius(val == null ? null : val.doubleValue());
 
 				val = (Number) rs.getObject(col++);
 				datum.setHumidity(val == null ? null : val.doubleValue());
@@ -224,10 +224,10 @@ public class JdbcWeatherDatumDao extends AbstractJdbcDatumDao<WeatherDatum> {
 		} else {
 			ps.setString(col++, datum.getSkyConditions());
 		}
-		if ( datum.getTemperatureCelcius() == null ) {
+		if ( datum.getTemperatureCelsius() == null ) {
 			ps.setNull(col++, Types.DOUBLE);
 		} else {
-			ps.setDouble(col++, datum.getTemperatureCelcius());
+			ps.setDouble(col++, datum.getTemperatureCelsius());
 		}
 		if ( datum.getHumidity() == null ) {
 			ps.setNull(col++, Types.DOUBLE);
