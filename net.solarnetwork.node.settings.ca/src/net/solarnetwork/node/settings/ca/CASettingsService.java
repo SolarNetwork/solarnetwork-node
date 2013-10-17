@@ -333,14 +333,16 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		Map<String, List<FactorySettingSpecifierProvider>> results = new LinkedHashMap<String, List<FactorySettingSpecifierProvider>>();
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(factoryUID);
-			for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper.instanceEntrySet() ) {
-				String instanceUID = me.getKey();
-				List<FactorySettingSpecifierProvider> list = new ArrayList<FactorySettingSpecifierProvider>(
-						me.getValue().size());
-				for ( SettingSpecifierProvider provider : me.getValue() ) {
-					list.add(new BasicFactorySettingSpecifierProvider(instanceUID, provider));
+			if ( helper != null ) {
+				for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper.instanceEntrySet() ) {
+					String instanceUID = me.getKey();
+					List<FactorySettingSpecifierProvider> list = new ArrayList<FactorySettingSpecifierProvider>(
+							me.getValue().size());
+					for ( SettingSpecifierProvider provider : me.getValue() ) {
+						list.add(new BasicFactorySettingSpecifierProvider(instanceUID, provider));
+					}
+					results.put(instanceUID, list);
 				}
-				results.put(instanceUID, list);
 			}
 		}
 		return results;
