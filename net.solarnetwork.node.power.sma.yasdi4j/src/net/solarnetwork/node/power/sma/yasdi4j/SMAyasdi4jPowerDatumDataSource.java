@@ -298,9 +298,18 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	private void setupChannelNamesToMonitor() {
 		Set<String> s = new LinkedHashSet<String>(3);
-		s.add(getPvVoltsChannelName());
-		s.add(getPvAmpsChannelName());
+		if ( getPvWattsChannelNames() != null && getPvWattsChannelNames().size() > 0 ) {
+			s.addAll(getPvWattsChannelNames());
+		} else {
+			if ( getPvVoltsChannelName() != null ) {
+				s.add(getPvVoltsChannelName());
+			}
+			if ( getPvAmpsChannelName() != null ) {
+				s.add(getPvAmpsChannelName());
+			}
+		}
 		s.add(getkWhChannelName());
+
 		if ( !s.equals(this.getChannelNamesToMonitor()) ) {
 			setChannelNamesToMonitor(s);
 		}
@@ -371,6 +380,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public void setPvWattsChannelNames(Set<String> pvWattsChannelNames) {
 		this.pvWattsChannelNames = pvWattsChannelNames;
+		setupChannelNamesToMonitor();
 	}
 
 }
