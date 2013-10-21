@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.power.mock;
@@ -29,7 +27,6 @@ package net.solarnetwork.node.power.mock;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.power.PowerDatum;
@@ -37,7 +34,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -47,24 +43,28 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * Mock implementation of {@link DatumDataSource} for {@link PowerDatum}
  * objects.
  * 
- * <p>This simple implementation returns one of two different PowerDatum 
- * instances, one for "daytime" and one for "nighttime". It is designed
- * for testing and debugging purposes only.</p>
- *
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * This simple implementation returns one of two different PowerDatum instances,
+ * one for "daytime" and one for "nighttime". It is designed for testing and
+ * debugging purposes only.
+ * </p>
+ * 
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>hourDayStart</dt>
- *   <dd>The hour to consider as the start of "daytime". Defaults to
- *   {@link #DEFAULT_HOUR_DAY_START}.</dd>
- *   
- *   <dt>hourNightStart</dt>
- *   <dd>The hour to consider as the start of "nighttime". Defaults to
- *   {@link #DEFAULT_HOUR_NIGHT_START}.</dd>
+ * <dt>hourDayStart</dt>
+ * <dd>The hour to consider as the start of "daytime". Defaults to
+ * {@link #DEFAULT_HOUR_DAY_START}.</dd>
+ * 
+ * <dt>hourNightStart</dt>
+ * <dd>The hour to consider as the start of "nighttime". Defaults to
+ * {@link #DEFAULT_HOUR_NIGHT_START}.</dd>
  * </dl>
- *
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
@@ -73,18 +73,15 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	/** The default value for the {@code hourNightStart} property. */
 	public static final int DEFAULT_HOUR_NIGHT_START = 20;
-	
-	private static final PowerDatum DAY_POWER 
-		= new MockPowerDatum(4.0, 12.0F, null, null, 0.0F, 0.0F, 5.0F, 
-				18.0F, 12.0, 0.144);
 
-	private static final PowerDatum NIGHT_POWER 
-		= new MockPowerDatum(4.0, 12.0F, null, null, 1.0F, 12.0F, 0.0F, 
-				0.0F, 12.0, 0.144);
-	
-	private final Logger log = LoggerFactory.getLogger(
-			MockPowerDatumDataSource.class);
-	
+	private static final PowerDatum DAY_POWER = new MockPowerDatum(4.0, 12.0F, null, null, 0.0F, 0.0F,
+			1100, 12.0, 0.144);
+
+	private static final PowerDatum NIGHT_POWER = new MockPowerDatum(4.0, 12.0F, null, null, 1.0F,
+			12.0F, 0, 12.0, 0.144);
+
+	private final Logger log = LoggerFactory.getLogger(MockPowerDatumDataSource.class);
+
 	private Float dayPvAmps = 5.0F;
 	private Float nightPvAmps = 0.0F;
 	private boolean enabled = true;
@@ -94,18 +91,20 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	private MessageSource messageSource = null;
 
+	@Override
 	public Class<? extends PowerDatum> getDatumType() {
 		return PowerDatum.class;
 	}
 
+	@Override
 	public PowerDatum readCurrentDatum() {
 		if ( !enabled ) {
 			log.debug("Not enabled");
 			return null;
 		}
 		Calendar now = Calendar.getInstance();
-		if ( now.get(Calendar.HOUR_OF_DAY) >= this.hourDayStart && 
-				now.get(Calendar.HOUR_OF_DAY) < this.hourNightStart ) {
+		if ( now.get(Calendar.HOUR_OF_DAY) >= this.hourDayStart
+				&& now.get(Calendar.HOUR_OF_DAY) < this.hourNightStart ) {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Returning day power between {}am and {}pm", this.hourDayStart,
 						(this.hourNightStart - 12));
@@ -121,18 +120,16 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		result.setPvAmps(nightPvAmps);
 		return result;
 	}
-	
-	private static class MockPowerDatum extends PowerDatum 
-	implements Mock, Cloneable {
 
-		private MockPowerDatum(Double batteryAmpHours, Float batteryVolts,
-				Float acOutputAmps, Float acOutputVolts, Float dcOutputAmps,
-				Float dcOutputVolts, Float pvAmps, Float pvVolts,
+	private static class MockPowerDatum extends PowerDatum implements Mock, Cloneable {
+
+		private MockPowerDatum(Double batteryAmpHours, Float batteryVolts, Float acOutputAmps,
+				Float acOutputVolts, Float dcOutputAmps, Float dcOutputVolts, Integer watts,
 				Double ampHoursToday, Double kWattHoursToday) {
 			super(batteryAmpHours, batteryVolts, acOutputAmps, acOutputVolts, dcOutputAmps,
-					dcOutputVolts, pvAmps, pvVolts, ampHoursToday, kWattHoursToday);
+					dcOutputVolts, watts, ampHoursToday, kWattHoursToday);
 		}
-		
+
 	}
 
 	@Override
@@ -148,11 +145,9 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return Arrays
-				.asList((SettingSpecifier) new BasicToggleSettingSpecifier("enabled", true),
-						(SettingSpecifier) new BasicSliderSettingSpecifier("dayPvAmps", 5.0, 0.0,
-								20.0, 0.1), (SettingSpecifier) new BasicSliderSettingSpecifier(
-								"nightPvAmps", 0.0, 0.0, 5.0, 0.1));
+		return Arrays.asList((SettingSpecifier) new BasicToggleSettingSpecifier("enabled", true),
+				(SettingSpecifier) new BasicSliderSettingSpecifier("dayPvAmps", 5.0, 0.0, 20.0, 0.1),
+				(SettingSpecifier) new BasicSliderSettingSpecifier("nightPvAmps", 0.0, 0.0, 5.0, 0.1));
 	}
 
 	@Override
@@ -204,5 +199,5 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
-	
+
 }
