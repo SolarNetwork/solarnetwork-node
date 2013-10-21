@@ -39,6 +39,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.StringUtils;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.ObjectFactory;
@@ -124,6 +125,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
+	private Set<String> pvWattsChannelNames = null;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private int channelMaxAgeSeconds = 30;
 
@@ -156,8 +158,20 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		final boolean newDay = isNewDay();
 
 		// Issue GetData command for each channel we're interested in
-		captureNumericDataValue(master, this.pvVoltsChannelName, "pvVolts", bean, newDay);
-		captureNumericDataValue(master, this.pvAmpsChannelName, "pvAmps", bean, newDay);
+		if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
+			// we sum up all channels into a single value
+			PowerDatum tmp = new PowerDatum();
+			PropertyAccessor tmpBean = PropertyAccessorFactory.forBeanPropertyAccess(tmp);
+			int totalWatts = 0;
+			for ( String channelName : this.pvWattsChannelNames ) {
+				captureNumericDataValue(master, channelName, "watts", tmpBean, newDay);
+				totalWatts += (tmp.getWatts() == null ? 0 : tmp.getWatts().intValue());
+			}
+			datum.setWatts(totalWatts);
+		} else {
+			captureNumericDataValue(master, this.pvVoltsChannelName, "pvVolts", bean, newDay);
+			captureNumericDataValue(master, this.pvAmpsChannelName, "pvAmps", bean, newDay);
+		}
 		captureNumericDataValue(master, this.kWhChannelName, "KWattHoursToday", bean, newDay);
 
 		if ( !isValidDatum(datum) ) {
@@ -172,8 +186,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	private boolean isValidDatum(PowerDatum d) {
-		if ( (d.getPvVolts() == null || d.getPvVolts() < 0.001)
-				&& (d.getPvAmps() == null || d.getPvAmps() < 0.001)
+		if ( (d.getWatts() == null || d.getWatts() < 1)
 				&& (d.getKWattHoursToday() == null || d.getKWattHoursToday() < 0.001) ) {
 			return false;
 		}
@@ -269,6 +282,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 
+		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue", defaults
+				.getPvWattsChannelNamesValue()));
 		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", defaults
 				.getPvVoltsChannelName()));
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", defaults
@@ -328,6 +343,34 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public void setChannelMaxAgeSeconds(int channelMaxAgeSeconds) {
 		this.channelMaxAgeSeconds = channelMaxAgeSeconds;
+	}
+
+	/**
+	 * Get the pvWattsChannelNames as a comma-delimited string value.
+	 * 
+	 * @return the channel names, as a delimited string
+	 */
+	public String getPvWattsChannelNamesValue() {
+		return (pvWattsChannelNames == null ? null : StringUtils
+				.commaDelimitedStringFromCollection(pvWattsChannelNames));
+	}
+
+	/**
+	 * Set the pvWattsChannelNames as a comma-delimited string value.
+	 * 
+	 * @param value
+	 *        the channel names, as a delimited string
+	 */
+	public void setPvWattsChannelNamesValue(String value) {
+		setPvWattsChannelNames(StringUtils.commaDelimitedStringToSet(value));
+	}
+
+	public Set<String> getPvWattsChannelNames() {
+		return pvWattsChannelNames;
+	}
+
+	public void setPvWattsChannelNames(Set<String> pvWattsChannelNames) {
+		this.pvWattsChannelNames = pvWattsChannelNames;
 	}
 
 }
