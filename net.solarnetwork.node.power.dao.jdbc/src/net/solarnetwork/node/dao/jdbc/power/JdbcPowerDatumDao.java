@@ -48,7 +48,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 8;
+	public static final int DEFAULT_TABLES_VERSION = 9;
 
 	/** The table name for {@link PowerDatum} data. */
 	public static final String TABLE_POWER_DATUM = "sn_power_datum";
@@ -66,8 +66,8 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
 			+ TABLE_POWER_DATUM
 			+ " (source_id, price_loc_id, watts, bat_volts, bat_amp_hrs, dc_out_volts,"
-			+ " dc_out_amps, ac_out_volts, ac_out_amps, kwatt_hours, " + "amp_hours, error_msg) VALUES"
-			+ " (?,?,?,?,?,?,?,?,?,?,?,?)";
+			+ " dc_out_amps, ac_out_volts, ac_out_amps, kwatt_hours, " + "amp_hours) VALUES"
+			+ " (?,?,?,?,?,?,?,?,?,?,?)";
 
 	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
 			+ TABLE_POWER_DATUM_UPLOAD + " (power_datum_id, destination, track_id) VALUES (?,?,?)";
@@ -167,7 +167,6 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 				val = (Number) rs.getObject(col++);
 				datum.setAmpHoursToday(val == null ? null : val.doubleValue());
 
-				datum.setErrorMessage(rs.getString(col++));
 				return datum;
 			}
 		});
@@ -226,11 +225,6 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 			ps.setNull(col++, Types.DOUBLE);
 		} else {
 			ps.setDouble(col++, datum.getAmpHoursToday());
-		}
-		if ( datum.getErrorMessage() == null ) {
-			ps.setNull(col++, Types.VARCHAR);
-		} else {
-			ps.setString(col++, datum.getErrorMessage());
 		}
 	}
 

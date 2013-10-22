@@ -3,8 +3,7 @@ CREATE TABLE solarnode.sn_power_datum (
 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
 	source_id 		VARCHAR(255),
 	price_loc_id	BIGINT,
-	pv_volts 		DOUBLE,
-	pv_amps			DOUBLE,
+	watts 			INTEGER,
 	bat_volts		DOUBLE,
 	bat_amp_hrs		DOUBLE,
 	dc_out_volts	DOUBLE,
@@ -13,14 +12,13 @@ CREATE TABLE solarnode.sn_power_datum (
 	ac_out_amps		DOUBLE,
 	kwatt_hours		DOUBLE,
 	amp_hours		DOUBLE,
-	error_msg		VARCHAR(32672),
 	PRIMARY KEY (id)
 );
 
 CREATE INDEX power_datum_created_idx ON solarnode.sn_power_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_power_datum.version', '7');
+VALUES ('solarnode.sn_power_datum.version', '9');
 
 CREATE TABLE solarnode.sn_power_datum_upload (
 	power_datum_id	BIGINT NOT NULL,

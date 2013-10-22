@@ -11,8 +11,7 @@ SELECT
 	p.ac_out_volts, 
 	p.ac_out_amps,
 	p.kwatt_hours,
-	p.amp_hours,
-	p.error_msg
+	p.amp_hours
 FROM solarnode.sn_power_datum p 
 LEFT OUTER JOIN solarnode.sn_power_datum_upload u
 	ON u.power_datum_id = p.id AND u.destination = ?
