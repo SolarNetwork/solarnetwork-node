@@ -29,12 +29,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -82,6 +84,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 	private static de.michaeldenk.yasdi4j.YasdiMaster MASTER;
+	private static List<YasdiDevice> DEVICES = new CopyOnWriteArrayList<YasdiDevice>();
 	private static Map<YasdiMasterDeviceFactory, Object> FACTORIES = new WeakHashMap<YasdiMasterDeviceFactory, Object>(
 			2);
 	private static File INI_FILE = null;
@@ -96,7 +99,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	private int expectedDeviceCount = 1;
 	private boolean debugYasdi = false;
 
-	private YasdiMaster master;
+	private YasdiMasterDevice master;
 
 	/**
 	 * Default constructor.
@@ -109,14 +112,12 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	}
 
 	/**
-	 * Get a UID for this factory, based on the {@link YasdiMaster#getUID()}
-	 * value.
+	 * Get a UID for this factory, based on device. value.
 	 * 
 	 * @return the UID
 	 */
 	public String getUID() {
-		YasdiMaster master = getObject();
-		return (master == null ? null : master.getUID());
+		return device;
 	}
 
 	@Override
@@ -125,25 +126,28 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 			return master;
 		}
 
-		// generate our configuration, based on all configured factories
-		setupConfigIniFile();
+		if ( MASTER != null ) {
+			MASTER.reset();
+		} else {
+			// generate our configuration, based on all configured factories
+			setupConfigIniFile();
 
-		if ( MASTER == null ) {
 			log.debug("Initializing YASDI from config {}", INI_FILE.getAbsolutePath());
 			MASTER = de.michaeldenk.yasdi4j.YasdiMaster.getInstance();
 			try {
 				MASTER.initialize(INI_FILE.getAbsolutePath());
-				YasdiDriver[] drivers = MASTER.getDrivers();
-				for ( YasdiDriver d : MASTER.getDrivers() ) {
-					MASTER.setDriverOnline(d);
-				}
-				log.debug("Initialized {} drivers", drivers.length);
 			} catch ( IOException e ) {
 				throw new RuntimeException("Unable to initialize YasdiMaster", e);
 			}
-
-		} else {
-			MASTER.reset();
+		}
+		try {
+			YasdiDriver[] drivers = MASTER.getDrivers();
+			for ( YasdiDriver d : MASTER.getDrivers() ) {
+				MASTER.setDriverOnline(d);
+			}
+			log.debug("Initialized {} drivers", drivers.length);
+		} catch ( IOException e ) {
+			throw new RuntimeException("Unable to initialize YasdiMaster", e);
 		}
 
 		// detect devices
@@ -167,26 +171,10 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 					StringUtils.commaDelimitedStringFromCollection(deviceNames));
 		}
 
-		if ( MASTER.getNrDevices() == 1 ) {
-			// simple case
-			master = new YasdiMasterDevice(MASTER.getDevices()[0], device);
-		} else {
-			// look for a YasdiDevice that isn't already associated with a factory
-			for ( YasdiDevice yDevice : MASTER.getDevices() ) {
-				boolean found = false;
-				for ( YasdiMasterDeviceFactory factory : FACTORIES.keySet() ) {
-					if ( factory.master != null && yDevice == factory.master.getDevice() ) {
-						found = true;
-						break;
-					}
-				}
-				if ( !found ) {
-					master = new YasdiMasterDevice(yDevice, this.device);
-					break;
-				}
-			}
-		}
+		DEVICES.clear();
+		DEVICES.addAll(Arrays.asList(MASTER.getDevices()));
 
+		master = new YasdiMasterDevice(DEVICES, this.device);
 		return master;
 	}
 

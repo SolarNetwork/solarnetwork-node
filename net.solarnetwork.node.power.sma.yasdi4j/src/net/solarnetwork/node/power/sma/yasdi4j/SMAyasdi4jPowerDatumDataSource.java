@@ -46,6 +46,7 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import de.michaeldenk.yasdi4j.YasdiChannel;
+import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
  * SMA {@link DatumDataSource} for {@link PowerDatum}, using the {@code yasdi4j}
@@ -96,8 +97,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	/** The accumulative kWh channel name. */
 	public static final String CHANNEL_NAME_KWH = "E-Total";
 
-	/** The default UID filter value. */
-	public static final Long DEFAULT_UID_FILTER = 1000L;
+	/** The default device serial number value. */
+	public static final Long DEFAULT_SERIAL_NUMBER = 1000L;
 
 	/**
 	 * Default value for the {@code channelNamesToMonitor} property.
@@ -128,6 +129,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	private Set<String> pvWattsChannelNames = null;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private int channelMaxAgeSeconds = 30;
+	private long deviceSerialNumber = DEFAULT_SERIAL_NUMBER;
 
 	private DynamicServiceTracker<ObjectFactory<YasdiMaster>> yasdi;
 
@@ -142,14 +144,26 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		return PowerDatum.class;
 	}
 
-	@Override
-	public PowerDatum readCurrentDatum() {
+	private YasdiDevice getYasdiDevice() {
 		final ObjectFactory<YasdiMaster> service = yasdi.service();
 		if ( service == null ) {
 			log.debug("No YASDI service available.");
 			return null;
 		}
 		final YasdiMaster master = service.getObject();
+		YasdiDevice device = master.getDevice(this.deviceSerialNumber);
+		if ( device == null ) {
+			log.info("YASDI device {} not available", this.deviceSerialNumber);
+		}
+		return device;
+	}
+
+	@Override
+	public PowerDatum readCurrentDatum() {
+		final YasdiDevice device = getYasdiDevice();
+		if ( device == null ) {
+			return null;
+		}
 
 		PowerDatum datum = new PowerDatum();
 		datum.setSourceId(getSourceId());
@@ -164,15 +178,15 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			PropertyAccessor tmpBean = PropertyAccessorFactory.forBeanPropertyAccess(tmp);
 			int totalWatts = 0;
 			for ( String channelName : this.pvWattsChannelNames ) {
-				captureNumericDataValue(master, channelName, "watts", tmpBean, newDay);
+				captureNumericDataValue(device, channelName, "watts", tmpBean, newDay);
 				totalWatts += (tmp.getWatts() == null ? 0 : tmp.getWatts().intValue());
 			}
 			datum.setWatts(totalWatts);
 		} else {
-			captureNumericDataValue(master, this.pvVoltsChannelName, "pvVolts", bean, newDay);
-			captureNumericDataValue(master, this.pvAmpsChannelName, "pvAmps", bean, newDay);
+			captureNumericDataValue(device, this.pvVoltsChannelName, "pvVolts", bean, newDay);
+			captureNumericDataValue(device, this.pvAmpsChannelName, "pvAmps", bean, newDay);
 		}
-		captureNumericDataValue(master, this.kWhChannelName, "KWattHoursToday", bean, newDay);
+		captureNumericDataValue(device, this.kWhChannelName, "KWattHoursToday", bean, newDay);
 
 		if ( !isValidDatum(datum) ) {
 			log.debug("No valid data available.");
@@ -197,8 +211,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 * Read a specific channel that returns numeric values and set that value
 	 * onto a PowerDatum instance.
 	 * 
-	 * @param service
-	 *        the YasdiMaster service to collect the data from
+	 * @param device
+	 *        the YasdiDevice to collect the data from
 	 * @param channelName
 	 *        the name of the channel to read
 	 * @param beanProperty
@@ -209,10 +223,10 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 *        flag if today is considered a "new day" for purposes of calling
 	 *        {@link #handleDailyChannelOffset(String, Number, boolean)}
 	 */
-	private void captureNumericDataValue(YasdiMaster service, String channelName, String beanProperty,
+	private void captureNumericDataValue(YasdiDevice device, String channelName, String beanProperty,
 			PropertyAccessor accessor, final boolean newDay) {
 		log.trace("Capturing channel {} as property {}", channelName, beanProperty);
-		YasdiChannel channel = service.getDevice().getChannel(channelName);
+		YasdiChannel channel = device.getChannel(channelName);
 		if ( channel == null ) {
 			log.warn("Channel {} not available from YASDI device", channelName);
 			return;
@@ -268,17 +282,17 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 		String yasdiDeviceName = "N/A";
 		try {
-			final ObjectFactory<YasdiMaster> service = yasdi.service();
-			if ( service != null ) {
-				yasdiDeviceName = service.getObject().getDevice().getName();
+			final YasdiDevice device = getYasdiDevice();
+			if ( device != null ) {
+				yasdiDeviceName = device.getName();
 			}
 		} catch ( RuntimeException e ) {
 			log.warn("Exception getting YASDI device name: {}", e.getMessage());
 		}
 		results.add(new BasicTitleSettingSpecifier("address", yasdiDeviceName, true));
 
-		results.add(new BasicTextFieldSettingSpecifier("yasdi.propertyFilters['UID']", String
-				.valueOf(DEFAULT_UID_FILTER)));
+		results.add(new BasicTextFieldSettingSpecifier("deviceSerialNumber", String
+				.valueOf(defaults.deviceSerialNumber)));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 
@@ -381,6 +395,10 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	public void setPvWattsChannelNames(Set<String> pvWattsChannelNames) {
 		this.pvWattsChannelNames = pvWattsChannelNames;
 		setupChannelNamesToMonitor();
+	}
+
+	public void setDeviceSerialNumber(long deviceSerialNumber) {
+		this.deviceSerialNumber = deviceSerialNumber;
 	}
 
 }

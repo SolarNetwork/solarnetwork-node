@@ -62,11 +62,6 @@
 							<property name="bundleContext" ref="bundleContext"/>
 							<property name="serviceClassName" value="org.springframework.beans.factory.ObjectFactory"/>
 							<property name="serviceFilter" value="(serviceClass=net.solarnetwork.node.io.yasdi4j.YasdiMaster)"/>
-							<property name="propertyFilters">
-								<map>
-									<entry key="UID" value="1000"/>
-								</map>
-							</property>
 						</bean>	
 					</property>
 				</bean>

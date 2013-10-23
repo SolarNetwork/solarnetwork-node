@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.io.yasdi4j;
 
+import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
@@ -32,7 +35,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  */
 public class YasdiMasterDevice implements YasdiMaster {
 
-	private final YasdiDevice device;
+	private final Collection<YasdiDevice> devices;
 	private final String commDevice;
 
 	/**
@@ -41,21 +44,21 @@ public class YasdiMasterDevice implements YasdiMaster {
 	 * @param device
 	 *        the device
 	 */
-	public YasdiMasterDevice(YasdiDevice device, String commDevice) {
+	public YasdiMasterDevice(Collection<YasdiDevice> devices, String commDevice) {
 		super();
-		this.device = device;
+		this.devices = devices;
 		this.commDevice = commDevice;
 	}
 
 	@Override
-	public YasdiDevice getDevice() {
-		return device;
+	public Collection<YasdiDevice> getDevices() {
+		return devices;
 	}
 
 	@Override
 	public String getUID() {
 		// returns the device serial number to uniquely identify the device
-		return String.valueOf(device.getSN());
+		return String.valueOf(commDevice);
 	}
 
 	@Override
@@ -65,7 +68,29 @@ public class YasdiMasterDevice implements YasdiMaster {
 
 	@Override
 	public String getName() {
-		return device.getName();
+		return getCommDevice();
+	}
+
+	@Override
+	public YasdiDevice getDevice(long serialNumber) {
+		for ( YasdiDevice d : devices ) {
+			if ( d.getSN() == serialNumber ) {
+				return d;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public YasdiDevice getDeviceMatchingName(String name) {
+		Pattern p = Pattern.compile(name, Pattern.CASE_INSENSITIVE);
+		for ( YasdiDevice d : devices ) {
+			Matcher m = p.matcher(d.getName());
+			if ( m.find() ) {
+				return d;
+			}
+		}
+		return null;
 	}
 
 }

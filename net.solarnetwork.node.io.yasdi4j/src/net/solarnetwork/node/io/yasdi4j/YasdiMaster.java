@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.yasdi4j;
 
+import java.util.Collection;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
@@ -65,10 +66,28 @@ public interface YasdiMaster {
 	String getCommDevice();
 
 	/**
-	 * Get the {@link YasdiDevice}.
+	 * Get all available {@link YasdiDevice} instances for this master.
 	 * 
-	 * @return YasdiDevice
+	 * @return YasdiDevice collection (never <em>null</em>)
 	 */
-	YasdiDevice getDevice();
+	Collection<YasdiDevice> getDevices();
+
+	/**
+	 * Get a single device based on that device's serial number.
+	 * 
+	 * @param serialNumber
+	 *        the device serialNumber to get
+	 * @return the device, or <em>null</em> if not found
+	 */
+	YasdiDevice getDevice(long serialNumber);
+
+	/**
+	 * Get a single device based on that device's name.
+	 * 
+	 * @param name
+	 *        the device name to match; will match substrings
+	 * @return the device, or <em>null</em> if not found
+	 */
+	YasdiDevice getDeviceMatchingName(String name);
 
 }
