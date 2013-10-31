@@ -6,12 +6,6 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelType;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaCommand;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaControl;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaUserDataField;
-import net.solarnetwork.node.hw.sma.sunnynet.SmaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,6 +104,18 @@ public final class SmaPacket {
 	public SmaPacket(byte[] packet) {
 		this.packet = packet;
 		decodePacket();
+	}
+
+	/**
+	 * Add utility to create a NetStart packet.
+	 * 
+	 * @param sourceAddress
+	 *        the source address
+	 * @return the packet
+	 */
+	public static SmaPacket netStartPacket(int sourceAddress) {
+		return new SmaPacket(sourceAddress, 0, 0, SmaControl.RequestGroup, SmaCommand.NetStart,
+				SmaUtils.EMPTY_BYTE_ARRAY);
 	}
 
 	/**
