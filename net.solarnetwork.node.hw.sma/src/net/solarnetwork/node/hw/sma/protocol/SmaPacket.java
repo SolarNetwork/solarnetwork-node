@@ -107,7 +107,7 @@ public final class SmaPacket {
 	}
 
 	/**
-	 * Add utility to create a NetStart packet.
+	 * Utility to create a NetStart packet.
 	 * 
 	 * @param sourceAddress
 	 *        the source address
@@ -115,6 +115,18 @@ public final class SmaPacket {
 	 */
 	public static SmaPacket netStartPacket(int sourceAddress) {
 		return new SmaPacket(sourceAddress, 0, 0, SmaControl.RequestGroup, SmaCommand.NetStart,
+				SmaUtils.EMPTY_BYTE_ARRAY);
+	}
+
+	/**
+	 * Utility to create a NetGet packet.
+	 * 
+	 * @param sourceAddress
+	 *        the source address
+	 * @return the packet
+	 */
+	public static SmaPacket netGetPacket(int sourceAddress) {
+		return new SmaPacket(sourceAddress, 0, 0, SmaControl.RequestGroup, SmaCommand.NetGet,
 				SmaUtils.EMPTY_BYTE_ARRAY);
 	}
 
