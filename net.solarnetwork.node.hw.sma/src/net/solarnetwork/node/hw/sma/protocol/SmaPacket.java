@@ -131,6 +131,20 @@ public final class SmaPacket {
 	}
 
 	/**
+	 * Utility to create a GetChannelInfo packet.
+	 * 
+	 * @param sourceAddress
+	 *        the source address
+	 * @param destinationAddress
+	 *        the destination address
+	 * @return the packet
+	 */
+	public static SmaPacket getChannelInfoPacket(int sourceAddress, int destinationAddress) {
+		return new SmaPacket(sourceAddress, destinationAddress, 0, SmaControl.RequestSingle,
+				SmaCommand.GetChannelInfo, SmaUtils.EMPTY_BYTE_ARRAY);
+	}
+
+	/**
 	 * Get a specific user data field value.
 	 * 
 	 * @param key
@@ -315,7 +329,7 @@ public final class SmaPacket {
 		//  # 1  request type2
 		//  # 1  channel number (index)
 		//  # 2  number of data sets
-		SmaChannelType type1 = SmaChannelType.forCode(0xFF & userData[0]);
+		SmaChannelType type1 = SmaChannelType.forCode(0xF & userData[0]);
 
 		results.put(SmaUserDataField.ChannelType1, type1);
 		results.put(SmaUserDataField.ChannelType2, 0xFF & userData[1]);
