@@ -36,8 +36,8 @@ import java.util.Map;
 public final class SmaChannel {
 
 	private final short index;
-	private final SmaChannelType type1;
-	private final short type2;
+	private final SmaChannelType type;
+	private final SmaChannelTypeGroup typeGroup;
 	private final int dataFormat;
 	private final int accessLevel;
 	private final String name;
@@ -53,8 +53,8 @@ public final class SmaChannel {
 	 * 
 	 * <pre>
 	 * # 1  index byte
-	 * # 1  channel type1 bytes
-	 * # 1  channel type2 bytes
+	 * # 1  channel type bytes
+	 * # 1  channel type group bytes
 	 * # 2  data format bytes
 	 * # 2  access level
 	 * # 16 channel name bytes
@@ -67,8 +67,8 @@ public final class SmaChannel {
 	 */
 	public SmaChannel(byte[] data, int offset) {
 		index = (short) (0xFF & data[offset]);
-		type1 = SmaChannelType.forCode(0xFF & data[offset + 1]);
-		type2 = (short) (0xFF & data[offset + 2]);
+		type = SmaChannelType.forCode(0xFF & data[offset + 1]);
+		typeGroup = SmaChannelTypeGroup.forCode(0xFF & data[offset + 2]);
 		dataFormat = (0xFF & data[offset + 3]) | ((0xFF & data[offset + 4]) << 8);
 		accessLevel = (0xFF & data[offset + 5]) | ((0xFF & data[offset + 6]) << 8);
 		name = SmaUtils.parseString(data, offset + 7, 16);
@@ -91,13 +91,13 @@ public final class SmaChannel {
 
 	@Override
 	public String toString() {
-		return "SmaChannel{name=" + name + ",type=" + type1 + ",index=" + index + ",type2=" + type2
+		return "SmaChannel{name=" + name + ",type=" + type + ",index=" + index + ",group=" + typeGroup
 				+ ",accessLevel=" + accessLevel + ",format=" + dataFormat + ",dataLength=" + dataLength
 				+ (parameters == null ? "" : ",parameters=" + parameters) + '}';
 	}
 
 	private int decodeData(byte[] data, int offset) {
-		switch (this.type1) {
+		switch (this.type) {
 			case Analog:
 				return decodeAnalogData(data, offset);
 
@@ -159,58 +159,34 @@ public final class SmaChannel {
 		parameters.put(type, value);
 	}
 
-	/**
-	 * @return the index
-	 */
 	public short getIndex() {
 		return index;
 	}
 
-	/**
-	 * @return the type1
-	 */
-	public SmaChannelType getType1() {
-		return type1;
+	public SmaChannelType getType() {
+		return type;
 	}
 
-	/**
-	 * @return the type2
-	 */
-	public short getType2() {
-		return type2;
+	public SmaChannelTypeGroup getTypeGroup() {
+		return typeGroup;
 	}
 
-	/**
-	 * @return the dataFormat
-	 */
 	public int getDataFormat() {
 		return dataFormat;
 	}
 
-	/**
-	 * @return the accessLevel
-	 */
 	public int getAccessLevel() {
 		return accessLevel;
 	}
 
-	/**
-	 * @return the name
-	 */
 	public String getName() {
 		return name;
 	}
 
-	/**
-	 * @return the dataLength
-	 */
 	public int getDataLength() {
 		return dataLength;
 	}
 
-	/**
-	 * @return the parameters
-	 */
 	public Map<SmaChannelParam, Object> getParameters() {
 		return parameters;
 	}

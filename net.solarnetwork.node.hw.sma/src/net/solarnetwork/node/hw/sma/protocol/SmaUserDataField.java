@@ -44,11 +44,11 @@ public enum SmaUserDataField {
 	/** The channel index number. */
 	ChannelIndex,
 
-	/** The channel type1 value. */
-	ChannelType1,
+	/** The channel type. */
+	ChannelType,
 
-	/** The channel type2 value. */
-	ChannelType2,
+	/** The channel type group. */
+	ChannelTypeGroup,
 
 	/** A data value. */
 	Value,

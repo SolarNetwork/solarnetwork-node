@@ -331,8 +331,8 @@ public final class SmaPacket {
 		//  # 2  number of data sets
 		SmaChannelType type1 = SmaChannelType.forCode(0xF & userData[0]);
 
-		results.put(SmaUserDataField.ChannelType1, type1);
-		results.put(SmaUserDataField.ChannelType2, 0xFF & userData[1]);
+		results.put(SmaUserDataField.ChannelType, type1);
+		results.put(SmaUserDataField.ChannelTypeGroup, 0x3F & userData[1]);
 		results.put(SmaUserDataField.ChannelIndex, 0xFF & userData[2]);
 		results.put(SmaUserDataField.DataSets, (0xFF & userData[3]) | ((0xFF & userData[4]) << 8));
 		results.put(SmaUserDataField.SecondsSince, (0xFF & userData[5]) | ((0xFF & userData[6]) << 8)

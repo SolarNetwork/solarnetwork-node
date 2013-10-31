@@ -55,8 +55,8 @@ public final class SmaUtils {
 	 */
 	public static byte[] encodeGetDataRequestUserData(SmaChannel channel) {
 		byte[] result = new byte[3];
-		result[0] = (byte) channel.getType1().getCode();
-		result[1] = (byte) channel.getType2();
+		result[0] = (byte) channel.getType().getCode();
+		result[1] = (byte) channel.getTypeGroup().getCode();
 		result[2] = (byte) channel.getIndex();
 		return result;
 	}
@@ -77,15 +77,15 @@ public final class SmaUtils {
 	 * @return the user data value (7 or 9 bytes long)
 	 */
 	public static byte[] encodeSetDataRequestUserData(SmaChannel channel, int value) {
-		byte[] result = new byte[channel.getType1() == SmaChannelType.Analog ? 7 : 9];
-		result[0] = (byte) channel.getType1().getCode();
-		result[1] = (byte) channel.getType2();
+		byte[] result = new byte[channel.getType() == SmaChannelType.Analog ? 7 : 9];
+		result[0] = (byte) channel.getType().getCode();
+		result[1] = (byte) channel.getType().getCode();
 		result[2] = (byte) channel.getIndex();
-		result[3] = (byte) (channel.getType1() == SmaChannelType.Analog ? 1 : 2);
+		result[3] = (byte) (channel.getType() == SmaChannelType.Analog ? 1 : 2);
 		result[4] = (byte) 0;
 		result[5] = (byte) (0xFF & value);
 		result[6] = (byte) (0xFF & (value >> 8));
-		if ( channel.getType1() != SmaChannelType.Analog ) {
+		if ( channel.getType() != SmaChannelType.Analog ) {
 			result[7] = (byte) (0xFF & (value >> 16));
 			result[8] = (byte) (0xFF & (value >> 24));
 		}
