@@ -32,7 +32,7 @@ package net.solarnetwork.node.hw.sma.protocol;
  */
 public enum SmaCommand {
 
-	/** The "net start" command, to initiate communicaiton. */
+	/** The "net start" command, to initiate communication. */
 	NetStart(6),
 
 	/** Get all available channel info. */
