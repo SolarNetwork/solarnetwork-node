@@ -35,6 +35,9 @@ public enum SmaCommand {
 	/** The "net start" command, to initiate communication. */
 	NetStart(6),
 
+	/** The "net get" command, to re-query for devices after NetStart issued. */
+	NetGet(1),
+
 	/** Get all available channel info. */
 	GetChannelInfo(9),
 
