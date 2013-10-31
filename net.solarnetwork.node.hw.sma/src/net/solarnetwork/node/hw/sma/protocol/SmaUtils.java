@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
  */
 public final class SmaUtils {
 
+	/** An empty byte array, useful for specifying empty user data. */
+	public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
 	private static final Pattern STRING_TRIM_PAT = Pattern.compile("\\s+\\u0000?$");
 
 	private SmaUtils() {
