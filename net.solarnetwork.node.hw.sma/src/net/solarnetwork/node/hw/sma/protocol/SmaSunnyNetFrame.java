@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.hw.sma.protocol;
 
-import net.solarnetwork.node.hw.sma.sunnynet.SmaCommand;
-
 /**
  * A communication frame for the {@link SmaPacket} packet, using the SunnyNet
  * protocol.
