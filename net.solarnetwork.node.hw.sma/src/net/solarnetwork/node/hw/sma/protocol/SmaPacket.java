@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * <pre>
  *   # 2 source address bytes
  *   # 2 destination address bytes
- *   # 1 control byte (0x40)
+ *   # 1 control byte
  *   # 1 packet counter byte
  *   # 1 command type byte
  *   # X user data bytes
