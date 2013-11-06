@@ -30,7 +30,7 @@ import net.solarnetwork.node.support.BaseDatum;
  * A unit of data collected from a solar-electricity generating device.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PowerDatum extends BaseDatum {
 
@@ -43,7 +43,7 @@ public class PowerDatum extends BaseDatum {
 	private Float acOutputVolts = null; // this is the ac volts output on the charger/inverter
 	private Float acOutputAmps = null; // this is the ac current in amps on the charger/inverter
 	private Double ampHoursToday = null; // this is the amp hours generated today
-	private Double kWattHoursToday = null; // this is the kilowatt hours generated today
+	private Long wattHourReading = null;
 
 	// these are for backwards compatibility only
 	private Float pvVolts = null; // this is the volts on the PV
@@ -102,7 +102,7 @@ public class PowerDatum extends BaseDatum {
 		this.dcOutputVolts = dcOutputVolts;
 		this.watts = watts;
 		this.ampHoursToday = ampHoursToday;
-		this.kWattHoursToday = kWattHoursToday;
+		setKWattHoursToday(kWattHoursToday);
 	}
 
 	@Override
@@ -110,7 +110,7 @@ public class PowerDatum extends BaseDatum {
 		return "PowerDatum{watts=" + this.watts
 				+ (this.batteryVolts == null ? "" : ",batVolts=" + this.batteryVolts)
 				+ (this.ampHoursToday == null ? "" : ",ampHoursToday=" + this.ampHoursToday)
-				+ (this.kWattHoursToday == null ? "" : ",kwHoursToday=" + this.kWattHoursToday) + '}';
+				+ (this.wattHourReading == null ? "" : ",wattHourReading=" + this.wattHourReading) + '}';
 	}
 
 	/**
@@ -118,7 +118,8 @@ public class PowerDatum extends BaseDatum {
 	 * 
 	 * <p>
 	 * This will return the {@code watts} value if available, or fall back to
-	 * {@code amps} * {@code volts}.<?p>
+	 * {@code amps * volts}.
+	 * </p>
 	 * 
 	 * @return watts, or <em>null</em> if watts not available and either amps or
 	 *         volts are null
@@ -133,22 +134,61 @@ public class PowerDatum extends BaseDatum {
 		return Integer.valueOf((int) Math.round(pvAmps.doubleValue() * pvVolts.doubleValue()));
 	}
 
+	public Long getWattHourReading() {
+		return wattHourReading;
+	}
+
+	public void setWattHourReading(Long wattHours) {
+		this.wattHourReading = wattHours;
+	}
+
+	/**
+	 * Set the {@code wattHourReading} as an offset in kWh.
+	 * 
+	 * <p>
+	 * This method will multiply the value by 1000, set that on
+	 * {@code wattHourReading}.
+	 * 
+	 * @param kWattHoursToday
+	 *        the kWh reading to set
+	 */
+	@Deprecated
+	public void setKWattHoursToday(Double kWattHoursToday) {
+		if ( kWattHoursToday != null ) {
+			setWattHourReading(Math.round(kWattHoursToday.doubleValue() * 1000));
+		} else {
+			setWattHourReading(null);
+		}
+	}
+
+	@Deprecated
+	public Double getKWattHoursToday() {
+		if ( wattHourReading == null ) {
+			return null;
+		}
+		return wattHourReading.doubleValue() / 1000.0;
+	}
+
 	public void setWatts(Integer watts) {
 		this.watts = watts;
 	}
 
+	@Deprecated
 	public Float getPvVolts() {
 		return pvVolts;
 	}
 
+	@Deprecated
 	public void setPvVolts(Float pvVolts) {
 		this.pvVolts = pvVolts;
 	}
 
+	@Deprecated
 	public Float getPvAmps() {
 		return pvAmps;
 	}
 
+	@Deprecated
 	public void setPvAmps(Float pvAmps) {
 		this.pvAmps = pvAmps;
 	}
@@ -207,14 +247,6 @@ public class PowerDatum extends BaseDatum {
 
 	public void setAmpHoursToday(Double ampHoursToday) {
 		this.ampHoursToday = ampHoursToday;
-	}
-
-	public Double getKWattHoursToday() {
-		return kWattHoursToday;
-	}
-
-	public void setKWattHoursToday(Double kWattHoursToday) {
-		this.kWattHoursToday = kWattHoursToday;
 	}
 
 	public Long getLocationId() {

@@ -10,7 +10,7 @@ SELECT
 	p.dc_out_amps, 
 	p.ac_out_volts, 
 	p.ac_out_amps,
-	p.kwatt_hours,
+	p.watt_hours,
 	p.amp_hours
 FROM solarnode.sn_power_datum p 
 LEFT OUTER JOIN solarnode.sn_power_datum_upload u

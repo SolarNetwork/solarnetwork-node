@@ -43,12 +43,12 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link PowerDatum} domain objects.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 9;
+	public static final int DEFAULT_TABLES_VERSION = 10;
 
 	/** The table name for {@link PowerDatum} data. */
 	public static final String TABLE_POWER_DATUM = "sn_power_datum";
@@ -66,7 +66,7 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
 			+ TABLE_POWER_DATUM
 			+ " (source_id, price_loc_id, watts, bat_volts, bat_amp_hrs, dc_out_volts,"
-			+ " dc_out_amps, ac_out_volts, ac_out_amps, kwatt_hours, " + "amp_hours) VALUES"
+			+ " dc_out_amps, ac_out_volts, ac_out_amps, watt_hours, amp_hours) VALUES"
 			+ " (?,?,?,?,?,?,?,?,?,?,?)";
 
 	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
@@ -162,7 +162,7 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 				datum.setAcOutputAmps(val == null ? null : val.floatValue());
 
 				val = (Number) rs.getObject(col++);
-				datum.setKWattHoursToday(val == null ? null : val.doubleValue());
+				datum.setWattHourReading(val == null ? null : val.longValue());
 
 				val = (Number) rs.getObject(col++);
 				datum.setAmpHoursToday(val == null ? null : val.doubleValue());
@@ -216,10 +216,10 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 		} else {
 			ps.setFloat(col++, datum.getAcOutputAmps());
 		}
-		if ( datum.getKWattHoursToday() == null ) {
-			ps.setNull(col++, Types.DOUBLE);
+		if ( datum.getWattHourReading() == null ) {
+			ps.setNull(col++, Types.BIGINT);
 		} else {
-			ps.setDouble(col++, datum.getKWattHoursToday());
+			ps.setLong(col++, datum.getWattHourReading());
 		}
 		if ( datum.getAmpHoursToday() == null ) {
 			ps.setNull(col++, Types.DOUBLE);

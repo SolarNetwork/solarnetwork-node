@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode PowerDatum JDBC DAO
 Bundle-SymbolicName: net.solarnetwork.node.power.dao.jdbc
-Bundle-Version: 1.5.0
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -10,7 +10,7 @@ Import-Package:
  net.solarnetwork.node;version="1.0.0",
  net.solarnetwork.node.dao;version="1.2.0",
  net.solarnetwork.node.dao.jdbc;version="1.2.1",
- net.solarnetwork.node.power;version="1.4.0",
+ net.solarnetwork.node.power;version="1.5.0",
  net.solarnetwork.node.support;version="1.0.0",
  org.aopalliance.aop;version="1.0.0",
  org.osgi.framework;version="[1.7,2.0)",
