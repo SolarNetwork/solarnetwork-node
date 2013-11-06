@@ -65,15 +65,6 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * <dt>yasdi</dt>
  * <dd>The dynamic service for the {@link YasdiMaster} instance to use.</dd>
  * 
- * <dt>channelNamesToOffsetDaily</dt>
- * <dd>If configured, a set of channels to treat as ever-accumulating numbers
- * that should be treated as daily-resetting values. This can be used, for
- * example, to calculate a "kWh generated today" value from a "E-Total" channel
- * that is not reset by the inverter itself. When reading values on the start of
- * a new day, the value of that channel is persisted so subsequent readings on
- * the same day can be calculated as an offset from that initial value. Requires
- * the {@code settingDao} property to also be configured.</dd>
- * 
  * <dt>settingDao</dt>
  * <dd>The {@link SettingDao} to use, required by the
  * {@code channelNamesToResetDaily} property.</dd>
@@ -111,16 +102,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(CHANNEL_NAME_PV_AMPS,
 					CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
 
-	/**
-	 * Default value for the {@code channelNamesToOffsetDaily} property.
-	 * 
-	 * <p>
-	 * Contains the PV voltage, PV current, and kWh channels.
-	 * </p>
-	 */
-	public static final Set<String> DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY = Collections
-			.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(CHANNEL_NAME_KWH)));
-
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -136,7 +117,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	public SMAyasdi4jPowerDatumDataSource() {
 		super();
 		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
-		setChannelNamesToOffsetDaily(DEFAULT_CHANNEL_NAMES_TO_OFFSET_DAILY);
 	}
 
 	@Override
@@ -186,7 +166,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			captureNumericDataValue(device, this.pvVoltsChannelName, "pvVolts", bean, newDay);
 			captureNumericDataValue(device, this.pvAmpsChannelName, "pvAmps", bean, newDay);
 		}
-		captureNumericDataValue(device, this.kWhChannelName, "KWattHoursToday", bean, newDay);
+		captureNumericDataValue(device, this.kWhChannelName, "wattHourReading", bean, newDay);
 
 		if ( !isValidDatum(datum) ) {
 			log.debug("No valid data available.");
@@ -201,7 +181,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	private boolean isValidDatum(PowerDatum d) {
 		if ( (d.getWatts() == null || d.getWatts() < 1)
-				&& (d.getKWattHoursToday() == null || d.getKWattHoursToday() < 0.001) ) {
+				&& (d.getWattHourReading() == null || d.getWattHourReading() < 1) ) {
 			return false;
 		}
 		return true;
@@ -245,8 +225,12 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			Class<?> propType = accessor.getPropertyType(beanProperty);
 			Number value = n;
 			String unit = channel.getUnit();
-			if ( unit != null && "mA".equals(unit.toString()) ) {
-				value = divide(propType, n, Integer.valueOf(1000));
+			if ( unit != null ) {
+				if ( "mA".equals(unit.toString()) ) {
+					value = divide(propType, n, Integer.valueOf(1000));
+				} else if ( "kWh".equals(unit.toString()) ) {
+					value = mult(n, 1000);
+				}
 			}
 			accessor.setPropertyValue(beanProperty, value);
 		}
@@ -303,9 +287,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", defaults
 				.getPvAmpsChannelName()));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", defaults.getkWhChannelName()));
-
-		results.add(new BasicTextFieldSettingSpecifier("channelNamesToOffsetDailyValue", defaults
-				.getChannelNamesToOffsetDailyValue()));
 
 		return results;
 	}
