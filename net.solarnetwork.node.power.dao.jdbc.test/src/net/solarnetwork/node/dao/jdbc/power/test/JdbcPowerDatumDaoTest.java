@@ -28,20 +28,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
+import net.solarnetwork.node.dao.jdbc.power.JdbcPowerDatumDao;
+import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.test.context.ContextConfiguration;
-
-import net.solarnetwork.node.dao.jdbc.power.JdbcPowerDatumDao;
-import net.solarnetwork.node.power.PowerDatum;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test case for the {@link JdbcPowerDatumDao} class.
@@ -53,66 +50,59 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 public class JdbcPowerDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	private static final String TEST_SOURCE_ID = "Test Source";
-	private static final Float TEST_PV_VOLTS = 2.2F;
-	private static final Float TEST_PV_AMPS = 2.1F;
-	private static final Double TEST_WATT_HOURS = 2.3D;
-	
-	private static final String SQL_GET_BY_ID = 
-		"SELECT id, created, source_id, pv_volts, pv_amps, kwatt_hours "
-		+"FROM solarnode.sn_power_datum WHERE id = ?";
+	private static final Integer TEST_WATTS = 22;
+	private static final Long TEST_WATT_HOURS = 2300L;
 
-	
-	@Autowired private JdbcPowerDatumDao dao;
-	@Autowired private JdbcOperations jdbcOps;
+	private static final String SQL_GET_BY_ID = "SELECT id, created, source_id, watts, watt_hours "
+			+ "FROM solarnode.sn_power_datum WHERE id = ?";
+
+	@Autowired
+	private JdbcPowerDatumDao dao;
+	@Autowired
+	private JdbcOperations jdbcOps;
 
 	@Test
 	public void storeNew() {
 		PowerDatum datum = new PowerDatum();
-		datum.setPvAmps(TEST_PV_AMPS);
+		datum.setWatts(TEST_WATTS);
 		datum.setSourceId(TEST_SOURCE_ID);
-		datum.setPvVolts(TEST_PV_VOLTS);
-		datum.setKWattHoursToday(TEST_WATT_HOURS);
-		
+		datum.setWattHourReading(TEST_WATT_HOURS);
+
 		final Long id = dao.storeDatum(datum);
 		assertNotNull(id);
-		
-		jdbcOps.query(SQL_GET_BY_ID, new Object[] {id}, new ResultSetExtractor<Object>() {
+
+		jdbcOps.query(SQL_GET_BY_ID, new Object[] { id }, new ResultSetExtractor<Object>() {
+
 			@Override
-			public Object extractData(ResultSet rs) throws SQLException,
-					DataAccessException {
+			public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
 				assertTrue("Must have one result", rs.next());
-				
+
 				int col = 1;
-				
+
 				Long l = rs.getLong(col++);
 				assertFalse(rs.wasNull());
 				assertEquals(id, l);
-				
+
 				rs.getTimestamp(col++);
 				assertFalse(rs.wasNull());
-				
+
 				String s = rs.getString(col++);
 				assertFalse(rs.wasNull());
 				assertEquals(TEST_SOURCE_ID, s);
-				
-				Float f = rs.getFloat(col++);
+
+				int w = rs.getInt(col++);
 				assertFalse(rs.wasNull());
-				assertEquals(TEST_PV_VOLTS.floatValue(), f.floatValue(), 0.001);
-				
-				Double d = rs.getDouble(col++);
+				assertEquals(TEST_WATTS.intValue(), w);
+
+				long wh = rs.getLong(col++);
 				assertFalse(rs.wasNull());
-				assertEquals(TEST_PV_AMPS.doubleValue(), d.doubleValue(), 0.001);
-				
-				d = rs.getDouble(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_WATT_HOURS.doubleValue(), d.doubleValue(), 0.001);
-				
+				assertEquals(TEST_WATT_HOURS.longValue(), wh);
+
 				assertFalse("Must not have more than one result", rs.next());
 				return null;
 			}
-			
+
 		});
 	}
-	
 
 }
