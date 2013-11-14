@@ -165,7 +165,7 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 				datum.setWattHourReading(val == null ? null : val.longValue());
 
 				val = (Number) rs.getObject(col++);
-				datum.setAmpHoursToday(val == null ? null : val.doubleValue());
+				datum.setAmpHourReading(val == null ? null : val.doubleValue());
 
 				return datum;
 			}
@@ -221,10 +221,10 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 		} else {
 			ps.setLong(col++, datum.getWattHourReading());
 		}
-		if ( datum.getAmpHoursToday() == null ) {
+		if ( datum.getAmpHourReading() == null ) {
 			ps.setNull(col++, Types.DOUBLE);
 		} else {
-			ps.setDouble(col++, datum.getAmpHoursToday());
+			ps.setDouble(col++, datum.getAmpHourReading());
 		}
 	}
 

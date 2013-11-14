@@ -30,7 +30,7 @@ import net.solarnetwork.node.support.BaseDatum;
  * A unit of data collected from a solar-electricity generating device.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PowerDatum extends BaseDatum {
 
@@ -42,7 +42,7 @@ public class PowerDatum extends BaseDatum {
 	private Float dcOutputAmps = null; // this is the dc current in amps on the charger/inverter
 	private Float acOutputVolts = null; // this is the ac volts output on the charger/inverter
 	private Float acOutputAmps = null; // this is the ac current in amps on the charger/inverter
-	private Double ampHoursToday = null; // this is the amp hours generated today
+	private Double ampHourReading = null;
 	private Long wattHourReading = null;
 
 	// these are for backwards compatibility only
@@ -85,7 +85,7 @@ public class PowerDatum extends BaseDatum {
 	 *        the PV amps
 	 * @param pvVolts
 	 *        the PV volts
-	 * @param ampHoursToday
+	 * @param ampHourReading
 	 *        the amp hours collected today
 	 * @param kWattHoursToday
 	 *        the kilowatt hours collected today
@@ -101,7 +101,7 @@ public class PowerDatum extends BaseDatum {
 		this.dcOutputAmps = dcOutputAmps;
 		this.dcOutputVolts = dcOutputVolts;
 		this.watts = watts;
-		this.ampHoursToday = ampHoursToday;
+		this.ampHourReading = ampHoursToday;
 		setKWattHoursToday(kWattHoursToday);
 	}
 
@@ -109,7 +109,7 @@ public class PowerDatum extends BaseDatum {
 	public String toString() {
 		return "PowerDatum{watts=" + this.watts
 				+ (this.batteryVolts == null ? "" : ",batVolts=" + this.batteryVolts)
-				+ (this.ampHoursToday == null ? "" : ",ampHoursToday=" + this.ampHoursToday)
+				+ (this.ampHourReading == null ? "" : ",ampHourReading=" + this.ampHourReading)
 				+ (this.wattHourReading == null ? "" : ",wattHourReading=" + this.wattHourReading) + '}';
 	}
 
@@ -241,12 +241,12 @@ public class PowerDatum extends BaseDatum {
 		this.acOutputAmps = acOutputAmps;
 	}
 
-	public Double getAmpHoursToday() {
-		return ampHoursToday;
+	public Double getAmpHourReading() {
+		return ampHourReading;
 	}
 
-	public void setAmpHoursToday(Double ampHoursToday) {
-		this.ampHoursToday = ampHoursToday;
+	public void setAmpHourReading(Double ampHoursToday) {
+		this.ampHourReading = ampHoursToday;
 	}
 
 	public Long getLocationId() {
