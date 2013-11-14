@@ -21,9 +21,6 @@
 package net.solarnetwork.node.power.impl;
 
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,18 +72,8 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dt>connectionFactory</dt>
  * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
  * 
- * <dt>addressesToOffsetDaily</dt>
- * <dd>If configured, a set of Modbus addresses to treat as ever-accumulating
- * numbers that should be treated as daily-resetting values. This can be used,
- * for example, to calculate a "Ah generated today" value from a register that
- * is not reset by the device itself. When reading values on the start of a new
- * day, the value of that address is persisted so subsequent readings on the
- * same day can be calculated as an offset from that initial value. Requires the
- * {@code settingDao} property to also be configured.</dd>
- * </dl>
- * 
  * @author matt.magoffin
- * @version 1.1
+ * @version 1.2
  */
 public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
@@ -101,7 +88,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 	private Map<Integer, String> registerMapping = defaultRegisterMapping();
 	private Map<Integer, Double> registerScaleFactor = defaultRegisterScaleFactor();
 	private Map<Integer, String> hiLoRegisterMapping = defaultHiLoRegisterMapping();
-	private Set<Integer> addressesToOffsetDaily = defaultAddressesToOffsetDaily();
 	private SettingDao settingDao;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -113,7 +99,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		final boolean newDay = isNewDay();
 		Map<Integer, Integer> words = ModbusHelper.readInputValues(connectionFactory, addresses, count,
 				unitId);
 		if ( words == null ) {
@@ -127,7 +112,7 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 				final Integer addr = me.getKey();
 				if ( words.containsKey(addr) ) {
 					final Integer word = words.get(addr);
-					setRegisterAddressValue(bean, addr, me.getValue(), word, newDay);
+					setRegisterAddressValue(bean, addr, me.getValue(), word);
 				} else {
 					log.warn("Register address 0x{} not available", Integer.toHexString(addr));
 				}
@@ -141,7 +126,7 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 					final int hiWord = words.get(hiAddr);
 					final int loWord = words.get(loAddr);
 					final int word = ModbusHelper.getLongWord(hiWord, loWord);
-					setRegisterAddressValue(bean, hiAddr, me.getValue(), word, newDay);
+					setRegisterAddressValue(bean, hiAddr, me.getValue(), word);
 				} else {
 					log.warn("Register address 0x{} out of bounds, {} available",
 							Integer.toHexString(me.getKey()), words.size());
@@ -149,19 +134,13 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 			}
 		}
 
-		if ( newDay ) {
-			storeLastKnownDay();
-		}
 		return datum;
 	}
 
 	private void setRegisterAddressValue(final PropertyAccessor bean, final Integer addr,
-			final String propertyName, final Integer propertyValue, final boolean newDay) {
+			final String propertyName, final Integer propertyValue) {
 		if ( bean.isWritableProperty(propertyName) ) {
 			Number value = propertyValue;
-			if ( addressesToOffsetDaily != null && addressesToOffsetDaily.contains(addr) ) {
-				value = handleDailyChannelOffset(addr, propertyValue, newDay);
-			}
 			if ( registerScaleFactor != null && registerScaleFactor.containsKey(addr) ) {
 				value = Double.valueOf(value.intValue() * registerScaleFactor.get(addr));
 			}
@@ -178,10 +157,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 		}
 	}
 
-	private static Set<Integer> defaultAddressesToOffsetDaily() {
-		return Collections.singleton(0x13);
-	}
-
 	private static Map<Integer, Double> defaultRegisterScaleFactor() {
 		// these are for the Morningstar TS-45
 		Map<Integer, Double> map = new LinkedHashMap<Integer, Double>(5);
@@ -195,7 +170,7 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	private static Map<Integer, String> defaultHiLoRegisterMapping() {
 		Map<Integer, String> map = new LinkedHashMap<Integer, String>(1);
-		map.put(0x13, "ampHoursToday");
+		map.put(0x13, "ampHourReading");
 		return map;
 	}
 
@@ -373,43 +348,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 		return StringUtils.delimitedStringFromCollection(addressList, ",");
 	}
 
-	/**
-	 * Set the Modbus addresses to treat as daily offsets via a comma-delimited
-	 * string of hexidecimal numbers.
-	 * 
-	 * @param value
-	 *        the list of addresses
-	 */
-	public void setAddressesToOffsetDailyValue(String value) {
-		Set<String> addressSet = StringUtils.commaDelimitedStringToSet(value);
-		Set<Integer> result = new HashSet<Integer>(addressSet.size());
-		for ( String addr : addressSet ) {
-			try {
-				result.add(Integer.valueOf(addr, 16));
-			} catch ( NumberFormatException e ) {
-				log.warn("Address values must be hexidecimal integers; {} ignored", addr);
-			}
-		}
-		setAddressesToOffsetDaily(result);
-	}
-
-	/**
-	 * Get the Modbus addresses to treat as daily offsets as a comma-delimited
-	 * string of hexidecimal numbers.
-	 * 
-	 * @return the list of addresses
-	 */
-	public String getAddressessToOffsetDailyValue() {
-		List<String> addressList = new ArrayList<String>(addressesToOffsetDaily == null ? 0
-				: addressesToOffsetDaily.size());
-		if ( addressesToOffsetDaily != null ) {
-			for ( Integer addr : addressesToOffsetDaily ) {
-				addressList.add(Integer.toHexString(addr));
-			}
-		}
-		return StringUtils.delimitedStringFromCollection(addressList, ",");
-	}
-
 	private String hexAddressMappingValue(Map<Integer, ?> map) {
 		StringBuilder buf = new StringBuilder();
 		if ( map != null ) {
@@ -422,180 +360,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 			}
 		}
 		return buf.toString();
-	}
-
-	// daily offset calculations
-
-	protected final String getSettingPrefixDayStartValue() {
-		return getClass().getSimpleName() + "." + sourceId + ".start:";
-	}
-
-	protected final String getSettingPrefixLastKnownValue() {
-		return getClass().getSimpleName() + "." + sourceId + ".value:";
-	}
-
-	protected final String getSettingKeyLastKnownDay() {
-		return getClass().getSimpleName() + "." + sourceId + ".knownDay";
-	}
-
-	/**
-	 * Get a "volatile" setting, that is one that does not trigger an automatic
-	 * settings backup.
-	 * 
-	 * @param key
-	 *        the setting key
-	 * @return the setting value, or <em>null</em> if not found
-	 */
-	private final String getVolatileSetting(String key) {
-		return (settingDao == null ? null : settingDao.getSetting(key,
-				SettingDao.TYPE_IGNORE_MODIFICATION_DATE));
-	}
-
-	/**
-	 * Save a "volatile" setting.
-	 * 
-	 * @param key
-	 *        the setting key
-	 * @param value
-	 *        the setting value
-	 * @see #getVolatileSetting(String)
-	 */
-	private final void saveVolatileSetting(String key, String value) {
-		if ( settingDao == null ) {
-			return;
-		}
-		settingDao.storeSetting(key, SettingDao.TYPE_IGNORE_MODIFICATION_DATE, value);
-	}
-
-	/**
-	 * Handle addresses that accumulate overall as if they reset daily.
-	 * 
-	 * @param address
-	 *        the address to calculate the offset for
-	 * @param currValue
-	 *        the current value reported for this channel
-	 * @param newDay
-	 *        <em>true</em> if this is a different day from the last known day
-	 */
-	protected final Integer handleDailyChannelOffset(final Integer address, Integer currValue,
-			final boolean newDay) {
-		String dayStartKey = getSettingPrefixDayStartValue() + address;
-		String lastKnownKey = getSettingPrefixLastKnownValue() + address;
-		Integer result;
-
-		String lastKnownValueStr = getVolatileSetting(lastKnownKey);
-		Integer lastKnownValue = (lastKnownValueStr == null ? currValue : Integer
-				.valueOf(lastKnownValueStr));
-
-		log.trace("Handling {} daily address {} offset for {}; curr value = {}; last known value = {}",
-				(newDay ? "new" : "same"), address, getDayOfYearValue(), currValue, lastKnownValue);
-
-		// we've seen values reported less than last known value after
-		// a power outage (i.e. after inverter turns off, then back on)
-		// on single day, so we verify that current value is not less 
-		// than last known value
-		if ( currValue.doubleValue() < lastKnownValue.doubleValue() ) {
-			// just return last known value, not curr value
-			log.warn("Address [" + address + "] reported value [" + currValue
-					+ "] -- less than last known value [" + lastKnownValue + "]. "
-					+ "Using last known value in place of reported value.");
-			currValue = lastKnownValue;
-		}
-
-		if ( newDay ) {
-			result = currValue - lastKnownValue;
-
-			if ( log.isDebugEnabled() ) {
-				log.debug("Last known day has changed, resetting offset value for address [" + address
-						+ "] to [" + lastKnownValue + ']');
-			}
-			saveVolatileSetting(dayStartKey, lastKnownValue.toString());
-		} else {
-			String dayStartValueStr = getVolatileSetting(dayStartKey);
-			Integer dayStartValue = (dayStartValueStr == null ? currValue : Integer
-					.valueOf(dayStartValueStr));
-			result = currValue - dayStartValue;
-		}
-
-		saveVolatileSetting(lastKnownKey, currValue.toString());
-
-		// we've seen negative values calculated sometimes at the start of the day,
-		// so we prevent that from happening here
-		if ( result < 0 ) {
-			result = null;
-		}
-
-		return result;
-	}
-
-	/**
-	 * Get the current day of the year as a String value.
-	 * 
-	 * @return the day of the year
-	 */
-	private String getDayOfYearValue() {
-		Calendar now = Calendar.getInstance();
-		return String.valueOf(now.get(Calendar.YEAR)) + "."
-				+ String.valueOf(now.get(Calendar.DAY_OF_YEAR));
-	}
-
-	/**
-	 * Save today as the last known day.
-	 * 
-	 * @see #getDayOfYearValue()
-	 */
-	private final void storeLastKnownDay() {
-		String dayOfYear = getDayOfYearValue();
-		if ( log.isDebugEnabled() ) {
-			log.debug("Saving last known day as [" + dayOfYear + ']');
-		}
-		saveVolatileSetting(getSettingKeyLastKnownDay(), dayOfYear);
-	}
-
-	/**
-	 * Get the last known day value, or <em>null</em> if not known.
-	 * 
-	 * @return the date, or <em>null</em> if not known
-	 */
-	private final Calendar getLastKnownDay() {
-		String lastKnownDayOfYear = getLastKnownDayOfYearValue();
-		Calendar day = null;
-		if ( lastKnownDayOfYear != null ) {
-			int dot = lastKnownDayOfYear.indexOf('.');
-			day = Calendar.getInstance();
-			day.set(Calendar.YEAR, Integer.parseInt(lastKnownDayOfYear.substring(0, dot)));
-			day.set(Calendar.DAY_OF_YEAR, Integer.parseInt(lastKnownDayOfYear.substring(dot + 1)));
-		}
-		return day;
-	}
-
-	private final String getLastKnownDayOfYearValue() {
-		return getVolatileSetting(getSettingKeyLastKnownDay());
-	}
-
-	/**
-	 * Test if today is a different day from the last known day.
-	 * 
-	 * <p>
-	 * If the {@code settingDao} to be configured, this method will use that to
-	 * load a "last known day" value. If that value is not found, or is
-	 * different from the current execution day, <em>true</em> will be returned.
-	 * Otherwise, <em>false</em> is returned.
-	 * </p>
-	 * 
-	 * @return boolean
-	 */
-	private final boolean isNewDay() {
-		if ( this.settingDao == null ) {
-			return false;
-		}
-		Calendar now = Calendar.getInstance();
-		Calendar then = getLastKnownDay();
-		if ( then == null || (now.get(Calendar.YEAR) != then.get(Calendar.YEAR))
-				|| (now.get(Calendar.DAY_OF_YEAR) != then.get(Calendar.DAY_OF_YEAR)) ) {
-			return true;
-		}
-		return false;
 	}
 
 	// SettingSpecifierProvider
@@ -629,8 +393,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 				.getHiLoRegisterMappingValue()));
 		results.add(new BasicTextFieldSettingSpecifier("registerScaleFactorValue", defaults
 				.getRegisterScaleFactorValue()));
-		results.add(new BasicTextFieldSettingSpecifier("addressesToOffsetDailyValue", defaults
-				.getAddressessToOffsetDailyValue()));
 		return results;
 	}
 
@@ -716,14 +478,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
-	}
-
-	public Set<Integer> getAddressesToOffsetDaily() {
-		return addressesToOffsetDaily;
-	}
-
-	public void setAddressesToOffsetDaily(Set<Integer> addressesToOffsetDaily) {
-		this.addressesToOffsetDaily = addressesToOffsetDaily;
 	}
 
 }
