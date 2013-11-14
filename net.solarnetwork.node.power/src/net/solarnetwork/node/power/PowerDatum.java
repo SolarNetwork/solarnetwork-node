@@ -86,13 +86,13 @@ public class PowerDatum extends BaseDatum {
 	 * @param pvVolts
 	 *        the PV volts
 	 * @param ampHourReading
-	 *        the amp hours collected today
+	 *        the amp hours collected
 	 * @param kWattHoursToday
 	 *        the kilowatt hours collected today
 	 */
 	public PowerDatum(Double batteryAmpHours, Float batteryVolts, Float acOutputAmps,
 			Float acOutputVolts, Float dcOutputAmps, Float dcOutputVolts, Integer watts,
-			Double ampHoursToday, Double kWattHoursToday) {
+			Double ampHourReading, Double kWattHoursToday) {
 		super();
 		this.batteryAmpHours = batteryAmpHours;
 		this.batteryVolts = batteryVolts;
@@ -101,7 +101,7 @@ public class PowerDatum extends BaseDatum {
 		this.dcOutputAmps = dcOutputAmps;
 		this.dcOutputVolts = dcOutputVolts;
 		this.watts = watts;
-		this.ampHourReading = ampHoursToday;
+		this.ampHourReading = ampHourReading;
 		setKWattHoursToday(kWattHoursToday);
 	}
 
@@ -193,6 +193,11 @@ public class PowerDatum extends BaseDatum {
 		this.pvAmps = pvAmps;
 	}
 
+	@Deprecated
+	public void setAmpHoursToday(Double ampHours) {
+		setAmpHourReading(ampHours);
+	}
+
 	public Float getBatteryVolts() {
 		return batteryVolts;
 	}
@@ -245,8 +250,8 @@ public class PowerDatum extends BaseDatum {
 		return ampHourReading;
 	}
 
-	public void setAmpHourReading(Double ampHoursToday) {
-		this.ampHourReading = ampHoursToday;
+	public void setAmpHourReading(Double ampHourReading) {
+		this.ampHourReading = ampHourReading;
 	}
 
 	public Long getLocationId() {
