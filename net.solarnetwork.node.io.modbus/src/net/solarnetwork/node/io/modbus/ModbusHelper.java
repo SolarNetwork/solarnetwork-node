@@ -225,10 +225,10 @@ public final class ModbusHelper {
 				ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
 				for ( int w = 0; w < res.getWordCount(); w++ ) {
 					if ( LOG.isTraceEnabled() ) {
-						LOG.trace("Got Modbus read input {} response {}", addresses[i],
+						LOG.trace("Got Modbus read input {} response {}", addresses[i] + w,
 								res.getRegisterValue(w));
 					}
-					result.put(i + w, res.getRegisterValue(w));
+					result.put(addresses[i] + w, res.getRegisterValue(w));
 				}
 			}
 		} finally {
