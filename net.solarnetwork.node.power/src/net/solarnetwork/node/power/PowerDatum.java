@@ -107,7 +107,7 @@ public class PowerDatum extends BaseDatum {
 
 	@Override
 	public String toString() {
-		return "PowerDatum{watts=" + this.watts
+		return "PowerDatum{watts=" + getWatts()
 				+ (this.batteryVolts == null ? "" : ",batVolts=" + this.batteryVolts)
 				+ (this.ampHourReading == null ? "" : ",ampHourReading=" + this.ampHourReading)
 				+ (this.wattHourReading == null ? "" : ",wattHourReading=" + this.wattHourReading) + '}';
