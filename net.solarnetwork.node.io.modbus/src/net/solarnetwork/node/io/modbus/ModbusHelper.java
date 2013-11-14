@@ -279,7 +279,7 @@ public final class ModbusHelper {
 	 * @return a 32-bit long word value
 	 */
 	public static int getLongWord(int hiWord, int loWord) {
-		return ((hiWord & 0xFFFF) << 16 | (loWord & 0xFFFF));
+		return (((hiWord & 0xFFFF) << 16) | (loWord & 0xFFFF));
 	}
 
 }
