@@ -129,7 +129,7 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 					final Integer word = words.get(addr);
 					setRegisterAddressValue(bean, addr, me.getValue(), word, newDay);
 				} else {
-					log.warn("Register value {} not available", addr);
+					log.warn("Register address 0x{} not available", Integer.toHexString(addr));
 				}
 			}
 		}
@@ -143,7 +143,8 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 					final int word = ModbusHelper.getLongWord(hiWord, loWord);
 					setRegisterAddressValue(bean, hiAddr, me.getValue(), word, newDay);
 				} else {
-					log.warn("Register value {} out of bounds, {} available", me.getKey(), words.size());
+					log.warn("Register address 0x{} out of bounds, {} available",
+							Integer.toHexString(me.getKey()), words.size());
 				}
 			}
 		}
@@ -164,11 +165,13 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 			if ( registerScaleFactor != null && registerScaleFactor.containsKey(addr) ) {
 				value = Double.valueOf(value.intValue() * registerScaleFactor.get(addr));
 			}
+			log.trace("Setting property {} for address 0x{} to [{}]", propertyName,
+					Integer.toHexString(addr), value);
 			try {
 				bean.setPropertyValue(propertyName, value);
 			} catch ( PropertyAccessException e ) {
-				log.warn("Unable to set property {} to {} for address {}: {}", propertyName, value,
-						addr, e.getMostSpecificCause().getMessage());
+				log.warn("Unable to set property {} to {} for address 0x{}: {}", propertyName, value,
+						Integer.toHexString(addr), e.getMostSpecificCause().getMessage());
 			}
 		} else {
 			log.warn("Property {} not available; bad configuration", propertyName);
