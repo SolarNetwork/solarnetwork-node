@@ -27,7 +27,7 @@
 		<property name="factoryUID" value="net.solarnetwork.node.power.modbus"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource"/>
+				<property name="basenames" value="net.solarnetwork.node.power.modbus.JamodPowerDatumDataSource"/>
 			</bean>
 		</property>
 	</bean>
@@ -54,7 +54,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
 			<property name="delegate">
-				<bean class="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource">
+				<bean class="net.solarnetwork.node.power.modbus.JamodPowerDatumDataSource">
 					<property name="connectionFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>

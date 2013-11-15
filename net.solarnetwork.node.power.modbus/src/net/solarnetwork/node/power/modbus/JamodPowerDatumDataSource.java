@@ -18,7 +18,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.power.impl;
+package net.solarnetwork.node.power.modbus;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
