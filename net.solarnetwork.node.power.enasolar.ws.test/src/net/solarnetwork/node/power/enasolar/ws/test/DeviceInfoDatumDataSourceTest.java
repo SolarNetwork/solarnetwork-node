@@ -18,18 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.power.enasolar.ws.test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -38,23 +35,22 @@ import org.springframework.test.context.ContextConfiguration;
  * Test case for the {@link DeviceInfoDatumDataSource} class.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 @ContextConfiguration
 public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
-	@Autowired private DeviceInfoDatumDataSource dataSource;
-	
+	@Autowired
+	private DeviceInfoDatumDataSource dataSource;
+
 	@Test
 	public void parseDatum() {
 		PowerDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
-		assertNotNull(datum);
-		assertNotNull(datum.getPvAmps());
-		assertNotNull(datum.getPvVolts());
-		assertNotNull(datum.getAcOutputAmps());
+		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
 		assertNotNull(datum.getAcOutputVolts());
-		assertNotNull(datum.getKWattHoursToday());
+		assertEquals(241.1, datum.getAcOutputVolts().doubleValue(), 0.001);
+		assertNotNull(datum.getAcOutputAmps());
+		assertEquals(2.604, datum.getAcOutputAmps().doubleValue(), 0.001);
 	}
-	
 }

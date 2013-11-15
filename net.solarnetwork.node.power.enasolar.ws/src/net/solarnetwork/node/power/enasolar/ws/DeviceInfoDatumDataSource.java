@@ -133,7 +133,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements Datu
 		result.put("pvVolts", "//data[@key='pvVolts']/@value");
 		result.put("pvPower", "//data[@key='pvPower']/@value");
 		result.put("acOutputVolts", "//data[@key='acOutputVolts']/@value");
-		result.put("acOutputAmps", "//data[@key='acPower']/@value");
+		result.put("acPower", "//data[@key='acPower']/@value");
 		result.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
 		return result;
 	}
@@ -145,12 +145,10 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements Datu
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		PowerDatum datum = new PowerDatum();
+		PowerDatum datum = new EnaSolarPowerDatum();
 		datum.setSourceId(sourceId);
 		webFormGetForBean(null, datum, url, null, xpathMapping);
-		datum = validateDatum(datum);
-
-		return datum;
+		return validateDatum(datum);
 	}
 
 	private PowerDatum validateDatum(PowerDatum datum) {
