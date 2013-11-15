@@ -3,15 +3,14 @@ CREATE TABLE solarnode.sn_price_datum (
 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
 	source_id 		VARCHAR(255) NOT NULL,
 	location_id		BIGINT NOT NULL,
-	price			DOUBLE,
-	error_msg		VARCHAR(32672),
+	price			DOUBLE
 	PRIMARY KEY (id)
 );
 
 CREATE INDEX price_datum_created_idx ON solarnode.sn_price_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_price_datum.version', '3');
+VALUES ('solarnode.sn_price_datum.version', '4');
 
 CREATE TABLE solarnode.sn_price_datum_upload (
 	datum_id		BIGINT NOT NULL,

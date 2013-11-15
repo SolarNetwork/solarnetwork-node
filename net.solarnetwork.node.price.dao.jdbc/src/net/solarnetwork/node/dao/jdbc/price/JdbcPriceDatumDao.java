@@ -20,53 +20,53 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.price;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
-
 import net.solarnetwork.node.DatumUpload;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
 import net.solarnetwork.node.price.PriceDatum;
-
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * JDBC-based implementation of 
- * {@link net.solarnetwork.node.dao.DatumDao} for {@link PriceDatum}
- * domain objects.
+ * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
+ * {@link PriceDatum} domain objects.
  * 
- * <p>Uses a {@link javax.sql.DataSource} and requires a schema named 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME}
- * with two tables: 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * to hold settings and {@link #TABLE_PRICE_DATUM} to hold the actual 
- * price data.</p>
+ * <p>
+ * Uses a {@link javax.sql.DataSource} and requires a schema named
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME} with two
+ * tables:
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} to
+ * hold settings and {@link #TABLE_PRICE_DATUM} to hold the actual price data.
+ * </p>
  * 
- * <p>This class will check to see if the 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * table exists when the {@link #init()} method is called. If it does not, 
- * it assumes the database needs to be created and will load a classpath 
- * SQL file resource specified by the {@link #getInitSqlResource()}, which 
- * should create the tables needed by this class. See the 
- * {@code derby-init.sql} resource in this package for an example.</p>
+ * <p>
+ * This class will check to see if the
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} table
+ * exists when the {@link #init()} method is called. If it does not, it assumes
+ * the database needs to be created and will load a classpath SQL file resource
+ * specified by the {@link #getInitSqlResource()}, which should create the
+ * tables needed by this class. See the {@code derby-init.sql} resource in this
+ * package for an example.
+ * </p>
  * 
- * <p>The tables must have a structure similar to this (shown in Apache
- * Derby SQL dialect):</p>
+ * <p>
+ * The tables must have a structure similar to this (shown in Apache Derby SQL
+ * dialect):
+ * </p>
  * 
- * <pre>CREATE TABLE solarnode.sn_settings (
+ * <pre>
+ * CREATE TABLE solarnode.sn_settings (
  * 	skey	VARCHAR(64) NOT NULL,
  * 	svalue	VARCHAR(255) NOT NULL,
  * 	PRIMARY KEY (skey)
@@ -77,52 +77,46 @@ import org.springframework.transaction.annotation.Transactional;
  * 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
  * 	source_id 		VARCHAR(255),
  *  location_id		BIGINT NOT NULL,
- * 	price			DOUBLE,
- * 	error_msg		VARCHAR(32672),
+ * 	price			DOUBLE
  * 	PRIMARY KEY (id)
- * )</pre>
- *
+ * )
+ * </pre>
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class JdbcPriceDatumDao
-extends AbstractJdbcDatumDao<PriceDatum> {
+public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 3;
-	
+	public static final int DEFAULT_TABLES_VERSION = 4;
+
 	/** The table name for {@link PriceDatum} data. */
 	public static final String TABLE_PRICE_DATUM = "sn_price_datum";
-	
+
 	/** The table name for PriceDatum upload data. */
 	public static final String TABLE_PRICE_DATUM_UPLOAD = "sn_price_datum_upload";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */
 	public static final String DEFAULT_INIT_SQL = "derby-pricedatum-init.sql";
-	
-	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_PRICE_DATUM
-		+" (created, source_id, location_id, price, error_msg) VALUES"
-		+" (?,?,?,?,?)";
-	
+
+	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_PRICE_DATUM + " (created, source_id, location_id, price) VALUES" + " (?,?,?,?)";
+
 	/** The default value for the {@code sqlGetTablesVersion} property. */
-	public static final String DEFAULT_SQL_GET_TABLES_VERSION 
-		= "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
-		+ "'solarnode.sn_price_datum.version'";
-	
+	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
+			+ "'solarnode.sn_price_datum.version'";
+
 	/** The default classpath Resource for the {@code findForUploadSqlResource}. */
 	public static final String DEFAULT_FIND_FOR_UPLOAD_SQL = "find-price-for-upload.sql";
-	
-	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_PRICE_DATUM_UPLOAD
-		+" (datum_id, destination, track_id) VALUES (?,?,?)";
-	
-	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM "
-		+SCHEMA_NAME +'.' +TABLE_PRICE_DATUM +" where id <= "
-		+"(select MAX(cd.id) from " +SCHEMA_NAME +'.' +TABLE_PRICE_DATUM 
-		+" cd inner join " +SCHEMA_NAME +'.' +TABLE_PRICE_DATUM_UPLOAD 
-		+" u on u.datum_id = cd.id where cd.created < ?)";
-	
+
+	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_PRICE_DATUM_UPLOAD + " (datum_id, destination, track_id) VALUES (?,?,?)";
+
+	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM " + SCHEMA_NAME + '.'
+			+ TABLE_PRICE_DATUM + " where id <= " + "(select MAX(cd.id) from " + SCHEMA_NAME + '.'
+			+ TABLE_PRICE_DATUM + " cd inner join " + SCHEMA_NAME + '.' + TABLE_PRICE_DATUM_UPLOAD
+			+ " u on u.datum_id = cd.id where cd.created < ?)";
+
 	/**
 	 * Default constructor.
 	 */
@@ -135,16 +129,17 @@ extends AbstractJdbcDatumDao<PriceDatum> {
 		setSqlResourcePrefix("derby-pricedatum");
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
 		setSqlDeleteOld(DEFAULT_SQL_DELETE_OLD);
-		setFindForUploadSqlResource(
-				new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
+		setFindForUploadSqlResource(new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
 		setSqlInsertDatum(DEFAULT_SQL_INSERT);
 		setSqlInsertUpload(DEFAULT_SQL_INSERT_UPLOAD);
 	}
-	
+
+	@Override
 	public Class<? extends PriceDatum> getDatumType() {
 		return PriceDatum.class;
 	}
 
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public Long storeDatum(PriceDatum datum) {
 		if ( datum.getLocationId() == null ) {
@@ -154,23 +149,27 @@ extends AbstractJdbcDatumDao<PriceDatum> {
 		return storeDomainObject(datum);
 	}
 
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public DatumUpload storeDatumUpload(PriceDatum datum,
-			String destination, Long trackingId) {
+	public DatumUpload storeDatumUpload(PriceDatum datum, String destination, Long trackingId) {
 		return storeNewDatumUpload(datum, destination, trackingId);
 	}
-	
+
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteUploadedDataOlderThan(int hours) {
 		return deleteUploadedDataOlderThanHours(hours);
 	}
 
+	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<PriceDatum> getDatumNotUploaded(String destination) {
 		return findDatumNotUploaded(destination, new RowMapper<PriceDatum>() {
+
+			@Override
 			public PriceDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 				if ( log.isTraceEnabled() ) {
-					log.trace("Handling result row " +rowNum);
+					log.trace("Handling result row " + rowNum);
 				}
 				PriceDatum datum = new PriceDatum();
 				int col = 1;
@@ -178,19 +177,17 @@ extends AbstractJdbcDatumDao<PriceDatum> {
 				datum.setSourceId(rs.getString(col++));
 				datum.setLocationId(rs.getLong(col++));
 				datum.setCreated(rs.getTimestamp(col++));
-				
-				Number val = (Number)rs.getObject(col++);
+
+				Number val = (Number) rs.getObject(col++);
 				datum.setPrice(val == null ? null : val.doubleValue());
-				
-				datum.setErrorMessage(rs.getString(col++));
+
 				return datum;
 			}
 		});
 	}
 
 	@Override
-	protected void setStoreStatementValues(PriceDatum datum, PreparedStatement ps) 
-	throws SQLException {
+	protected void setStoreStatementValues(PriceDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 1;
 		ps.setTimestamp(col++, new java.sql.Timestamp(datum.getCreated().getTime()));
 		ps.setString(col++, datum.getSourceId());
@@ -200,11 +197,6 @@ extends AbstractJdbcDatumDao<PriceDatum> {
 		} else {
 			ps.setDouble(col++, datum.getPrice());
 		}
-		if ( datum.getErrorMessage() == null ) {
-			ps.setNull(col++, Types.VARCHAR);
-		} else {
-			ps.setString(col++, datum.getErrorMessage());
-		}
 	}
-	
+
 }
