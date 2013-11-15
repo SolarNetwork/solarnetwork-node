@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Dictionary;
+import java.util.EnumSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,6 +55,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceProvider;
 import net.solarnetwork.node.backup.ResourceBackupResource;
@@ -105,7 +107,7 @@ import org.supercsv.prefs.CsvPreference;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider {
 
@@ -602,8 +604,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	public SettingsBackup backupSettings() {
 		final Date mrd = settingDao.getMostRecentModificationDate();
 		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_DATE_FORMAT);
-		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE,
-				SettingDao.TYPE_IGNORE_MODIFICATION_DATE);
+		final String lastBackupDateStr = settingDao.getSetting(SETTING_LAST_BACKUP_DATE);
 		final Date lastBackupDate;
 		try {
 			lastBackupDate = (lastBackupDateStr == null ? null : sdf.parse(lastBackupDateStr));
@@ -626,8 +627,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		try {
 			writer = new BufferedWriter(new FileWriter(f));
 			exportSettingsCSV(writer);
-			settingDao.storeSetting(SETTING_LAST_BACKUP_DATE, SettingDao.TYPE_IGNORE_MODIFICATION_DATE,
-					backupDateKey);
+			settingDao.storeSetting(new Setting(SETTING_LAST_BACKUP_DATE, null, backupDateKey, EnumSet
+					.of(SettingFlag.IgnoreModificationDate)));
 		} catch ( IOException e ) {
 			log.error("Unable to create settings backup {}: {}", f.getPath(), e.getMessage());
 		} finally {

@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc;
@@ -56,7 +54,7 @@ import org.springframework.core.io.Resource;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class DatabaseSetup {
 
@@ -68,7 +66,7 @@ public class DatabaseSetup {
 			+ JdbcDaoConstants.SCHEMA_NAME + "." + JdbcDaoConstants.TABLE_SETTINGS + " WHERE skey = "
 			+ "'solarnode.sn_settings.version'";
 
-	private static final int TABLES_VERSION = 4;
+	private static final int TABLES_VERSION = 5;
 
 	private DataSource dataSource = null;
 	private Resource initSqlResource = new ClassPathResource(DEFAULT_INIT_SQL_RESOURCE,

@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc;
@@ -34,8 +32,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.KeyValuePair;
 import org.springframework.dao.DataAccessException;
@@ -64,27 +64,28 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
 	private static final String DEFAULT_SQL_FIND = "SELECT tkey,svalue FROM " + SCHEMA_NAME + '.'
 			+ TABLE_SETTINGS + " WHERE skey = ? ORDER BY tkey";
 
-	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey FROM " + SCHEMA_NAME
-			+ '.' + TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
+	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
+			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
 
 	private static final String DEFAULT_SQL_DELETE = "DELETE FROM " + SCHEMA_NAME + '.' + TABLE_SETTINGS
 			+ " WHERE skey = ? AND tkey = ?";
 
-	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue,modified FROM "
+	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue,modified,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " ORDER BY skey,tkey";
 
 	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " + SCHEMA_NAME + '.'
 			+ TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
 
 	private static final String DEFAULT_SQL_GET_MOST_RECENT_DATE = "SELECT modified FROM " + SCHEMA_NAME
-			+ '.' + TABLE_SETTINGS + " WHERE tkey <> ? ORDER BY modified DESC";
+			+ '.' + TABLE_SETTINGS
+			+ " WHERE SOLARNODE.BITWISE_AND(flags, ?) <> ? ORDER BY modified DESC";
 
 	private final String sqlGet = DEFAULT_SQL_GET;
 	private final String sqlDelete = DEFAULT_SQL_DELETE;
@@ -148,15 +149,41 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 				@Override
 				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					storeSettingInternal(key, type, value);
+					storeSettingInternal(key, type, value, 0);
 				}
 			});
 		} else {
-			storeSettingInternal(key, type, value);
+			storeSettingInternal(key, type, value, 0);
 		}
 	}
 
-	private void storeSettingInternal(final String key, final String type, final String value) {
+	@Override
+	public void storeSetting(final Setting setting) {
+		TransactionTemplate tt = getTransactionTemplate();
+		if ( tt != null ) {
+			tt.execute(new TransactionCallbackWithoutResult() {
+
+				@Override
+				protected void doInTransactionWithoutResult(TransactionStatus status) {
+					storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
+							SettingFlag.maskForSet(setting.getFlags()));
+				}
+			});
+		} else {
+			storeSettingInternal(setting.getKey(), setting.getType(), setting.getValue(),
+					SettingFlag.maskForSet(setting.getFlags()));
+		}
+	}
+
+	@Override
+	public Setting readSetting(String key, String type) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private void storeSettingInternal(final String key, final String ttype, final String value,
+			final int flags) {
+		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
@@ -188,6 +215,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 					rs.updateTimestamp(2, now);
 					rs.updateString(3, key);
 					rs.updateString(4, type);
+					rs.updateInt(5, flags);
 					rs.insertRow();
 				}
 				return null;
@@ -229,7 +257,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				PreparedStatement stmt = con.prepareStatement(sqlGetMostRecentDate);
 				stmt.setMaxRows(1);
-				stmt.setString(1, TYPE_IGNORE_MODIFICATION_DATE);
+				final int mask = SettingFlag.maskForSet(EnumSet.of(SettingFlag.IgnoreModificationDate));
+				stmt.setInt(1, mask);
+				stmt.setInt(2, mask);
 				return stmt;
 			}
 		}, new ResultSetExtractor<Date>() {
@@ -256,6 +286,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		s.setKey(resultSet.getString(1));
 		s.setType(resultSet.getString(2));
 		s.setValue(resultSet.getString(3));
+		s.setFlags(SettingFlag.setForMask(resultSet.getInt(5)));
 		return s;
 	}
 
@@ -265,6 +296,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		resultSet.updateString(1, entity.getKey());
 		resultSet.updateString(2, entity.getType());
 		resultSet.updateString(3, entity.getValue());
+		resultSet.updateInt(5, SettingFlag.maskForSet(entity.getFlags()));
 	}
 
 }
