@@ -13,9 +13,9 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
 	<!-- Configuration -->
 	
@@ -34,6 +34,10 @@
 	<service ref="syncBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
 	<!-- Supporting services -->
+	
+	<bean class="net.solarnetwork.node.dao.jdbc.derby.DerbyCustomFunctionsInitializer" init-method="init">
+		<property name="jdbcOperations" ref="jdbcOps"/>
+	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.derby.JOBS"/>
