@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.power.PowerDatum;
@@ -88,7 +87,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 	private Map<Integer, String> registerMapping = defaultRegisterMapping();
 	private Map<Integer, Double> registerScaleFactor = defaultRegisterScaleFactor();
 	private Map<Integer, String> hiLoRegisterMapping = defaultHiLoRegisterMapping();
-	private SettingDao settingDao;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -470,14 +468,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	public void setHiLoRegisterMapping(Map<Integer, String> hiLoRegisterMapping) {
 		this.hiLoRegisterMapping = hiLoRegisterMapping;
-	}
-
-	public SettingDao getSettingDao() {
-		return settingDao;
-	}
-
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
 	}
 
 }

@@ -39,8 +39,6 @@
 		<reference-listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference>
 	
-	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
-	
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -57,7 +55,6 @@
 		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.power.impl.JamodPowerDatumDataSource">
-					<property name="settingDao" ref="settingDao"/>
 					<property name="connectionFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>
