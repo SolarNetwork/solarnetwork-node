@@ -25,22 +25,21 @@
 package net.solarnetwork.node.power.enasolar.ws;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.xml.xpath.XPathExpression;
-
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.XmlServiceSupport;
-
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -91,38 +90,34 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version $Revision$
  */
-public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
-		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
+public class DeviceInfoDatumDataSource extends XmlServiceSupport implements DatumDataSource<PowerDatum>,
+		SettingSpecifierProvider {
 
 	/** The {@link SettingDao} key for a Long Wh last-known-value value. */
-	public static final String SETTING_LAST_KNOWN_VALUE 
-		= "DeviceInfoDatumDataSource:globalWh";
-	
+	public static final String SETTING_LAST_KNOWN_VALUE = "DeviceInfoDatumDataSource:globalWh";
+
 	/** The {@link SettingDao} key for a Long counter of 0 watt readings. */
-	public static final String SETTING_ZERO_WATT_COUNT 
-		= "DeviceInfoDatumDataSource:0W";
-	
+	public static final String SETTING_ZERO_WATT_COUNT = "DeviceInfoDatumDataSource:0W";
+
 	/** The maximum number of consecutive zero-watt readings to return. */
 	public static final long ZERO_WATT_THRESHOLD = 10;
-	
+
 	/** The default value for the {@code url} property. */
 	public static final String DEFAULT_URL = "http://localhost:8082/gs/deviceinfo.xml";
 
-	
 	private static final Pattern DATA_VALUE_XPATH_NAME = Pattern.compile("key='(\\w+)'");
 
 	private String url = DEFAULT_URL;
 	private String sourceId;
 	private Map<String, XPathExpression> xpathMapping;
 	private SettingDao settingDao;
-	
+
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
 	@Override
 	public String toString() {
-		return "Enasolar"
-				+(sourceId == null ? "" : "-" +sourceId);
+		return "Enasolar" + (sourceId == null ? "" : "-" + sourceId);
 	}
 
 	@Override
@@ -136,13 +131,10 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	private static Map<String, String> defaultXpathMapping() {
 		Map<String, String> result = new LinkedHashMap<String, String>(10);
 		result.put("pvVolts", "//data[@key='pvVolts']/@value");
-		result.put("pvAmps", "//data[@key='pvPower']/@value");
+		result.put("pvPower", "//data[@key='pvPower']/@value");
 		result.put("acOutputVolts", "//data[@key='acOutputVolts']/@value");
 		result.put("acOutputAmps", "//data[@key='acPower']/@value");
-		result.put("kWattHoursToday", "//data[@key='kWattHoursToday']/@value");
-		
-		// map decaWattHoursTotal into errorMessage, just for validation later
-		result.put("errorMessage", "//data[@key='decaWattHoursTotal']/@value");
+		result.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
 		return result;
 	}
 
@@ -156,86 +148,53 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 		PowerDatum datum = new PowerDatum();
 		datum.setSourceId(sourceId);
 		webFormGetForBean(null, datum, url, null, xpathMapping);
-		
-		// at this point, pvAmps actually contains kW, so convert
-		// this into amps to properly log the data
-		if ( datum.getPvAmps() != null && datum.getPvVolts() != null ) {
-			float volts = datum.getPvVolts().floatValue();
-			float amps = 0.0F;
-			if ( volts > 0.0F ) {
-				amps = (datum.getPvAmps().floatValue() * 1000) / volts;
-			}
-			datum.setPvAmps(Float.valueOf(amps));
-		}
-		
-		// also, acOutputAmps actually contains kW, so convert
-		// this into amps to properly log the data
-		if ( datum.getAcOutputAmps() != null && datum.getAcOutputVolts() != null ) {
-			float volts = datum.getAcOutputVolts().floatValue();
-			float amps = 0.0F;
-			if ( volts > 0.0F ) {
-				amps = (datum.getAcOutputAmps().floatValue() * 1000) / volts;
-			}
-			datum.setAcOutputAmps(Float.valueOf(amps));
-		}
-		
 		datum = validateDatum(datum);
-		
+
 		return datum;
 	}
-	
+
 	private PowerDatum validateDatum(PowerDatum datum) {
-		final String currValueStr = datum.getErrorMessage();
-		datum.setErrorMessage(null);
-		if ( currValueStr == null || settingDao == null ) {
+		if ( settingDao == null ) {
 			// nothing to compare
 			return datum;
 		}
 
 		final String settingType = (sourceId == null ? "" : sourceId);
-		final Long currValue;
+		final Long currValue = datum.getWattHourReading();
 		final Long lastKnownValue;
 		final Long zeroWattCount;
-		try {
-			currValue = Long.parseLong(currValueStr, 16) * 10;
-			final String lastKnownValueStr = settingDao.getSetting(SETTING_LAST_KNOWN_VALUE, settingType);
-			lastKnownValue = (lastKnownValueStr == null
-					? 0L : Long.parseLong(lastKnownValueStr));
-			final String zeroWattCountStr = settingDao.getSetting(SETTING_ZERO_WATT_COUNT, settingType);
-			zeroWattCount = (zeroWattCountStr == null ? 0L : Long.parseLong(zeroWattCountStr));
-		} catch ( NumberFormatException e ) {
-			log.warn("Unable to parse decaWattHoursTotal number value {}: {}", 
-					currValueStr, e.getMessage());
-			return datum;
-		}
+		final String lastKnownValueStr = settingDao.getSetting(SETTING_LAST_KNOWN_VALUE, settingType);
+		lastKnownValue = (lastKnownValueStr == null ? 0L : Long.parseLong(lastKnownValueStr));
+		final String zeroWattCountStr = settingDao.getSetting(SETTING_ZERO_WATT_COUNT, settingType);
+		zeroWattCount = (zeroWattCountStr == null ? 0L : Long.parseLong(zeroWattCountStr));
 
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
 		// on single day, so we verify that current decaWattHoursTotal is not less 
 		// than last known decaWattHoursTotal value
 		if ( currValue.longValue() < lastKnownValue.longValue() ) {
-			log.warn("Inverter [" +sourceId +"] reported value ["
-					+currValue +"] -- less than last known value ["
-					+lastKnownValue +"]. Discarding this datum.");
+			log.warn("Inverter [" + sourceId + "] reported value [" + currValue
+					+ "] -- less than last known value [" + lastKnownValue + "]. Discarding this datum.");
 			datum = null;
-		} else if ( datum.getPvAmps() != null && datum.getPvVolts() != null && 
-				(datum.getPvAmps() * datum.getPvVolts()) < 0.01F ) {
+		} else if ( datum.getWatts() != null && datum.getWatts() < 1 ) {
 			final Long newCount = (zeroWattCount.longValue() + 1);
 			if ( zeroWattCount >= ZERO_WATT_THRESHOLD ) {
 				log.debug("Skipping zero-watt reading #{}", zeroWattCount);
 				datum = null;
 			}
-			settingDao.storeSetting(SETTING_ZERO_WATT_COUNT, settingType, newCount.toString());
+			settingDao.storeSetting(new Setting(SETTING_ZERO_WATT_COUNT, settingType, newCount
+					.toString(), EnumSet.of(Setting.SettingFlag.Volatile)));
 		} else {
 			if ( currValue.longValue() != lastKnownValue.longValue() ) {
-				settingDao.storeSetting(SETTING_LAST_KNOWN_VALUE, settingType, currValue.toString());
+				settingDao.storeSetting(new Setting(SETTING_LAST_KNOWN_VALUE, settingType, currValue
+						.toString(), EnumSet.of(Setting.SettingFlag.Volatile)));
 			}
 			if ( zeroWattCount > 0 ) {
 				// reset zero-watt counter
 				settingDao.deleteSetting(SETTING_ZERO_WATT_COUNT, settingType);
 			}
 		}
-		
+
 		// everything checks out
 		return datum;
 	}
@@ -243,12 +202,13 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	/**
 	 * Set the XPath mapping using String values.
 	 * 
-	 * @param xpathMap the string XPath mapping values
+	 * @param xpathMap
+	 *        the string XPath mapping values
 	 */
 	public void setXpathMap(Map<String, String> xpathMap) {
 		setXpathMapping(getXPathExpressionMap(xpathMap));
 	}
-	
+
 	// for settings
 	private static String getDataMapping(Map<String, String> map) {
 		StringBuilder buf = new StringBuilder();
@@ -265,7 +225,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 		}
 		return buf.toString();
 	}
-	
+
 	public void setDataMapping(String mapping) {
 		if ( mapping == null || mapping.length() < 1 ) {
 			return;
@@ -277,7 +237,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 			if ( kv == null || kv.length != 2 ) {
 				continue;
 			}
-			map.put(kv[0], "//data[@key='" +kv[1] +"']/@value");
+			map.put(kv[0], "//data[@key='" + kv[1] + "']/@value");
 		}
 		setXpathMap(map);
 	}
@@ -299,7 +259,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 				source.setBundleClassLoader(getClass().getClassLoader());
@@ -314,7 +274,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(10);
 		result.add(new BasicTextFieldSettingSpecifier("url", "http://localhost:8082/gs/deviceinfo.xml"));
 		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		result.add(new BasicTextFieldSettingSpecifier("dataMapping", 
+		result.add(new BasicTextFieldSettingSpecifier("dataMapping",
 				getDataMapping(defaultXpathMapping())));
 		return result;
 	}
@@ -322,24 +282,31 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	public String getUrl() {
 		return url;
 	}
+
 	public void setUrl(String url) {
 		this.url = url;
 	}
+
 	public Map<String, XPathExpression> getXpathMapping() {
 		return xpathMapping;
 	}
+
 	public void setXpathMapping(Map<String, XPathExpression> xpathMapping) {
 		this.xpathMapping = xpathMapping;
 	}
+
 	public String getSourceId() {
 		return sourceId;
 	}
+
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
+
 	public SettingDao getSettingDao() {
 		return settingDao;
 	}
+
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
 	}
