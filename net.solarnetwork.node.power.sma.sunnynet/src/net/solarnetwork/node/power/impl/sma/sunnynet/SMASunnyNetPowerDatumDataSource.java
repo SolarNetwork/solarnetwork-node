@@ -321,22 +321,13 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 			// ignore this one
 		}
 
-		if ( getChannelNamesToResetDaily() != null && getSettingDao() != null ) {
-			handleDailyChannelReset(dataCollector);
-		}
-
 		PowerDatum datum = new PowerDatum();
 
-		final boolean newDay = isNewDay();
-
 		// Issue GetData command for each channel we're interested in
-		getNumericDataValue(dataCollector, this.pvVoltsChannelName, "pvVolts", datum, newDay);
-		getNumericDataValue(dataCollector, this.pvAmpsChannelName, "pvAmps", datum, newDay);
-		getNumericDataValue(dataCollector, this.kWhChannelName, "KWattHoursToday", datum, newDay);
+		getNumericDataValue(dataCollector, this.pvVoltsChannelName, "pvVolts", datum);
+		getNumericDataValue(dataCollector, this.pvAmpsChannelName, "pvAmps", datum);
+		getNumericDataValue(dataCollector, this.kWhChannelName, "KWattHoursToday", datum);
 
-		if ( newDay ) {
-			storeLastKnownDay();
-		}
 		return datum;
 	}
 
@@ -357,13 +348,12 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 *        {@link #handleDailyChannelOffset(String, Number, boolean)}
 	 */
 	private void getNumericDataValue(ConversationalDataCollector dataCollector, String channelName,
-			String beanProperty, PowerDatum datum, final boolean newDay) {
+			String beanProperty, PowerDatum datum) {
 		if ( this.channelMap.containsKey(channelName) ) {
 			SmaChannel channel = this.channelMap.get(channelName);
 			SmaPacket resp = issueGetData(dataCollector, channel, this.smaAddress);
 			if ( resp.isValid() ) {
 				Number n = (Number) resp.getUserDataField(SmaUserDataField.Value);
-				n = handleDailyChannelOffset(channelName, n, newDay);
 				if ( n != null ) {
 					PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(datum);
 					Class<?> propType = accessor.getPropertyType(beanProperty);
@@ -385,51 +375,6 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		}
 	}
 
-	/**
-	 * Issue a SetData command for channels configured to reset daily.
-	 * 
-	 * <p>
-	 * This class maintains a key/value pair in the {@link SettingDao} for the
-	 * "last known" day of the year. If this value differs from the current day
-	 * (or is not found) then this method will issue a {@code SetData} command
-	 * for each channel configured in the {@link #getChannelNamesToResetDaily()}
-	 * set with a value of zero. If the reset is successful, the current day
-	 * value will be persisted back into {@link SettingDao} so the reset will
-	 * not be attempted again until the next day.
-	 * </p>
-	 * 
-	 * @param dataCollector
-	 *        the data collector to issue the SetData commands with
-	 */
-	private void handleDailyChannelReset(ConversationalDataCollector dataCollector) {
-		final String dayOfYear = getDayOfYearValue();
-		final String lastKnownDayOfYear = getLastKnownDayOfYearValue();
-		if ( dayOfYear.equals(lastKnownDayOfYear) ) {
-			if ( log.isTraceEnabled() ) {
-				log.trace("Last known day of year [" + lastKnownDayOfYear
-						+ "] has not changed, will not reset daily channels");
-			}
-			return;
-		}
-
-		if ( log.isInfoEnabled() ) {
-			log.info("Day changed from [" + lastKnownDayOfYear + "] to [ " + dayOfYear
-					+ "], will reset daily channels now");
-		}
-		for ( String channelName : this.getChannelNamesToResetDaily() ) {
-			if ( !this.channelMap.containsKey(channelName) ) {
-				continue;
-			}
-			SmaChannel channel = this.channelMap.get(channelName);
-			SmaPacket resp = issueSetData(dataCollector, channel, this.smaAddress, 0);
-			if ( !resp.isValid() ) {
-				log.warn("Invalid response to SetData reset command for channel [" + channelName
-						+ "], aborting channel resets");
-				return;
-			}
-		}
-	}
-
 	private SmaPacket issueGetData(ConversationalDataCollector dataCollector, SmaChannel channel,
 			int address) {
 		if ( log.isTraceEnabled() ) {
@@ -437,18 +382,6 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		}
 		byte[] data = SmaUtils.encodeGetDataRequestUserData(channel);
 		SmaPacket req = writeCommand(dataCollector, SmaCommand.GetData, address, 0,
-				SmaControl.RequestSingle, data);
-
-		return decodeResponse(dataCollector, req);
-	}
-
-	private SmaPacket issueSetData(ConversationalDataCollector dataCollector, SmaChannel channel,
-			int address, int word) {
-		if ( log.isTraceEnabled() ) {
-			log.trace("Setting data for channel " + channel);
-		}
-		byte[] data = SmaUtils.encodeSetDataRequestUserData(channel, word);
-		SmaPacket req = writeCommand(dataCollector, SmaCommand.SetData, address, 0,
 				SmaControl.RequestSingle, data);
 
 		return decodeResponse(dataCollector, req);
@@ -673,25 +606,12 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
 
-		results.add(new BasicTextFieldSettingSpecifier("channelNamesToOffsetDailyValue", ""));
-		results.add(new BasicTextFieldSettingSpecifier("channelNamesToResetDailyValue", ""));
-
 		results.add(new BasicTextFieldSettingSpecifier("synOnlineWaitMs", String
 				.valueOf(DEFAULT_SYN_ONLINE_WAIT_MS)));
 
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
 				SMASunnyNetPowerDatumDataSource.getDefaultSerialParameters(), "serialParams."));
 		return results;
-	}
-
-	/**
-	 * Set the channel names to monitor via a comma-delimited string.
-	 * 
-	 * @param list
-	 *        comma-delimited list of channel names to monitor
-	 */
-	public void setChannelNamesToResetDailyValue(String list) {
-		setChannelNamesToResetDaily(StringUtils.commaDelimitedStringToSet(list));
 	}
 
 	public long getSynOnlineWaitMs() {
