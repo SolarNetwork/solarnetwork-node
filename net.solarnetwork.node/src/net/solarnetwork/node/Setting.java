@@ -25,6 +25,7 @@
 package net.solarnetwork.node;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -126,6 +127,7 @@ public class Setting {
 	private String key;
 	private String type;
 	private String value;
+	private Date modified;
 	private Set<SettingFlag> flags;
 
 	/**
@@ -221,6 +223,14 @@ public class Setting {
 
 	public void setFlags(Set<SettingFlag> flags) {
 		this.flags = flags;
+	}
+
+	public Date getModified() {
+		return modified;
+	}
+
+	public void setModified(Date modified) {
+		this.modified = modified;
 	}
 
 }

@@ -286,6 +286,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		s.setKey(resultSet.getString(1));
 		s.setType(resultSet.getString(2));
 		s.setValue(resultSet.getString(3));
+		s.setModified(resultSet.getTimestamp(4));
 		s.setFlags(SettingFlag.setForMask(resultSet.getInt(5)));
 		return s;
 	}
