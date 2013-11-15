@@ -36,10 +36,6 @@
 		</property>
 	</bean>
 	
-	<!-- Service references -->
-	
-	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
-	
 	<!-- Published services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -56,7 +52,6 @@
 		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource">
-					<property name="settingDao" ref="settingDao"/>
 					<property name="dataCollectorFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>
