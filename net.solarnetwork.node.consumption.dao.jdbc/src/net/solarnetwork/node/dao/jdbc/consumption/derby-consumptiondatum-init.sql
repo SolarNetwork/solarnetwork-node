@@ -6,14 +6,13 @@ CREATE TABLE solarnode.sn_consum_datum (
 	amps			DOUBLE,
 	voltage			DOUBLE,
 	watt_hour		BIGINT,
-	error_msg		VARCHAR(32672),
 	PRIMARY KEY (id)
 );
 
 CREATE INDEX consum_datum_created_idx ON solarnode.sn_consum_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_consum_datum.version', '6');
+VALUES ('solarnode.sn_consum_datum.version', '7');
 
 CREATE TABLE solarnode.sn_consum_datum_upload (
 	consum_datum_id	BIGINT NOT NULL,

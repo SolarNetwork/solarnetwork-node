@@ -20,52 +20,54 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.consumption;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
-
 import net.solarnetwork.node.DatumUpload;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
-
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * JDBC-based implementation of 
- * {@link net.solarnetwork.node.dao.DatumDao} for {@link ConsumptionDatum}
- * domain objects.
- *
- * <p>Ueses a {@link javax.sql.DataSource} and requires a schema named 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME} with two tables: 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * to hold settings and {@link #TABLE_CONSUMPTION_DATUM} to hold the actual 
- * consumption data.</p>
+ * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
+ * {@link ConsumptionDatum} domain objects.
  * 
- * <p>This class will check to see if the 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * table exists when the {@link #init()} method is called. If it does not, 
- * it assumes the database needs to be created and will load a classpath 
- * SQL file resource specified by the {@link #getInitSqlResource()}, which 
- * should create the tables needed by this class. See the 
- * {@code derby-init.sql} resource in this package for an example.</p>
+ * <p>
+ * Ueses a {@link javax.sql.DataSource} and requires a schema named
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME} with two
+ * tables:
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} to
+ * hold settings and {@link #TABLE_CONSUMPTION_DATUM} to hold the actual
+ * consumption data.
+ * </p>
  * 
- * <p>The tables must have a structure similar to this (shown in Apache
- * Derby SQL dialect):</p>
+ * <p>
+ * This class will check to see if the
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} table
+ * exists when the {@link #init()} method is called. If it does not, it assumes
+ * the database needs to be created and will load a classpath SQL file resource
+ * specified by the {@link #getInitSqlResource()}, which should create the
+ * tables needed by this class. See the {@code derby-init.sql} resource in this
+ * package for an example.
+ * </p>
  * 
- * <pre>CREATE TABLE solarnode.sn_settings (
+ * <p>
+ * The tables must have a structure similar to this (shown in Apache Derby SQL
+ * dialect):
+ * </p>
+ * 
+ * <pre>
+ * CREATE TABLE solarnode.sn_settings (
  * 	skey	VARCHAR(64) NOT NULL,
  * 	svalue	VARCHAR(255) NOT NULL,
  * 	PRIMARY KEY (skey)
@@ -78,52 +80,48 @@ import org.springframework.transaction.annotation.Transactional;
  *  price_loc_id	BIGINT,
  * 	amps			DOUBLE,
  * 	voltage			DOUBLE,
- *  watt_hour		BIGINT,
- * 	error_msg		VARCHAR(32672),
+ *  watt_hour		BIGINT
  * 	PRIMARY KEY (id)
- * )</pre>
+ * )
+ * </pre>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class JdbcConsumptionDatumDao
-extends AbstractJdbcDatumDao<ConsumptionDatum> {
+public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 6;
-	
+	public static final int DEFAULT_TABLES_VERSION = 7;
+
 	/** The table name for {@link ConsumptionDatum} data. */
 	public static final String TABLE_CONSUMPTION_DATUM = "sn_consum_datum";
-	
+
 	/** The table name for {@link ConsumptionDatum} upload data. */
 	public static final String TABLE_CONSUMPTION_DATUM_UPLOAD = "sn_consum_datum_upload";
-	
+
 	/** The default classpath Resource for the {@code initSqlResource}. */
 	public static final String DEFAULT_INIT_SQL = "derby-consumptiondatum-init.sql";
-	
+
 	/** The default value for the {@code sqlGetTablesVersion} property. */
-	public static final String DEFAULT_SQL_GET_TABLES_VERSION 
-		= "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
-		+ "'solarnode.sn_consum_datum.version'";
-	
-	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_CONSUMPTION_DATUM
-		+" (source_id, price_loc_id, amps, voltage, watt_hour, error_msg) VALUES"
-		+" (?,?,?,?,?,?)";
-	
-	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_CONSUMPTION_DATUM_UPLOAD
-		+" (consum_datum_id, destination, track_id) VALUES (?,?,?)";
-	
-	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM "
-		+SCHEMA_NAME +'.' +TABLE_CONSUMPTION_DATUM +" where id <= "
-		+"(select MAX(cd.id) from " +SCHEMA_NAME +'.' +TABLE_CONSUMPTION_DATUM 
-		+" cd inner join " +SCHEMA_NAME +'.' +TABLE_CONSUMPTION_DATUM_UPLOAD 
-		+" u on u.consum_datum_id = cd.id where cd.created < ?)";
-	
+	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
+			+ "'solarnode.sn_consum_datum.version'";
+
+	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_CONSUMPTION_DATUM + " (source_id, price_loc_id, amps, voltage, watt_hour) VALUES"
+			+ " (?,?,?,?,?)";
+
+	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_CONSUMPTION_DATUM_UPLOAD
+			+ " (consum_datum_id, destination, track_id) VALUES (?,?,?)";
+
+	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM " + SCHEMA_NAME + '.'
+			+ TABLE_CONSUMPTION_DATUM + " where id <= " + "(select MAX(cd.id) from " + SCHEMA_NAME + '.'
+			+ TABLE_CONSUMPTION_DATUM + " cd inner join " + SCHEMA_NAME + '.'
+			+ TABLE_CONSUMPTION_DATUM_UPLOAD + " u on u.consum_datum_id = cd.id where cd.created < ?)";
+
 	/** The default classpath Resource for the {@code findForUploadSqlResource}. */
 	public static final String DEFAULT_FIND_FOR_UPLOAD_SQL = "find-consumptiondatum-for-upload.sql";
-	
+
 	/**
 	 * Default constructor.
 	 */
@@ -136,67 +134,71 @@ extends AbstractJdbcDatumDao<ConsumptionDatum> {
 		setSqlResourcePrefix("derby-consumptiondatum");
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
 		setSqlDeleteOld(DEFAULT_SQL_DELETE_OLD);
-		setFindForUploadSqlResource(
-				new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
+		setFindForUploadSqlResource(new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
 		setSqlInsertDatum(DEFAULT_SQL_INSERT);
 		setSqlInsertUpload(DEFAULT_SQL_INSERT_UPLOAD);
 	}
 
+	@Override
 	public Class<? extends ConsumptionDatum> getDatumType() {
 		return ConsumptionDatum.class;
 	}
 
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public Long storeDatum(ConsumptionDatum datum) {
 		return storeDomainObject(datum);
 	}
 
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public DatumUpload storeDatumUpload(ConsumptionDatum datum,
-			String destination, Long trackingId) {
+	public DatumUpload storeDatumUpload(ConsumptionDatum datum, String destination, Long trackingId) {
 		return storeNewDatumUpload(datum, destination, trackingId);
 	}
 
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteUploadedDataOlderThan(int hours) {
 		return deleteUploadedDataOlderThanHours(hours);
 	}
 
+	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<ConsumptionDatum> getDatumNotUploaded(String destination) {
 		return findDatumNotUploaded(destination, new RowMapper<ConsumptionDatum>() {
+
+			@Override
 			public ConsumptionDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 				if ( log.isTraceEnabled() ) {
-					log.trace("Handling result row " +rowNum);
+					log.trace("Handling result row " + rowNum);
 				}
 				ConsumptionDatum datum = new ConsumptionDatum();
 				int col = 1;
 				datum.setId(rs.getLong(col++));
 				datum.setSourceId(rs.getString(col++));
 
-				Number val = (Number)rs.getObject(col++);
+				Number val = (Number) rs.getObject(col++);
 				datum.setLocationId(val == null ? null : val.longValue());
-				
+
 				datum.setCreated(rs.getTimestamp(col++));
-				
-				val = (Number)rs.getObject(col++);
+
+				val = (Number) rs.getObject(col++);
 				datum.setVolts(val == null ? null : val.floatValue());
-				
-				val = (Number)rs.getObject(col++);
+
+				val = (Number) rs.getObject(col++);
 				datum.setAmps(val == null ? null : val.floatValue());
-				
-				val = (Number)rs.getObject(col++);
+
+				val = (Number) rs.getObject(col++);
 				datum.setWattHourReading(val == null ? null : val.longValue());
-				
-				datum.setErrorMessage(rs.getString(col++));
+
 				return datum;
 			}
 		});
 	}
 
 	@Override
-	protected void setStoreStatementValues(ConsumptionDatum datum, PreparedStatement ps) 
-	throws SQLException {
+	protected void setStoreStatementValues(ConsumptionDatum datum, PreparedStatement ps)
+			throws SQLException {
 		int col = 1;
 		ps.setString(col++, datum.getSourceId());
 		if ( datum.getLocationId() == null ) {
@@ -218,11 +220,6 @@ extends AbstractJdbcDatumDao<ConsumptionDatum> {
 			ps.setNull(col++, Types.BIGINT);
 		} else {
 			ps.setLong(col++, datum.getWattHourReading());
-		}
-		if ( datum.getErrorMessage() == null ) {
-			ps.setNull(col++, Types.VARCHAR);
-		} else {
-			ps.setString(col++, datum.getErrorMessage());
 		}
 	}
 
