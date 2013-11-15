@@ -750,15 +750,17 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(resource.getBackupPath()) ) {
 			try {
 				// TODO: need a better way to organize settings into "do not restore" category
-				final Pattern allowed = Pattern.compile(
-						"^((?!solarnode)|solarnode\\.(id|keystore|solarnet)).*",
-						Pattern.CASE_INSENSITIVE);
+				final Pattern notAllowed = Pattern.compile("^solarnode.*", Pattern.CASE_INSENSITIVE);
 				InputStreamReader reader = new InputStreamReader(resource.getInputStream(), "UTF-8");
 				importSettingsCSV(reader, new ImportCallback() {
 
 					@Override
 					public boolean shouldImportSetting(Setting s) {
-						return allowed.matcher(s.getKey()).matches();
+						if ( notAllowed.matcher(s.getKey()).matches() ) {
+							// only allow restoring solarnode keys if their type is NOT empty
+							return (s.getType() != null && s.getType().length() > 0);
+						}
+						return true;
 					}
 				});
 				return true;
