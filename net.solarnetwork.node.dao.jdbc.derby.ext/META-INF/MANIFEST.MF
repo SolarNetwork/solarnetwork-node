@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode Derby Extensions
+Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby.ext
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Fragment-Host: derby;bundle-version="10.8.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: net.solarnetwork.node.dao.jdbc.derby.ext;version="1.0.0"
