@@ -5,8 +5,7 @@ SELECT d.id,
 	d.latitude,
 	d.longitude,
 	d.sunrise,
-	d.sunset,
-	d.error_msg
+	d.sunset
 FROM solarnode.sn_day_datum d 
 LEFT OUTER JOIN solarnode.sn_day_datum_upload u
 	ON u.datum_id = d.id AND u.destination = ?

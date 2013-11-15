@@ -6,15 +6,14 @@ CREATE TABLE solarnode.sn_day_datum (
 	latitude		DOUBLE,
 	longitude		DOUBLE,
 	sunrise			TIME,
-	sunset			TIME,
-	error_msg		VARCHAR(32672),
+	sunset			TIME
 	PRIMARY KEY (id)
 );
 
 CREATE INDEX day_datum_created_idx ON solarnode.sn_day_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_day_datum.version', '1');
+VALUES ('solarnode.sn_day_datum.version', '2');
 
 CREATE TABLE solarnode.sn_day_datum_upload (
 	datum_id		BIGINT NOT NULL,

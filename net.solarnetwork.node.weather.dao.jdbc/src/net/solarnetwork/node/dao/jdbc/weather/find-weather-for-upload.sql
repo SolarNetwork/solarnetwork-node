@@ -9,8 +9,7 @@ SELECT w.id,
 	w.bar_delta,
 	w.visibility,
 	w.uv_index,
-	w.dew_point,
-	w.error_msg
+	w.dew_point
 FROM solarnode.sn_weather_datum w 
 LEFT OUTER JOIN solarnode.sn_weather_datum_upload u
 	ON u.datum_id = w.id AND u.destination = ?

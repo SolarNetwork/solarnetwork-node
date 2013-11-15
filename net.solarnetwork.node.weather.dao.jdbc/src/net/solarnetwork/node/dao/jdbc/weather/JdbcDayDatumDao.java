@@ -18,53 +18,53 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.weather;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
-
 import net.solarnetwork.node.DatumUpload;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
 import net.solarnetwork.node.weather.DayDatum;
-
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * JDBC-based implementation of 
- * {@link net.solarnetwork.node.dao.DatumDao} for {@link PriceDatum}
- * domain objects.
+ * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
+ * {@link PriceDatum} domain objects.
  * 
- * <p>Uses a {@link javax.sql.DataSource} and requires a schema named 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME}
- * with two tables: 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * to hold settings and {@link #TABLE_PRICE_DATUM} to hold the actual 
- * price data.</p>
+ * <p>
+ * Uses a {@link javax.sql.DataSource} and requires a schema named
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#SCHEMA_NAME} with two
+ * tables:
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} to
+ * hold settings and {@link #TABLE_PRICE_DATUM} to hold the actual price data.
+ * </p>
  * 
- * <p>This class will check to see if the 
- * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS}
- * table exists when the {@link #init()} method is called. If it does not, 
- * it assumes the database needs to be created and will load a classpath 
- * SQL file resource specified by the {@link #getInitSqlResource()}, which 
- * should create the tables needed by this class. See the 
- * {@code derby-init.sql} resource in this package for an example.</p>
+ * <p>
+ * This class will check to see if the
+ * {@link net.solarnetwork.node.dao.jdbc.JdbcDaoConstants#TABLE_SETTINGS} table
+ * exists when the {@link #init()} method is called. If it does not, it assumes
+ * the database needs to be created and will load a classpath SQL file resource
+ * specified by the {@link #getInitSqlResource()}, which should create the
+ * tables needed by this class. See the {@code derby-init.sql} resource in this
+ * package for an example.
+ * </p>
  * 
- * <p>The tables must have a structure similar to this (shown in Apache
- * Derby SQL dialect):</p>
+ * <p>
+ * The tables must have a structure similar to this (shown in Apache Derby SQL
+ * dialect):
+ * </p>
  * 
- * <pre>CREATE TABLE solarnode.sn_settings (
+ * <pre>
+ * CREATE TABLE solarnode.sn_settings (
  * 	skey	VARCHAR(64) NOT NULL,
  * 	svalue	VARCHAR(255) NOT NULL,
  * 	PRIMARY KEY (skey)
@@ -78,53 +78,47 @@ import org.springframework.transaction.annotation.Transactional;
  * 	latitude		DOUBLE,
  * 	longitude		DOUBLE,
  * 	sunrise			TIME,
- * 	sunset			TIME,
- * 	error_msg		VARCHAR(32672),
+ * 	sunset			TIME
  * 	PRIMARY KEY (id)
- * )</pre>
+ * )
+ * </pre>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public class JdbcDayDatumDao
-extends AbstractJdbcDatumDao<DayDatum> {
+public class JdbcDayDatumDao extends AbstractJdbcDatumDao<DayDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 1;
-	
+	public static final int DEFAULT_TABLES_VERSION = 2;
+
 	/** The table name for {@link DayDatum} data. */
 	public static final String TABLE_DAY_DATUM = "sn_day_datum";
-	
+
 	/** The table name for DayDatum upload data. */
 	public static final String TABLE_DAY_DATUM_UPLOAD = "sn_day_datum_upload";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */
 	public static final String DEFAULT_INIT_SQL = "derby-daydatum-init.sql";
-	
-	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_DAY_DATUM
-		+" (source_id, tz, latitude, longitude, sunrise, sunset," 
-		+" error_msg) VALUES"
-		+" (?,?,?,?,?,?,?)";
-	
+
+	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_DAY_DATUM + " (source_id, tz, latitude, longitude, sunrise, sunset) VALUES"
+			+ " (?,?,?,?,?,?)";
+
 	/** The default value for the {@code sqlGetTablesVersion} property. */
-	public static final String DEFAULT_SQL_GET_TABLES_VERSION 
-		= "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
-		+ "'solarnode.sn_day_datum.version'";
-	
+	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
+			+ "'solarnode.sn_day_datum.version'";
+
 	/** The default classpath Resource for the {@code findForUploadSqlResource}. */
 	public static final String DEFAULT_FIND_FOR_UPLOAD_SQL = "find-day-for-upload.sql";
-	
-	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " 
-		+SCHEMA_NAME +'.'+TABLE_DAY_DATUM_UPLOAD
-		+" (datum_id, destination, track_id) VALUES (?,?,?)";
-	
-	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM "
-		+SCHEMA_NAME +'.' +TABLE_DAY_DATUM +" where id <= "
-		+"(select MAX(cd.id) from " +SCHEMA_NAME +'.' +TABLE_DAY_DATUM 
-		+" cd inner join " +SCHEMA_NAME +'.' +TABLE_DAY_DATUM_UPLOAD 
-		+" u on u.datum_id = cd.id where cd.created < ?)";
-	
+
+	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
+			+ TABLE_DAY_DATUM_UPLOAD + " (datum_id, destination, track_id) VALUES (?,?,?)";
+
+	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM " + SCHEMA_NAME + '.'
+			+ TABLE_DAY_DATUM + " where id <= (select MAX(cd.id) from " + SCHEMA_NAME + '.'
+			+ TABLE_DAY_DATUM + " cd inner join " + SCHEMA_NAME + '.' + TABLE_DAY_DATUM_UPLOAD
+			+ " u on u.datum_id = cd.id where cd.created < ?)";
+
 	/**
 	 * Default constructor.
 	 */
@@ -137,8 +131,7 @@ extends AbstractJdbcDatumDao<DayDatum> {
 		setSqlResourcePrefix("derby-pricedatum");
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
 		setSqlDeleteOld(DEFAULT_SQL_DELETE_OLD);
-		setFindForUploadSqlResource(
-				new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
+		setFindForUploadSqlResource(new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
 		setSqlInsertDatum(DEFAULT_SQL_INSERT);
 		setSqlInsertUpload(DEFAULT_SQL_INSERT_UPLOAD);
 	}
@@ -158,9 +151,11 @@ extends AbstractJdbcDatumDao<DayDatum> {
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<DayDatum> getDatumNotUploaded(String destination) {
 		return findDatumNotUploaded(destination, new RowMapper<DayDatum>() {
+
+			@Override
 			public DayDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 				if ( log.isTraceEnabled() ) {
-					log.trace("Handling result row " +rowNum);
+					log.trace("Handling result row " + rowNum);
 				}
 				DayDatum datum = new DayDatum();
 				int col = 1;
@@ -168,18 +163,16 @@ extends AbstractJdbcDatumDao<DayDatum> {
 				datum.setCreated(rs.getTimestamp(col++));
 				datum.setSourceId(rs.getString(col++));
 				datum.setTimeZoneId(rs.getString(col++));
-				
-				Number val = (Number)rs.getObject(col++);
+
+				Number val = (Number) rs.getObject(col++);
 				datum.setLatitude(val == null ? null : val.doubleValue());
-				
-				val = (Number)rs.getObject(col++);
+
+				val = (Number) rs.getObject(col++);
 				datum.setLongitude(val == null ? null : val.doubleValue());
-				
+
 				datum.setSunrise(rs.getTime(col++));
 				datum.setSunset(rs.getTime(col++));
-				
-				datum.setErrorMessage(rs.getString(col++));
-				
+
 				return datum;
 			}
 		});
@@ -187,8 +180,7 @@ extends AbstractJdbcDatumDao<DayDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public DatumUpload storeDatumUpload(DayDatum datum,
-			String destination, Long trackingId) {
+	public DatumUpload storeDatumUpload(DayDatum datum, String destination, Long trackingId) {
 		return storeNewDatumUpload(datum, destination, trackingId);
 	}
 
@@ -199,8 +191,7 @@ extends AbstractJdbcDatumDao<DayDatum> {
 	}
 
 	@Override
-	protected void setStoreStatementValues(DayDatum datum, PreparedStatement ps) 
-	throws SQLException {
+	protected void setStoreStatementValues(DayDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 1;
 		ps.setString(col++, datum.getSourceId());
 		if ( datum.getTimeZoneId() == null ) {
@@ -227,11 +218,6 @@ extends AbstractJdbcDatumDao<DayDatum> {
 			ps.setNull(col++, Types.TIME);
 		} else {
 			ps.setTime(col++, new java.sql.Time(datum.getSunset().getTime()));
-		}
-		if ( datum.getErrorMessage() == null ) {
-			ps.setNull(col++, Types.VARCHAR);
-		} else {
-			ps.setString(col++, datum.getErrorMessage());
 		}
 	}
 }

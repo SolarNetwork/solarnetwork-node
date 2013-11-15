@@ -10,15 +10,14 @@ CREATE TABLE solarnode.sn_weather_datum (
 	bar_delta		VARCHAR(255),
 	visibility		DOUBLE,
 	uv_index		INTEGER,
-	dew_point		DOUBLE,	
-	error_msg		VARCHAR(32672),
+	dew_point		DOUBLE,
 	PRIMARY KEY (id)
 );
 
 CREATE INDEX weather_datum_created_idx ON solarnode.sn_weather_datum (created);
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_weather_datum.version', '2');
+VALUES ('solarnode.sn_weather_datum.version', '3');
 
 CREATE TABLE solarnode.sn_weather_datum_upload (
 	datum_id		BIGINT NOT NULL,
