@@ -26,15 +26,12 @@ package net.solarnetwork.node.weather.nz.metservice.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
 import java.io.File;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.node.weather.WeatherDatum;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource;
-
 import org.junit.Test;
 import org.springframework.util.ResourceUtils;
 
@@ -46,44 +43,41 @@ import org.springframework.util.ResourceUtils;
  */
 public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
-	private MetserviceWeatherDatumDataSource createDataSourceInstance() 
-	throws Exception {
-		
+	private MetserviceWeatherDatumDataSource createDataSourceInstance() throws Exception {
+
 		URL url = getClass().getResource("localObs.txt");
 		File f = ResourceUtils.getFile(url);
 		String baseDirectory = f.getParent();
-		
+
 		MetserviceWeatherDatumDataSource ds = new MetserviceWeatherDatumDataSource();
-		ds.setBaseUrl("file://"+baseDirectory);
+		ds.setBaseUrl("file://" + baseDirectory);
 		ds.setLocalObs("localObs.txt");
 		ds.setOneMinObs("oneMinObs.txt");
 		ds.setUv("uv.txt");
 		ds.setLocalForecast("localForecast.txt");
 		return ds;
 	}
-	
+
 	@Test
 	public void parseRiseSet() throws Exception {
 		MetserviceWeatherDatumDataSource ds = createDataSourceInstance();
 		WeatherDatum datum = ds.readCurrentDatum();
 		assertNotNull(datum);
-		
-		final SimpleDateFormat tsFormat = new SimpleDateFormat(ds.getTimestampDateFormat());
-		
-		assertNotNull(datum.getInfoDate());
-		assertEquals("5:10pm tuesday 18 oct 2011", 
-				tsFormat.format(datum.getInfoDate()).toLowerCase());
 
-		assertNotNull(datum.getTemperatureCelcius());
-		assertEquals(13.1, datum.getTemperatureCelcius().doubleValue(), 0.001);
-		
+		final SimpleDateFormat tsFormat = new SimpleDateFormat(ds.getTimestampDateFormat());
+
+		assertNotNull(datum.getInfoDate());
+		assertEquals("5:10pm tuesday 18 oct 2011", tsFormat.format(datum.getInfoDate()).toLowerCase());
+
+		assertNotNull(datum.getTemperatureCelsius());
+		assertEquals(13.1, datum.getTemperatureCelsius().doubleValue(), 0.001);
+
 		assertNotNull(datum.getHumidity());
 		assertEquals(70.0, datum.getHumidity().doubleValue(), 0.001);
-		
-		
+
 		assertNotNull(datum.getBarometricPressure());
 		assertEquals(999.0, datum.getBarometricPressure().doubleValue(), 0.001);
-		
+
 		assertEquals("Few showers first", datum.getSkyConditions());
 	}
 
