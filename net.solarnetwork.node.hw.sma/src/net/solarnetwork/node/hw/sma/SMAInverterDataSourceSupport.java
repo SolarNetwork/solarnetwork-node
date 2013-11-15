@@ -57,8 +57,7 @@ public abstract class SMAInverterDataSourceSupport {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private Set<String> channelNamesToMonitor = null;
-	private Set<String> channelNamesToResetDaily = null;
-	private final SettingDao settingDao = null;
+	private SettingDao settingDao = null;
 	private String sourceId = DEFAULT_SOURCE_ID;
 
 	protected final String getSettingPrefixDayStartValue() {
@@ -276,20 +275,16 @@ public abstract class SMAInverterDataSourceSupport {
 		this.channelNamesToMonitor = channelNamesToMonitor;
 	}
 
-	public Set<String> getChannelNamesToResetDaily() {
-		return channelNamesToResetDaily;
-	}
-
-	public void setChannelNamesToResetDaily(Set<String> channelNamesToResetDaily) {
-		this.channelNamesToResetDaily = channelNamesToResetDaily;
-	}
-
 	public String getSourceId() {
 		return sourceId;
 	}
 
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	public void setSettingDao(SettingDao settingDao) {
+		this.settingDao = settingDao;
 	}
 
 }
