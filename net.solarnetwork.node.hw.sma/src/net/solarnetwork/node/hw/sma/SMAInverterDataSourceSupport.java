@@ -23,9 +23,10 @@
 package net.solarnetwork.node.hw.sma;
 
 import java.util.Calendar;
+import java.util.EnumSet;
 import java.util.Set;
+import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,10 +38,6 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt>channelNamesToOffsetDaily</dt>
- * <dd>A set of channel names to be calculated as daily offsets. See the
- * {@link #handleDailyChannelOffset(String, Number, boolean)} method.</dd>
- * 
  * <dt>settingDao</dt>
  * <dd>The {@link SettingDao} to persist settings with.</dd>
  * 
@@ -50,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class SMAInverterDataSourceSupport {
 
@@ -61,8 +58,7 @@ public abstract class SMAInverterDataSourceSupport {
 
 	private Set<String> channelNamesToMonitor = null;
 	private Set<String> channelNamesToResetDaily = null;
-	private Set<String> channelNamesToOffsetDaily = null;
-	private SettingDao settingDao = null;
+	private final SettingDao settingDao = null;
 	private String sourceId = DEFAULT_SOURCE_ID;
 
 	protected final String getSettingPrefixDayStartValue() {
@@ -86,8 +82,7 @@ public abstract class SMAInverterDataSourceSupport {
 	 * @return the setting value, or <em>null</em> if not found
 	 */
 	protected final String getVolatileSetting(String key) {
-		return (settingDao == null ? null : settingDao.getSetting(key,
-				SettingDao.TYPE_IGNORE_MODIFICATION_DATE));
+		return (settingDao == null ? null : settingDao.getSetting(key));
 	}
 
 	/**
@@ -103,73 +98,7 @@ public abstract class SMAInverterDataSourceSupport {
 		if ( settingDao == null ) {
 			return;
 		}
-		settingDao.storeSetting(key, SettingDao.TYPE_IGNORE_MODIFICATION_DATE, value);
-	}
-
-	/**
-	 * Handle channels that accumulate overall as if they reset daily.
-	 * 
-	 * @param channelName
-	 *        the channel name to calculate the offset for
-	 * @param currValue
-	 *        the current value reported for this channel
-	 * @param newDay
-	 *        <em>true</em> if this is a different day from the last known day
-	 */
-	protected final Number handleDailyChannelOffset(String channelName, Number currValue,
-			final boolean newDay) {
-		if ( currValue == null || this.channelNamesToOffsetDaily == null
-				|| !this.channelNamesToOffsetDaily.contains(channelName) ) {
-			return currValue;
-		}
-
-		String dayStartKey = getSettingPrefixDayStartValue() + channelName;
-		String lastKnownKey = getSettingPrefixLastKnownValue() + channelName;
-		Number result;
-
-		String lastKnownValueStr = getVolatileSetting(lastKnownKey);
-		Number lastKnownValue = lastKnownValueStr == null ? currValue : parseNumber(
-				currValue.getClass(), lastKnownValueStr);
-
-		log.trace("Handling {} daily channel {} offset for {}; curr value = {}; last known value = {}",
-				(newDay ? "new" : "same"), channelName, getDayOfYearValue(), currValue, lastKnownValue);
-
-		// we've seen values reported less than last known value after
-		// a power outage (i.e. after inverter turns off, then back on)
-		// on single day, so we verify that current value is not less 
-		// than last known value
-		if ( currValue.doubleValue() < lastKnownValue.doubleValue() ) {
-			// just return last known value, not curr value
-			log.warn("Channel [" + channelName + "] reported value [" + currValue
-					+ "] -- less than last known value [" + lastKnownValue + "]. "
-					+ "Using last known value in place of reported value.");
-			currValue = lastKnownValue;
-		}
-
-		if ( newDay ) {
-			result = diff(currValue, lastKnownValue);
-
-			if ( log.isDebugEnabled() ) {
-				log.debug("Last known day has changed, resetting offset value for channel ["
-						+ channelName + "] to [" + lastKnownValue + ']');
-			}
-			saveVolatileSetting(dayStartKey, lastKnownValue.toString());
-		} else {
-			String dayStartValueStr = getVolatileSetting(dayStartKey);
-			Number dayStartValue = dayStartValueStr == null ? currValue : parseNumber(
-					currValue.getClass(), dayStartValueStr);
-			result = diff(currValue, dayStartValue);
-		}
-
-		saveVolatileSetting(lastKnownKey, currValue.toString());
-
-		// we've seen negative values calculated sometimes at the start of the day,
-		// so we prevent that from happening here
-		if ( result.doubleValue() < 0 ) {
-			result = Double.valueOf(0.0);
-		}
-
-		return result;
+		settingDao.storeSetting(new Setting(key, null, value, EnumSet.of(Setting.SettingFlag.Volatile)));
 	}
 
 	/**
@@ -339,25 +268,6 @@ public abstract class SMAInverterDataSourceSupport {
 		return Double.valueOf(a.doubleValue() * b.doubleValue());
 	}
 
-	/**
-	 * Set the channel names to monitor via a comma-delimited string.
-	 * 
-	 * @param list
-	 *        comma-delimited list of channel names to monitor
-	 */
-	public final void setChannelNamesToOffsetDailyValue(String list) {
-		setChannelNamesToOffsetDaily(StringUtils.commaDelimitedStringToSet(list));
-	}
-
-	/**
-	 * Get the channel names to offset daily as a comma-delimited string.
-	 * 
-	 * @return comma-delimited list of channel names to offset daily
-	 */
-	public final String getChannelNamesToOffsetDailyValue() {
-		return StringUtils.commaDelimitedStringFromCollection(getChannelNamesToOffsetDaily());
-	}
-
 	public Set<String> getChannelNamesToMonitor() {
 		return channelNamesToMonitor;
 	}
@@ -372,22 +282,6 @@ public abstract class SMAInverterDataSourceSupport {
 
 	public void setChannelNamesToResetDaily(Set<String> channelNamesToResetDaily) {
 		this.channelNamesToResetDaily = channelNamesToResetDaily;
-	}
-
-	public Set<String> getChannelNamesToOffsetDaily() {
-		return channelNamesToOffsetDaily;
-	}
-
-	public void setChannelNamesToOffsetDaily(Set<String> channelNamesToOffsetDaily) {
-		this.channelNamesToOffsetDaily = channelNamesToOffsetDaily;
-	}
-
-	public SettingDao getSettingDao() {
-		return settingDao;
-	}
-
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
 	}
 
 	public String getSourceId() {
