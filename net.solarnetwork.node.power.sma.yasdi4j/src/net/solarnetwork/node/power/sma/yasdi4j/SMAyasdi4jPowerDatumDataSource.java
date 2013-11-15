@@ -219,8 +219,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		}
 		Number n = Double.valueOf(channel.getValue());
 		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, n);
-		n = handleDailyChannelOffset(channelName, n, newDay);
-		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, n);
 		if ( n != null ) {
 			Class<?> propType = accessor.getPropertyType(beanProperty);
 			Number value = n;
