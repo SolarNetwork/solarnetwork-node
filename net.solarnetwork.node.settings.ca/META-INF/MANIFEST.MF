@@ -30,4 +30,5 @@ Import-Package:
  org.supercsv.io;version="[2.0,3.0)",
  org.supercsv.prefs;version="[2.0,3.0)",
  org.supercsv.cellprocessor;version="[2.0,3.0)",
- org.supercsv.cellprocessor.ift;version="[2.0,3.0)"
+ org.supercsv.cellprocessor.ift;version="[2.0,3.0)",
+ org.supercsv.util;version="[2.0,3.0)"

@@ -51,6 +51,7 @@ import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -91,6 +92,7 @@ import org.supercsv.io.CsvBeanWriter;
 import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
+import org.supercsv.util.CsvContext;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -492,7 +494,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
-	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value" };
+	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value", "flags",
+			"modified" };
+	private static final String SETTING_MODIFIED_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
@@ -500,7 +504,18 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		final List<IOException> errors = new ArrayList<IOException>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
 				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
-				new org.supercsv.cellprocessor.Optional(), };
+				new org.supercsv.cellprocessor.Optional(), new CellProcessor() {
+
+					@Override
+					public Object execute(Object value, CsvContext ctx) {
+						@SuppressWarnings("unchecked")
+						Set<net.solarnetwork.node.Setting.SettingFlag> set = (Set<net.solarnetwork.node.Setting.SettingFlag>) value;
+						if ( set != null ) {
+							return net.solarnetwork.node.Setting.SettingFlag.maskForSet(set);
+						}
+						return 0;
+					}
+				}, new org.supercsv.cellprocessor.FmtDate(SETTING_MODIFIED_DATE_FORMAT) };
 		try {
 			writer.writeHeader(CSV_HEADERS);
 			settingDao.batchProcess(new BatchCallback<Setting>() {
@@ -549,7 +564,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		 * @return <em>true</em> to allow the setting to be imported,
 		 *         <em>false</em> to skip
 		 */
-		boolean shouldImportSetting(String key, String type, String value);
+		boolean shouldImportSetting(Setting setting);
 
 	}
 
@@ -560,15 +575,27 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		importSettingsCSV(in, new ImportCallback() {
 
 			@Override
-			public boolean shouldImportSetting(String key, String type, String value) {
-				return allowed.matcher(key).matches();
+			public boolean shouldImportSetting(Setting s) {
+				return allowed.matcher(s.getKey()).matches();
 			}
 		});
 	}
 
 	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
 		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
-		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null, };
+		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
+				new CellProcessor() {
+
+					@Override
+					public Object execute(Object arg, CsvContext ctx) {
+						Set<net.solarnetwork.node.Setting.SettingFlag> set = null;
+						if ( arg != null ) {
+							int mask = Integer.parseInt(arg.toString());
+							set = net.solarnetwork.node.Setting.SettingFlag.setForMask(mask);
+						}
+						return set;
+					}
+				}, new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT) };
 		reader.getHeader(true);
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
@@ -577,13 +604,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				Setting s;
 				try {
 					while ( (s = reader.read(Setting.class, CSV_HEADERS, processors)) != null ) {
-						if ( !callback.shouldImportSetting(s.getKey(), s.getType(), s.getValue()) ) {
+						if ( !callback.shouldImportSetting(s) ) {
 							continue;
 						}
 						if ( s.getValue() == null ) {
 							settingDao.deleteSetting(s.getKey(), s.getType());
 						} else {
-							settingDao.storeSetting(s.getKey(), s.getType(), s.getValue());
+							settingDao.storeSetting(s);
 						}
 					}
 				} catch ( IOException e ) {
@@ -730,8 +757,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				importSettingsCSV(reader, new ImportCallback() {
 
 					@Override
-					public boolean shouldImportSetting(String key, String type, String value) {
-						return allowed.matcher(key).matches();
+					public boolean shouldImportSetting(Setting s) {
+						return allowed.matcher(s.getKey()).matches();
 					}
 				});
 				return true;
