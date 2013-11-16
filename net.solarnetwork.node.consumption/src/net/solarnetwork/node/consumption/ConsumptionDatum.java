@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.consumption;
@@ -31,44 +29,40 @@ import net.solarnetwork.node.support.BaseDatum;
 /**
  * Domain object for energy consumption related data.
  * 
- * <p>The {@code sourceId} value is used to differentiate between multiple consumption
- * monitors within the same system.</p>
- *
+ * <p>
+ * The {@code sourceId} value is used to differentiate between multiple
+ * consumption monitors within the same system.
+ * </p>
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class ConsumptionDatum extends BaseDatum {
 
-	private Long locationId = null; 				// price location ID
+	private Long locationId = null; // price location ID
 	private Float amps = null;
 	private Float volts = null;
 	private Long wattHourReading = null;
-	
+
 	/**
 	 * Default constructor.
 	 */
 	public ConsumptionDatum() {
-		this(null);
-	}
-
-	/**
-	 * Construct with a primary key.
-	 * 
-	 * @param id the primary key
-	 */
-	public ConsumptionDatum(Long id) {
-		super(id);
+		this(null, null, null);
 	}
 
 	/**
 	 * Construct with amp and volt values.
 	 * 
-	 * @param sourceId the source ID
-	 * @param amps the amps
-	 * @param volts the volts
+	 * @param sourceId
+	 *        the source ID
+	 * @param amps
+	 *        the amps
+	 * @param volts
+	 *        the volts
 	 */
 	public ConsumptionDatum(String sourceId, Float amps, Float volts) {
-		this();
+		super();
 		setSourceId(sourceId);
 		this.amps = amps;
 		this.volts = volts;
@@ -76,34 +70,38 @@ public class ConsumptionDatum extends BaseDatum {
 
 	@Override
 	public String toString() {
-		return "ConsumptionDatum{sourceId=" +getSourceId()
-			+",amps=" +this.amps
-			+",volts=" +this.volts
-			+",wattHourReading=" +this.wattHourReading
-			+'}';
+		return "ConsumptionDatum{sourceId=" + getSourceId() + ",amps=" + this.amps + ",volts="
+				+ this.volts + ",wattHourReading=" + this.wattHourReading + '}';
 	}
 
 	public Float getAmps() {
 		return amps;
 	}
+
 	public void setAmps(Float amps) {
 		this.amps = amps;
 	}
+
 	public Float getVolts() {
 		return volts;
 	}
+
 	public void setVolts(Float volts) {
 		this.volts = volts;
 	}
+
 	public Long getLocationId() {
 		return locationId;
 	}
+
 	public void setLocationId(Long locationId) {
 		this.locationId = locationId;
 	}
+
 	public Long getWattHourReading() {
 		return wattHourReading;
 	}
+
 	public void setWattHourReading(Long wattHourReading) {
 		this.wattHourReading = wattHourReading;
 	}

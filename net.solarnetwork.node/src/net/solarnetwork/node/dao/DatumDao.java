@@ -1,5 +1,5 @@
 /* ===================================================================
- * Dao.java
+ * DatumDao.java
  * 
  * Created Nov 30, 2009 4:56:25 PM
  * 
@@ -20,23 +20,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao;
 
+import java.util.Date;
 import java.util.List;
-
 import net.solarnetwork.node.Datum;
-import net.solarnetwork.node.DatumUpload;
 
 /**
  * Data Access Object (DAO) API for {@link Datum} objects.
- *
+ * 
  * @author matt
- * @version $Revision$ $Date$
- * @param <T> the type of Datum this DAO supports
+ * @version 1.1
+ * @param <T>
+ *        the type of Datum this DAO supports
  */
 public interface DatumDao<T extends Datum> {
 
@@ -47,32 +45,27 @@ public interface DatumDao<T extends Datum> {
 	 */
 	Class<? extends T> getDatumType();
 
-	/*
-	 * Get a datum by its primary key.
-	 * 
-	 * @param id the primary key
-	 * @return the datum, or <em>null</em> if not found
-	 *
-	T getDatum(Long id);
-	*/
-	
 	/**
-	 * Store (create or update) a datum and return it's primary key.
+	 * Store (create or update) a datum.
 	 * 
-	 * @param datum the datum to persist
+	 * @param datum
+	 *        the datum to persist
 	 * @return the generated primary key
 	 */
-	Long storeDatum(T datum);
+	void storeDatum(T datum);
 
 	/**
-	 * Get a List of Datum instances that have not been uploaded yet to a 
+	 * Get a List of Datum instances that have not been uploaded yet to a
 	 * specific destination.
 	 * 
-	 * <p>This does not need to return all data, it can limit the amount
-	 * returned at one time to conserve memory. This method can be called
-	 * repeatedly if needed.</p>
+	 * <p>
+	 * This does not need to return all data, it can limit the amount returned
+	 * at one time to conserve memory. This method can be called repeatedly if
+	 * needed.
+	 * </p>
 	 * 
-	 * @param destination the destination to check
+	 * @param destination
+	 *        the destination to check
 	 * @return list of Datum, or empty List if none available
 	 */
 	List<T> getDatumNotUploaded(String destination);
@@ -80,25 +73,32 @@ public interface DatumDao<T extends Datum> {
 	/**
 	 * Persist a {@link DatumUpload} instance.
 	 * 
-	 * @param datum the Datum that has been uploaded successfully
-	 * @param destination the destination the Datum was uploaded to
-	 * @param trackingId the remote tracking ID assigned to the uploaded Datum
-	 * @return new DatumUpload instance
+	 * @param datum
+	 *        the Datum that has been uploaded successfully
+	 * @param date
+	 *        the date it was uploaded
+	 * @param destination
+	 *        the destination the Datum was uploaded to
+	 * @param trackingId
+	 *        the remote tracking ID assigned to the uploaded Datum
 	 */
-	DatumUpload storeDatumUpload(T datum, String destination, Long trackingId);
-	
+	void setDatumUploaded(T datum, Date date, String destination, Long trackingId);
+
 	/**
 	 * Delete both Datum and DatumUpload objects that have been successfully
 	 * uploaded to at least one destination and are older than the specified
 	 * number of hours.
 	 * 
-	 * <p>This is designed to free up space from local database storage
-	 * for devices with limited storage capacity. It will not delete any
-	 * Datum objects that have not been successfully uploaded anywhere.</p>
+	 * <p>
+	 * This is designed to free up space from local database storage for devices
+	 * with limited storage capacity. It will not delete any Datum objects that
+	 * have not been successfully uploaded anywhere.
+	 * </p>
 	 * 
-	 * @param hours the minimum number of hours old the data must be to delete
+	 * @param hours
+	 *        the minimum number of hours old the data must be to delete
 	 * @return the number of Datum (and associated DatumUpload) entities deleted
 	 */
 	int deleteUploadedDataOlderThan(int hours);
-	
+
 }

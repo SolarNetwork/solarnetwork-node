@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node;
@@ -30,26 +28,37 @@ import java.util.Date;
 
 /**
  * Basic persistable domain object API.
- *
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public interface Datum {
 
 	/**
-	 * Get the primary key, or <em>null</em> if not a persisted object.
-	 * 
-	 * @return the primary key
-	 */
-	public Long getId();
-
-	/**
-	 * Get the date this object was created, which is often equal to
-	 * either the date it was persisted or the date the associated 
-	 * data in this object was captured.
+	 * Get the date this object was created, which is often equal to either the
+	 * date it was persisted or the date the associated data in this object was
+	 * captured.
 	 * 
 	 * @return the created date
 	 */
 	public Date getCreated();
+
+	/**
+	 * Get a unique source ID for this datum.
+	 * 
+	 * <p>
+	 * A single datum type may collect data from many different sources.
+	 * </p>
+	 * 
+	 * @return the source ID
+	 */
+	public String getSourceId();
+
+	/**
+	 * Get teh date this object was uploaded to SolarNet.
+	 * 
+	 * @return the upload date
+	 */
+	public Date getUploaded();
 
 }

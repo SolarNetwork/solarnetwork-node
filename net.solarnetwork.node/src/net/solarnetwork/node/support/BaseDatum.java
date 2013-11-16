@@ -35,25 +35,15 @@ import net.solarnetwork.node.Datum;
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
-	private Long id = null;
 	private String sourceId = null;
 	private Date created = null;
+	private Date uploaded = null;
 
 	/**
 	 * Default constructor.
 	 */
 	public BaseDatum() {
 		super();
-	}
-
-	/**
-	 * Construct with an ID value.
-	 * 
-	 * @param id
-	 *        the ID value
-	 */
-	public BaseDatum(Long id) {
-		setId(id);
 	}
 
 	@Override
@@ -70,7 +60,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + ((created == null) ? 0 : created.hashCode());
 		result = prime * result + ((sourceId == null) ? 0 : sourceId.hashCode());
 		return result;
 	}
@@ -97,11 +87,11 @@ public abstract class BaseDatum implements Datum, Cloneable {
 			return false;
 		}
 		BaseDatum other = (BaseDatum) obj;
-		if ( id == null ) {
-			if ( other.id != null ) {
+		if ( created == null ) {
+			if ( other.created != null ) {
 				return false;
 			}
-		} else if ( !id.equals(other.id) ) {
+		} else if ( !created.equals(other.created) ) {
 			return false;
 		}
 		if ( sourceId == null ) {
@@ -115,15 +105,6 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	}
 
 	@Override
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
-
-	@Override
 	public Date getCreated() {
 		return created;
 	}
@@ -132,12 +113,22 @@ public abstract class BaseDatum implements Datum, Cloneable {
 		this.created = created;
 	}
 
+	@Override
 	public String getSourceId() {
 		return sourceId;
 	}
 
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	@Override
+	public Date getUploaded() {
+		return uploaded;
+	}
+
+	public void setUploaded(Date uploaded) {
+		this.uploaded = uploaded;
 	}
 
 }
