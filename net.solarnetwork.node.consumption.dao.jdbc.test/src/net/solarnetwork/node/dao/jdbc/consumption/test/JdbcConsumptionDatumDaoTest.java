@@ -26,10 +26,10 @@ package net.solarnetwork.node.dao.jdbc.consumption.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.dao.jdbc.consumption.JdbcConsumptionDatumDao;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
@@ -54,8 +54,8 @@ public class JdbcConsumptionDatumDaoTest extends AbstractNodeTransactionalTest {
 	private static final Float TEST_VOLTS = 2.2F;
 	private static final Long TEST_WATT_HOUR_READING = 3L;
 
-	private static final String SQL_GET_BY_ID = "SELECT id, source_id, created, voltage, amps, watt_hour "
-			+ "FROM solarnode.sn_consum_datum WHERE id = ?";
+	private static final String SQL_GET_BY_ID = "SELECT source_id, created, voltage, amps, watt_hour "
+			+ "FROM solarnode.sn_consum_datum WHERE created = ? AND source_id = ?";
 
 	@Autowired
 	private JdbcConsumptionDatumDao dao;
@@ -65,47 +65,45 @@ public class JdbcConsumptionDatumDaoTest extends AbstractNodeTransactionalTest {
 	@Test
 	public void storeNew() {
 		ConsumptionDatum datum = new ConsumptionDatum(TEST_SOURCE_ID, TEST_AMPS, TEST_VOLTS);
+		datum.setCreated(new Date());
 		datum.setWattHourReading(TEST_WATT_HOUR_READING);
 
-		final Long id = dao.storeDatum(datum);
-		assertNotNull(id);
+		dao.storeDatum(datum);
 
-		jdbcOps.query(SQL_GET_BY_ID, new Object[] { id }, new ResultSetExtractor<Object>() {
+		jdbcOps.query(SQL_GET_BY_ID, new Object[] {
+				new java.sql.Timestamp(datum.getCreated().getTime()), TEST_SOURCE_ID },
+				new ResultSetExtractor<Object>() {
 
-			@Override
-			public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
-				assertTrue("Must have one result", rs.next());
+					@Override
+					public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+						assertTrue("Must have one result", rs.next());
 
-				int col = 1;
+						int col = 1;
 
-				Long l = rs.getLong(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(id, l);
+						String s = rs.getString(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_SOURCE_ID, s);
 
-				String s = rs.getString(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_SOURCE_ID, s);
+						rs.getTimestamp(col++);
+						assertFalse(rs.wasNull());
 
-				rs.getTimestamp(col++);
-				assertFalse(rs.wasNull());
+						Float f = rs.getFloat(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_VOLTS.doubleValue(), f.doubleValue(), 0.001);
 
-				Float f = rs.getFloat(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_VOLTS.doubleValue(), f.doubleValue(), 0.001);
+						f = rs.getFloat(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_AMPS.doubleValue(), f.doubleValue(), 0.001);
 
-				f = rs.getFloat(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_AMPS.doubleValue(), f.doubleValue(), 0.001);
+						Long l = rs.getLong(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_WATT_HOUR_READING, l);
 
-				l = rs.getLong(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_WATT_HOUR_READING, l);
+						assertFalse("Must not have more than one result", rs.next());
+						return null;
+					}
 
-				assertFalse("Must not have more than one result", rs.next());
-				return null;
-			}
-
-		});
+				});
 	}
 
 }

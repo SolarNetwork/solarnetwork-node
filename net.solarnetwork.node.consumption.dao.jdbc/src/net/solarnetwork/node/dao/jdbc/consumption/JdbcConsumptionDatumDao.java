@@ -173,6 +173,9 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 	protected void setStoreStatementValues(ConsumptionDatum datum, PreparedStatement ps)
 			throws SQLException {
 		int col = 1;
+		ps.setTimestamp(col++,
+				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
+						.getCreated().getTime()));
 		ps.setString(col++, datum.getSourceId());
 		if ( datum.getLocationId() == null ) {
 			ps.setNull(col++, Types.BIGINT);
