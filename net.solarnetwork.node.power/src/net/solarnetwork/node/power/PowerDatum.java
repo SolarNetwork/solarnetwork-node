@@ -57,16 +57,6 @@ public class PowerDatum extends BaseDatum {
 	}
 
 	/**
-	 * Construct with an ID.
-	 * 
-	 * @param id
-	 *        the ID to set
-	 */
-	public PowerDatum(Long id) {
-		super(id);
-	}
-
-	/**
 	 * Construct with values.
 	 * 
 	 * @param batteryAmpHours

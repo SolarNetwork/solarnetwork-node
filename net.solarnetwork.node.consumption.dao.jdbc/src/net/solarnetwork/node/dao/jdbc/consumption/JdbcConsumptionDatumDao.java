@@ -60,30 +60,6 @@ import org.springframework.transaction.annotation.Transactional;
  * package for an example.
  * </p>
  * 
- * <p>
- * The tables must have a structure similar to this (shown in Apache Derby SQL
- * dialect):
- * </p>
- * 
- * <pre>
- * CREATE TABLE solarnode.sn_settings (
- * 	skey	VARCHAR(64) NOT NULL,
- * 	svalue	VARCHAR(255) NOT NULL,
- * 	PRIMARY KEY (skey)
- * 	)
- * 	
- * CREATE TABLE solarnode.sn_consum_datum (
- * 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
- * 	source_id 		VARCHAR(255),
- *  price_loc_id	BIGINT,
- * 	amps			DOUBLE,
- * 	voltage			DOUBLE,
- *  watt_hour		BIGINT,
- *  uploaded       TIMESTAMP,
- * 	PRIMARY KEY (id)
- * )
- * </pre>
- * 
  * @author matt
  * @version 1.1
  */
@@ -176,7 +152,7 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 		ps.setTimestamp(col++,
 				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
 						.getCreated().getTime()));
-		ps.setString(col++, datum.getSourceId());
+		ps.setString(col++, datum.getSourceId() == null ? "" : datum.getSourceId());
 		if ( datum.getLocationId() == null ) {
 			ps.setNull(col++, Types.BIGINT);
 		} else {
@@ -198,5 +174,4 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 			ps.setLong(col++, datum.getWattHourReading());
 		}
 	}
-
 }

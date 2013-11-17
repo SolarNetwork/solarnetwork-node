@@ -26,10 +26,10 @@ package net.solarnetwork.node.dao.jdbc.power.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import net.solarnetwork.node.dao.jdbc.power.JdbcPowerDatumDao;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
@@ -53,8 +53,8 @@ public class JdbcPowerDatumDaoTest extends AbstractNodeTransactionalTest {
 	private static final Integer TEST_WATTS = 22;
 	private static final Long TEST_WATT_HOURS = 2300L;
 
-	private static final String SQL_GET_BY_ID = "SELECT id, created, source_id, watts, watt_hours "
-			+ "FROM solarnode.sn_power_datum WHERE id = ?";
+	private static final String SQL_GET_BY_ID = "SELECT created, source_id, watts, watt_hours "
+			+ "FROM solarnode.sn_power_datum WHERE created = ? AND source_id = ?";
 
 	@Autowired
 	private JdbcPowerDatumDao dao;
@@ -64,45 +64,42 @@ public class JdbcPowerDatumDaoTest extends AbstractNodeTransactionalTest {
 	@Test
 	public void storeNew() {
 		PowerDatum datum = new PowerDatum();
+		datum.setCreated(new Date());
 		datum.setWatts(TEST_WATTS);
 		datum.setSourceId(TEST_SOURCE_ID);
 		datum.setWattHourReading(TEST_WATT_HOURS);
 
-		final Long id = dao.storeDatum(datum);
-		assertNotNull(id);
+		dao.storeDatum(datum);
 
-		jdbcOps.query(SQL_GET_BY_ID, new Object[] { id }, new ResultSetExtractor<Object>() {
+		jdbcOps.query(SQL_GET_BY_ID, new Object[] { datum.getCreated(), datum.getSourceId() },
+				new ResultSetExtractor<Object>() {
 
-			@Override
-			public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
-				assertTrue("Must have one result", rs.next());
+					@Override
+					public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+						assertTrue("Must have one result", rs.next());
 
-				int col = 1;
+						int col = 1;
 
-				Long l = rs.getLong(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(id, l);
+						rs.getTimestamp(col++);
+						assertFalse(rs.wasNull());
 
-				rs.getTimestamp(col++);
-				assertFalse(rs.wasNull());
+						String s = rs.getString(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_SOURCE_ID, s);
 
-				String s = rs.getString(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_SOURCE_ID, s);
+						int w = rs.getInt(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_WATTS.intValue(), w);
 
-				int w = rs.getInt(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_WATTS.intValue(), w);
+						long wh = rs.getLong(col++);
+						assertFalse(rs.wasNull());
+						assertEquals(TEST_WATT_HOURS.longValue(), wh);
 
-				long wh = rs.getLong(col++);
-				assertFalse(rs.wasNull());
-				assertEquals(TEST_WATT_HOURS.longValue(), wh);
+						assertFalse("Must not have more than one result", rs.next());
+						return null;
+					}
 
-				assertFalse("Must not have more than one result", rs.next());
-				return null;
-			}
-
-		});
+				});
 	}
 
 }

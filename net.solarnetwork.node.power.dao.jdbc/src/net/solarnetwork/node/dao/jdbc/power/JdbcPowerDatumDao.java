@@ -24,13 +24,12 @@
 
 package net.solarnetwork.node.dao.jdbc.power;
 
-import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.DatumUpload;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
 import net.solarnetwork.node.power.PowerDatum;
 import org.springframework.core.io.ClassPathResource;
@@ -48,7 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 10;
+	public static final int DEFAULT_TABLES_VERSION = 11;
 
 	/** The table name for {@link PowerDatum} data. */
 	public static final String TABLE_POWER_DATUM = "sn_power_datum";
@@ -63,38 +62,16 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
 			+ "'solarnode.sn_power_datum.version'";
 
-	private static final String DEFAULT_SQL_INSERT = "INSERT INTO " + SCHEMA_NAME + '.'
-			+ TABLE_POWER_DATUM
-			+ " (source_id, price_loc_id, watts, bat_volts, bat_amp_hrs, dc_out_volts,"
-			+ " dc_out_amps, ac_out_volts, ac_out_amps, watt_hours, amp_hours) VALUES"
-			+ " (?,?,?,?,?,?,?,?,?,?,?)";
-
-	private static final String DEFAULT_SQL_INSERT_UPLOAD = "INSERT INTO " + SCHEMA_NAME + '.'
-			+ TABLE_POWER_DATUM_UPLOAD + " (power_datum_id, destination, track_id) VALUES (?,?,?)";
-
-	private static final String DEFAULT_SQL_DELETE_OLD = "DELETE FROM " + SCHEMA_NAME + '.'
-			+ TABLE_POWER_DATUM + " where id <= " + "(select MAX(pd.id) from " + SCHEMA_NAME + '.'
-			+ TABLE_POWER_DATUM + " pd inner join " + SCHEMA_NAME + '.' + TABLE_POWER_DATUM_UPLOAD
-			+ " u on u.power_datum_id = pd.id where pd.created < ?)";
-
-	/** The default classpath Resource for the {@code findForUploadSqlResource}. */
-	public static final String DEFAULT_FIND_FOR_UPLOAD_SQL = "find-powerdatum-for-upload.sql";
-
 	/**
 	 * Default constructor.
 	 */
 	public JdbcPowerDatumDao() {
 		super();
+		setSqlResourcePrefix("derby-powerdatum");
 		setTableName(TABLE_POWER_DATUM);
-		setUploadTableName(TABLE_POWER_DATUM_UPLOAD);
 		setTablesVersion(DEFAULT_TABLES_VERSION);
 		setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
-		setSqlResourcePrefix("derby-powerdatum");
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
-		setSqlDeleteOld(DEFAULT_SQL_DELETE_OLD);
-		setFindForUploadSqlResource(new ClassPathResource(DEFAULT_FIND_FOR_UPLOAD_SQL, getClass()));
-		setSqlInsertDatum(DEFAULT_SQL_INSERT);
-		setSqlInsertUpload(DEFAULT_SQL_INSERT_UPLOAD);
 	}
 
 	@Override
@@ -104,14 +81,14 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public Long storeDatum(PowerDatum datum) {
-		return storeDomainObject(datum);
+	public void storeDatum(PowerDatum datum) {
+		storeDomainObject(datum);
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public DatumUpload storeDatumUpload(PowerDatum datum, String destination, Long trackingId) {
-		return storeNewDatumUpload(datum, destination, trackingId);
+	public void setDatumUploaded(PowerDatum datum, Date date, String destination, Long trackingId) {
+		updateDatumUpload(datum, date.getTime());
 	}
 
 	@Override
@@ -123,7 +100,7 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<PowerDatum> getDatumNotUploaded(String destination) {
-		return findDatumNotUploaded(destination, new RowMapper<PowerDatum>() {
+		return findDatumNotUploaded(new RowMapper<PowerDatum>() {
 
 			@Override
 			public PowerDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -132,13 +109,11 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 				}
 				PowerDatum datum = new PowerDatum();
 				int col = 1;
-				datum.setId(rs.getLong(col++));
+				datum.setCreated(rs.getTimestamp(col++));
 				datum.setSourceId(rs.getString(col++));
 
 				Number val = (Number) rs.getObject(col++);
 				datum.setLocationId(val == null ? null : val.longValue());
-
-				datum.setCreated(rs.getTimestamp(col++));
 
 				val = (Number) rs.getObject(col++);
 				datum.setWatts(val == null ? null : val.intValue());
@@ -175,7 +150,10 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 	@Override
 	protected void setStoreStatementValues(PowerDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 1;
-		ps.setString(col++, datum.getSourceId());
+		ps.setTimestamp(col++,
+				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
+						.getCreated().getTime()));
+		ps.setString(col++, datum.getSourceId() == null ? "" : datum.getSourceId());
 		if ( datum.getLocationId() == null ) {
 			ps.setNull(col++, Types.BIGINT);
 		} else {
