@@ -4,4 +4,4 @@ SELECT
 	price
 FROM solarnode.sn_price_datum
 WHERE uploaded IS NULL
-ORDER BY created, source_id
+ORDER BY created, location_id

@@ -10,6 +10,7 @@ DELETE FROM solarnode.sn_price_datum WHERE id IN (
 
 ALTER TABLE solarnode.sn_price_datum ADD COLUMN uploaded TIMESTAMP;
 ALTER TABLE solarnode.sn_price_datum DROP COLUMN id;
+ALTER TABLE solarnode.sn_price_datum DROP COLUMN source_id;
 
 ALTER TABLE solarnode.sn_price_datum ADD PRIMARY KEY (created, location_id);
 DROP INDEX solarnode.price_datum_created_idx;
