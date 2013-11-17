@@ -1,6 +1,5 @@
 SELECT 
 	created,
-	source_id,
 	location_id,
 	price
 FROM solarnode.sn_price_datum

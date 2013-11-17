@@ -129,7 +129,6 @@ public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 				PriceDatum datum = new PriceDatum();
 				int col = 1;
 				datum.setCreated(rs.getTimestamp(col++));
-				datum.setSourceId(rs.getString(col++));
 				datum.setLocationId(rs.getLong(col++));
 
 				Number val = (Number) rs.getObject(col++);
@@ -146,7 +145,6 @@ public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 		ps.setTimestamp(col++,
 				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
 						.getCreated().getTime()));
-		ps.setString(col++, datum.getSourceId() == null ? "" : datum.getSourceId());
 		ps.setLong(col++, datum.getLocationId());
 		if ( datum.getPrice() == null ) {
 			ps.setNull(col++, Types.DOUBLE);

@@ -1,9 +1,8 @@
 CREATE TABLE solarnode.sn_price_datum (
 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
-	source_id 		VARCHAR(255) NOT NULL,
 	location_id		BIGINT NOT NULL,
 	price			DOUBLE
-	PRIMARY KEY (created, source_id)
+	PRIMARY KEY (created, location_id)
 );
 
 CREATE INDEX price_datum_created_idx ON solarnode.sn_price_datum (created);
