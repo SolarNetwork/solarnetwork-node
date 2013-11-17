@@ -11,6 +11,6 @@ SELECT
 	ac_out_amps,
 	watt_hours,
 	amp_hours
-FROM solarnode.sn_power_datum p 
+FROM solarnode.sn_power_datum
 WHERE uploaded IS NULL
 ORDER BY created, source_id
