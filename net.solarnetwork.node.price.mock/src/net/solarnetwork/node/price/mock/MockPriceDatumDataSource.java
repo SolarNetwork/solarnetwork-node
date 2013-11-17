@@ -20,23 +20,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.price.mock;
 
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.price.PriceDatum;
 
 /**
  * Mock implementation of {@link DatumDataSource} for {@link PriceDatum}
  * objects.
  * 
- * <p>This simple implementation returns an object with random data.</p>
- *
+ * <p>
+ * This simple implementation returns an object with random data.
+ * </p>
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class MockPriceDatumDataSource implements DatumDataSource<PriceDatum> {
 
@@ -47,7 +48,15 @@ public class MockPriceDatumDataSource implements DatumDataSource<PriceDatum> {
 
 	@Override
 	public PriceDatum readCurrentDatum() {
-		return new PriceDatum("mock", Math.random() * 10, -1L);
+		return new MockPriceDatum("mock", Math.random() * 10, -1L);
+	}
+
+	public class MockPriceDatum extends PriceDatum implements Mock {
+
+		public MockPriceDatum(String sourceId, double price, Long locationId) {
+			super(sourceId, price, locationId);
+		}
+
 	}
 
 }

@@ -20,66 +20,61 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.price.mock;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.price.PriceDatum;
-import net.solarnetwork.node.support.BasicDatumUpload;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Mock implementation of {@link DatumDao} for {@link PriceDatum} objects.
  * 
- * <p>This implementation does not persist anything, it is useful for 
- * testing and debugging only.</p>
- *
+ * <p>
+ * This implementation does not persist anything, it is useful for testing and
+ * debugging only.
+ * </p>
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class MockPriceDatumDao 
-implements DatumDao<PriceDatum> {
+public class MockPriceDatumDao implements DatumDao<PriceDatum> {
 
 	private final Logger log = LoggerFactory.getLogger(MockPriceDatumDao.class);
-	private final AtomicLong counter = new AtomicLong(0);
-	
+
+	@Override
 	public int deleteUploadedDataOlderThan(int hours) {
 		return 0;
 	}
 
+	@Override
 	public List<PriceDatum> getDatumNotUploaded(String destination) {
 		return Collections.emptyList();
 	}
 
+	@Override
 	public Class<? extends PriceDatum> getDatumType() {
 		return PriceDatum.class;
 	}
 
-	public Long storeDatum(PriceDatum datum) {
+	@Override
+	public void storeDatum(PriceDatum datum) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("MOCK: persisting PriceDatum: " +datum);
+			log.debug("MOCK: persisting PriceDatum: " + datum);
 		}
-		return counter.decrementAndGet();
 	}
 
-	public BasicDatumUpload storeDatumUpload(PriceDatum datum,
-			String destination, Long trackingId) {
+	@Override
+	public void setDatumUploaded(PriceDatum datum, Date date, String destination, Long trackingId) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("MOCK: persisting PriceDatum " +datum
-					+" upload to [" +destination +"] with tracking ID ["
-					+trackingId +']');
+			log.debug("MOCK: persisting PriceDatum " + datum + " upload to [" + destination
+					+ "] with tracking ID [" + trackingId + ']');
 		}
-		return new BasicDatumUpload(datum, counter.decrementAndGet(), 
-				destination, trackingId);
 	}
 
 }
