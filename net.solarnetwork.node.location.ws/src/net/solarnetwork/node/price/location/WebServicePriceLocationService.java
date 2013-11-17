@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.price.location;
@@ -28,14 +26,11 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
-
 import net.solarnetwork.node.PriceLocation;
 import net.solarnetwork.node.PriceLocationService;
 import net.solarnetwork.node.support.XmlServiceSupport;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
@@ -43,23 +38,22 @@ import org.springframework.beans.PropertyAccessorFactory;
  * Web service implementation of {@link PriceLocationService}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
-public class WebServicePriceLocationService extends XmlServiceSupport
-implements PriceLocationService {
+public class WebServicePriceLocationService extends XmlServiceSupport implements PriceLocationService {
 
 	/** Default value for the <code>cacheTtl</code> property. */
 	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 4;
-	
+
 	private String url;
 	private Map<String, String> datumXPathMapping = null;
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
-	
-	private ConcurrentHashMap<String, CachedPriceLocation> cache 
-		= new ConcurrentHashMap<String, CachedPriceLocation>(2);
-	
+
+	private final ConcurrentHashMap<String, CachedPriceLocation> cache = new ConcurrentHashMap<String, CachedPriceLocation>(
+			2);
+
 	private Map<String, XPathExpression> datumXPathExpMap = null;
-	
+
 	/**
 	 * Initialize this class after properties are set.
 	 */
@@ -80,44 +74,42 @@ implements PriceLocationService {
 		}
 		datumXPathExpMap = getXPathExpressionMap(datumXPathMapping);
 	}
-	
+
 	@Override
 	public PriceLocation findLocation(String sourceName, String locationName) {
-		String cacheKey = sourceName +"-" +locationName;
+		String cacheKey = sourceName + "-" + locationName;
 		CachedPriceLocation cachedLocation = cache.get(cacheKey);
 		if ( cachedLocation != null ) {
 			if ( cachedLocation.expires > System.currentTimeMillis() ) {
 				if ( log.isDebugEnabled() ) {
-					log.debug("Found cached " +cachedLocation.location 
-							+" (expires in " 
-							+(System.currentTimeMillis() - cachedLocation.expires)
-							+"ms)");
+					log.debug("Found cached " + cachedLocation.location + " (expires in "
+							+ (System.currentTimeMillis() - cachedLocation.expires) + "ms)");
 				}
 				return cachedLocation.location;
 			}
 		}
-		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(
-				new PriceLocationQuery(sourceName, locationName));
-		String postUrl = getIdentityService().getSolarInBaseUrl() +url;
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new PriceLocationQuery(
+				sourceName, locationName));
+		String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
 			if ( log.isInfoEnabled() ) {
-				log.info("Looking up PriceLocation for source [" +sourceName 
-						+"] location [" +locationName +"] from [" +postUrl +"]");
+				log.info("Looking up PriceLocation for source [" + sourceName + "] location ["
+						+ locationName + "] from [" + postUrl + "]");
 			}
 			PriceLocation loc = new PriceLocation();
 			webFormGetForBean(bean, loc, postUrl, null, datumXPathExpMap);
 			if ( loc.getLocationId() == null ) {
 				if ( log.isWarnEnabled() ) {
-					log.warn("PriceLocation not found for source [" +sourceName 
-							+"] location [" +locationName +']');
+					log.warn("PriceLocation not found for source [" + sourceName + "] location ["
+							+ locationName + ']');
 				}
 				return null;
 			}
-			
+
 			if ( log.isDebugEnabled() ) {
-				log.debug("Caching " +loc +" for up to " +cacheTtl +"ms");
+				log.debug("Caching " + loc + " for up to " + cacheTtl + "ms");
 			}
-			
+
 			cachedLocation = new CachedPriceLocation();
 			cachedLocation.location = loc;
 			cachedLocation.expires = Long.valueOf(System.currentTimeMillis() + cacheTtl);
@@ -135,8 +127,8 @@ implements PriceLocationService {
 				// service is not available as long as it was available previously.
 				if ( cachedLocation != null ) {
 					if ( log.isWarnEnabled() ) {
-						log.warn("IOException looking up PriceLocation from [" +postUrl 
-								+"], returning cached data even though cache has expired.");
+						log.warn("IOException looking up PriceLocation from [" + postUrl
+								+ "], returning cached data even though cache has expired.");
 					}
 					return cachedLocation.location;
 				}
@@ -146,36 +138,37 @@ implements PriceLocationService {
 		}
 		return null;
 	}
-	
+
 	private static class CachedPriceLocation {
+
 		private Long expires;
 		private PriceLocation location;
 	}
 
 	public static class PriceLocationQuery {
-		
+
 		private final String sourceName;
 		private final String locationName;
-		
+
 		private PriceLocationQuery(String sourceName, String locationName) {
 			this.sourceName = sourceName;
 			this.locationName = locationName;
 		}
-		
+
 		/**
 		 * @return the sourceName
 		 */
 		public String getSourceName() {
 			return sourceName;
 		}
-		
+
 		/**
 		 * @return the locationName
 		 */
 		public String getLocationName() {
 			return locationName;
 		}
-		
+
 	}
 
 	/**
@@ -186,7 +179,8 @@ implements PriceLocationService {
 	}
 
 	/**
-	 * @param url the url to set
+	 * @param url
+	 *        the url to set
 	 */
 	public void setUrl(String url) {
 		this.url = url;
@@ -200,7 +194,8 @@ implements PriceLocationService {
 	}
 
 	/**
-	 * @param datumXPathMapping the datumXPathMapping to set
+	 * @param datumXPathMapping
+	 *        the datumXPathMapping to set
 	 */
 	public void setDatumXPathMapping(Map<String, String> datumXPathMapping) {
 		this.datumXPathMapping = datumXPathMapping;
@@ -214,10 +209,11 @@ implements PriceLocationService {
 	}
 
 	/**
-	 * @param cacheTtl the cacheTtl to set
+	 * @param cacheTtl
+	 *        the cacheTtl to set
 	 */
 	public void setCacheTtl(Long cacheTtl) {
 		this.cacheTtl = cacheTtl;
 	}
-	
+
 }
