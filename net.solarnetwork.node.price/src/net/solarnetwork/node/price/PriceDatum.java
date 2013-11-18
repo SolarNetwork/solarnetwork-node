@@ -20,42 +20,41 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.price;
 
 import java.util.Date;
-
 import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.support.BaseDatum;
 
 /**
  * Domain object for energy price related data.
- *
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class PriceDatum extends BaseDatum implements Datum {
 
 	private Long locationId = null;
-	private String sourceId = null;
-	private Double price = null;		// the price
-	
+	private Double price = null; // the price
+
 	/**
 	 * Default constructor.
 	 */
 	public PriceDatum() {
 		super();
 	}
-	
+
 	/**
 	 * Construct with source and price value.
 	 * 
-	 * @param sourceId the source ID
-	 * @param price the price
-	 * @param locationId the location ID
+	 * @param sourceId
+	 *        the source ID
+	 * @param price
+	 *        the price
+	 * @param locationId
+	 *        the location ID
 	 */
 	public PriceDatum(String sourceId, double price, Long locationId) {
 		this();
@@ -67,50 +66,22 @@ public class PriceDatum extends BaseDatum implements Datum {
 
 	@Override
 	public String toString() {
-		return "PriceDatum{locationId=" +this.locationId 
-			+",sourceId=" +this.sourceId
-			+",price=" +this.price
-			+'}';
+		return "PriceDatum{locationId=" + this.locationId + ",sourceId=" + getSourceId() + ",price="
+				+ this.price + '}';
 	}
 
-	/**
-	 * @return the sourceId
-	 */
-	public String getSourceId() {
-		return sourceId;
-	}
-	
-	/**
-	 * @param sourceId the sourceId to set
-	 */
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
-	}
-	
-	/**
-	 * @return the price
-	 */
 	public Double getPrice() {
 		return price;
 	}
-	
-	/**
-	 * @param price the price to set
-	 */
+
 	public void setPrice(Double price) {
 		this.price = price;
 	}
-	
-	/**
-	 * @return the locationId
-	 */
+
 	public Long getLocationId() {
 		return locationId;
 	}
 
-	/**
-	 * @param locationId the locationId to set
-	 */
 	public void setLocationId(Long locationId) {
 		this.locationId = locationId;
 	}
