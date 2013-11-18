@@ -70,7 +70,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	 * Compare for equality.
 	 * 
 	 * <p>
-	 * This method compares the {@code id} and {@code sourceId} values for
+	 * This method compares the {@code created} and {@code sourceId} values for
 	 * equality.
 	 * </p>
 	 * 
