@@ -194,13 +194,42 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * Mark a Datum as uploaded.
 	 * 
 	 * <p>
-	 * This method will execute the {@link #SQL_RESOURCE_UPDATE_UPLOADED} SQL
-	 * setting a single Timestamp parameter based on
-	 * {@link DatumUpload#getCreated()}.
+	 * This method will call {@link #updateDatumUpload(long, Object, long)}
+	 * passing in {@link T#getCreated()}, {@link T#getSourceId()}, and
+	 * {@code timestamp}.
+	 * </p>
 	 * 
-	 * @param upload
+	 * @param datum
+	 *        the datum that was uploaded
+	 * @param timestamp
+	 *        the date the upload happened
 	 */
 	protected void updateDatumUpload(final T datum, final long timestamp) {
+		updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
+	}
+
+	/**
+	 * Mark a Datum as uploaded.
+	 * 
+	 * <p>
+	 * This method will execute the {@link #SQL_RESOURCE_UPDATE_UPLOADED} SQL
+	 * setting the following parameters:
+	 * </p>
+	 * 
+	 * <ol>
+	 * <li>Timestamp parameter based on {@code timestamp}</li>
+	 * <li>Timestamp parameter based on {@code created}</li>
+	 * <li>Object parameter based on {@code id}</li>
+	 * </ol>
+	 * 
+	 * @param created
+	 *        the date the object was created
+	 * @param id
+	 *        the object's source or location ID
+	 * @param timestamp
+	 *        the date the upload happened
+	 */
+	protected void updateDatumUpload(final long created, final Object id, final long timestamp) {
 		getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
@@ -209,8 +238,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 						.prepareStatement(getSqlResource(SQL_RESOURCE_UPDATE_UPLOADED));
 				int col = 1;
 				ps.setTimestamp(col++, new java.sql.Timestamp(timestamp));
-				ps.setTimestamp(col++, new java.sql.Timestamp(datum.getCreated().getTime()));
-				ps.setString(col++, datum.getSourceId());
+				ps.setTimestamp(col++, new java.sql.Timestamp(created));
+				ps.setObject(col++, id);
 				return ps;
 			}
 		});

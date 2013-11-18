@@ -107,7 +107,7 @@ public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public void setDatumUploaded(PriceDatum datum, Date date, String destination, Long trackingId) {
-		updateDatumUpload(datum, date.getTime());
+		updateDatumUpload(datum.getCreated().getTime(), datum.getLocationId(), date.getTime());
 	}
 
 	@Override
