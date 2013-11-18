@@ -20,15 +20,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.weather.mock;
 
 import java.util.Calendar;
 import java.util.Date;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.weather.WeatherDatum;
 
@@ -36,30 +33,34 @@ import net.solarnetwork.node.weather.WeatherDatum;
  * Mock implementation of {@link DatumDataSource} for {@link WeatherDatum}
  * objects.
  * 
- * <p>This simple implementation returns an object with fixed data.</p>
- *
+ * <p>
+ * This simple implementation returns an object with fixed data.
+ * </p>
+ * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class MockWeatherDatumDataSource implements DatumDataSource<WeatherDatum> {
 
+	@Override
 	public Class<? extends WeatherDatum> getDatumType() {
 		return WeatherDatum.class;
 	}
 
+	@Override
 	public WeatherDatum readCurrentDatum() {
 		Calendar cal = Calendar.getInstance();
 		cal.set(Calendar.MINUTE, 0);
 		cal.set(Calendar.SECOND, 0);
 		cal.set(Calendar.MILLISECOND, 0);
-		
+
 		Date today = cal.getTime();
 		WeatherDatum datum = new WeatherDatum();
-		datum.setInfoDate(today);
+		datum.setCreated(today);
 		datum.setSkyConditions("Clear");
-		datum.setTemperatureCelcius(24.0);
+		datum.setTemperatureCelsius(24.0);
 		datum.setHumidity(57.0);
-		
+
 		return datum;
 	}
 

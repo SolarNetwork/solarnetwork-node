@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.weather.nz.metservice;
@@ -91,7 +89,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherDatum> implements
 		DatumDataSource<WeatherDatum>, SettingSpecifierProvider {
@@ -153,8 +151,8 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 			if ( infoDate != null && temp != null ) {
 				result = new WeatherDatum();
-				result.setInfoDate(infoDate);
-				result.setTemperatureCelcius(temp);
+				result.setCreated(infoDate);
+				result.setTemperatureCelsius(temp);
 
 				// UV data discontinued? Removed for now.
 

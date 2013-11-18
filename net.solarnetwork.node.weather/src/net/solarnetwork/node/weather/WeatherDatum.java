@@ -25,7 +25,7 @@
 package net.solarnetwork.node.weather;
 
 import java.util.Date;
-import net.solarnetwork.node.support.BaseDatum;
+import net.solarnetwork.node.support.BaseLocationDatum;
 
 /**
  * Domain object for weather related data.
@@ -33,9 +33,8 @@ import net.solarnetwork.node.support.BaseDatum;
  * @author matt
  * @version 1.1
  */
-public class WeatherDatum extends BaseDatum {
+public class WeatherDatum extends BaseLocationDatum {
 
-	private Date infoDate; // date weather info current as of
 	private String skyConditions;
 	private Double temperatureCelsius;
 	private Double humidity;
@@ -45,27 +44,9 @@ public class WeatherDatum extends BaseDatum {
 	private Integer uvIndex;
 	private Double dewPoint;
 
-	/**
-	 * Default constructor.
-	 */
-	public WeatherDatum() {
-		this(null);
-	}
-
-	/**
-	 * Construct with a primary key.
-	 * 
-	 * @param id
-	 *        the primary key
-	 */
-	public WeatherDatum(Long id) {
-		super(id);
-		setCreated(new Date());
-	}
-
 	@Override
 	public String toString() {
-		return "WeatherDatum{infoDate=" + this.infoDate + ",temp=" + this.temperatureCelsius
+		return "WeatherDatum{infoDate=" + getCreated() + ",temp=" + this.temperatureCelsius
 				+ ",humidity=" + this.humidity + ",barometricPressure=" + this.barometricPressure
 				+ ",barometerDelta=" + this.barometerDelta + '}';
 	}
@@ -139,12 +120,14 @@ public class WeatherDatum extends BaseDatum {
 		this.dewPoint = dewPoint;
 	}
 
+	@Deprecated
 	public Date getInfoDate() {
-		return infoDate;
+		return getCreated();
 	}
 
+	@Deprecated
 	public void setInfoDate(Date infoDate) {
-		this.infoDate = infoDate;
+		setCreated(infoDate);
 	}
 
 }
