@@ -44,6 +44,7 @@ Import-Package:
  org.springframework.context.support;version="[3.1,4.0)",
  org.springframework.core;version="[3.1,4.0)",
  org.springframework.core.io;version="[3.1,4.0)",
+ org.springframework.dao;version="[3.1,4.0)",
  org.springframework.scheduling.quartz;version="[3.1,4.0)",
  org.springframework.util;version="[3.1,4.0)",
  org.w3c.dom,

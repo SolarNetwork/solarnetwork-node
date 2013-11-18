@@ -1,5 +1,5 @@
 /* ==================================================================
- * PriceLocationService.java - Feb 19, 2011 2:29:08 PM
+ * LocationService.java - Feb 19, 2011 2:29:08 PM
  * 
  * Copyright 2007-2011 SolarNetwork.net Dev Team
  * 
@@ -18,33 +18,38 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node;
 
+import java.util.Collection;
+
 /**
- * API for querying for a price location.
+ * API for querying for locations.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
-public interface PriceLocationService {
-	
+public interface LocationService {
+
 	/** An unknown source, which is always available. */
 	static final String UNKNOWN_SOURCE = "Unknown";
-	
+
 	/** An unknown location, which is always available for the UNKNOWN source. */
 	static final String UNKNOWN_LOCATION = "Unknown";
 
 	/**
-	 * Look up a PriceLocation based on a source name and location name.
+	 * Look up a Location based on a source name and location name.
 	 * 
-	 * @param sourceName the source of the price data (e.g. electricityinfo.co.nz)
-	 * @param locationName the price location within the source (e.g. HAY2201)
+	 * @param locationType
+	 *        the type of location to look up
+	 * @param sourceName
+	 *        the source of the location data
+	 * @param locationName
+	 *        the location within the source (e.g. HAY2201)
 	 * @return the matching location, or <em>null</em> if not found
 	 */
-	PriceLocation findLocation(String sourceName, String locationName);
-	
+	<T extends Location> Collection<T> findLocations(Class<T> locationType, String sourceName,
+			String locationName);
+
 }

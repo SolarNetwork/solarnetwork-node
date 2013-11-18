@@ -1,5 +1,5 @@
 /* ==================================================================
- * WebServicePriceLocationService.java - Feb 19, 2011 2:43:42 PM
+ * WebServiceLocationService.java - Feb 19, 2011 2:43:42 PM
  * 
  * Copyright 2007-2011 SolarNetwork.net Dev Team
  * 
@@ -20,16 +20,19 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.price.location;
+package net.solarnetwork.node.location.ws;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.node.PriceLocation;
-import net.solarnetwork.node.PriceLocationService;
+import net.solarnetwork.node.Location;
+import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -38,9 +41,9 @@ import org.springframework.beans.PropertyAccessorFactory;
  * Web service implementation of {@link PriceLocationService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class WebServicePriceLocationService extends XmlServiceSupport implements PriceLocationService {
+public class WebServiceLocationService extends XmlServiceSupport implements LocationService {
 
 	/** Default value for the <code>cacheTtl</code> property. */
 	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 4;
@@ -49,7 +52,7 @@ public class WebServicePriceLocationService extends XmlServiceSupport implements
 	private Map<String, String> datumXPathMapping = null;
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 
-	private final ConcurrentHashMap<String, CachedPriceLocation> cache = new ConcurrentHashMap<String, CachedPriceLocation>(
+	private final ConcurrentHashMap<String, CachedLocation> cache = new ConcurrentHashMap<String, CachedLocation>(
 			2);
 
 	private Map<String, XPathExpression> datumXPathExpMap = null;
@@ -64,6 +67,7 @@ public class WebServicePriceLocationService extends XmlServiceSupport implements
 		if ( getNsContext() != null ) {
 			xp.setNamespaceContext(getNsContext());
 		}
+		// FIXME: map element response attributes to bean property names automatically
 		if ( datumXPathMapping == null ) {
 			// create default XML response mapping
 			Map<String, String> defaults = new LinkedHashMap<String, String>(3);
@@ -76,45 +80,43 @@ public class WebServicePriceLocationService extends XmlServiceSupport implements
 	}
 
 	@Override
-	public PriceLocation findLocation(String sourceName, String locationName) {
-		String cacheKey = sourceName + "-" + locationName;
-		CachedPriceLocation cachedLocation = cache.get(cacheKey);
+	public <T extends Location> Collection<T> findLocations(Class<T> locationType, String sourceName,
+			String locationName) {
+		String cacheKey = locationType.getName() + "-" + sourceName + "-" + locationName;
+		CachedLocation cachedLocation = cache.get(cacheKey);
 		if ( cachedLocation != null ) {
 			if ( cachedLocation.expires > System.currentTimeMillis() ) {
-				if ( log.isDebugEnabled() ) {
-					log.debug("Found cached " + cachedLocation.location + " (expires in "
-							+ (System.currentTimeMillis() - cachedLocation.expires) + "ms)");
-				}
-				return cachedLocation.location;
+				log.debug("Found cached {} (expires in {}ms)", cachedLocation.location,
+						(System.currentTimeMillis() - cachedLocation.expires));
+
+				@SuppressWarnings("unchecked")
+				Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
+				return locs;
 			}
 		}
-		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new PriceLocationQuery(
-				sourceName, locationName));
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new LocationQuery(sourceName,
+				locationName));
 		String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
 			if ( log.isInfoEnabled() ) {
-				log.info("Looking up PriceLocation for source [" + sourceName + "] location ["
-						+ locationName + "] from [" + postUrl + "]");
+				log.info("Looking up {} for source [{}] location [{}] from [{}]",
+						locationType.getSimpleName(), sourceName, locationName, url);
 			}
-			PriceLocation loc = new PriceLocation();
+			T loc = locationType.newInstance();
 			webFormGetForBean(bean, loc, postUrl, null, datumXPathExpMap);
 			if ( loc.getLocationId() == null ) {
-				if ( log.isWarnEnabled() ) {
-					log.warn("PriceLocation not found for source [" + sourceName + "] location ["
-							+ locationName + ']');
-				}
+				log.warn("{} not found for source [{}] location [{}]", locationType.getSimpleName(),
+						sourceName, locationName);
 				return null;
 			}
 
-			if ( log.isDebugEnabled() ) {
-				log.debug("Caching " + loc + " for up to " + cacheTtl + "ms");
-			}
+			log.debug("Caching {} for up to {}ms", loc, cacheTtl);
 
-			cachedLocation = new CachedPriceLocation();
+			cachedLocation = new CachedLocation();
 			cachedLocation.location = loc;
 			cachedLocation.expires = Long.valueOf(System.currentTimeMillis() + cacheTtl);
 			cache.put(cacheKey, cachedLocation);
-			return loc;
+			return Collections.singleton(loc);
 		} catch ( RuntimeException e ) {
 			Throwable root = e;
 			while ( root.getCause() != null ) {
@@ -126,45 +128,44 @@ public class WebServicePriceLocationService extends XmlServiceSupport implements
 				// has expired. This allows us to keep associating price data while the 
 				// service is not available as long as it was available previously.
 				if ( cachedLocation != null ) {
-					if ( log.isWarnEnabled() ) {
-						log.warn("IOException looking up PriceLocation from [" + postUrl
-								+ "], returning cached data even though cache has expired.");
-					}
-					return cachedLocation.location;
+					log.warn(
+							"IOException looking up PriceLocation from [{}], returning cached data even though cache has expired.",
+							postUrl);
+					@SuppressWarnings("unchecked")
+					Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
+					return locs;
 				}
 			} else {
 				throw e;
 			}
+		} catch ( InstantiationException e ) {
+			throw new RuntimeException(e);
+		} catch ( IllegalAccessException e ) {
+			throw new RuntimeException(e);
 		}
 		return null;
 	}
 
-	private static class CachedPriceLocation {
+	private static class CachedLocation {
 
 		private Long expires;
-		private PriceLocation location;
+		private Location location;
 	}
 
-	public static class PriceLocationQuery {
+	public static class LocationQuery {
 
 		private final String sourceName;
 		private final String locationName;
 
-		private PriceLocationQuery(String sourceName, String locationName) {
+		private LocationQuery(String sourceName, String locationName) {
 			this.sourceName = sourceName;
 			this.locationName = locationName;
 		}
 
-		/**
-		 * @return the sourceName
-		 */
 		public String getSourceName() {
 			return sourceName;
 		}
 
-		/**
-		 * @return the locationName
-		 */
 		public String getLocationName() {
 			return locationName;
 		}

@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.job;
@@ -36,6 +34,7 @@ import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
+import org.springframework.dao.DuplicateKeyException;
 
 /**
  * Job to collect data from a {@link DatumDataSource} and persist that via a
@@ -79,7 +78,7 @@ import org.quartz.StatefulJob;
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob implements StatefulJob {
 
@@ -118,9 +117,13 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 							.next().toString() : datumList.toString()));
 				}
 				for ( T datum : datumList ) {
-					datumDao.storeDatum(datum);
-					if ( log.isDebugEnabled() ) {
+					try {
+						datumDao.storeDatum(datum);
 						log.debug("Persisted Datum {}", datum);
+					} catch ( DuplicateKeyException e ) {
+						// we ignore duplicate key exceptions, as we sometimes collect the same 
+						// datum multiple times for redundancy
+						log.info("Datum {} is a duplicate; not persisting", datum);
 					}
 				}
 			} catch ( Throwable e ) {

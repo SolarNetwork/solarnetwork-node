@@ -1,7 +1,7 @@
 /* ==================================================================
- * PriceLocation.java - Feb 19, 2011 2:29:20 PM
+ * Location.java - Nov 17, 2013 7:36:36 PM
  * 
- * Copyright 2007-2011 SolarNetwork.net Dev Team
+ * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,39 +22,44 @@
 
 package net.solarnetwork.node;
 
-import net.solarnetwork.node.support.BasicLocation;
-
 /**
- * Information about a specific price location.
+ * API for a location object.
+ * 
+ * <p>
+ * A <em>location</em> is a standardized reference to some place or some source
+ * of information, for example a weather location, a price location, etc.
+ * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class PriceLocation extends BasicLocation {
+public interface Location {
 
-	private String currency;
-	private String unit;
+	/**
+	 * Get a unique ID of this location.
+	 * 
+	 * @return the location ID
+	 */
+	public Long getLocationId();
 
-	@Override
-	public String toString() {
-		return "PriceDatum{locationId=" + getLocationId() + ",currency=" + this.currency + ",unit="
-				+ this.unit + '}';
-	}
+	/**
+	 * Get a name for this location.
+	 * 
+	 * @return the location name
+	 */
+	public String getLocationName();
 
-	public String getCurrency() {
-		return currency;
-	}
+	/**
+	 * Get a unique ID of the source of this location.
+	 * 
+	 * @return the source ID
+	 */
+	public Long getSourceId();
 
-	public void setCurrency(String currency) {
-		this.currency = currency;
-	}
-
-	public String getUnit() {
-		return unit;
-	}
-
-	public void setUnit(String unit) {
-		this.unit = unit;
-	}
-
+	/**
+	 * Get the name of the source of this location.
+	 * 
+	 * @return the source name
+	 */
+	public String getSourceName();
 }
