@@ -93,6 +93,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * instead of calling the delegate. This is designed for services that require a
  * location ID to be set, for example a Location Datum logger. Defaults to
  * <em>false</em>.</dd>
+ * 
+ * <dt>messageBundleBasename</dt>
+ * <dd>The message bundle basename to use. This can be customized so different
+ * messages can be shown for different uses of this proxy. Defaults to
+ * {@link #PRICE_LOCATION_MESSAGE_BUNDLE}.</dd>
  * </dl>
  * 
  * @author matt
@@ -104,6 +109,9 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	/** Default value for the {@code locationIdPropertyName} property. */
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
 
+	/** Bundle name for price location lookup messages. */
+	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
+
 	private DatumDataSource<T> delegate;
 	private OptionalServiceTracker<LocationService> locationService;
 	private Class<? extends Location> locationType = PriceLocation.class;
@@ -111,6 +119,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	private String locationName = LocationService.UNKNOWN_LOCATION;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private boolean requireLocationService = false;
+	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
 
 	private MessageSource messageSource;
 
@@ -248,7 +257,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 			ResourceBundleMessageSource proxySource = new ResourceBundleMessageSource();
 			proxySource.setBundleClassLoader(getClass().getClassLoader());
-			proxySource.setBasename(getClass().getName());
+			proxySource.setBasename(messageBundleBasename);
 			if ( delegateSource != null ) {
 				proxySource.setParentMessageSource(delegateSource);
 			}
@@ -334,6 +343,14 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public void setLocationType(Class<? extends Location> locationType) {
 		this.locationType = locationType;
+	}
+
+	public String getMessageBundleBasename() {
+		return messageBundleBasename;
+	}
+
+	public void setMessageBundleBasename(String messageBundleBaseName) {
+		this.messageBundleBasename = messageBundleBaseName;
 	}
 
 }
