@@ -1,7 +1,8 @@
 CREATE TABLE solarnode.sn_price_datum (
 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
 	location_id		BIGINT NOT NULL,
-	price			DOUBLE
+	price			DOUBLE,
+	uploaded		TIMESTAMP,
 	PRIMARY KEY (created, location_id)
 );
 
