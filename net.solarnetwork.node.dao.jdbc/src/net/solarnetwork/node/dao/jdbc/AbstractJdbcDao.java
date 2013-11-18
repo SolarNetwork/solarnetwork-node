@@ -49,6 +49,7 @@ import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * Base class for JDBC based DAO implementations.
@@ -374,8 +375,11 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * <p>
 	 * The classpath resource is taken as the {@link #getSqlResourcePrefix()}
 	 * value and {@code -} and the {@code classPathResource} combined with a
-	 * {@code .sql} suffix. If that resoruce is not found, then the prefix and
-	 * {@code -} are dropped and attempted.
+	 * {@code .sql} suffix. If that resoruce is not found, then the prefix is
+	 * split into components separated by a {@code -} character, and the last
+	 * component is dropped and then combined with {@code -} and
+	 * {@code classPathResource} again to try to find a match, until there is no
+	 * prefix left and just the {@code classPathResource} itself is tried.
 	 * </p>
 	 * 
 	 * <p>
@@ -394,11 +398,24 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 		if ( sqlResourceCache.containsKey(key) ) {
 			return sqlResourceCache.get(key);
 		}
+		String[] prefixes = getSqlResourcePrefix().split("-");
+		int prefixEndIndex = prefixes.length - 1;
 		try {
 			Resource r = new ClassPathResource(resourceName, myClass);
-			if ( !r.exists() ) {
-				// try without prefix
-				r = new ClassPathResource(classPathResource + ".sql", myClass);
+			while ( !r.exists() && prefixEndIndex >= 0 ) {
+				// try by chopping down prefix, which we split on a dash character
+				String subName;
+				if ( prefixEndIndex > 0 ) {
+					String[] subPrefixes = new String[prefixEndIndex];
+					System.arraycopy(prefixes, prefixEndIndex, subPrefixes, 0, prefixEndIndex);
+					subName = StringUtils.arrayToDelimitedString(subPrefixes, "-") + "-"
+							+ classPathResource;
+				} else {
+					subName = classPathResource;
+				}
+				subName += ".sql";
+				r = new ClassPathResource(subName, myClass);
+				prefixEndIndex--;
 			}
 			if ( !r.exists() ) {
 				throw new RuntimeException("SQL resource " + resourceName + " not found");
