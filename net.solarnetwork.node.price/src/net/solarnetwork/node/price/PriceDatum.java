@@ -26,7 +26,7 @@ package net.solarnetwork.node.price;
 
 import java.util.Date;
 import net.solarnetwork.node.Datum;
-import net.solarnetwork.node.support.BaseDatum;
+import net.solarnetwork.node.support.BaseLocationDatum;
 
 /**
  * Domain object for energy price related data.
@@ -34,9 +34,8 @@ import net.solarnetwork.node.support.BaseDatum;
  * @author matt
  * @version 1.1
  */
-public class PriceDatum extends BaseDatum implements Datum {
+public class PriceDatum extends BaseLocationDatum implements Datum {
 
-	private Long locationId = null;
 	private Double price = null; // the price
 
 	/**
@@ -66,7 +65,7 @@ public class PriceDatum extends BaseDatum implements Datum {
 
 	@Override
 	public String toString() {
-		return "PriceDatum{locationId=" + this.locationId + ",sourceId=" + getSourceId() + ",price="
+		return "PriceDatum{locationId=" + getLocationId() + ",sourceId=" + getSourceId() + ",price="
 				+ this.price + '}';
 	}
 
@@ -76,14 +75,6 @@ public class PriceDatum extends BaseDatum implements Datum {
 
 	public void setPrice(Double price) {
 		this.price = price;
-	}
-
-	public Long getLocationId() {
-		return locationId;
-	}
-
-	public void setLocationId(Long locationId) {
-		this.locationId = locationId;
 	}
 
 }
