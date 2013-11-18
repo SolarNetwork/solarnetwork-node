@@ -141,17 +141,10 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 		return multi.readMultipleDatum();
 	}
 
-	/**
-	 * @return the datumDataSource
-	 */
 	public DatumDataSource<T> getDatumDataSource() {
 		return datumDataSources == null || datumDataSources.size() < 1 ? null : datumDataSources.get(0);
 	}
 
-	/**
-	 * @param datumDataSource
-	 *        the datumDataSource to set
-	 */
 	public void setDatumDataSource(DatumDataSource<T> datumDataSource) {
 		if ( this.datumDataSources == null ) {
 			this.datumDataSources = new ArrayList<DatumDataSource<T>>(2);
@@ -160,32 +153,18 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 		this.datumDataSources.add(datumDataSource);
 	}
 
-	/**
-	 * @return the datumDataSources
-	 */
 	public List<DatumDataSource<T>> getDatumDataSources() {
 		return datumDataSources;
 	}
 
-	/**
-	 * @param datumDataSources
-	 *        the datumDataSources to set
-	 */
 	public void setDatumDataSources(List<DatumDataSource<T>> datumDataSources) {
 		this.datumDataSources = datumDataSources;
 	}
 
-	/**
-	 * @return the datumDao
-	 */
 	public DatumDao<T> getDatumDao() {
 		return datumDao;
 	}
 
-	/**
-	 * @param datumDao
-	 *        the datumDao to set
-	 */
 	public void setDatumDao(DatumDao<T> datumDao) {
 		this.datumDao = datumDao;
 	}
