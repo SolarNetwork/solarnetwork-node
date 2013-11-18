@@ -71,9 +71,9 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 		if ( datumXPathMapping == null ) {
 			// create default XML response mapping
 			Map<String, String> defaults = new LinkedHashMap<String, String>(3);
-			defaults.put("locationId", "/*/@id");
-			defaults.put("currency", "/*/@currency");
-			defaults.put("unit", "/*/@unit");
+			defaults.put("locationId", "//*[@id][1]/@id"); // grab the first result ID
+			//defaults.put("currency", "/*/@currency");
+			//defaults.put("unit", "/*/@unit");
 			datumXPathMapping = defaults;
 		}
 		datumXPathExpMap = getXPathExpressionMap(datumXPathMapping);
@@ -82,7 +82,9 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 	@Override
 	public <T extends Location> Collection<T> findLocations(Class<T> locationType, String sourceName,
 			String locationName) {
-		String cacheKey = locationType.getName() + "-" + sourceName + "-" + locationName;
+		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
+		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + sourceName + ";"
+				+ locationName;
 		CachedLocation cachedLocation = cache.get(cacheKey);
 		if ( cachedLocation != null ) {
 			if ( cachedLocation.expires > System.currentTimeMillis() ) {
@@ -94,9 +96,12 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 				return locs;
 			}
 		}
-		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new LocationQuery(sourceName,
-				locationName));
-		String postUrl = getIdentityService().getSolarInBaseUrl() + url;
+		String queryType = locationType.getSimpleName();
+		if ( queryType.endsWith("Location") ) {
+			queryType = queryType.substring(0, queryType.length() - 8);
+		}
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new LocationQuery(queryType,
+				sourceName, locationName));
 		try {
 			if ( log.isInfoEnabled() ) {
 				log.info("Looking up {} for source [{}] location [{}] from [{}]",
@@ -129,8 +134,8 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 				// service is not available as long as it was available previously.
 				if ( cachedLocation != null ) {
 					log.warn(
-							"IOException looking up PriceLocation from [{}], returning cached data even though cache has expired.",
-							postUrl);
+							"IOException looking up {} Location from [{}], returning cached data even though cache has expired.",
+							locationType.getSimpleName(), postUrl);
 					@SuppressWarnings("unchecked")
 					Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
 					return locs;
@@ -143,7 +148,7 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 		} catch ( IllegalAccessException e ) {
 			throw new RuntimeException(e);
 		}
-		return null;
+		return Collections.emptyList();
 	}
 
 	private static class CachedLocation {
@@ -154,12 +159,18 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 
 	public static class LocationQuery {
 
+		private final String type;
 		private final String sourceName;
 		private final String locationName;
 
-		private LocationQuery(String sourceName, String locationName) {
+		private LocationQuery(String type, String sourceName, String locationName) {
+			this.type = type;
 			this.sourceName = sourceName;
 			this.locationName = locationName;
+		}
+
+		public String getType() {
+			return type;
 		}
 
 		public String getSourceName() {

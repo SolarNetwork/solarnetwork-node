@@ -39,7 +39,7 @@
 		class="net.solarnetwork.node.location.ws.WebServiceLocationService"
 		init-method="init">
 		<property name="identityService" ref="identityService"/>
-		<property name="url" value="/priceLocationLookup.do"/>
+		<property name="url" value="/locationSearch.do"/>
 		<property name="cacheTtl" value="${WebServiceLocationService.cacheTtl}"/>
 	</bean>
 	
