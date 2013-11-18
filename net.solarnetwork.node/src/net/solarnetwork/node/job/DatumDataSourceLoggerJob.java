@@ -123,7 +123,7 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 					} catch ( DuplicateKeyException e ) {
 						// we ignore duplicate key exceptions, as we sometimes collect the same 
 						// datum multiple times for redundancy
-						log.info("Datum {} is a duplicate; not persisting", datum);
+						log.info("Duplicate datum {}; not persisting", datum);
 					}
 				}
 			} catch ( Throwable e ) {
