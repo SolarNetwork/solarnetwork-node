@@ -19,13 +19,12 @@
 
 	<!-- Service References -->
 	
-	<reference id="priceLocationServiceRef" availability="optional"
-		interface="net.solarnetwork.node.PriceLocationService">
-		<reference-listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
+	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
+		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference>
-	
-	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="priceLocationServiceRef"/>
+
+	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="locationServiceRef"/>
 	</bean>
 	
 	<!-- Published Services -->
@@ -43,11 +42,11 @@
 		
 	<bean id="mockPriceDatumDataSource" class="net.solarnetwork.node.price.mock.MockPriceDatumDataSource"/>
 
-	<bean id="mockPriceLocationDatumDataSource" class="net.solarnetwork.node.PriceLocationDatumDataSource"
+	<bean id="mockPriceLocationDatumDataSource" class="net.solarnetwork.node.support.LocationDatumDataSource"
 		factory-method="getInstance">
 		<argument ref="mockPriceDatumDataSource"/>
-		<argument ref="priceLocationService"/>
-		<property name="requirePriceLocationService" value="true"/>
+		<argument ref="locationService"/>
+		<property name="requireLocationService" value="true"/>
 	</bean>
 	
 </blueprint>
