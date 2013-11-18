@@ -17,8 +17,12 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<bean id="priceLocationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="priceLocationServiceRef"/>
+	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
+		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+
+	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="locationServiceRef"/>
 	</bean>
 	
 	<bean id="settingsFactory" 
@@ -31,14 +35,7 @@
 			</bean>
 		</property>
 	</bean>
-	
-	<!-- Service References -->
-	
-	<reference id="priceLocationServiceRef" availability="optional"
-		interface="net.solarnetwork.node.PriceLocationService">
-		<reference-listener ref="priceLocationService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-	
+		
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
 	<!-- Published Services -->
@@ -55,14 +52,14 @@
 			<beans:entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.power.enasolar"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.PriceLocationDatumDataSource">
+		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
 				<bean init-method="init"
 					class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource">
 					<property name="settingDao" ref="settingDao"/>
 				</bean>
 			</property>
-			<property name="priceLocationService" ref="priceLocationService"/>
+			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
