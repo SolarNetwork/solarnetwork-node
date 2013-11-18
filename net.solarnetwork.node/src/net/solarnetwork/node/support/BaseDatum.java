@@ -44,6 +44,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	 */
 	public BaseDatum() {
 		super();
+		setSourceId("");
 	}
 
 	@Override
