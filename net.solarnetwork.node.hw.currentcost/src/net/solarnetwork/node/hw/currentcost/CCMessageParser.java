@@ -31,8 +31,6 @@ import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.JodaDateFormatEditor;
 import net.solarnetwork.util.JodaDateFormatEditor.ParseMode;
 import org.joda.time.LocalTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 
 /**
@@ -48,8 +46,6 @@ public class CCMessageParser extends XmlServiceSupport {
 			ParseMode.LocalTime);
 
 	private final Map<String, XPathExpression> xpathMapping;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	public CCMessageParser() {
 		super();
