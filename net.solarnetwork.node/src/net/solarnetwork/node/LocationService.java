@@ -52,4 +52,15 @@ public interface LocationService {
 	<T extends Location> Collection<T> findLocations(Class<T> locationType, String sourceName,
 			String locationName);
 
+	/**
+	 * Get a specific Location based on an ID.
+	 * 
+	 * @param locationType
+	 *        the type of location to look up
+	 * @param locationId
+	 *        the ID of the location to find
+	 * @return the location, or <em>null</em> if not found
+	 */
+	<T extends Location> T getLocation(Class<T> locationType, Long locationId);
+
 }

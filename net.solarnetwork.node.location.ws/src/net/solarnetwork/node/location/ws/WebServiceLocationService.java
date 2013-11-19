@@ -49,6 +49,7 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 4;
 
 	private String url;
+	private String getUrl;
 	private Map<String, String> datumXPathMapping = null;
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 
@@ -80,38 +81,56 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 	}
 
 	@Override
-	public <T extends Location> Collection<T> findLocations(Class<T> locationType, String sourceName,
-			String locationName) {
-		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
-		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + sourceName + ";"
-				+ locationName;
+	public <T extends Location> T getLocation(Class<T> locationType, Long locationId) {
+		if ( locationId == null ) {
+			Collection<T> results = findLocations(locationType, UNKNOWN_SOURCE, UNKNOWN_LOCATION);
+			if ( results.isEmpty() ) {
+				return null;
+			}
+			return results.iterator().next();
+		}
+		final String postUrl = getIdentityService().getSolarInBaseUrl() + getUrl;
+		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + locationId;
 		CachedLocation cachedLocation = cache.get(cacheKey);
 		if ( cachedLocation != null ) {
 			if ( cachedLocation.expires > System.currentTimeMillis() ) {
 				log.debug("Found cached {} (expires in {}ms)", cachedLocation.location,
 						(System.currentTimeMillis() - cachedLocation.expires));
-
 				@SuppressWarnings("unchecked")
-				Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
-				return locs;
+				T result = (T) cachedLocation.location;
+				return result;
 			}
 		}
+		final BeanWrapper bean = getQueryBean(locationType, locationId, null, null);
+		log.info("Looking up {} for location ID {} from [{}]", locationType.getSimpleName(), locationId,
+				url);
+		Collection<T> results = postForLocations(locationType, bean, postUrl, cacheKey);
+		if ( results.isEmpty() ) {
+			return null;
+		}
+		return results.iterator().next();
+	}
+
+	private BeanWrapper getQueryBean(Class<?> locationType, Long id, String sourceName,
+			String locationName) {
 		String queryType = locationType.getSimpleName();
 		if ( queryType.endsWith("Location") ) {
 			queryType = queryType.substring(0, queryType.length() - 8);
 		}
-		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(new LocationQuery(queryType,
-				sourceName, locationName));
+		LocationQuery q = (id == null ? new LocationQuery(queryType, sourceName, locationName)
+				: new LocationQuery(queryType, id));
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(q);
+		return bean;
+	}
+
+	private <T extends Location> Collection<T> postForLocations(final Class<T> locationType,
+			BeanWrapper bean, String postUrl, String cacheKey) {
+		CachedLocation cachedLocation = null;
 		try {
-			if ( log.isInfoEnabled() ) {
-				log.info("Looking up {} for source [{}] location [{}] from [{}]",
-						locationType.getSimpleName(), sourceName, locationName, url);
-			}
 			T loc = locationType.newInstance();
 			webFormGetForBean(bean, loc, postUrl, null, datumXPathExpMap);
 			if ( loc.getLocationId() == null ) {
-				log.warn("{} not found for source [{}] location [{}]", locationType.getSimpleName(),
-						sourceName, locationName);
+				log.warn("{} not found for {}", bean.getWrappedInstance());
 				return null;
 			}
 
@@ -151,6 +170,29 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 		return Collections.emptyList();
 	}
 
+	@Override
+	public <T extends Location> Collection<T> findLocations(final Class<T> locationType,
+			final String sourceName, final String locationName) {
+		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
+		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + sourceName + ";"
+				+ locationName;
+		CachedLocation cachedLocation = cache.get(cacheKey);
+		if ( cachedLocation != null ) {
+			if ( cachedLocation.expires > System.currentTimeMillis() ) {
+				log.debug("Found cached {} (expires in {}ms)", cachedLocation.location,
+						(System.currentTimeMillis() - cachedLocation.expires));
+
+				@SuppressWarnings("unchecked")
+				Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
+				return locs;
+			}
+		}
+		final BeanWrapper bean = getQueryBean(locationType, null, sourceName, locationName);
+		log.info("Looking up {} for source [{}] location [{}] from [{}]", locationType.getSimpleName(),
+				sourceName, locationName, url);
+		return postForLocations(locationType, bean, postUrl, cacheKey);
+	}
+
 	private static class CachedLocation {
 
 		private Long expires;
@@ -160,13 +202,31 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 	public static class LocationQuery {
 
 		private final String type;
+		private final Long id;
 		private final String sourceName;
 		private final String locationName;
 
+		private LocationQuery(String type, Long id) {
+			super();
+			this.id = id;
+			this.type = type;
+			this.sourceName = null;
+			this.locationName = null;
+		}
+
 		private LocationQuery(String type, String sourceName, String locationName) {
+			super();
+			this.id = null;
 			this.type = type;
 			this.sourceName = sourceName;
 			this.locationName = locationName;
+		}
+
+		@Override
+		public String toString() {
+			return "LocationQuery{type=" + type + (id != null ? ",id=" + id : "")
+					+ (sourceName != null ? ",source=" + sourceName : "")
+					+ (locationName != null ? ",location=" + locationName : "") + "}";
 		}
 
 		public String getType() {
@@ -181,51 +241,42 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 			return locationName;
 		}
 
+		public Long getId() {
+			return id;
+		}
+
 	}
 
-	/**
-	 * @return the url
-	 */
 	public String getUrl() {
 		return url;
 	}
 
-	/**
-	 * @param url
-	 *        the url to set
-	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 
-	/**
-	 * @return the datumXPathMapping
-	 */
 	public Map<String, String> getDatumXPathMapping() {
 		return datumXPathMapping;
 	}
 
-	/**
-	 * @param datumXPathMapping
-	 *        the datumXPathMapping to set
-	 */
 	public void setDatumXPathMapping(Map<String, String> datumXPathMapping) {
 		this.datumXPathMapping = datumXPathMapping;
 	}
 
-	/**
-	 * @return the cacheTtl
-	 */
 	public Long getCacheTtl() {
 		return cacheTtl;
 	}
 
-	/**
-	 * @param cacheTtl
-	 *        the cacheTtl to set
-	 */
 	public void setCacheTtl(Long cacheTtl) {
 		this.cacheTtl = cacheTtl;
+	}
+
+	public String getGetUrl() {
+		return getUrl;
+	}
+
+	public void setGetUrl(String getUrl) {
+		this.getUrl = getUrl;
 	}
 
 }

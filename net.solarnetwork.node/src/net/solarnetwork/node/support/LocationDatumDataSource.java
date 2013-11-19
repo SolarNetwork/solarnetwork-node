@@ -25,7 +25,6 @@ package net.solarnetwork.node.support;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.DatumDataSource;
@@ -36,7 +35,7 @@ import net.solarnetwork.node.PriceLocation;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.OptionalServiceTracker;
 import org.slf4j.Logger;
@@ -115,12 +114,12 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	private DatumDataSource<T> delegate;
 	private OptionalServiceTracker<LocationService> locationService;
 	private Class<? extends Location> locationType = PriceLocation.class;
-	private String sourceName = LocationService.UNKNOWN_SOURCE;
-	private String locationName = LocationService.UNKNOWN_LOCATION;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
+	private Long locationId = null;
 
+	private Location location = null;
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -180,8 +179,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 			}
 		}
 		LocationService service = locationService.service();
-		if ( results != null && service != null && locationName != null && locationName.length() > 0
-				&& sourceName != null && locationName.length() > 0 ) {
+		if ( results != null && service != null ) {
 			for ( T datum : results ) {
 				populateLocation(datum, service);
 			}
@@ -206,16 +204,16 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private void populateLocation(T datum, LocationService service) {
-		Collection<? extends Location> locs = service.findLocations(locationType, sourceName,
-				locationName);
-		Iterator<? extends Location> itr = locs.iterator();
-		if ( itr.hasNext() ) {
-			Location loc = itr.next();
-			if ( log.isDebugEnabled() ) {
-				log.debug("Augmenting datum " + datum + " with Location " + loc);
+		if ( location == null ) {
+			location = service.getLocation(locationType, locationId);
+			if ( location == null ) {
+				log.debug("Location not found for ID {}", locationId);
 			}
+		}
+		if ( location != null ) {
+			log.debug("Augmenting datum {} with Locaiton {}", datum, location);
 			BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-			bean.setPropertyValue(locationIdPropertyName, loc.getLocationId());
+			bean.setPropertyValue(locationIdPropertyName, location.getLocationId());
 		}
 	}
 
@@ -270,8 +268,8 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(new BasicTextFieldSettingSpecifier("sourceName", ""));
-		result.add(new BasicTextFieldSettingSpecifier("locationName", ""));
+		result.add(new BasicLocationLookupSettingSpecifier("locationId", this.locationType,
+				this.location));
 		if ( delegate instanceof SettingSpecifierProvider ) {
 			List<SettingSpecifier> delegateResult = ((SettingSpecifierProvider) delegate)
 					.getSettingSpecifiers();
@@ -305,22 +303,6 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.locationService = locationService;
 	}
 
-	public String getSourceName() {
-		return sourceName;
-	}
-
-	public void setSourceName(String sourceName) {
-		this.sourceName = sourceName;
-	}
-
-	public String getLocationName() {
-		return locationName;
-	}
-
-	public void setLocationName(String locationName) {
-		this.locationName = locationName;
-	}
-
 	public String getLocationIdPropertyName() {
 		return locationIdPropertyName;
 	}
@@ -351,6 +333,22 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public void setMessageBundleBasename(String messageBundleBaseName) {
 		this.messageBundleBasename = messageBundleBaseName;
+	}
+
+	public Long getLocationId() {
+		return locationId;
+	}
+
+	public void setLocationId(Long locationId) {
+		if ( this.location != null && locationId != null
+				&& !locationId.equals(this.location.getLocationId()) ) {
+			this.location = null; // set to null so we re-fetch from server
+		}
+		this.locationId = locationId;
+	}
+
+	public Location getLocation() {
+		return location;
 	}
 
 }

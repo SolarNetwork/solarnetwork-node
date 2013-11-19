@@ -29,12 +29,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -44,8 +41,6 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -65,11 +60,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.core.io.Resource;
@@ -113,31 +104,15 @@ import org.xml.sax.SAXException;
  * @author matt.magoffin
  * @version $Revision$ $Date$
  */
-public abstract class XmlServiceSupport {
-
-	/** The default value for the {@code connectionTimeout} property. */
-	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+public abstract class XmlServiceSupport extends HttpClientSupport {
 
 	/** Special attribute key for a node ID value. */
 	public static final String ATTR_NODE_ID = "node-id";
 
-	/** The HTTP method GET. */
-	public static final String HTTP_METHOD_GET = "GET";
-
-	/** The HTTP method POST. */
-	public static final String HTTP_METHOD_POST = "POST";
-
-	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private NamespaceContext nsContext = null;
 	private DocumentBuilderFactory docBuilderFactory = null;
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
-	private IdentityService identityService = null;
-	private OptionalService<SSLService> sslService = null;
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
-
 	/**
 	 * Initialize this class after properties are set.
 	 */
@@ -523,53 +498,6 @@ public abstract class XmlServiceSupport {
 	}
 
 	/**
-	 * Get an InputStream from a URLConnection response, handling compression.
-	 * 
-	 * <p>
-	 * This method handles decompressing the response if the encoding is set to
-	 * {@code gzip} or {@code deflate}.
-	 * </p>
-	 * 
-	 * @param conn
-	 *        the URLConnection
-	 * @return the InputStream
-	 * @throws IOException
-	 *         if any IO error occurs
-	 */
-	protected InputStream getInputStreamFromURLConnection(URLConnection conn) throws IOException {
-		String enc = conn.getContentEncoding();
-		String type = conn.getContentType();
-
-		log.trace("Got content type [{}] encoded as [{}]", type, enc);
-
-		InputStream is = conn.getInputStream();
-		if ( "gzip".equalsIgnoreCase(enc) ) {
-			is = new GZIPInputStream(is);
-		} else if ( "deflate".equalsIgnoreCase("enc") ) {
-			is = new DeflaterInputStream(is);
-		}
-		return is;
-	}
-
-	/**
-	 * Get a Reader for a Unicode encoded URL connection response.
-	 * 
-	 * <p>
-	 * This calls {@link #getInputStreamFromURLConnection(URLConnection)} so
-	 * compressed responses are handled appropriately.
-	 * </p>
-	 * 
-	 * @param conn
-	 *        the URLConnection
-	 * @return the Reader
-	 * @throws IOException
-	 *         if an IO error occurs
-	 */
-	protected Reader getUnicodeReaderFromURLConnection(URLConnection conn) throws IOException {
-		return new BufferedReader(new UnicodeReader(getInputStreamFromURLConnection(conn), null));
-	}
-
-	/**
 	 * Get a SAX InputSource from a URLConnection's InputStream.
 	 * 
 	 * <p>
@@ -700,63 +628,6 @@ public abstract class XmlServiceSupport {
 		}
 		out.flush();
 		out.close();
-	}
-
-	/**
-	 * Get a URLConnection for a specific URL and HTTP method.
-	 * 
-	 * <p>
-	 * If the httpMethod equals {@code POST} then the connection's
-	 * {@code doOutput} property will be set to <em>true</em>, otherwise it will
-	 * be set to <em>false</em>. The {@code doInput} property is always set to
-	 * <em>true</em>.
-	 * </p>
-	 * 
-	 * <p>
-	 * This method also sets up the request property
-	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
-	 * The {@link #getInputSourceFromURLConnection(URLConnection)} automatically
-	 * handles compressed responses.
-	 * </p>
-	 * 
-	 * <p>
-	 * If the {@link #getSslService()} property is configured and the URL
-	 * represents an HTTPS connection, then that factory will be used to for the
-	 * connection.
-	 * </p>
-	 * 
-	 * @param url
-	 *        the URL to connect to
-	 * @param httpMethod
-	 *        the HTTP method
-	 * @return the URLConnection
-	 * @throws IOException
-	 *         if any IO error occurs
-	 */
-	protected URLConnection getURLConnection(String url, String httpMethod) throws IOException {
-		URL connUrl = new URL(url);
-		URLConnection conn = connUrl.openConnection();
-		if ( conn instanceof HttpURLConnection ) {
-			HttpURLConnection hConn = (HttpURLConnection) conn;
-			hConn.setRequestMethod(httpMethod);
-		}
-		if ( sslService != null && conn instanceof HttpsURLConnection ) {
-			SSLService service = sslService.service();
-			if ( service != null ) {
-				SSLSocketFactory factory = service.getSolarInSocketFactory();
-				if ( factory != null ) {
-					HttpsURLConnection hConn = (HttpsURLConnection) conn;
-					hConn.setSSLSocketFactory(factory);
-				}
-			}
-		}
-		conn.setRequestProperty("Accept", "text/*");
-		conn.setRequestProperty("Accept-Encoding", "gzip,deflate");
-		conn.setDoInput(true);
-		conn.setDoOutput(HTTP_METHOD_POST.equalsIgnoreCase(httpMethod));
-		conn.setConnectTimeout(this.connectionTimeout);
-		conn.setReadTimeout(connectionTimeout);
-		return conn;
 	}
 
 	/**
@@ -942,30 +813,6 @@ public abstract class XmlServiceSupport {
 
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
-	}
-
-	public void setConnectionTimeout(int connectionTimeout) {
-		this.connectionTimeout = connectionTimeout;
-	}
-
-	public int getConnectionTimeout() {
-		return connectionTimeout;
-	}
-
-	public IdentityService getIdentityService() {
-		return identityService;
-	}
-
-	public void setIdentityService(IdentityService identityService) {
-		this.identityService = identityService;
-	}
-
-	public OptionalService<SSLService> getSslService() {
-		return sslService;
-	}
-
-	public void setSslService(OptionalService<SSLService> sslService) {
-		this.sslService = sslService;
 	}
 
 }
