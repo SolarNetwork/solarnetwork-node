@@ -136,7 +136,25 @@ SolarNode.Settings.addTextField = function(params) {
  * @param params.value {String} the initial value
  */
 SolarNode.Settings.addLocationFinder = function(params) {
-	
+	var label = $('#'+params.key);
+	var labelSpan = label.find('.setting-value');
+	var btn = label.find('.btn');
+	var lcType = params.locationType.toLowerCase();
+	var modalRuntimeKey = lcType+'Modal';
+	var modal = $('#'+lcType+'-lookup-modal');
+	if ( SolarNode.Settings.runtime[modalRuntimeKey] === undefined ) {
+		SolarNode.Settings.runtime[modalRuntimeKey] = modal.modal({show:false});
+	}
+	btn.click(function() {
+		labelSpan.text(
+				(params.locationName !== undefined ? params.locationName : '')
+				+(params.sourceName !== undefined && params.sourceName > 0 ? ' ('+params.sourceName+')' : '')
+				);
+		modal.find('input[name=sourceName]').val(params.sourceName);
+		modal.find('input[name=locationName]').val(params.locationName);
+		modal.find('input[name=country]').val(params.country);
+		modal.modal('show');
+	});
 };
 
 /**

@@ -117,20 +117,20 @@
 						${fn:escapeXml(settingValue)}
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
-						<span class="setting-value">
-							${setting.locationName}
-							<c:if test='${not empty setting.sourceName}'> (${setting.sourceName})</c:if>
-						</span>
-						<button type="button" class="btn">
-							<fmt:message key="settings.change"/>
-						</button>
+						<label id="${settingId}">
+							<span class="setting-value"></span>
+							<button type="button" class="btn">
+								<fmt:message key="settings.change"/>
+							</button>
+						</label>
 						<script>
 						$(function() {
 							SolarNode.Settings.addLocationFinder({
 								key: '${settingId}',
-								locationType: '${setting.locationType}',
+								locationType: '${setting.locationTypeKey}',
 								sourceName: '${setup:js(setting.sourceName)}',
 								locationName: '${setup:js(setting.locationName)}',
+								country: '${setup:js(setting.location.country)}',
 								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
 								provider: '${provider.settingUID}',

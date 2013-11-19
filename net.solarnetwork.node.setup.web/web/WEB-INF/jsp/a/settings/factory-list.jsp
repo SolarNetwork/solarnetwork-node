@@ -102,3 +102,33 @@ $(function() {
 		<fmt:message key="delete.label"/>
 	</button>
 </div>
+<form id="price-lookup-modal" class="modal dynamic hide fade" 
+		action="<c:url value='/api/v1/sec/location'/>" method="get">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3><fmt:message key='lookup.price.title'/></h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key='lookup.price.intro'/></p>
+		<div class="form-inline">
+			<input type="text" class="span2" maxlength="64" name="sourceName" placeholder="<fmt:message key='lookup.price.sourceName'/>"/>
+			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.price.locationName'/>"/>
+			<input type="text" class="span2" maxlength="2" name="country" placeholder="<fmt:message key='lookup.price.country'/>"/>
+			<button type="button" class="btn btn-primary"><fmt:message key='lookup.action.search'/></button>
+		</div>
+
+		<table id="price-lookup-results-table"></table>
+		
+		<label id="price-lookup-selected-label" class="hidden">
+			<fmt:message key='lookup.selected.label'/>
+			<span id="price-lookup-selected-container"></span>
+		</label>
+	</div>
+	<div class="modal-footer">
+		<input type="hidden" name="type" value="Price"/>
+		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<button type="submit" class="btn btn-primary" disabled="disabled">
+			<fmt:message key="lookup.action.choose"/>
+		</button>
+	</div>
+</form>
