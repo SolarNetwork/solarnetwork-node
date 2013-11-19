@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.playpen;
@@ -28,12 +26,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.node.Location;
+import net.solarnetwork.node.LocationService;
+import net.solarnetwork.node.PriceLocation;
+import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.OptionalServiceTracker;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -41,11 +45,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class SettingsPlaypen implements SettingSpecifierProvider {
 
-	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
 	private static final String DEFAULT_STRING = "simple";
@@ -59,6 +62,10 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Double slide = DEFAULT_SLIDE;
 	private String radio = DEFAULT_RADIO[0];
 
+	private OptionalServiceTracker<LocationService> locationService;
+	private Long locationId;
+	private Location location;
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.settings.playpen";
@@ -71,13 +78,11 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(SettingsPlaypen.class.getClassLoader());
-				source.setBasename(SettingsPlaypen.class.getName());
-				MESSAGE_SOURCE = source;
-			}
+		if ( MESSAGE_SOURCE == null ) {
+			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+			source.setBundleClassLoader(SettingsPlaypen.class.getClassLoader());
+			source.setBasename(SettingsPlaypen.class.getName());
+			MESSAGE_SOURCE = source;
 		}
 		return MESSAGE_SOURCE;
 	}
@@ -92,6 +97,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier("integer", defaults.getInteger().toString()));
 		results.add(new BasicToggleSettingSpecifier("toggle", defaults.getToggle()));
 		results.add(new BasicSliderSettingSpecifier("slide", defaults.getSlide(), 0.0, 10.0, 0.5));
+		results.add(getLocationSettingSpecifier());
 
 		BasicRadioGroupSettingSpecifier radioSpec = new BasicRadioGroupSettingSpecifier("radio",
 				defaults.getRadio());
@@ -103,6 +109,16 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		results.add(radioSpec);
 
 		return results;
+	}
+
+	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
+		if ( location == null && locationService != null ) {
+			LocationService service = locationService.service();
+			if ( service != null ) {
+				location = service.getLocation(PriceLocation.class, locationId);
+			}
+		}
+		return new BasicLocationLookupSettingSpecifier("locationId", PriceLocation.class, location);
 	}
 
 	public String getString() {
@@ -143,6 +159,34 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	public void setRadio(String radio) {
 		this.radio = radio;
+	}
+
+	public OptionalServiceTracker<LocationService> getLocationService() {
+		return locationService;
+	}
+
+	public void setLocationService(OptionalServiceTracker<LocationService> locationService) {
+		this.locationService = locationService;
+	}
+
+	public Long getLocationId() {
+		return locationId;
+	}
+
+	public void setLocationId(Long locationId) {
+		if ( this.location != null && locationId != null
+				&& !locationId.equals(this.location.getLocationId()) ) {
+			this.location = null; // set to null so we re-fetch from server
+		}
+		this.locationId = locationId;
+	}
+
+	public Location getLocation() {
+		return location;
+	}
+
+	public void setLocation(Location location) {
+		this.location = location;
 	}
 
 }
