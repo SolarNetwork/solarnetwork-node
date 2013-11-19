@@ -52,8 +52,6 @@ import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -127,8 +125,6 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
 		Map<String, String> xpathMap = new HashMap<String, String>();
