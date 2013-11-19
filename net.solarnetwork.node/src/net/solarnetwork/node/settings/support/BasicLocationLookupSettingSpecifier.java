@@ -91,4 +91,14 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 		return (location == null ? null : location.getSourceName());
 	}
 
+	@Override
+	public String getLocationTypeKey() {
+		String t = (locationType == null ? "basic" : locationType.getSimpleName());
+		if ( t.endsWith("Location") ) {
+			t = t.substring(0, t.length() - 8);
+		}
+		t = t.toLowerCase();
+		return t;
+	}
+
 }

@@ -46,4 +46,11 @@ public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Lo
 	 */
 	Class<? extends Location> getLocationType();
 
+	/**
+	 * Get the location type as a key.
+	 * 
+	 * @return the location type key
+	 */
+	String getLocationTypeKey();
+
 }
