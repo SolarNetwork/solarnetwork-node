@@ -128,6 +128,18 @@ SolarNode.Settings.addTextField = function(params) {
 };
 
 /**
+ * Setup a new location finder field.
+ * 
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the control
+ * @param params.value {String} the initial value
+ */
+SolarNode.Settings.addLocationFinder = function(params) {
+	
+};
+
+/**
  * Post any setting changes back to the node.
  * 
  * @param url {String} the URL to post to

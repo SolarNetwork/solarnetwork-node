@@ -29,6 +29,11 @@
 		
 	<osgi:reference id="pkiService" interface="net.solarnetwork.node.setup.PKIService"/>
 		
+	<osgi:reference id="sslServiceRef" availability="optional"
+		interface="net.solarnetwork.node.SSLService">
+		<osgi:reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
 	<osgi:reference id="settingsServiceRef" availability="optional"
 		interface="net.solarnetwork.node.settings.SettingsService">
 		<osgi:listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>

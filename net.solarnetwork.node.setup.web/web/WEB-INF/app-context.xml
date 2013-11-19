@@ -14,6 +14,10 @@
 		<property name="service" ref="settingsServiceRef"/>
 	</bean>
 
+	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="sslServiceRef"/>
+	</bean>
+	
 	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
 		<property name="service" ref="backupManagerRef"/>
 	</bean>

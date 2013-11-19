@@ -116,6 +116,30 @@
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
 						${fn:escapeXml(settingValue)}
 					</c:when>
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
+						<span class="setting-value">
+							${setting.locationName}
+							<c:if test='${not empty setting.sourceName}'> (${setting.sourceName})</c:if>
+						</span>
+						<button type="button" class="btn">
+							<fmt:message key="settings.change"/>
+						</button>
+						<script>
+						$(function() {
+							SolarNode.Settings.addLocationFinder({
+								key: '${settingId}',
+								locationType: '${setting.locationType}',
+								sourceName: '${setup:js(setting.sourceName)}',
+								locationName: '${setup:js(setting.locationName)}',
+								value: '${fn:escapeXml(settingValue)}',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
+							});
+						});
+						</script>
+					</c:when>
 				</c:choose>
 				
 				<c:set var="help">
