@@ -22,6 +22,14 @@
 		</property>
 	</bean>
 	
+	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
+		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+
+	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="locationServiceRef"/>
+	</bean>
+	
 	<!-- Published services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -33,7 +41,9 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.settings.playpen"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
+		<bean class="net.solarnetwork.node.settings.playpen.SettingsPlaypen">
+			<property name="locationService" ref="locationService"/>
+		</bean>
 	</osgix:managed-service-factory>
 	
 </blueprint>

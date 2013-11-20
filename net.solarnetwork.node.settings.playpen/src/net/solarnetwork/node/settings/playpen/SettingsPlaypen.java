@@ -29,6 +29,7 @@ import java.util.Map;
 import net.solarnetwork.node.Location;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.PriceLocation;
+import net.solarnetwork.node.WeatherLocation;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -66,6 +67,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Long locationId;
 	private Location location;
 
+	private Long weatherLocationId;
+	private Location weatherLocation;
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.settings.playpen";
@@ -97,7 +101,6 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier("integer", defaults.getInteger().toString()));
 		results.add(new BasicToggleSettingSpecifier("toggle", defaults.getToggle()));
 		results.add(new BasicSliderSettingSpecifier("slide", defaults.getSlide(), 0.0, 10.0, 0.5));
-		results.add(getLocationSettingSpecifier());
 
 		BasicRadioGroupSettingSpecifier radioSpec = new BasicRadioGroupSettingSpecifier("radio",
 				defaults.getRadio());
@@ -107,6 +110,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		}
 		radioSpec.setValueTitles(radioValues);
 		results.add(radioSpec);
+
+		results.add(getLocationSettingSpecifier());
+		results.add(getWeatherLocationSettingSpecifier());
 
 		return results;
 	}
@@ -119,6 +125,17 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("locationId", PriceLocation.class, location);
+	}
+
+	private LocationLookupSettingSpecifier getWeatherLocationSettingSpecifier() {
+		if ( weatherLocation == null && locationService != null ) {
+			LocationService service = locationService.service();
+			if ( service != null ) {
+				weatherLocation = service.getLocation(WeatherLocation.class, weatherLocationId);
+			}
+		}
+		return new BasicLocationLookupSettingSpecifier("weatherLocationId", WeatherLocation.class,
+				weatherLocation);
 	}
 
 	public String getString() {
@@ -181,12 +198,16 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		this.locationId = locationId;
 	}
 
-	public Location getLocation() {
-		return location;
+	public Long getWeatherLocationId() {
+		return weatherLocationId;
 	}
 
-	public void setLocation(Location location) {
-		this.location = location;
+	public void setWeatherLocationId(Long weatherLocationId) {
+		if ( this.weatherLocation != null && weatherLocationId != null
+				&& !weatherLocationId.equals(this.weatherLocation.getLocationId()) ) {
+			this.weatherLocation = null; // set to null so we re-fetch from server
+		}
+		this.weatherLocationId = weatherLocationId;
 	}
 
 }
