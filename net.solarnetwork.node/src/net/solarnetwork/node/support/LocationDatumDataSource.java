@@ -33,6 +33,7 @@ import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.PriceLocation;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
+import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
@@ -268,8 +269,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(new BasicLocationLookupSettingSpecifier("locationId", this.locationType,
-				this.location));
+		result.add(getLocationSettingSpecifier());
 		if ( delegate instanceof SettingSpecifierProvider ) {
 			List<SettingSpecifier> delegateResult = ((SettingSpecifierProvider) delegate)
 					.getSettingSpecifiers();
@@ -285,6 +285,16 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 			}
 		}
 		return result;
+	}
+
+	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
+		if ( location == null && locationService != null ) {
+			LocationService service = locationService.service();
+			if ( service != null ) {
+				location = service.getLocation(locationType, locationId);
+			}
+		}
+		return new BasicLocationLookupSettingSpecifier("locationId", locationType, location);
 	}
 
 	public DatumDataSource<T> getDelegate() {
