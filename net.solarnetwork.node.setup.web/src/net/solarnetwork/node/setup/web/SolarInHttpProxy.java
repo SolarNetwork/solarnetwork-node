@@ -74,7 +74,8 @@ public class SolarInHttpProxy extends HttpClientSupport {
 	 * @throws IOException
 	 *         if an IO error occurs
 	 */
-	@RequestMapping(value = { "/api/v1/sec/location" }, method = RequestMethod.GET)
+	@RequestMapping(value = { "/api/v1/sec/location", "/api/v1/sec/location/price",
+			"/api/v1/sec/location/weather" }, method = RequestMethod.GET)
 	public void proxy(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String context = request.getContextPath();
 		String path = request.getRequestURI();
