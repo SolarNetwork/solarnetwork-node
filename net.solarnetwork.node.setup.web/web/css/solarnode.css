@@ -116,3 +116,17 @@ legend {
 pre.pre-scrollable {
 	max-height: 160px;
 }
+
+.lookup-modal .modal-body {
+	height: 300px;
+}
+
+.lookup-model table {
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+#weather-lookup-modal {
+	width: 700px;
+	margin-left: -350px;
+}

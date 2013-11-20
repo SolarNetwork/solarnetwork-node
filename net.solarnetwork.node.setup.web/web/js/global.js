@@ -62,7 +62,25 @@ var SolarNode = {
 		$('body').append(
 				$('<div class="alert alert-error"><button class="close btn" data-dismiss="alert"><i class="icon-remove"></i></button></div>')
 				.append(contents));
-	}
+	},
+	
+	/**
+	 * Get a message based on a template, with optional parameters.
+	 * 
+	 * Parameters should be in the form {x} where x is a number starting at 0. Occurrences
+	 * of these parameters in the message bundle will be replaced by corresponding
+	 * array values from the passed in params array.
+	 */
+	i18n : function(msg, params) {
+		if ( !Array.isArray(params) ) {
+			params = [];
+		}
+		var i = 0;
+		for ( i = 0; i < params.length; i++ ) {
+			msg = msg.replace(new RegExp('\\{'+(i)+'\\}','g'),params[i]);
+		}
+		return msg;
+	 }
 	
 };
 

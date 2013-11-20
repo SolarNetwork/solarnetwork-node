@@ -9,6 +9,7 @@
 	/js-lib/bootstrap.js
 	/js-lib/spin.js
 	/js-lib/jquery.spin.js
+	/js-lib/jquery.form.js
 	/js/global.js
 	/js/certs.js
 	/js/settings.js
