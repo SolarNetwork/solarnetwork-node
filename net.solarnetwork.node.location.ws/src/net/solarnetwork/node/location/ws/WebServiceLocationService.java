@@ -46,10 +46,9 @@ import org.springframework.beans.PropertyAccessorFactory;
 public class WebServiceLocationService extends XmlServiceSupport implements LocationService {
 
 	/** Default value for the <code>cacheTtl</code> property. */
-	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 4;
+	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 24 * 7;
 
 	private String url;
-	private String getUrl;
 	private Map<String, String> datumXPathMapping = null;
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 
@@ -73,8 +72,8 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 			// create default XML response mapping
 			Map<String, String> defaults = new LinkedHashMap<String, String>(3);
 			defaults.put("locationId", "//*[@id][1]/@id"); // grab the first result ID
-			//defaults.put("currency", "/*/@currency");
-			//defaults.put("unit", "/*/@unit");
+			defaults.put("sourceName", "//*[@id][1]/@sourceName"); // grab the first result ID
+			defaults.put("locationName", "//*[@id][1]/@locationName"); // grab the first result ID
 			datumXPathMapping = defaults;
 		}
 		datumXPathExpMap = getXPathExpressionMap(datumXPathMapping);
@@ -89,7 +88,7 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 			}
 			return results.iterator().next();
 		}
-		final String postUrl = getIdentityService().getSolarInBaseUrl() + getUrl;
+		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + locationId;
 		CachedLocation cachedLocation = cache.get(cacheKey);
 		if ( cachedLocation != null ) {
@@ -269,14 +268,6 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 
 	public void setCacheTtl(Long cacheTtl) {
 		this.cacheTtl = cacheTtl;
-	}
-
-	public String getGetUrl() {
-		return getUrl;
-	}
-
-	public void setGetUrl(String getUrl) {
-		this.getUrl = getUrl;
 	}
 
 }
