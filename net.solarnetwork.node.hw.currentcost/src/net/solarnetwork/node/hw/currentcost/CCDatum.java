@@ -25,12 +25,14 @@ package net.solarnetwork.node.hw.currentcost;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import org.joda.time.LocalTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  * A CurrentCost datum.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CCDatum implements Comparable<CCDatum> {
 
@@ -57,6 +59,26 @@ public class CCDatum implements Comparable<CCDatum> {
 	@Override
 	public String toString() {
 		return "CCDatum{" + getStatusMessage() + "}";
+	}
+
+	/**
+	 * Secondary setter to set the time, to support both v1 and v2 message
+	 * format mapping.
+	 * 
+	 * @param time
+	 *        the time
+	 */
+	public void setLocalTime(String timeString) {
+		LocalTime t = null;
+		if ( timeString != null && timeString.length() > 5 ) {
+			// the XPath mapping can result in a time like ::14:14:27, due to supporting old/new XML
+			if ( timeString.startsWith(":") ) {
+				timeString = timeString.replaceAll("^:+", "");
+			}
+			DateTimeFormatter dtf = DateTimeFormat.forPattern("HH:mm:ss");
+			t = dtf.parseLocalTime(timeString);
+		}
+		this.time = t;
 	}
 
 	/**

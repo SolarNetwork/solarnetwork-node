@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.currentcost.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import java.io.IOException;
 import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCMessageParser;
@@ -61,6 +62,26 @@ public class CCMessageParserTest {
 		assertNotNull("temperature", datum.getTemperature());
 		assertEquals("temperature value", 22.6, datum.getTemperature().doubleValue(), 0.01);
 		assertEquals(new LocalTime(10, 43, 49), datum.getTime());
+	}
+
+	@Test
+	public void praseCC128Message() throws IOException {
+		byte[] xml = FileCopyUtils.copyToByteArray(getClass().getResourceAsStream("message-2.xml"));
+		CCMessageParser parser = new CCMessageParser();
+		CCDatum datum = parser.parseMessage(xml);
+		assertNotNull(datum);
+		log.debug("Got CCDatum: " + datum.getStatusMessage());
+		assertEquals("channel1Watts value", Integer.valueOf(16), datum.getChannel1Watts());
+		assertNull("channel2Watts value", datum.getChannel2Watts());
+		assertNull("channel3Watts value", datum.getChannel3Watts());
+		assertEquals("daysSinceBegin value", Integer.valueOf(4), datum.getDaysSinceBegin());
+		assertEquals("00077", datum.getDeviceAddress());
+		assertEquals("CC128-v1.51", datum.getDeviceName());
+		assertNull("deviceSoftwareVersion", datum.getDeviceSoftwareVersion());
+		assertEquals("1", datum.getDeviceType());
+		assertNotNull("temperature", datum.getTemperature());
+		assertEquals("temperature value", 24.6, datum.getTemperature().doubleValue(), 0.01);
+		assertEquals(new LocalTime(14, 14, 27), datum.getTime());
 	}
 
 }

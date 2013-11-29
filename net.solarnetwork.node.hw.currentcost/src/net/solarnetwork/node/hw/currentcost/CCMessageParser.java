@@ -37,8 +37,12 @@ import org.springframework.beans.BeanWrapper;
  * Helper class that can parse Current Cost XML messages into {@link CCDatum}
  * instances.
  * 
+ * <p>
+ * This parser supports both <b>Classic</b> and <b>CC128</b> message formats.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CCMessageParser extends XmlServiceSupport {
 
@@ -51,12 +55,13 @@ public class CCMessageParser extends XmlServiceSupport {
 		super();
 		init();
 		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("deviceAddress", "/msg/src/id");
-		mapping.put("deviceName", "/msg/src/name");
-		mapping.put("deviceType", "/msg/src/type");
+		mapping.put("deviceAddress", "(/msg/src/id|/msg/id)[1]");
+		mapping.put("deviceName", "(/msg/src/name|/msg/src[count(child::*) = 0])[1]");
+		mapping.put("deviceType", "(/msg/src/type|/msg/type[count(child::*) = 0])[1]");
 		mapping.put("deviceSoftwareVersion", "/msg/src/sver");
-		mapping.put("daysSinceBegin", "/msg/date/dsb");
-		mapping.put("time", "concat(/msg/date/hr, ':', /msg/date/min, ':', /msg/date/sec)");
+		mapping.put("daysSinceBegin", "(/msg/date/dsb|/msg/dsb)[1]");
+		mapping.put("localTime",
+				"concat(/msg/date/hr, ':', /msg/date/min, ':', /msg/date/sec, /msg/time)");
 		mapping.put("channel1Watts", "/msg/ch1/watts");
 		mapping.put("channel2Watts", "/msg/ch2/watts");
 		mapping.put("channel3Watts", "/msg/ch3/watts");
