@@ -44,16 +44,6 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	}
 
 	/**
-	 * Construct with an ID.
-	 * 
-	 * @param id
-	 *        the ID
-	 */
-	public EnaSolarPowerDatum(Long id) {
-		super(id);
-	}
-
-	/**
 	 * Set the deca-watt hour total reading, as a hexidecimal string.
 	 * 
 	 * @param decaWattHoursTotal
