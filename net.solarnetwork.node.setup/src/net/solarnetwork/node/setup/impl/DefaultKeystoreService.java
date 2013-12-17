@@ -405,6 +405,10 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			throw new CertificateException("Error opening node private key", e);
 		}
 		X509Certificate nodeCert = getNodeCertificate(keyStore);
+		if ( nodeCert == null ) {
+			throw new CertificateException(
+					"The node does not have a private key, start the association process over.");
+		}
 		X509Certificate caCert = getCACertificate(keyStore);
 
 		X509Certificate[] chain = certificateService.parsePKCS7CertificateChainString(pem);
