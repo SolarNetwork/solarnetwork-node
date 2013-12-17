@@ -18,48 +18,43 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.control.simple;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.DatumUpload;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.support.NodeControlInfoDatum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * {@link DatumDao} implementation for {@link NodeControlInfoDatum}
- * objects.
+ * {@link DatumDao} implementation for {@link NodeControlInfoDatum} objects.
  * 
- * <p>This service uses registered {@link NodeControlProvider} instances to
- * manage all node control providers in the system. It keeps track of the state
- * returned by each provider, and only returns changed data when the 
- * {@link #getDatumNotUploaded()} method is called.</p>
+ * <p>
+ * This service uses registered {@link NodeControlProvider} instances to manage
+ * all node control providers in the system. It keeps track of the state
+ * returned by each provider, and only returns changed data when the
+ * {@link #getDatumNotUploaded()} method is called.
+ * </p>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public class SimpleControlInfoDatumDao
-implements DatumDao<NodeControlInfoDatum> {
+public class SimpleControlInfoDatumDao implements DatumDao<NodeControlInfoDatum> {
 
 	private List<NodeControlProvider> providers;
-	
-	private Map<String, Map<String, NodeControlInfoDatum>> cache 
-		= new LinkedHashMap<String, Map<String, NodeControlInfoDatum>>();
-	
-	private Logger log = LoggerFactory.getLogger(getClass());
-	
+
+	private final Map<String, Map<String, NodeControlInfoDatum>> cache = new LinkedHashMap<String, Map<String, NodeControlInfoDatum>>();
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
+
 	@Override
 	public Class<? extends NodeControlInfoDatum> getDatumType() {
 		return NodeControlInfoDatum.class;
@@ -71,8 +66,7 @@ implements DatumDao<NodeControlInfoDatum> {
 		if ( providers != null ) {
 			for ( NodeControlProvider provider : providers ) {
 				List<String> controlIds = provider.getAvailableControlIds();
-				log.debug("Requesting control info from provider {}: {}",
-						provider, controlIds);
+				log.debug("Requesting control info from provider {}: {}", provider, controlIds);
 				for ( String controlId : provider.getAvailableControlIds() ) {
 					NodeControlInfo info = provider.getCurrentControlInfo(controlId);
 					if ( info == null ) {
@@ -87,7 +81,7 @@ implements DatumDao<NodeControlInfoDatum> {
 					datum.setType(info.getType());
 					datum.setUnit(info.getUnit());
 					datum.setValue(info.getValue());
-					
+
 					Map<String, NodeControlInfoDatum> destCache = cache.get(destination);
 					if ( destCache == null ) {
 						destCache = new LinkedHashMap<String, NodeControlInfoDatum>();
@@ -98,8 +92,7 @@ implements DatumDao<NodeControlInfoDatum> {
 						results.add(datum);
 						destCache.put(controlId, datum);
 					} else {
-						log.debug("Control {} has not changed from cached value: {}",
-								controlId, cached);
+						log.debug("Control {} has not changed from cached value: {}", controlId, cached);
 					}
 				}
 			}
@@ -109,14 +102,8 @@ implements DatumDao<NodeControlInfoDatum> {
 	}
 
 	@Override
-	public Long storeDatum(NodeControlInfoDatum datum) {
-		return null;
-	}
-
-	@Override
-	public DatumUpload storeDatumUpload(NodeControlInfoDatum datum,
-			String destination, Long trackingId) {
-		return null;
+	public void storeDatum(NodeControlInfoDatum datum) {
+		// nothing to do here
 	}
 
 	@Override
@@ -124,9 +111,16 @@ implements DatumDao<NodeControlInfoDatum> {
 		return 0;
 	}
 
+	@Override
+	public void setDatumUploaded(NodeControlInfoDatum datum, Date date, String destination,
+			Long trackingId) {
+		// nothing to do here
+	}
+
 	public List<NodeControlProvider> getProviders() {
 		return providers;
 	}
+
 	public void setProviders(List<NodeControlProvider> providers) {
 		this.providers = providers;
 	}
