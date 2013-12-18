@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode DAO JDBC
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc
-Bundle-Version: 1.7.0
+Bundle-Version: 1.7.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.solarnetwork.node.dao.jdbc;version="1.7.0"
+Export-Package: net.solarnetwork.node.dao.jdbc;version="1.7.1"
 Import-Package: javax.sql,
  net.solarnetwork.dao.jdbc;version="1.0.0",
  net.solarnetwork.node;version="1.9.0",

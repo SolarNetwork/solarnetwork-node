@@ -1,5 +1,5 @@
 ALTER TABLE solarnode.sn_settings
-ADD COLUMN flags INTEGER;
+ADD COLUMN flags INTEGER WITH DEFAULT 0;
 
 UPDATE solarnode.sn_settings SET flags = 0;
 
