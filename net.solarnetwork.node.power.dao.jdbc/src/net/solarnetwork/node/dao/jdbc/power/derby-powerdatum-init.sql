@@ -11,6 +11,7 @@ CREATE TABLE solarnode.sn_power_datum (
 	ac_out_volts	DOUBLE,
 	ac_out_amps		DOUBLE,
 	amp_hours		DOUBLE,
+	uploaded		TIMESTAMP,
 	PRIMARY KEY (created, source_id)
 );
 
