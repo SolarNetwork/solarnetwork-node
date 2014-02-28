@@ -30,6 +30,7 @@ import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
 import net.wimpi.modbus.net.SerialConnection;
+import org.joda.time.LocalDateTime;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +64,9 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Value("${meter.serialNumber}")
 	private Long meterSerialNumber;
+
+	@Value("${meter.manufactureDate}")
+	private Long meterManufactureDate;
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactoryService;
 	private PM3200Support support;
@@ -122,6 +126,19 @@ public class PM3200SupportTests extends AbstractNodeTest {
 			}
 		});
 		Assert.assertEquals("Meter serial number", meterSerialNumber, result);
+	}
+
+	@Test
+	public void testReadMeterManufactureDate() {
+		LocalDateTime result = connectionFactory.execute(new ModbusConnectionCallback<LocalDateTime>() {
+
+			@Override
+			public LocalDateTime doInConnection(SerialConnection conn) throws IOException {
+				return support.getMeterManufactureDate(conn);
+			}
+		});
+		LocalDateTime expected = new LocalDateTime(meterManufactureDate);
+		Assert.assertEquals("Meter manufacture date", expected, result);
 	}
 
 }

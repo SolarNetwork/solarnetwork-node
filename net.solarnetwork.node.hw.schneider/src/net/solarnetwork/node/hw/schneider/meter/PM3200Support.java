@@ -26,6 +26,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.net.SerialConnection;
+import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +53,7 @@ public class PM3200Support {
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
 	public static final Integer ADDR_SYSTEM_METER_MANUFACTURER = 69;
 	public static final Integer ADDR_SYSTEM_METER_SERIAL_NUMBER = 129;
+	public static final Integer ADDR_SYSTEM_METER_MANUFACTURE_DATE = 131;
 
 	private Integer unitId = 1;
 
@@ -106,6 +108,42 @@ public class PM3200Support {
 		if ( data != null && data.length == 2 ) {
 			int longValue = ModbusHelper.getLongWord(data[0], data[1]);
 			result = (long) longValue;
+		}
+		return result;
+	}
+
+	/**
+	 * Read the manufacture date of the meter.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @return the meter manufacture date, or <em>null</em> if not available
+	 */
+	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
+		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4, unitId);
+		return parseDateTime(data);
+	}
+
+	/**
+	 * Parse a DateTime value from raw Modbus register values. The {@code data}
+	 * array is expected to have a length of {@code 4}.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed date, or <em>null</em> if not available
+	 */
+	public static LocalDateTime parseDateTime(final Integer[] data) {
+		LocalDateTime result = null;
+		if ( data != null && data.length == 4 ) {
+			int year = 2000 + (data[0].intValue() & 0x7F);
+			int month = (data[1].intValue() & 0xF00) >> 8;
+			int day = (data[1].intValue() & 0x1F);
+			int hour = (data[2].intValue() & 0x1F00) >> 8;
+			int minute = (data[2].intValue() & 0x3F);
+			int ms = (data[3].intValue()); // this is really seconds + milliseconds
+			int sec = ms / 1000;
+			ms = ms - (sec * 1000);
+			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
 		}
 		return result;
 	}
