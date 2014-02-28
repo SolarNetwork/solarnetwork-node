@@ -22,10 +22,21 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
+import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +60,21 @@ import org.slf4j.LoggerFactory;
  */
 public class PM3200Support {
 
+	/** Key for the meter name, as a String. */
+	public static final String INFO_KEY_METER_NAME = "Name";
+
+	/** Key for the meter model, as a String. */
+	public static final String INFO_KEY_METER_MODEL = "Model";
+
+	/** Key for the meter serial number, as a Long. */
+	public static final String INFO_KEY_METER_SERIAL_NUMBER = "Serial Number";
+
+	/** Key for the meter manufacturer, as a String. */
+	public static final String INFO_KEY_METER_MANUFACTURER = "Manufacturer";
+
+	/** Key for the meter manufacture date, as a {@link LocalDate}. */
+	public static final String INFO_KEY_METER_MANUFACTURE_DATE = "Manufacture Date";
+
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
 	public static final Integer ADDR_SYSTEM_METER_MANUFACTURER = 69;
@@ -56,6 +82,7 @@ public class PM3200Support {
 	public static final Integer ADDR_SYSTEM_METER_MANUFACTURE_DATE = 131;
 
 	private Integer unitId = 1;
+	private Map<String, Object> meterInfo;
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 
@@ -125,6 +152,65 @@ public class PM3200Support {
 	}
 
 	/**
+	 * Read general meter info and return a map of the results. See the various
+	 * {@code INFO_KEY_*} constants for information on the values returned in
+	 * the result map.
+	 * 
+	 * @param conn
+	 *        the connection to use
+	 * @return a map with general meter information populated
+	 */
+	public Map<String, Object> readMeterInfo(SerialConnection conn) {
+		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
+		String str = getMeterName(conn);
+		if ( str != null ) {
+			result.put(INFO_KEY_METER_NAME, str);
+		}
+		str = getMeterModel(conn);
+		if ( str != null ) {
+			result.put(INFO_KEY_METER_MODEL, str);
+		}
+		str = getMeterManufacturer(conn);
+		if ( result != null ) {
+			result.put(INFO_KEY_METER_MANUFACTURER, str);
+		}
+		LocalDateTime dt = getMeterManufactureDate(conn);
+		if ( dt != null ) {
+			result.put(INFO_KEY_METER_MANUFACTURE_DATE, dt.toLocalDate());
+		}
+		Long l = getMeterSerialNumber(conn);
+		if ( l != null ) {
+			result.put(INFO_KEY_METER_SERIAL_NUMBER, l);
+		}
+		return result;
+	}
+
+	/**
+	 * Return an informational message composed of general meter info. This
+	 * method will call {@link #readMeterInfo(SerialConnection)} and return a
+	 * {@code /} (forward slash) delimited string of the resulting values.
+	 * 
+	 * @return info message
+	 */
+	public String getMeterInfoMessage() {
+		if ( meterInfo == null ) {
+			meterInfo = ModbusHelper.execute(connectionFactory,
+					new ModbusConnectionCallback<Map<String, Object>>() {
+
+						@Override
+						public Map<String, Object> doInConnection(SerialConnection conn)
+								throws IOException {
+							return readMeterInfo(conn);
+						}
+					});
+		}
+		if ( meterInfo == null ) {
+			return null;
+		}
+		return StringUtils.delimitedStringFromCollection(meterInfo.values(), " / ");
+	}
+
+	/**
 	 * Parse a DateTime value from raw Modbus register values. The {@code data}
 	 * array is expected to have a length of {@code 4}.
 	 * 
@@ -146,6 +232,27 @@ public class PM3200Support {
 			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
 		}
 		return result;
+	}
+
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		PM3200Support defaults = new PM3200Support();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
+
+		// get current value
+		BasicTitleSettingSpecifier info = new BasicTitleSettingSpecifier("info", "N/A", true);
+		try {
+			String infoMsg = getMeterInfoMessage();
+			info.setDefaultValue(infoMsg);
+		} catch ( RuntimeException e ) {
+			log.debug("Error reading {} info: {}", unitId, e.getMessage());
+		}
+		results.add(info);
+
+		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
+
+		return results;
 	}
 
 	public Integer getUnitId() {

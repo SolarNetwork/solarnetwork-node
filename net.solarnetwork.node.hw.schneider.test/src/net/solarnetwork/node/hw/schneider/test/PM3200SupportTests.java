@@ -23,12 +23,15 @@
 package net.solarnetwork.node.hw.schneider.test;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.LocalDateTime;
 import org.junit.Assert;
@@ -40,6 +43,12 @@ import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Test cases for the {@link PM3200Support} class.
+ * 
+ * <p>
+ * Note these tests require a working connection to an actual meter. You must
+ * configure the expected values for your meter in the
+ * {@code environment/local/schneider.properties} file.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -139,6 +148,20 @@ public class PM3200SupportTests extends AbstractNodeTest {
 		});
 		LocalDateTime expected = new LocalDateTime(meterManufactureDate);
 		Assert.assertEquals("Meter manufacture date", expected, result);
+	}
+
+	@Test
+	public void testReadMeterInfoMessage() {
+		String result = support.getMeterInfoMessage();
+		List<Object> data = new ArrayList<Object>(10);
+		data.add(meterName);
+		data.add(meterModel);
+		data.add(meterManufacturer);
+		LocalDateTime expectedDate = new LocalDateTime(meterManufactureDate);
+		data.add(expectedDate.toLocalDate().toString());
+		data.add(meterSerialNumber);
+		String expected = StringUtils.delimitedStringFromCollection(data, " / ");
+		Assert.assertEquals("Meter info message", expected, result);
 	}
 
 }
