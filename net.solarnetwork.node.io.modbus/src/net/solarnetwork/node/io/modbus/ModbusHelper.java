@@ -418,4 +418,27 @@ public final class ModbusHelper {
 		return (((hiWord & 0xFFFF) << 16) | (loWord & 0xFFFF));
 	}
 
+	/**
+	 * Parse a 32-bit float value from raw Modbus register values. The
+	 * {@code data} array is expected to have a length of {@code 2}, and in
+	 * big-endian order.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 *         float is {@code NaN}
+	 */
+	public static Float parseFloat32(final Integer[] data) {
+		Float result = null;
+		if ( data != null && data.length == 2 ) {
+			result = Float.intBitsToFloat(((data[0].intValue() & 0xFFFF) << 16)
+					| (data[1].intValue() & 0xFFFF));
+			if ( result.isNaN() ) {
+				LOG.trace("Data results in NaN: {}", (Object) data);
+				result = null;
+			}
+		}
+		return result;
+	}
+
 }
