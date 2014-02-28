@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,9 +34,12 @@ import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadCoilsResponse;
 import net.wimpi.modbus.msg.ReadInputRegistersRequest;
 import net.wimpi.modbus.msg.ReadInputRegistersResponse;
+import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
+import net.wimpi.modbus.msg.ReadMultipleRegistersResponse;
 import net.wimpi.modbus.msg.WriteCoilRequest;
 import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
+import net.wimpi.modbus.procimg.InputRegister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +47,11 @@ import org.slf4j.LoggerFactory;
  * Helper methods for working with Modbus.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public final class ModbusHelper {
 
+	private static final String UTF8_CHARSET = "UTF-8";
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusHelper.class);
 
 	/**
@@ -202,7 +207,6 @@ public final class ModbusHelper {
 	 *        the number of Modbus "words" to read from each address
 	 * @param unitId
 	 *        the Modbus unit ID to use in the read request
-	 * @param unitId
 	 * @return map of integer addresses to corresponding integer values, there
 	 *         should be {@code count} values for each {@code address} read
 	 */
@@ -266,6 +270,138 @@ public final class ModbusHelper {
 			}
 
 		});
+	}
+
+	/**
+	 * Get the values of specific registers as an array. This uses a Modbus
+	 * function code {@code 3} request.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 */
+	public static Integer[] readValues(SerialConnection conn, final Integer address, final int count,
+			final int unitId) {
+		Integer[] result = new Integer[count];
+		try {
+			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+			ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
+			req.setUnitID(unitId);
+			req.setHeadless();
+			trans.setRequest(req);
+			try {
+				trans.execute();
+			} catch ( ModbusException e ) {
+				throw new RuntimeException(e);
+			}
+			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+			for ( int w = 0; w < res.getWordCount(); w++ ) {
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
+				}
+				result[w] = res.getRegisterValue(w);
+			}
+		} finally {
+			conn.close();
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Get the raw bytes of specific registers as an array. This uses a Modbus
+	 * function code {@code 3} request.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 2-byte "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return array of register bytes; the result will have a length equal to
+	 *         {@code count * 2}
+	 */
+	public static byte[] readBytes(final SerialConnection conn, final Integer address, final int count,
+			final int unitId) {
+		byte[] result = new byte[count * 2];
+		try {
+			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+			ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
+			req.setUnitID(unitId);
+			req.setHeadless();
+			trans.setRequest(req);
+			try {
+				trans.execute();
+			} catch ( ModbusException e ) {
+				throw new RuntimeException(e);
+			}
+			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+			InputRegister[] registers = res.getRegisters();
+			if ( registers != null ) {
+
+				for ( int i = 0; i < registers.length; i++ ) {
+					if ( LOG.isTraceEnabled() ) {
+						LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
+					}
+					System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
+				}
+			}
+		} finally {
+			conn.close();
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Read a set of "input" type registers and interpret as a UTF-8 encoded
+	 * string.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param trim
+	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        resulting string
+	 * @return String from interpreting raw bytes as a UTF-8 encoded string
+	 * @see #readBytes(SerialConnection, Integer, int, int)
+	 */
+	public static String readUTF8String(final SerialConnection conn, final Integer address,
+			final int count, final int unitId, final boolean trim) {
+		final byte[] bytes = readBytes(conn, address, count, unitId);
+		String result = null;
+		if ( bytes != null ) {
+			try {
+				result = new String(bytes, UTF8_CHARSET);
+				if ( trim ) {
+					result = result.trim();
+				}
+			} catch ( UnsupportedEncodingException e ) {
+				throw new RuntimeException(e); // should never happen
+			}
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus input register {} count {} string: {}", address, count, result);
+		}
+		return result;
 	}
 
 	/**
