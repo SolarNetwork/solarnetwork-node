@@ -105,26 +105,22 @@ public final class ModbusHelper {
 	public static BitSet readDiscreetValues(SerialConnection conn, final Integer[] addresses,
 			final int count, final int unitId) {
 		BitSet result = new BitSet(addresses.length);
-		try {
-			for ( int i = 0; i < addresses.length; i++ ) {
-				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-				ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
-				req.setUnitID(unitId);
-				req.setHeadless();
-				trans.setRequest(req);
-				try {
-					trans.execute();
-				} catch ( ModbusException e ) {
-					throw new RuntimeException(e);
-				}
-				ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
-				if ( LOG.isTraceEnabled() ) {
-					LOG.trace("Got Modbus read coil {} response [{}]", addresses[i], res.getCoils());
-				}
-				result.set(i, res.getCoilStatus(0));
+		for ( int i = 0; i < addresses.length; i++ ) {
+			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+			ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
+			req.setUnitID(unitId);
+			req.setHeadless();
+			trans.setRequest(req);
+			try {
+				trans.execute();
+			} catch ( ModbusException e ) {
+				throw new RuntimeException(e);
 			}
-		} finally {
-			conn.close();
+			ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
+			if ( LOG.isTraceEnabled() ) {
+				LOG.trace("Got Modbus read coil {} response [{}]", addresses[i], res.getCoils());
+			}
+			result.set(i, res.getCoilStatus(0));
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus coil {} values: {}", addresses, result);
@@ -214,29 +210,25 @@ public final class ModbusHelper {
 			final Integer[] addresses, final int count, final int unitId) {
 		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>((addresses == null ? 0
 				: addresses.length) * count);
-		try {
-			for ( int i = 0; i < addresses.length; i++ ) {
-				ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-				ReadInputRegistersRequest req = new ReadInputRegistersRequest(addresses[i], count);
-				req.setUnitID(unitId);
-				req.setHeadless();
-				trans.setRequest(req);
-				try {
-					trans.execute();
-				} catch ( ModbusException e ) {
-					throw new RuntimeException(e);
-				}
-				ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
-				for ( int w = 0; w < res.getWordCount(); w++ ) {
-					if ( LOG.isTraceEnabled() ) {
-						LOG.trace("Got Modbus read input {} response {}", addresses[i] + w,
-								res.getRegisterValue(w));
-					}
-					result.put(addresses[i] + w, res.getRegisterValue(w));
-				}
+		for ( int i = 0; i < addresses.length; i++ ) {
+			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+			ReadInputRegistersRequest req = new ReadInputRegistersRequest(addresses[i], count);
+			req.setUnitID(unitId);
+			req.setHeadless();
+			trans.setRequest(req);
+			try {
+				trans.execute();
+			} catch ( ModbusException e ) {
+				throw new RuntimeException(e);
 			}
-		} finally {
-			conn.close();
+			ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
+			for ( int w = 0; w < res.getWordCount(); w++ ) {
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read input {} response {}", addresses[i] + w,
+							res.getRegisterValue(w));
+				}
+				result.put(addresses[i] + w, res.getRegisterValue(w));
+			}
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus input registers {} values: {}", addresses, result);
@@ -290,26 +282,22 @@ public final class ModbusHelper {
 	public static Integer[] readValues(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
 		Integer[] result = new Integer[count];
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
 		try {
-			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-			ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-			req.setUnitID(unitId);
-			req.setHeadless();
-			trans.setRequest(req);
-			try {
-				trans.execute();
-			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		for ( int w = 0; w < res.getWordCount(); w++ ) {
+			if ( LOG.isTraceEnabled() ) {
+				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
 			}
-			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-			for ( int w = 0; w < res.getWordCount(); w++ ) {
-				if ( LOG.isTraceEnabled() ) {
-					LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-				}
-				result[w] = res.getRegisterValue(w);
-			}
-		} finally {
-			conn.close();
+			result[w] = res.getRegisterValue(w);
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
@@ -335,30 +323,26 @@ public final class ModbusHelper {
 	public static byte[] readBytes(final SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
 		byte[] result = new byte[count * 2];
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
 		try {
-			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-			ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-			req.setUnitID(unitId);
-			req.setHeadless();
-			trans.setRequest(req);
-			try {
-				trans.execute();
-			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
-			}
-			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-			InputRegister[] registers = res.getRegisters();
-			if ( registers != null ) {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		InputRegister[] registers = res.getRegisters();
+		if ( registers != null ) {
 
-				for ( int i = 0; i < registers.length; i++ ) {
-					if ( LOG.isTraceEnabled() ) {
-						LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
-					}
-					System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
+			for ( int i = 0; i < registers.length; i++ ) {
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
 				}
+				System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
 			}
-		} finally {
-			conn.close();
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
