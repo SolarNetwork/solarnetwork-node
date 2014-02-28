@@ -26,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Base test class for non-transactional unit tests.
@@ -35,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
  * @version 1.0
  */
 @ContextConfiguration
-@Transactional
 public abstract class AbstractNodeTest extends AbstractJUnit4SpringContextTests {
 
 	/** A class-level logger. */
