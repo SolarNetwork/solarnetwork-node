@@ -81,6 +81,48 @@ public class PM3200Support {
 	public static final Integer ADDR_SYSTEM_METER_SERIAL_NUMBER = 129;
 	public static final Integer ADDR_SYSTEM_METER_MANUFACTURE_DATE = 131;
 
+	public static final Integer ADDR_DATA_START = 2999;
+
+	// current
+	public static final Integer ADDR_DATA_I1 = ADDR_DATA_START;
+	public static final Integer ADDR_DATA_I2 = 3001;
+	public static final Integer ADDR_DATA_I3 = 3003;
+	public static final Integer ADDR_DATA_I_NEUTRAL = 3005;
+	public static final Integer ADDR_DATA_I_AVERAGE = 3009;
+
+	// voltage
+	public static final Integer ADDR_DATA_V_L1_L2 = 3019;
+	public static final Integer ADDR_DATA_V_L2_L3 = 3021;
+	public static final Integer ADDR_DATA_V_L3_L1 = 3023;
+	public static final Integer ADDR_DATA_V_L_L_AVERAGE = 3025;
+	public static final Integer ADDR_DATA_V_L1_NEUTRAL = 3027;
+	public static final Integer ADDR_DATA_V_L2_NEUTRAL = 3029;
+	public static final Integer ADDR_DATA_V_L3_NEUTRAL = 3031;
+	public static final Integer ADDR_DATA_V_NEUTRAL_AVERAGE = 3035;
+
+	// power
+	public static final Integer ADDR_DATA_ACTIVE_POWER_P1 = 3053;
+	public static final Integer ADDR_DATA_ACTIVE_POWER_P2 = 3055;
+	public static final Integer ADDR_DATA_ACTIVE_POWER_P3 = 3057;
+	public static final Integer ADDR_DATA_ACTIVE_POWER_TOTAL = 3059;
+	public static final Integer ADDR_DATA_REACTIVE_POWER_P1 = 3061;
+	public static final Integer ADDR_DATA_REACTIVE_POWER_P2 = 3063;
+	public static final Integer ADDR_DATA_REACTIVE_POWER_P3 = 3065;
+	public static final Integer ADDR_DATA_REACTIVE_POWER_TOTAL = 3067;
+	public static final Integer ADDR_DATA_APPARENT_POWER_P1 = 3069;
+	public static final Integer ADDR_DATA_APPARENT_POWER_P2 = 3071;
+	public static final Integer ADDR_DATA_APPARENT_POWER_P3 = 3073;
+	public static final Integer ADDR_DATA_APPARENT_POWER_TOTAL = 3075;
+	public static final Integer ADDR_DATA_FREQUENCY = 3109;
+
+	// total energy
+	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 3203;
+	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = 3207;
+	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = 3219;
+	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = 3223;
+	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = 3235;
+	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = 3239;
+
 	private Integer unitId = 1;
 	private Map<String, Object> meterInfo;
 
@@ -230,6 +272,41 @@ public class PM3200Support {
 			int sec = ms / 1000;
 			ms = ms - (sec * 1000);
 			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
+		}
+		return result;
+	}
+
+	/**
+	 * Parse a 32-bit float value from a data array.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @param offset
+	 *        the offset within the array to parse the value from
+	 * @return the float, or <em>null</em> if not available
+	 */
+	public static Float parseFloat32(Integer[] data, int offset) {
+		Float result = null;
+		if ( data != null && offset >= 0 && data.length > (offset + 1) ) {
+			result = ModbusHelper.parseFloat32(new Integer[] { data[offset], data[offset + 1] });
+		}
+		return result;
+	}
+
+	/**
+	 * Parse a 64-bit integer value from a data array.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @param offset
+	 *        the offset within the array to parse the value from
+	 * @return the long, or <em>null</em> if not available
+	 */
+	public static Long parseInt64(Integer[] data, int offset) {
+		Long result = null;
+		if ( data != null && offset >= 0 && data.length > (offset + 3) ) {
+			result = ModbusHelper.parseInt64(new Integer[] { data[offset], data[offset + 1],
+					data[offset + 2], data[offset + 3] });
 		}
 		return result;
 	}
