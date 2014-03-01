@@ -227,8 +227,8 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 			source.setBasename(getClass().getName());
 
 			ResourceBundleMessageSource parent = new ResourceBundleMessageSource();
-			parent.setBundleClassLoader(super.getClass().getClassLoader());
-			parent.setBasename(super.getClass().getName());
+			parent.setBundleClassLoader(PM3200Support.class.getClassLoader());
+			parent.setBasename(PM3200Support.class.getName());
 			source.setParentMessageSource(parent);
 
 			MESSAGE_SOURCE = source;
