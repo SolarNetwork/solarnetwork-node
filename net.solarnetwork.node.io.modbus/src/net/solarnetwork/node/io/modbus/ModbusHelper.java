@@ -404,8 +404,8 @@ public final class ModbusHelper {
 
 	/**
 	 * Parse a 32-bit float value from raw Modbus register values. The
-	 * {@code data} array is expected to have a length of {@code 2}, and in
-	 * big-endian order.
+	 * {@code data} array is expected to have a length of {@code 2}, and be
+	 * arranged in big-endian order.
 	 * 
 	 * @param data
 	 *        the data array
@@ -421,6 +421,24 @@ public final class ModbusHelper {
 				LOG.trace("Data results in NaN: {}", (Object) data);
 				result = null;
 			}
+		}
+		return result;
+	}
+
+	/**
+	 * Parse a 64-bit long value from raw Modbus register values. The
+	 * {@code data} array is expected to have a length of {@code 4}, and be
+	 * arranged in big-endian order.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed long
+	 */
+	public static Long parseInt64(final Integer[] data) {
+		Long result = null;
+		if ( data != null && data.length == 4 ) {
+			result = (((data[0].longValue() & 0xFFFF) << 48) | ((data[1].longValue() & 0xFFFF) << 32)
+					| ((data[2].longValue() & 0xFFFF) << 16) | (data[3].longValue() & 0xFFFF));
 		}
 		return result;
 	}
