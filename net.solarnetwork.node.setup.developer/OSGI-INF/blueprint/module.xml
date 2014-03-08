@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+	
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="setup.cfg" persistent-id="net.solarnetwork.node.setup">
+		<beans:prop key="SetupService.nodeId">-11</beans:prop>
+		<beans:prop key="SetupService.hostName">localhost</beans:prop>
+		<beans:prop key="SetupService.port">8080</beans:prop>
+		<beans:prop key="SetupService.solarInUrlPrefix">/solarin</beans:prop>
+	</osgix:cm-properties>
+	
+	<!-- Published Services -->
+	
+	<service ref="identityService">
+		<interfaces>
+			<value>net.solarnetwork.node.IdentityService</value>
+		</interfaces>
+	</service>
+
+	<ctx:property-placeholder properties-ref="setup.cfg"/>
+	
+	<bean id="identityService" class="net.solarnetwork.node.setup.developer.DeveloperIdentityService">
+		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
+		<property name="nodeId" value="${SetupService.nodeId}"/>
+		<property name="hostName" value="${SetupService.hostName}"/>
+		<property name="port" value="${SetupService.port}"/>
+	</bean>
+	
+</blueprint>
