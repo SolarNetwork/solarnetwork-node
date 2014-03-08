@@ -20,18 +20,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node;
 
 /**
  * API for collecting {@link Datum} objects from some device.
- *
+ * 
  * @author matt
- * @version $Revision$ $Date$
- * @param <T> the Datum type
+ * @version 1.0
+ * @param <T>
+ *        the Datum type
  */
 public interface DatumDataSource<T extends Datum> {
 
@@ -41,10 +40,10 @@ public interface DatumDataSource<T extends Datum> {
 	 * @return class
 	 */
 	Class<? extends T> getDatumType();
-	
+
 	/**
-	 * Read the current value from the data source, returning
-	 * as an unpersisted {@link Datum} object.
+	 * Read the current value from the data source, returning as an unpersisted
+	 * {@link Datum} object.
 	 * 
 	 * @return Datum
 	 */
