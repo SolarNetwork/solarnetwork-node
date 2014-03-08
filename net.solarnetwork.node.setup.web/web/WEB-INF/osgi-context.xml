@@ -25,9 +25,9 @@
 	
 	<osgi:reference id="identityService" interface="net.solarnetwork.node.IdentityService"/>
 	
-	<osgi:reference id="setupService" interface="net.solarnetwork.node.setup.SetupService"/>
+	<osgi:reference id="setupService" interface="net.solarnetwork.node.setup.SetupService" availability="optional"/>
 		
-	<osgi:reference id="pkiService" interface="net.solarnetwork.node.setup.PKIService"/>
+	<osgi:reference id="pkiService" interface="net.solarnetwork.node.setup.PKIService" availability="optional"/>
 		
 	<osgi:reference id="sslServiceRef" availability="optional"
 		interface="net.solarnetwork.node.SSLService">
