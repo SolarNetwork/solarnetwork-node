@@ -18,19 +18,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web.support;
 
 import java.io.IOException;
 import java.util.Locale;
-
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
-
 import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 
 /**
  * JSP tag for resolving a message from an existing {@link MessageSource}.
@@ -51,11 +48,11 @@ import org.springframework.context.MessageSource;
  * <dd>The message key to resolve.</dd>
  * 
  * <dt>text</dt>
- * <dd>Default value to use if message can't be resolved.</dd>
+ * <dd>An optional default value to use if message can't be resolved.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class MessageTag extends TagSupport {
 
@@ -70,14 +67,23 @@ public class MessageTag extends TagSupport {
 		String msg = null;
 		if ( messageSource != null && key != null ) {
 			Locale locale = this.pageContext.getRequest().getLocale();
-			msg = this.messageSource.getMessage(this.key, null, "???" + this.key + "???", locale);
-		} else {
-			msg = text;
+			try {
+				msg = this.messageSource.getMessage(this.key, null, locale);
+			} catch ( NoSuchMessageException e ) {
+				// ignore
+			}
+		}
+		if ( msg == null ) {
+			if ( text != null ) {
+				msg = text;
+			} else {
+				msg = "???" + this.key + "???";
+			}
 		}
 		if ( msg != null && msg.length() > 0 ) {
 			try {
 				pageContext.getOut().write(msg);
-			} catch (IOException e) {
+			} catch ( IOException e ) {
 				throw new JspException(e);
 			}
 		}
