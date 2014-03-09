@@ -1,12 +1,12 @@
 <section class="intro">
 	<h2>
 		<fmt:message key="settings.factory.title">
-			<fmt:param value="${factory.displayName}"/>
+			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</h2>
 	<p>
 		<fmt:message key="settings.factory.intro">
-			<fmt:param value="${factory.displayName}"/>
+			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</p>
 	<p>
@@ -34,7 +34,7 @@
 		
 					<fieldset>
 						<legend>
-							<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
+							<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
 							${' '}
 							${instance.key}
 						</legend>
