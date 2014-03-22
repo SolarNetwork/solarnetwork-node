@@ -29,17 +29,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.job.AbstractJob;
-import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -245,13 +242,9 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 	}
 
 	private InstructionState toggleControl(final boolean value) {
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
-
-		instr.addParameter(controlId, String.valueOf(value));
 		InstructionState result = null;
 		try {
-			result = InstructionUtils.handleInstruction(handlers, instr);
+			result = InstructionUtils.setControlParameter(handlers, controlId, String.valueOf(value));
 		} catch ( RuntimeException e ) {
 			log.error("Exception setting control parameter {} to {}", controlId, value, e);
 		}
