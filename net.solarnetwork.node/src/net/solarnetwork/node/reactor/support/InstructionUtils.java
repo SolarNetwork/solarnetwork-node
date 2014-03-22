@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.reactor.support;
 
+import java.util.Date;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -30,7 +31,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * Utilities for dealing with common Instruction patterns.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public final class InstructionUtils {
 
@@ -69,6 +70,33 @@ public final class InstructionUtils {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Given a collection of {@link InstructionHandler} objects, find the first
+	 * one that can handle the
+	 * {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} topic for the
+	 * given {@code controlId} and {@code controlValue}. The
+	 * {@link Instruction#getRemoteInstructionId()} and
+	 * {@link Instruction#getInstructorId()} values are set to
+	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
+	 * 
+	 * @param handlers
+	 *        the collection of handlers to search over
+	 * @param controlId
+	 *        the ID of the control to set the control value to
+	 * @param controlValue
+	 *        the value to set the control to
+	 * @return the first non-null result of
+	 *         {@link InstructionHandler#processInstruction(Instruction)}, or
+	 *         <em>null</em> if no handler returns a value
+	 */
+	public static InstructionState setControlParameter(final Iterable<InstructionHandler> handlers,
+			final String controlId, final String controlValue) {
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(controlId, String.valueOf(controlValue));
+		return InstructionUtils.handleInstruction(handlers, instr);
 	}
 
 }
