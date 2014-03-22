@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
@@ -30,29 +28,31 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public interface InstructionHandler {
-	
+
 	/** The instruction topic for setting control parameters. */
 	String TOPIC_SET_CONTROL_PARAMETER = "SetControlParameter";
 
 	/**
 	 * Test if a topic is handled by this handler.
 	 * 
-	 * @param topic the topic
-	 * @return <em>true</em> only if this handler can execute the job for 
-	 * the given topic
+	 * @param topic
+	 *        the topic
+	 * @return <em>true</em> only if this handler can execute the job for the
+	 *         given topic
 	 */
 	boolean handlesTopic(String topic);
-	
+
 	/**
 	 * Process an instruction.
 	 * 
-	 * @param instruction the instruction to process
+	 * @param instruction
+	 *        the instruction to process
 	 * @return the state for the instruction, or <em>null</em> if the
-	 * instruction was not handled
+	 *         instruction was not handled
 	 */
 	InstructionState processInstruction(Instruction instruction);
-	
+
 }
