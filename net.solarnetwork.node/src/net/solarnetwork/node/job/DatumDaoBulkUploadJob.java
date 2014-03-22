@@ -115,8 +115,8 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 				if ( log.isTraceEnabled() ) {
 					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]", new Object[] {
 							result.getDatum().getClass().getSimpleName(),
-							result.getDatum().getCreated().getTime(), result.getDatum().getSourceId(),
-							tid });
+							(result.getDatum().getCreated() == null ? null : result.getDatum()
+									.getCreated().getTime()), result.getDatum().getSourceId(), tid });
 				}
 
 				if ( tid != null ) {
