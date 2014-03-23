@@ -42,7 +42,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.NodeControlInfoDatum;
-import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.net.SerialConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +84,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";
 
-	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
+	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -118,6 +118,23 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 				.get(3) ? 1 : 0) << 3));
 	}
 
+	private static final int PCM_LEVEL_0 = 0;
+	private static final int PCM_LEVEL_1 = 5;
+	private static final int PCM_LEVEL_2 = 10;
+	private static final int PCM_LEVEL_3 = 16;
+	private static final int PCM_LEVEL_4 = 23;
+	private static final int PCM_LEVEL_5 = 30;
+	private static final int PCM_LEVEL_6 = 36;
+	private static final int PCM_LEVEL_7 = 42;
+	private static final int PCM_LEVEL_8 = 50;
+	private static final int PCM_LEVEL_9 = 57;
+	private static final int PCM_LEVEL_10 = 65;
+	private static final int PCM_LEVEL_11 = 72;
+	private static final int PCM_LEVEL_12 = 80;
+	private static final int PCM_LEVEL_13 = 86;
+	private static final int PCM_LEVEL_14 = 93;
+	private static final int PCM_LEVEL_15 = 100;
+
 	/**
 	 * Get the approximate power output setting, from 0 to 100.
 	 * 
@@ -129,36 +146,96 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	private Integer percentValueForIntegerValue(Integer val) {
 		switch (val) {
 			case 1:
-				return 5;
+				return PCM_LEVEL_1;
 			case 2:
-				return 10;
+				return PCM_LEVEL_2;
 			case 3:
-				return 16;
+				return PCM_LEVEL_3;
 			case 4:
-				return 23;
+				return PCM_LEVEL_4;
 			case 5:
-				return 30;
+				return PCM_LEVEL_5;
 			case 6:
-				return 36;
+				return PCM_LEVEL_6;
 			case 7:
-				return 42;
+				return PCM_LEVEL_7;
 			case 8:
-				return 50;
+				return PCM_LEVEL_8;
 			case 9:
-				return 57;
+				return PCM_LEVEL_9;
 			case 10:
-				return 65;
+				return PCM_LEVEL_10;
 			case 11:
-				return 72;
+				return PCM_LEVEL_11;
 			case 12:
-				return 80;
+				return PCM_LEVEL_12;
 			case 13:
-				return 86;
+				return PCM_LEVEL_13;
 			case 14:
-				return 93;
+				return PCM_LEVEL_14;
 			default:
-				return (val < 1 ? 0 : 100);
+				return (val < 1 ? PCM_LEVEL_0 : PCM_LEVEL_15);
 		}
+	}
+
+	/**
+	 * Get the appropriate power output value, from 0 to 15, from an integer
+	 * percentage (0-100). Note that the value is floored, such that the PCM
+	 * value can never be larger than the percentage value passed in.
+	 * 
+	 * @param percent
+	 *        an integer percentage from 0-100
+	 * @return a PCM output value from 0-15
+	 */
+	private Integer pcmValueForPercentValue(Integer percent) {
+		final int p = (percent == null ? 0 : percent.intValue());
+		if ( p < PCM_LEVEL_1 ) {
+			return 0;
+		}
+		if ( p < PCM_LEVEL_2 ) {
+			return 1;
+		}
+		if ( p < PCM_LEVEL_3 ) {
+			return 2;
+		}
+		if ( p < PCM_LEVEL_4 ) {
+			return 3;
+		}
+		if ( p < PCM_LEVEL_5 ) {
+			return 4;
+		}
+		if ( p < PCM_LEVEL_6 ) {
+			return 5;
+		}
+		if ( p < PCM_LEVEL_7 ) {
+			return 6;
+		}
+		if ( p < PCM_LEVEL_8 ) {
+			return 7;
+		}
+		if ( p < PCM_LEVEL_9 ) {
+			return 8;
+		}
+		if ( p < PCM_LEVEL_10 ) {
+			return 9;
+		}
+		if ( p < PCM_LEVEL_11 ) {
+			return 10;
+		}
+		if ( p < PCM_LEVEL_12 ) {
+			return 11;
+		}
+		if ( p < PCM_LEVEL_13 ) {
+			return 12;
+		}
+		if ( p < PCM_LEVEL_14 ) {
+			return 13;
+		}
+		if ( p < PCM_LEVEL_15 ) {
+			return 14;
+		}
+		// all systems go!
+		return 15;
 	}
 
 	private synchronized boolean setPCMStatus(Integer desiredValue) {
@@ -215,7 +292,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic) || InstructionHandler.TOPIC_DEMAND_BALANCE
+				.equals(topic));
 	}
 
 	@Override
@@ -226,9 +304,16 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		for ( String paramName : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", paramName);
 			if ( controlId.equals(paramName) ) {
-				// treat parameter value as a decimal integer, value between 0-15
 				String str = instruction.getParameterValue(controlId);
+				// by default, treat parameter value as a decimal integer, value between 0-15
 				Integer desiredValue = Integer.parseInt(str);
+				if ( InstructionHandler.TOPIC_DEMAND_BALANCE.equals(instruction.getTopic()) ) {
+					// treat as a percentage integer 0-100, translate to 0-15
+					Integer val = pcmValueForPercentValue(desiredValue);
+					log.info("Balance request to {}%; PCM output to be capped at {} ({}%)",
+							desiredValue, val, percentValueForIntegerValue(val));
+					desiredValue = val;
+				}
 				if ( setPCMStatus(desiredValue) ) {
 					result = InstructionState.Completed;
 				} else {
@@ -328,12 +413,11 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		this.d4Address = d4Address;
 	}
 
-	public DynamicServiceTracker<ModbusSerialConnectionFactory> getConnectionFactory() {
+	public OptionalService<ModbusSerialConnectionFactory> getConnectionFactory() {
 		return connectionFactory;
 	}
 
-	public void setConnectionFactory(
-			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
+	public void setConnectionFactory(OptionalService<ModbusSerialConnectionFactory> connectionFactory) {
 		this.connectionFactory = connectionFactory;
 	}
 
