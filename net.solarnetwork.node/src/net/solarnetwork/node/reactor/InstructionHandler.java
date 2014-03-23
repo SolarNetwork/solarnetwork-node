@@ -28,12 +28,25 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface InstructionHandler {
 
-	/** The instruction topic for setting control parameters. */
+	/**
+	 * The instruction topic for setting control parameters. By convention the
+	 * instruction should have a parameter whose key is the ID of the control to
+	 * change and whose value is some control-specific data.
+	 */
 	String TOPIC_SET_CONTROL_PARAMETER = "SetControlParameter";
+
+	/**
+	 * The instruction topic for balancing power generation to power demand. By
+	 * convention the instruction should have a parameter whose key is the ID of
+	 * the control that should respond to the balancing request and whose value
+	 * is an integer percentage (0 - 100) of the maximum desired power
+	 * generation capacity.
+	 */
+	String TOPIC_DEMAND_BALANCE = "DemandBalanceGeneration";
 
 	/**
 	 * Test if a topic is handled by this handler.
