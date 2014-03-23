@@ -46,6 +46,20 @@ import org.springframework.context.MessageSource;
  * <dt>settingSpecifierProvider</dt>
  * <dd>The {@link SettingSpecifierProvider} that this class proxies all methods
  * for.</dd>
+ * <dt>trigger</dt>
+ * <dd>The job trigger.</dd>
+ * <dt>jobDetail</dt>
+ * <dd>The job detail.</dd>
+ * <dt>messageSource</dt>
+ * <dd>A {@link MessageSource} to use for
+ * {@link SettingSpecifierProvider#getMessageSource()}. If not configured, and a
+ * {@code settingSpecifierProvider} is configured, then a
+ * {@link TemplatedMessageSource} will automatically be created using that
+ * provider as its delegate and a mapping regular expression of
+ * {@code trigger\\.jobDataMap\\['(.*)'\\](.*)}. This essentially allows the
+ * delegate provider to configure properties as if they were directly named
+ * after its own settings, without needing to wrap each key with
+ * {@code trigger.jobDataMap[...]}.</dd>
  * </dl>
  * 
  * @author matt
