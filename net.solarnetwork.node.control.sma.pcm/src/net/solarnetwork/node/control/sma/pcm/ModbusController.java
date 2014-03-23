@@ -24,8 +24,8 @@ package net.solarnetwork.node.control.sma.pcm;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -73,6 +73,8 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  */
 public class ModbusController implements SettingSpecifierProvider, NodeControlProvider,
 		InstructionHandler {
+
+	private static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
 
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -261,7 +263,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	@Override
 	public List<String> getAvailableControlIds() {
-		return Collections.singletonList(controlId);
+		return Arrays.asList(controlId, controlId + PERCENT_CONTROL_ID_SUFFIX);
 	}
 
 	@Override
@@ -271,6 +273,9 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		NodeControlInfoDatum result = null;
 		try {
 			Integer value = integerValueForBitSet(currentDiscreetValue());
+			if ( controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX) ) {
+				value = percentValueForIntegerValue(value);
+			}
 			result = newNodeControlInfoDatum(controlId, value);
 		} catch ( RuntimeException e ) {
 			log.error("Error reading PCM {} status: {}", controlId, e.getMessage());
