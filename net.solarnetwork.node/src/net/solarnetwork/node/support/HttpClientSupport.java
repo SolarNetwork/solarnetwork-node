@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class HttpClientSupport {
 
@@ -65,6 +65,8 @@ public abstract class HttpClientSupport {
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private IdentityService identityService = null;
 	private OptionalService<SSLService> sslService = null;
+	private String uid;
+	private String groupUID;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -218,6 +220,26 @@ public abstract class HttpClientSupport {
 
 	public void setSslService(OptionalService<SSLService> sslService) {
 		this.sslService = sslService;
+	}
+
+	public String getUID() {
+		return getUid();
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

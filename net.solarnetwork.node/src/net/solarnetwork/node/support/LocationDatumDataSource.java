@@ -101,7 +101,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -222,6 +222,16 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	public String toString() {
 		return delegate != null ? delegate.toString() + "[LocationDatumDataSource proxy]"
 				: "LocationDatumDataSource";
+	}
+
+	@Override
+	public String getUID() {
+		return delegate.getUID();
+	}
+
+	@Override
+	public String getGroupUID() {
+		return delegate.getGroupUID();
 	}
 
 	@Override

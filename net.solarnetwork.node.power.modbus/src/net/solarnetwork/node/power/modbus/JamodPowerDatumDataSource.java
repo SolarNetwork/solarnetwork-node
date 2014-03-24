@@ -72,7 +72,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
  * 
  * @author matt.magoffin
- * @version 1.2
+ * @version 1.3
  */
 public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
@@ -87,6 +87,7 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 	private Map<Integer, String> registerMapping = defaultRegisterMapping();
 	private Map<Integer, Double> registerScaleFactor = defaultRegisterScaleFactor();
 	private Map<Integer, String> hiLoRegisterMapping = defaultHiLoRegisterMapping();
+	private String groupUID;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -381,7 +382,8 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", (defaults.sourceId == null ? ""
-				: defaults.sourceId.toString())));
+				: defaults.sourceId)));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("addressesValue", defaults.getAddressessValue()));
 		results.add(new BasicTextFieldSettingSpecifier("count", (defaults.getCount() == null ? ""
 				: defaults.getCount().toString())));
@@ -403,6 +405,20 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 			MESSAGE_SOURCE = source;
 		}
 		return MESSAGE_SOURCE;
+	}
+
+	@Override
+	public String getUID() {
+		return getSourceId();
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 	public Integer getUnitId() {

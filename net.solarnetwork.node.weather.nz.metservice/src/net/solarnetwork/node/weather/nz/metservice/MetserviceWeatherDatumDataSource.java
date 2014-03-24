@@ -222,9 +222,12 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		return Arrays
-				.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
-						DEFAULT_BASE_URL), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-						"localForecast", DEFAULT_LOCAL_FORECAST_SET),
+				.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
+								DEFAULT_BASE_URL),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecast",
+								DEFAULT_LOCAL_FORECAST_SET),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecastDayPattern",
 								DEFAULT_LOCAL_FORECAST_DAY_PATTERN),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localObs",

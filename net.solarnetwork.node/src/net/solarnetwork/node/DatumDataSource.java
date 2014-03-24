@@ -28,11 +28,11 @@ package net.solarnetwork.node;
  * API for collecting {@link Datum} objects from some device.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @param <T>
  *        the Datum type
  */
-public interface DatumDataSource<T extends Datum> {
+public interface DatumDataSource<T extends Datum> extends Identifiable {
 
 	/**
 	 * Get the class supported by this DataSource.

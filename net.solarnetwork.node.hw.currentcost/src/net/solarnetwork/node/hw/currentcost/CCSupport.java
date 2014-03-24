@@ -118,7 +118,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CCSupport {
 
@@ -161,6 +161,8 @@ public class CCSupport {
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
+	private String uid = null;
+	private String groupUID = null;
 
 	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
 		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
@@ -297,6 +299,8 @@ public class CCSupport {
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", String
 				.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
@@ -414,6 +418,26 @@ public class CCSupport {
 
 	public void setCollectAllSourceIdsTimeout(int collectAllSourceIdsTimeout) {
 		this.collectAllSourceIdsTimeout = collectAllSourceIdsTimeout;
+	}
+
+	public String getUID() {
+		return getUid();
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

@@ -55,7 +55,7 @@ import net.solarnetwork.node.weather.DayDatum;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockDayDatumDataSource implements DatumDataSource<DayDatum> {
 
@@ -109,6 +109,16 @@ public class MockDayDatumDataSource implements DatumDataSource<DayDatum> {
 
 	public void setTimeNightStart(String timeNightStart) {
 		this.timeNightStart = timeNightStart;
+	}
+
+	@Override
+	public String getUID() {
+		return "MockSource";
+	}
+
+	@Override
+	public String getGroupUID() {
+		return "Mock";
 	}
 
 }

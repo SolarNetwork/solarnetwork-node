@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class SMAInverterDataSourceSupport {
 
@@ -59,6 +59,7 @@ public abstract class SMAInverterDataSourceSupport {
 	private Set<String> channelNamesToMonitor = null;
 	private SettingDao settingDao = null;
 	private String sourceId = DEFAULT_SOURCE_ID;
+	private String groupUID = null;
 
 	protected final String getSettingPrefixDayStartValue() {
 		return getClass().getSimpleName() + "." + sourceId + ".start:";
@@ -285,6 +286,18 @@ public abstract class SMAInverterDataSourceSupport {
 
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
+	}
+
+	public String getUID() {
+		return getSourceId();
+	}
+
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

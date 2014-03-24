@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node;
@@ -28,28 +26,25 @@ package net.solarnetwork.node;
  * API for a service that manages data collector instances.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public interface DataCollectorFactory<T> {
+public interface DataCollectorFactory<T> extends Identifiable {
 
 	/**
-	 * Get a unique identifier for this factory.
-	 * 
-	 * <p>
-	 * This should be meaningful to the factory implementation. For example a
-	 * serial port based implementation could use the port identifier as the
-	 * UID.
-	 * </p>
+	 * Get a unique identifier for this factory. This should be meaningful to
+	 * the factory implementation. For example a serial port based
+	 * implementation could use the port identifier as the UID.
 	 * 
 	 * @return unique identifier
 	 */
+	@Override
 	String getUID();
 
 	/**
 	 * Get a {@link DataCollector} instance.
 	 * 
 	 * @param params
-	 *            the parameters to configure the collector with
+	 *        the parameters to configure the collector with
 	 * @return the instance
 	 */
 	DataCollector getDataCollectorInstance(T params);
@@ -58,7 +53,7 @@ public interface DataCollectorFactory<T> {
 	 * Get a {@link ConversationalDataCollector} instance.
 	 * 
 	 * @param params
-	 *            the parameters to configure the collector with
+	 *        the parameters to configure the collector with
 	 * @return the instance
 	 */
 	ConversationalDataCollector getConversationalDataCollectorInstance(T params);

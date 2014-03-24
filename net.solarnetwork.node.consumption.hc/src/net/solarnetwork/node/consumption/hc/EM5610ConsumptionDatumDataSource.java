@@ -25,7 +25,6 @@ package net.solarnetwork.node.consumption.hc;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -39,7 +38,6 @@ import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
 import net.wimpi.modbus.msg.ReadMultipleRegistersResponse;
 import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.util.SerialParameters;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -48,11 +46,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
 /**
  * DatumDataSource for ConsumptionDatum with the Hsiang Cheng EM 5610 kWh meter.
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt></dt>
- *   <dd></dd>
+ * <dt></dt>
+ * <dd></dd>
  * </dl>
  * 
  * @author matt
@@ -69,10 +69,10 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 	private static final float CURRENT_UNIT_VALUE = 60000F;
 	private static final float VOLTAGE_UNIT_VALUE = 100F;
 	private static final int DEFAULT_UNIT_ID = 1;
-	
+
 	/** The default value for the {@code sourceId} property. */
 	public static final String DEFAULT_SOURCE_ID = "Main";
-	
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private int unitId = DEFAULT_UNIT_ID;
@@ -82,6 +82,7 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 	private int connectionTries = DEFAULT_CONNECTION_TRIES;
 	private int transactionRepeat = 1;
 	private String sourceId = DEFAULT_SOURCE_ID;
+	private String groupUID = null;
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
 
 	private static final Object MONITOR = new Object();
@@ -115,7 +116,7 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 		params.setReceiveTimeout(bean.getReceiveTimeout());
 		return params;
 	}
-	
+
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
 		SerialConnection conn = null;
@@ -128,55 +129,51 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 			}
 		}
 	}
-	
+
 	private ConsumptionDatum getSample(SerialConnection conn) {
 		final ConsumptionDatum datum = new ConsumptionDatum();
-		
-		readInputRegister(conn, 
-			new ReadMultipleRegistersRequest(this.currentRegister, 1), 
-			this.transactionRepeat, 
-			new ReadMultipleRegistersTransactionCallback() {
-				public void doInTransaction(
-						ReadMultipleRegistersResponse res, int transactionIdx) {
-					int regVal = res.getRegisterValue(0);
-					log.trace("current regVal: {}", regVal);
 
-					Float current = Float.valueOf((float)regVal / CURRENT_UNIT_VALUE);
+		readInputRegister(conn, new ReadMultipleRegistersRequest(this.currentRegister, 1),
+				this.transactionRepeat, new ReadMultipleRegistersTransactionCallback() {
 
-					log.debug("current: {}", current);
-					datum.setAmps(current);
-				}
-			});
-		
-		readInputRegister(conn, 
-			new ReadMultipleRegistersRequest(this.voltageRegister, 1), 
-			this.transactionRepeat, 
-			new ReadMultipleRegistersTransactionCallback() {
-				public void doInTransaction(
-						ReadMultipleRegistersResponse res, int transactionIdx) {
-					int regVal = res.getRegisterValue(0);
-					log.trace("voltage regVal: {}", regVal);
-						
-					Float voltage = Float.valueOf((float)regVal / VOLTAGE_UNIT_VALUE);
-				
-					log.debug("voltage: {}", voltage);
-					datum.setVolts(voltage);
-				}
-			});
-		
-		readInputRegister(conn, 
-				new ReadMultipleRegistersRequest(this.wattHourRegister, 2), 
-				this.transactionRepeat, 
-				new ReadMultipleRegistersTransactionCallback() {
-					public void doInTransaction(
-							ReadMultipleRegistersResponse res, int transactionIdx) {
-						int regVal = (res.getRegisterValue(0) << 16) 
-								| res.getRegisterValue(1);
+					@Override
+					public void doInTransaction(ReadMultipleRegistersResponse res, int transactionIdx) {
+						int regVal = res.getRegisterValue(0);
+						log.trace("current regVal: {}", regVal);
+
+						Float current = Float.valueOf(regVal / CURRENT_UNIT_VALUE);
+
+						log.debug("current: {}", current);
+						datum.setAmps(current);
+					}
+				});
+
+		readInputRegister(conn, new ReadMultipleRegistersRequest(this.voltageRegister, 1),
+				this.transactionRepeat, new ReadMultipleRegistersTransactionCallback() {
+
+					@Override
+					public void doInTransaction(ReadMultipleRegistersResponse res, int transactionIdx) {
+						int regVal = res.getRegisterValue(0);
+						log.trace("voltage regVal: {}", regVal);
+
+						Float voltage = Float.valueOf(regVal / VOLTAGE_UNIT_VALUE);
+
+						log.debug("voltage: {}", voltage);
+						datum.setVolts(voltage);
+					}
+				});
+
+		readInputRegister(conn, new ReadMultipleRegistersRequest(this.wattHourRegister, 2),
+				this.transactionRepeat, new ReadMultipleRegistersTransactionCallback() {
+
+					@Override
+					public void doInTransaction(ReadMultipleRegistersResponse res, int transactionIdx) {
+						int regVal = (res.getRegisterValue(0) << 16) | res.getRegisterValue(1);
 						log.trace("WH regVal: {}", regVal);
-						
+
 						if ( regVal > 0 ) {
 							Long wh = Long.valueOf(regVal);
-					
+
 							log.debug("WH: {}", wh);
 							datum.setWattHourReading(wh);
 						}
@@ -185,13 +182,11 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 		datum.setSourceId(this.sourceId);
 		return datum;
 	}
-	
-	private void readInputRegister(SerialConnection conn, 
-			ReadMultipleRegistersRequest req, 
-			int txRepeat,
-			ReadMultipleRegistersTransactionCallback callback) {
+
+	private void readInputRegister(SerialConnection conn, ReadMultipleRegistersRequest req,
+			int txRepeat, ReadMultipleRegistersTransactionCallback callback) {
 		log.debug("Starting modbus transaction for request [{}]", req);
-		
+
 		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
 		req.setUnitID(this.unitId);
 		req.setHeadless();
@@ -199,19 +194,18 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 		for ( int i = 0; i < txRepeat; i++ ) {
 			try {
 				trans.execute();
-			} catch (ModbusException e) {
+			} catch ( ModbusException e ) {
 				throw new RuntimeException(e);
 			}
-			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse)trans.getResponse();
+			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
 			log.debug("Got response [{}]", res);
 			callback.doInTransaction(res, i);
 		}
 	}
-	
+
 	private SerialConnection openConnection(int tries) {
 		SerialParameters params = modbusParams(this.serialParams);
-		log.debug("Opening serial connection to [{}], {} tries remaining", params.getPortName(),
-				tries);
+		log.debug("Opening serial connection to [{}], {} tries remaining", params.getPortName(), tries);
 		try {
 			SerialConnection conn = new SerialConnection(params);
 			log.trace("just before opening connection status: {}", conn.isOpen());
@@ -222,9 +216,14 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 			if ( tries > 1 ) {
 				return openConnection(tries - 1);
 			}
-			throw new RuntimeException("Unable to open serial connection to ["
-					+ params.getPortName() + "]", e);
+			throw new RuntimeException("Unable to open serial connection to [" + params.getPortName()
+					+ "]", e);
 		}
+	}
+
+	@Override
+	public String getUID() {
+		return getSourceId();
 	}
 
 	@Override
@@ -244,7 +243,7 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
@@ -266,9 +265,9 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort",
-				DEFAULT_SERIAL_PORT));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort", DEFAULT_SERIAL_PORT));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(DEFAULT_UNIT_ID)));
 		results.add(new BasicTextFieldSettingSpecifier("currentRegister", String
 				.valueOf(DEFAULT_CURRENT_REGISTER)));
@@ -283,55 +282,71 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 	}
 
 	private static interface ReadMultipleRegistersTransactionCallback {
-		
+
 		/**
 		 * Execute within a ReadInputRegister transaction.
-		 * @param res the response
-		 * @param transactionIdx the transaction index
+		 * 
+		 * @param res
+		 *        the response
+		 * @param transactionIdx
+		 *        the transaction index
 		 */
 		void doInTransaction(ReadMultipleRegistersResponse res, int transactionIdx);
-		
+
 	}
 
 	public int getUnitId() {
 		return unitId;
 	}
+
 	public void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
+
 	public int getCurrentRegister() {
 		return currentRegister;
 	}
+
 	public void setCurrentRegister(int currentRegister) {
 		this.currentRegister = currentRegister;
 	}
+
 	public int getVoltageRegister() {
 		return voltageRegister;
 	}
+
 	public void setVoltageRegister(int voltageRegister) {
 		this.voltageRegister = voltageRegister;
 	}
+
 	public int getWattHourRegister() {
 		return wattHourRegister;
 	}
+
 	public void setWattHourRegister(int wattHourRegister) {
 		this.wattHourRegister = wattHourRegister;
 	}
+
 	public int getConnectionTries() {
 		return connectionTries;
 	}
+
 	public void setConnectionTries(int connectionTries) {
 		this.connectionTries = connectionTries;
 	}
+
 	public int getTransactionRepeat() {
 		return transactionRepeat;
 	}
+
 	public void setTransactionRepeat(int transactionRepeat) {
 		this.transactionRepeat = transactionRepeat;
 	}
+
 	public String getSourceId() {
 		return sourceId;
 	}
+
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
@@ -343,5 +358,14 @@ public class EM5610ConsumptionDatumDataSource implements DatumDataSource<Consump
 	public void setSerialParams(SerialPortBeanParameters serialParams) {
 		this.serialParams = serialParams;
 	}
-	
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
+	}
+
 }

@@ -64,7 +64,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
@@ -89,6 +89,9 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
 	private int hourNightStart = DEFAULT_HOUR_NIGHT_START;
 
+	private String sourceId = "MockSource";
+	private String groupUID = "Mock";
+
 	private MessageSource messageSource = null;
 
 	@Override
@@ -96,6 +99,7 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		return PowerDatum.class;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public PowerDatum readCurrentDatum() {
 		if ( !enabled ) {
@@ -198,6 +202,28 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
+	}
+
+	@Override
+	public String getUID() {
+		return getSourceId();
 	}
 
 }

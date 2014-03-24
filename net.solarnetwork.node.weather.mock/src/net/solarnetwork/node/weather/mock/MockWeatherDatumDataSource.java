@@ -38,7 +38,7 @@ import net.solarnetwork.node.weather.WeatherDatum;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockWeatherDatumDataSource implements DatumDataSource<WeatherDatum> {
 
@@ -62,6 +62,16 @@ public class MockWeatherDatumDataSource implements DatumDataSource<WeatherDatum>
 		datum.setHumidity(57.0);
 
 		return datum;
+	}
+
+	@Override
+	public String getUID() {
+		return "MockSource";
+	}
+
+	@Override
+	public String getGroupUID() {
+		return "Mock";
 	}
 
 }

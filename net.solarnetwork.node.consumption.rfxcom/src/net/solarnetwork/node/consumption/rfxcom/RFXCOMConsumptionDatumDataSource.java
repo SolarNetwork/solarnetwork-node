@@ -62,7 +62,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * the supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
 		MultiDatumDataSource<ConsumptionDatum>, ConversationalDataCollector.Moderator<List<Message>>,
@@ -96,6 +96,8 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
 	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
+	private String uid;
+	private String groupUID;
 
 	// some in-memory error correction support, map keys are source IDs
 	private long maxWattHourWarmupVerificationDiff = DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF;
@@ -380,7 +382,11 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
+
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(21);
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 
@@ -392,8 +398,6 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 			status.append(datum.toString());
 		}
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
-
-		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
 
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
@@ -517,6 +521,28 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	public void setMaxWattHourSpikeVerificationDiff(long maxWattHourSpikeVerificationDiff) {
 		this.maxWattHourSpikeVerificationDiff = maxWattHourSpikeVerificationDiff;
+	}
+
+	@Override
+	public String getUID() {
+		return getUid();
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

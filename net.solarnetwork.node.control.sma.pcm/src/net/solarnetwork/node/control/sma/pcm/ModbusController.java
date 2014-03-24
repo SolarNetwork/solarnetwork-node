@@ -261,9 +261,13 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	// NodeControlProvider
 
+	private String getPercentControlId() {
+		return controlId + PERCENT_CONTROL_ID_SUFFIX;
+	}
+
 	@Override
 	public List<String> getAvailableControlIds() {
-		return Arrays.asList(controlId, controlId + PERCENT_CONTROL_ID_SUFFIX);
+		return Arrays.asList(controlId, getPercentControlId());
 	}
 
 	@Override
@@ -306,16 +310,18 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		log.debug("Inspecting instruction {} against control {}", instruction.getId(), controlId);
+		final String percentControlId = getPercentControlId();
 		for ( String paramName : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", paramName);
-			if ( controlId.equals(paramName) ) {
+			if ( controlId.equals(paramName) || controlId.equals(percentControlId) ) {
 				String str = instruction.getParameterValue(controlId);
 				// by default, treat parameter value as a decimal integer, value between 0-15
 				Integer desiredValue = Integer.parseInt(str);
-				if ( InstructionHandler.TOPIC_DEMAND_BALANCE.equals(instruction.getTopic()) ) {
+				if ( controlId.equals(percentControlId)
+						|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(instruction.getTopic()) ) {
 					// treat as a percentage integer 0-100, translate to 0-15
 					Integer val = pcmValueForPercentValue(desiredValue);
-					log.info("Balance request to {}%; PCM output to be capped at {} ({}%)",
+					log.info("Percent output request to {}%; PCM output to be capped at {} ({}%)",
 							desiredValue, val, percentValueForIntegerValue(val));
 					desiredValue = val;
 				}

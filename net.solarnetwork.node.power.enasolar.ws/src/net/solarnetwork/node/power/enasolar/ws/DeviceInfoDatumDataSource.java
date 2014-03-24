@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.power.enasolar.ws;
@@ -85,10 +83,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dd>The {@link SettingDao} to use to keep track of "last known" values to
  * compensate for inverter power cuts. When the inverter power is cut, it might
  * return stale data in the XML service, which we want to discard.</dd>
+ * 
+ * <dt>groupUID</dt>
+ * <dd>The service group ID to use.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class DeviceInfoDatumDataSource extends XmlServiceSupport implements DatumDataSource<PowerDatum>,
 		SettingSpecifierProvider {
@@ -197,6 +198,11 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements Datu
 		return datum;
 	}
 
+	@Override
+	public String getUID() {
+		return getSourceId();
+	}
+
 	/**
 	 * Set the XPath mapping using String values.
 	 * 
@@ -272,6 +278,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements Datu
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(10);
 		result.add(new BasicTextFieldSettingSpecifier("url", "http://localhost:8082/gs/deviceinfo.xml"));
 		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		result.add(new BasicTextFieldSettingSpecifier("dataMapping",
 				getDataMapping(defaultXpathMapping())));
 		return result;

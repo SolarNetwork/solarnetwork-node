@@ -67,10 +67,12 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dl class="class-properties">
  * <dt>portIdentifier</dt>
  * <dd>The port identifier to use for all serial communication.</dd>
+ * <dt>groupUID</dt>
+ * <dd>The service group to use. Defaults to <em>null</em>.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPortBeanParameters>,
 		SettingSpecifierProvider {
@@ -87,10 +89,16 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 	private String portIdentifier = DEFAULT_PORT_IDENTIFIER;
 	private long timeout = 50L;
 	private TimeUnit unit = TimeUnit.SECONDS;
+	private String groupUID = null;
 
 	@Override
 	public String getUID() {
 		return portIdentifier;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
 	}
 
 	private Lock acquireLock() throws LockTimeoutException {
@@ -206,6 +214,7 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 		RxtxDataCollectorFactory defaults = new RxtxDataCollectorFactory();
 		results.add(new BasicTextFieldSettingSpecifier("portIdentifier", defaults.portIdentifier));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
 		return results;
 	}
@@ -295,6 +304,10 @@ public class RxtxDataCollectorFactory implements DataCollectorFactory<SerialPort
 
 	public void setUnit(TimeUnit unit) {
 		this.unit = unit;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

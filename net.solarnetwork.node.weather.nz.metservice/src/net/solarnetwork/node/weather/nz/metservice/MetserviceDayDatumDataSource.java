@@ -176,12 +176,13 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
-				DEFAULT_BASE_URL), (SettingSpecifier) new BasicTextFieldSettingSpecifier("riseSet",
-				DEFAULT_RISE_SET), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-				"dayDateFormat", DEFAULT_DAY_DATE_FORMAT),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("timeDayFormat",
-						DEFAULT_TIME_DATE_FORMAT));
+		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl", DEFAULT_BASE_URL),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("riseSet", DEFAULT_RISE_SET),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dayDateFormat",
+						DEFAULT_DAY_DATE_FORMAT), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
+						"timeDayFormat", DEFAULT_TIME_DATE_FORMAT));
 	}
 
 	public String getRiseSet() {

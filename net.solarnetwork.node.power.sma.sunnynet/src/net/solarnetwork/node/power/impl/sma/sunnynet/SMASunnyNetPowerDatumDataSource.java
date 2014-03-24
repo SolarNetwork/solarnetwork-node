@@ -157,7 +157,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </pre>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport implements
 		DatumDataSource<PowerDatum>, ConversationalDataCollector.Moderator<PowerDatum>,
@@ -209,6 +209,8 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private long synOnlineWaitMs = DEFAULT_SYN_ONLINE_WAIT_MS;
+	private String sourceId = "Main";
+	private String groupUID;
 
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
@@ -322,6 +324,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		}
 
 		PowerDatum datum = new PowerDatum();
+		datum.setSourceId(this.sourceId);
 
 		// Issue GetData command for each channel we're interested in
 		getNumericDataValue(dataCollector, this.pvVoltsChannelName, "pvVolts", datum);
@@ -601,6 +604,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 				DEFAULT_SERIAL_PORT));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 
 		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
@@ -664,6 +668,31 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	public void setDataCollectorFactory(
 			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
+	}
+
+	@Override
+	public String getUID() {
+		return getSourceId();
+	}
+
+	@Override
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	@Override
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	@Override
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

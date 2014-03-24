@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Schneider Electric Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.schneider
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.hw.schneider.meter;version="1.0.0"
+ net.solarnetwork.node.hw.schneider.meter;version="1.1.0"
 Import-Package: 
  net.solarnetwork.domain;version="1.2.0",
- net.solarnetwork.node;version="1.8.0",
+ net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.io.modbus;version="1.4.0",
  net.solarnetwork.node.reactor;version="1.0.0",
  net.solarnetwork.node.settings;version="1.1.0",

@@ -53,6 +53,10 @@ import org.slf4j.LoggerFactory;
  * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
  * <dt>unitId</dt>
  * <dd>The Modbus ID of the device to communicate with.</dd>
+ * <dt>uid</dt>
+ * <dd>A service name to use.</dd>
+ * <dt>groupUID</dt>
+ * <dd>A service group to use.</dd>
  * </dl>
  * 
  * @author matt
@@ -125,6 +129,8 @@ public class PM3200Support {
 
 	private Integer unitId = 1;
 	private Map<String, Object> meterInfo;
+	private String uid;
+	private String groupUID;
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 
@@ -324,7 +330,8 @@ public class PM3200Support {
 			log.debug("Error reading {} info: {}", unitId, e.getMessage());
 		}
 		results.add(info);
-
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
@@ -346,6 +353,40 @@ public class PM3200Support {
 
 	public void setConnectionFactory(OptionalService<ModbusSerialConnectionFactory> connectionFactory) {
 		this.connectionFactory = connectionFactory;
+	}
+
+	/**
+	 * Get a UID value.
+	 * 
+	 * <p>
+	 * If {@code uid} is not configured then the {@code unitId} will be
+	 * returned.
+	 * </p>
+	 * 
+	 * @return UID
+	 */
+	public String getUID() {
+		String uid = getUid();
+		if ( uid == null && unitId != null ) {
+			uid = unitId.toString();
+		}
+		return uid;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

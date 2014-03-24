@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Xantrex GT View Power
 Bundle-SymbolicName: net.solarnetwork.node.power.xantrex.gtview
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.node;version="1.0.0",
+ net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.power;version="1.0.0",
  net.solarnetwork.node.util;version="1.0.0",
  org.slf4j;version="[1.5.0,2.0.0)",

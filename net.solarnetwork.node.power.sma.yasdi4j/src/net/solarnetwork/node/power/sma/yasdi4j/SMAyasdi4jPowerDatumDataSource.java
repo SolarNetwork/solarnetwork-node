@@ -277,6 +277,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 				.valueOf(defaults.deviceSerialNumber)));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 
 		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue", defaults
 				.getPvWattsChannelNamesValue()));

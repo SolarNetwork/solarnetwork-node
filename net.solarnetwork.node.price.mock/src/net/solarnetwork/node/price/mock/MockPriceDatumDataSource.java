@@ -37,7 +37,7 @@ import net.solarnetwork.node.price.PriceDatum;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockPriceDatumDataSource implements DatumDataSource<PriceDatum> {
 
@@ -57,6 +57,16 @@ public class MockPriceDatumDataSource implements DatumDataSource<PriceDatum> {
 			super(sourceId, price, locationId);
 		}
 
+	}
+
+	@Override
+	public String getUID() {
+		return "MockSource";
+	}
+
+	@Override
+	public String getGroupUID() {
+		return "Mock";
 	}
 
 }

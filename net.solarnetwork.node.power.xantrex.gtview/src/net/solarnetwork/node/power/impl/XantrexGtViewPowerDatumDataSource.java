@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 /* ==================================================================
@@ -53,7 +51,6 @@ package net.solarnetwork.node.power.impl;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.power.PowerDatum;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
@@ -63,21 +60,25 @@ import org.springframework.beans.factory.ObjectFactory;
  * inverters, acquiring the data by reading the files written by the freeware
  * GT-View application.
  * 
- * <p>It assumes the {@link DataCollector} implementation blocks until 
- * appropriate data is available when the {@link DataCollector#collectData()}
- * method is called.</p>
+ * <p>
+ * It assumes the {@link DataCollector} implementation blocks until appropriate
+ * data is available when the {@link DataCollector#collectData()} method is
+ * called.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>dataCollectorFactory</dt>
- *   <dd>The factory for creating {@link DataCollector} instances with. 
- *   {@link GenericObjectFactory#getObject()} will be called on each invocation
- *   of {@link #readCurrentConsumptionDatum()}.</dd>
+ * <dt>dataCollectorFactory</dt>
+ * <dd>The factory for creating {@link DataCollector} instances with.
+ * {@link GenericObjectFactory#getObject()} will be called on each invocation of
+ * {@link #readCurrentConsumptionDatum()}.</dd>
  * </dl>
- *
+ * 
  * @author matt, mike
- * @version $Revision$ $Date: 2008-08-10 01:34:16 -0700 (Sun, 10 Aug 2008)$
+ * @version 1.2
  */
 public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerDatum> {
 
@@ -91,7 +92,17 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private ObjectFactory<DataCollector> dataCollectorFactory;
-	
+
+	@Override
+	public String getUID() {
+		return getClass().getName();
+	}
+
+	@Override
+	public String getGroupUID() {
+		return null;
+	}
+
 	@Override
 	public Class<? extends PowerDatum> getDatumType() {
 		return PowerDatum.class;
@@ -110,19 +121,20 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 				dataCollector.stopCollecting();
 			}
 		}
-		
+
 		if ( data == null ) {
 			log.warn("Null serial data received, serial communications problem");
 			return null;
 		}
-		
+
 		return getPowerDatumInstance(data);
 
 	}
-	
+
+	@SuppressWarnings("deprecation")
 	private PowerDatum getPowerDatumInstance(String data) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Raw last sample data in file: " +data);
+			log.debug("Raw last sample data in file: " + data);
 		}
 
 		String[] tokens = data.split("\t");
@@ -134,9 +146,9 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 		if ( d == null || d.doubleValue() == 0.0 ) {
 			return null;
 		}
-		
+
 		PowerDatum datum = new PowerDatum();
-						
+
 		// Field 0: Date: unused
 
 		// Field 1: Time: unused
@@ -206,19 +218,12 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 		return null;
 	}
 
-	/**
-	 * @return the dataCollectorFactory
-	 */
 	public ObjectFactory<DataCollector> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
 
-	/**
-	 * @param dataCollectorFactory the dataCollectorFactory to set
-	 */
-	public void setDataCollectorFactory(
-			ObjectFactory<DataCollector> dataCollectorFactory) {
+	public void setDataCollectorFactory(ObjectFactory<DataCollector> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
 	}
-	
+
 }
