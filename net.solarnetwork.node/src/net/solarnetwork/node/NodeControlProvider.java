@@ -18,23 +18,26 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node;
 
 import java.util.List;
-
 import net.solarnetwork.domain.NodeControlInfo;
 
 /**
  * API for control providers to implement.
  * 
+ * <p>
+ * For many control providers that implement a single control, the
+ * {@link Identifiable#getUID()} will return the <em>control ID</em> of that
+ * control.
+ * </p>
+ * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public interface NodeControlProvider {
+public interface NodeControlProvider extends Identifiable {
 
 	/**
 	 * Get a list of available controls this provider supports.
@@ -42,12 +45,12 @@ public interface NodeControlProvider {
 	 * @return the components
 	 */
 	List<String> getAvailableControlIds();
-	
+
 	/**
-	 * Get the current instantaneous component value for the given
-	 * component ID.
+	 * Get the current instantaneous component value for the given component ID.
 	 * 
-	 * @param controlId the ID of the control to get the info for
+	 * @param controlId
+	 *        the ID of the control to get the info for
 	 * @return the current value
 	 */
 	NodeControlInfo getCurrentControlInfo(String controlId);

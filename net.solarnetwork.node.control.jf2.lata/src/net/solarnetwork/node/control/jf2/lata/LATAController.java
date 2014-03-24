@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.ConversationalDataCollector;
@@ -54,48 +53,52 @@ import net.solarnetwork.node.support.NodeControlInfoDatum;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
- * Implementation of both {@link NodeControlProvider} and {@link InstructionHandler}
- * for the JF2 LATA switch.
+ * Implementation of both {@link NodeControlProvider} and
+ * {@link InstructionHandler} for the JF2 LATA switch.
  * 
- * <p>This class allows the LATA switch to both report the on/off status of each
- * configured address, and for those addresses to be toggled on/off.</p>
+ * <p>
+ * This class allows the LATA switch to both report the on/off status of each
+ * configured address, and for those addresses to be toggled on/off.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>controlIdMapping</dt>
- *   <dd>A mapping of NodeControlInfo {@code controlId} value keys to associated
- *   LATA switch addresses, as hex string values. This can also be configured
- *   via the {@link #setControlIdMappingValue(String)} method, for easy configuration
- *   via a property placeholder.</dd>
- *   
- *   <dt>dataCollectorFactory</dt>
- *   <dd>An ObjectFactory for creating the {@link ConversationalDataCollector} to
- *   handle the IO communication with the LATA switch with.</dd>
+ * <dt>controlIdMapping</dt>
+ * <dd>A mapping of NodeControlInfo {@code controlId} value keys to associated
+ * LATA switch addresses, as hex string values. This can also be configured via
+ * the {@link #setControlIdMappingValue(String)} method, for easy configuration
+ * via a property placeholder.</dd>
+ * 
+ * <dt>dataCollectorFactory</dt>
+ * <dd>An ObjectFactory for creating the {@link ConversationalDataCollector} to
+ * handle the IO communication with the LATA switch with.</dd>
  * </dl>
  * 
  * @author matt
  * @version $Revision$
  */
-public class LATAController implements NodeControlProvider, InstructionHandler,
-		SettingSpecifierProvider {
-	
+public class LATAController implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
+
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
-	
+
 	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
-	
-	private static final Pattern SWITCH_STATUS_RESULT_PATTERN
-		= Pattern.compile("^(\\w{8})2\\d{2}(\\w*)");
+	private String uid;
+	private String groupUID;
+
+	private static final Pattern SWITCH_STATUS_RESULT_PATTERN = Pattern
+			.compile("^(\\w{8})2\\d{2}(\\w*)");
 
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
@@ -109,7 +112,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 		super();
 		setControlIdMappingValue(DEFAULT_CONTROL_ID_MAPPING);
 	}
-	
+
 	@Override
 	public boolean handlesTopic(String topic) {
 		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
@@ -119,8 +122,8 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 	public InstructionState processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
-		log.debug("Inspecting instruction {} against controls {}",
-				instruction.getId(), controlIdMapping.keySet());
+		log.debug("Inspecting instruction {} against controls {}", instruction.getId(),
+				controlIdMapping.keySet());
 		for ( String controlId : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", controlId);
 			if ( controlIdMapping.containsKey(controlId) ) {
@@ -154,14 +157,13 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 		try {
 			cmd = new AddressableCommand(address, newStatus ? Command.SwitchOn : Command.SwitchOff);
 		} catch ( CommandValidationException e ) {
-			log.error("Bad address [{}] configured for control ID {}: {}",
-					new Object[] {address, controlId, e.getMessage()});
+			log.error("Bad address [{}] configured for control ID {}: {}", new Object[] { address,
+					controlId, e.getMessage() });
 			return false;
 		}
 		DataCollectorFactory<SerialPortBeanParameters> df = dataCollectorFactory.service();
 		if ( df != null ) {
-			ConversationalDataCollector dc = df
-					.getConversationalDataCollectorInstance(serialParams);
+			ConversationalDataCollector dc = df.getConversationalDataCollectorInstance(serialParams);
 			try {
 				dc.collectData(new LATABusConverser(cmd));
 				log.trace("Set status to {} for control {}, address {}", new Object[] { newStatus,
@@ -197,8 +199,8 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 		try {
 			cmd = new AddressableCommand(address, Command.SwitchStatus);
 		} catch ( CommandValidationException e ) {
-			log.error("Bad address [{}] configured for control ID {}: {}",
-					new Object[] {address, controlId, e.getMessage()});
+			log.error("Bad address [{}] configured for control ID {}: {}", new Object[] { address,
+					controlId, e.getMessage() });
 			return null;
 		}
 
@@ -216,13 +218,14 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 				log.info("Status unavailable for control {}, address {}", controlId, address);
 				return null;
 			}
-			log.trace("Got status result [{}] for control {}, address {}", 
-					new Object[] {result, controlId, address});
+			log.trace("Got status result [{}] for control {}, address {}", new Object[] { result,
+					controlId, address });
 			Matcher m = SWITCH_STATUS_RESULT_PATTERN.matcher(result);
 			if ( m.find() ) {
 				String resultAddress = m.group(1);
 				if ( !resultAddress.equals(address) ) {
-					log.debug("Address returned in command {} does not match expected address {}, ignoring",
+					log.debug(
+							"Address returned in command {} does not match expected address {}, ignoring",
 							resultAddress, address);
 				} else {
 					String status = m.group(2);
@@ -249,16 +252,19 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 		info.setValue(status.toString());
 		return info;
 	}
-	
+
 	/**
 	 * Set the {@code controlIdMapping} property using a string value.
 	 * 
-	 * <p>The passed in value must be a comma-delimited list of key/value
-	 * pairs, each pair separated by an equal sign. For example:
+	 * <p>
+	 * The passed in value must be a comma-delimited list of key/value pairs,
+	 * each pair separated by an equal sign. For example:
 	 * {@code 1 = one, 2 = two} would define two keys and their associated
-	 * values.</p>
+	 * values.
+	 * </p>
 	 * 
-	 * @param value the value string
+	 * @param value
+	 *        the value string
 	 */
 	public void setControlIdMappingValue(String value) {
 		String[] keyValues = value.split("\\s*,\\s*");
@@ -309,7 +315,7 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
@@ -331,10 +337,12 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(
-				"controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
-		results.add(new BasicTextFieldSettingSpecifier(
-				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("controlIdMappingValue",
+				DEFAULT_CONTROL_ID_MAPPING));
+		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
 		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
 		return results;
 	}
@@ -363,6 +371,27 @@ public class LATAController implements NodeControlProvider, InstructionHandler,
 	public void setSerialParams(SerialPortBeanParameters serialParams) {
 		this.serialParams = serialParams;
 	}
-	
-	
+
+	@Override
+	public String getUID() {
+		return getUid();
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
+	}
+
 }

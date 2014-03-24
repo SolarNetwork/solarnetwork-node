@@ -78,6 +78,7 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 
 	private Integer unitId = 1;
 	private String controlId = "/switch/1";
+	private String groupUID;
 
 	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
 
@@ -117,6 +118,11 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 	@Override
 	public List<String> getAvailableControlIds() {
 		return Collections.singletonList(controlId);
+	}
+
+	@Override
+	public String getUID() {
+		return getControlId();
 	}
 
 	@Override
@@ -202,7 +208,8 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
 
 		return results;
@@ -250,6 +257,15 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 	public void setConnectionFactory(
 			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
 		this.connectionFactory = connectionFactory;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

@@ -85,6 +85,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";
+	private String groupUID;
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 
@@ -266,6 +267,11 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	}
 
 	@Override
+	public String getUID() {
+		return getControlId();
+	}
+
+	@Override
 	public List<String> getAvailableControlIds() {
 		return Arrays.asList(controlId, getPercentControlId());
 	}
@@ -372,7 +378,8 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("d1Address", defaults.d1Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d2Address", defaults.d2Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
@@ -446,6 +453,15 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }
