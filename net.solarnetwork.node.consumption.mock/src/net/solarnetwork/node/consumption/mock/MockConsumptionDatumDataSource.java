@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.consumption.mock;
@@ -62,7 +60,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class MockConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum> {
 
@@ -87,6 +85,8 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 	private String groupUID = "Mock";
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
 	private int hourNightStart = DEFAULT_HOUR_NIGHT_START;
+	private int dayAmpRandomness = 16;
+	private int nightAmpRandomness = 1;
 
 	private final AtomicLong counter = new AtomicLong(0);
 
@@ -106,16 +106,27 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 						+ (this.hourNightStart - 12) + "pm");
 			}
 			result = (ConsumptionDatum) DAY.clone();
+			applyRandomness(result, dayAmpRandomness);
 		} else {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Returning night consumption after " + (this.hourNightStart - 12) + "pm");
 			}
 			result = (ConsumptionDatum) NIGHT.clone();
+			applyRandomness(result, nightAmpRandomness);
 		}
 		result.setSourceId(sourceId);
 		long wattHours = counter.addAndGet(Math.round(Math.random() * 100.0));
 		result.setWattHourReading(wattHours);
 		return result;
+	}
+
+	private void applyRandomness(final ConsumptionDatum datum, final float r) {
+		float amps = datum.getAmps();
+		amps += (float) (Math.random() * r * (Math.random() > 0.2 ? 1.0f : -1.0f));
+		if ( amps < 0 ) {
+			amps = 0;
+		}
+		datum.setAmps(amps);
 	}
 
 	@Override
@@ -154,6 +165,22 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	public void setHourNightStart(int hourNightStart) {
 		this.hourNightStart = hourNightStart;
+	}
+
+	public int getDayAmpRandomness() {
+		return dayAmpRandomness;
+	}
+
+	public void setDayAmpRandomness(int dayAmpRandomness) {
+		this.dayAmpRandomness = dayAmpRandomness;
+	}
+
+	public int getNightAmpRandomness() {
+		return nightAmpRandomness;
+	}
+
+	public void setNightAmpRandomness(int nightAmpRandomness) {
+		this.nightAmpRandomness = nightAmpRandomness;
 	}
 
 }

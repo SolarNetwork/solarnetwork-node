@@ -84,6 +84,7 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	private Float dayPvAmps = 5.0F;
 	private Float nightPvAmps = 0.0F;
+	private int dayWattRandomness = 900;
 	private boolean enabled = true;
 
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
@@ -115,6 +116,7 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 			}
 			PowerDatum result = (PowerDatum) DAY_POWER.clone();
 			result.setPvAmps(dayPvAmps);
+			applyRandomness(result, dayWattRandomness);
 			return result;
 		}
 		if ( log.isDebugEnabled() ) {
@@ -123,6 +125,15 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		PowerDatum result = (PowerDatum) NIGHT_POWER.clone();
 		result.setPvAmps(nightPvAmps);
 		return result;
+	}
+
+	private void applyRandomness(final PowerDatum datum, final int r) {
+		int watts = datum.getWatts();
+		watts += (int) (Math.random() * r * (Math.random() > 0.2 ? 1.0f : -1.0f));
+		if ( watts < 0 ) {
+			watts = 0;
+		}
+		datum.setWatts(watts);
 	}
 
 	private static class MockPowerDatum extends PowerDatum implements Mock, Cloneable {
@@ -224,6 +235,14 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 	@Override
 	public String getUID() {
 		return getSourceId();
+	}
+
+	public int getDayWattRandomness() {
+		return dayWattRandomness;
+	}
+
+	public void setDayWattRandomness(int dayWattRandomness) {
+		this.dayWattRandomness = dayWattRandomness;
 	}
 
 }
