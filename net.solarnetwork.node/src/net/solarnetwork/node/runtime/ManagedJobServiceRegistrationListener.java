@@ -97,7 +97,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -213,7 +213,7 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 
 					// get JobDataMap
 					Enumeration<String> keyEnum = props.keys();
-					Pattern pat = Pattern.compile("trigger\\.jobDataMap\\['(.*)'\\]");
+					Pattern pat = Pattern.compile("trigger\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\].*");
 					while ( keyEnum.hasMoreElements() ) {
 						String key = keyEnum.nextElement();
 						Matcher m = pat.matcher(key);

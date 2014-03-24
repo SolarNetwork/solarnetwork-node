@@ -28,6 +28,7 @@ import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.node.util.TemplatedMessageSource;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
@@ -56,21 +57,35 @@ import org.springframework.context.MessageSource;
  * {@code settingSpecifierProvider} is configured, then a
  * {@link TemplatedMessageSource} will automatically be created using that
  * provider as its delegate and a mapping regular expression of
- * {@code trigger\\.jobDataMap\\['(.*)'\\](.*)}. This essentially allows the
- * delegate provider to configure properties as if they were directly named
- * after its own settings, without needing to wrap each key with
- * {@code trigger.jobDataMap[...]}.</dd>
+ * {@code jobDetail\.jobDataMap\['([a-zA-Z0-9_]*)'\](.*)}. This essentially
+ * allows the delegate provider to configure properties as if they were directly
+ * named after its own settings, without needing to wrap each key with
+ * {@code jobDetail.jobDataMap[...]}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail {
+
+	/**
+	 * The regular expression used to delegate properties to the delegate
+	 * {@code settingSpecifierProvider}.
+	 */
+	public static final String JOB_DETAIL_PROPERTY_MAPPING_REGEX = "jobDetail\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\](.*)";
+
+	private static final KeyedSmartQuotedTemplateMapper MAPPER = getMapper();
 
 	private SettingSpecifierProvider settingSpecifierProvider;
 	private Trigger trigger;
 	private JobDetail jobDetail;
 	private MessageSource messageSource;
+
+	private static KeyedSmartQuotedTemplateMapper getMapper() {
+		KeyedSmartQuotedTemplateMapper result = new KeyedSmartQuotedTemplateMapper();
+		result.setTemplate("jobDetail.jobDataMap['%s']");
+		return result;
+	}
 
 	@Override
 	public String toString() {
@@ -108,8 +123,6 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		// we map the managed properties to the trigger, so when we update the values 
-		// we can reschedule the job with the updated values
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		if ( trigger instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trigger;
@@ -119,7 +132,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		for ( SettingSpecifier spec : settingSpecifierProvider.getSettingSpecifiers() ) {
 			if ( spec instanceof KeyedSettingSpecifier<?> ) {
 				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-				result.add(keyedSpec.mappedWithPlaceholer("trigger.jobDataMap['%s']"));
+				result.add(keyedSpec.mappedWithMapper(MAPPER));
 			} else {
 				result.add(spec);
 			}
@@ -132,7 +145,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		if ( messageSource == null ) {
 			TemplatedMessageSource tSource = new TemplatedMessageSource();
 			tSource.setDelegate(settingSpecifierProvider.getMessageSource());
-			tSource.setRegex("trigger\\.jobDataMap\\['(.*)'\\](.*)");
+			tSource.setRegex(JOB_DETAIL_PROPERTY_MAPPING_REGEX);
 			messageSource = tSource;
 		}
 		return messageSource;
