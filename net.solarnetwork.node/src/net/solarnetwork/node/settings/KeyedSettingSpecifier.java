@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
@@ -30,7 +28,7 @@ package net.solarnetwork.node.settings;
  * @param <T>
  *        the type of value stored by this setting
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 
@@ -71,6 +69,15 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 	SettingSpecifier mappedWithPlaceholer(String template);
 
 	/**
+	 * Return a setting specifier mapped to a new path, using a {@link Mapper}.
+	 * 
+	 * @param mapper
+	 *        the mapper
+	 * @return the new instance
+	 */
+	SettingSpecifier mappedWithMapper(Mapper mapper);
+
+	/**
 	 * Get transient flag.
 	 * 
 	 * <p>
@@ -82,4 +89,19 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 	 */
 	boolean isTransient();
 
+	/**
+	 * API to dynamically map a key to a new key.
+	 */
+	interface Mapper {
+
+		/**
+		 * Map an input key to an output key.
+		 * 
+		 * @param key
+		 *        the key to map
+		 * @return the mapped key
+		 */
+		String mapKey(String key);
+
+	}
 }

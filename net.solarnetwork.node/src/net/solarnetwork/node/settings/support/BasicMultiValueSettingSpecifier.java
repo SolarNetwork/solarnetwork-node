@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link MultiValueSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecifier implements
 		MultiValueSettingSpecifier {
@@ -40,18 +38,28 @@ public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecif
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BasicMultiValueSettingSpecifier(String key, String defaultValue) {
 		super(key, defaultValue);
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(prefix
-				+ getKey(), getDefaultValue());
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(String.format(
+				template, getKey()), getDefaultValue());
+		spec.setTitle(getTitle());
+		spec.setValueTitles(getValueTitles());
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(
+			net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper mapper) {
+		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(
+				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;

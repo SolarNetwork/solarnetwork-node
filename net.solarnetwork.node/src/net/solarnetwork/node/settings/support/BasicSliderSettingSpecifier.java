@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.SliderSettingSpecifier;
  * Basic implementation of {@link SliderSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Double> implements
 		SliderSettingSpecifier {
@@ -81,6 +79,14 @@ public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Doubl
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicSliderSettingSpecifier spec = new BasicSliderSettingSpecifier(String.format(template,
 				getKey()), getDefaultValue(), minimumValue, maximumValue, step);
+		spec.setTitle(getTitle());
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		BasicSliderSettingSpecifier spec = new BasicSliderSettingSpecifier(mapper.mapKey(getKey()),
+				getDefaultValue(), minimumValue, maximumValue, step);
 		spec.setTitle(getTitle());
 		return spec;
 	}

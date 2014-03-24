@@ -30,7 +30,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link LocationLookupSettingSpecifier}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long> implements
 		LocationLookupSettingSpecifier {
@@ -57,6 +57,14 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicLocationLookupSettingSpecifier spec = new BasicLocationLookupSettingSpecifier(
 				String.format(template, getKey()), locationType, location);
+		spec.setTitle(getTitle());
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		BasicLocationLookupSettingSpecifier spec = new BasicLocationLookupSettingSpecifier(
+				mapper.mapKey(getKey()), locationType, location);
 		spec.setTitle(getTitle());
 		return spec;
 	}

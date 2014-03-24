@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.ToggleSettingSpecifier;
  * Basic implementation of {@link ToggleSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Object> implements
 		ToggleSettingSpecifier {
@@ -79,6 +77,16 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicToggleSettingSpecifier spec = new BasicToggleSettingSpecifier(String.format(template,
 				getKey()), getDefaultValue());
+		spec.setTitle(getTitle());
+		spec.setTrueValue(trueValue);
+		spec.setFalseValue(falseValue);
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		BasicToggleSettingSpecifier spec = new BasicToggleSettingSpecifier(mapper.mapKey(getKey()),
+				getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setTrueValue(trueValue);
 		spec.setFalseValue(falseValue);

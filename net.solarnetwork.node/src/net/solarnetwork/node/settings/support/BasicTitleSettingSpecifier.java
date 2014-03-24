@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -33,7 +31,7 @@ import net.solarnetwork.node.settings.TitleSettingSpecifier;
  * Basic implemtation of {@link TitleSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String> implements
 		TitleSettingSpecifier {
@@ -75,6 +73,15 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(String.format(template,
 				getKey()), getDefaultValue());
+		spec.setTitle(getTitle());
+		spec.setValueTitles(valueTitles);
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(mapper.mapKey(getKey()),
+				getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(valueTitles);
 		return spec;

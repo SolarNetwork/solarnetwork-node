@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link RadioGroupSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicRadioGroupSettingSpecifier extends BasicTextFieldSettingSpecifier implements
 		RadioGroupSettingSpecifier {
@@ -42,9 +40,9 @@ public class BasicRadioGroupSettingSpecifier extends BasicTextFieldSettingSpecif
 	 * Constructor.
 	 * 
 	 * @param key
-	 *            the key
+	 *        the key
 	 * @param defaultValue
-	 *            the default value
+	 *        the default value
 	 */
 	public BasicRadioGroupSettingSpecifier(String key, String defaultValue) {
 		super(key, defaultValue);
@@ -56,9 +54,18 @@ public class BasicRadioGroupSettingSpecifier extends BasicTextFieldSettingSpecif
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
-		BasicRadioGroupSettingSpecifier spec = new BasicRadioGroupSettingSpecifier(prefix
-				+ getKey(), getDefaultValue());
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		BasicRadioGroupSettingSpecifier spec = new BasicRadioGroupSettingSpecifier(String.format(
+				template, getKey()), getDefaultValue());
+		spec.setTitle(getTitle());
+		spec.setValueTitles(getValueTitles());
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		BasicRadioGroupSettingSpecifier spec = new BasicRadioGroupSettingSpecifier(
+				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;

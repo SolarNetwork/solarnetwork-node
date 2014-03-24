@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
  * Basic implementation of {@link TextFieldSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier implements
 		TextFieldSettingSpecifier {
@@ -52,6 +50,16 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier i
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(String.format(template,
 				getKey()), getDefaultValue());
+		spec.setTitle(getTitle());
+		spec.setValueTitles(getValueTitles());
+		return spec;
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(
+			net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper mapper) {
+		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(
+				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
@@ -31,7 +29,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Base implementation of {@link KeyedSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier implements
 		KeyedSettingSpecifier<T> {
