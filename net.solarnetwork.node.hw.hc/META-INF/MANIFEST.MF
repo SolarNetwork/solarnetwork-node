@@ -1,0 +1,18 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode Hsiang Cheng Electric Support
+Bundle-SymbolicName: net.solarnetwork.node.hw.hc
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ net.solarnetwork.node.io.modbus;version="1.5.0",
+ net.solarnetwork.util;version="1.14.0",
+ net.wimpi.modbus;version="[1.2.0,1.3.0)",
+ net.wimpi.modbus.io;version="[1.2.0,1.3.0)",
+ net.wimpi.modbus.msg;version="[1.2.0,1.3.0)",
+ net.wimpi.modbus.net;version="[1.2.0,1.3.0)",
+ net.wimpi.modbus.util;version="[1.2.0,1.3.0)",
+ org.joda.time;version="[1.6,3.0)",
+ org.joda.time.base;version="[1.6,3.0)",
+ org.slf4j;version="[1.5.0,2.0.0)"
