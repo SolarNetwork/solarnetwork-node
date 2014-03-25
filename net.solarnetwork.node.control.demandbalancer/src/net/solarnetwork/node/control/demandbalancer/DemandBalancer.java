@@ -130,9 +130,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				(demandWatts == null ? "N/A" : demandWatts.toString()), (generationWatts == null ? "N/A"
 						: generationWatts.toString()), powerMaximumWatts,
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
-		if ( demandWatts != null && generationWatts != null && generationLimitPercent != null ) {
+		if ( demandWatts != null && generationWatts != null ) {
 			evaluateBalance(demandWatts.intValue(), generationWatts.intValue(),
-					generationLimitPercent.intValue());
+					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
 		}
 	}
 

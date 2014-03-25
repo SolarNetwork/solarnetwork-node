@@ -53,7 +53,8 @@ public interface DemandBalanceStrategy {
 	 * @param generationCapacityWatts
 	 *        the generation capacity, in watts
 	 * @param currentLimit
-	 *        the current generation limit, as an integer percentage
+	 *        the current generation limit, as an integer percentage, or
+	 *        anything less than {@code 0} if unknown
 	 * @return the desired generation limit, as an integer percentage
 	 */
 	int evaluateBalance(final String powerControlId, final int demandWatts, final int generationWatts,
