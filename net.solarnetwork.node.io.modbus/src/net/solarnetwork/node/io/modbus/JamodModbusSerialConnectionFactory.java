@@ -43,13 +43,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * Default implementation of {@link ModbusSerialConnectionFactory}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectionFactory,
 		SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
-	private final ReentrantLock lock = new ReentrantLock();
+	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
 	private static SerialParametersBean getDefaultSerialParametersInstance() {
 		SerialParametersBean params = new SerialParametersBean();
@@ -78,7 +78,18 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	@Override
 	public SerialConnection getSerialConnection() {
 		LockingSerialConnection conn = new LockingSerialConnection(serialParams);
-		openConnection(conn, 2);
+		try {
+			openConnection(conn, 2);
+		} catch ( RuntimeException e ) {
+			if ( conn != null ) {
+				try {
+					conn.close(); // to release the lock
+				} catch ( Exception e2 ) {
+					// ignore this
+				}
+			}
+			throw e;
+		}
 		return conn;
 	}
 
@@ -108,13 +119,19 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 
 		@Override
 		public void close() {
-			if ( isOpen() ) {
-				try {
+			try {
+				if ( isOpen() ) {
 					super.close();
-				} finally {
-					releaseLock();
 				}
+			} finally {
+				releaseLock();
 			}
+		}
+
+		@Override
+		protected void finalize() throws Throwable {
+			releaseLock(); // as a catch-all
+			super.finalize();
 		}
 	}
 
@@ -125,6 +142,10 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	 *         if the lock cannot be obtained
 	 */
 	private void acquireLock() throws LockTimeoutException {
+		if ( lock.isLocked() ) {
+			log.debug("Port {} lock already acquired", serialParams.getPortName());
+			return;
+		}
 		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}", serialParams.getPortName(),
 				timeout, unit);
 		try {
@@ -140,11 +161,14 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	}
 
 	/**
-	 * Release the lock previously obtained via {@link #acquireLock()}.
+	 * Release the lock previously obtained via {@link #acquireLock()}. This
+	 * method is safe to call even if the lock has already been released.
 	 */
 	private void releaseLock() {
-		log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
-		lock.unlock();
+		if ( lock.isLocked() ) {
+			log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
+			lock.unlock();
+		}
 	}
 
 	private void openConnection(SerialConnection conn, int tries) {
@@ -163,6 +187,11 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 			} catch ( Exception e ) {
 				exception = e;
 				tries--;
+				try {
+					conn.close();
+				} catch ( Exception e2 ) {
+					// ignore this one
+				}
 			}
 		} while ( tries > 0 );
 		throw new RuntimeException("Unable to open serial connection to [" + serialParams.getPortName()
