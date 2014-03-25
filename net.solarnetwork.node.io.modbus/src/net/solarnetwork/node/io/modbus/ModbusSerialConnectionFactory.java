@@ -52,7 +52,9 @@ public interface ModbusSerialConnectionFactory {
 	 * 
 	 * <p>
 	 * The returned connection will be opened. If the connection cannot be
-	 * opened, a {@link RuntimeException} will be thrown.
+	 * opened, a {@link RuntimeException} will be thrown. The caller should
+	 * always call {@link SerialConnection#close()} to free up resources when
+	 * finished.
 	 * </p>
 	 * 
 	 * @return the connection
