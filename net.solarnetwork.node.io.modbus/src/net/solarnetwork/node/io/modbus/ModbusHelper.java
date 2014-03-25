@@ -47,11 +47,12 @@ import org.slf4j.LoggerFactory;
  * Helper methods for working with Modbus.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public final class ModbusHelper {
 
 	private static final String UTF8_CHARSET = "UTF-8";
+	private static final String ASCII_CHARSET = "US-ASCII";
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusHelper.class);
 
 	/**
@@ -366,20 +367,67 @@ public final class ModbusHelper {
 	 *        if <em>true</em> then remove leading/trailing whitespace from the
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a UTF-8 encoded string
-	 * @see #readBytes(SerialConnection, Integer, int, int)
+	 * @see #readString(SerialConnection, Integer, int, int, boolean, String)
 	 */
 	public static String readUTF8String(final SerialConnection conn, final Integer address,
 			final int count, final int unitId, final boolean trim) {
+		return readString(conn, address, count, unitId, trim, UTF8_CHARSET);
+	}
+
+	/**
+	 * Read a set of "input" type registers and interpret as a US-ASCII encoded
+	 * string.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param trim
+	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        resulting string
+	 * @return String from interpreting raw bytes as a US-ASCII encoded string
+	 * @see #readString(SerialConnection, Integer, int, int, boolean, String)
+	 */
+	public static String readASCIIString(final SerialConnection conn, final Integer address,
+			final int count, final int unitId, final boolean trim) {
+		return readString(conn, address, count, unitId, trim, ASCII_CHARSET);
+	}
+
+	/**
+	 * Read a set of "input" type registers and interpret as a string.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param trim
+	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        resulting string
+	 * @param charsetName
+	 *        the character set to interpret the bytes as
+	 * @return String from interpreting raw bytes as a string
+	 * @see #readBytes(SerialConnection, Integer, int, int)
+	 */
+	public static String readString(final SerialConnection conn, final Integer address, final int count,
+			final int unitId, final boolean trim, final String charsetName) {
 		final byte[] bytes = readBytes(conn, address, count, unitId);
 		String result = null;
 		if ( bytes != null ) {
 			try {
-				result = new String(bytes, UTF8_CHARSET);
+				result = new String(bytes, charsetName);
 				if ( trim ) {
 					result = result.trim();
 				}
 			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e); // should never happen
+				throw new RuntimeException(e);
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
