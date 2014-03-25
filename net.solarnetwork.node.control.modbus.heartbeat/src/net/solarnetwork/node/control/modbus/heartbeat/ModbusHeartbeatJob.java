@@ -98,7 +98,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, Sett
 				heartbeatSuccess = true;
 			}
 		} catch ( RuntimeException e ) {
-			log.error("Error sending heartbeat message: {}", e);
+			log.error("Error sending heartbeat message: {}", e.toString());
 			Throwable root = e;
 			while ( root.getCause() != null ) {
 				root = root.getCause();
