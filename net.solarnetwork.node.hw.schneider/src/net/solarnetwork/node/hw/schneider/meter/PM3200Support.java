@@ -22,24 +22,19 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Supporting class for the PM3200 series power meter.
@@ -60,24 +55,24 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class PM3200Support {
+public class PM3200Support extends ModbusSupport {
 
 	/** Key for the meter name, as a String. */
-	public static final String INFO_KEY_METER_NAME = "Name";
+	public static final String INFO_KEY_METER_NAME = INFO_KEY_DEVICE_NAME;
 
 	/** Key for the meter model, as a String. */
-	public static final String INFO_KEY_METER_MODEL = "Model";
+	public static final String INFO_KEY_METER_MODEL = INFO_KEY_DEVICE_MODEL;
 
 	/** Key for the meter serial number, as a Long. */
-	public static final String INFO_KEY_METER_SERIAL_NUMBER = "Serial Number";
+	public static final String INFO_KEY_METER_SERIAL_NUMBER = INFO_KEY_DEVICE_SERIAL_NUMBER;
 
 	/** Key for the meter manufacturer, as a String. */
-	public static final String INFO_KEY_METER_MANUFACTURER = "Manufacturer";
+	public static final String INFO_KEY_METER_MANUFACTURER = INFO_KEY_DEVICE_MANUFACTURER;
 
 	/** Key for the meter manufacture date, as a {@link LocalDate}. */
-	public static final String INFO_KEY_METER_MANUFACTURE_DATE = "Manufacture Date";
+	public static final String INFO_KEY_METER_MANUFACTURE_DATE = INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
@@ -127,16 +122,6 @@ public class PM3200Support {
 	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = 3235;
 	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = 3239;
 
-	private Integer unitId = 1;
-	private Map<String, Object> meterInfo;
-	private String uid;
-	private String groupUID;
-
-	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
-
 	/**
 	 * Read the name of the meter.
 	 * 
@@ -145,7 +130,7 @@ public class PM3200Support {
 	 * @return the meter name, or <em>null</em> if not available
 	 */
 	public String getMeterName(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_NAME, 20, unitId, true);
+		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_NAME, 20, getUnitId(), true);
 	}
 
 	/**
@@ -156,7 +141,7 @@ public class PM3200Support {
 	 * @return the meter model, or <em>null</em> if not available
 	 */
 	public String getMeterModel(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MODEL, 20, unitId, true);
+		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MODEL, 20, getUnitId(), true);
 	}
 
 	/**
@@ -167,7 +152,7 @@ public class PM3200Support {
 	 * @return the meter manufacturer, or <em>null</em> if not available
 	 */
 	public String getMeterManufacturer(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MANUFACTURER, 20, unitId, true);
+		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MANUFACTURER, 20, getUnitId(), true);
 	}
 
 	/**
@@ -179,7 +164,7 @@ public class PM3200Support {
 	 */
 	public Long getMeterSerialNumber(SerialConnection conn) {
 		Long result = null;
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_SERIAL_NUMBER, 2, unitId);
+		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_SERIAL_NUMBER, 2, getUnitId());
 		if ( data != null && data.length == 2 ) {
 			int longValue = ModbusHelper.getLongWord(data[0], data[1]);
 			result = (long) longValue;
@@ -195,20 +180,13 @@ public class PM3200Support {
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
 	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4, unitId);
+		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4,
+				getUnitId());
 		return parseDateTime(data);
 	}
 
-	/**
-	 * Read general meter info and return a map of the results. See the various
-	 * {@code INFO_KEY_*} constants for information on the values returned in
-	 * the result map.
-	 * 
-	 * @param conn
-	 *        the connection to use
-	 * @return a map with general meter information populated
-	 */
-	public Map<String, Object> readMeterInfo(SerialConnection conn) {
+	@Override
+	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
 		String str = getMeterName(conn);
 		if ( str != null ) {
@@ -234,6 +212,19 @@ public class PM3200Support {
 	}
 
 	/**
+	 * Read general meter info and return a map of the results. See the various
+	 * {@code INFO_KEY_*} constants for information on the values returned in
+	 * the result map.
+	 * 
+	 * @param conn
+	 *        the connection to use
+	 * @return a map with general meter information populated
+	 */
+	public Map<String, Object> readMeterInfo(SerialConnection conn) {
+		return readDeviceInfo(conn);
+	}
+
+	/**
 	 * Return an informational message composed of general meter info. This
 	 * method will call {@link #readMeterInfo(SerialConnection)} and return a
 	 * {@code /} (forward slash) delimited string of the resulting values.
@@ -241,21 +232,7 @@ public class PM3200Support {
 	 * @return info message
 	 */
 	public String getMeterInfoMessage() {
-		if ( meterInfo == null ) {
-			meterInfo = ModbusHelper.execute(connectionFactory,
-					new ModbusConnectionCallback<Map<String, Object>>() {
-
-						@Override
-						public Map<String, Object> doInConnection(SerialConnection conn)
-								throws IOException {
-							return readMeterInfo(conn);
-						}
-					});
-		}
-		if ( meterInfo == null ) {
-			return null;
-		}
-		return StringUtils.delimitedStringFromCollection(meterInfo.values(), " / ");
+		return getDeviceInfoMessage();
 	}
 
 	/**
@@ -292,11 +269,7 @@ public class PM3200Support {
 	 * @return the float, or <em>null</em> if not available
 	 */
 	public static Float parseFloat32(Integer[] data, int offset) {
-		Float result = null;
-		if ( data != null && offset >= 0 && data.length > (offset + 1) ) {
-			result = ModbusHelper.parseFloat32(new Integer[] { data[offset], data[offset + 1] });
-		}
-		return result;
+		return parseBigEndianFloat32(data, offset);
 	}
 
 	/**
@@ -309,12 +282,7 @@ public class PM3200Support {
 	 * @return the long, or <em>null</em> if not available
 	 */
 	public static Long parseInt64(Integer[] data, int offset) {
-		Long result = null;
-		if ( data != null && offset >= 0 && data.length > (offset + 3) ) {
-			result = ModbusHelper.parseInt64(new Integer[] { data[offset], data[offset + 1],
-					data[offset + 2], data[offset + 3] });
-		}
-		return result;
+		return parseBigEndianInt64(data, offset);
 	}
 
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -327,66 +295,16 @@ public class PM3200Support {
 			String infoMsg = getMeterInfoMessage();
 			info.setDefaultValue(infoMsg);
 		} catch ( RuntimeException e ) {
-			log.debug("Error reading {} info: {}", unitId, e.getMessage());
+			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
 		}
 		results.add(info);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
 
 		return results;
-	}
-
-	public Integer getUnitId() {
-		return unitId;
-	}
-
-	public void setUnitId(Integer unitId) {
-		this.unitId = unitId;
-	}
-
-	public OptionalService<ModbusSerialConnectionFactory> getConnectionFactory() {
-		return connectionFactory;
-	}
-
-	public void setConnectionFactory(OptionalService<ModbusSerialConnectionFactory> connectionFactory) {
-		this.connectionFactory = connectionFactory;
-	}
-
-	/**
-	 * Get a UID value.
-	 * 
-	 * <p>
-	 * If {@code uid} is not configured then the {@code unitId} will be
-	 * returned.
-	 * </p>
-	 * 
-	 * @return UID
-	 */
-	public String getUID() {
-		String uid = getUid();
-		if ( uid == null && unitId != null ) {
-			uid = unitId.toString();
-		}
-		return uid;
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }
