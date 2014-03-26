@@ -22,10 +22,18 @@
 
 package net.solarnetwork.node.hw.hc;
 
+import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_MANUFACTURE_DATE;
+import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_MODEL;
+import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_SERIAL_NUMBER;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSupport;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.LocalDateTime;
 
@@ -61,66 +69,38 @@ import org.joda.time.LocalDateTime;
  */
 public class EM5600Support extends ModbusSupport {
 
-	// unit constants: note these are expressed as integers, values are derived
-	// by dividing the unscaled value by these
-	public static final int UNIT_U = 100;
-	public static final int UNIT_A = 10000;
-	public static final int UNIT_P = 20;
+	private boolean captureTotal = true;
+	private boolean capturePhaseA = false;
+	private boolean capturePhaseB = false;
+	private boolean capturePhaseC = false;
 
-	// meter info
-	public static final Integer ADDR_SYSTEM_METER_MODEL = 0x0;
-	public static final Integer ADDR_SYSTEM_METER_HARDWARE_VERSION = 0x2; // length 2 ASCII characters
-	public static final Integer ADDR_SYSTEM_METER_SERIAL_NUMBER = 0x10; // length 4 ASCII characters
-	public static final Integer ADDR_SYSTEM_METER_MANUFACTURE_DATE = 0x18; // length 2 F10 encoding
+	/**
+	 * An instance of {@link EM5600Data} to support keeping the last-read values
+	 * of data in memory.
+	 */
+	protected final EM5600Data sample = new EM5600Data();
 
-	// current
-	public static final Integer ADDR_DATA_I1 = 0x130;
-	public static final Integer ADDR_DATA_I2 = 0x131;
-	public static final Integer ADDR_DATA_I3 = 0x132;
-	public static final Integer ADDR_DATA_I_AVERAGE = 0x133;
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		EM5600Support defaults = new EM5600Support();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
-	// voltage
-	public static final Integer ADDR_DATA_V_L1_NEUTRAL = 0x136;
-	public static final Integer ADDR_DATA_V_L2_NEUTRAL = 0x137;
-	public static final Integer ADDR_DATA_V_L3_NEUTRAL = 0x138;
-	public static final Integer ADDR_DATA_V_NEUTRAL_AVERAGE = 0x139;
-	public static final Integer ADDR_DATA_V_L1_L2 = 0x13B;
-	public static final Integer ADDR_DATA_V_L2_L3 = 0x13C;
-	public static final Integer ADDR_DATA_V_L3_L1 = 0x13D;
-	public static final Integer ADDR_DATA_V_L_L_AVERAGE = 0x13E;
+		// get current value
+		BasicTitleSettingSpecifier info = new BasicTitleSettingSpecifier("info", "N/A", true);
+		try {
+			String infoMsg = getDeviceInfoMessage();
+			info.setDefaultValue(infoMsg);
+		} catch ( RuntimeException e ) {
+			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
+		}
+		results.add(info);
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
 
-	// power
-	public static final Integer ADDR_DATA_ACTIVE_POWER_TOTAL = 0x140;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_TOTAL = 0x141;
-	public static final Integer ADDR_DATA_APPARENT_POWER_TOTAL = 0x142;
-	public static final Integer ADDR_DATA_POWER_FACTOR_TOTAL = 0x143;
-	public static final Integer ADDR_DATA_FREQUENCY = 0x144;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P1 = 0x145;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P1 = 0x146;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P1 = 0x147;
-	public static final Integer ADDR_DATA_POWER_FACTOR_P1 = 0x148;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P2 = 0x149;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P2 = 0x14A;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P2 = 0x14B;
-	public static final Integer ADDR_DATA_POWER_FACTOR_P2 = 0x14C;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P3 = 0x14D;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P3 = 0x14E;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P3 = 0x14F;
-	public static final Integer ADDR_DATA_POWER_FACTOR_P3 = 0x150;
-	public static final Integer ADDR_DATA_PHASE_ROTATION = 0x151;
-
-	// energy
-	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 0x160; // length 2
-	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = 0x162;
-	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = 0x164;
-	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = 0x166;
-
-	// units
-	public static final Integer ADDR_DATA_ENERGY_UNIT = 0x17E;
-	public static final Integer ADDR_DATA_PT_RATIO = 0x200A;
-	public static final Integer ADDR_DATA_CT_RATIO = 0x200B;
-
-	public static final int ENERGY_UNIT_WH = 0;
+		return results;
+	}
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
@@ -177,8 +157,7 @@ public class EM5600Support extends ModbusSupport {
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
 	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 2,
-				getUnitId());
+		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 2, getUnitId());
 		return parseDateTime(data);
 	}
 
@@ -191,14 +170,47 @@ public class EM5600Support extends ModbusSupport {
 	 *        the data array
 	 * @return the parsed date, or <em>null</em> if not available
 	 */
-	public static LocalDateTime parseDateTime(final Integer[] data) {
+	public static LocalDateTime parseDateTime(final int[] data) {
 		LocalDateTime result = null;
 		if ( data != null && data.length == 2 ) {
-			int day = (data[0].intValue() & 0x1F00) >> 8; // 1 - 31
-			int year = 2000 + (data[1].intValue() & 0xFF00) >> 8; // 0 - 255
-			int month = (data[1].intValue() & 0xC); //1-12
+			int day = (data[0] & 0x1F00) >> 8; // 1 - 31
+			int year = 2000 + (data[1] & 0xFF00) >> 8; // 0 - 255
+			int month = (data[1] & 0xC); //1-12
 			result = new LocalDateTime(year, month, day, 0, 0, 0, 0);
 		}
 		return result;
 	}
+
+	public boolean isCaptureTotal() {
+		return captureTotal;
+	}
+
+	public void setCaptureTotal(boolean captureTotal) {
+		this.captureTotal = captureTotal;
+	}
+
+	public boolean isCapturePhaseA() {
+		return capturePhaseA;
+	}
+
+	public void setCapturePhaseA(boolean capturePhaseA) {
+		this.capturePhaseA = capturePhaseA;
+	}
+
+	public boolean isCapturePhaseB() {
+		return capturePhaseB;
+	}
+
+	public void setCapturePhaseB(boolean capturePhaseB) {
+		this.capturePhaseB = capturePhaseB;
+	}
+
+	public boolean isCapturePhaseC() {
+		return capturePhaseC;
+	}
+
+	public void setCapturePhaseC(boolean capturePhaseC) {
+		this.capturePhaseC = capturePhaseC;
+	}
+
 }
