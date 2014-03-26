@@ -532,4 +532,24 @@ public final class ModbusHelper {
 		return result;
 	}
 
+	/**
+	 * Parse a 32-bit long value from raw Modbus register values. The
+	 * {@code data} array is expected to have a length of at least
+	 * {@code offset} + {@code 1}, and be arranged in big-endian order.
+	 * <b>Note</b> a {@code Long} is returned to support unsigned 32-bit values.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @param offset
+	 *        the offset in the array to parse the 32-bit value
+	 * @return the parsed long
+	 */
+	public static Long parseInt32(final int[] data, int offset) {
+		Long result = null;
+		if ( data != null && (offset + 1) < data.length ) {
+			result = ((long) ((data[offset] & 0xFFFF) << 16) | (long) (data[offset + 1] & 0xFFFF));
+		}
+		return result;
+	}
+
 }
