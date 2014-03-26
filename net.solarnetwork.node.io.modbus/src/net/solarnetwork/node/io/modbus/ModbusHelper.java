@@ -307,6 +307,47 @@ public final class ModbusHelper {
 	}
 
 	/**
+	 * Get the values of specific registers as an array. This uses a Modbus
+	 * function code {@code 3} request.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 */
+	public static int[] readInts(SerialConnection conn, final Integer address, final int count,
+			final int unitId) {
+		int[] result = new int[count];
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		for ( int w = 0; w < res.getWordCount(); w++ ) {
+			if ( LOG.isTraceEnabled() ) {
+				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
+			}
+			result[w] = res.getRegisterValue(w);
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+		}
+		return result;
+	}
+
+	/**
 	 * Get the raw bytes of specific registers as an array. This uses a Modbus
 	 * function code {@code 3} request.
 	 * 
