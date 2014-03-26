@@ -26,6 +26,7 @@ import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_MANUFACTU
 import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_MODEL;
 import static net.solarnetwork.node.hw.hc.EM5600Data.ADDR_SYSTEM_METER_SERIAL_NUMBER;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.LocalDateTime;
 
@@ -69,16 +71,97 @@ import org.joda.time.LocalDateTime;
  */
 public class EM5600Support extends ModbusSupport {
 
-	private boolean captureTotal = true;
-	private boolean capturePhaseA = false;
-	private boolean capturePhaseB = false;
-	private boolean capturePhaseC = false;
+	/** The default source ID applied for the total reading values. */
+	public static final String MAIN_SOURCE_ID = "Main";
+
+	private Map<MeasurementKind, String> sourceMapping = getDefaulSourceMapping();
 
 	/**
 	 * An instance of {@link EM5600Data} to support keeping the last-read values
 	 * of data in memory.
 	 */
 	protected final EM5600Data sample = new EM5600Data();
+
+	/**
+	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
+	 * source to the value {@code Main}.
+	 * 
+	 * @return mapping
+	 */
+	public static Map<MeasurementKind, String> getDefaulSourceMapping() {
+		Map<MeasurementKind, String> result = new EnumMap<MeasurementKind, String>(MeasurementKind.class);
+		result.put(MeasurementKind.Total, MAIN_SOURCE_ID);
+		return result;
+	}
+
+	/**
+	 * Set a {@code sourceMapping} Map via an encoded String value.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param mapping
+	 *        the encoding mapping
+	 * @see #getSourceMappingValue()
+	 */
+	public void setSourceMappingValue(String mapping) {
+		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
+		Map<MeasurementKind, String> kindMap = new EnumMap<MeasurementKind, String>(
+				MeasurementKind.class);
+		if ( m != null )
+			for ( Map.Entry<String, String> me : m.entrySet() ) {
+				String k = me.getKey();
+				MeasurementKind mk;
+				try {
+					mk = MeasurementKind.valueOf(k);
+				} catch ( RuntimeException e ) {
+					log.info("'{}' is not a valid MeasurementKind value, ignoring.", k);
+					continue;
+				}
+				kindMap.put(mk, me.getValue());
+			}
+		setSourceMapping(kindMap);
+	}
+
+	/**
+	 * Get a delimited string representation of the {@link #getSourceMapping()}
+	 * map.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * @return the encoded mapping
+	 * @see #setSourceMappingValue(String)
+	 */
+	public String getSourceMappingValue() {
+		return StringUtils.delimitedStringFromMap(sourceMapping);
+	}
+
+	/**
+	 * Get a source ID value for a given measurement kind.
+	 * 
+	 * @param kind
+	 *        the measurement kind
+	 * @return the source ID value, or <em>null</em> if not available
+	 */
+	public String getSourceIdForMeasurementKind(MeasurementKind kind) {
+		return (sourceMapping == null ? null : sourceMapping.get(kind));
+	}
 
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		EM5600Support defaults = new EM5600Support();
@@ -98,6 +181,8 @@ public class EM5600Support extends ModbusSupport {
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
+				.getSourceMappingValue()));
 
 		return results;
 	}
@@ -182,35 +267,27 @@ public class EM5600Support extends ModbusSupport {
 	}
 
 	public boolean isCaptureTotal() {
-		return captureTotal;
-	}
-
-	public void setCaptureTotal(boolean captureTotal) {
-		this.captureTotal = captureTotal;
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return capturePhaseA;
-	}
-
-	public void setCapturePhaseA(boolean capturePhaseA) {
-		this.capturePhaseA = capturePhaseA;
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return capturePhaseB;
-	}
-
-	public void setCapturePhaseB(boolean capturePhaseB) {
-		this.capturePhaseB = capturePhaseB;
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return capturePhaseC;
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseC));
 	}
 
-	public void setCapturePhaseC(boolean capturePhaseC) {
-		this.capturePhaseC = capturePhaseC;
+	public Map<MeasurementKind, String> getSourceMapping() {
+		return sourceMapping;
+	}
+
+	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
+		this.sourceMapping = sourceMapping;
 	}
 
 }
