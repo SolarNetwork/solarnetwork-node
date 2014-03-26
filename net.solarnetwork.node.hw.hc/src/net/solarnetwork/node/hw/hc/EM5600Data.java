@@ -339,8 +339,11 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as an energy value
 	 */
-	public float getEnergy(int addr) {
-		return (getInputRegister(addr) * energyUnit);
+	public long getEnergy(int addr) {
+		inputRegisterRangeCheck(addr);
+		inputRegisterRangeCheck(addr + 1);
+		Long l = ModbusHelper.parseInt32(inputRegisters, addr - ADDR_INPUT_REG_START);
+		return (l == null ? 0 : l.longValue() * energyUnit);
 	}
 
 	public int getPtRatio() {
