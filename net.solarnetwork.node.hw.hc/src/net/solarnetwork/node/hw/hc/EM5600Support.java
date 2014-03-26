@@ -37,7 +37,9 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
 
 /**
  * Supporting class for the EM5600 series power meter.
@@ -62,8 +64,9 @@ import org.joda.time.LocalDateTime;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>sourceMapping</dt>
+ * <dd>A mapping of {@link MeasurementKind} to associated Source ID values to
+ * assign to collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
  * </dl>
  * 
  * @author matt
@@ -167,15 +170,8 @@ public class EM5600Support extends ModbusSupport {
 		EM5600Support defaults = new EM5600Support();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
-		// get current value
-		BasicTitleSettingSpecifier info = new BasicTitleSettingSpecifier("info", "N/A", true);
-		try {
-			String infoMsg = getDeviceInfoMessage();
-			info.setDefaultValue(infoMsg);
-		} catch ( RuntimeException e ) {
-			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
-		}
-		results.add(info);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
@@ -185,6 +181,34 @@ public class EM5600Support extends ModbusSupport {
 				.getSourceMappingValue()));
 
 		return results;
+	}
+
+	private String getInfoMessage() {
+		String msg = null;
+		try {
+			msg = getDeviceInfoMessage();
+		} catch ( RuntimeException e ) {
+			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
+		}
+		return (msg == null ? "N/A" : msg);
+	}
+
+	private String getSampleMessage(EM5600Data data) {
+		if ( data.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+		StringBuilder buf = new StringBuilder();
+		buf.append("I = ").append(
+				data.getCurrent(data.getUnitFactor() == UnitFactor.EM5610 ? EM5600Data.ADDR_DATA_I1
+						: EM5600Data.ADDR_DATA_I_AVERAGE));
+		buf.append(", V = ")
+				.append(data.getVoltage(data.getUnitFactor() == UnitFactor.EM5610 ? EM5600Data.ADDR_DATA_V_L1_NEUTRAL
+						: EM5600Data.ADDR_DATA_V_NEUTRAL_AVERAGE));
+		buf.append(", Wh = ").append(sample.getEnergy(EM5600Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+		;
+		buf.append("; sampled at ").append(
+				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		return buf.toString();
 	}
 
 	@Override
