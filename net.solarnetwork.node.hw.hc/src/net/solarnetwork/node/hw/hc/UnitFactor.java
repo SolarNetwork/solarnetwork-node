@@ -22,11 +22,12 @@
 
 package net.solarnetwork.node.hw.hc;
 
+import java.math.BigDecimal;
+
 /**
- * Unit factors for EM65XX devices. If the value is a positive integer it
- * represents a divisor; if the value is negative it represents a multiple that
- * should be treated as an absolute factor (i.e. convert the factor to a
- * positive value and then multiply).
+ * Unit factors for EM65XX devices. The values represent a multiple of a raw
+ * Modbus register value. The factors are stored as {@link BigDecimal} objects
+ * to no precision is lost.
  * 
  * @author matt
  * @version 1.0
@@ -34,22 +35,22 @@ package net.solarnetwork.node.hw.hc;
 public enum UnitFactor {
 
 	/** Unit factors for EM5610. */
-	EM5610(1, 1, 1),
+	EM5610("1", "1", "1"),
 
 	/** Unit factors for EM5630 in 5A (CT) mode. */
-	EM5630_5A(100, 10000, 20),
+	EM5630_5A("0.01", "0.0001", "0.2"),
 
 	/** Unit factors for EM5630 in 30A mode. */
-	EM5630_30A(100, 3000, -6);
+	EM5630_30A("0.01", "0.003", "6");
 
-	private final int u;
-	private final int a;
-	private final int p;
+	private final BigDecimal u;
+	private final BigDecimal a;
+	private final BigDecimal p;
 
-	private UnitFactor(int u, int a, int p) {
-		this.u = u;
-		this.a = a;
-		this.p = p;
+	private UnitFactor(String u, String a, String p) {
+		this.u = new BigDecimal(u);
+		this.a = new BigDecimal(a);
+		this.p = new BigDecimal(p);
 	}
 
 	/**
@@ -57,7 +58,7 @@ public enum UnitFactor {
 	 * 
 	 * @return the U factor
 	 */
-	public int getU() {
+	public BigDecimal getU() {
 		return u;
 	}
 
@@ -66,7 +67,7 @@ public enum UnitFactor {
 	 * 
 	 * @return the A factor
 	 */
-	public int getA() {
+	public BigDecimal getA() {
 		return a;
 	}
 
@@ -75,7 +76,7 @@ public enum UnitFactor {
 	 * 
 	 * @return the P factor
 	 */
-	public int getP() {
+	public BigDecimal getP() {
 		return p;
 	}
 
