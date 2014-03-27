@@ -35,22 +35,24 @@ import java.math.BigDecimal;
 public enum UnitFactor {
 
 	/** Unit factors for EM5610. */
-	EM5610("1", "1", "1"),
+	EM5610("1", "1", "1", "5610"),
 
 	/** Unit factors for EM5630 in 5A (CT) mode. */
-	EM5630_5A("0.01", "0.0001", "0.2"),
+	EM5630_5A("0.01", "0.0001", "0.2", "5630 (5A CT mode)"),
 
 	/** Unit factors for EM5630 in 30A mode. */
-	EM5630_30A("0.01", "0.003", "6");
+	EM5630_30A("0.01", "0.003", "6", "5630");
 
 	private final BigDecimal u;
 	private final BigDecimal a;
 	private final BigDecimal p;
+	private final String name;
 
-	private UnitFactor(String u, String a, String p) {
+	private UnitFactor(String u, String a, String p, String name) {
 		this.u = new BigDecimal(u);
 		this.a = new BigDecimal(a);
 		this.p = new BigDecimal(p);
+		this.name = name;
 	}
 
 	/**
@@ -80,4 +82,12 @@ public enum UnitFactor {
 		return p;
 	}
 
+	/**
+	 * Get a display name for this factor.
+	 * 
+	 * @return the name
+	 */
+	public String getDisplayName() {
+		return name;
+	}
 }
