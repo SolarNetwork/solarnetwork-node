@@ -68,12 +68,15 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 				break;
 
 			case PhaseA:
+				extractPhaseAMeasurements();
 				break;
 
 			case PhaseB:
+				extractPhaseBMeasurements();
 				break;
 
 			case PhaseC:
+				extractPhaseCMeasurements();
 				break;
 		}
 	}
@@ -87,6 +90,21 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 			setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_NEUTRAL_AVERAGE));
 		}
 		setWattHourReading(sample.getEnergy(EM5600Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+	}
+
+	private void extractPhaseAMeasurements() {
+		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I1));
+		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L1_NEUTRAL));
+	}
+
+	private void extractPhaseBMeasurements() {
+		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I2));
+		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L2_NEUTRAL));
+	}
+
+	private void extractPhaseCMeasurements() {
+		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I3));
+		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L3_NEUTRAL));
 	}
 
 }
