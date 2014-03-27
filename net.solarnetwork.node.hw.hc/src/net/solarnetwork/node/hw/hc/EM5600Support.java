@@ -85,6 +85,8 @@ public class EM5600Support extends ModbusSupport {
 	 */
 	protected final EM5600Data sample = new EM5600Data();
 
+	private UnitFactor unitFactor = UnitFactor.EM5610;
+
 	/**
 	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
 	 * source to the value {@code Main}.
@@ -166,12 +168,29 @@ public class EM5600Support extends ModbusSupport {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
+	/**
+	 * Get settings supported by this class. Extending classes can use this to
+	 * support the Settings API.
+	 * 
+	 * @return list of settings
+	 */
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		EM5600Support defaults = new EM5600Support();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+
+		/*
+		 * BasicRadioGroupSettingSpecifier unitFactorSpec = new
+		 * BasicRadioGroupSettingSpecifier( "unitFactor",
+		 * defaults.getUnitFactor().toString()); Map<String, String> radioValues
+		 * = new LinkedHashMap<String, String>(3); for ( UnitFactor f :
+		 * UnitFactor.values() ) { radioValues.put(f.toString(),
+		 * f.getDisplayName()); } unitFactorSpec.setValueTitles(radioValues);
+		 * results.add(unitFactorSpec);
+		 */
+
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
@@ -220,6 +239,18 @@ public class EM5600Support extends ModbusSupport {
 		i = getMeterModel(conn);
 		if ( i != null ) {
 			result.put(INFO_KEY_DEVICE_MODEL, i);
+			switch (i) {
+				case 5630:
+					if ( unitFactor == UnitFactor.EM5610 ) {
+						setUnitFactor(UnitFactor.EM5630_30A);
+					}
+					break;
+
+				default:
+					setUnitFactor(UnitFactor.EM5610);
+					break;
+
+			}
 		}
 		LocalDateTime dt = getMeterManufactureDate(conn);
 		if ( dt != null ) {
@@ -312,6 +343,16 @@ public class EM5600Support extends ModbusSupport {
 
 	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
+	}
+
+	public UnitFactor getUnitFactor() {
+		return unitFactor;
+	}
+
+	public void setUnitFactor(UnitFactor unitFactor) {
+		assert unitFactor != null;
+		this.unitFactor = unitFactor;
+		this.sample.setUnitFactor(unitFactor);
 	}
 
 }
