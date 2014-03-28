@@ -217,14 +217,11 @@ public class EM5600Support extends ModbusSupport {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("I = ").append(
-				data.getCurrent(data.getUnitFactor() == UnitFactor.EM5610 ? EM5600Data.ADDR_DATA_I1
-						: EM5600Data.ADDR_DATA_I_AVERAGE));
-		buf.append(", V = ")
-				.append(data.getVoltage(data.getUnitFactor() == UnitFactor.EM5610 ? EM5600Data.ADDR_DATA_V_L1_NEUTRAL
-						: EM5600Data.ADDR_DATA_V_NEUTRAL_AVERAGE));
+		buf.append("W = ").append(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
+		buf.append(", VA = ").append(sample.getPower(EM5600Data.ADDR_DATA_APPARENT_POWER_TOTAL));
 		buf.append(", Wh = ").append(sample.getEnergy(EM5600Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
-		;
+		buf.append(", \ud835\udf11 = ").append(
+				sample.getPowerFactor(EM5600Data.ADDR_DATA_POWER_FACTOR_TOTAL));
 		buf.append("; sampled at ").append(
 				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
 		return buf.toString();
