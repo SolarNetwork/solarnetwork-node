@@ -85,7 +85,7 @@ public class EM5600Support extends ModbusSupport {
 	 */
 	protected final EM5600Data sample = new EM5600Data();
 
-	private UnitFactor unitFactor = UnitFactor.EM5610;
+	private UnitFactor unitFactor = null;
 
 	/**
 	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
@@ -239,18 +239,6 @@ public class EM5600Support extends ModbusSupport {
 		i = getMeterModel(conn);
 		if ( i != null ) {
 			result.put(INFO_KEY_DEVICE_MODEL, i);
-			switch (i) {
-				case 5630:
-					if ( unitFactor == UnitFactor.EM5610 ) {
-						setUnitFactor(UnitFactor.EM5630_30A);
-					}
-					break;
-
-				default:
-					setUnitFactor(UnitFactor.EM5610);
-					break;
-
-			}
 		}
 		LocalDateTime dt = getMeterManufactureDate(conn);
 		if ( dt != null ) {
@@ -275,7 +263,8 @@ public class EM5600Support extends ModbusSupport {
 	}
 
 	/**
-	 * Read the model number of the meter.
+	 * Read the model number of the meter. The {@code unitFactor} will also be
+	 * populated if not already available.
 	 * 
 	 * @param conn
 	 *        the connection
@@ -284,6 +273,20 @@ public class EM5600Support extends ModbusSupport {
 	public Integer getMeterModel(SerialConnection conn) {
 		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MODEL, 1, getUnitId());
 		if ( data != null && data.length > 0 ) {
+			if ( unitFactor == null ) {
+				switch (data[0].intValue()) {
+					case 5630:
+						setUnitFactor(UnitFactor.EM5630_30A);
+						break;
+
+					// TODO: how tell if EM5630_5A
+
+					default:
+						setUnitFactor(UnitFactor.EM5610);
+						break;
+
+				}
+			}
 			return data[0];
 		}
 		return null;

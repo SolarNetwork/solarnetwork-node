@@ -34,7 +34,6 @@ import net.solarnetwork.node.hw.hc.EM5600Support;
 import net.solarnetwork.node.hw.hc.MeasurementKind;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.wimpi.modbus.net.SerialConnection;
 import org.springframework.context.MessageSource;
@@ -130,6 +129,10 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	}
 
 	private EM5600Data getCurrentSample(final SerialConnection conn) {
+		if ( getUnitFactor() == null ) {
+			Integer model = getMeterModel(conn);
+			log.debug("Found meter model {}", model);
+		}
 		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
 		if ( lastReadDiff > MIN_TIME_READ_ENERGY_RATIOS ) {
 			sample.readEnergyRatios(conn, getUnitId());
@@ -150,15 +153,6 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	@Override
 	public String getDisplayName() {
 		return "EM5600 Series Meter";
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = super.getSettingSpecifiers();
-
-		// TODO: other settings
-
-		return results;
 	}
 
 	@Override
