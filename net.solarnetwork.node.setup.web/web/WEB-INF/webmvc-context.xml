@@ -31,12 +31,8 @@
 				<property name="prefixJson" value="false" />
 				<property name="supportedMediaTypes" value="application/json" />
 				<property name="objectMapper">
-					<bean class="net.solarnetwork.util.ObjectMapperFactoryBean">
-						<property name="mapper">
-							<bean class="org.codehaus.jackson.map.ObjectMapper">
-								<property name="serializationInclusion" value="NON_NULL"/>
-							</bean>
-						</property>
+					<bean class="net.solarnetwork.util.ObjectMapperFactoryBean" >
+						<property name="mapper" ref="jacksonObjectMapper"/>
 						<property name="serializers">
 							<list>
 								<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
@@ -50,6 +46,21 @@
 		    </bean>
 		</mvc:message-converters>
 	</mvc:annotation-driven>
+	
+	<!-- All this craziness just to set the serializationInclusion property without getting a
+	 	"Invalid property 'serializationInclusion'" exception from Spring. -->
+	<bean id="jacksonObjectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
+	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject">
+			<bean factory-bean="jacksonObjectMapper" factory-method="getSerializationConfig" />
+		</property>
+		<property name="targetMethod" value="setSerializationInclusion" />
+		<property name="arguments">
+			<list>
+				<value type="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion">NON_NULL</value>
+			</list>
+		</property>
+	</bean>
 
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
