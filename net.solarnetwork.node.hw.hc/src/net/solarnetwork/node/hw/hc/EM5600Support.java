@@ -298,7 +298,7 @@ public class EM5600Support extends ModbusSupport {
 	 */
 	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
 		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 2, getUnitId());
-		return parseDateTime(data);
+		return parseDate(data);
 	}
 
 	/**
@@ -310,12 +310,12 @@ public class EM5600Support extends ModbusSupport {
 	 *        the data array
 	 * @return the parsed date, or <em>null</em> if not available
 	 */
-	public static LocalDateTime parseDateTime(final int[] data) {
+	public static LocalDateTime parseDate(final int[] data) {
 		LocalDateTime result = null;
 		if ( data != null && data.length == 2 ) {
 			int day = (data[0] & 0x1F00) >> 8; // 1 - 31
-			int year = 2000 + (data[1] & 0xFF00) >> 8; // 0 - 255
-			int month = (data[1] & 0xC); //1-12
+			int year = 2000 + ((data[1] & 0xFF00) >> 8); // 0 - 255
+			int month = (data[1] & 0xF); //1-12
 			result = new LocalDateTime(year, month, day, 0, 0, 0, 0);
 		}
 		return result;
