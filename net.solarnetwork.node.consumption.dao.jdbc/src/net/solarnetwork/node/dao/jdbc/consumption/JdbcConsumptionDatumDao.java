@@ -61,12 +61,12 @@ import org.springframework.transaction.annotation.Transactional;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 8;
+	public static final int DEFAULT_TABLES_VERSION = 9;
 
 	/** The table name for {@link ConsumptionDatum} data. */
 	public static final String TABLE_CONSUMPTION_DATUM = "sn_consum_datum";
@@ -132,10 +132,7 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 				datum.setLocationId(val == null ? null : val.longValue());
 
 				val = (Number) rs.getObject(col++);
-				datum.setVolts(val == null ? null : val.floatValue());
-
-				val = (Number) rs.getObject(col++);
-				datum.setAmps(val == null ? null : val.floatValue());
+				datum.setWatts(val == null ? null : val.intValue());
 
 				val = (Number) rs.getObject(col++);
 				datum.setWattHourReading(val == null ? null : val.longValue());
@@ -158,15 +155,10 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 		} else {
 			ps.setLong(col++, datum.getLocationId());
 		}
-		if ( datum.getAmps() == null ) {
-			ps.setNull(col++, Types.FLOAT);
+		if ( datum.getWatts() == null ) {
+			ps.setNull(col++, Types.INTEGER);
 		} else {
-			ps.setFloat(col++, datum.getAmps());
-		}
-		if ( datum.getVolts() == null ) {
-			ps.setNull(col++, Types.FLOAT);
-		} else {
-			ps.setFloat(col++, datum.getVolts());
+			ps.setInt(col++, datum.getWatts());
 		}
 		if ( datum.getWattHourReading() == null ) {
 			ps.setNull(col++, Types.BIGINT);

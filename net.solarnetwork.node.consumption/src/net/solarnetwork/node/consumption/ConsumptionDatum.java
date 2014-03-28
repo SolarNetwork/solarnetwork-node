@@ -35,14 +35,17 @@ import net.solarnetwork.node.support.BaseDatum;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ConsumptionDatum extends BaseDatum {
 
 	private Long locationId = null; // price location ID
+	private Integer watts = null;
+	private Long wattHourReading = null;
+
+	// these are for backwards compatibility only
 	private Float amps = null;
 	private Float volts = null;
-	private Long wattHourReading = null;
 
 	/**
 	 * Default constructor.
@@ -68,24 +71,42 @@ public class ConsumptionDatum extends BaseDatum {
 		this.volts = volts;
 	}
 
-	@Override
-	public String toString() {
-		return "ConsumptionDatum{sourceId=" + getSourceId() + ",amps=" + this.amps + ",volts="
-				+ this.volts + ",wattHourReading=" + this.wattHourReading + '}';
+	/**
+	 * Construct with a watt value.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 * @param watts
+	 *        the watts
+	 */
+	public ConsumptionDatum(String sourceId, Integer watts) {
+		super();
+		setSourceId(sourceId);
+		setWatts(watts);
 	}
 
+	@Override
+	public String toString() {
+		return "ConsumptionDatum{sourceId=" + getSourceId() + ",watts=" + getWatts()
+				+ ",wattHourReading=" + this.wattHourReading + '}';
+	}
+
+	@Deprecated
 	public Float getAmps() {
 		return amps;
 	}
 
+	@Deprecated
 	public void setAmps(Float amps) {
 		this.amps = amps;
 	}
 
+	@Deprecated
 	public Float getVolts() {
 		return volts;
 	}
 
+	@Deprecated
 	public void setVolts(Float volts) {
 		this.volts = volts;
 	}
@@ -104,6 +125,31 @@ public class ConsumptionDatum extends BaseDatum {
 
 	public void setWattHourReading(Long wattHourReading) {
 		this.wattHourReading = wattHourReading;
+	}
+
+	/**
+	 * Get the watts.
+	 * 
+	 * <p>
+	 * This will return the {@code watts} value if available, or fall back to
+	 * {@code amps * volts}.
+	 * </p>
+	 * 
+	 * @return watts, or <em>null</em> if watts not available and either amps or
+	 *         volts are null
+	 */
+	public Integer getWatts() {
+		if ( watts != null ) {
+			return watts;
+		}
+		if ( amps == null || volts == null ) {
+			return null;
+		}
+		return Integer.valueOf((int) Math.round(amps.doubleValue() * volts.doubleValue()));
+	}
+
+	public void setWatts(Integer watts) {
+		this.watts = watts;
 	}
 
 }
