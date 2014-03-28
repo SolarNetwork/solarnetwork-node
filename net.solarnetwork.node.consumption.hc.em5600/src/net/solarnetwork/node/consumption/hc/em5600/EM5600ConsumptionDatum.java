@@ -25,7 +25,6 @@ package net.solarnetwork.node.consumption.hc.em5600;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.hw.hc.EM5600Data;
 import net.solarnetwork.node.hw.hc.MeasurementKind;
-import net.solarnetwork.node.hw.hc.UnitFactor;
 
 /**
  * Extension of {@link ConsumptionDatum} with additional properties supported by
@@ -58,7 +57,7 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 	 * @return <em>true</em> if the data appears to be valid
 	 */
 	public boolean isValid() {
-		return (getVolts() != null && getAmps() != null) || getWattHourReading() != null;
+		return (getWatts() != null || getWattHourReading() != null);
 	}
 
 	private void extractMeasurements() {
@@ -82,29 +81,20 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 	}
 
 	private void extractTotalMeasurements() {
-		if ( sample.getUnitFactor() == UnitFactor.EM5610 ) {
-			setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I1));
-			setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L1_NEUTRAL));
-		} else {
-			setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I_AVERAGE));
-			setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_NEUTRAL_AVERAGE));
-		}
+		setWatts(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
 		setWattHourReading(sample.getEnergy(EM5600Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
 	}
 
 	private void extractPhaseAMeasurements() {
-		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I1));
-		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L1_NEUTRAL));
+		setWatts(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_P1));
 	}
 
 	private void extractPhaseBMeasurements() {
-		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I2));
-		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L2_NEUTRAL));
+		setWatts(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_P2));
 	}
 
 	private void extractPhaseCMeasurements() {
-		setAmps(sample.getCurrent(EM5600Data.ADDR_DATA_I3));
-		setVolts(sample.getVoltage(EM5600Data.ADDR_DATA_V_L3_NEUTRAL));
+		setWatts(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_P3));
 	}
 
 }
