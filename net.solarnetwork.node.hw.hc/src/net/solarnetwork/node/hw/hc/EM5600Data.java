@@ -93,7 +93,8 @@ public class EM5600Data {
 	private final int[] inputRegisters;
 	private float ptRatio = 1;
 	private float ctRatio = 1;
-	private int energyUnit = 1;
+	private int energyUnit;
+	private int energyFactor;
 	private UnitFactor unitFactor = UnitFactor.EM5610;
 	private long dataTimestamp = 0;
 
@@ -102,6 +103,7 @@ public class EM5600Data {
 	 */
 	public EM5600Data() {
 		super();
+		setEnergyUnit(0);
 		inputRegisters = new int[ADDR_INPUT_REG_END - ADDR_INPUT_REG_START + 1];
 		Arrays.fill(inputRegisters, 0);
 	}
@@ -118,6 +120,7 @@ public class EM5600Data {
 		ptRatio = other.ptRatio;
 		ctRatio = other.ctRatio;
 		energyUnit = other.energyUnit;
+		energyFactor = other.energyFactor;
 		unitFactor = other.unitFactor;
 		dataTimestamp = other.dataTimestamp;
 	}
@@ -266,10 +269,30 @@ public class EM5600Data {
 	public void setUnitFactor(UnitFactor unitFactor) {
 		assert unitFactor != null;
 		this.unitFactor = unitFactor;
-		if ( unitFactor == UnitFactor.EM5610 ) {
-			ptRatio = 1;
-			ctRatio = 1;
-		}
+	}
+
+	/**
+	 * Get the effective PT ratio. This will return {@code 1} unless the
+	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
+	 * return {@link #getPtRatio()} which has presumably be set by reading from
+	 * the meter via {@link #readEnergyRatios(SerialConnection, int)}.
+	 * 
+	 * @return effective PT ratio
+	 */
+	public float getEffectivePtRatio() {
+		return (unitFactor == UnitFactor.EM5630_5A ? ptRatio : 1);
+	}
+
+	/**
+	 * Get the effective CT ratio. This will return {@code 1} unless the
+	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
+	 * return {@link #getCtRatio()} which has presumably be set by reading from
+	 * the meter via {@link #readEnergyRatios(SerialConnection, int)}.
+	 * 
+	 * @return effective PT ratio
+	 */
+	public float getEffectiveCtRatio() {
+		return (unitFactor == UnitFactor.EM5630_5A ? ctRatio : 1);
 	}
 
 	/**
@@ -280,7 +303,7 @@ public class EM5600Data {
 	 * @return the value interpreted as a voltage value
 	 */
 	public float getVoltage(int addr) {
-		return (getInputRegister(addr) * ptRatio * unitFactor.getU().floatValue());
+		return (getInputRegister(addr) * getEffectivePtRatio() * unitFactor.getU().floatValue());
 	}
 
 	/**
@@ -291,7 +314,7 @@ public class EM5600Data {
 	 * @return the value interpreted as a current value
 	 */
 	public float getCurrent(int addr) {
-		return (getInputRegister(addr) * ctRatio * unitFactor.getA().floatValue());
+		return (getInputRegister(addr) * getEffectiveCtRatio() * unitFactor.getA().floatValue());
 	}
 
 	/**
@@ -324,8 +347,9 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a power value
 	 */
-	public float getPower(int addr) {
-		return ((getInputRegister(addr) * ptRatio * ctRatio * unitFactor.getP().floatValue()));
+	public int getPower(int addr) {
+		return (int) Math.ceil(getInputRegister(addr) * getEffectivePtRatio() * getEffectiveCtRatio()
+				* unitFactor.getP().floatValue());
 	}
 
 	/**
@@ -339,7 +363,7 @@ public class EM5600Data {
 		inputRegisterRangeCheck(addr);
 		inputRegisterRangeCheck(addr + 1);
 		Long l = ModbusHelper.parseInt32(inputRegisters, addr - ADDR_INPUT_REG_START);
-		return (l == null ? 0 : l.longValue() * energyUnit);
+		return (l == null ? 0 : l.longValue() * energyFactor);
 	}
 
 	public float getPtRatio() {
@@ -363,7 +387,9 @@ public class EM5600Data {
 	}
 
 	public void setEnergyUnit(int energyUnit) {
+		assert energyUnit >= 0 && energyUnit <= 6;
 		this.energyUnit = energyUnit;
+		this.energyFactor = (int) Math.pow(10, energyUnit);
 	}
 
 }
