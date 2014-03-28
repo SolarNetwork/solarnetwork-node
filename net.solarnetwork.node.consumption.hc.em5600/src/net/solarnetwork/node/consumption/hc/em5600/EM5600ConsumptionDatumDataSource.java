@@ -139,6 +139,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		}
 		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
 			sample.readMeterData(conn, getUnitId());
+			log.debug("Read EM5600 data: {}", sample);
 		}
 		return new EM5600Data(sample);
 	}
