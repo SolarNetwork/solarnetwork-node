@@ -176,7 +176,7 @@ public class EM5600Data {
 			// a value of 0 here means we should treat the energy unit as 1, e.g. 5610
 			int eu = eUnit[0];
 			inputRegisters[ADDR_DATA_ENERGY_UNIT - ADDR_INPUT_REG_START] = eu;
-			energyUnit = (eu < 1 ? 1 : eu);
+			setEnergyUnit(eu < 0 ? 0 : eu);
 		}
 		int[] transformerRatios = ModbusHelper.readInts(conn, ADDR_DATA_PT_RATIO, 2, unitId);
 		if ( transformerRatios != null && transformerRatios.length > 1 ) {
