@@ -284,7 +284,7 @@ public class EM5600Data {
 	 * @return the value interpreted as a voltage value
 	 */
 	public float getVoltage(int addr) {
-		return (getInputRegister(addr) * ptRatio) * unitFactor.getU().floatValue();
+		return (getInputRegister(addr) * ptRatio * unitFactor.getU().floatValue());
 	}
 
 	/**
@@ -295,7 +295,7 @@ public class EM5600Data {
 	 * @return the value interpreted as a current value
 	 */
 	public float getCurrent(int addr) {
-		return (getInputRegister(addr) * ctRatio) * unitFactor.getA().floatValue();
+		return (getInputRegister(addr) * ctRatio * unitFactor.getA().floatValue());
 	}
 
 	/**
@@ -329,7 +329,7 @@ public class EM5600Data {
 	 * @return the value interpreted as a power value
 	 */
 	public float getPower(int addr) {
-		return ((getInputRegister(addr) * ptRatio * ctRatio) * unitFactor.getP().floatValue());
+		return ((getInputRegister(addr) * ptRatio * ctRatio * unitFactor.getP().floatValue()));
 	}
 
 	/**
