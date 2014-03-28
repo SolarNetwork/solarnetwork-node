@@ -91,8 +91,8 @@ public class EM5600Data {
 	private static final int ADDR_INPUT_REG_END = ADDR_DATA_ENERGY_UNIT;
 
 	private final int[] inputRegisters;
-	private int ptRatio = 1;
-	private int ctRatio = 1;
+	private float ptRatio = 1;
+	private float ctRatio = 1;
 	private int energyUnit = 1;
 	private UnitFactor unitFactor = UnitFactor.EM5610;
 	private long dataTimestamp = 0;
@@ -346,11 +346,11 @@ public class EM5600Data {
 		return (l == null ? 0 : l.longValue() * energyUnit);
 	}
 
-	public int getPtRatio() {
+	public float getPtRatio() {
 		return ptRatio;
 	}
 
-	public int getCtRatio() {
+	public float getCtRatio() {
 		return ctRatio;
 	}
 
