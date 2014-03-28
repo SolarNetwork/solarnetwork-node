@@ -168,9 +168,6 @@ public class EM5600Data {
 	 *        the Modbus unit ID to query
 	 */
 	public void readEnergyRatios(final SerialConnection conn, final int unitId) {
-		if ( unitFactor == UnitFactor.EM5610 ) {
-			return;
-		}
 		int[] eUnit = ModbusHelper.readInts(conn, ADDR_DATA_ENERGY_UNIT, 1, unitId);
 		if ( eUnit != null && eUnit.length > 0 ) {
 			// a value of 0 here means we should treat the energy unit as 1, e.g. 5610
