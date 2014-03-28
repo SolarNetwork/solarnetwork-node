@@ -387,7 +387,7 @@ public final class ModbusHelper {
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+			LOG.debug("Read Modbus register {} count {} bytes: {}", address, count, result);
 		}
 		return result;
 	}
