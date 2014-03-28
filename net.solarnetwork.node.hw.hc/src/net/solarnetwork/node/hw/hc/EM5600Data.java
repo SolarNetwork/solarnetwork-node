@@ -131,10 +131,15 @@ public class EM5600Data {
 				+ energyUnit + ",EF=" + energyFactor + ",V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL)
 				+ ",V2=" + getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3="
 				+ getVoltage(ADDR_DATA_V_L3_NEUTRAL) + ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2="
-				+ getCurrent(ADDR_DATA_I2) + ",A3=" + getCurrent(ADDR_DATA_I3) + ",W="
-				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",WhI="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT) + ",WhE="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT) + "}";
+				+ getCurrent(ADDR_DATA_I2) + ",A3=" + getCurrent(ADDR_DATA_I3) + ",PF="
+				+ getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL) + ",W="
+				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
+				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
+				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
+				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT) + ",varh-I="
+				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT) + ",Wh-E="
+				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT) + "varh-E,"
+				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT) + "}";
 	}
 
 	/**
