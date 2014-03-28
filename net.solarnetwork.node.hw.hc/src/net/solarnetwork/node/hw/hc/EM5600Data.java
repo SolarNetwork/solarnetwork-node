@@ -158,7 +158,29 @@ public class EM5600Data {
 	public void readMeterData(final SerialConnection conn, final int unitId) {
 		int[] data = ModbusHelper.readInts(conn, ADDR_DATA_I1,
 				(ADDR_DATA_PHASE_ROTATION - ADDR_DATA_I1 + 1), unitId);
+
+		// re-read some data to get signed values... these are mixed with unsigned values
+		// so we are reading some registers twice, but in fewer transactions
+		short[] signedData = ModbusHelper.readSignedShorts(conn, ADDR_DATA_ACTIVE_POWER_TOTAL,
+				(ADDR_DATA_POWER_FACTOR_P3 - ADDR_DATA_APPARENT_POWER_TOTAL + 1), unitId);
+		final int signedDataOffset = ADDR_DATA_ACTIVE_POWER_TOTAL - ADDR_DATA_I1;
+		for ( int i = 0; i < signedData.length; i++ ) {
+			final int addr = ADDR_DATA_ACTIVE_POWER_TOTAL + i;
+			switch (addr) {
+				case ADDR_DATA_APPARENT_POWER_P1:
+				case ADDR_DATA_APPARENT_POWER_P2:
+				case ADDR_DATA_APPARENT_POWER_P3:
+				case ADDR_DATA_APPARENT_POWER_TOTAL:
+				case ADDR_DATA_FREQUENCY:
+					// these are unsigned values, so skip as they were populated in the first tx
+					continue;
+
+				default:
+					data[i + signedDataOffset] = signedData[i];
+			}
+		}
 		setCurrentVoltagePower(data);
+
 		data = ModbusHelper.readInts(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, (ADDR_DATA_ENERGY_UNIT
 				- ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1), unitId);
 		setEnergy(data);
