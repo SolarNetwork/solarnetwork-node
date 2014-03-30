@@ -134,10 +134,10 @@ public class PM3200Data {
 	 * 
 	 * <pre>
 	 * PM3200Data{
-	 *     03000: 0x4141, 0x727e
-	 *     03002: 0xffc0, 0x0000
-	 *     ...
-	 *     03240: 0x0000, 0x0000
+	 *      3000: 0x4141, 0x727E
+	 *      3002: 0xFFC0, 0x0000
+	 *      ...
+	 *      3240: 0x0000, 0x0000
 	 * }
 	 * </pre>
 	 * 
@@ -151,9 +151,9 @@ public class PM3200Data {
 		boolean odd = true;
 		for ( int k : keys ) {
 			if ( odd ) {
-				buf.append("\t").append(String.format("%05d", k + 1)).append(": ");
+				buf.append("\t").append(String.format("%5d", k + 1)).append(": ");
 			}
-			buf.append(String.format("0x%04x", snapshot.dataRegisters.get(k)));
+			buf.append(String.format("0x%04X", snapshot.dataRegisters.get(k)));
 			if ( odd ) {
 				buf.append(", ");
 			} else {
