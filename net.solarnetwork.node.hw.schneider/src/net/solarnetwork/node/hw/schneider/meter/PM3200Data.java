@@ -113,7 +113,7 @@ public class PM3200Data {
 		return "PM3200Data{V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL) + ",V2="
 				+ getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3=" + getVoltage(ADDR_DATA_V_L3_NEUTRAL)
 				+ ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2=" + getCurrent(ADDR_DATA_I2) + ",A3="
-				+ getCurrent(ADDR_DATA_I3) + ",PF=" + getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL)
+				+ getCurrent(ADDR_DATA_I3) + ",PF=" + getPowerFactor(ADDR_DATA_REACTIVE_FACTOR_TOTAL)
 				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
 				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
 				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
