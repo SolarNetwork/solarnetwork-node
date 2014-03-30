@@ -66,10 +66,10 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
 		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
 			sample.readMeterData(conn, getUnitId());
-			log.debug("Read PM3200 data: {}", sample);
 			if ( log.isTraceEnabled() ) {
 				log.trace(sample.dataDebugString());
 			}
+			log.debug("Read PM3200 data: {}", sample);
 		}
 		return new PM3200Data(sample);
 	}
