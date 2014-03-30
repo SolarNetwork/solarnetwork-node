@@ -23,18 +23,20 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
-import org.joda.time.LocalDate;
+import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormat;
 
 /**
  * Supporting class for the PM3200 series power meter.
@@ -44,35 +46,15 @@ import org.joda.time.LocalDateTime;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt>connectionFactory</dt>
- * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
- * <dt>unitId</dt>
- * <dd>The Modbus ID of the device to communicate with.</dd>
- * <dt>uid</dt>
- * <dd>A service name to use.</dd>
- * <dt>groupUID</dt>
- * <dd>A service group to use.</dd>
+ * <dt>sourceMapping</dt>
+ * <dd>A mapping of {@link MeasurementKind} to associated Source ID values to
+ * assign to collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PM3200Support extends ModbusSupport {
-
-	/** Key for the meter name, as a String. */
-	public static final String INFO_KEY_METER_NAME = INFO_KEY_DEVICE_NAME;
-
-	/** Key for the meter model, as a String. */
-	public static final String INFO_KEY_METER_MODEL = INFO_KEY_DEVICE_MODEL;
-
-	/** Key for the meter serial number, as a Long. */
-	public static final String INFO_KEY_METER_SERIAL_NUMBER = INFO_KEY_DEVICE_SERIAL_NUMBER;
-
-	/** Key for the meter manufacturer, as a String. */
-	public static final String INFO_KEY_METER_MANUFACTURER = INFO_KEY_DEVICE_MANUFACTURER;
-
-	/** Key for the meter manufacture date, as a {@link LocalDate}. */
-	public static final String INFO_KEY_METER_MANUFACTURE_DATE = INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
@@ -80,47 +62,28 @@ public class PM3200Support extends ModbusSupport {
 	public static final Integer ADDR_SYSTEM_METER_SERIAL_NUMBER = 129;
 	public static final Integer ADDR_SYSTEM_METER_MANUFACTURE_DATE = 131;
 
-	public static final Integer ADDR_DATA_START = 2999;
+	/** The default source ID applied for the total reading values. */
+	public static final String MAIN_SOURCE_ID = "Main";
 
-	// current
-	public static final Integer ADDR_DATA_I1 = ADDR_DATA_START;
-	public static final Integer ADDR_DATA_I2 = 3001;
-	public static final Integer ADDR_DATA_I3 = 3003;
-	public static final Integer ADDR_DATA_I_NEUTRAL = 3005;
-	public static final Integer ADDR_DATA_I_AVERAGE = 3009;
+	private Map<MeasurementKind, String> sourceMapping = getDefaulSourceMapping();
 
-	// voltage
-	public static final Integer ADDR_DATA_V_L1_L2 = 3019;
-	public static final Integer ADDR_DATA_V_L2_L3 = 3021;
-	public static final Integer ADDR_DATA_V_L3_L1 = 3023;
-	public static final Integer ADDR_DATA_V_L_L_AVERAGE = 3025;
-	public static final Integer ADDR_DATA_V_L1_NEUTRAL = 3027;
-	public static final Integer ADDR_DATA_V_L2_NEUTRAL = 3029;
-	public static final Integer ADDR_DATA_V_L3_NEUTRAL = 3031;
-	public static final Integer ADDR_DATA_V_NEUTRAL_AVERAGE = 3035;
+	/**
+	 * An instance of {@link PM3200Data} to support keeping the last-read values
+	 * of data in memory.
+	 */
+	protected final PM3200Data sample = new PM3200Data();
 
-	// power
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P1 = 3053;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P2 = 3055;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_P3 = 3057;
-	public static final Integer ADDR_DATA_ACTIVE_POWER_TOTAL = 3059;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P1 = 3061;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P2 = 3063;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_P3 = 3065;
-	public static final Integer ADDR_DATA_REACTIVE_POWER_TOTAL = 3067;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P1 = 3069;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P2 = 3071;
-	public static final Integer ADDR_DATA_APPARENT_POWER_P3 = 3073;
-	public static final Integer ADDR_DATA_APPARENT_POWER_TOTAL = 3075;
-	public static final Integer ADDR_DATA_FREQUENCY = 3109;
-
-	// total energy
-	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 3203;
-	public static final Integer ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = 3207;
-	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = 3219;
-	public static final Integer ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = 3223;
-	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = 3235;
-	public static final Integer ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = 3239;
+	/**
+	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
+	 * source to the value {@code Main}.
+	 * 
+	 * @return mapping
+	 */
+	public static Map<MeasurementKind, String> getDefaulSourceMapping() {
+		Map<MeasurementKind, String> result = new EnumMap<MeasurementKind, String>(MeasurementKind.class);
+		result.put(MeasurementKind.Total, MAIN_SOURCE_ID);
+		return result;
+	}
 
 	/**
 	 * Read the name of the meter.
@@ -180,8 +143,7 @@ public class PM3200Support extends ModbusSupport {
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
 	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4,
-				getUnitId());
+		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4, getUnitId());
 		return parseDateTime(data);
 	}
 
@@ -190,49 +152,25 @@ public class PM3200Support extends ModbusSupport {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
 		String str = getMeterName(conn);
 		if ( str != null ) {
-			result.put(INFO_KEY_METER_NAME, str);
+			result.put(INFO_KEY_DEVICE_NAME, str);
 		}
 		str = getMeterModel(conn);
 		if ( str != null ) {
-			result.put(INFO_KEY_METER_MODEL, str);
+			result.put(INFO_KEY_DEVICE_MODEL, str);
 		}
 		str = getMeterManufacturer(conn);
 		if ( result != null ) {
-			result.put(INFO_KEY_METER_MANUFACTURER, str);
+			result.put(INFO_KEY_DEVICE_MANUFACTURER, str);
 		}
 		LocalDateTime dt = getMeterManufactureDate(conn);
 		if ( dt != null ) {
-			result.put(INFO_KEY_METER_MANUFACTURE_DATE, dt.toLocalDate());
+			result.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, dt.toLocalDate());
 		}
 		Long l = getMeterSerialNumber(conn);
 		if ( l != null ) {
-			result.put(INFO_KEY_METER_SERIAL_NUMBER, l);
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, l);
 		}
 		return result;
-	}
-
-	/**
-	 * Read general meter info and return a map of the results. See the various
-	 * {@code INFO_KEY_*} constants for information on the values returned in
-	 * the result map.
-	 * 
-	 * @param conn
-	 *        the connection to use
-	 * @return a map with general meter information populated
-	 */
-	public Map<String, Object> readMeterInfo(SerialConnection conn) {
-		return readDeviceInfo(conn);
-	}
-
-	/**
-	 * Return an informational message composed of general meter info. This
-	 * method will call {@link #readMeterInfo(SerialConnection)} and return a
-	 * {@code /} (forward slash) delimited string of the resulting values.
-	 * 
-	 * @return info message
-	 */
-	public String getMeterInfoMessage() {
-		return getDeviceInfoMessage();
 	}
 
 	/**
@@ -243,15 +181,15 @@ public class PM3200Support extends ModbusSupport {
 	 *        the data array
 	 * @return the parsed date, or <em>null</em> if not available
 	 */
-	public static LocalDateTime parseDateTime(final Integer[] data) {
+	public static LocalDateTime parseDateTime(final int[] data) {
 		LocalDateTime result = null;
 		if ( data != null && data.length == 4 ) {
-			int year = 2000 + (data[0].intValue() & 0x7F);
-			int month = (data[1].intValue() & 0xF00) >> 8;
-			int day = (data[1].intValue() & 0x1F);
-			int hour = (data[2].intValue() & 0x1F00) >> 8;
-			int minute = (data[2].intValue() & 0x3F);
-			int ms = (data[3].intValue()); // this is really seconds + milliseconds
+			int year = 2000 + (data[0] & 0x7F);
+			int month = (data[1] & 0xF00) >> 8;
+			int day = (data[1] & 0x1F);
+			int hour = (data[2] & 0x1F00) >> 8;
+			int minute = (data[2] & 0x3F);
+			int ms = (data[3]); // this is really seconds + milliseconds
 			int sec = ms / 1000;
 			ms = ms - (sec * 1000);
 			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
@@ -285,26 +223,140 @@ public class PM3200Support extends ModbusSupport {
 		return parseBigEndianInt64(data, offset);
 	}
 
+	/**
+	 * Set a {@code sourceMapping} Map via an encoded String value.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param mapping
+	 *        the encoding mapping
+	 * @see #getSourceMappingValue()
+	 */
+	public void setSourceMappingValue(String mapping) {
+		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
+		Map<MeasurementKind, String> kindMap = new EnumMap<MeasurementKind, String>(
+				MeasurementKind.class);
+		if ( m != null )
+			for ( Map.Entry<String, String> me : m.entrySet() ) {
+				String k = me.getKey();
+				MeasurementKind mk;
+				try {
+					mk = MeasurementKind.valueOf(k);
+				} catch ( RuntimeException e ) {
+					log.info("'{}' is not a valid MeasurementKind value, ignoring.", k);
+					continue;
+				}
+				kindMap.put(mk, me.getValue());
+			}
+		setSourceMapping(kindMap);
+	}
+
+	/**
+	 * Get a delimited string representation of the {@link #getSourceMapping()}
+	 * map.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * @return the encoded mapping
+	 * @see #setSourceMappingValue(String)
+	 */
+	public String getSourceMappingValue() {
+		return StringUtils.delimitedStringFromMap(sourceMapping);
+	}
+
+	/**
+	 * Get a source ID value for a given measurement kind.
+	 * 
+	 * @param kind
+	 *        the measurement kind
+	 * @return the source ID value, or <em>null</em> if not available
+	 */
+	public String getSourceIdForMeasurementKind(MeasurementKind kind) {
+		return (sourceMapping == null ? null : sourceMapping.get(kind));
+	}
+
+	private String getInfoMessage() {
+		String msg = null;
+		try {
+			msg = getDeviceInfoMessage();
+		} catch ( RuntimeException e ) {
+			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
+		}
+		return (msg == null ? "N/A" : msg);
+	}
+
+	private String getSampleMessage(PM3200Data data) {
+		if ( data.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+		StringBuilder buf = new StringBuilder();
+		buf.append("W = ").append(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
+		buf.append(", VA = ").append(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
+		buf.append(", Wh = ").append(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+		buf.append(", \ud835\udf11 = ").append(
+				sample.getPowerFactor(PM3200Data.ADDR_DATA_POWER_FACTOR_TOTAL));
+		buf.append("; sampled at ").append(
+				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		return buf.toString();
+	}
+
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		PM3200Support defaults = new PM3200Support();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
-		// get current value
-		BasicTitleSettingSpecifier info = new BasicTitleSettingSpecifier("info", "N/A", true);
-		try {
-			String infoMsg = getMeterInfoMessage();
-			info.setDefaultValue(infoMsg);
-		} catch ( RuntimeException e ) {
-			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
-		}
-		results.add(info);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
+				.getSourceMappingValue()));
 
 		return results;
+	}
+
+	public boolean isCaptureTotal() {
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.Total));
+	}
+
+	public boolean isCapturePhaseA() {
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseA));
+	}
+
+	public boolean isCapturePhaseB() {
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseB));
+	}
+
+	public boolean isCapturePhaseC() {
+		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseC));
+	}
+
+	public Map<MeasurementKind, String> getSourceMapping() {
+		return sourceMapping;
+	}
+
+	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
+		this.sourceMapping = sourceMapping;
 	}
 
 }

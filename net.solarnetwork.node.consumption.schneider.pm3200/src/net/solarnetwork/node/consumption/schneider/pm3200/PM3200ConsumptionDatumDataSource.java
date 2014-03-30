@@ -25,20 +25,18 @@ package net.solarnetwork.node.consumption.schneider.pm3200;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.wimpi.modbus.net.SerialConnection;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * DatumDataSource for ConsumptionDatum with the Schneider Electric PM3200
@@ -60,23 +58,17 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
 		SettingSpecifierProvider {
 
-	/** The default source ID applied for the total reading values. */
-	public static final String MAIN_SOURCE_ID = "Main";
+	private static final long MIN_TIME_READ_DATA = 1000L * 5L; // 5 seconds
 
-	private static MessageSource MESSAGE_SOURCE;
+	private MessageSource messageSource;
 
-	private Map<Integer, String> sourceMapping = getDefaulSourceMapping();
-
-	/**
-	 * Get a default {@code sourceMapping} value. This maps only the {@code 0}
-	 * source to the value {@code Main}.
-	 * 
-	 * @return mapping
-	 */
-	public static Map<Integer, String> getDefaulSourceMapping() {
-		Map<Integer, String> result = new LinkedHashMap<Integer, String>(1);
-		result.put(0, MAIN_SOURCE_ID);
-		return result;
+	private PM3200Data getCurrentSample(final SerialConnection conn) {
+		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
+			sample.readMeterData(conn, getUnitId());
+			log.debug("Read PM3200 data: {}", sample);
+		}
+		return new PM3200Data(sample);
 	}
 
 	@Override
@@ -86,23 +78,15 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
-		if ( !shouldCollectSource(0) ) {
-			return null;
-		}
 		return ModbusHelper.execute(getConnectionFactory(),
 				new ModbusConnectionCallback<ConsumptionDatum>() {
 
 					@Override
 					public ConsumptionDatum doInConnection(SerialConnection conn) throws IOException {
-						// current, voltage
-						final Integer[][] data = readMeterValues(conn);
-						PM3200ConsumptionDatum d = new PM3200ConsumptionDatum();
-						fillDatumValues(d, data, 0);
-						if ( d.isValid() ) {
-							d.setSourceId(getSourceId(0));
-						} else {
-							d = null;
-						}
+						final PM3200Data currSample = getCurrentSample(conn);
+						PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
+								MeasurementKind.Total);
+						d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
 						return d;
 					}
 				});
@@ -113,89 +97,43 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		return PM3200ConsumptionDatum.class;
 	}
 
-	private static final int METER_VALUES_CURRENT_VOLTAGE = 0;
-	private static final int METER_VALUES_CURRENT_VOLTAGE_START = ADDR_DATA_I1;
-	private static final int METER_VALUES_TOTAL_ENERGY = 1;
-	private static final int METER_VALUES_TOTAL_ENERGY_START = ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT;
-
-	private Integer[][] readMeterValues(SerialConnection conn) {
-		Integer[] ivData = ModbusHelper.readValues(conn, ADDR_DATA_I1, 38, getUnitId());
-		Integer[] eData = ModbusHelper.readValues(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 48,
-				getUnitId());
-		return new Integer[][] { ivData, eData };
-	}
-
-	private void fillDatumValues(PM3200ConsumptionDatum d, Integer[][] data, int n) {
-		fillCurrentVoltageValues(d, data[METER_VALUES_CURRENT_VOLTAGE],
-				METER_VALUES_CURRENT_VOLTAGE_START, n);
-		fillEnergyValues(d, data[METER_VALUES_TOTAL_ENERGY], METER_VALUES_TOTAL_ENERGY_START, n);
-	}
-
 	@Override
 	public Collection<ConsumptionDatum> readMultipleDatum() {
-		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(3);
+		return ModbusHelper.execute(getConnectionFactory(),
+				new ModbusConnectionCallback<List<ConsumptionDatum>>() {
 
-		ModbusHelper.execute(getConnectionFactory(), new ModbusConnectionCallback<Object>() {
-
-			@Override
-			public Object doInConnection(SerialConnection conn) throws IOException {
-				final Integer[][] data = readMeterValues(conn);
-				PM3200ConsumptionDatum d = new PM3200ConsumptionDatum();
-				for ( int n = 0; n < 4; n++ ) {
-					if ( shouldCollectSource(n) ) {
-						fillDatumValues(d, data, n);
-						if ( d.isValid() ) {
-							d.setSourceId(getSourceId(n));
+					@Override
+					public List<ConsumptionDatum> doInConnection(SerialConnection conn)
+							throws IOException {
+						final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(4);
+						final PM3200Data currSample = getCurrentSample(conn);
+						if ( isCaptureTotal() ) {
+							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
+									MeasurementKind.Total);
+							d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
 							results.add(d);
 						}
+						if ( isCapturePhaseA() ) {
+							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
+									MeasurementKind.PhaseA);
+							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseA));
+							results.add(d);
+						}
+						if ( isCapturePhaseB() ) {
+							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
+									MeasurementKind.PhaseB);
+							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseB));
+							results.add(d);
+						}
+						if ( isCapturePhaseC() ) {
+							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
+									MeasurementKind.PhaseC);
+							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseC));
+							results.add(d);
+						}
+						return results;
 					}
-				}
-
-				return null;
-			}
-		});
-
-		return results;
-	}
-
-	private boolean shouldCollectSource(int num) {
-		return (sourceMapping == null || sourceMapping.containsKey(num));
-	}
-
-	private String getSourceId(int num) {
-		String result = null;
-		if ( sourceMapping != null ) {
-			result = sourceMapping.get(num);
-		}
-		if ( result == null ) {
-			if ( num == 0 ) {
-				result = MAIN_SOURCE_ID;
-			} else {
-				result = String.valueOf(num);
-			}
-		}
-		return result;
-	}
-
-	private void fillCurrentVoltageValues(final PM3200ConsumptionDatum d, final Integer[] data,
-			final int startingAddress, final int num) {
-		assert (num >= 0 && num <= 3);
-		if ( num == 0 ) {
-			d.setAmps(parseFloat32(data, ADDR_DATA_I_AVERAGE - startingAddress));
-			d.setVolts(parseFloat32(data, ADDR_DATA_V_NEUTRAL_AVERAGE - startingAddress));
-			//d.setWattHourReading(parseInt64(data, ADDR_DATA_START - ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
-		} else {
-			d.setAmps(parseFloat32(data, ADDR_DATA_I1 + ((num - 1) * 2)) - startingAddress);
-			d.setVolts(parseFloat32(data, ADDR_DATA_V_L1_NEUTRAL + ((num - 1) * 2)) - startingAddress);
-		}
-	}
-
-	private void fillEnergyValues(final PM3200ConsumptionDatum d, final Integer[] data,
-			final int startingAddress, final int num) {
-		assert (num >= 0 && num <= 3);
-		if ( num == 0 ) {
-			d.setWattHourReading(parseInt64(data, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT - startingAddress));
-		}
+				});
 	}
 
 	// SettingSpecifierProvider
@@ -210,38 +148,13 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		return "PM3200 Series Meter";
 	}
 
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = super.getSettingSpecifiers();
-
-		// TODO: other settings
-
-		return results;
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(getClass().getClassLoader());
-			source.setBasename(getClass().getName());
-
-			ResourceBundleMessageSource parent = new ResourceBundleMessageSource();
-			parent.setBundleClassLoader(PM3200Support.class.getClassLoader());
-			parent.setBasename(PM3200Support.class.getName());
-			source.setParentMessageSource(parent);
-
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
-	}
-
-	public Map<Integer, String> getSourceMapping() {
-		return sourceMapping;
-	}
-
-	public void setSourceMapping(Map<Integer, String> sourceMapping) {
-		this.sourceMapping = sourceMapping;
+		return messageSource;
 	}
 
 }

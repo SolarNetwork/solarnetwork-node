@@ -7,7 +7,6 @@
 		<include name="net.solarnetwork.node.hw.schneider"/>
 		<include name="net.solarnetwork.node.io.modbus"/>
 	</dirset>
-	
 
 	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
 	<import file="${dir.osgi.base}/lib-build.xml"/>

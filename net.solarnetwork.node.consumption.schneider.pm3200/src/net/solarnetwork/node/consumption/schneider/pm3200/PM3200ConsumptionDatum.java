@@ -23,6 +23,8 @@
 package net.solarnetwork.node.consumption.schneider.pm3200;
 
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 
 /**
  * Extension of {@link ConsumptionDatum} with additional properties supported by
@@ -33,13 +35,66 @@ import net.solarnetwork.node.consumption.ConsumptionDatum;
  */
 public class PM3200ConsumptionDatum extends ConsumptionDatum {
 
+	private final PM3200Data sample;
+	private final MeasurementKind kind;
+
+	/**
+	 * Construct with a sample.
+	 * 
+	 * @param sample
+	 *        the sample
+	 */
+	public PM3200ConsumptionDatum(PM3200Data sample, MeasurementKind kind) {
+		super();
+		this.sample = sample;
+		this.kind = kind;
+		extractMeasurements();
+	}
+
 	/**
 	 * Test if the data appears valid in this datum.
 	 * 
 	 * @return <em>true</em> if the data appears to be valid
 	 */
 	public boolean isValid() {
-		return (getVolts() != null && getAmps() != null) || getWattHourReading() != null;
+		return (getWatts() != null || getWattHourReading() != null);
+	}
+
+	private void extractMeasurements() {
+		switch (kind) {
+			case Total:
+				extractTotalMeasurements();
+				break;
+
+			case PhaseA:
+				extractPhaseAMeasurements();
+				break;
+
+			case PhaseB:
+				extractPhaseBMeasurements();
+				break;
+
+			case PhaseC:
+				extractPhaseCMeasurements();
+				break;
+		}
+	}
+
+	private void extractTotalMeasurements() {
+		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
+		setWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+	}
+
+	private void extractPhaseAMeasurements() {
+		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P1));
+	}
+
+	private void extractPhaseBMeasurements() {
+		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P2));
+	}
+
+	private void extractPhaseCMeasurements() {
+		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P3));
 	}
 
 }
