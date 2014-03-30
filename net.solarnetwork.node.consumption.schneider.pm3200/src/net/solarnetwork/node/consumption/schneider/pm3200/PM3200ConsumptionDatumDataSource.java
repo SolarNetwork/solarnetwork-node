@@ -47,8 +47,8 @@ import org.springframework.context.MessageSource;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>messageSource</dt>
+ * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
  * </dl>
  * 
  * @author matt
@@ -67,6 +67,9 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
 			sample.readMeterData(conn, getUnitId());
 			log.debug("Read PM3200 data: {}", sample);
+			if ( log.isTraceEnabled() ) {
+				log.trace(sample.dataDebugString());
+			}
 		}
 		return new PM3200Data(sample);
 	}

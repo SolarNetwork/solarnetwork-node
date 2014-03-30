@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
+import java.util.Arrays;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.wimpi.modbus.net.SerialConnection;
 
@@ -125,6 +126,46 @@ public class PM3200Data {
 	}
 
 	/**
+	 * Get a string of data values, useful for debugging. The generated string
+	 * will contain a register address followed by two register values per line,
+	 * printed as hexidecimal integers, with a prefix and suffix line. The
+	 * register addresses will be printed as {@bold 1-based} values, to
+	 * match Schneider's documentation. For example:
+	 * 
+	 * <pre>
+	 * PM3200Data{
+	 *     03000: 0x4141, 0x727e
+	 *     03002: 0xffc0, 0x0000
+	 *     ...
+	 *     03240: 0x0000, 0x0000
+	 * }
+	 * </pre>
+	 * 
+	 * @return debug string
+	 */
+	public String dataDebugString() {
+		final StringBuilder buf = new StringBuilder("PM3200Data{\n");
+		PM3200Data snapshot = new PM3200Data(this);
+		int[] keys = snapshot.dataRegisters.keys();
+		Arrays.sort(keys);
+		boolean odd = true;
+		for ( int k : keys ) {
+			if ( odd ) {
+				buf.append("\t").append(String.format("%05d", k + 1)).append(": ");
+			}
+			buf.append(String.format("0x%04x", snapshot.dataRegisters.get(k)));
+			if ( odd ) {
+				buf.append(", ");
+			} else {
+				buf.append("\n");
+			}
+			odd = !odd;
+		}
+		buf.append("}");
+		return buf.toString();
+	}
+
+	/**
 	 * Read data from the meter and store it internally. If data is populated
 	 * successfully, the {@link dataTimestamp} will be updated to the current
 	 * system time. <b>Note</b> this does <b>not</b> call
@@ -137,7 +178,7 @@ public class PM3200Data {
 	 * @param unitId
 	 *        the Modbus unit ID to query
 	 */
-	public void readMeterData(final SerialConnection conn, final int unitId) {
+	public synchronized void readMeterData(final SerialConnection conn, final int unitId) {
 		// current
 		readIntData(conn, unitId, ADDR_DATA_I1, ADDR_DATA_I_AVERAGE + 1);
 
