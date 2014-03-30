@@ -534,6 +534,43 @@ public final class ModbusHelper {
 
 	/**
 	 * Parse a 32-bit float value from raw Modbus register values. The
+	 * {@code data} array is expected to have a length of at least
+	 * {@code offset} + {@code 1}, and be arranged in big-endian order.
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 *         float is {@code NaN}
+	 */
+	public static Float parseFloat32(final int[] data, int offset) {
+		Float result = null;
+		if ( data != null && (offset + 1) < data.length ) {
+			result = parseFloat32(data[0], data[1]);
+		}
+		return result;
+	}
+
+	/**
+	 * Parse a 32-bit float value from raw Modbus register values.
+	 * 
+	 * @param high
+	 *        the high 16 bits
+	 * @param low
+	 *        the low 16 bits
+	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 *         float is {@code NaN}
+	 */
+	public static Float parseFloat32(final int high, final int low) {
+		Float result = Float.intBitsToFloat(((high & 0xFFFF) << 16) | (low & 0xFFFF));
+		if ( result.isNaN() ) {
+			LOG.trace("Data results in NaN: {} {}", high, low);
+			result = null;
+		}
+		return result;
+	}
+
+	/**
+	 * Parse a 32-bit float value from raw Modbus register values. The
 	 * {@code data} array is expected to have a length of {@code 2}, and be
 	 * arranged in big-endian order.
 	 * 
@@ -567,10 +604,27 @@ public final class ModbusHelper {
 	public static Long parseInt64(final Integer[] data) {
 		Long result = null;
 		if ( data != null && data.length == 4 ) {
-			result = (((data[0].longValue() & 0xFFFF) << 48) | ((data[1].longValue() & 0xFFFF) << 32)
-					| ((data[2].longValue() & 0xFFFF) << 16) | (data[3].longValue() & 0xFFFF));
+			result = parseInt64(data[0], data[1], data[2], data[3]);
 		}
 		return result;
+	}
+
+	/**
+	 * Parse a 64-bit long value from raw Modbus register values.
+	 * 
+	 * @param h1
+	 *        bits 63-48
+	 * @param h2
+	 *        bits 47-32
+	 * @param l1
+	 *        bits 31-16
+	 * @param l2
+	 *        bits 15-0
+	 * @return the parsed long
+	 */
+	public static Long parseInt64(final int h1, final int h2, final int l1, final int l2) {
+		return ((((long) h1 & 0xFFFF) << 48) | (((long) h2 & 0xFFFF) << 32)
+				| (((long) l1 & 0xFFFF) << 16) | ((long) l2 & 0xFFFF));
 	}
 
 	/**
