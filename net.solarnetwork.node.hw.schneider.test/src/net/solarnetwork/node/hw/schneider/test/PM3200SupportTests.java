@@ -152,7 +152,7 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void testReadMeterInfoMessage() {
-		String result = support.getMeterInfoMessage();
+		String result = support.getDeviceInfoMessage();
 		List<Object> data = new ArrayList<Object>(10);
 		data.add(meterName);
 		data.add(meterModel);
