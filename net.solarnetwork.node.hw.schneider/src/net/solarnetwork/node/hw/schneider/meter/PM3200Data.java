@@ -204,7 +204,16 @@ public class PM3200Data {
 		saveDataArray(data, startAddr);
 	}
 
-	private void saveDataArray(final int[] data, int addr) {
+	/**
+	 * Internally store an array of integer register data values, starting at a
+	 * given address.
+	 * 
+	 * @param data
+	 *        the data array to save
+	 * @param addr
+	 *        the starting address of the data
+	 */
+	protected void saveDataArray(final int[] data, int addr) {
 		if ( data == null || data.length < 1 ) {
 			return;
 		}
