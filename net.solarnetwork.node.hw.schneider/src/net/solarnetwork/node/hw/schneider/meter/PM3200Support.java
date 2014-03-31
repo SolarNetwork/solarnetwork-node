@@ -310,8 +310,7 @@ public class PM3200Support extends ModbusSupport {
 		buf.append("W = ").append(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
 		buf.append(", VA = ").append(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
 		buf.append(", Wh = ").append(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
-		buf.append(", tan \ud835\udf11 = ").append(
-				sample.getPowerFactor(PM3200Data.ADDR_DATA_REACTIVE_FACTOR_TOTAL));
+		buf.append(", cos \ud835\udf11 = ").append(sample.getEffectiveTotalPowerFactor());
 		buf.append("; sampled at ").append(
 				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
 		return buf.toString();

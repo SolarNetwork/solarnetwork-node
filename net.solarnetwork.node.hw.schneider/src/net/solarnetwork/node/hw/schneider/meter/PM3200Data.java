@@ -288,6 +288,24 @@ public class PM3200Data {
 	}
 
 	/**
+	 * Get the effective total power factor, in terms of cos(phi). The result
+	 * range is from -1 to 1.
+	 * 
+	 * @return the effective power factor
+	 */
+	public Float getEffectiveTotalPowerFactor() {
+		Float tangentPhi = getFloat32(ADDR_DATA_REACTIVE_FACTOR_TOTAL);
+		if ( tangentPhi == null ) {
+			return null;
+		}
+		float result = (float) (1.0 / Math.sqrt(1 + tangentPhi.doubleValue() * tangentPhi.doubleValue()));
+		if ( tangentPhi.floatValue() < 0 ) {
+			result = -result;
+		}
+		return result;
+	}
+
+	/**
 	 * Get an effective power value in W (active), Var (reactive) or VA
 	 * (apparent).
 	 * 
