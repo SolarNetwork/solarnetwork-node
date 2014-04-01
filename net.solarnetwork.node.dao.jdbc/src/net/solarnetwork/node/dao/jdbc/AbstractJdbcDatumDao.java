@@ -31,9 +31,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.List;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 

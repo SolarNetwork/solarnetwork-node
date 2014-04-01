@@ -20,9 +20,8 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.support.BasicLocation;
 
 /**
  * Information about a specific price location.

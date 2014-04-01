@@ -1,5 +1,5 @@
 /* ==================================================================
- * Location.java - Nov 17, 2013 7:36:36 PM
+ * WeatherLocation.java - Nov 18, 2013 4:45:17 PM
  * 
  * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
@@ -20,46 +20,22 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
+
 
 /**
- * API for a location object.
- * 
- * <p>
- * A <em>location</em> is a standardized reference to some place or some source
- * of information, for example a weather location, a price location, etc.
- * </p>
+ * Extension of {@link BasicLocation} for weather data.
  * 
  * @author matt
  * @version 1.0
  */
-public interface Location {
+public class WeatherLocation extends BasicLocation {
 
 	/**
-	 * Get a unique ID of this location.
-	 * 
-	 * @return the location ID
+	 * Default constructor.
 	 */
-	public Long getLocationId();
+	public WeatherLocation() {
+		super();
+	}
 
-	/**
-	 * Get a name for this location.
-	 * 
-	 * @return the location name
-	 */
-	public String getLocationName();
-
-	/**
-	 * Get a unique ID of the source of this location.
-	 * 
-	 * @return the source ID
-	 */
-	public Long getSourceId();
-
-	/**
-	 * Get the name of the source of this location.
-	 * 
-	 * @return the source name
-	 */
-	public String getSourceName();
 }

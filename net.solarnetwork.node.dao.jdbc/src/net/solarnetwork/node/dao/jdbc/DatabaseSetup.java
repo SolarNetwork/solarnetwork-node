@@ -25,7 +25,7 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import javax.sql.DataSource;
-import net.solarnetwork.node.Datum;
+import net.solarnetwork.node.domain.Datum;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;

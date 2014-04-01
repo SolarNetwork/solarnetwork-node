@@ -2,12 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Hsiang Cheng Electric EM56XX Consumption
 Bundle-SymbolicName: net.solarnetwork.node.consumption.hc.em5600
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.consumption;version="1.5.0",
+ net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.hw.hc;version="1.0.0",
  net.solarnetwork.node.io.modbus;version="1.5.0",
  net.solarnetwork.node.settings;version="1.3.0",

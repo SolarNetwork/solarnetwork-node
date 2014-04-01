@@ -1,7 +1,7 @@
 /* ==================================================================
- * MultiDatumDataSource.java - Apr 8, 2010 7:32:57 AM
+ * Location.java - Nov 17, 2013 7:36:36 PM
  * 
- * Copyright 2007-2010 SolarNetwork.net Dev Team
+ * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -18,36 +18,48 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
-package net.solarnetwork.node;
-
-import java.util.Collection;
-import net.solarnetwork.node.domain.Datum;
+package net.solarnetwork.node.domain;
 
 /**
- * API for collecting multiple {@link Datum} objects from some device.
+ * API for a location object.
+ * 
+ * <p>
+ * A <em>location</em> is a standardized reference to some place or some source
+ * of information, for example a weather location, a price location, etc.
+ * </p>
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
-public interface MultiDatumDataSource<T extends Datum> extends Identifiable {
+public interface Location {
 
 	/**
-	 * Get the class supported by this DataSource.
+	 * Get a unique ID of this location.
 	 * 
-	 * @return class
+	 * @return the location ID
 	 */
-	Class<? extends T> getMultiDatumType();
+	public Long getLocationId();
 
 	/**
-	 * Read multiple values from the data source, returning as a collection of
-	 * unpersisted {@link Datum} objects.
+	 * Get a name for this location.
 	 * 
-	 * @return Datum
+	 * @return the location name
 	 */
-	Collection<T> readMultipleDatum();
+	public String getLocationName();
 
+	/**
+	 * Get a unique ID of the source of this location.
+	 * 
+	 * @return the source ID
+	 */
+	public Long getSourceId();
+
+	/**
+	 * Get the name of the source of this location.
+	 * 
+	 * @return the source name
+	 */
+	public String getSourceName();
 }

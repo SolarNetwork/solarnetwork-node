@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.settings;
 
-import net.solarnetwork.node.Location;
+import net.solarnetwork.node.domain.Location;
 
 /**
  * A setting for a location ID.

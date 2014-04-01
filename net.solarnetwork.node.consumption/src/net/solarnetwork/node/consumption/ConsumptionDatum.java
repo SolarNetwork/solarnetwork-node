@@ -24,7 +24,7 @@
 
 package net.solarnetwork.node.consumption;
 
-import net.solarnetwork.node.support.BaseDatum;
+import net.solarnetwork.node.domain.BaseEnergyDatum;
 
 /**
  * Domain object for energy consumption related data.
@@ -35,13 +35,11 @@ import net.solarnetwork.node.support.BaseDatum;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class ConsumptionDatum extends BaseDatum {
+public class ConsumptionDatum extends BaseEnergyDatum {
 
 	private Long locationId = null; // price location ID
-	private Integer watts = null;
-	private Long wattHourReading = null;
 
 	// these are for backwards compatibility only
 	private Float amps = null;
@@ -85,12 +83,6 @@ public class ConsumptionDatum extends BaseDatum {
 		setWatts(watts);
 	}
 
-	@Override
-	public String toString() {
-		return "ConsumptionDatum{sourceId=" + getSourceId() + ",watts=" + getWatts()
-				+ ",wattHourReading=" + this.wattHourReading + '}';
-	}
-
 	@Deprecated
 	public Float getAmps() {
 		return amps;
@@ -119,14 +111,6 @@ public class ConsumptionDatum extends BaseDatum {
 		this.locationId = locationId;
 	}
 
-	public Long getWattHourReading() {
-		return wattHourReading;
-	}
-
-	public void setWattHourReading(Long wattHourReading) {
-		this.wattHourReading = wattHourReading;
-	}
-
 	/**
 	 * Get the watts.
 	 * 
@@ -138,7 +122,9 @@ public class ConsumptionDatum extends BaseDatum {
 	 * @return watts, or <em>null</em> if watts not available and either amps or
 	 *         volts are null
 	 */
+	@Override
 	public Integer getWatts() {
+		Integer watts = super.getWatts();
 		if ( watts != null ) {
 			return watts;
 		}
@@ -146,10 +132,6 @@ public class ConsumptionDatum extends BaseDatum {
 			return null;
 		}
 		return Integer.valueOf((int) Math.round(amps.doubleValue() * volts.doubleValue()));
-	}
-
-	public void setWatts(Integer watts) {
-		this.watts = watts;
 	}
 
 }

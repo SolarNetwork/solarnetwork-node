@@ -1,7 +1,7 @@
 /* ==================================================================
- * WeatherLocation.java - Nov 18, 2013 4:45:17 PM
+ * BaseEnergyDatum.java - Apr 1, 2014 5:18:09 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,23 +20,41 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.support.BasicLocation;
 
 /**
- * Extension of {@link BasicLocation} for weather data.
+ * Base class for {@link EnergyDatum} implementations.
  * 
  * @author matt
  * @version 1.0
  */
-public class WeatherLocation extends BasicLocation {
+public abstract class BaseEnergyDatum extends BaseDatum implements EnergyDatum {
 
-	/**
-	 * Default constructor.
-	 */
-	public WeatherLocation() {
-		super();
+	private Integer watts = null;
+	private Long wattHourReading = null;
+
+	@Override
+	public Integer getWatts() {
+		return watts;
 	}
 
+	public void setWatts(Integer watts) {
+		this.watts = watts;
+	}
+
+	@Override
+	public Long getWattHourReading() {
+		return wattHourReading;
+	}
+
+	public void setWattHourReading(Long wattHourReading) {
+		this.wattHourReading = wattHourReading;
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{sourceId=" + getSourceId() + ",watts=" + getWatts()
+				+ ",wattHourReading=" + getWattHourReading() + '}';
+	}
 }

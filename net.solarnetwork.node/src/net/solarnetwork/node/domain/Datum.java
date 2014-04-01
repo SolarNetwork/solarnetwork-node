@@ -22,7 +22,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
 import java.util.Date;
 
@@ -55,7 +55,7 @@ public interface Datum {
 	public String getSourceId();
 
 	/**
-	 * Get teh date this object was uploaded to SolarNet.
+	 * Get the date this object was uploaded to SolarNet.
 	 * 
 	 * @return the upload date
 	 */

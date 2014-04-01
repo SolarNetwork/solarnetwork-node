@@ -2,12 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Demand Balancer
 Bundle-SymbolicName: net.solarnetwork.node.control.demandbalancer
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: net.solarnetwork.domain;version="1.2.0",
- net.solarnetwork.node;version="1.10.0",
+Import-Package: 
+ net.solarnetwork.domain;version="1.2.0",
+ net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.consumption;version="1.5.0",
+ net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.job;version="1.9.0",
  net.solarnetwork.node.power;version="1.7.0",
  net.solarnetwork.node.reactor;version="1.1.0",

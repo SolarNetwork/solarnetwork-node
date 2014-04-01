@@ -29,10 +29,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.support.NodeControlInfoDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

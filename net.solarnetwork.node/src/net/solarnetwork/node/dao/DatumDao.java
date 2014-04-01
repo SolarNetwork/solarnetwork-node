@@ -26,7 +26,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Datum;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * Data Access Object (DAO) API for {@link Datum} objects.

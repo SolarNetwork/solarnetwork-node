@@ -30,12 +30,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.UploadService;
-
+import net.solarnetwork.node.domain.Datum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

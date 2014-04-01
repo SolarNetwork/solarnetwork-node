@@ -24,6 +24,8 @@
 
 package net.solarnetwork.node;
 
+import net.solarnetwork.node.domain.Datum;
+
 /**
  * Result object for a specific datum uploaded in bulk.
  * 

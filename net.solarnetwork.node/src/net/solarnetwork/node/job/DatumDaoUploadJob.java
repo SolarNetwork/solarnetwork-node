@@ -30,9 +30,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 

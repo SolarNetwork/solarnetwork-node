@@ -23,6 +23,7 @@
 package net.solarnetwork.node;
 
 import java.util.Collection;
+import net.solarnetwork.node.domain.Location;
 
 /**
  * API for querying for locations.
