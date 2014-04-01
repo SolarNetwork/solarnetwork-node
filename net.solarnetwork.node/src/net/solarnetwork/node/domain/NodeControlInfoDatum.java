@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.domain;
@@ -31,7 +29,7 @@ import net.solarnetwork.domain.NodeControlPropertyType;
  * Implementation of {@link NodeControlInfo} and {@link Datum}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 
@@ -40,7 +38,7 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	private Boolean readonly;
 	private String unit;
 	private String propertyName;
-	
+
 	@Override
 	public String getControlId() {
 		return getSourceId();
@@ -70,22 +68,20 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	public String getUnit() {
 		return unit;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "NodeControlInfoDatum{controlId=" +(getSourceId() == null ? "" : getSourceId()) 
-				+",type=" +(type == null ? "" : type.toString())
-				+",property=" +(propertyName == null ? "" : propertyName)
-				+",value=" +(value == null ? "" : value)
-				+'}';
+		return "NodeControlInfoDatum{controlId=" + (getSourceId() == null ? "" : getSourceId())
+				+ ",type=" + (type == null ? "" : type.toString()) + ",property="
+				+ (propertyName == null ? "" : propertyName) + ",value=" + (value == null ? "" : value)
+				+ '}';
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result
-				+ ((propertyName == null) ? 0 : propertyName.hashCode());
+		result = prime * result + ((propertyName == null) ? 0 : propertyName.hashCode());
 		result = prime * result + ((unit == null) ? 0 : unit.hashCode());
 		result = prime * result + ((value == null) ? 0 : value.hashCode());
 		return result;
@@ -93,35 +89,35 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj) {
+		if ( this == obj ) {
 			return true;
 		}
-		if (!super.equals(obj)) {
+		if ( !super.equals(obj) ) {
 			return false;
 		}
-		if (getClass() != obj.getClass()) {
+		if ( getClass() != obj.getClass() ) {
 			return false;
 		}
 		NodeControlInfoDatum other = (NodeControlInfoDatum) obj;
-		if (propertyName == null) {
-			if (other.propertyName != null) {
+		if ( propertyName == null ) {
+			if ( other.propertyName != null ) {
 				return false;
 			}
-		} else if (!propertyName.equals(other.propertyName)) {
+		} else if ( !propertyName.equals(other.propertyName) ) {
 			return false;
 		}
-		if (unit == null) {
-			if (other.unit != null) {
+		if ( unit == null ) {
+			if ( other.unit != null ) {
 				return false;
 			}
-		} else if (!unit.equals(other.unit)) {
+		} else if ( !unit.equals(other.unit) ) {
 			return false;
 		}
-		if (value == null) {
-			if (other.value != null) {
+		if ( value == null ) {
+			if ( other.value != null ) {
 				return false;
 			}
-		} else if (!value.equals(other.value)) {
+		} else if ( !value.equals(other.value) ) {
 			return false;
 		}
 		return true;
@@ -130,15 +126,19 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	public void setType(NodeControlPropertyType type) {
 		this.type = type;
 	}
+
 	public void setValue(String value) {
 		this.value = value;
 	}
+
 	public void setReadonly(Boolean readonly) {
 		this.readonly = readonly;
 	}
+
 	public void setUnit(String unit) {
 		this.unit = unit;
 	}
+
 	public void setPropertyName(String propertyName) {
 		this.propertyName = propertyName;
 	}
