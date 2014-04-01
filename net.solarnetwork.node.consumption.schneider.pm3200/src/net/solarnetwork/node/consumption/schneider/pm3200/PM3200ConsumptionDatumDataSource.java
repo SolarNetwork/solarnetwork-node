@@ -29,7 +29,7 @@ import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
@@ -52,7 +52,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
@@ -87,9 +87,8 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 					@Override
 					public ConsumptionDatum doInConnection(SerialConnection conn) throws IOException {
 						final PM3200Data currSample = getCurrentSample(conn);
-						PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-								MeasurementKind.Total);
-						d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
+						PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.Total);
+						d.setSourceId(getSourceMapping().get(ACPhase.Total));
 						return d;
 					}
 				});
@@ -112,26 +111,26 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 						final PM3200Data currSample = getCurrentSample(conn);
 						if ( isCaptureTotal() ) {
 							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.Total);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
+									ACPhase.Total);
+							d.setSourceId(getSourceMapping().get(ACPhase.Total));
 							results.add(d);
 						}
 						if ( isCapturePhaseA() ) {
 							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseA);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseA));
+									ACPhase.PhaseA);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 							results.add(d);
 						}
 						if ( isCapturePhaseB() ) {
 							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseB);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseB));
+									ACPhase.PhaseB);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 							results.add(d);
 						}
 						if ( isCapturePhaseC() ) {
 							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseC);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseC));
+									ACPhase.PhaseC);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 							results.add(d);
 						}
 						return results;
