@@ -2,12 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Power Mock
 Bundle-SymbolicName: net.solarnetwork.node.power.mock
-Bundle-Version: 1.8.0
+Bundle-Version: 1.9.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.dao;version="1.5.0",
+ net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.power;version="1.7.0",
  net.solarnetwork.node.settings;version="1.0.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
