@@ -24,6 +24,8 @@
 
 package net.solarnetwork.node;
 
+import net.solarnetwork.node.domain.Datum;
+
 /**
  * API for collecting {@link Datum} objects from some device.
  * 

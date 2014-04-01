@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 

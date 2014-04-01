@@ -22,7 +22,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
 import java.util.Date;
 

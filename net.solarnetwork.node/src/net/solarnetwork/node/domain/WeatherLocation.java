@@ -20,9 +20,8 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.domain.BasicLocation;
 
 /**
  * Extension of {@link BasicLocation} for weather data.

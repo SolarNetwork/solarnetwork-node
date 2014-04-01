@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.Location;
 
 /**
  * Basic implementation of {@link Location}.

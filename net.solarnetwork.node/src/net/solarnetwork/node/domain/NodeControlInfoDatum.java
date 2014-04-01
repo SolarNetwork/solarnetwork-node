@@ -26,7 +26,6 @@ package net.solarnetwork.node.domain;
 
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.Datum;
 
 /**
  * Implementation of {@link NodeControlInfo} and {@link Datum}.

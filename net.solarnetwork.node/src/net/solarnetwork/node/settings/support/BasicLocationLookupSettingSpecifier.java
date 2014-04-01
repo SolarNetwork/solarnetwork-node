@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
-import net.solarnetwork.node.Location;
+import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 

@@ -28,10 +28,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -121,9 +122,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 */
 	public void evaluateBalance() {
 		final Iterable<ConsumptionDatum> demand = getCurrentDatum(consumptionDataSource);
-		final Integer demandWatts = wattsForConsumption(demand);
+		final Integer demandWatts = wattsForEnergyDatum(demand);
 		final Iterable<PowerDatum> generation = getCurrentDatum(powerDataSource);
-		final Integer generationWatts = wattsForPower(generation);
+		final Integer generationWatts = wattsForEnergyDatum(generation);
 		final NodeControlInfo generationLimit = getCurrentControlValue(powerControl, powerControlId);
 		final Integer generationLimitPercent = percentForLimit(generationLimit);
 		log.debug("Current demand: {}, generation: {}, capacity: {}, limit: {}",
@@ -196,7 +197,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return null;
 	}
 
-	private Integer wattsForPower(PowerDatum datum) {
+	private Integer wattsForEnergyDatum(EnergyDatum datum) {
 		if ( datum == null ) {
 			return null;
 		}
@@ -206,39 +207,13 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return null;
 	}
 
-	private Integer wattsForPower(Iterable<PowerDatum> datums) {
+	private Integer wattsForEnergyDatum(Iterable<? extends EnergyDatum> datums) {
 		if ( datums == null ) {
 			return null;
 		}
 		int total = -1;
-		for ( PowerDatum datum : datums ) {
-			Integer w = wattsForPower(datum);
-			if ( w != null ) {
-				if ( total < 0 ) {
-					total = w;
-				} else {
-					total += w;
-				}
-			}
-		}
-		return (total < 0 ? null : total);
-	}
-
-	private Integer wattsForConsumption(ConsumptionDatum datum) {
-		if ( datum == null || datum.getAmps() == null || datum.getVolts() == null ) {
-			return null;
-		}
-		return Integer.valueOf((int) Math.ceil(datum.getAmps().doubleValue()
-				* datum.getVolts().doubleValue()));
-	}
-
-	private Integer wattsForConsumption(Iterable<ConsumptionDatum> datums) {
-		if ( datums == null ) {
-			return null;
-		}
-		int total = -1;
-		for ( ConsumptionDatum datum : datums ) {
-			Integer w = wattsForConsumption(datum);
+		for ( EnergyDatum datum : datums ) {
+			Integer w = wattsForEnergyDatum(datum);
 			if ( w != null ) {
 				if ( total < 0 ) {
 					total = w;

@@ -25,6 +25,7 @@
 package net.solarnetwork.node;
 
 import java.util.Collection;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * API for collecting multiple {@link Datum} objects from some device.

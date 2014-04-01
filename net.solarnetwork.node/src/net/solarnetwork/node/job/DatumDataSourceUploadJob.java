@@ -26,10 +26,9 @@
 
 package net.solarnetwork.node.job;
 
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.UploadService;
-
+import net.solarnetwork.node.domain.Datum;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 

@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.Datum;
 
 /**
  * Standardized API for energy related datum to implement. By "energy" we simply
