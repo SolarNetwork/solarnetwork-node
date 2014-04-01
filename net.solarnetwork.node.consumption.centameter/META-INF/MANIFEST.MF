@@ -2,13 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Centameter Consumption
 Bundle-SymbolicName: net.solarnetwork.node.consumption.centameter
-Bundle-Version: 1.65.0
+Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.node;version="1.9.0",
+ net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.centameter;version="1.4.0",
  net.solarnetwork.node.consumption;version="1.0.0",
+ net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.settings;version="1.0.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
  net.solarnetwork.node.support;version="1.8.0",

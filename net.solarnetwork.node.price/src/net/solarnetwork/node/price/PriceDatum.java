@@ -25,14 +25,14 @@
 package net.solarnetwork.node.price;
 
 import java.util.Date;
-import net.solarnetwork.node.Datum;
-import net.solarnetwork.node.support.BaseLocationDatum;
+import net.solarnetwork.node.domain.BaseLocationDatum;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * Domain object for energy price related data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PriceDatum extends BaseLocationDatum implements Datum {
 

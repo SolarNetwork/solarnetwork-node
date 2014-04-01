@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -45,12 +44,11 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -58,7 +56,6 @@ import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.InstructionStatusPropertyEditor;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.OptionalServiceTracker;
-
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.propertyeditors.CustomDateEditor;
@@ -70,46 +67,48 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * {@link BulkUploadService} that uses an HTTP POST with body content
- * formed as an XML document containing all data to upload.
+ * {@link BulkUploadService} that uses an HTTP POST with body content formed as
+ * an XML document containing all data to upload.
  * 
- * <p>The response is expected to contain an XML document with
- * one result element for each uploaded datum, in the same order.
- * Each datum that was successfully uploaded must have an attribute 
- * in the corresponding result element that contains  a Long value; 
- * the {@code datumIdXPath} is used to extract these values from the
- * XML response.</p>
+ * <p>
+ * The response is expected to contain an XML document with one result element
+ * for each uploaded datum, in the same order. Each datum that was successfully
+ * uploaded must have an attribute in the corresponding result element that
+ * contains a Long value; the {@code datumIdXPath} is used to extract these
+ * values from the XML response.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>key</dt>
- *   <dd>The unique key to assign to this upload service. The 
- *   {@link #getKey()} method will append this value to 
- *   {@code BulkXmlWebPostUploadService:}.</dd>
- *   
- *   <dt>datumIdXPath</dt>
- *   <dd>An XPath to use for extracting the remote primary keys (tracking IDs)
- *   from the web post XML response. This single XPath is used across all
- *   Datum types and the entire XML response, so it must be generic enough to
- *   handle all types. Defaults to {@link #DEFAULT_ID_XPATH}.</dd>
- *   
- *   <dt>url</dt>
- *   <dd>The URL to bulk post to.</dd>
- *   
- *   <dt>compressXml</dt>
- *   <dd>If <em>true</em> then GZip compress the XML document and encode as Base64
- *   when uploading. Defaults to <em>true</em>.</dd>
- *   
- *   <dt>identityService</dt>
- *   <dd>The {@link IdentityService} for node details.</dd>
+ * <dt>key</dt>
+ * <dd>The unique key to assign to this upload service. The {@link #getKey()}
+ * method will append this value to {@code BulkXmlWebPostUploadService:}.</dd>
+ * 
+ * <dt>datumIdXPath</dt>
+ * <dd>An XPath to use for extracting the remote primary keys (tracking IDs)
+ * from the web post XML response. This single XPath is used across all Datum
+ * types and the entire XML response, so it must be generic enough to handle all
+ * types. Defaults to {@link #DEFAULT_ID_XPATH}.</dd>
+ * 
+ * <dt>url</dt>
+ * <dd>The URL to bulk post to.</dd>
+ * 
+ * <dt>compressXml</dt>
+ * <dd>If <em>true</em> then GZip compress the XML document and encode as Base64
+ * when uploading. Defaults to <em>true</em>.</dd>
+ * 
+ * <dt>identityService</dt>
+ * <dd>The {@link IdentityService} for node details.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public class BulkXmlWebPostUploadService extends XmlServiceSupport
-implements BulkUploadService, InstructionAcknowledgementService {
+public class BulkXmlWebPostUploadService extends XmlServiceSupport implements BulkUploadService,
+		InstructionAcknowledgementService {
 
 	/** The date format to use for formatting dates with time. */
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSSZ";
@@ -134,7 +133,7 @@ implements BulkUploadService, InstructionAcknowledgementService {
 
 	@Override
 	public String getKey() {
-		return "BulkXmlWebPostUploadService:" +getIdentityService().getSolarNetHostName();
+		return "BulkXmlWebPostUploadService:" + getIdentityService().getSolarNetHostName();
 	}
 
 	@Override
@@ -157,7 +156,7 @@ implements BulkUploadService, InstructionAcknowledgementService {
 	public void acknowledgeInstructions(Collection<Instruction> instructions) {
 		upload(instructions);
 	}
-	
+
 	private NodeList upload(Collection<?> data) {
 		// this is getting built in memory at the moment, it might be required
 		// to build to a temp file to conserve memory?
@@ -167,22 +166,22 @@ implements BulkUploadService, InstructionAcknowledgementService {
 			dom = getDocBuilderFactory().newDocumentBuilder().newDocument();
 			root = dom.createElement("bulkDatumUpload");
 			dom.appendChild(root);
-			
+
 			// setup root attributes
 			Long nodeId = getIdentityService().getNodeId();
 			if ( nodeId != null ) {
 				root.setAttribute("nodeId", nodeId.toString());
 			}
-			
-		} catch (ParserConfigurationException e) {
+
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
 		for ( Object datum : data ) {
 			Element datumElement = null;
 			if ( datum instanceof Instruction ) {
-				datumElement = getInstructionElement((Instruction)datum, dom);
+				datumElement = getInstructionElement((Instruction) datum, dom);
 			} else if ( datum instanceof NodeControlInfo ) {
-				datumElement = getNodeControlInfoElement((NodeControlInfo)datum, dom);
+				datumElement = getNodeControlInfoElement((NodeControlInfo) datum, dom);
 			} else {
 				BeanWrapper bean = getDefaultBeanWrapper(datum);
 				datumElement = getElement(bean, dom);
@@ -203,35 +202,33 @@ implements BulkUploadService, InstructionAcknowledgementService {
 				xp.setNamespaceContext(getNsContext());
 			}
 			XPathExpression xpExp = xp.compile(datumIdXPath);
-			resultIds = (NodeList)xpExp.evaluate(resultDom.getDocumentElement(), 
-					XPathConstants.NODESET);
+			resultIds = (NodeList) xpExp
+					.evaluate(resultDom.getDocumentElement(), XPathConstants.NODESET);
 			xpExp = xp.compile(instructionXPath);
-			instruction = (Node)xpExp.evaluate(resultDom.getDocumentElement(), 
-					XPathConstants.NODE);
-		} catch (XPathExpressionException e) {
+			instruction = (Node) xpExp.evaluate(resultDom.getDocumentElement(), XPathConstants.NODE);
+		} catch ( XPathExpressionException e ) {
 			throw new RuntimeException(e);
-		} catch (SAXException e) {
+		} catch ( SAXException e ) {
 			throw new RuntimeException(e);
-		} catch (IOException e) {
+		} catch ( IOException e ) {
 			throw new RuntimeException(e);
-		} catch (ParserConfigurationException e) {
+		} catch ( ParserConfigurationException e ) {
 			throw new RuntimeException(e);
 		}
 		if ( resultIds != null ) {
 			int count = resultIds.getLength();
 			if ( count != data.size() ) {
-				throw new RuntimeException("Expected " +data.size() 
-						+" result IDs, but found " +count);
+				throw new RuntimeException("Expected " + data.size() + " result IDs, but found " + count);
 			}
 		}
 		if ( instruction != null && reactorService != null && reactorService.isAvailable() ) {
-			reactorService.getService().processInstruction(getIdentityService().getSolarInBaseUrl(), 
+			reactorService.getService().processInstruction(getIdentityService().getSolarInBaseUrl(),
 					resultDom, "text/xml", null);
 		}
-		
+
 		return resultIds;
 	}
-	
+
 	private Element getInstructionElement(Instruction instruction, Document dom) {
 		if ( instruction.getTopic() == null || instruction.getStatus() == null ) {
 			return null;
@@ -245,23 +242,18 @@ implements BulkUploadService, InstructionAcknowledgementService {
 		}
 		el.setAttribute("topic", instruction.getTopic());
 		el.setAttribute("status", instruction.getStatus().getInstructionState().toString());
-		/* For now, not posting parameters in ack...
-		Iterable<String> paramNames = instruction.getParameterNames();
-		if ( paramNames != null ) {
-			for ( String paramName : instruction.getParameterNames() ) {
-				String[] values = instruction.getAllParameterValues(paramName);
-				for ( String value : values ) {
-					Element param = dom.createElement("Parameter");
-					el.appendChild(param);
-					param.setAttribute("name", paramName);
-					param.setAttribute("value", value);
-				}
-			}
-		}
-		*/
+		/*
+		 * For now, not posting parameters in ack... Iterable<String> paramNames
+		 * = instruction.getParameterNames(); if ( paramNames != null ) { for (
+		 * String paramName : instruction.getParameterNames() ) { String[]
+		 * values = instruction.getAllParameterValues(paramName); for ( String
+		 * value : values ) { Element param = dom.createElement("Parameter");
+		 * el.appendChild(param); param.setAttribute("name", paramName);
+		 * param.setAttribute("value", value); } } }
+		 */
 		return el;
 	}
-	
+
 	private Element getNodeControlInfoElement(NodeControlInfo controlInfo, Document dom) {
 		Element el = dom.createElement("NodeControlInfo");
 		el.setAttribute("controlId", controlInfo.getControlId());
@@ -284,7 +276,7 @@ implements BulkUploadService, InstructionAcknowledgementService {
 	}
 
 	private InputSource handlePost(Document dom) {
-		String postUrl = getIdentityService().getSolarInBaseUrl() +url;
+		String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
 			URLConnection conn = getURLConnection(postUrl, "POST");
 			conn.setRequestProperty("Content-Type", "text/xml;charset=UTF-8");
@@ -309,13 +301,13 @@ implements BulkUploadService, InstructionAcknowledgementService {
 
 			out.flush();
 			out.close();
-			
+
 			return getInputSourceFromURLConnection(conn);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
-				log.trace("IOException bulk posting data to " +postUrl, e);
+				log.trace("IOException bulk posting data to " + postUrl, e);
 			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " +e.getMessage());
+				log.debug("Unable to post data: " + e.getMessage());
 			}
 			throw new RuntimeException(e);
 		}
@@ -330,34 +322,33 @@ implements BulkUploadService, InstructionAcknowledgementService {
 		// TODO need a way to configure these things instead of hard-coding them here
 		SimpleDateFormat timeFormat = new SimpleDateFormat(DAY_TIME_FORMAT);
 		dateFormat.setLenient(false);
-		bean.registerCustomEditor(Date.class, "sunrise", 
-				new CustomDateEditor(timeFormat, false));
-		bean.registerCustomEditor(Date.class, "sunset", 
-				new CustomDateEditor(timeFormat, false));
+		bean.registerCustomEditor(Date.class, "sunrise", new CustomDateEditor(timeFormat, false));
+		bean.registerCustomEditor(Date.class, "sunset", new CustomDateEditor(timeFormat, false));
 
 		SimpleDateFormat dayFormat = new SimpleDateFormat(DAY_DATE_FORMAT);
 		dateFormat.setLenient(false);
-		bean.registerCustomEditor(Date.class, "day", 
-				new CustomDateEditor(dayFormat, false));
-		
-		bean.registerCustomEditor(InstructionStatus.class, 
-				new InstructionStatusPropertyEditor());
+		bean.registerCustomEditor(Date.class, "day", new CustomDateEditor(dayFormat, false));
+
+		bean.registerCustomEditor(InstructionStatus.class, new InstructionStatusPropertyEditor());
 		return bean;
 	}
 
 	public void setUrl(String url) {
 		this.url = url;
 	}
+
 	public void setDatumIdXPath(String datumIdXPath) {
 		this.datumIdXPath = datumIdXPath;
 	}
+
 	public void setCompressXml(boolean compressXml) {
 		this.compressXml = compressXml;
 	}
-	public void setReactorService(
-			OptionalServiceTracker<ReactorService> reactorService) {
+
+	public void setReactorService(OptionalServiceTracker<ReactorService> reactorService) {
 		this.reactorService = reactorService;
 	}
+
 	public void setInstructionXPath(String instructionXPath) {
 		this.instructionXPath = instructionXPath;
 	}

@@ -26,9 +26,9 @@ package net.solarnetwork.node.weather;
 
 import java.util.Date;
 import java.util.TimeZone;
-import net.solarnetwork.node.Datum;
-import net.solarnetwork.node.support.BaseDatum;
-import net.solarnetwork.node.support.BaseLocationDatum;
+import net.solarnetwork.node.domain.BaseDatum;
+import net.solarnetwork.node.domain.BaseLocationDatum;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * Domain object for day related data.
@@ -52,7 +52,7 @@ import net.solarnetwork.node.support.BaseLocationDatum;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DayDatum extends BaseLocationDatum implements Datum {
 

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.control.jf2.lata;
@@ -43,13 +41,13 @@ import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException;
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
+import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.NodeControlInfoDatum;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
@@ -84,7 +82,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class LATAController implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
 

@@ -25,13 +25,13 @@
 package net.solarnetwork.node.weather;
 
 import java.util.Date;
-import net.solarnetwork.node.support.BaseLocationDatum;
+import net.solarnetwork.node.domain.BaseLocationDatum;
 
 /**
  * Domain object for weather related data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class WeatherDatum extends BaseLocationDatum {
 
