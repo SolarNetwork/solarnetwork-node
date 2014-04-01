@@ -55,7 +55,7 @@ public interface Datum {
 	public String getSourceId();
 
 	/**
-	 * Get teh date this object was uploaded to SolarNet.
+	 * Get the date this object was uploaded to SolarNet.
 	 * 
 	 * @return the upload date
 	 */
