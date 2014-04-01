@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.support.BaseDatum;
 
 /**
  * Base class for {@link EnergyDatum} implementations.

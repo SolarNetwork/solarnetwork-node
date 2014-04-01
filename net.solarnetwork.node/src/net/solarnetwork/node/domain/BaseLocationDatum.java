@@ -20,7 +20,8 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.domain;
+
 
 /**
  * Base object for location datum, such as Price or Weather.

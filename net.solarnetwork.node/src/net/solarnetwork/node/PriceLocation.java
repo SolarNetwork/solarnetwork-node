@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node;
 
-import net.solarnetwork.node.support.BasicLocation;
+import net.solarnetwork.node.domain.BasicLocation;
 
 /**
  * Information about a specific price location.

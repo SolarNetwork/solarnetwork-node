@@ -30,7 +30,7 @@ import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.support.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
