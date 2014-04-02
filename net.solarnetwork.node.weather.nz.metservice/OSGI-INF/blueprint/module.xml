@@ -64,7 +64,7 @@
 			</property>
 			<property name="locationService" ref="locationService"/>
 			<property name="requireLocationService" value="true"/>
-			<property name="locationType" value="net.solarnetwork.node.WeatherLocation"/>
+			<property name="locationType" value="net.solarnetwork.node.domain.WeatherLocation"/>
 			<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -84,7 +84,7 @@
 			</property>
 			<property name="locationService" ref="locationService"/>
 			<property name="requireLocationService" value="true"/>
-			<property name="locationType" value="net.solarnetwork.node.WeatherLocation"/>
+			<property name="locationType" value="net.solarnetwork.node.domain.WeatherLocation"/>
 			<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
 		</bean>
 	</osgix:managed-service-factory>
