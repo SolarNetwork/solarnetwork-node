@@ -34,6 +34,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -75,12 +81,19 @@ public class DefaultBackupManager implements BackupManager {
 	private Collection<BackupService> backupServices;
 	private OptionalService<BackupService> backupServiceTracker;
 	private Collection<BackupResourceProvider> resourceProviders;
+	private ExecutorService executorService = defaultExecutorService();
 
 	private static HierarchicalMessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
 		source.setBundleClassLoader(DefaultBackupManager.class.getClassLoader());
 		source.setBasename(DefaultBackupManager.class.getName());
 		return source;
+	}
+
+	private static ExecutorService defaultExecutorService() {
+		// we want at most one backup happening at a time by default
+		return new ThreadPoolExecutor(0, 1, 5, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(3,
+				true));
 	}
 
 	@Override
@@ -180,6 +193,19 @@ public class DefaultBackupManager implements BackupManager {
 					: "initiated"), service.getKey());
 		}
 		return backup;
+	}
+
+	@Override
+	public Future<Backup> createAsynchronousBackup() {
+		assert executorService != null;
+		return executorService.submit(new Callable<Backup>() {
+
+			@Override
+			public Backup call() throws Exception {
+				return createBackup();
+			}
+
+		});
 	}
 
 	@Override
@@ -368,6 +394,10 @@ public class DefaultBackupManager implements BackupManager {
 
 	public void setResourceProviders(Collection<BackupResourceProvider> resourceProviders) {
 		this.resourceProviders = resourceProviders;
+	}
+
+	public void setExecutorService(ExecutorService executorService) {
+		this.executorService = executorService;
 	}
 
 }

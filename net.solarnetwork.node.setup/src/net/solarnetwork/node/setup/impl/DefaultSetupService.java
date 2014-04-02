@@ -41,6 +41,7 @@ import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.PKIService;
@@ -48,6 +49,7 @@ import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.JavaBeanXmlSerializer;
+import net.solarnetwork.util.OptionalService;
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -68,6 +70,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </p>
  * 
  * <dl class="class-properties">
+ * <dt>backupManager</dt>
+ * <dd>An optional {@link BackupManager} to trigger an immediate backup after
+ * associating.</dd>
+ * 
  * <dt>settingDao</dt>
  * <dd>The {@link SettingDao} to use for querying/storing application state
  * information.</dd>
@@ -92,7 +98,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -121,6 +127,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 
+	private OptionalService<BackupManager> backupManager;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
@@ -330,12 +337,23 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 			pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
 
+			makeBackup();
+
 			return result;
 		} catch ( Exception e ) {
 			log.error("Error while confirming server details: {}", details, e);
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
+	}
+
+	private void makeBackup() {
+		BackupManager mgr = (backupManager == null ? null : backupManager.service());
+		if ( mgr == null ) {
+			return;
+		}
+		log.info("Requesting background backup.");
+		mgr.createAsynchronousBackup();
 	}
 
 	private String getSetting(String key) {
@@ -363,6 +381,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
+	}
+
+	public void setBackupManager(OptionalService<BackupManager> backupManager) {
+		this.backupManager = backupManager;
 	}
 
 }
