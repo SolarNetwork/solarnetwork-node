@@ -29,9 +29,9 @@ import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.hc.EM5600Data;
 import net.solarnetwork.node.hw.hc.EM5600Support;
-import net.solarnetwork.node.hw.hc.MeasurementKind;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -52,7 +52,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
@@ -76,9 +76,8 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 					@Override
 					public ConsumptionDatum doInConnection(SerialConnection conn) throws IOException {
 						final EM5600Data currSample = getCurrentSample(conn);
-						EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample,
-								MeasurementKind.Total);
-						d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
+						EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample, ACPhase.Total);
+						d.setSourceId(getSourceMapping().get(ACPhase.Total));
 						return d;
 					}
 				});
@@ -101,26 +100,26 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 						final EM5600Data currSample = getCurrentSample(conn);
 						if ( isCaptureTotal() ) {
 							EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample,
-									MeasurementKind.Total);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
+									ACPhase.Total);
+							d.setSourceId(getSourceMapping().get(ACPhase.Total));
 							results.add(d);
 						}
 						if ( isCapturePhaseA() ) {
 							EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample,
-									MeasurementKind.PhaseA);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseA));
+									ACPhase.PhaseA);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 							results.add(d);
 						}
 						if ( isCapturePhaseB() ) {
 							EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample,
-									MeasurementKind.PhaseB);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseB));
+									ACPhase.PhaseB);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 							results.add(d);
 						}
 						if ( isCapturePhaseC() ) {
 							EM5600ConsumptionDatum d = new EM5600ConsumptionDatum(currSample,
-									MeasurementKind.PhaseC);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseC));
+									ACPhase.PhaseC);
+							d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 							results.add(d);
 						}
 						return results;

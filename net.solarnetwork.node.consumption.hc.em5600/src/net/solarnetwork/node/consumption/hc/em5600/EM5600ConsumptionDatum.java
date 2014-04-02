@@ -23,20 +23,21 @@
 package net.solarnetwork.node.consumption.hc.em5600;
 
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.hc.EM5600Data;
-import net.solarnetwork.node.hw.hc.MeasurementKind;
 
 /**
  * Extension of {@link ConsumptionDatum} with additional properties supported by
  * the EM5600 series meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class EM5600ConsumptionDatum extends ConsumptionDatum {
+public class EM5600ConsumptionDatum extends ConsumptionDatum implements ACEnergyDatum {
 
 	private final EM5600Data sample;
-	private final MeasurementKind kind;
+	private final ACPhase phase;
 
 	/**
 	 * Construct with a sample.
@@ -44,10 +45,10 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 	 * @param sample
 	 *        the sample
 	 */
-	public EM5600ConsumptionDatum(EM5600Data sample, MeasurementKind kind) {
+	public EM5600ConsumptionDatum(EM5600Data sample, ACPhase kind) {
 		super();
 		this.sample = sample;
-		this.kind = kind;
+		this.phase = kind;
 		extractMeasurements();
 	}
 
@@ -61,7 +62,7 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 	}
 
 	private void extractMeasurements() {
-		switch (kind) {
+		switch (phase) {
 			case Total:
 				extractTotalMeasurements();
 				break;
@@ -95,6 +96,72 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum {
 
 	private void extractPhaseCMeasurements() {
 		setWatts(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_P3));
+	}
+
+	@Override
+	public ACPhase getPhase() {
+		return phase;
+	}
+
+	@Override
+	public Integer getRealPower() {
+		return getWatts();
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_APPARENT_POWER_P1;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_APPARENT_POWER_P2;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_APPARENT_POWER_P3;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_APPARENT_POWER_TOTAL;
+				break;
+		}
+		return sample.getPower(addr);
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_REACTIVE_POWER_P1;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_REACTIVE_POWER_P2;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_REACTIVE_POWER_P3;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_REACTIVE_POWER_TOTAL;
+				break;
+		}
+		return sample.getPower(addr);
+	}
+
+	@Override
+	public Float getEffectivePowerFactor() {
+		return sample.getPowerFactor(EM5600Data.ADDR_DATA_POWER_FACTOR_TOTAL);
+	}
+
+	@Override
+	public Float getFrequency() {
+		return sample.getFrequency(EM5600Data.ADDR_DATA_FREQUENCY);
 	}
 
 }
