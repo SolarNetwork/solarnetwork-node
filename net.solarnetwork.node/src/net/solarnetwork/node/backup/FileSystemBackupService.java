@@ -50,6 +50,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
@@ -100,9 +101,22 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private File backupDir = new File(System.getProperty("java.io.tmpdir"));
+	private File backupDir = defaultBackuprDir();
 	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
+
+	private static File defaultBackuprDir() {
+		String path = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, null);
+		if ( path == null ) {
+			path = System.getProperty("java.io.tmpdir");
+		} else {
+			if ( !path.endsWith("/") ) {
+				path += "/";
+			}
+			path += "var/backups";
+		}
+		return new File(path);
+	}
 
 	private static MessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
