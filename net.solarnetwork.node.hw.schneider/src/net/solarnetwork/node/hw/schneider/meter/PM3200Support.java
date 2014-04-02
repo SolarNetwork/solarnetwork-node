@@ -27,6 +27,7 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -47,8 +48,8 @@ import org.joda.time.format.DateTimeFormat;
  * 
  * <dl class="class-properties">
  * <dt>sourceMapping</dt>
- * <dd>A mapping of {@link MeasurementKind} to associated Source ID values to
- * assign to collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * <dd>A mapping of {@link ACPhase} to associated Source ID values to assign to
+ * collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
  * </dl>
  * 
  * @author matt
@@ -65,7 +66,7 @@ public class PM3200Support extends ModbusSupport {
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
-	private Map<MeasurementKind, String> sourceMapping = getDefaulSourceMapping();
+	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
 
 	/**
 	 * An instance of {@link PM3200Data} to support keeping the last-read values
@@ -79,9 +80,9 @@ public class PM3200Support extends ModbusSupport {
 	 * 
 	 * @return mapping
 	 */
-	public static Map<MeasurementKind, String> getDefaulSourceMapping() {
-		Map<MeasurementKind, String> result = new EnumMap<MeasurementKind, String>(MeasurementKind.class);
-		result.put(MeasurementKind.Total, MAIN_SOURCE_ID);
+	public static Map<ACPhase, String> getDefaulSourceMapping() {
+		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
+		result.put(ACPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -245,16 +246,15 @@ public class PM3200Support extends ModbusSupport {
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<MeasurementKind, String> kindMap = new EnumMap<MeasurementKind, String>(
-				MeasurementKind.class);
+		Map<ACPhase, String> kindMap = new EnumMap<ACPhase, String>(ACPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				MeasurementKind mk;
+				ACPhase mk;
 				try {
-					mk = MeasurementKind.valueOf(k);
+					mk = ACPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid MeasurementKind value, ignoring.", k);
+					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());
@@ -288,7 +288,7 @@ public class PM3200Support extends ModbusSupport {
 	 *        the measurement kind
 	 * @return the source ID value, or <em>null</em> if not available
 	 */
-	public String getSourceIdForMeasurementKind(MeasurementKind kind) {
+	public String getSourceIdForACPhase(ACPhase kind) {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
@@ -335,26 +335,26 @@ public class PM3200Support extends ModbusSupport {
 	}
 
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
 	}
 
-	public Map<MeasurementKind, String> getSourceMapping() {
+	public Map<ACPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
-	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
+	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 

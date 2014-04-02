@@ -23,7 +23,8 @@
 package net.solarnetwork.node.consumption.schneider.pm3200;
 
 import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 
 /**
@@ -31,12 +32,12 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
  * the PM3200 series meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class PM3200ConsumptionDatum extends ConsumptionDatum {
+public class PM3200ConsumptionDatum extends ConsumptionDatum implements ACEnergyDatum {
 
 	private final PM3200Data sample;
-	private final MeasurementKind kind;
+	private final ACPhase phase;
 
 	/**
 	 * Construct with a sample.
@@ -44,10 +45,10 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 	 * @param sample
 	 *        the sample
 	 */
-	public PM3200ConsumptionDatum(PM3200Data sample, MeasurementKind kind) {
+	public PM3200ConsumptionDatum(PM3200Data sample, ACPhase phase) {
 		super();
 		this.sample = sample;
-		this.kind = kind;
+		this.phase = phase;
 		extractMeasurements();
 	}
 
@@ -61,7 +62,7 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 	}
 
 	private void extractMeasurements() {
-		switch (kind) {
+		switch (phase) {
 			case Total:
 				extractTotalMeasurements();
 				break;
@@ -95,6 +96,72 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 
 	private void extractPhaseCMeasurements() {
 		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P3));
+	}
+
+	@Override
+	public ACPhase getPhase() {
+		return phase;
+	}
+
+	@Override
+	public Integer getRealPower() {
+		return getWatts();
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_APPARENT_POWER_P1;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_APPARENT_POWER_P2;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_APPARENT_POWER_P3;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL;
+				break;
+		}
+		return sample.getPower(addr);
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_REACTIVE_POWER_P1;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_REACTIVE_POWER_P2;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_REACTIVE_POWER_P3;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_REACTIVE_POWER_TOTAL;
+				break;
+		}
+		return sample.getPower(addr);
+	}
+
+	@Override
+	public Float getEffectivePowerFactor() {
+		return sample.getEffectiveTotalPowerFactor();
+	}
+
+	@Override
+	public Float getFrequency() {
+		return sample.getFrequency(PM3200Data.ADDR_DATA_FREQUENCY);
 	}
 
 }
