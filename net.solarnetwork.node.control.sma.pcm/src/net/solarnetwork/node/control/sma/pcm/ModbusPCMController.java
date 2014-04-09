@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusController.java - Jul 10, 2013 7:14:40 AM
+ * ModbusPCMController.java - Jul 10, 2013 7:14:40 AM
  * 
  * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
@@ -71,7 +71,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class ModbusController implements SettingSpecifierProvider, NodeControlProvider,
+public class ModbusPCMController implements SettingSpecifierProvider, NodeControlProvider,
 		InstructionHandler {
 
 	private static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
@@ -315,12 +315,12 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 	public InstructionState processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
-		log.debug("Inspecting instruction {} against control {}", instruction.getId(), controlId);
+		log.debug("Inspecting instruction {} against control {}", instruction.getTopic(), controlId);
 		final String percentControlId = getPercentControlId();
 		for ( String paramName : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", paramName);
-			if ( controlId.equals(paramName) || controlId.equals(percentControlId) ) {
-				String str = instruction.getParameterValue(controlId);
+			if ( controlId.equals(paramName) || percentControlId.equals(paramName) ) {
+				String str = instruction.getParameterValue(paramName);
 				// by default, treat parameter value as a decimal integer, value between 0-15
 				Integer desiredValue = Integer.parseInt(str);
 				if ( controlId.equals(percentControlId)
@@ -355,7 +355,7 @@ public class ModbusController implements SettingSpecifierProvider, NodeControlPr
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		ModbusController defaults = new ModbusController();
+		ModbusPCMController defaults = new ModbusPCMController();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
 		// get current value

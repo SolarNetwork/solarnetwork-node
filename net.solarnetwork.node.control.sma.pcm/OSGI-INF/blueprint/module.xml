@@ -20,7 +20,7 @@
 		<property name="factoryUID" value="net.solarnetwork.node.control.sma.pcm"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.control.sma.pcm.ModbusController"/>
+				<property name="basenames" value="net.solarnetwork.node.control.sma.pcm.ModbusPCMController"/>
 			</bean>
 		</property>
 	</bean>
@@ -39,7 +39,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.sma.pcm"/>
 		</osgix:service-properties>
-		<bean id="controller" class="net.solarnetwork.node.control.sma.pcm.ModbusController">
+		<bean id="controller" class="net.solarnetwork.node.control.sma.pcm.ModbusPCMController">
 			<property name="connectionFactory">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>
