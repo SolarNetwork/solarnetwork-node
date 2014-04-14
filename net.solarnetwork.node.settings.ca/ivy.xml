@@ -9,9 +9,7 @@
 		<dependency org="joda-time" name="joda-time" rev="2.1" >
     		<artifact name="joda-time" type="jar" />
 		</dependency>
-		<dependency org="net.sf.supercsv" name="super-csv" rev="2.0.0-beta-1">
-    		<artifact name="super-csv" type="jar" />
-		</dependency>
+		<dependency org="net.sf.supercsv" name="super-csv" rev="2.1.0"  conf="core"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0">
 			<artifact name="org.osgi.core" type="jar"/>
 		</dependency>
