@@ -1,11 +1,5 @@
 <project basedir=".">
 
-	<property name="bundle.deps" value="true"/>
-	<dirset id="bundle.deps" dir="${basedir}/../..">
-		<include name="solarnetwork-common/net.solarnetwork.common.web"/>
-		<include name="solarnetwork-node/net.solarnetwork.node.setup"/>
-	</dirset>
-	
 	<property name="dir.resources" value="web"/>
 	<property name="dir.jar.classes.dest" value="WEB-INF/classes"/>
 	
