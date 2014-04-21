@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Setup Web
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.4.1
+Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
@@ -29,7 +29,7 @@ Import-Package:
  net.solarnetwork.node.reactor;version="1.0.0",
  net.solarnetwork.node.reactor.support;version="1.0.0",
  net.solarnetwork.node.settings;version="1.2.0",
- net.solarnetwork.node.setup;version="1.0.0",
+ net.solarnetwork.node.setup;version="1.4.0",
  net.solarnetwork.node.support;version="1.8.0",
  net.solarnetwork.util;version="1.10.0",
  net.solarnetwork.web.support;version="1.0",

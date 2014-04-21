@@ -1,5 +1,5 @@
 /* ==================================================================
- * ArtifactController.java - Apr 21, 2014 10:32:12 AM
+ * PluginController.java - Apr 21, 2014 10:32:12 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.setup.web;
 
+import javax.annotation.Resource;
+import net.solarnetwork.node.setup.PluginService;
+import net.solarnetwork.util.OptionalService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -33,6 +36,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
  */
 @Controller
 @RequestMapping("/plugins")
-public class ArtifactController {
+public class PluginController {
+
+	@Resource(name = "pluginService")
+	private OptionalService<PluginService> pluginService;
 
 }
