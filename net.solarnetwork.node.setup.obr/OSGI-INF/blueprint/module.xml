@@ -18,20 +18,17 @@
 
 	<!-- Service references -->
 
-	<reference id="repoAdminRef" availability="optional" interface="org.osgi.service.obr.RepositoryAdmin">
-		<reference-listener ref="repoAdmin" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
+	<reference id="repositoryAdmin" availability="mandatory" interface="org.osgi.service.obr.RepositoryAdmin"/>
 
-	<bean id="repoAdmin" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="repoAdminRef"/>
-	</bean>
-
-	<reference-list id="obrRepos" interface="net.solarnetwork.node.setup.obr.OBRRepository" availability="optional"/>
+	<reference-list id="obrRepos" interface="net.solarnetwork.node.setup.obr.OBRRepository" availability="optional">
+		<reference-listener ref="repoService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference-list>
 		
 	<!-- Supporting Services -->
 	
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.setup.obr.OBRPluginService"/>
+	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" init-method="init">
+		<property name="repositoryAdmin" ref="repositoryAdmin"/>
+		<property name="repositories" ref="obrRepos"/>
 	</bean>
 	
 	<bean id="repoMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">

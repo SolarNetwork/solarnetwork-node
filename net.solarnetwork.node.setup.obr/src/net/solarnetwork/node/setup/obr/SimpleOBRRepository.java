@@ -67,7 +67,7 @@ public class SimpleOBRRepository implements OBRRepository {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(1);
-		results.add(new BasicTextFieldSettingSpecifier("url", ""));
+		results.add(new BasicTextFieldSettingSpecifier("URL", ""));
 		return results;
 	}
 

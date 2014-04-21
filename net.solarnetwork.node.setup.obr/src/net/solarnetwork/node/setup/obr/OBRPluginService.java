@@ -22,14 +22,16 @@
 
 package net.solarnetwork.node.setup.obr;
 
+import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginService;
-import net.solarnetwork.util.OptionalService;
+import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
-import org.springframework.context.MessageSource;
 
 /**
  * OBR implementation of {@link PluginService}.
@@ -46,36 +48,103 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.0
  */
-public class OBRPluginService implements PluginService, SettingSpecifierProvider {
+public class OBRPluginService implements PluginService {
 
-	private OptionalService<RepositoryAdmin> repositoryAdmin;
-	private MessageSource messageSource;
+	private RepositoryAdmin repositoryAdmin;
+	private List<OBRRepository> repositories;
+
+	private final Map<URL, OBRRepositoryStatus> statusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
+			4);
+
+	/**
+	 * Call to initialize the service, after all properties have been
+	 * configured.
+	 */
+	public void init() {
+		if ( repositories != null && repositoryAdmin != null ) {
+			for ( OBRRepository repo : repositories ) {
+				configureOBRRepository(repo);
+			}
+		}
+	}
+
+	private OBRRepositoryStatus getOrCreateStatus(URL url) {
+		synchronized ( statusMap ) {
+			OBRRepositoryStatus status = statusMap.get(url);
+			if ( status == null ) {
+				status = new OBRRepositoryStatus();
+				status.setRepositoryURL(url);
+				statusMap.put(url, status);
+			}
+			return status;
+		}
+	}
+
+	private synchronized void configureOBRRepository(OBRRepository repository) {
+		if ( repository == null || repositoryAdmin == null ) {
+			return;
+		}
+		Set<URL> configuredURLs = new HashSet<URL>();
+		for ( Repository repo : repositoryAdmin.listRepositories() ) {
+			configuredURLs.add(repo.getURL());
+		}
+		URL repoURL = repository.getURL();
+		if ( repoURL != null && !configuredURLs.contains(repoURL) ) {
+			try {
+				repositoryAdmin.addRepository(repoURL);
+				OBRRepositoryStatus status = getOrCreateStatus(repoURL);
+				status.setConfigured(true);
+				status.setException(null);
+			} catch ( Exception e ) {
+				OBRRepositoryStatus status = getOrCreateStatus(repoURL);
+				status.setConfigured(false);
+				status.setException(e);
+			}
+		}
+	}
 
 	@Override
-	public List<Plugin> availablePlugins() {
+	public List<Plugin> availablePlugins(String filter) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	@Override
-	public String getSettingUID() {
-		return "net.solarnetwork.node.setup.obr";
+	/**
+	 * Call when an {@link OBRRepository} becomes available.
+	 * 
+	 * @param repository
+	 *        the repository
+	 */
+	public void onBind(OBRRepository repository) {
+		configureOBRRepository(repository);
 	}
 
-	@Override
-	public String getDisplayName() {
-		return "OBR Plugin Service";
+	/**
+	 * Call when an {@link OBRRepository} is no longer available.
+	 * 
+	 * @param repository
+	 *        the repository
+	 */
+	public void onUnbind(OBRRepository repository) {
+		if ( repository == null || repository.getURL() == null || repositoryAdmin == null ) {
+			return;
+		}
+		for ( Repository repo : repositoryAdmin.listRepositories() ) {
+			URL repoURL = repo.getURL();
+			if ( repoURL != null && repoURL.equals(repository.getURL()) ) {
+				repositoryAdmin.removeRepository(repoURL);
+				statusMap.remove(repoURL);
+				return;
+			}
+		}
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
+	public void setRepositoryAdmin(RepositoryAdmin repositoryAdmin) {
+		this.repositoryAdmin = repositoryAdmin;
 	}
 
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		// TODO Auto-generated method stub
-		return null;
+	public void setRepositories(List<OBRRepository> repositories) {
+		this.repositories = repositories;
 	}
 
 }
