@@ -23,6 +23,8 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginService;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
+import org.osgi.service.obr.Resource;
 
 /**
  * OBR implementation of {@link PluginService}, using the Apache Felix OBR
@@ -112,8 +115,15 @@ public class OBRPluginService implements PluginService {
 
 	@Override
 	public List<Plugin> availablePlugins(String filter) {
-		// TODO Auto-generated method stub
-		return null;
+		if ( repositoryAdmin == null ) {
+			return Collections.emptyList();
+		}
+		Resource[] resources = repositoryAdmin.discoverResources(filter);
+		List<Plugin> plugins = new ArrayList<Plugin>(resources == null ? 0 : resources.length);
+		for ( Resource r : resources ) {
+			plugins.add(new OBRResourcePlugin(r));
+		}
+		return plugins;
 	}
 
 	/**
