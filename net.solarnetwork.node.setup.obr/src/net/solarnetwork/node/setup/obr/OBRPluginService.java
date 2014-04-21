@@ -25,6 +25,7 @@ package net.solarnetwork.node.setup.obr;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -162,6 +163,17 @@ public class OBRPluginService implements PluginService {
 			}
 			plugins.add(p);
 		}
+
+		// sort the results lexically by their names
+		Collections.sort(plugins, new Comparator<Plugin>() {
+
+			@Override
+			public int compare(Plugin o1, Plugin o2) {
+				return o1.getInfo().getName().compareToIgnoreCase(o2.getInfo().getName());
+			}
+
+		});
+
 		return plugins;
 	}
 
