@@ -40,6 +40,7 @@ public class OBRResourcePlugin implements Plugin {
 
 	private final Resource resource;
 	private final OBRPluginVersion version;
+	private final OBRResourcePluginInfo info;
 
 	/**
 	 * Construct with a {@link Resource}.
@@ -51,6 +52,7 @@ public class OBRResourcePlugin implements Plugin {
 		super();
 		this.resource = resource;
 		this.version = new OBRPluginVersion(getResourceVersion());
+		this.info = new OBRResourcePluginInfo(resource);
 	}
 
 	@Override
@@ -74,12 +76,12 @@ public class OBRResourcePlugin implements Plugin {
 
 	@Override
 	public PluginInfo getInfo() {
-		return new OBRResourcePluginInfo(resource);
+		return info;
 	}
 
 	@Override
 	public PluginInfo getLocalizedInfo(Locale locale) {
-		return new LocalizedPluginInfo(new OBRResourcePluginInfo(resource), locale);
+		return new LocalizedPluginInfo(info, locale);
 	}
 
 }
