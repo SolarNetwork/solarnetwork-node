@@ -22,11 +22,19 @@
 
 package net.solarnetwork.node.setup.web;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import javax.annotation.Resource;
+import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginService;
+import net.solarnetwork.node.setup.SimplePluginQuery;
 import net.solarnetwork.util.OptionalService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * Controller to manage the installed bundles via an OBR.
@@ -40,5 +48,20 @@ public class PluginController {
 
 	@Resource(name = "pluginService")
 	private OptionalService<PluginService> pluginService;
+
+	@RequestMapping(value = "", method = RequestMethod.GET)
+	@ResponseBody
+	public List<Plugin> list(@RequestParam(value = "filter", required = false) final String filter,
+			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
+			final Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			return Collections.emptyList();
+		}
+		SimplePluginQuery query = new SimplePluginQuery();
+		query.setSimpleQuery(filter);
+		query.setLatestVersionOnly(latestOnly == null ? true : latestOnly.booleanValue());
+		return service.availablePlugins(query, locale);
+	}
 
 }
