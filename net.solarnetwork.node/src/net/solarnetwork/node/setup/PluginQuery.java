@@ -1,5 +1,5 @@
 /* ==================================================================
- * PluginInfo.java - Apr 21, 2014 2:28:53 PM
+ * PluginQuery.java - Apr 22, 2014 7:39:29 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,46 +22,29 @@
 
 package net.solarnetwork.node.setup;
 
-import java.util.Locale;
-
 /**
- * Descriptive information about a plugin, designed to help users of the plugin.
+ * API for querying and filtering available plugins.
  * 
  * @author matt
  * @version 1.0
  */
-public interface PluginInfo {
+public interface PluginQuery {
 
 	/**
-	 * Get a name of the plugin.
+	 * If <em>true</em> then only return the latest (highest) version available
+	 * for any given plugin.
 	 * 
-	 * @return the name
+	 * @return boolean
 	 */
-	String getName();
+	boolean isLatestVersionOnly();
 
 	/**
-	 * Get a description of the plugin.
+	 * Get a simple substring-matching query. This is the query as provided by a
+	 * user. The application can apply this query in whatever method is most
+	 * appropriate to return appropriate results.
 	 * 
-	 * @return the description
+	 * @return a simple query string
 	 */
-	String getDescription();
-
-	/**
-	 * Get a localized name of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the name
-	 */
-	String getLocalizedName(Locale locale);
-
-	/**
-	 * Get a localized description of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the description
-	 */
-	String getLocalizedDescription(Locale locale);
+	String getSimpleQuery();
 
 }

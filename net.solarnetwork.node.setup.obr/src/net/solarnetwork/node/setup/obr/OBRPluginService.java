@@ -25,13 +25,22 @@ package net.solarnetwork.node.setup.obr;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
+import net.solarnetwork.node.setup.PluginQuery;
 import net.solarnetwork.node.setup.PluginService;
+import net.solarnetwork.node.setup.PluginVersion;
+import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.support.SearchFilter.CompareOperator;
+import net.solarnetwork.support.SearchFilter.LogicOperator;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
 import org.osgi.service.obr.Resource;
@@ -114,16 +123,47 @@ public class OBRPluginService implements PluginService {
 	}
 
 	@Override
-	public List<Plugin> availablePlugins(String filter) {
+	public List<Plugin> availablePlugins(PluginQuery query, Locale locale) {
 		if ( repositoryAdmin == null ) {
 			return Collections.emptyList();
 		}
-		Resource[] resources = repositoryAdmin.discoverResources(filter);
+		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query));
 		List<Plugin> plugins = new ArrayList<Plugin>(resources == null ? 0 : resources.length);
+		Map<String, Plugin> latestVersions = (query.isLatestVersionOnly() ? new HashMap<String, Plugin>(
+				resources.length) : null);
 		for ( Resource r : resources ) {
-			plugins.add(new OBRResourcePlugin(r));
+			Plugin p = new OBRResourcePlugin(r);
+			if ( latestVersions != null ) {
+				Plugin seenPlugin = latestVersions.get(r.getSymbolicName());
+				PluginVersion seenVersion = (seenPlugin == null ? null : seenPlugin.getVersion());
+				if ( seenVersion != null && seenVersion.compareTo(p.getVersion()) < 0 ) {
+					// newer version... so remove older one from results
+					plugins.remove(seenPlugin);
+				} else if ( seenVersion != null ) {
+					// skip older version
+					continue;
+				}
+			}
+			if ( locale != null ) {
+				p = new LocalizedPlugin(p, locale);
+			}
+			if ( latestVersions != null ) {
+				latestVersions.put(r.getSymbolicName(), p);
+			}
+			plugins.add(p);
 		}
 		return plugins;
+	}
+
+	private String getOBRFilter(PluginQuery query) {
+		SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
+				CompareOperator.SUBSTRING);
+		SearchFilter node = new SearchFilter(Resource.SYMBOLIC_NAME, "net.solarnetwork.node.",
+				CompareOperator.SUBSTRING_AT_START);
+		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
+		filter.put("id", id);
+		filter.put("node", node);
+		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
 
 	/**

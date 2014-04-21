@@ -59,5 +59,7 @@
 			<property name="messageSource" ref="repoMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
+	
+	<service ref="repoService" interface="net.solarnetwork.node.setup.PluginService"/>
 
 </blueprint>

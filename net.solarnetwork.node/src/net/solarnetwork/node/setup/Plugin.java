@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.setup;
 
+import java.util.Locale;
+
 /**
  * API for a system "plugin" that can be manipulated by the application at
  * runtime.
@@ -52,5 +54,14 @@ public interface Plugin {
 	 * @return the info
 	 */
 	PluginInfo getInfo();
+
+	/**
+	 * Get the plugin information as a localized resource.
+	 * 
+	 * @param locale
+	 *        the locale
+	 * @return the info
+	 */
+	PluginInfo getLocalizedInfo(Locale locale);
 
 }

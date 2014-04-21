@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Service for managing dynamic "plugins" within the application.
@@ -35,11 +36,13 @@ public interface PluginService {
 	/**
 	 * Get a list of all available plugins.
 	 * 
-	 * @param filter
-	 *        an optional filter to apply to limit the returned results by. Pass
+	 * @param query
+	 *        an optional query to apply to limit the returned results by. Pass
 	 *        <em>null</em> to request all available Plugin instances
+	 * @param locale
+	 *        an optional locale to apply to PluginInfo
 	 * @return list of available plugins, or an empty list if none available
 	 */
-	List<Plugin> availablePlugins(String filter);
+	List<Plugin> availablePlugins(PluginQuery query, Locale locale);
 
 }

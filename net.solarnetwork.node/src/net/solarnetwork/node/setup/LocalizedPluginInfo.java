@@ -1,5 +1,5 @@
 /* ==================================================================
- * PluginInfo.java - Apr 21, 2014 2:28:53 PM
+ * LocalizedPluginInfo.java - Apr 22, 2014 7:04:27 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -25,43 +25,49 @@ package net.solarnetwork.node.setup;
 import java.util.Locale;
 
 /**
- * Descriptive information about a plugin, designed to help users of the plugin.
+ * Localized version of {@link PluginInfo} so that calls to non-localized
+ * JavaBean accessors return localized values.
  * 
  * @author matt
  * @version 1.0
  */
-public interface PluginInfo {
+public class LocalizedPluginInfo implements PluginInfo {
+
+	private final PluginInfo info;
+	private final Locale locale;
 
 	/**
-	 * Get a name of the plugin.
+	 * Construct a localized PluginInfo.
 	 * 
-	 * @return the name
-	 */
-	String getName();
-
-	/**
-	 * Get a description of the plugin.
-	 * 
-	 * @return the description
-	 */
-	String getDescription();
-
-	/**
-	 * Get a localized name of the plugin.
-	 * 
+	 * @param info
+	 *        the non-localized info instance to delegate to
 	 * @param locale
-	 *        the desired locale
-	 * @return the name
+	 *        the desired locale to use
 	 */
-	String getLocalizedName(Locale locale);
+	public LocalizedPluginInfo(PluginInfo info, Locale locale) {
+		super();
+		this.info = info;
+		this.locale = locale;
+	}
 
-	/**
-	 * Get a localized description of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the description
-	 */
-	String getLocalizedDescription(Locale locale);
+	@Override
+	public String getName() {
+		return info.getLocalizedName(locale);
+	}
+
+	@Override
+	public String getDescription() {
+		return info.getLocalizedDescription(locale);
+	}
+
+	@Override
+	public String getLocalizedName(Locale otherLocale) {
+		return info.getLocalizedName(otherLocale);
+	}
+
+	@Override
+	public String getLocalizedDescription(Locale otherLocale) {
+		return info.getLocalizedDescription(otherLocale);
+	}
 
 }

@@ -23,9 +23,11 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
+import net.solarnetwork.node.setup.LocalizedPluginInfo;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginInfo;
 import net.solarnetwork.node.setup.PluginVersion;
+import org.osgi.framework.Version;
 import org.osgi.service.obr.Resource;
 
 /**
@@ -37,6 +39,7 @@ import org.osgi.service.obr.Resource;
 public class OBRResourcePlugin implements Plugin {
 
 	private final Resource resource;
+	private final OBRPluginVersion version;
 
 	/**
 	 * Construct with a {@link Resource}.
@@ -47,6 +50,7 @@ public class OBRResourcePlugin implements Plugin {
 	public OBRResourcePlugin(Resource resource) {
 		super();
 		this.resource = resource;
+		this.version = new OBRPluginVersion(getResourceVersion());
 	}
 
 	@Override
@@ -56,25 +60,26 @@ public class OBRResourcePlugin implements Plugin {
 
 	@Override
 	public PluginVersion getVersion() {
-		return new OBRPluginVersion(resource.getVersion());
+		return version;
+	}
+
+	/**
+	 * Get the underlying {@link Resource#getVersion()} directly.
+	 * 
+	 * @return the version
+	 */
+	public Version getResourceVersion() {
+		return resource.getVersion();
 	}
 
 	@Override
 	public PluginInfo getInfo() {
-		// OBR doesn't support localization... too bad
-		return new PluginInfo() {
+		return new OBRResourcePluginInfo(resource);
+	}
 
-			@Override
-			public String getLocalizedName(Locale locale) {
-				return resource.getPresentationName();
-			}
-
-			@Override
-			public String getLocalizedDescription(Locale locale) {
-				// TODO: what can we return here?
-				return "";
-			}
-		};
+	@Override
+	public PluginInfo getLocalizedInfo(Locale locale) {
+		return new LocalizedPluginInfo(new OBRResourcePluginInfo(resource), locale);
 	}
 
 }

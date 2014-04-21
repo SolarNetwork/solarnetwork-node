@@ -1,5 +1,5 @@
 /* ==================================================================
- * PluginInfo.java - Apr 21, 2014 2:28:53 PM
+ * SimplePluginQuery.java - Apr 22, 2014 7:42:47 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,46 +22,33 @@
 
 package net.solarnetwork.node.setup;
 
-import java.util.Locale;
-
 /**
- * Descriptive information about a plugin, designed to help users of the plugin.
+ * Simple implementation of {@link PluginQuery}.
  * 
  * @author matt
  * @version 1.0
  */
-public interface PluginInfo {
+public class SimplePluginQuery implements PluginQuery {
 
-	/**
-	 * Get a name of the plugin.
-	 * 
-	 * @return the name
-	 */
-	String getName();
+	private boolean latestVersionOnly = true;
+	private String simpleQuery = null;
 
-	/**
-	 * Get a description of the plugin.
-	 * 
-	 * @return the description
-	 */
-	String getDescription();
+	@Override
+	public boolean isLatestVersionOnly() {
+		return latestVersionOnly;
+	}
 
-	/**
-	 * Get a localized name of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the name
-	 */
-	String getLocalizedName(Locale locale);
+	public void setLatestVersionOnly(boolean latestVersionOnly) {
+		this.latestVersionOnly = latestVersionOnly;
+	}
 
-	/**
-	 * Get a localized description of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the description
-	 */
-	String getLocalizedDescription(Locale locale);
+	@Override
+	public String getSimpleQuery() {
+		return simpleQuery;
+	}
+
+	public void setSimpleQuery(String simpleQuery) {
+		this.simpleQuery = simpleQuery;
+	}
 
 }

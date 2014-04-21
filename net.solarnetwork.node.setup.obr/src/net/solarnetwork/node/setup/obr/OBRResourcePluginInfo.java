@@ -1,5 +1,5 @@
 /* ==================================================================
- * PluginInfo.java - Apr 21, 2014 2:28:53 PM
+ * OBRResourcePluginInfo.java - Apr 22, 2014 7:17:31 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -20,48 +20,52 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup;
+package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
+import net.solarnetwork.node.setup.PluginInfo;
+import org.osgi.service.obr.Resource;
 
 /**
- * Descriptive information about a plugin, designed to help users of the plugin.
+ * PluginInfo implementation that wraps an OBR {link Resource}.
  * 
  * @author matt
  * @version 1.0
  */
-public interface PluginInfo {
+public class OBRResourcePluginInfo implements PluginInfo {
+
+	private final Resource resource;
 
 	/**
-	 * Get a name of the plugin.
+	 * Construct with a resource.
 	 * 
-	 * @return the name
+	 * @param resource
+	 *        the resource
 	 */
-	String getName();
+	public OBRResourcePluginInfo(Resource resource) {
+		super();
+		this.resource = resource;
+	}
 
-	/**
-	 * Get a description of the plugin.
-	 * 
-	 * @return the description
-	 */
-	String getDescription();
+	@Override
+	public String getLocalizedName(Locale locale) {
+		return getName();
+	}
 
-	/**
-	 * Get a localized name of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the name
-	 */
-	String getLocalizedName(Locale locale);
+	@Override
+	public String getLocalizedDescription(Locale locale) {
+		return getDescription();
+	}
 
-	/**
-	 * Get a localized description of the plugin.
-	 * 
-	 * @param locale
-	 *        the desired locale
-	 * @return the description
-	 */
-	String getLocalizedDescription(Locale locale);
+	@Override
+	public String getName() {
+		return resource.getPresentationName();
+	}
+
+	@Override
+	public String getDescription() {
+		// TODO: what can we return here?
+		return "";
+	}
 
 }
