@@ -34,15 +34,22 @@ import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
 
 /**
- * OBR implementation of {@link PluginService}.
+ * OBR implementation of {@link PluginService}, using the Apache Felix OBR
+ * implementation.
  * 
  * <p>
  * The configurable properties of this class are:
  * </p>
  * 
  * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
+ * <dt>repositoryAdmin</dt>
+ * <dd>The {@link RepositoryAdmin} to manage all OBR actions with.</dd>
+ * 
+ * <dt>repositories</dt>
+ * <dd>The collection of {@link OBRRepository} instances managed by SolarNode.
+ * For each configured {@link OBRRepository} this service will register an
+ * associated {@code org.osgi.service.obr.Repository} instance with the
+ * {@code repositoryAdmin} service.</dd>
  * </dl>
  * 
  * @author matt
