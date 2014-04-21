@@ -62,6 +62,13 @@ import org.osgi.service.obr.Resource;
  * For each configured {@link OBRRepository} this service will register an
  * associated {@code org.osgi.service.obr.Repository} instance with the
  * {@code repositoryAdmin} service.</dd>
+ * 
+ * <dt>restrictingSymbolicNameFilter</dt>
+ * <dd>An optional filter to include when
+ * {@link #availablePlugins(PluginQuery, Locale)} is called, that restricts the
+ * results to those <em>starting with</em> this value. The idea here is to
+ * provide a way to focus the results on just a core subset of all plugins so
+ * the results are more relevant to users.</dd>
  * </dl>
  * 
  * @author matt
@@ -69,8 +76,11 @@ import org.osgi.service.obr.Resource;
  */
 public class OBRPluginService implements PluginService {
 
+	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
+
 	private RepositoryAdmin repositoryAdmin;
 	private List<OBRRepository> repositories;
+	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 
 	private final Map<URL, OBRRepositoryStatus> statusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
@@ -156,13 +166,15 @@ public class OBRPluginService implements PluginService {
 	}
 
 	private String getOBRFilter(PluginQuery query) {
+		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
 		SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
 				CompareOperator.SUBSTRING);
-		SearchFilter node = new SearchFilter(Resource.SYMBOLIC_NAME, "net.solarnetwork.node.",
-				CompareOperator.SUBSTRING_AT_START);
-		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
 		filter.put("id", id);
-		filter.put("node", node);
+		if ( restrictingSymbolicNameFilter != null ) {
+			SearchFilter restrict = new SearchFilter(Resource.SYMBOLIC_NAME,
+					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
+			filter.put("restrict", restrict);
+		}
 		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
 
@@ -202,6 +214,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setRepositories(List<OBRRepository> repositories) {
 		this.repositories = repositories;
+	}
+
+	public void setRestrictingSymbolicNameFilter(String restrictingSymbolicNameFilter) {
+		this.restrictingSymbolicNameFilter = restrictingSymbolicNameFilter;
 	}
 
 }
