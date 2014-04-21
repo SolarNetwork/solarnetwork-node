@@ -35,8 +35,11 @@ public interface PluginService {
 	/**
 	 * Get a list of all available plugins.
 	 * 
-	 * @return list of available plugins
+	 * @param filter
+	 *        an optional filter to apply to limit the returned results by. Pass
+	 *        <em>null</em> to request all available Plugin instances
+	 * @return list of available plugins, or an empty list if none available
 	 */
-	List<Plugin> availablePlugins();
+	List<Plugin> availablePlugins(String filter);
 
 }
