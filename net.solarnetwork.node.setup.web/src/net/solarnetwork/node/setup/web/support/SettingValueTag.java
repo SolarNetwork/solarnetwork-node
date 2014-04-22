@@ -25,15 +25,12 @@
 package net.solarnetwork.node.setup.web.support;
 
 import java.io.IOException;
-
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
-
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingsService;
-
-import org.apache.taglibs.standard.tag.common.core.OutSupport;
+import org.apache.taglibs.standard.util.EscapeXML;
 
 /**
  * Expose the current value of a setting.
@@ -58,8 +55,8 @@ public class SettingValueTag extends TagSupport {
 		Object val = service.getSettingValue(provider, setting);
 		if ( val != null ) {
 			try {
-				OutSupport.out(pageContext, escapeXml, val.toString());
-			} catch (IOException e) {
+				EscapeXML.emit(val, escapeXml, pageContext.getOut());
+			} catch ( IOException e ) {
 				throw new JspException(e);
 			}
 		}
