@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
 import net.solarnetwork.node.setup.LocalizedPluginInfo;
+import net.solarnetwork.node.setup.BundlePluginVersion;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginInfo;
 import net.solarnetwork.node.setup.PluginVersion;
@@ -39,7 +40,7 @@ import org.osgi.service.obr.Resource;
 public class OBRResourcePlugin implements Plugin {
 
 	private final Resource resource;
-	private final OBRPluginVersion version;
+	private final BundlePluginVersion version;
 	private final OBRResourcePluginInfo info;
 
 	/**
@@ -51,7 +52,7 @@ public class OBRResourcePlugin implements Plugin {
 	public OBRResourcePlugin(Resource resource) {
 		super();
 		this.resource = resource;
-		this.version = new OBRPluginVersion(getResourceVersion());
+		this.version = new BundlePluginVersion(getResourceVersion());
 		this.info = new OBRResourcePluginInfo(resource);
 	}
 

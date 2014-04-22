@@ -30,13 +30,16 @@ SolarNode.Plugins.populateUI = function(container) {
 	
 	var groupPlugins = function(data) {
 		var i, len;
+		var plugin;
+		var groupName;
 		var result = {
-			groupNames: [],
-			groups: {}
+			groupNames: [],	// String[]
+			groups: {},   	// map of GroupName -> Plugin[]
+			installed: {} 	// map of UID -> Plugin
 		};
-		for ( i = 0, len = data.length; i < len; i++ ) {
-			var plugin = data[i];
-			var groupName = groupNameForPlugin(plugin);
+		for ( i = 0, len = data.availablePlugins.length; i < len; i++ ) {
+			plugin = data.availablePlugins[i];
+			groupName = groupNameForPlugin(plugin);
 			if ( result.groups[groupName] === undefined ) {
 				result.groupNames.push(groupName);
 				// note we assume plugins already sorted by name
@@ -45,6 +48,10 @@ SolarNode.Plugins.populateUI = function(container) {
 			result.groups[groupName].push(plugin);
 		}
 		result.groupNames.sort();
+		for ( i = 0, len = data.installedPlugins.length; i < len; i++ ) {
+			plugin = data.installedPlugins[i];
+			result.installed[plugin.uid] = plugin;
+		}
 		return result;
 	};
 	

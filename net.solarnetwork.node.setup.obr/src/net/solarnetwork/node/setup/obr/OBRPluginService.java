@@ -34,6 +34,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginQuery;
@@ -42,6 +43,8 @@ import net.solarnetwork.node.setup.PluginVersion;
 import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.support.SearchFilter.CompareOperator;
 import net.solarnetwork.support.SearchFilter.LogicOperator;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
 import org.osgi.service.obr.Resource;
@@ -83,6 +86,7 @@ public class OBRPluginService implements PluginService {
 			"net.solarnetwork.node.dao." };
 
 	private RepositoryAdmin repositoryAdmin;
+	private BundleContext bundleContext;
 	private List<OBRRepository> repositories;
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
@@ -181,9 +185,46 @@ public class OBRPluginService implements PluginService {
 		return plugins;
 	}
 
-	private String getOBRFilter(PluginQuery query) {
+	@Override
+	public List<Plugin> installedPlugins(Locale locale) {
+		// we limit returned results to those that are also available via OBR
+		if ( repositoryAdmin == null || bundleContext == null ) {
+			return Collections.emptyList();
+		}
+		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(null));
+		if ( resources == null || resources.length < 1 ) {
+			return Collections.emptyList();
+		}
+		Set<String> availableUIDs = new HashSet<String>(resources.length);
+		for ( Resource r : resources ) {
+			availableUIDs.add(r.getSymbolicName());
+		}
+		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(availableUIDs.size());
+		Bundle[] bundles = bundleContext.getBundles();
+		for ( Bundle b : bundles ) {
+			String uid = b.getSymbolicName();
+			if ( availableUIDs.contains(uid) ) {
+				Bundle installedBundle = installedBundles.get(uid);
+				if ( installedBundle == null
+						|| b.getVersion().compareTo(installedBundle.getVersion()) > 0 ) {
+					installedBundles.put(uid, b);
+				}
+			}
+		}
+		List<Plugin> results = new ArrayList<Plugin>(installedBundles.size());
+		for ( Bundle b : installedBundles.values() ) {
+			Plugin p = new BundlePlugin(b);
+			if ( locale != null ) {
+				p = new LocalizedPlugin(p, locale);
+			}
+			results.add(p);
+		}
+		return results;
+	}
+
+	private String getOBRFilter(final PluginQuery query) {
 		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
-		if ( query.getSimpleQuery() != null && query.getSimpleQuery().length() > 0 ) {
+		if ( query != null && query.getSimpleQuery() != null && query.getSimpleQuery().length() > 0 ) {
 			SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
 					CompareOperator.SUBSTRING);
 			filter.put("id", id);
@@ -250,6 +291,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setExclusionSymbolicNameFilters(String[] exclusionSymbolicNameFilters) {
 		this.exclusionSymbolicNameFilters = exclusionSymbolicNameFilters;
+	}
+
+	public void setBundleContext(BundleContext bundleContext) {
+		this.bundleContext = bundleContext;
 	}
 
 }

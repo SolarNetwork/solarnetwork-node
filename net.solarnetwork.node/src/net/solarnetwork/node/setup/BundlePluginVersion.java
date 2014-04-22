@@ -1,5 +1,5 @@
 /* ==================================================================
- * OBRPluginVersion.java - Apr 21, 2014 5:38:23 PM
+ * BundlePluginVersion.java - Apr 21, 2014 5:38:23 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -20,9 +20,8 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.obr;
+package net.solarnetwork.node.setup;
 
-import net.solarnetwork.node.setup.PluginVersion;
 import org.osgi.framework.Version;
 
 /**
@@ -31,7 +30,7 @@ import org.osgi.framework.Version;
  * @author matt
  * @version 1.0
  */
-public class OBRPluginVersion implements PluginVersion {
+public class BundlePluginVersion implements PluginVersion {
 
 	private final Version version;
 
@@ -41,17 +40,17 @@ public class OBRPluginVersion implements PluginVersion {
 	 * @param version
 	 *        the Version to wrap
 	 */
-	public OBRPluginVersion(Version version) {
+	public BundlePluginVersion(Version version) {
 		super();
 		this.version = version;
 	}
 
 	@Override
 	public int compareTo(PluginVersion o) {
-		if ( !(o instanceof OBRPluginVersion) ) {
-			throw new IllegalArgumentException("Only OBRPluginVersion supported");
+		if ( !(o instanceof BundlePluginVersion) ) {
+			throw new IllegalArgumentException("Only BundlePluginVersion supported");
 		}
-		return this.version.compareTo(((OBRPluginVersion) o).version);
+		return this.version.compareTo(((BundlePluginVersion) o).version);
 	}
 
 	@Override

@@ -46,22 +46,51 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("/plugins")
 public class PluginController {
 
+	public static class PluginDetails {
+
+		private final List<Plugin> availablePlugins;
+		private final List<Plugin> installedPlugins;
+
+		public PluginDetails() {
+			super();
+			this.availablePlugins = Collections.emptyList();
+			this.installedPlugins = Collections.emptyList();
+		}
+
+		public PluginDetails(List<Plugin> availablePlugins, List<Plugin> installedPlugins) {
+			super();
+			this.availablePlugins = availablePlugins;
+			this.installedPlugins = installedPlugins;
+		}
+
+		public List<Plugin> getAvailablePlugins() {
+			return availablePlugins;
+		}
+
+		public List<Plugin> getInstalledPlugins() {
+			return installedPlugins;
+		}
+
+	}
+
 	@Resource(name = "pluginService")
 	private OptionalService<PluginService> pluginService;
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	@ResponseBody
-	public List<Plugin> list(@RequestParam(value = "filter", required = false) final String filter,
+	public PluginDetails list(@RequestParam(value = "filter", required = false) final String filter,
 			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
 			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
-			return Collections.emptyList();
+			return new PluginDetails();
 		}
 		SimplePluginQuery query = new SimplePluginQuery();
 		query.setSimpleQuery(filter);
 		query.setLatestVersionOnly(latestOnly == null ? true : latestOnly.booleanValue());
-		return service.availablePlugins(query, locale);
+		List<Plugin> available = service.availablePlugins(query, locale);
+		List<Plugin> installed = service.installedPlugins(locale);
+		return new PluginDetails(available, installed);
 	}
 
 }

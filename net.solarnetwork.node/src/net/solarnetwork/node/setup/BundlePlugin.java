@@ -1,5 +1,5 @@
 /* ==================================================================
- * PluginService.java - Apr 21, 2014 2:12:15 PM
+ * BundlePlugin.java - Apr 22, 2014 8:22:09 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,36 +22,52 @@
 
 package net.solarnetwork.node.setup;
 
-import java.util.List;
 import java.util.Locale;
+import org.osgi.framework.Bundle;
 
 /**
- * Service for managing dynamic "plugins" within the application.
+ * Implementation of {@link Plugin} that wraps a {@link Bundle}.
  * 
  * @author matt
  * @version 1.0
  */
-public interface PluginService {
+public class BundlePlugin implements Plugin {
+
+	private final Bundle bundle;
+	private final BundlePluginVersion version;
+	private final BundlePluginInfo info;
 
 	/**
-	 * Get a list of all available plugins.
+	 * Construct with a {@link Bundle}.
 	 * 
-	 * @param query
-	 *        an optional query to apply to limit the returned results by. Pass
-	 *        <em>null</em> to request all available Plugin instances
-	 * @param locale
-	 *        an optional locale to apply to PluginInfo
-	 * @return list of available plugins, or an empty list if none available
+	 * @param bundle
+	 *        the bundle
 	 */
-	List<Plugin> availablePlugins(PluginQuery query, Locale locale);
+	public BundlePlugin(Bundle bundle) {
+		super();
+		this.bundle = bundle;
+		this.version = new BundlePluginVersion(bundle.getVersion());
+		this.info = new BundlePluginInfo(bundle);
+	}
 
-	/**
-	 * Get a list of all installed plugins.
-	 * 
-	 * @param locale
-	 *        an optional locale to apply to PluginInfo
-	 * @return list of installed plugins, or an empty list if none installed
-	 */
-	List<Plugin> installedPlugins(Locale locale);
+	@Override
+	public String getUID() {
+		return bundle.getSymbolicName();
+	}
+
+	@Override
+	public PluginVersion getVersion() {
+		return version;
+	}
+
+	@Override
+	public PluginInfo getInfo() {
+		return info;
+	}
+
+	@Override
+	public PluginInfo getLocalizedInfo(Locale locale) {
+		return new LocalizedPluginInfo(info, locale);
+	}
 
 }

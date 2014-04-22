@@ -27,6 +27,7 @@
 	<!-- Supporting Services -->
 	
 	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" init-method="init">
+		<property name="bundleContext" ref="bundleContext"/>
 		<property name="repositoryAdmin" ref="repositoryAdmin"/>
 		<property name="repositories" ref="obrRepos"/>
 	</bean>
