@@ -190,6 +190,36 @@ SolarNode.Class.Slider.prototype = {
 	
 };
 
+SolarNode.context = (function() {
+	var basePath = undefined;
+	
+	var contextPath = function() {
+		if ( basePath === undefined ) {
+			basePath = $('meta[name=base-path]').attr('content');
+		}
+		return (basePath === undefined ? "" : basePath);
+	};
+	
+	var helper = {
+		
+		basePath : contextPath,
+		
+		path : function(path) {
+			var p = contextPath();
+			var p1 = String(path);
+			if ( p.search(/\/$/) >= 0 && p1.length > 0 && p1.charAt(0) === '/' ) {
+				p += p1.substring(1);
+			} else {
+				p += p1;
+			}
+			return p;
+		}
+		
+	};
+	
+	return helper;
+})();
+
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');
