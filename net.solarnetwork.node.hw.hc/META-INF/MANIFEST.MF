@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Hsiang Cheng Electric Support
+Bundle-Name: Hsiang Cheng Electric Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.hc
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
