@@ -72,9 +72,43 @@ SolarNode.Plugins.populateUI = function(container) {
 		return innerBody;
 	};
 	
-	var createPluginUI = function(plugin) {
+	var compareVersions = function(v1, v2) {
+		var result = v1.major - v2.major;
+		if ( result !== 0 ) {
+			return result;
+		}
+		result = v1.minor - v2.minor;
+		if ( result !== 0 ) {
+			return result;
+		}
+		result = v1.micro - v2.micro;
+		if ( result !== 0 ) {
+			return result;
+		}
+		// ignoring qualifiers
+		return 0;
+	};
+	
+	var createPluginUI = function(plugin, installed) {
 		var id = "Plugin-" +plugin.uid.replace(/\W/g, '-');
-		return $('<div/>').attr('id', id).text(plugin.info.name);
+		var row = $('<div class="plugin clearfix"/>').attr('id', id).text(plugin.info.name);
+		var actionContainer = $('<div class="pull-right"/>').appendTo(row);
+		var installedPlugin = installed[plugin.uid];
+		var button = undefined;
+		if ( installedPlugin === undefined ) {
+			// not installed; offer to install it
+			button = $('<button class="btn btn-small btn-primary span2">').text('Install'); // TODO: l10n
+			actionContainer.append(button);
+		} else if ( compareVersions(plugin.version, installedPlugin.version) > 0 ) {
+			// update available
+			button = $('<button class="btn btn-small btn-info span2">').text('Upgrade'); // TODO: l10n
+			actionContainer.append(button);
+		} else {
+			// installed
+			button = $('<button class="btn btn-small btn-danger span2"/>').text('Remove');  // TODO: l10n
+			actionContainer.append(button);
+		}
+		return row;
 	};
 	
 	$.getJSON(url, function(data) {
@@ -92,7 +126,7 @@ SolarNode.Plugins.populateUI = function(container) {
 			group = groupedPlugins.groups[groupName];
 			for ( j = 0, jMax = group.length; j < jMax; j++ ) {
 				plugin = group[j];
-				groupBody.append(createPluginUI(plugin));
+				groupBody.append(createPluginUI(plugin, groupedPlugins.installed));
 			}
 		}
 		container.html(html);

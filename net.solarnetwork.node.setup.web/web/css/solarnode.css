@@ -130,3 +130,7 @@ pre.pre-scrollable {
 	width: 700px;
 	margin-left: -350px;
 }
+
+#plugin-list div.plugin {
+	margin-bottom: 0.5em;
+}
