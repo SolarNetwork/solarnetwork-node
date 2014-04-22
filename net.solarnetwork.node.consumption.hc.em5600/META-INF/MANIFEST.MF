@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Hsiang Cheng Electric EM56XX Consumption
+Bundle-Name: SolarNode Hsiang Cheng Electric EM56XX Consumption
 Bundle-SymbolicName: net.solarnetwork.node.consumption.hc.em5600
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
