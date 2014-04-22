@@ -79,9 +79,13 @@ public class OBRPluginService implements PluginService {
 
 	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
 
+	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { "mock",
+			"net.solarnetwork.node.dao." };
+
 	private RepositoryAdmin repositoryAdmin;
 	private List<OBRRepository> repositories;
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
+	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
 
 	private final Map<URL, OBRRepositoryStatus> statusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
@@ -179,13 +183,25 @@ public class OBRPluginService implements PluginService {
 
 	private String getOBRFilter(PluginQuery query) {
 		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
-		SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
-				CompareOperator.SUBSTRING);
-		filter.put("id", id);
+		if ( query.getSimpleQuery() != null && query.getSimpleQuery().length() > 0 ) {
+			SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
+					CompareOperator.SUBSTRING);
+			filter.put("id", id);
+		}
 		if ( restrictingSymbolicNameFilter != null ) {
 			SearchFilter restrict = new SearchFilter(Resource.SYMBOLIC_NAME,
 					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
 			filter.put("restrict", restrict);
+		}
+		if ( exclusionSymbolicNameFilters != null && exclusionSymbolicNameFilters.length > 0 ) {
+			Map<String, Object> exMap = new LinkedHashMap<String, Object>(
+					exclusionSymbolicNameFilters.length);
+			for ( String ex : exclusionSymbolicNameFilters ) {
+				exMap.put(ex, new SearchFilter(Resource.SYMBOLIC_NAME, ex, CompareOperator.SUBSTRING));
+			}
+			SearchFilter exOrs = new SearchFilter(exMap, LogicOperator.OR);
+			filter.put("exclusion", new SearchFilter(Collections.singletonMap("exors", exOrs),
+					LogicOperator.NOT));
 		}
 		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
@@ -230,6 +246,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setRestrictingSymbolicNameFilter(String restrictingSymbolicNameFilter) {
 		this.restrictingSymbolicNameFilter = restrictingSymbolicNameFilter;
+	}
+
+	public void setExclusionSymbolicNameFilters(String[] exclusionSymbolicNameFilters) {
+		this.exclusionSymbolicNameFilters = exclusionSymbolicNameFilters;
 	}
 
 }
