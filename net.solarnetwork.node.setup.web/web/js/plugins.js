@@ -112,6 +112,9 @@ SolarNode.Plugins.populateUI = function(container) {
 			button = $('<button class="btn btn-small btn-danger span2"/>').text('Remove');  // TODO: l10n
 			actionContainer.append(button);
 		}
+		button.click(function() {
+			SolarNode.Plugins.previewInstall(plugin);
+		});
 		return row;
 	};
 	
@@ -147,6 +150,14 @@ SolarNode.Plugins.populateUI = function(container) {
 		}
 		container.html(html);
 	});
+};
+
+SolarNode.Plugins.previewInstall = function(plugin) {
+	var form = $('#plugin-preview-install-modal');
+	var title = form.find('h3');
+	title.text(title.data('msg-install') +' ' +plugin.info.name);
+	form.find('input[name=uid]').val(plugin.uid);
+	form.modal('show');
 };
 
 $(document).ready(function() {
