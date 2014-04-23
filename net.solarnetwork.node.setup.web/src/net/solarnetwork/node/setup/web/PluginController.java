@@ -22,14 +22,18 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.web.domain.Response.response;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import javax.annotation.Resource;
 import net.solarnetwork.node.setup.Plugin;
+import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.SimplePluginQuery;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.web.domain.Response;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -78,19 +82,32 @@ public class PluginController {
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	@ResponseBody
-	public PluginDetails list(@RequestParam(value = "filter", required = false) final String filter,
+	public Response<PluginDetails> list(
+			@RequestParam(value = "filter", required = false) final String filter,
 			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
 			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
-			return new PluginDetails();
+			return response(new PluginDetails());
 		}
 		SimplePluginQuery query = new SimplePluginQuery();
 		query.setSimpleQuery(filter);
 		query.setLatestVersionOnly(latestOnly == null ? true : latestOnly.booleanValue());
 		List<Plugin> available = service.availablePlugins(query, locale);
 		List<Plugin> installed = service.installedPlugins(locale);
-		return new PluginDetails(available, installed);
+		return response(new PluginDetails(available, installed));
+	}
+
+	@RequestMapping(value = "/install", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<PluginProvisionStatus> previewInstall(@RequestParam(value = "uid") final String uid,
+			final Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+		Collection<String> uids = Collections.singleton(uid);
+		return response(service.previewInstallPlugins(uids, locale));
 	}
 
 }

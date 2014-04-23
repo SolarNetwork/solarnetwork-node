@@ -112,9 +112,15 @@ SolarNode.Plugins.populateUI = function(container) {
 	};
 	
 	$.getJSON(url, function(data) {
+		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			container.empty();
+			// TODO: l10n
+			SolarNode.warn('Error!', 'An error occured loading plugin information.', container);
+			return;
+		}
 		var i, iMax;
 		var j, jMax;
-		var groupedPlugins = groupPlugins(data);
+		var groupedPlugins = groupPlugins(data.data);
 		var html = $('<div class="accordion" id="plugin-list"/>');
 		var groupBody = undefined;
 		var groupName = undefined;

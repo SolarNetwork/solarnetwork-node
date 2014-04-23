@@ -80,6 +80,14 @@ var SolarNode = {
 			msg = msg.replace(new RegExp('\\{'+(i)+'\\}','g'),params[i]);
 		}
 		return msg;
+	 },
+	 
+	 warn : function(title, message, container) {
+		 container = container || $('#body-container');
+		 if ( container ) {
+			 container.prepend('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button><strong>'
+					 +title +'</strong> ' +message +'</div>');
+		 }
 	 }
 	
 };
