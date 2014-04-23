@@ -98,6 +98,17 @@ public class PluginController {
 		return response(new PluginDetails(available, installed));
 	}
 
+	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<Boolean> refresh() {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			return response(Boolean.FALSE);
+		}
+		service.refreshAvailablePlugins();
+		return response(Boolean.TRUE);
+	}
+
 	@RequestMapping(value = "/install", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginProvisionStatus> previewInstall(@RequestParam(value = "uid") final String uid,
