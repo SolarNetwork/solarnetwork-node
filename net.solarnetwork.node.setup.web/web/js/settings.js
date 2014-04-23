@@ -341,16 +341,11 @@ $(document).ready(function() {
 	
 	$('#backup-now-btn').click(function(event) {
 		event.preventDefault();
-		var btn = $(this);
-		btn.height(btn.outerHeight());
-		btn.width(btn.outerWidth());
-		btn.button('loading');
+		var l = Ladda.create(this);
 		var url = $(this.form).attr('action');
-		btn.spin("small");
+		l.start();
 		$.post(url, function(data) {
-			btn.data('spinner').stop();
-			btn.button('reset');
-			btn.removeAttr('style');
+			l.stop();
 		});
 	});
 });

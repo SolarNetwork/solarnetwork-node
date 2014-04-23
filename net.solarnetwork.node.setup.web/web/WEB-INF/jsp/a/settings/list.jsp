@@ -129,7 +129,7 @@
 		</fieldset>
 		<div class="form-actions">
 			<form class="form-inline" action="<c:url value='/settings/backupNow.do'/>" method="post">
- 				<button class="btn btn-primary" type="submit" id="backup-now-btn"
+ 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
  					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
 			</form>
 		</div>

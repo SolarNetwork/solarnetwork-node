@@ -6,13 +6,13 @@
 <pack:style>
 	/css/bootstrap.css
 	/css/bootstrap-responsive.css
+	/css/ladda.css
 	/css/solarnode.css
 </pack:style>
 <pack:script> 
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
-	/js-lib/spin.js
-	/js-lib/jquery.spin.js
+	/js-lib/ladda.js
 	/js-lib/jquery.form.js
 	/js/global.js
 	/js/certs.js
