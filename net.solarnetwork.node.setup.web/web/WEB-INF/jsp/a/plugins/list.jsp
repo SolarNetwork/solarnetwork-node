@@ -21,7 +21,7 @@
 	</div>
 	<div class="modal-body">
 		<p><fmt:message key="plugin.install.intro"/></p>
-		<ul id="plugin-preview-install-list"></ul>
+		<div id="plugin-preview-install-list"></div>
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="uid" value=""/>

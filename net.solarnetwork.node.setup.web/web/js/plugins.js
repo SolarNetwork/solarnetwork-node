@@ -154,10 +154,33 @@ SolarNode.Plugins.populateUI = function(container) {
 
 SolarNode.Plugins.previewInstall = function(plugin) {
 	var form = $('#plugin-preview-install-modal');
+	var previewURL = form.attr('action') + '?uid=' +encodeURIComponent(plugin.uid);
+	var container = $('#plugin-preview-install-list').empty();
 	var title = form.find('h3');
 	title.text(title.data('msg-install') +' ' +plugin.info.name);
 	form.find('input[name=uid]').val(plugin.uid);
 	form.modal('show');
+	$.getJSON(previewURL, function(data) {
+		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			// TODO: l10n
+			SolarNode.warn('Error!', 'An error occured loading plugin information.', list);
+			return;
+		}
+		var i, len;
+		var pluginToInstall;
+		var list = $('<ul/>');
+		var version;
+		for ( i = 0, len = data.data.pluginsToInstall.length; i < len; i++ ) {
+			pluginToInstall = data.data.pluginsToInstall[i];
+			version = pluginToInstall.version.major + '.' + pluginToInstall.version.minor;
+			if ( pluginToInstall.version.micro > 0 ) {
+				version += '.' + pluginToInstall.version.micro;
+			}
+			$('<li/>').html('<b>' +pluginToInstall.info.name  
+					+'</b> <span class="label">' +version +'</span>').appendTo(list);
+		}
+		container.append(list);
+	});
 };
 
 $(document).ready(function() {
