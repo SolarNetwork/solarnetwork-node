@@ -48,26 +48,24 @@ public class BundlePluginInfo implements PluginInfo {
 
 	@Override
 	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
+		return bundle.getHeaders().get("Bundle-Name");
 	}
 
 	@Override
 	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
+		return bundle.getHeaders().get("Bundle-Description");
 	}
 
 	@Override
 	public String getLocalizedName(Locale locale) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO l10n
+		return getName();
 	}
 
 	@Override
 	public String getLocalizedDescription(Locale locale) {
-		// TODO Auto-generated method stub
-		return null;
+		// TODO l10n
+		return getDescription();
 	}
 
 }
