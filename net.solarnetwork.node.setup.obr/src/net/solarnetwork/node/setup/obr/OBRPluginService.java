@@ -359,9 +359,12 @@ public class OBRPluginService implements PluginService {
 			}
 			throw new PluginProvisionException(buf.toString());
 		}
-		resources = resolver.getRequiredResources();
-		List<Plugin> toInstall = new ArrayList<Plugin>(resources.length);
+		Resource[] requiredResources = resolver.getRequiredResources();
+		List<Plugin> toInstall = new ArrayList<Plugin>(resources.length + requiredResources.length);
 		for ( Resource r : resources ) {
+			toInstall.add(new OBRResourcePlugin(r));
+		}
+		for ( Resource r : requiredResources ) {
 			toInstall.add(new OBRResourcePlugin(r));
 		}
 		OBRPluginProvisionStatus result = new OBRPluginProvisionStatus(provisionID);
