@@ -81,6 +81,11 @@ public class PluginController {
 	private OptionalService<PluginService> pluginService;
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
+	public String home() {
+		return "plugins/list";
+	}
+
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginDetails> list(
 			@RequestParam(value = "filter", required = false) final String filter,

@@ -4,8 +4,12 @@ SolarNode.Plugins = {
 
 SolarNode.Plugins.runtime = {};
 
+SolarNode.Plugins.refreshPluginList = function(container) {
+	SolarNode.Plugins.populateUI(container);
+};
+
 SolarNode.Plugins.populateUI = function(container) {
-	var url = SolarNode.context.path('/plugins');
+	var url = SolarNode.context.path('/plugins/list');
 	
 	var groupNameForPlugin = function(plugin) {
 		var match = plugin.uid.match(/^net\.solarnetwork\.node\.(\w+)/);
@@ -111,7 +115,13 @@ SolarNode.Plugins.populateUI = function(container) {
 		return row;
 	};
 	
+	var refreshBtn = $('#plugins-refresh');
+	refreshBtn.button('loading');
+	var ladda = Ladda.create(refreshBtn.get(0));
+	ladda.start();
 	$.getJSON(url, function(data) {
+		refreshBtn.button('reset');
+		ladda.stop();
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
 			container.empty();
 			// TODO: l10n
@@ -140,24 +150,11 @@ SolarNode.Plugins.populateUI = function(container) {
 };
 
 $(document).ready(function() {
-	$('#link-plugins').click(function(event) {
-		event.preventDefault();
-
-		var btn = $(this);
-		if ( btn.hasClass('active') ) {
-			// already active, nothing to do
-			return;
-		}
-
-		// toggle other tabs off...
-		$('.navbar li.active').removeClass('active');
-		
-		// make me active
-		btn.parent().addClass('active');
-		
-		// replace body content with plugin UI
-		var container = $('#body-container');
-		container.html('<p>Loading...</p>');
-		SolarNode.Plugins.populateUI(container);
+	var pluginsContainer = $('#plugins').first();
+	pluginsContainer.each(function() {
+		SolarNode.Plugins.refreshPluginList($(this));
+	});
+	$('#plugins-refresh').click(function() {
+		SolarNode.Plugins.refreshPluginList(pluginsContainer);
 	});
 });

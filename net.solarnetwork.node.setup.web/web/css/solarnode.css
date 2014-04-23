@@ -134,3 +134,7 @@ pre.pre-scrollable {
 #plugin-list div.plugin {
 	margin-bottom: 0.5em;
 }
+
+#plugins {
+	margin-top: 1em;
+}
