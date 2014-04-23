@@ -94,16 +94,22 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 
 	@Override
 	public float getOverallProgress() {
-		final float downloadProgress = (float) (overallDownloadSize != null
-				&& overallDownloadSize.longValue() > 0 && overallDownloadedSize != null ? (overallDownloadedSize
-				.doubleValue() / overallDownloadSize.doubleValue()) : 1);
-		final float installProgress = (float) (pluginsToInstall != null && pluginsToInstall.size() > 0
-				&& pluginsInstalled != null ? ((double) pluginsInstalled.size() / (double) pluginsToInstall
-				.size()) : 1);
-		final float removeProgress = (float) (pluginsToRemove != null && pluginsToRemove.size() > 0
-				&& pluginsRemoved != null ? ((double) pluginsRemoved.size() / (double) pluginsToRemove
-				.size()) : 1);
-		return ((downloadProgress + installProgress + removeProgress) / 3f);
+		int steps = 0;
+		float progress = 0;
+		if ( overallDownloadSize != null && overallDownloadSize.longValue() > 0
+				&& overallDownloadedSize != null ) {
+			steps++;
+			progress += (float) (overallDownloadedSize.doubleValue() / overallDownloadSize.doubleValue());
+		}
+		if ( pluginsToInstall != null && pluginsToInstall.size() > 0 && pluginsInstalled != null ) {
+			steps++;
+			progress += (float) ((double) pluginsInstalled.size() / (double) pluginsToInstall.size());
+		}
+		if ( pluginsToRemove != null && pluginsToRemove.size() > 0 && pluginsRemoved != null ) {
+			steps++;
+			progress += (float) ((double) pluginsRemoved.size() / (double) pluginsToRemove.size());
+		}
+		return (steps == 0 ? 0f : (progress / steps));
 	}
 
 	@Override
