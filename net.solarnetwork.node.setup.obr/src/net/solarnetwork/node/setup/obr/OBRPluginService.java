@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.obr;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,9 +35,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
+import net.solarnetwork.node.setup.PluginProvisionException;
+import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginQuery;
 import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.PluginVersion;
@@ -47,7 +53,11 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
+import org.osgi.service.obr.Requirement;
+import org.osgi.service.obr.Resolver;
 import org.osgi.service.obr.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * OBR implementation of {@link PluginService}, using the Apache Felix OBR
@@ -80,6 +90,8 @@ import org.osgi.service.obr.Resource;
  */
 public class OBRPluginService implements PluginService {
 
+	private static final String PREVIEW_PROVISION_ID = "preview";
+
 	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { "mock",
@@ -88,11 +100,17 @@ public class OBRPluginService implements PluginService {
 	private RepositoryAdmin repositoryAdmin;
 	private BundleContext bundleContext;
 	private List<OBRRepository> repositories;
+	private String downloadPath = "app/main";
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
 
-	private final Map<URL, OBRRepositoryStatus> statusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
+	private final ConcurrentMap<URL, OBRRepositoryStatus> repoStatusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
+	private final ConcurrentMap<String, OBRPluginProvisionStatus> provisionStatusMap = new ConcurrentHashMap<String, OBRPluginProvisionStatus>(
+			4);
+	private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Call to initialize the service, after all properties have been
@@ -106,13 +124,32 @@ public class OBRPluginService implements PluginService {
 		}
 	}
 
+	@Override
+	public void refreshAvailablePlugins() {
+		if ( repositoryAdmin == null ) {
+			return;
+		}
+		Repository[] repos = repositoryAdmin.listRepositories();
+		if ( repos == null ) {
+			return;
+		}
+		for ( Repository r : repos ) {
+			// by examining the source, this is the way to refresh the repository metadata
+			try {
+				repositoryAdmin.addRepository(r.getURL());
+			} catch ( Exception e ) {
+				log.warn("Unable to refresh OBR repository {}", r.getURL());
+			}
+		}
+	}
+
 	private OBRRepositoryStatus getOrCreateStatus(URL url) {
-		synchronized ( statusMap ) {
-			OBRRepositoryStatus status = statusMap.get(url);
+		synchronized ( repoStatusMap ) {
+			OBRRepositoryStatus status = repoStatusMap.get(url);
 			if ( status == null ) {
 				status = new OBRRepositoryStatus();
 				status.setRepositoryURL(url);
-				statusMap.put(url, status);
+				repoStatusMap.put(url, status);
 			}
 			return status;
 		}
@@ -247,6 +284,91 @@ public class OBRPluginService implements PluginService {
 		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
 
+	@Override
+	public PluginProvisionStatus removePlugins(Collection<String> uids, Locale locale) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public PluginProvisionStatus statusForProvisioningOperation(String provisionID, Locale locale) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private SearchFilter filterForPluginUIDs(Collection<String> uids) {
+		assert uids != null;
+		Map<String, Object> f = new LinkedHashMap<String, Object>(uids.size());
+		for ( String uid : uids ) {
+			f.put(uid, new SearchFilter(Resource.SYMBOLIC_NAME, uid, CompareOperator.EQUAL));
+		}
+		return new SearchFilter(f, LogicOperator.OR);
+	}
+
+	@Override
+	public PluginProvisionStatus previewInstallPlugins(Collection<String> uids, Locale locale) {
+		return resolveInstall(uids, locale, PREVIEW_PROVISION_ID);
+	}
+
+	private OBRPluginProvisionStatus resolveInstall(Collection<String> uids, Locale locale,
+			String provisionID) {
+		if ( uids == null || uids.size() < 1 || repositoryAdmin == null ) {
+			return new OBRPluginProvisionStatus(PREVIEW_PROVISION_ID);
+		}
+
+		// get a list of the Resources we want to install
+		SearchFilter filter = filterForPluginUIDs(uids);
+		Resource[] resources = repositoryAdmin.discoverResources(filter.asLDAPSearchFilterString());
+		if ( resources == null || resources.length < 1 ) {
+			return new OBRPluginProvisionStatus(PREVIEW_PROVISION_ID);
+		}
+
+		// resolve the complete list of resources we need
+		Resolver resolver = repositoryAdmin.resolver();
+		for ( Resource r : resources ) {
+			resolver.add(r);
+		}
+		final boolean success = resolver.resolve();
+		if ( !success ) {
+			StringBuilder buf = new StringBuilder();
+			Requirement[] failures = resolver.getUnsatisfiedRequirements();
+			// TODO: l10n
+			if ( failures != null && failures.length > 0 ) {
+				for ( Requirement r : failures ) {
+					if ( buf.length() > 0 ) {
+						buf.append(", ");
+					}
+					buf.append(r.getName());
+					if ( r.getComment() != null && r.getComment().length() > 0 ) {
+						buf.append(" (").append(r.getComment()).append(")");
+					}
+				}
+				if ( failures.length == 1 ) {
+					buf.insert(0, "The following requirement is not satisfied: ");
+				} else {
+					buf.insert(0, "The following requirements are not satisfied: ");
+				}
+			} else {
+				buf.append("Unknown error");
+			}
+			throw new PluginProvisionException(buf.toString());
+		}
+		resources = resolver.getRequiredResources();
+		List<Plugin> toInstall = new ArrayList<Plugin>(resources.length);
+		for ( Resource r : resources ) {
+			toInstall.add(new OBRResourcePlugin(r));
+		}
+		OBRPluginProvisionStatus result = new OBRPluginProvisionStatus(provisionID);
+		result.setPluginsToInstall(toInstall);
+		return result;
+	}
+
 	/**
 	 * Call when an {@link OBRRepository} becomes available.
 	 * 
@@ -271,7 +393,7 @@ public class OBRPluginService implements PluginService {
 			URL repoURL = repo.getURL();
 			if ( repoURL != null && repoURL.equals(repository.getURL()) ) {
 				repositoryAdmin.removeRepository(repoURL);
-				statusMap.remove(repoURL);
+				repoStatusMap.remove(repoURL);
 				return;
 			}
 		}
@@ -295,6 +417,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setBundleContext(BundleContext bundleContext) {
 		this.bundleContext = bundleContext;
+	}
+
+	public void setDownloadPath(String downloadPath) {
+		this.downloadPath = downloadPath;
 	}
 
 }
