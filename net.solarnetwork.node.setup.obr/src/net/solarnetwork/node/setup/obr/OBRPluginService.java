@@ -125,20 +125,29 @@ public class OBRPluginService implements PluginService {
 	}
 
 	@Override
-	public void refreshAvailablePlugins() {
+	public synchronized void refreshAvailablePlugins() {
 		if ( repositoryAdmin == null ) {
 			return;
 		}
+		// by examining the source, found that to "refresh" we really just
+		// add the same URL again. To pick up changes applied to the repository URLs,
+		// however, we'll just remove all currently configured URLs and then add
+		// the currently configured ones.
 		Repository[] repos = repositoryAdmin.listRepositories();
 		if ( repos == null ) {
 			return;
 		}
 		for ( Repository r : repos ) {
-			// by examining the source, this is the way to refresh the repository metadata
 			try {
-				repositoryAdmin.addRepository(r.getURL());
+				repositoryAdmin.removeRepository(r.getURL());
 			} catch ( Exception e ) {
 				log.warn("Unable to refresh OBR repository {}", r.getURL());
+			}
+		}
+		repoStatusMap.clear();
+		if ( repositories != null ) {
+			for ( OBRRepository r : repositories ) {
+				configureOBRRepository(r);
 			}
 		}
 	}
