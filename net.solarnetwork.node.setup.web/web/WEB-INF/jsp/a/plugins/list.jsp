@@ -2,12 +2,13 @@
 	<p><fmt:message key="plugins.intro"/></p>
 	<fmt:message key="plugins.loading.message" var="msgLoading"/>
 	<fmt:message key="plugins.refresh.button" var="msgRefresh"/>
-	<button id="plugins-refresh" class="btn btn-primary ladda-button expand-right" 
+	<c:url value="/plugins/refresh" var="urlPluginRefresh"/>
+	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right" href="${urlPluginRefresh}"
 		data-loading-text="${msgLoading}"
 		data-msg-loading="${msgLoading}"
 		data-msg-refresh="${msgRefresh}">
 		${msgRefresh}
-	</button>
+	</a>
 </section>
 <section id="plugins">
 </section>

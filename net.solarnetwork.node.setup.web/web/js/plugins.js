@@ -4,8 +4,36 @@ SolarNode.Plugins = {
 
 SolarNode.Plugins.runtime = {};
 
-SolarNode.Plugins.refreshPluginList = function(container) {
-	SolarNode.Plugins.populateUI(container);
+SolarNode.Plugins.showLoading = function(button) {
+	var ladda = button.data('ladda');
+	if ( ladda === undefined ) {
+		button.button('loading');
+		ladda = Ladda.create(button.get(0));
+		button.data('ladda', ladda);
+		ladda.start();
+	}
+};
+
+SolarNode.Plugins.hideLoading = function(button) {
+	var ladda = button.data('ladda');
+	if ( ladda !== undefined ) {
+		button.button('reset');
+		ladda.stop();
+		button.removeData('ladda');
+	}
+};
+
+SolarNode.Plugins.refreshPluginList = function(url, container) {
+	SolarNode.Plugins.showLoading($('#plugins-refresh'));
+	$.getJSON(url, function(data) {
+		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			SolarNode.Plugins.hideLoading($('#plugins-refresh'));
+			// TODO: l10n
+			SolarNode.warn('Error!', 'An error occured refreshing plugin information.', list);
+			return;
+		}
+		SolarNode.Plugins.populateUI(container);
+	});
 };
 
 SolarNode.Plugins.populateUI = function(container) {
@@ -118,13 +146,9 @@ SolarNode.Plugins.populateUI = function(container) {
 		return row;
 	};
 	
-	var refreshBtn = $('#plugins-refresh');
-	refreshBtn.button('loading');
-	var ladda = Ladda.create(refreshBtn.get(0));
-	ladda.start();
+	SolarNode.Plugins.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
-		refreshBtn.button('reset');
-		ladda.stop();
+		SolarNode.Plugins.hideLoading($('#plugins-refresh'));
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
 			container.empty();
 			// TODO: l10n
@@ -186,9 +210,10 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 $(document).ready(function() {
 	var pluginsContainer = $('#plugins').first();
 	pluginsContainer.each(function() {
-		SolarNode.Plugins.refreshPluginList($(this));
+		SolarNode.Plugins.populateUI($(this));
 	});
-	$('#plugins-refresh').click(function() {
-		SolarNode.Plugins.refreshPluginList(pluginsContainer);
+	$('#plugins-refresh').click(function(event) {
+		event.preventDefault();
+		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsContainer);
 	});
 });
