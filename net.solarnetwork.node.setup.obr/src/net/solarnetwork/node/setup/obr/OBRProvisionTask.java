@@ -98,6 +98,13 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			throw new RuntimeException("Unable to create plugin directory: " + directory.toString());
 		}
 
+		// This method will manually download the bundle for each resolved plugin, 
+		// then install it and start it in the running OSGi platform. We don't
+		// make use of the OBR RepositoryAdmin to do this because on SolarNode
+		// the bundle's runtime area is held only in RAM (not persisted to disk)
+		// but we want these downloaded bundles to be persisted to disk. Thus we
+		// just do a bit of work here to download and start the bundles ourselves.
+
 		boolean refreshNeeded = false;
 		List<Bundle> installedBundles = new ArrayList<Bundle>(plugins.size());
 
