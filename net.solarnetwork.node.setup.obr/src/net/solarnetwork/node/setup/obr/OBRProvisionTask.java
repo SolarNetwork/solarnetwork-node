@@ -22,9 +22,13 @@
 
 package net.solarnetwork.node.setup.obr;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -36,6 +40,7 @@ import net.solarnetwork.node.setup.Plugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Version;
 import org.osgi.framework.wiring.FrameworkWiring;
 import org.osgi.service.obr.Resource;
 import org.slf4j.Logger;
@@ -120,17 +125,6 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			String pluginFileName = StringUtils.getFilename(resourceURL.getPath());
 			File outputFile = new File(directory, pluginFileName);
 			String bundleSymbolicName = resource.getSymbolicName();
-			Bundle oldBundle = findBundle(bundleSymbolicName);
-			if ( oldBundle != null ) {
-				try {
-					oldBundle.uninstall();
-					if ( !refreshNeeded ) {
-						refreshNeeded = true;
-					}
-				} catch ( BundleException e ) {
-					throw new RuntimeException("Unable to uninstall plugin " + bundleSymbolicName, e);
-				}
-			}
 			LOG.debug("Downloading plugin {} => {}", resourceURL, outputFile);
 			try {
 				FileCopyUtils.copy(resourceURL.openStream(), new FileOutputStream(outputFile));
@@ -140,11 +134,48 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
 			try {
 				URL newBundleURL = outputFile.toURI().toURL();
-				LOG.debug("Installing plugin {}", newBundleURL);
-				Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
-				LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
-						newBundle.getVersion());
-				installedBundles.add(newBundle);
+				Bundle oldBundle = findBundle(bundleSymbolicName);
+				if ( oldBundle != null ) {
+					Version oldVersion = oldBundle.getVersion();
+					LOG.debug("Upgrading plugin {} from {} to {}", bundleSymbolicName, oldVersion,
+							resource.getVersion());
+					InputStream in = null;
+					try {
+						in = new BufferedInputStream(new FileInputStream(outputFile));
+						oldBundle.update(in);
+
+						// try to delete the old version
+						File oldJar = new File(directory, bundleSymbolicName + "-" + oldVersion + ".jar");
+						if ( !oldJar.delete() ) {
+							LOG.warn("Error deleting old plugin " + oldJar.getName());
+						}
+
+						installedBundles.add(oldBundle);
+						LOG.info("Upgraded plugin {} from version {} to {}", bundleSymbolicName,
+								oldVersion, resource.getVersion());
+						if ( !refreshNeeded ) {
+							refreshNeeded = true;
+						}
+					} catch ( BundleException e ) {
+						throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
+					} catch ( FileNotFoundException e ) {
+						throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
+					} finally {
+						if ( in != null ) {
+							try {
+								in.close();
+							} catch ( IOException e ) {
+								// ignore
+							}
+						}
+					}
+				} else {
+					LOG.debug("Installing plugin {} version {}", newBundleURL, resource.getVersion());
+					Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
+					LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
+							newBundle.getVersion());
+					installedBundles.add(newBundle);
+				}
 			} catch ( BundleException e ) {
 				throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
 			} catch ( MalformedURLException e ) {
@@ -157,7 +188,9 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		for ( ListIterator<Bundle> itr = installedBundles.listIterator(); itr.hasNext(); ) {
 			Bundle b = itr.next();
 			try {
-				b.start();
+				if ( !(b.getState() == Bundle.ACTIVE || b.getState() == Bundle.STARTING) ) {
+					b.start();
+				}
 				// bundles are in reverse order of plugins
 				Plugin p = plugins.get(plugins.size() - itr.nextIndex());
 				status.markPluginStarted(p);
