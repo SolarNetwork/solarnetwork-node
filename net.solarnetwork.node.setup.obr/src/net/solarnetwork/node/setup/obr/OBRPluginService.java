@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
@@ -116,7 +117,7 @@ public class OBRPluginService implements PluginService {
 	private final ConcurrentMap<String, OBRProvisionTask> provisionTaskMap = new ConcurrentHashMap<String, OBRProvisionTask>(
 			4);
 	private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(0);
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -363,8 +364,8 @@ public class OBRPluginService implements PluginService {
 			cleanerTask = new TaskCleaner();
 			log.debug("Scheduling TaskCleaner thread at fixed delay {} seconds",
 					provisionTaskStatusMinimumKeepSeconds);
-			//scheduler.scheduleWithFixedDelay(cleanerTask, provisionTaskStatusMinimumKeepSeconds,
-			//		provisionTaskStatusMinimumKeepSeconds, TimeUnit.SECONDS);
+			scheduler.scheduleWithFixedDelay(cleanerTask, provisionTaskStatusMinimumKeepSeconds,
+					provisionTaskStatusMinimumKeepSeconds, TimeUnit.SECONDS);
 		}
 
 		// return a copy, like a snapshot, so we don't deal with threading
