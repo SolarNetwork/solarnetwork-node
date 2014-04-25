@@ -355,7 +355,7 @@ public class OBRPluginService implements PluginService {
 	@Override
 	public synchronized PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
 		OBRPluginProvisionStatus status = resolveInstall(uids, locale, generateProvisionID());
-		OBRProvisionTask task = new OBRProvisionTask(status, new File(downloadPath));
+		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
 		saveProvisionTask(task);
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);

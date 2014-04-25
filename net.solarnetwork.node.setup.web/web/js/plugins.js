@@ -210,10 +210,14 @@ SolarNode.Plugins.handleInstall = function(form) {
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
 			SolarNode.Plugins.populateUI($('#plugins'));
+			refreshPluginListOnModalClose = false;
 		}
 		
 		// in case we were still polling when close... don't bother to keep going
 		keepPollingForStatus = false;
+		
+		// clear out any error/message
+		errorContainer.addClass('hide').empty();
 	});
 	form.ajaxForm({
 		dataType: 'json',

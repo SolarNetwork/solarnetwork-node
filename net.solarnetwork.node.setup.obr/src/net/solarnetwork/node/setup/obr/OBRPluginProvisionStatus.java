@@ -45,6 +45,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	private Long overallDownloadedSize;
 	private List<Plugin> pluginsToInstall = Collections.emptyList();
 	private Set<Plugin> pluginsInstalled = Collections.emptySet();
+	private Set<Plugin> pluginsStarted = Collections.emptySet();
 	private List<Plugin> pluginsToRemove = Collections.emptyList();
 	private Set<Plugin> pluginsRemoved = Collections.emptySet();
 
@@ -80,6 +81,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		overallDownloadSize = other.overallDownloadSize;
 		pluginsToInstall = new ArrayList<Plugin>(other.pluginsToInstall);
 		pluginsInstalled = new HashSet<Plugin>(other.pluginsInstalled);
+		pluginsStarted = new HashSet<Plugin>(other.pluginsStarted);
 		pluginsToRemove = new ArrayList<Plugin>(other.pluginsToRemove);
 		pluginsRemoved = new HashSet<Plugin>(other.pluginsRemoved);
 	}
@@ -120,6 +122,31 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	}
 
 	/**
+	 * Mark a given Plugin from the {@link #getPluginsToInstall()} list as
+	 * started.
+	 * 
+	 * @param plugin
+	 *        the plugin to mark as started
+	 */
+	public void markPluginStarted(Plugin plugin) {
+		if ( pluginsToInstall == null || !pluginsToInstall.contains(plugin) ) {
+			return;
+		}
+		if ( pluginsStarted != null && !pluginsStarted.contains(plugin) ) {
+			try {
+				pluginsStarted.add(plugin);
+			} catch ( UnsupportedOperationException e ) {
+				// read-only list, so convert to writable one
+				Set<Plugin> installed = new HashSet<Plugin>(pluginsToInstall.size());
+				installed.add(plugin);
+				pluginsStarted = installed;
+			}
+		} else {
+			pluginsStarted = Collections.singleton(plugin);
+		}
+	}
+
+	/**
 	 * Mark a given Plugin from the {@link #getPluginsToRemove()} list as
 	 * removed.
 	 * 
@@ -154,8 +181,9 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 			progress += (float) (overallDownloadedSize.doubleValue() / overallDownloadSize.doubleValue());
 		}
 		if ( pluginsToInstall != null && pluginsToInstall.size() > 0 && pluginsInstalled != null ) {
-			steps++;
+			steps += 2;
 			progress += (float) ((double) pluginsInstalled.size() / (double) pluginsToInstall.size());
+			progress += (float) ((double) pluginsStarted.size() / (double) pluginsToInstall.size());
 		}
 		if ( pluginsToRemove != null && pluginsToRemove.size() > 0 && pluginsRemoved != null ) {
 			steps++;

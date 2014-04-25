@@ -23,8 +23,8 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
-import net.solarnetwork.node.setup.LocalizedPluginInfo;
 import net.solarnetwork.node.setup.BundlePluginVersion;
+import net.solarnetwork.node.setup.LocalizedPluginInfo;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginInfo;
 import net.solarnetwork.node.setup.PluginVersion;
@@ -83,6 +83,15 @@ public class OBRResourcePlugin implements Plugin {
 	@Override
 	public PluginInfo getLocalizedInfo(Locale locale) {
 		return new LocalizedPluginInfo(info, locale);
+	}
+
+	/**
+	 * Get the Resource associated with this Plugin.
+	 * 
+	 * @return the Resource
+	 */
+	Resource getResource() {
+		return resource;
 	}
 
 }
