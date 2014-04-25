@@ -60,7 +60,7 @@ var SolarNode = {
 	 */
 	errorAlert : function(contents) {
 		$('body').append(
-				$('<div class="alert alert-error"><button class="close btn" data-dismiss="alert"><i class="icon-remove"></i></button></div>')
+				$('<div class="alert alert-error"><button class="close btn" data-dismiss="alert">&times;</button></div>')
 				.append(contents));
 	},
 	
@@ -82,12 +82,36 @@ var SolarNode = {
 		return msg;
 	 },
 	 
-	 warn : function(title, message, container) {
+	 alert : function(title, message, style, container) {
 		 container = container || $('#body-container');
 		 if ( container ) {
-			 container.prepend('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button><strong>'
-					 +title +'</strong> ' +message +'</div>');
+			 var alert = $('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+			 if ( title ) {
+				 $('<strong/>').append(title).appendTo(alert);
+				 if ( message ) {
+					 $(' ').appendTo(alert);
+				 }
+			 }
+			 if ( message ) {
+				 alert.append(message);
+			 }
+			 if ( style ) {
+				 alert.addClass(style);
+			 }
+			 container.prepend(alert);
 		 }
+	 },
+	 
+	 info : function(message, container) {
+		 SolarNode.alert(null, message, 'alert-info', container);
+	 },
+	 
+	 warn : function(title, message, container) {
+		 SolarNode.alert(title, message, null, container);
+	 },
+	 
+	 error : function(message, container) {
+		 SolarNode.alert(null, message, 'alert-error', container);
 	 }
 	
 };
@@ -227,6 +251,25 @@ SolarNode.context = (function() {
 	
 	return helper;
 })();
+
+SolarNode.showLoading = function(button) {
+	var ladda = button.data('ladda');
+	if ( ladda === undefined ) {
+		button.button('loading');
+		ladda = Ladda.create(button.get(0));
+		button.data('ladda', ladda);
+		ladda.start();
+	}
+};
+
+SolarNode.hideLoading = function(button) {
+	var ladda = button.data('ladda');
+	if ( ladda !== undefined ) {
+		button.button('reset');
+		ladda.stop();
+		button.removeData('ladda');
+	}
+};
 
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {

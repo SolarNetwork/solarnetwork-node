@@ -34,7 +34,12 @@ import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.SimplePluginQuery;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -80,9 +85,56 @@ public class PluginController {
 	@Resource(name = "pluginService")
 	private OptionalService<PluginService> pluginService;
 
+	@Autowired(required = true)
+	private MessageSource messageSource;
+
+	private long statusPollTimeoutMs = 1000L * 15L;
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	public static final String ERROR_UNKNOWN_PROVISION_ID = "unknown.provisionID";
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	@ResponseBody
+	public Response<Object> unknownProvisionID(IllegalArgumentException e, Locale locale) {
+		return new Response<Object>(Boolean.FALSE, ERROR_UNKNOWN_PROVISION_ID, messageSource.getMessage(
+				"plugins.error.unknown-provisionID", null, locale), null);
+	}
+
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
 		return "plugins/list";
+	}
+
+	@RequestMapping(value = "/provisionStatus", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<PluginProvisionStatus> status(@RequestParam(value = "id") final String provisionID,
+			@RequestParam(value = "p", required = false) final Integer knownProgress, final Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+		log.debug("Looking up provision status {}", provisionID);
+		// we assume a long-poll request here, so wait until the status changes
+		PluginProvisionStatus status;
+		int progress = (knownProgress != null ? knownProgress.intValue() : 0);
+		final long maxTime = System.currentTimeMillis() + statusPollTimeoutMs;
+		while ( true ) {
+			status = service.statusForProvisioningOperation(provisionID, locale);
+			if ( status == null ) {
+				// the provision ID is not available
+				throw new IllegalArgumentException(provisionID);
+			}
+			int newProgress = Math.round(status.getOverallProgress() * 100f);
+			if ( newProgress > progress || System.currentTimeMillis() > maxTime ) {
+				return response(status);
+			}
+			try {
+				Thread.sleep(1000);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
+		}
 	}
 
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -124,6 +176,30 @@ public class PluginController {
 		}
 		Collection<String> uids = Collections.singleton(uid);
 		return response(service.previewInstallPlugins(uids, locale));
+	}
+
+	@RequestMapping(value = "/install", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<PluginProvisionStatus> install(@RequestParam(value = "uid") final String uid,
+			final Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+		Collection<String> uids = Collections.singleton(uid);
+		return response(service.installPlugins(uids, locale));
+	}
+
+	public void setPluginService(OptionalService<PluginService> pluginService) {
+		this.pluginService = pluginService;
+	}
+
+	public void setStatusPollTimeoutMs(long statusPollTimeoutMs) {
+		this.statusPollTimeoutMs = statusPollTimeoutMs;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

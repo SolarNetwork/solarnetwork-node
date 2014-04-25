@@ -4,30 +4,11 @@ SolarNode.Plugins = {
 
 SolarNode.Plugins.runtime = {};
 
-SolarNode.Plugins.showLoading = function(button) {
-	var ladda = button.data('ladda');
-	if ( ladda === undefined ) {
-		button.button('loading');
-		ladda = Ladda.create(button.get(0));
-		button.data('ladda', ladda);
-		ladda.start();
-	}
-};
-
-SolarNode.Plugins.hideLoading = function(button) {
-	var ladda = button.data('ladda');
-	if ( ladda !== undefined ) {
-		button.button('reset');
-		ladda.stop();
-		button.removeData('ladda');
-	}
-};
-
 SolarNode.Plugins.refreshPluginList = function(url, container) {
-	SolarNode.Plugins.showLoading($('#plugins-refresh'));
+	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			SolarNode.Plugins.hideLoading($('#plugins-refresh'));
+			SolarNode.hideLoading($('#plugins-refresh'));
 			// TODO: l10n
 			SolarNode.warn('Error!', 'An error occured refreshing plugin information.', list);
 			return;
@@ -146,11 +127,11 @@ SolarNode.Plugins.populateUI = function(container) {
 		return row;
 	};
 	
-	SolarNode.Plugins.showLoading($('#plugins-refresh'));
+	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
-		SolarNode.Plugins.hideLoading($('#plugins-refresh'));
+		SolarNode.hideLoading($('#plugins-refresh'));
+		container.empty();
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			container.empty();
 			// TODO: l10n
 			SolarNode.warn('Error!', 'An error occured loading plugin information.', container);
 			return;
@@ -207,6 +188,91 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 	});
 };
 
+SolarNode.Plugins.handleInstall = function(form) {
+	var progressBar = form.find('.progress');
+	var progressFill = progressBar.find('.bar');
+	var installBtn = form.find('button[type=submit]');
+	var errorContainer = $('#plugin-install-error');
+	var refreshPluginListOnModalClose = false;
+	var keepPollingForStatus = true;
+	
+	var showAlert = function(msg) {
+		SolarNode.hideLoading(installBtn);
+		progressBar.addClass('hide');
+		SolarNode.error(SolarNode.i18n(installBtn.data('msg-error'), [msg]), errorContainer);
+	};
+	form.on('hidden', function() {
+		// tidy up in case closed before completed
+		SolarNode.hideLoading(installBtn);
+		progressBar.addClass('hide');
+		installBtn.removeClass('hide');
+		
+		// refresh the plugin list, if we've installed/removed anything
+		if ( refreshPluginListOnModalClose === true ) {
+			SolarNode.Plugins.populateUI($('#plugins'));
+		}
+		
+		// in case we were still polling when close... don't bother to keep going
+		keepPollingForStatus = false;
+	});
+	form.ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(dataArray, form, options) {
+			// start a progress bar on the install button so we know a install is happening
+			progressBar.removeClass('hide');
+			progressFill.css('width', '0%');
+			errorContainer.empty();
+			SolarNode.showLoading(installBtn);
+		},
+		success: function(json, status, xhr, form) {
+			if ( json.success !== true ) {
+				SolarNode.hideLoading(installBtn);
+				showAlert(json.message);
+				return;
+			}
+			// TODO: support message? var message = json.data.statusMessage;
+			var progress = Math.round(json.data.overallProgress * 100);
+			var pollURL = SolarNode.context.path('/plugins/provisionStatus') +'?id=' 
+					+encodeURIComponent(json.data.provisionID) +'&p=';
+			(function poll() {
+			    $.ajax({ 
+			    	url: (pollURL + progress),
+			    	dataType: "json",
+			    	success: function(json) {
+			    		if ( json.success === true && json.data !== undefined ) {
+			    			progress = Math.round(json.data.overallProgress * 100);
+			    			progressFill.css('width', progress +'%');
+			    		} else {
+			    			if ( json.message !== undefined ) {
+			    				showAlert(json.message);
+			    			}
+			    			keepPollingForStatus = false;
+			    		}
+			    	}, 
+			    	complete: function(xhr, status) {
+			    		if ( status === 'error' ) {
+			    			showAlert(xhr.statusText);
+			    		} else if ( !(progress < 100) ) {
+							SolarNode.hideLoading(installBtn);
+			    			progressBar.addClass('hide');
+			    			installBtn.addClass('hide');
+			    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
+			    			refreshPluginListOnModalClose = true;
+			    		} else if ( keepPollingForStatus ) {
+			    			poll();
+			    		}
+			    	}, 
+			    	timeout: 20000,
+			    });
+			})();
+		},
+		error: function(xhr, status, statusText) {
+			SolarNode.hideLoading(installBtn);
+			showAlert(statusText);
+		}
+	});
+};
+
 $(document).ready(function() {
 	var pluginsContainer = $('#plugins').first();
 	pluginsContainer.each(function() {
@@ -215,5 +281,8 @@ $(document).ready(function() {
 	$('#plugins-refresh').click(function(event) {
 		event.preventDefault();
 		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsContainer);
+	});
+	$('#plugin-preview-install-modal').first().each(function() {
+		SolarNode.Plugins.handleInstall($(this));
 	});
 });

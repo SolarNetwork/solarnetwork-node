@@ -24,7 +24,9 @@ package net.solarnetwork.node.setup.obr;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginProvisionStatus;
 
@@ -42,9 +44,9 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	private Long overallDownloadSize;
 	private Long overallDownloadedSize;
 	private List<Plugin> pluginsToInstall = Collections.emptyList();
-	private List<Plugin> pluginsInstalled = Collections.emptyList();
+	private Set<Plugin> pluginsInstalled = Collections.emptySet();
 	private List<Plugin> pluginsToRemove = Collections.emptyList();
-	private List<Plugin> pluginsRemoved = Collections.emptyList();
+	private Set<Plugin> pluginsRemoved = Collections.emptySet();
 
 	/**
 	 * Construct with an ID.
@@ -77,9 +79,9 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		overallDownloadedSize = other.overallDownloadedSize;
 		overallDownloadSize = other.overallDownloadSize;
 		pluginsToInstall = new ArrayList<Plugin>(other.pluginsToInstall);
-		pluginsInstalled = new ArrayList<Plugin>(other.pluginsInstalled);
+		pluginsInstalled = new HashSet<Plugin>(other.pluginsInstalled);
 		pluginsToRemove = new ArrayList<Plugin>(other.pluginsToRemove);
-		pluginsRemoved = new ArrayList<Plugin>(other.pluginsRemoved);
+		pluginsRemoved = new HashSet<Plugin>(other.pluginsRemoved);
 	}
 
 	@Override
@@ -90,6 +92,56 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	@Override
 	public String getStatusMessage() {
 		return statusMessage;
+	}
+
+	/**
+	 * Mark a given Plugin from the {@link #getPluginsToInstall()} list as
+	 * installed.
+	 * 
+	 * @param plugin
+	 *        the plugin to mark as installed
+	 */
+	public void markPluginInstalled(Plugin plugin) {
+		if ( pluginsToInstall == null || !pluginsToInstall.contains(plugin) ) {
+			return;
+		}
+		if ( pluginsInstalled != null && !pluginsInstalled.contains(plugin) ) {
+			try {
+				pluginsInstalled.add(plugin);
+			} catch ( UnsupportedOperationException e ) {
+				// read-only list, so convert to writable one
+				Set<Plugin> installed = new HashSet<Plugin>(pluginsToInstall.size());
+				installed.add(plugin);
+				pluginsInstalled = installed;
+			}
+		} else {
+			pluginsInstalled = Collections.singleton(plugin);
+		}
+	}
+
+	/**
+	 * Mark a given Plugin from the {@link #getPluginsToRemove()} list as
+	 * removed.
+	 * 
+	 * @param plugin
+	 *        the plugin to mark as removed
+	 */
+	public void markPluginRemoved(Plugin plugin) {
+		if ( pluginsToRemove == null || !pluginsToRemove.contains(plugin) ) {
+			return;
+		}
+		if ( pluginsRemoved != null && !pluginsRemoved.contains(plugin) ) {
+			try {
+				pluginsInstalled.add(plugin);
+			} catch ( UnsupportedOperationException e ) {
+				// read-only list, so convert to writable one
+				Set<Plugin> installed = new HashSet<Plugin>(pluginsToRemove.size());
+				installed.add(plugin);
+				pluginsRemoved = installed;
+			}
+		} else {
+			pluginsRemoved = Collections.singleton(plugin);
+		}
 	}
 
 	@Override
@@ -132,20 +184,12 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		return pluginsToRemove;
 	}
 
-	public List<Plugin> getPluginsInstalled() {
+	public Set<Plugin> getPluginsInstalled() {
 		return pluginsInstalled;
 	}
 
-	public void setPluginsInstalled(List<Plugin> pluginsInstalled) {
-		this.pluginsInstalled = pluginsInstalled;
-	}
-
-	public List<Plugin> getPluginsRemoved() {
+	public Set<Plugin> getPluginsRemoved() {
 		return pluginsRemoved;
-	}
-
-	public void setPluginsRemoved(List<Plugin> pluginsRemoved) {
-		this.pluginsRemoved = pluginsRemoved;
 	}
 
 	public void setStatusMessage(String statusMessage) {

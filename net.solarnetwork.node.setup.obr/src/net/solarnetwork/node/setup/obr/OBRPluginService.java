@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.obr;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,15 +30,19 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
@@ -103,14 +108,44 @@ public class OBRPluginService implements PluginService {
 	private String downloadPath = "app/main";
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
+	private TaskCleaner cleanerTask;
+	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
 
 	private final ConcurrentMap<URL, OBRRepositoryStatus> repoStatusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
-	private final ConcurrentMap<String, OBRPluginProvisionStatus> provisionStatusMap = new ConcurrentHashMap<String, OBRPluginProvisionStatus>(
+	private final ConcurrentMap<String, OBRProvisionTask> provisionTaskMap = new ConcurrentHashMap<String, OBRProvisionTask>(
 			4);
 	private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+	private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(0);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	// static, so we don't hang onto cyclic reference to self
+	private class TaskCleaner implements Runnable {
+
+		@Override
+		public void run() {
+			Iterator<OBRProvisionTask> itr;
+			final long now = System.currentTimeMillis();
+			final long min = provisionTaskStatusMinimumKeepSeconds * 1000L;
+			for ( itr = provisionTaskMap.values().iterator(); itr.hasNext(); ) {
+				OBRProvisionTask task = itr.next();
+				if ( task.getFuture().isDone() && (now - task.getStatus().getCreationDate()) > min ) {
+					log.debug("Cleaning out old provision task status {}", task.getStatus()
+							.getProvisionID());
+					itr.remove();
+				}
+			}
+
+		}
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		// just in case... clean up our timers
+		destroy();
+		super.finalize();
+	}
 
 	/**
 	 * Call to initialize the service, after all properties have been
@@ -122,6 +157,14 @@ public class OBRPluginService implements PluginService {
 				configureOBRRepository(repo);
 			}
 		}
+	}
+
+	/**
+	 * Call to destory this service, cleaning up any resources.
+	 */
+	public void destroy() {
+		executorService.shutdownNow();
+		scheduler.shutdownNow();
 	}
 
 	@Override
@@ -175,6 +218,7 @@ public class OBRPluginService implements PluginService {
 		URL repoURL = repository.getURL();
 		if ( repoURL != null && !configuredURLs.contains(repoURL) ) {
 			try {
+				log.info("Adding OBR plugin repository {}", repoURL);
 				repositoryAdmin.addRepository(repoURL);
 				OBRRepositoryStatus status = getOrCreateStatus(repoURL);
 				status.setConfigured(true);
@@ -293,6 +337,14 @@ public class OBRPluginService implements PluginService {
 		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
 
+	private String generateProvisionID() {
+		return UUID.randomUUID().toString();
+	}
+
+	private void saveProvisionTask(OBRProvisionTask task) {
+		provisionTaskMap.put(task.getStatus().getProvisionID(), task);
+	}
+
 	@Override
 	public PluginProvisionStatus removePlugins(Collection<String> uids, Locale locale) {
 		// TODO Auto-generated method stub
@@ -300,15 +352,29 @@ public class OBRPluginService implements PluginService {
 	}
 
 	@Override
-	public PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
-		// TODO Auto-generated method stub
-		return null;
+	public synchronized PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
+		OBRPluginProvisionStatus status = resolveInstall(uids, locale, generateProvisionID());
+		OBRProvisionTask task = new OBRProvisionTask(status, new File(downloadPath));
+		saveProvisionTask(task);
+		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
+		task.setFuture(future);
+
+		if ( cleanerTask == null ) {
+			cleanerTask = new TaskCleaner();
+			log.debug("Scheduling TaskCleaner thread at fixed delay {} seconds",
+					provisionTaskStatusMinimumKeepSeconds);
+			//scheduler.scheduleWithFixedDelay(cleanerTask, provisionTaskStatusMinimumKeepSeconds,
+			//		provisionTaskStatusMinimumKeepSeconds, TimeUnit.SECONDS);
+		}
+
+		// return a copy, like a snapshot, so we don't deal with threading
+		return new OBRPluginProvisionStatus(status);
 	}
 
 	@Override
 	public PluginProvisionStatus statusForProvisioningOperation(String provisionID, Locale locale) {
-		// TODO Auto-generated method stub
-		return null;
+		OBRProvisionTask task = provisionTaskMap.get(provisionID);
+		return (task == null ? null : new OBRPluginProvisionStatus(task.getStatus()));
 	}
 
 	private SearchFilter filterForPluginUIDs(Collection<String> uids) {
@@ -433,6 +499,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setDownloadPath(String downloadPath) {
 		this.downloadPath = downloadPath;
+	}
+
+	public void setProvisionTaskStatusMinimumKeepSeconds(long provisionTaskStatusMinimumKeepSeconds) {
+		this.provisionTaskStatusMinimumKeepSeconds = provisionTaskStatusMinimumKeepSeconds;
 	}
 
 }

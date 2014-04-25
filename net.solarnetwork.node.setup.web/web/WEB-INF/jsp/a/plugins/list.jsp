@@ -4,9 +4,7 @@
 	<fmt:message key="plugins.refresh.button" var="msgRefresh"/>
 	<c:url value="/plugins/refresh" var="urlPluginRefresh"/>
 	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right" href="${urlPluginRefresh}"
-		data-loading-text="${msgLoading}"
-		data-msg-loading="${msgLoading}"
-		data-msg-refresh="${msgRefresh}">
+		data-loading-text="${msgLoading}">
 		${msgRefresh}
 	</a>
 </section>
@@ -23,10 +21,20 @@
 	<div class="modal-body">
 		<p><fmt:message key="plugin.install.intro"/></p>
 		<div id="plugin-preview-install-list"></div>
+		<div class="progress progress-striped active hide">
+			<div class="bar"></div>
+	    </div>
+	    <div id="plugin-install-error"></div>
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="uid" value=""/>
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
-		<button type="submit" class="btn btn-primary">${msgInstall}</button>
+		<fmt:message key="plugin.installing.message" var="msgInstalling"/>
+		<fmt:message key="plugin.install.error" var="msgInstallError"/>
+		<fmt:message key="plugin.install.success" var="msgInstallSuccess"/>
+		<button type="submit" class="btn btn-primary ladda-button expand-right"
+			data-msg-error="${msgInstallError}"
+			data-msg-success="${msgInstallSuccess}"
+			data-loading-text="${msgInstalling}">${msgInstall}</button>
 	</div>
 </form>

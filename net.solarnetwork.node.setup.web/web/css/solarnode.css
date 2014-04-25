@@ -138,3 +138,12 @@ pre.pre-scrollable {
 #plugins {
 	margin-top: 1em;
 }
+
+#plugin-preview-install-modal .progress {
+	margin-top: 20px;
+	margin-bottom: 5px;
+}
+
+#plugin-install-error .alert {
+	margin-bottom: 0;
+}
