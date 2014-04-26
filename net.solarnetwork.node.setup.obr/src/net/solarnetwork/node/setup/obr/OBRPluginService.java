@@ -51,12 +51,12 @@ import net.solarnetwork.node.setup.PluginProvisionException;
 import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginQuery;
 import net.solarnetwork.node.setup.PluginService;
-import net.solarnetwork.node.setup.PluginVersion;
 import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.support.SearchFilter.CompareOperator;
 import net.solarnetwork.support.SearchFilter.LogicOperator;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Version;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
 import org.osgi.service.obr.Requirement;
@@ -238,27 +238,19 @@ public class OBRPluginService implements PluginService {
 			return Collections.emptyList();
 		}
 		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query));
-		List<Plugin> plugins = new ArrayList<Plugin>(resources == null ? 0 : resources.length);
-		Map<String, Plugin> latestVersions = (query.isLatestVersionOnly() ? new HashMap<String, Plugin>(
-				resources.length) : null);
+		if ( resources == null || resources.length < 1 ) {
+			return Collections.emptyList();
+		}
+
+		if ( query.isLatestVersionOnly() ) {
+			resources = getLatestVersions(resources);
+		}
+
+		List<Plugin> plugins = new ArrayList<Plugin>(resources.length);
 		for ( Resource r : resources ) {
 			Plugin p = new OBRResourcePlugin(r);
-			if ( latestVersions != null ) {
-				Plugin seenPlugin = latestVersions.get(r.getSymbolicName());
-				PluginVersion seenVersion = (seenPlugin == null ? null : seenPlugin.getVersion());
-				if ( seenVersion != null && seenVersion.compareTo(p.getVersion()) < 0 ) {
-					// newer version... so remove older one from results
-					plugins.remove(seenPlugin);
-				} else if ( seenVersion != null ) {
-					// skip older version
-					continue;
-				}
-			}
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
-			}
-			if ( latestVersions != null ) {
-				latestVersions.put(r.getSymbolicName(), p);
 			}
 			plugins.add(p);
 		}
@@ -392,6 +384,23 @@ public class OBRPluginService implements PluginService {
 		return resolveInstall(uids, locale, PREVIEW_PROVISION_ID);
 	}
 
+	private Resource[] getLatestVersions(Resource[] resources) {
+		Map<String, Resource> latestVersions = new LinkedHashMap<String, Resource>(resources.length);
+		for ( Resource r : resources ) {
+			Resource seenResource = latestVersions.get(r.getSymbolicName());
+			Version seenVersion = (seenResource == null ? null : seenResource.getVersion());
+			if ( seenVersion != null && seenVersion.compareTo(r.getVersion()) < 0 ) {
+				// newer version... so remove older one from results
+				latestVersions.remove(r.getSymbolicName());
+			} else if ( seenVersion != null ) {
+				// skip older version
+				continue;
+			}
+			latestVersions.put(r.getSymbolicName(), r);
+		}
+		return latestVersions.values().toArray(new Resource[latestVersions.size()]);
+	}
+
 	private OBRPluginProvisionStatus resolveInstall(Collection<String> uids, Locale locale,
 			String provisionID) {
 		if ( uids == null || uids.size() < 1 || repositoryAdmin == null ) {
@@ -404,6 +413,9 @@ public class OBRPluginService implements PluginService {
 		if ( resources == null || resources.length < 1 ) {
 			return new OBRPluginProvisionStatus(PREVIEW_PROVISION_ID);
 		}
+
+		// filter out duplicate, older versions
+		resources = getLatestVersions(resources);
 
 		// resolve the complete list of resources we need
 		Resolver resolver = repositoryAdmin.resolver();
