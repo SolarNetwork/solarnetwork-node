@@ -18,6 +18,7 @@
 </section>
 <section id="plugins" data-msg-install="${msgInstall}" data-msg-upgrade="${msgUpgrade}" data-msg-remove="${msgRemove}">
 	<h2><fmt:message key="plugins.available.title"/></h2>
+	<p><fmt:message key="plugins.available.intro"/></p>
 	<div class="list-content"></div>
 </section>
 

@@ -86,9 +86,10 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 			}
 			result.groups[groupName].push(plugin);
 			installedPlugin = result.installed[plugin.uid];
+			// the following assumes plugin names are unique, which seems OK for now
 			if ( installedPlugin !== undefined && SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 				result.upgradableNames.push(plugin.info.name);
-				result.upgradable[plugin.uid] = plugin;
+				result.upgradable[plugin.info.name] = plugin;
 			}
 		}
 		result.groupNames.sort();
@@ -141,8 +142,9 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
 		SolarNode.hideLoading($('#plugins-refresh'));
-		availableContainer.empty();
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			availableContainer.empty();
+			upgradeContainer.empty();
 			// TODO: l10n
 			SolarNode.warn('Error!', 'An error occured loading plugin information.', availableContainer);
 			return;
@@ -150,11 +152,23 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		var i, iMax;
 		var j, jMax;
 		var groupedPlugins = groupPlugins(data.data);
-		var html = $('<div class="accordion" id="plugin-list"/>');
+		var html = undefined;
 		var groupBody = undefined;
 		var groupName = undefined;
 		var group = undefined;
 		var plugin = undefined;
+		html = $('<div id="plugin-upgrade-list"/>');
+		for ( i = 0, iMax = groupedPlugins.upgradableNames.length; i < iMax; i++ ) {
+			plugin = groupedPlugins.upgradable[groupedPlugins.upgradableNames[i]];
+			html.append(createPluginUI(plugin, groupedPlugins.installed));
+		}
+		if ( iMax > 0 ) {
+			upgradeContainer.html(html);
+			upgradeSection.removeClass('hide');
+		} else {
+			upgradeSection.addClass('hide');
+		}
+		html = $('<div class="accordion" id="plugin-list"/>');
 		for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
 			groupName = groupedPlugins.groupNames[i];
 			groupBody = createGroup(groupName, html);
@@ -220,7 +234,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 		
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
-			SolarNode.Plugins.populateUI($('#plugins'));
+			SolarNode.Plugins.populateUI($('#plugins'), $('#plugin-upgrades'));
 			refreshPluginListOnModalClose = false;
 		}
 		
