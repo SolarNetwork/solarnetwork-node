@@ -126,6 +126,10 @@ pre.pre-scrollable {
 	overflow-y: auto;
 }
 
+.label.suffix {
+	margin-left: 1em;
+}
+
 #weather-lookup-modal {
 	width: 700px;
 	margin-left: -350px;
@@ -137,6 +141,11 @@ pre.pre-scrollable {
 
 #plugins {
 	margin-top: 1em;
+}
+
+#plugin-upgrades button,
+#plugins button {
+	width: 7em;
 }
 
 #plugin-preview-install-modal .progress {

@@ -1,9 +1,9 @@
-<section class="intro">
+<section class="intro clearfix">
 	<p><fmt:message key="plugins.intro"/></p>
 	<fmt:message key="plugins.loading.message" var="msgLoading"/>
 	<fmt:message key="plugins.refresh.button" var="msgRefresh"/>
 	<c:url value="/plugins/refresh" var="urlPluginRefresh"/>
-	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right" href="${urlPluginRefresh}"
+	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right pull-right" href="${urlPluginRefresh}"
 		data-loading-text="${msgLoading}">
 		${msgRefresh}
 	</a>

@@ -34,6 +34,14 @@ SolarNode.Plugins.refreshPluginList = function(url, container, upgradeContainer)
 	});
 };
 
+SolarNode.Plugins.versionLabel = function(plugin) {
+	var version = plugin.version.major + '.' + plugin.version.minor;
+	if ( plugin.version.micro > 0 ) {
+		version += '.' + plugin.version.micro;
+	}
+	return version;
+};
+
 SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 	var url = SolarNode.context.path('/plugins/list');
 	var availableContainer = availableSection.children('.list-content');
@@ -114,23 +122,42 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		return innerBody;
 	};
 	
-	var createPluginUI = function(plugin, installed) {
+	var createPluginUI = function(plugin, installed, showVersions) {
 		var id = "Plugin-" +plugin.uid.replace(/\W/g, '-');
-		var row = $('<div class="plugin clearfix"/>').attr('id', id).text(plugin.info.name);
-		var actionContainer = $('<div class="pull-right"/>').appendTo(row);
+		var row = $('<div class="plugin row-fluid"/>').attr('id', id);
 		var installedPlugin = installed[plugin.uid];
+		var titleContainer = $('<div/>').addClass(showVersions ? 'span9' : 'span10').text(plugin.info.name);
+		titleContainer.appendTo(row);
+		if ( showVersions === true ) {
+			var versionContainer = $('<div class="span1"/>').appendTo(row);
+			var versionLabel = $('<span class="label">' +SolarNode.Plugins.versionLabel(plugin) +'</span>');
+			if ( installedPlugin === undefined ) {
+				// not installed... leave default style
+			} else if ( SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
+				// update available
+				versionLabel.addClass('label-info');
+				
+				// also add existing version to title
+				$('<span class="label suffix">' +SolarNode.Plugins.versionLabel(installedPlugin) +'</span>').appendTo(titleContainer);
+			} else {
+				// installed
+				versionLabel.addClass('label-important');
+			}
+			versionLabel.appendTo(versionContainer);
+		}
+		var actionContainer = $('<div class="span2"/>').appendTo(row);
 		var button = undefined;
 		if ( installedPlugin === undefined ) {
 			// not installed; offer to install it
-			button = $('<button class="btn btn-small btn-primary span2">').text(availableSection.data('msg-install'));
+			button = $('<button type="button" class="btn btn-small btn-primary">').text(availableSection.data('msg-install'));
 			actionContainer.append(button);
 		} else if ( SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 			// update available
-			button = $('<button class="btn btn-small btn-info span2">').text(availableSection.data('msg-upgrade'));
+			button = $('<button type="button" class="btn btn-small btn-info">').text(availableSection.data('msg-upgrade'));
 			actionContainer.append(button);
 		} else {
 			// installed
-			button = $('<button class="btn btn-small btn-danger span2"/>').text(availableSection.data('msg-remove'));
+			button = $('<button type="button" class="btn btn-small btn-danger"/>').text(availableSection.data('msg-remove'));
 			actionContainer.append(button);
 		}
 		button.click(function() {
@@ -160,7 +187,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		html = $('<div id="plugin-upgrade-list"/>');
 		for ( i = 0, iMax = groupedPlugins.upgradableNames.length; i < iMax; i++ ) {
 			plugin = groupedPlugins.upgradable[groupedPlugins.upgradableNames[i]];
-			html.append(createPluginUI(plugin, groupedPlugins.installed));
+			html.append(createPluginUI(plugin, groupedPlugins.installed, true));
 		}
 		if ( iMax > 0 ) {
 			upgradeContainer.html(html);
@@ -202,10 +229,7 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 		var version;
 		for ( i = 0, len = data.data.pluginsToInstall.length; i < len; i++ ) {
 			pluginToInstall = data.data.pluginsToInstall[i];
-			version = pluginToInstall.version.major + '.' + pluginToInstall.version.minor;
-			if ( pluginToInstall.version.micro > 0 ) {
-				version += '.' + pluginToInstall.version.micro;
-			}
+			version = SolarNode.Plugins.versionLabel(pluginToInstall);
 			$('<li/>').html('<b>' +pluginToInstall.info.name  
 					+'</b> <span class="label">' +version +'</span>').appendTo(list);
 		}
