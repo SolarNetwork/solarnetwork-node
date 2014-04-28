@@ -8,11 +8,20 @@
 		${msgRefresh}
 	</a>
 </section>
-<section id="plugins">
+<fmt:message key="plugin.install.button" var="msgInstall"/>
+<fmt:message key="plugin.upgrade.button" var="msgUpgrade"/>
+<fmt:message key="plugin.remove.button" var="msgRemove"/>
+<section id="plugin-upgrades" class="hide" data-msg-upgrade="${msgUpgrade}">
+	<h2><fmt:message key="plugins.upgradable.title"/></h2>
+	<p><fmt:message key="plugins.upgradable.intro"/></p>
+	<div class="list-content"></div>
+</section>
+<section id="plugins" data-msg-install="${msgInstall}" data-msg-upgrade="${msgUpgrade}" data-msg-remove="${msgRemove}">
+	<h2><fmt:message key="plugins.available.title"/></h2>
+	<div class="list-content"></div>
 </section>
 
 <c:url value="/plugins/install" var="urlPluginInstall"/>
-<fmt:message key="plugin.install.button" var="msgInstall"/>
 <form id="plugin-preview-install-modal" class="modal dynamic hide fade" action="${urlPluginInstall}" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
