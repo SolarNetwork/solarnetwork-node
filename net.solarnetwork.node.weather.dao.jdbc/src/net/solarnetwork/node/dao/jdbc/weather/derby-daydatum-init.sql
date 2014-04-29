@@ -5,7 +5,7 @@ CREATE TABLE solarnode.sn_day_datum (
 	latitude		DOUBLE,
 	longitude		DOUBLE,
 	sunrise			TIME,
-	sunset			TIME
+	sunset			TIME,
 	uploaded		TIMESTAMP,
 	PRIMARY KEY (created, location_id)
 );
