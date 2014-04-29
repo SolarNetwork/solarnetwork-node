@@ -340,8 +340,25 @@ public class OBRPluginService implements PluginService {
 
 	@Override
 	public PluginProvisionStatus removePlugins(Collection<String> uids, Locale locale) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Plugin> pluginsToRemove = new ArrayList<Plugin>(uids.size());
+		Bundle[] bundles = bundleContext.getBundles();
+		for ( Bundle b : bundles ) {
+			String uid = b.getSymbolicName();
+			if ( uids.contains(uid) ) {
+				Plugin p = new BundlePlugin(b);
+				pluginsToRemove.add(p);
+			}
+		}
+		OBRPluginProvisionStatus status = new OBRPluginProvisionStatus(generateProvisionID());
+		status.setPluginsToRemove(pluginsToRemove);
+		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
+		saveProvisionTask(task);
+		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
+		task.setFuture(future);
+
+		startCleanerTaskIfNeeded();
+
+		return new OBRPluginProvisionStatus(status);
 	}
 
 	@Override
@@ -352,6 +369,13 @@ public class OBRPluginService implements PluginService {
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);
 
+		startCleanerTaskIfNeeded();
+
+		// return a copy, like a snapshot, so we don't deal with threading
+		return new OBRPluginProvisionStatus(status);
+	}
+
+	private void startCleanerTaskIfNeeded() {
 		if ( cleanerTask == null ) {
 			cleanerTask = new TaskCleaner();
 			log.debug("Scheduling TaskCleaner thread at fixed delay {} seconds",
@@ -359,9 +383,6 @@ public class OBRPluginService implements PluginService {
 			scheduler.scheduleWithFixedDelay(cleanerTask, provisionTaskStatusMinimumKeepSeconds,
 					provisionTaskStatusMinimumKeepSeconds, TimeUnit.SECONDS);
 		}
-
-		// return a copy, like a snapshot, so we don't deal with threading
-		return new OBRPluginProvisionStatus(status);
 	}
 
 	@Override

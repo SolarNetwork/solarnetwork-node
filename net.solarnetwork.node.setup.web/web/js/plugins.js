@@ -147,6 +147,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		}
 		var actionContainer = $('<div class="span2"/>').appendTo(row);
 		var button = undefined;
+		var action = SolarNode.Plugins.previewInstall;
 		if ( installedPlugin === undefined ) {
 			// not installed; offer to install it
 			button = $('<button type="button" class="btn btn-small btn-primary">').text(availableSection.data('msg-install'));
@@ -159,9 +160,10 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 			// installed
 			button = $('<button type="button" class="btn btn-small btn-danger"/>').text(availableSection.data('msg-remove'));
 			actionContainer.append(button);
+			action = SolarNode.Plugins.previewRemove;
 		}
 		button.click(function() {
-			SolarNode.Plugins.previewInstall(plugin);
+			action(plugin);
 		});
 		return row;
 	};
@@ -240,11 +242,25 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 	});
 };
 
+SolarNode.Plugins.previewRemove = function(plugin) {
+	var form = $('#plugin-preview-remove-modal');
+	var container = $('#plugin-preview-remove-list').empty();
+	var title = form.find('h3');
+	title.text(title.data('msg-remove') +' ' +plugin.info.name);
+	form.find('input[name=uid]').val(plugin.uid);
+	form.modal('show');
+	var list = $('<ul/>');
+	var	version = SolarNode.Plugins.versionLabel(plugin);
+	$('<li/>').html('<b>' +plugin.info.name  
+			+'</b> <span class="label">' +version +'</span>').appendTo(list);
+	container.append(list);
+};
+
 SolarNode.Plugins.handleInstall = function(form) {
 	var progressBar = form.find('.progress');
 	var progressFill = progressBar.find('.bar');
 	var installBtn = form.find('button[type=submit]');
-	var errorContainer = $('#plugin-install-error');
+	var errorContainer = form.find('.message-container');
 	var refreshPluginListOnModalClose = false;
 	var keepPollingForStatus = true;
 	
@@ -314,7 +330,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 			    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
 			    			progressBar.addClass('hide');
 			    			installBtn.addClass('hide');
-			    			errorContainer.removeClass('hide')
+			    			errorContainer.removeClass('hide');
 			    			refreshPluginListOnModalClose = true;
 			    		} else if ( keepPollingForStatus ) {
 			    			poll();
@@ -342,6 +358,9 @@ $(document).ready(function() {
 		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsSection, upgradeSection);
 	});
 	$('#plugin-preview-install-modal').first().each(function() {
+		SolarNode.Plugins.handleInstall($(this));
+	});
+	$('#plugin-preview-remove-modal').first().each(function() {
 		SolarNode.Plugins.handleInstall($(this));
 	});
 });

@@ -190,6 +190,18 @@ public class PluginController {
 		return response(service.installPlugins(uids, locale));
 	}
 
+	@RequestMapping(value = "/remove", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<PluginProvisionStatus> remove(@RequestParam(value = "uid") final String uid,
+			final Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+		Collection<String> uids = Collections.singleton(uid);
+		return response(service.removePlugins(uids, locale));
+	}
+
 	public void setPluginService(OptionalService<PluginService> pluginService) {
 		this.pluginService = pluginService;
 	}

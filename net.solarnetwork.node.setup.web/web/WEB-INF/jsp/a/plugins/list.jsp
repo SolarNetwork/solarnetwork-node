@@ -34,7 +34,7 @@
 		<div class="progress progress-striped active hide">
 			<div class="bar"></div>
 	    </div>
-	    <div id="plugin-install-error"></div>
+	    <div class="message-container"></div>
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="uid" value=""/>
@@ -46,5 +46,32 @@
 			data-msg-error="${msgInstallError}"
 			data-msg-success="${msgInstallSuccess}"
 			data-loading-text="${msgInstalling}">${msgInstall}</button>
+	</div>
+</form>
+
+<c:url value="/plugins/remove" var="urlPluginRemove"/>
+<form id="plugin-preview-remove-modal" class="modal dynamic hide fade" action="${urlPluginRemove}" method="post">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3 data-msg-remove="${msgRemove}"><fmt:message key="plugin.remove.title"/></h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key="plugin.remove.intro"/></p>
+		<div id="plugin-preview-remove-list"></div>
+		<div class="progress progress-striped active hide">
+			<div class="bar"></div>
+	    </div>
+	    <div class="message-container"></div>
+	</div>
+	<div class="modal-footer">
+		<input type="hidden" name="uid" value=""/>
+		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<fmt:message key="plugin.removing.message" var="msgRemoving"/>
+		<fmt:message key="plugin.remove.error" var="msgRemoveError"/>
+		<fmt:message key="plugin.remove.success" var="msgRemoveSuccess"/>
+		<button type="submit" class="btn btn-danger ladda-button expand-right"
+			data-msg-error="${msgRemoveError}"
+			data-msg-success="${msgRemoveSuccess}"
+			data-loading-text="${msgRemoveing}">${msgRemove}</button>
 	</div>
 </form>

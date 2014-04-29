@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.Plugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -82,6 +83,9 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	public OBRPluginProvisionStatus call() throws Exception {
 		if ( status.getPluginsToInstall() != null && status.getPluginsToInstall().size() > 0 ) {
 			downloadPlugins(status.getPluginsToInstall());
+		}
+		if ( status.getPluginsToRemove() != null && status.getPluginsToRemove().size() > 0 ) {
+			removePlugins(status.getPluginsToRemove());
 		}
 		return status;
 	}
@@ -204,6 +208,43 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			fw.refreshBundles(null);
 		}
 		LOG.debug("Install of {} plugins complete", plugins.size());
+	}
+
+	private void removePlugins(List<Plugin> plugins) {
+		assert plugins != null;
+		LOG.debug("Starting removal of {} plugins", plugins.size());
+
+		boolean refreshNeeded = false;
+		for ( Plugin plugin : plugins ) {
+			assert plugin instanceof BundlePlugin;
+			LOG.debug("Starting removal of plugin: {}", plugin.getUID());
+			BundlePlugin bundlePlugin = (BundlePlugin) plugin;
+			Bundle oldBundle = bundlePlugin.getBundle();
+			if ( oldBundle != null ) {
+				Version oldVersion = oldBundle.getVersion();
+				LOG.debug("Removing plugin {} version {}", oldBundle.getSymbolicName(), oldVersion);
+				try {
+					oldBundle.uninstall();
+					refreshNeeded = true;
+				} catch ( BundleException e ) {
+					throw new RuntimeException("Unable to uninstall plugin "
+							+ oldBundle.getSymbolicName(), e);
+				}
+				File oldJar = new File(directory, oldBundle.getSymbolicName() + "-" + oldVersion
+						+ ".jar");
+				if ( !oldJar.delete() ) {
+					LOG.warn("Error deleting plugin JAR " + oldJar.getName());
+				}
+			}
+
+			LOG.debug("Removed plugin: {}", plugin.getUID());
+			status.markPluginRemoved(plugin);
+		}
+		if ( refreshNeeded ) {
+			FrameworkWiring fw = bundleContext.getBundle(0).adapt(FrameworkWiring.class);
+			fw.refreshBundles(null);
+		}
+		LOG.debug("Removal of {} plugins complete", plugins.size());
 	}
 
 	public OBRPluginProvisionStatus getStatus() {

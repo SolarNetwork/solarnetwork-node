@@ -189,7 +189,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 			steps++;
 			progress += (float) ((double) pluginsRemoved.size() / (double) pluginsToRemove.size());
 		}
-		return (steps == 0 ? 0f : (progress / steps));
+		return (steps == 0 ? 1f : (progress / steps));
 	}
 
 	@Override
