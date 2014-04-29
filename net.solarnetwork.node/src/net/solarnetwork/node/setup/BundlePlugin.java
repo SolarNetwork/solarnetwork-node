@@ -23,6 +23,8 @@
 package net.solarnetwork.node.setup;
 
 import java.util.Locale;
+import net.solarnetwork.util.SerializeIgnore;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.osgi.framework.Bundle;
 
 /**
@@ -68,6 +70,17 @@ public class BundlePlugin implements Plugin {
 	@Override
 	public PluginInfo getLocalizedInfo(Locale locale) {
 		return new LocalizedPluginInfo(info, locale);
+	}
+
+	/**
+	 * Get the Bundle associated with this plugin.
+	 * 
+	 * @return the Bundle
+	 */
+	@JsonIgnore
+	@SerializeIgnore
+	public Bundle getBundle() {
+		return bundle;
 	}
 
 }
