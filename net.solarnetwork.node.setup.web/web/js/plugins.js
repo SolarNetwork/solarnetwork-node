@@ -214,6 +214,8 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 	var previewURL = form.attr('action') + '?uid=' +encodeURIComponent(plugin.uid);
 	var container = $('#plugin-preview-install-list').empty();
 	var title = form.find('h3');
+	var installBtn = form.find('button[type=submit]');
+	installBtn.attr('disabled', 'disabled');
 	title.text(title.data('msg-install') +' ' +plugin.info.name);
 	form.find('input[name=uid]').val(plugin.uid);
 	form.modal('show');
@@ -234,6 +236,7 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 					+'</b> <span class="label">' +version +'</span>').appendTo(list);
 		}
 		container.append(list);
+		installBtn.removeAttr('disabled');
 	});
 };
 
@@ -274,6 +277,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 			// start a progress bar on the install button so we know a install is happening
 			progressBar.removeClass('hide');
 			progressFill.css('width', '0%');
+			keepPollingForStatus = true;
 			errorContainer.empty();
 			SolarNode.showLoading(installBtn);
 		},
@@ -307,9 +311,10 @@ SolarNode.Plugins.handleInstall = function(form) {
 			    			showAlert(xhr.statusText);
 			    		} else if ( !(progress < 100) ) {
 							SolarNode.hideLoading(installBtn);
+			    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
 			    			progressBar.addClass('hide');
 			    			installBtn.addClass('hide');
-			    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
+			    			errorContainer.removeClass('hide')
 			    			refreshPluginListOnModalClose = true;
 			    		} else if ( keepPollingForStatus ) {
 			    			poll();
