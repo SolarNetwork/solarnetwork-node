@@ -253,19 +253,31 @@ SolarNode.context = (function() {
 })();
 
 SolarNode.showLoading = function(button) {
+	SolarNode.showSpinner(button, true);
+};
+
+SolarNode.hideLoading = function(button) {
+	SolarNode.hideSpinner(button, true);
+};
+
+SolarNode.showSpinner = function(button, showLoading) {
 	var ladda = button.data('ladda');
 	if ( ladda === undefined ) {
-		button.button('loading');
+		if ( showLoading ) {
+			button.button('loading');
+		}
 		ladda = Ladda.create(button.get(0));
 		button.data('ladda', ladda);
 		ladda.start();
 	}
 };
 
-SolarNode.hideLoading = function(button) {
+SolarNode.hideSpinner = function(button, hideLoading) {
 	var ladda = button.data('ladda');
 	if ( ladda !== undefined ) {
-		button.button('reset');
+		if ( hideLoading ) {
+			button.button('reset');
+		}
 		ladda.stop();
 		button.removeData('ladda');
 	}
