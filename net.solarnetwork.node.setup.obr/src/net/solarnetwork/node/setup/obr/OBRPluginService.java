@@ -44,6 +44,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
@@ -54,6 +56,7 @@ import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.support.SearchFilter.CompareOperator;
 import net.solarnetwork.support.SearchFilter.LogicOperator;
+import net.solarnetwork.util.OptionalService;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Version;
@@ -111,6 +114,7 @@ public class OBRPluginService implements PluginService {
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
 	private TaskCleaner cleanerTask;
 	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
+	private OptionalService<BackupManager> backupManager;
 
 	private final ConcurrentMap<URL, OBRRepositoryStatus> repoStatusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
@@ -353,6 +357,8 @@ public class OBRPluginService implements PluginService {
 		status.setPluginsToRemove(pluginsToRemove);
 		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
 		saveProvisionTask(task);
+		handleBackupBeforeProvisioningOperation(status);
+
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);
 
@@ -361,11 +367,32 @@ public class OBRPluginService implements PluginService {
 		return new OBRPluginProvisionStatus(status);
 	}
 
+	private void handleBackupBeforeProvisioningOperation(OBRPluginProvisionStatus status) {
+		// if we are actually going to provision something, let's make a backup
+		if ( status.getOverallProgress() < 1 ) {
+			BackupManager mgr = backupManager.service();
+			if ( mgr != null ) {
+				log.info("Creating backup before provisioning operation");
+				try {
+					Backup backup = mgr.createBackup();
+					if ( backup != null ) {
+						log.info("Created backup {} (size {})", backup.getKey(), backup.getSize());
+					}
+				} catch ( RuntimeException e ) {
+					log.warn("Error creating backup for provisioning operation {}",
+							status.getProvisionID(), e);
+				}
+			}
+		}
+	}
+
 	@Override
 	public synchronized PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
 		OBRPluginProvisionStatus status = resolveInstall(uids, locale, generateProvisionID());
 		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
 		saveProvisionTask(task);
+		handleBackupBeforeProvisioningOperation(status);
+
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);
 
@@ -537,6 +564,10 @@ public class OBRPluginService implements PluginService {
 
 	public void setProvisionTaskStatusMinimumKeepSeconds(long provisionTaskStatusMinimumKeepSeconds) {
 		this.provisionTaskStatusMinimumKeepSeconds = provisionTaskStatusMinimumKeepSeconds;
+	}
+
+	public void setBackupManager(OptionalService<BackupManager> backupManager) {
+		this.backupManager = backupManager;
 	}
 
 }
