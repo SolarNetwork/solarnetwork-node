@@ -81,13 +81,18 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
 	@Override
 	public OBRPluginProvisionStatus call() throws Exception {
-		if ( status.getPluginsToInstall() != null && status.getPluginsToInstall().size() > 0 ) {
-			downloadPlugins(status.getPluginsToInstall());
+		try {
+			if ( status.getPluginsToInstall() != null && status.getPluginsToInstall().size() > 0 ) {
+				downloadPlugins(status.getPluginsToInstall());
+			}
+			if ( status.getPluginsToRemove() != null && status.getPluginsToRemove().size() > 0 ) {
+				removePlugins(status.getPluginsToRemove());
+			}
+			return status;
+		} catch ( Exception e ) {
+			LOG.warn("Error in provision task: {}", e.getMessage(), e);
+			throw e;
 		}
-		if ( status.getPluginsToRemove() != null && status.getPluginsToRemove().size() > 0 ) {
-			removePlugins(status.getPluginsToRemove());
-		}
-		return status;
 	}
 
 	private Bundle findBundle(String symbolicName) {
