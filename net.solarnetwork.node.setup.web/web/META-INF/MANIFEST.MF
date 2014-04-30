@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Setup Web
+Bundle-Name: Core Setup Web App
+Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
 Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
