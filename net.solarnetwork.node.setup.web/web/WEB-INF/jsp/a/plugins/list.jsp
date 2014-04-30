@@ -77,6 +77,6 @@
 		<button type="submit" class="btn btn-danger ladda-button expand-right"
 			data-msg-error="${msgRemoveError}"
 			data-msg-success="${msgRemoveSuccess}"
-			data-loading-text="${msgRemoveing}">${msgRemove}</button>
+			data-loading-text="${msgRemoving}">${msgRemove}</button>
 	</div>
 </form>
