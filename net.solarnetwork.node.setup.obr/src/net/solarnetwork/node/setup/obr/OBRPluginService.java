@@ -92,6 +92,10 @@ import org.slf4j.LoggerFactory;
  * results to those <em>starting with</em> this value. The idea here is to
  * provide a way to focus the results on just a core subset of all plugins so
  * the results are more relevant to users.</dd>
+ * 
+ * <dt>backupManager</dt>
+ * <dd>An optional {@link BackupManager} service. If configured, then automatic
+ * backups will be initiated before any provisioning operation.</dd>
  * </dl>
  * 
  * @author matt
@@ -369,7 +373,7 @@ public class OBRPluginService implements PluginService {
 
 	private void handleBackupBeforeProvisioningOperation(OBRPluginProvisionStatus status) {
 		// if we are actually going to provision something, let's make a backup
-		if ( status.getOverallProgress() < 1 ) {
+		if ( backupManager != null && status.getOverallProgress() < 1 ) {
 			BackupManager mgr = backupManager.service();
 			if ( mgr != null ) {
 				log.info("Creating backup before provisioning operation");
