@@ -179,15 +179,15 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			// update available
 			button = $('<button type="button" class="btn btn-small btn-info">').text(availableSection.data('msg-upgrade'));
 			actionContainer.append(button);
-		} else {
-			// installed
+		} else if ( plugin.coreFeature !== true ) {
+			// installed, and not a core feature
 			button = $('<button type="button" class="btn btn-small btn-danger"/>').text(availableSection.data('msg-remove'));
 			actionContainer.append(button);
 			action = SolarNode.Plugins.previewRemove;
 		}
-		button.click(function() {
-			action(plugin);
-		});
+		if ( button !== undefined ) {
+			button.click(function() { action(plugin); });
+		}
 		return row;
 	};
 	
