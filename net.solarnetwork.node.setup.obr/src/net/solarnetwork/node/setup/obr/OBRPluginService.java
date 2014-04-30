@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.setup.BundlePlugin;
@@ -57,6 +58,7 @@ import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.support.SearchFilter.CompareOperator;
 import net.solarnetwork.support.SearchFilter.LogicOperator;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Version;
@@ -91,16 +93,17 @@ import org.slf4j.LoggerFactory;
  * 
  * <dt>restrictingSymbolicNameFilter</dt>
  * <dd>An optional filter to include when
- * {@link #availablePlugins(PluginQuery, Locale)} is called, that restricts the
- * results to those <em>starting with</em> this value. The idea here is to
- * provide a way to focus the results on just a core subset of all plugins so
- * the results are more relevant to users.</dd>
+ * {@link #availablePlugins(PluginQuery, Locale)} or
+ * {@link #installedPlugins(Locale)} are called that restricts the results to
+ * those <em>starting with</em> this value. The idea here is to provide a way to
+ * focus the results on just a core subset of all plugins so the results are
+ * more relevant to users.</dd>
  * 
  * <dt>exclusionSymbolicNameFilters</dt>
- * <dd>An optional list of symbolic bundle names to exclude from the results of
- * {@link #availablePlugins(PluginQuery, Locale)}. The idea here is to hide
- * low-level plugins that would automatically be included by user-facing
- * plugins, making the results more relevant to users.</dd>
+ * <dd>An optional list of symbolic bundle name <em>substrings</em> to exclude
+ * from the results of {@link #availablePlugins(PluginQuery, Locale)}. The idea
+ * here is to hide low-level plugins that would automatically be included by
+ * user-facing plugins, making the results more relevant to users.</dd>
  * 
  * <dt>backupManager</dt>
  * <dd>An optional {@link BackupManager} service. If configured, then automatic
@@ -122,7 +125,11 @@ public class OBRPluginService implements PluginService {
 	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { "mock",
-			"net.solarnetwork.node.dao." };
+			"net.solarnetwork.node.dao.", "net.solarnetwork.node.io.", "net.solarnetwork.node.hw." };
+
+	private static final String[] DEFAULT_CORE_FEATURE_EXPRESSIONS = { "net\\.solarnetwork\\.node",
+			"net\\.solarnetwork\\.node\\.dao(?:\\..*)*", "net\\.solarnetwork\\.node\\.setup(?:\\..*)*",
+			"net\\.solarnetwork\\.node\\.settings(?:\\..*)*" };
 
 	private RepositoryAdmin repositoryAdmin;
 	private BundleContext bundleContext;
@@ -130,6 +137,8 @@ public class OBRPluginService implements PluginService {
 	private String downloadPath = "app/main";
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
+	private Pattern[] coreFeatureSymbolicNamePatterns = StringUtils.patterns(
+			DEFAULT_CORE_FEATURE_EXPRESSIONS, 0);
 	private OptionalService<BackupManager> backupManager;
 	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
 
@@ -144,7 +153,6 @@ public class OBRPluginService implements PluginService {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	// static, so we don't hang onto cyclic reference to self
 	private class TaskCleaner implements Runnable {
 
 		@Override
@@ -260,7 +268,7 @@ public class OBRPluginService implements PluginService {
 		if ( repositoryAdmin == null ) {
 			return Collections.emptyList();
 		}
-		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query));
+		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query, true));
 		if ( resources == null || resources.length < 1 ) {
 			return Collections.emptyList();
 		}
@@ -271,7 +279,8 @@ public class OBRPluginService implements PluginService {
 
 		List<Plugin> plugins = new ArrayList<Plugin>(resources.length);
 		for ( Resource r : resources ) {
-			Plugin p = new OBRResourcePlugin(r);
+			Plugin p = new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
+					r.getSymbolicName()) != null));
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
 			}
@@ -297,7 +306,7 @@ public class OBRPluginService implements PluginService {
 		if ( repositoryAdmin == null || bundleContext == null ) {
 			return Collections.emptyList();
 		}
-		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(null));
+		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(null, false));
 		if ( resources == null || resources.length < 1 ) {
 			return Collections.emptyList();
 		}
@@ -319,7 +328,8 @@ public class OBRPluginService implements PluginService {
 		}
 		List<Plugin> results = new ArrayList<Plugin>(installedBundles.size());
 		for ( Bundle b : installedBundles.values() ) {
-			Plugin p = new BundlePlugin(b);
+			Plugin p = new BundlePlugin(b, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
+					b.getSymbolicName()) != null));
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
 			}
@@ -328,7 +338,7 @@ public class OBRPluginService implements PluginService {
 		return results;
 	}
 
-	private String getOBRFilter(final PluginQuery query) {
+	private String getOBRFilter(final PluginQuery query, final boolean performExclude) {
 		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
 		if ( query != null && query.getSimpleQuery() != null && query.getSimpleQuery().length() > 0 ) {
 			SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
@@ -340,7 +350,8 @@ public class OBRPluginService implements PluginService {
 					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
 			filter.put("restrict", restrict);
 		}
-		if ( exclusionSymbolicNameFilters != null && exclusionSymbolicNameFilters.length > 0 ) {
+		if ( performExclude && exclusionSymbolicNameFilters != null
+				&& exclusionSymbolicNameFilters.length > 0 ) {
 			Map<String, Object> exMap = new LinkedHashMap<String, Object>(
 					exclusionSymbolicNameFilters.length);
 			for ( String ex : exclusionSymbolicNameFilters ) {
@@ -368,7 +379,8 @@ public class OBRPluginService implements PluginService {
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
 			if ( uids.contains(uid) ) {
-				Plugin p = new BundlePlugin(b);
+				Plugin p = new BundlePlugin(b, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
+						b.getSymbolicName()) != null));
 				pluginsToRemove.add(p);
 			}
 		}
@@ -517,10 +529,12 @@ public class OBRPluginService implements PluginService {
 		Resource[] requiredResources = resolver.getRequiredResources();
 		List<Plugin> toInstall = new ArrayList<Plugin>(resources.length + requiredResources.length);
 		for ( Resource r : resources ) {
-			toInstall.add(new OBRResourcePlugin(r));
+			toInstall.add(new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
+					r.getSymbolicName()) != null)));
 		}
 		for ( Resource r : requiredResources ) {
-			toInstall.add(new OBRResourcePlugin(r));
+			toInstall.add(new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
+					r.getSymbolicName()) != null)));
 		}
 		OBRPluginProvisionStatus result = new OBRPluginProvisionStatus(provisionID);
 		result.setPluginsToInstall(toInstall);
@@ -587,6 +601,42 @@ public class OBRPluginService implements PluginService {
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
+	}
+
+	/**
+	 * Set the {@code coreFeatureSymbolicNamePatterns} property via string
+	 * expressions. The expressions will be compiled into {@link Pattern}
+	 * objects and thus must be valid expressions according to that class.
+	 * 
+	 * @param expressions
+	 *        the expressions to use for {@code coreFeatureSymbolicNamePatterns}
+	 */
+	public void setCoreFeatureSymbolicNameExpressions(String[] expressions) {
+		setCoreFeatureSymbolicNamePatterns(StringUtils.patterns(expressions, 0));
+	}
+
+	/**
+	 * Get the {@code coreFeatureSymbolicNamePatterns} property as string
+	 * values.
+	 * 
+	 * @return {@code coreFeatureSymbolicNamePatterns} as strings, or
+	 *         <em>null</em>
+	 */
+	public String[] getCoreFeatureSymbolicNameExpressions() {
+		return StringUtils.expressions(coreFeatureSymbolicNamePatterns);
+	}
+
+	/**
+	 * Set a list of regular expressions to use to determine if a plugin is a
+	 * "core feature" or not. The expressions will be matched against bundle
+	 * symbolic names; if a match is found the plugin will have its
+	 * {@link Plugin#isCoreFeature()} flag set to <em>true</em>.
+	 * 
+	 * @param coreFeatureSymbolicNamePatterns
+	 *        patterns to match against bundle symbolic names
+	 */
+	public void setCoreFeatureSymbolicNamePatterns(Pattern[] coreFeatureSymbolicNamePatterns) {
+		this.coreFeatureSymbolicNamePatterns = coreFeatureSymbolicNamePatterns;
 	}
 
 }

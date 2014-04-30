@@ -42,16 +42,20 @@ public class OBRResourcePlugin implements Plugin {
 	private final Resource resource;
 	private final BundlePluginVersion version;
 	private final OBRResourcePluginInfo info;
+	private final boolean coreFeature;
 
 	/**
 	 * Construct with a {@link Resource}.
 	 * 
 	 * @param the
 	 *        Resource to wrap
+	 * @param coreFeature
+	 *        the core feature flag
 	 */
-	public OBRResourcePlugin(Resource resource) {
+	public OBRResourcePlugin(Resource resource, boolean coreFeature) {
 		super();
 		this.resource = resource;
+		this.coreFeature = coreFeature;
 		this.version = new BundlePluginVersion(getResourceVersion());
 		this.info = new OBRResourcePluginInfo(resource);
 	}
@@ -83,6 +87,11 @@ public class OBRResourcePlugin implements Plugin {
 	@Override
 	public PluginInfo getLocalizedInfo(Locale locale) {
 		return new LocalizedPluginInfo(info, locale);
+	}
+
+	@Override
+	public boolean isCoreFeature() {
+		return coreFeature;
 	}
 
 	/**

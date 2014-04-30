@@ -38,6 +38,7 @@ public class BundlePlugin implements Plugin {
 	private final Bundle bundle;
 	private final BundlePluginVersion version;
 	private final BundlePluginInfo info;
+	private final boolean coreFeature;
 
 	/**
 	 * Construct with a {@link Bundle}.
@@ -45,9 +46,10 @@ public class BundlePlugin implements Plugin {
 	 * @param bundle
 	 *        the bundle
 	 */
-	public BundlePlugin(Bundle bundle) {
+	public BundlePlugin(Bundle bundle, boolean coreFeature) {
 		super();
 		this.bundle = bundle;
+		this.coreFeature = coreFeature;
 		this.version = new BundlePluginVersion(bundle.getVersion());
 		this.info = new BundlePluginInfo(bundle);
 	}
@@ -70,6 +72,11 @@ public class BundlePlugin implements Plugin {
 	@Override
 	public PluginInfo getLocalizedInfo(Locale locale) {
 		return new LocalizedPluginInfo(info, locale);
+	}
+
+	@Override
+	public boolean isCoreFeature() {
+		return coreFeature;
 	}
 
 	/**

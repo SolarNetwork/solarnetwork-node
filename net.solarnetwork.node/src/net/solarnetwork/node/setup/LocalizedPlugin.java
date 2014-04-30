@@ -70,4 +70,9 @@ public class LocalizedPlugin implements Plugin {
 		return plugin.getLocalizedInfo(otherLocale);
 	}
 
+	@Override
+	public boolean isCoreFeature() {
+		return plugin.isCoreFeature();
+	}
+
 }

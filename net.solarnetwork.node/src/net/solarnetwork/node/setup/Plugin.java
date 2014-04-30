@@ -64,4 +64,13 @@ public interface Plugin {
 	 */
 	PluginInfo getLocalizedInfo(Locale locale);
 
+	/**
+	 * Return "core feature" flag. Core features are those plugins that are
+	 * central to SolarNode functionality, and should not be removed by users.
+	 * They can be upgraded, however.
+	 * 
+	 * @return core feature flag
+	 */
+	boolean isCoreFeature();
+
 }
