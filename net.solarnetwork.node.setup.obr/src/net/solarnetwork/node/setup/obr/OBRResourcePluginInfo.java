@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
+import java.util.Map;
 import net.solarnetwork.node.setup.PluginInfo;
 import org.osgi.service.obr.Resource;
 
@@ -64,8 +65,9 @@ public class OBRResourcePluginInfo implements PluginInfo {
 
 	@Override
 	public String getDescription() {
-		// TODO: what can we return here?
-		return "";
+		@SuppressWarnings("unchecked")
+		Map<String, ?> props = resource.getProperties();
+		Object descr = props.get(Resource.DESCRIPTION);
+		return (descr instanceof String ? (String) descr : null);
 	}
-
 }
