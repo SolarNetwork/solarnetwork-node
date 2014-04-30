@@ -77,6 +77,9 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * <dl class="class-properties">
+ * <dt>bundleContext</dt>
+ * <dd>The OSGi {@link BundleContext} to enable installing/removing plugins.</dd>
+ * 
  * <dt>repositoryAdmin</dt>
  * <dd>The {@link RepositoryAdmin} to manage all OBR actions with.</dd>
  * 
@@ -93,10 +96,21 @@ import org.slf4j.LoggerFactory;
  * provide a way to focus the results on just a core subset of all plugins so
  * the results are more relevant to users.</dd>
  * 
+ * <dt>exclusionSymbolicNameFilters</dt>
+ * <dd>An optional list of symbolic bundle names to exclude from the results of
+ * {@link #availablePlugins(PluginQuery, Locale)}. The idea here is to hide
+ * low-level plugins that would automatically be included by user-facing
+ * plugins, making the results more relevant to users.</dd>
+ * 
  * <dt>backupManager</dt>
  * <dd>An optional {@link BackupManager} service. If configured, then automatic
  * backups will be initiated before any provisioning operation.</dd>
  * </dl>
+ * 
+ * <dt>provisionTaskStatusMinimumKeepSeconds</dt> <dd>The minimum number of
+ * seconds to hold provision tasks in memory after the task has completed, to
+ * support the {@link #statusForProvisioningOperation(String, Locale)} method.
+ * Defaults to 10 minutes.</dd>
  * 
  * @author matt
  * @version 1.0
@@ -116,9 +130,10 @@ public class OBRPluginService implements PluginService {
 	private String downloadPath = "app/main";
 	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
-	private TaskCleaner cleanerTask;
-	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
 	private OptionalService<BackupManager> backupManager;
+	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
+
+	private TaskCleaner cleanerTask;
 
 	private final ConcurrentMap<URL, OBRRepositoryStatus> repoStatusMap = new ConcurrentHashMap<URL, OBRRepositoryStatus>(
 			4);
