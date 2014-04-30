@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Consumption for Carrel-Electrade meters
+Bundle-Name: Carrel-Electrade Meter Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.carrel.dts.dts
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

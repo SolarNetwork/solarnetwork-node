@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Simple Control
+Bundle-Name: Core Control Support
 Bundle-SymbolicName: net.solarnetwork.node.control.simple
 Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork

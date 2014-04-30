@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Consumption Mock
+Bundle-Name: Consumption Mock
 Bundle-SymbolicName: net.solarnetwork.node.consumption.mock
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork

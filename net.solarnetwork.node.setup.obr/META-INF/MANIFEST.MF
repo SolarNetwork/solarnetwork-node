@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OBR Setup
+Bundle-Name: Plug-in Repository
 Bundle-SymbolicName: net.solarnetwork.node.setup.obr
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

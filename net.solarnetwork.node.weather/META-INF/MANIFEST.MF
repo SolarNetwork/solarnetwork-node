@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Weather
+Bundle-Name: Weather Datum Support
 Bundle-SymbolicName: net.solarnetwork.node.weather
 Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork

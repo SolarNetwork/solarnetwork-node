@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RFXCOM Energy Meter Consumption
+Bundle-Name: RFXCOM Energy Meter Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.rfxcom
 Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork

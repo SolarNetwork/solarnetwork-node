@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Consumption JDBC DAO
+Bundle-Name: Consumption Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.consumption.dao.jdbc
 Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork

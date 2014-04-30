@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Mock Upload
+Bundle-Name: Mock SolarNet Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.mock
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

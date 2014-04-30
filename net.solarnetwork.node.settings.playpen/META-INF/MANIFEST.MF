@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Settings Playpen
+Bundle-Name: Settings Developer Playpen
 Bundle-SymbolicName: net.solarnetwork.node.settings.playpen
 Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork

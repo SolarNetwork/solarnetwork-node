@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode XML Reactor IO
+Bundle-Name: Reactor XML Support
 Bundle-SymbolicName: net.solarnetwork.node.reactor.io.xml
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

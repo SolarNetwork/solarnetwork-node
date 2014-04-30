@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode URL IO
+Bundle-Name: Core URL Support
 Bundle-SymbolicName: net.solarnetwork.node.io.url
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Setup
+Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
 Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork

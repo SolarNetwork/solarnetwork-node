@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Mock Generation Limit Control
+Bundle-Name: Mock Generation Limit Control
 Bundle-SymbolicName: net.solarnetwork.node.control.demandbalancer.mock
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

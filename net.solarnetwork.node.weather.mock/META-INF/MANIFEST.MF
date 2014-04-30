@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Weather Mock
+Bundle-Name: Weather Mock
 Bundle-SymbolicName: net.solarnetwork.node.weather.mock
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork

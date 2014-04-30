@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Modbus Toggle Control
+Bundle-Name: Modbus Toggle Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus.toggle
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork

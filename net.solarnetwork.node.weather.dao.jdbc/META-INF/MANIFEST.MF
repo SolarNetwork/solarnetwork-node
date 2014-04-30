@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Weather JDBC DAO
+Bundle-Name: Weather Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.weather.dao.jdbc
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork

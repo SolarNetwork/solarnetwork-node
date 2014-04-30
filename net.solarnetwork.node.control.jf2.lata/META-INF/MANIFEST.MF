@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JF2 LATA Support
+Bundle-Name: JF2 LATA Switch Control
 Bundle-SymbolicName: net.solarnetwork.node.control.jf2.lata
 Bundle-Version: 1.4.0
 Bundle-Vendor: SolarNetwork

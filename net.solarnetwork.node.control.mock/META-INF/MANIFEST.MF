@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Mock Control
+Bundle-Name: Mock Control
 Bundle-SymbolicName: net.solarnetwork.node.control.mock
 Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork

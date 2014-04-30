@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Modbus Power
+Bundle-Name: Morningstar TS-45 Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.modbus
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork

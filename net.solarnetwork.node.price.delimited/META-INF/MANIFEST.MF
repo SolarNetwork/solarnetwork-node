@@ -1,6 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Delimited Price
+Bundle-Name: Delimited Price Datum DataSource
+Bundle-Description: Capture price data from a URL-accessible text resource, such 
+ as a CSV file.
 Bundle-SymbolicName: net.solarnetwork.node.price.delimited
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Price Mock
+Bundle-Name: Price Mock
 Bundle-SymbolicName: net.solarnetwork.node.price.mock
 Bundle-Version: 1.4.0
 Bundle-Vendor: SolarNetwork

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode SMA SunnyNet
+Bundle-Name: SMA Power Datum DataSource (SunnyNet)
 Bundle-SymbolicName: net.solarnetwork.node.power.sma.sunnynet
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork

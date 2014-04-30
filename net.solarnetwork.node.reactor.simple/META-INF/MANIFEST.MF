@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Simple Reactor Service
+Bundle-Name: Simple Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
 Bundle-Version: 1.1.1
 Bundle-Vendor: SolarNetwork

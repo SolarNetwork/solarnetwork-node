@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Schneider Electirc PM3200 Meter
+Bundle-Name: Schneider Electirc PM3200 Meter Consumption DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.schneider.pm3200
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork

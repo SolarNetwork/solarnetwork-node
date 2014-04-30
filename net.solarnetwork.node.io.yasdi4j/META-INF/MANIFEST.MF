@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: YASDI Support
+Bundle-Name: SMA yasdi4j Support
 Bundle-SymbolicName: net.solarnetwork.node.io.yasdi4j
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

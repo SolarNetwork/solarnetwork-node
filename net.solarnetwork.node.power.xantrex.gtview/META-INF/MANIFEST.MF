@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Xantrex GT View Power
+Bundle-Name: Xantrex GT View Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.xantrex.gtview
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
