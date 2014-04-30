@@ -16,6 +16,11 @@
 	<p><fmt:message key="plugins.upgradable.intro"/></p>
 	<div class="list-content"></div>
 </section>
+<section id="plugin-installed" class="hide" data-msg-remove="${msgRemove}">
+	<h2><fmt:message key="plugins.installed.title"/></h2>
+	<p><fmt:message key="plugins.installed.intro"/></p>
+	<div class="list-content"></div>
+</section>
 <section id="plugins" data-msg-install="${msgInstall}" data-msg-upgrade="${msgUpgrade}" data-msg-remove="${msgRemove}">
 	<h2><fmt:message key="plugins.available.title"/></h2>
 	<p><fmt:message key="plugins.available.intro"/></p>

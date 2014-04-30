@@ -21,7 +21,7 @@ SolarNode.Plugins.compareVersions = function(v1, v2) {
 	return 0;
 };
 
-SolarNode.Plugins.refreshPluginList = function(url, container, upgradeContainer) {
+SolarNode.Plugins.refreshPluginList = function(url, container, upgradeContainer, installedContainer) {
 	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
@@ -30,7 +30,7 @@ SolarNode.Plugins.refreshPluginList = function(url, container, upgradeContainer)
 			SolarNode.warn('Error!', 'An error occured refreshing plugin information.', list);
 			return;
 		}
-		SolarNode.Plugins.populateUI(container, upgradeContainer);
+		SolarNode.Plugins.populateUI(container, upgradeContainer, installedContainer);
 	});
 };
 
@@ -42,10 +42,11 @@ SolarNode.Plugins.versionLabel = function(plugin) {
 	return version;
 };
 
-SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
+SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, installedSection) {
 	var url = SolarNode.context.path('/plugins/list');
 	var availableContainer = availableSection.children('.list-content');
 	var upgradeContainer = upgradeSection.children('.list-content');
+	var installedContainer = installedSection.children('.list-content');
 	
 	var groupNameForPlugin = function(plugin) {
 		var match = plugin.uid.match(/^net\.solarnetwork\.node\.(\w+)/);
@@ -68,21 +69,34 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		return (n.charAt(0).toUpperCase() + n.substring(1));
 	};
 	
+	var pluginRefNameComparator = function(l, r) {
+		if ( l.name < r.name ) {
+			return -1;
+		}
+		if ( l.name > r.name ) {
+			return 1;
+		}
+		return 0;
+	};
+	
 	var groupPlugins = function(data) {
 		var i, len;
 		var plugin;
 		var groupName;
 		var installedPlugin;
 		var result = {
-			groupNames: [],	// String[]
-			groups: {},   	// map of GroupName -> Plugin[]
-			installed: {}, 	// map of UID -> Plugin
-			upgradableNames: [],
-			upgradable: {} // map of UID -> Plugin
+			groupNames: [],		// String[]
+			groups: {},   		// map of GroupName -> Plugin[]
+			upToDate: [], 		// {uid, name}
+			installed: {}, 		// map of UID -> Plugin
+			upgradableNames: [],// String[]
+			upgradable: {} 		// map of UID -> Plugin
 		};
 		for ( i = 0, len = data.installedPlugins.length; i < len; i++ ) {
 			plugin = data.installedPlugins[i];
 			result.installed[plugin.uid] = plugin;
+			// the following assumes plugin names are unique, which seems OK for now
+			result.upToDate.push({uid:plugin.uid, name:plugin.info.name});
 		}
 		for ( i = 0, len = data.availablePlugins.length; i < len; i++ ) {
 			plugin = data.availablePlugins[i];
@@ -98,10 +112,19 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 			if ( installedPlugin !== undefined && SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 				result.upgradableNames.push(plugin.info.name);
 				result.upgradable[plugin.info.name] = plugin;
+				
+				// check if this is upgradable, to remove from "installed" section
+				result.upToDate.some(function(pluginRef, idx, array) {
+					if ( plugin.uid === pluginRef.uid ) {
+						array.splice(idx, 1);
+						return true;
+					}
+				});
 			}
 		}
 		result.groupNames.sort();
 		result.upgradableNames.sort();
+		result.upToDate.sort(pluginRefNameComparator);
 		return result;
 	};
 	
@@ -135,13 +158,13 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 				// not installed... leave default style
 			} else if ( SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 				// update available
-				versionLabel.addClass('label-info');
+				//versionLabel.addClass('label-info');
 				
 				// also add existing version to title
 				$('<span class="label suffix">' +SolarNode.Plugins.versionLabel(installedPlugin) +'</span>').appendTo(titleContainer);
 			} else {
 				// installed
-				versionLabel.addClass('label-important');
+				//versionLabel.addClass('label-important');
 			}
 			versionLabel.appendTo(versionContainer);
 		}
@@ -186,6 +209,8 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		var groupName = undefined;
 		var group = undefined;
 		var plugin = undefined;
+		
+		// construct "upgradable" section
 		html = $('<div id="plugin-upgrade-list"/>');
 		for ( i = 0, iMax = groupedPlugins.upgradableNames.length; i < iMax; i++ ) {
 			plugin = groupedPlugins.upgradable[groupedPlugins.upgradableNames[i]];
@@ -197,6 +222,21 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection) {
 		} else {
 			upgradeSection.addClass('hide');
 		}
+		
+		// construct "up to date" section
+		html = $('<div id="plugin-intalled-list"/>');
+		for ( i = 0, iMax = groupedPlugins.upToDate.length; i < iMax; i++ ) {
+			plugin = groupedPlugins.installed[groupedPlugins.upToDate[i].uid];
+			html.append(createPluginUI(plugin, groupedPlugins.installed, true));
+		}
+		if ( iMax > 0 ) {
+			installedContainer.html(html);
+			installedSection.removeClass('hide');
+		} else {
+			installedSection.addClass('hide');
+		}
+		
+		// construct "available" section
 		html = $('<div class="accordion" id="plugin-list"/>');
 		for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
 			groupName = groupedPlugins.groupNames[i];
@@ -277,7 +317,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 		
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
-			SolarNode.Plugins.populateUI($('#plugins'), $('#plugin-upgrades'));
+			SolarNode.Plugins.populateUI($('#plugins'), $('#plugin-upgrades'), $('#plugin-installed'));
 			refreshPluginListOnModalClose = false;
 		}
 		
@@ -350,12 +390,13 @@ SolarNode.Plugins.handleInstall = function(form) {
 $(document).ready(function() {
 	var pluginsSection = $('#plugins').first();
 	var upgradeSection = $('#plugin-upgrades').first();
+	var installedSection = $('#plugin-installed').first();
 	if ( pluginsSection.size() === 1 && upgradeSection.size() === 1 ) {
-		SolarNode.Plugins.populateUI(pluginsSection, upgradeSection);
+		SolarNode.Plugins.populateUI(pluginsSection, upgradeSection, installedSection);
 	};
 	$('#plugins-refresh').click(function(event) {
 		event.preventDefault();
-		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsSection, upgradeSection);
+		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsSection, upgradeSection, installedSection);
 	});
 	$('#plugin-preview-install-modal').first().each(function() {
 		SolarNode.Plugins.handleInstall($(this));
