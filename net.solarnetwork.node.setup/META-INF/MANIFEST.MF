@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
+Bundle-Description: Provides core SolarNode setup infrastructure support.
 Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Derby Database Extensions
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby.ext
+Bundle-Description: Provides SolarNode extensions to the Apache Derby database engine.
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: derby;bundle-version="10.8.0"

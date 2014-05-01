@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Core Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc
+Bundle-Description: Provides standardized database storage infrastructure for the SolarNode application.
 Bundle-Version: 1.8.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

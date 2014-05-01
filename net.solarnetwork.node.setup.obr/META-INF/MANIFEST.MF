@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Plug-in Repository
 Bundle-SymbolicName: net.solarnetwork.node.setup.obr
+Bundle-Description: Manage SolarNode plug-ins via a network OSGi Bundle Repository.
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Cent-a-meter Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.centameter
+Bundle-Description: Collect consumption data from Cent-a-meter amp meters.
 Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

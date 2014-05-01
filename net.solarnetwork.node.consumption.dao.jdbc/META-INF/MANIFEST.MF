@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Consumption Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.consumption.dao.jdbc
+Bundle-Description: Database storage cache for consumption data.
 Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
