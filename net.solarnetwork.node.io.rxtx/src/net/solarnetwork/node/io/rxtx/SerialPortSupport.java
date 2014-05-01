@@ -520,8 +520,9 @@ public abstract class SerialPortSupport extends SerialPortBean {
 					eventLog.debug("Looking for EOF bytes {}", asciiDebugValue(eofBytes));
 					return false;
 				} else {
-					eventLog.trace("Looking for {} magic bytes {} in buffer {}", magicBytes.length,
-							asciiDebugValue(magicBytes), asciiDebugValue(sink.toByteArray()));
+					eventLog.trace("Looking for {} magic bytes {} in buffer {}",
+							new Object[] { magicBytes.length, asciiDebugValue(magicBytes),
+									asciiDebugValue(sink.toByteArray()) });
 				}
 
 				// look for magic in the buffer
