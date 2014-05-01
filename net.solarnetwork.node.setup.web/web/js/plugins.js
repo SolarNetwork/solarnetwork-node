@@ -54,18 +54,8 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			return plugin.uid;
 		}
 		var n = match[1];
-		
-		// some special cases here...
-		// TODO: l10n
-		if ( n === 'io' ) {
-			return "Communication Support";
-		}
-		if ( n === 'hw' ) {
-			return "Hardware Support";
-		}
-		
-		// default: capitalize
-		
+
+		// capitalize
 		return (n.charAt(0).toUpperCase() + n.substring(1));
 	};
 	
@@ -88,14 +78,12 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			groupNames: [],		// String[]
 			groups: {},   		// map of GroupName -> Plugin[]
 			upToDate: [], 		// {uid, name}
-			installed: {}, 		// map of UID -> Plugin
-			upgradableNames: [],// String[]
-			upgradable: {} 		// map of UID -> Plugin
+			upgradable: [], 	// {uid, name, plugin}
+			installed: {} 		// map of UID -> Plugin
 		};
 		for ( i = 0, len = data.installedPlugins.length; i < len; i++ ) {
 			plugin = data.installedPlugins[i];
 			result.installed[plugin.uid] = plugin;
-			// the following assumes plugin names are unique, which seems OK for now
 			result.upToDate.push({uid:plugin.uid, name:plugin.info.name});
 		}
 		for ( i = 0, len = data.availablePlugins.length; i < len; i++ ) {
@@ -103,17 +91,12 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			groupName = groupNameForPlugin(plugin);
 			if ( result.groups[groupName] === undefined ) {
 				result.groupNames.push(groupName);
-				// note we assume plugins already sorted by name
 				result.groups[groupName] = [];
 			}
 			result.groups[groupName].push(plugin);
 			installedPlugin = result.installed[plugin.uid];
-			// the following assumes plugin names are unique, which seems OK for now
 			if ( installedPlugin !== undefined && SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
-				result.upgradableNames.push(plugin.info.name);
-				result.upgradable[plugin.info.name] = plugin;
-				
-				// check if this is upgradable, to remove from "installed" section
+				result.upgradable.push({uid:plugin.uid, name:plugin.info.name, plugin:plugin});
 				result.upToDate.some(function(pluginRef, idx, array) {
 					if ( plugin.uid === pluginRef.uid ) {
 						array.splice(idx, 1);
@@ -123,7 +106,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			}
 		}
 		result.groupNames.sort();
-		result.upgradableNames.sort();
+		result.upgradable.sort(pluginRefNameComparator);
 		result.upToDate.sort(pluginRefNameComparator);
 		return result;
 	};
@@ -184,6 +167,9 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			button = $('<button type="button" class="btn btn-small btn-danger"/>').text(availableSection.data('msg-remove'));
 			actionContainer.append(button);
 			action = SolarNode.Plugins.previewRemove;
+		} else if ( showVersions === true ) {
+			// core, cannot remove
+			$('<span class="label"/>').text(installedSection.data('msg-unremovable')).appendTo(actionContainer);
 		}
 		if ( button !== undefined ) {
 			button.click(function() { action(plugin); });
@@ -203,6 +189,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		}
 		var i, iMax;
 		var j, jMax;
+		var k, kMax;
 		var groupedPlugins = groupPlugins(data.data);
 		var html = undefined;
 		var groupBody = undefined;
@@ -212,8 +199,8 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		
 		// construct "upgradable" section
 		html = $('<div id="plugin-upgrade-list"/>');
-		for ( i = 0, iMax = groupedPlugins.upgradableNames.length; i < iMax; i++ ) {
-			plugin = groupedPlugins.upgradable[groupedPlugins.upgradableNames[i]];
+		for ( i = 0, iMax = groupedPlugins.upgradable.length; i < iMax; i++ ) {
+			plugin = groupedPlugins.upgradable[i].plugin;
 			html.append(createPluginUI(plugin, groupedPlugins.installed, true));
 		}
 		if ( iMax > 0 ) {
@@ -238,12 +225,30 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		
 		// construct "available" section
 		html = $('<div class="accordion" id="plugin-list"/>');
-		for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
+		GROUPS: for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
 			groupName = groupedPlugins.groupNames[i];
-			groupBody = createGroup(groupName, html);
+			groupBody = null; // don't create yet, we might filter out entire group
 			group = groupedPlugins.groups[groupName];
 			for ( j = 0, jMax = group.length; j < jMax; j++ ) {
 				plugin = group[j];
+				
+				// skip upgradable plugins
+				for ( k = 0, kMax = groupedPlugins.upgradable.length; k < kMax; k++ ) {
+					if ( plugin.uid === groupedPlugins.upgradable[k].uid ) {
+						continue GROUPS;
+					}
+				}
+				
+				// skip up-to-date plugins
+				for ( k = 0, kMax = groupedPlugins.upToDate.length; k < kMax; k++ ) {
+					if ( plugin.uid === groupedPlugins.upToDate[k].uid ) {
+						continue GROUPS;
+					}
+				}
+				
+				if ( groupBody === null ) {
+					groupBody = createGroup(groupName, html);
+				}
 				groupBody.append(createPluginUI(plugin, groupedPlugins.installed));
 			}
 		}

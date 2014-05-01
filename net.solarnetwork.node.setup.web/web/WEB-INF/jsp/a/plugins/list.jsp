@@ -11,12 +11,13 @@
 <fmt:message key="plugin.install.button" var="msgInstall"/>
 <fmt:message key="plugin.upgrade.button" var="msgUpgrade"/>
 <fmt:message key="plugin.remove.button" var="msgRemove"/>
+<fmt:message key="plugin.unremovable.message" var="msgUnremovable"/>
 <section id="plugin-upgrades" class="hide" data-msg-upgrade="${msgUpgrade}">
 	<h2><fmt:message key="plugins.upgradable.title"/></h2>
 	<p><fmt:message key="plugins.upgradable.intro"/></p>
 	<div class="list-content"></div>
 </section>
-<section id="plugin-installed" class="hide" data-msg-remove="${msgRemove}">
+<section id="plugin-installed" class="hide" data-msg-remove="${msgRemove}" data-msg-unremovable="${msgUnremovable}">
 	<h2><fmt:message key="plugins.installed.title"/></h2>
 	<p><fmt:message key="plugins.installed.intro"/></p>
 	<div class="list-content"></div>
