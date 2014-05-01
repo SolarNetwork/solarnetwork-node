@@ -212,6 +212,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			upgradeContainer.html(html);
 			upgradeSection.removeClass('hide');
 		} else {
+			upgradeContainer.empty();
 			upgradeSection.addClass('hide');
 		}
 		
@@ -225,6 +226,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			installedContainer.html(html);
 			installedSection.removeClass('hide');
 		} else {
+			installedContainer.empty();
 			installedSection.addClass('hide');
 		}
 		
@@ -257,7 +259,13 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 				groupBody.append(createPluginUI(plugin, groupedPlugins.installed));
 			}
 		}
-		availableContainer.html(html);
+		if ( html.children().size() > 0 ) {
+			availableContainer.html(html);
+			availableSection.removeClass('hide');
+		} else {
+			availableContainer.empty();
+			availableSection.addClass('hide');
+		}
 	});
 };
 
