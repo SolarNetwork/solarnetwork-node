@@ -124,7 +124,7 @@ public class OBRPluginService implements PluginService {
 
 	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
 
-	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { "mock",
+	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { ".mock", ".test",
 			"net.solarnetwork.node.dao.", "net.solarnetwork.node.io.", "net.solarnetwork.node.hw." };
 
 	private static final String[] DEFAULT_CORE_FEATURE_EXPRESSIONS = { "net\\.solarnetwork\\.node",
@@ -268,7 +268,7 @@ public class OBRPluginService implements PluginService {
 		if ( repositoryAdmin == null ) {
 			return Collections.emptyList();
 		}
-		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query, true));
+		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(query));
 		if ( resources == null || resources.length < 1 ) {
 			return Collections.emptyList();
 		}
@@ -277,10 +277,26 @@ public class OBRPluginService implements PluginService {
 			resources = getLatestVersions(resources);
 		}
 
-		List<Plugin> plugins = new ArrayList<Plugin>(resources.length);
-		for ( Resource r : resources ) {
+		// we need to know if we should includes a (normally) excluded plugin that is upgradable
+		final Map<String, Bundle> installedBundles = installedBundles();
+
+		final List<Plugin> plugins = new ArrayList<Plugin>(resources.length);
+		RLOOP: for ( Resource r : resources ) {
+			final String uid = r.getSymbolicName();
+			if ( exclusionSymbolicNameFilters != null && exclusionSymbolicNameFilters.length > 0 ) {
+				for ( String exclude : exclusionSymbolicNameFilters ) {
+					if ( uid.contains(exclude) ) {
+						// this plugin is normally excluded... but is it actually installed, and upgradable?
+						Bundle installed = installedBundles.get(uid);
+						if ( installed == null || r.getVersion().compareTo(installed.getVersion()) < 1 ) {
+							// it's not installed, or the installed version is up to date, so exclude it
+							continue RLOOP;
+						}
+					}
+				}
+			}
 			Plugin p = new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
-					r.getSymbolicName()) != null));
+					uid) != null));
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
 			}
@@ -300,32 +316,28 @@ public class OBRPluginService implements PluginService {
 		return plugins;
 	}
 
-	@Override
-	public List<Plugin> installedPlugins(Locale locale) {
-		// we limit returned results to those that are also available via OBR
-		if ( repositoryAdmin == null || bundleContext == null ) {
-			return Collections.emptyList();
-		}
-		Resource[] resources = repositoryAdmin.discoverResources(getOBRFilter(null, false));
-		if ( resources == null || resources.length < 1 ) {
-			return Collections.emptyList();
-		}
-		Set<String> availableUIDs = new HashSet<String>(resources.length);
-		for ( Resource r : resources ) {
-			availableUIDs.add(r.getSymbolicName());
-		}
-		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(availableUIDs.size());
+	private Map<String, Bundle> installedBundles() {
 		Bundle[] bundles = bundleContext.getBundles();
+		if ( bundles == null || bundles.length < 1 ) {
+			return Collections.emptyMap();
+		}
+		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(bundles.length);
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
-			if ( availableUIDs.contains(uid) ) {
-				Bundle installedBundle = installedBundles.get(uid);
-				if ( installedBundle == null
-						|| b.getVersion().compareTo(installedBundle.getVersion()) > 0 ) {
-					installedBundles.put(uid, b);
-				}
+			if ( restrictingSymbolicNameFilter != null && !uid.startsWith(restrictingSymbolicNameFilter) ) {
+				continue;
 			}
+			installedBundles.put(uid, b);
 		}
+		return installedBundles;
+	}
+
+	@Override
+	public List<Plugin> installedPlugins(Locale locale) {
+		if ( bundleContext == null ) {
+			return Collections.emptyList();
+		}
+		Map<String, Bundle> installedBundles = installedBundles();
 		List<Plugin> results = new ArrayList<Plugin>(installedBundles.size());
 		for ( Bundle b : installedBundles.values() ) {
 			Plugin p = new BundlePlugin(b, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
@@ -338,28 +350,17 @@ public class OBRPluginService implements PluginService {
 		return results;
 	}
 
-	private String getOBRFilter(final PluginQuery query, final boolean performExclude) {
+	private String getOBRFilter(final PluginQuery query) {
 		Map<String, Object> filter = new LinkedHashMap<String, Object>(4);
 		if ( query != null && query.getSimpleQuery() != null && query.getSimpleQuery().length() > 0 ) {
 			SearchFilter id = new SearchFilter(Resource.SYMBOLIC_NAME, query.getSimpleQuery(),
 					CompareOperator.SUBSTRING);
 			filter.put("id", id);
 		}
-		if ( restrictingSymbolicNameFilter != null ) {
+		if ( restrictingSymbolicNameFilter != null && restrictingSymbolicNameFilter.length() > 0 ) {
 			SearchFilter restrict = new SearchFilter(Resource.SYMBOLIC_NAME,
 					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
 			filter.put("restrict", restrict);
-		}
-		if ( performExclude && exclusionSymbolicNameFilters != null
-				&& exclusionSymbolicNameFilters.length > 0 ) {
-			Map<String, Object> exMap = new LinkedHashMap<String, Object>(
-					exclusionSymbolicNameFilters.length);
-			for ( String ex : exclusionSymbolicNameFilters ) {
-				exMap.put(ex, new SearchFilter(Resource.SYMBOLIC_NAME, ex, CompareOperator.SUBSTRING));
-			}
-			SearchFilter exOrs = new SearchFilter(exMap, LogicOperator.OR);
-			filter.put("exclusion", new SearchFilter(Collections.singletonMap("exors", exOrs),
-					LogicOperator.NOT));
 		}
 		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 	}
