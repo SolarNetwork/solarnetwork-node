@@ -132,10 +132,15 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		var id = "Plugin-" +plugin.uid.replace(/\W/g, '-');
 		var row = $('<div class="plugin row-fluid"/>').attr('id', id);
 		var installedPlugin = installed[plugin.uid];
-		var titleContainer = $('<div/>').addClass(showVersions ? 'span9' : 'span10').text(plugin.info.name);
+		var titleContainer = $('<div class="name span4"/>').text(plugin.info.name);
 		titleContainer.appendTo(row);
+		var descContainer = $('<div class="desc"/>').addClass(showVersions ? 'span5' : 'span6');
+		if ( plugin.info.description ) {
+			descContainer.text(plugin.info.description);
+		}
+		descContainer.appendTo(row);
 		if ( showVersions === true ) {
-			var versionContainer = $('<div class="span1"/>').appendTo(row);
+			var versionContainer = $('<div class="version span1"/>').appendTo(row);
 			var versionLabel = $('<span class="label">' +SolarNode.Plugins.versionLabel(plugin) +'</span>');
 			if ( installedPlugin === undefined ) {
 				// not installed... leave default style
@@ -151,7 +156,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			}
 			versionLabel.appendTo(versionContainer);
 		}
-		var actionContainer = $('<div class="span2"/>').appendTo(row);
+		var actionContainer = $('<div class="action span2"/>').appendTo(row);
 		var button = undefined;
 		var action = SolarNode.Plugins.previewInstall;
 		if ( installedPlugin === undefined ) {

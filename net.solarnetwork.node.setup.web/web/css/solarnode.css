@@ -135,10 +135,6 @@ pre.pre-scrollable {
 	margin-left: -350px;
 }
 
-#plugin-list div.plugin {
-	margin-bottom: 0.5em;
-}
-
 #plugins {
 	margin-top: 1em;
 }
@@ -155,4 +151,47 @@ pre.pre-scrollable {
 
 #plugin-install-error .alert {
 	margin-bottom: 0;
+}
+
+div.plugin {
+	padding: 8px;
+}
+
+div.plugin .name {
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+div.plugin .desc {
+	margin-bottom: 10px;
+	font-size: 0.9em;
+	font-style: italic;
+}
+
+@media (max-width: 767px) {
+	div.plugin {
+		border-top: 1px solid #ccc;
+		padding: 0 8px 8px 8px;
+	}
+	div.plugin:first-child {
+		border-top: none !important;
+	}
+	div.plugin:nth-child(even) {
+		background-color: #fafafa;
+	}
+	div.plugin > div {
+		min-height: 0 !important;
+	}
+	div.plugin .name {
+		margin-top: 5px;
+		margin-bottom: 0;
+	}
+	div.plugin .version {
+		float: left;
+		width: auto;
+	}
+	div.plugin .action {
+		float: right;
+		width: auto;
+	}
 }
