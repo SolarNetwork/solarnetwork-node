@@ -153,13 +153,11 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			dataType: 'json',
 			beforeSubmit: function(dataArray, form, options) {
 				// start a spinner on the search button so we know a search is happening
-				searchBtn.attr('disabled', 'disabled');
-				searchBtn.spin('small');
+				SolarNode.showLoading(searchBtn);
+				//searchBtn.attr('disabled', 'disabled');
 			},
 			success: function(json, status, xhr, form) {
-				// remove spinner and re-enable search button
-				searchBtn.data('spinner').stop();
-				searchBtn.removeAttr('disabled');
+				//searchBtn.removeAttr('disabled');
 				if ( json.success !== true ) {
 					SolarNode.errorAlert("Error querying SolarNetwork for locations: " +json.message);
 					return;
@@ -199,6 +197,10 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			},
 			error: function(xhr, status, statusText) {
 				SolarNode.errorAlert("Error querying SolarNetwork for locations: " +statusText);
+			},
+			complete: function() {
+				//searchBtn.removeAttr('disabled', 'disabled');
+				SolarNode.hideLoading(searchBtn);
 			}
 		});
 		modal.on('hidden', function() {

@@ -114,7 +114,7 @@ $(function() {
 			<input type="text" class="span2" maxlength="64" name="sourceName" placeholder="<fmt:message key='lookup.price.sourceName'/>"/>
 			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.price.locationName'/>"/>
 			<input type="text" class="span2" maxlength="6" name="currency" placeholder="<fmt:message key='lookup.price.currency'/>"/>
-			<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.action.search'/>">
+			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
 		</div>
@@ -154,9 +154,10 @@ $(function() {
 		<div class="form-inline">
 			<input type="text" class="span2" maxlength="64" name="sourceName" placeholder="<fmt:message key='lookup.weather.sourceName'/>"/>
 			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.weather.locationName'/>"/>
-			<input type="text" class="span2" maxlength="2" name="location.country" placeholder="<fmt:message key='lookup.weather.country'/>"/>
+			<input type="text" class="span1" maxlength="2" name="location.country" placeholder="<fmt:message key='lookup.weather.country'/>"/>
 			<input type="text" class="span2" maxlength="10" name="location.postalCode" placeholder="<fmt:message key='lookup.weather.postalCode'/>"/>
-			<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.action.search'/>">
+			<button type="submit" class="btn btn-primary ladda-button expand-right" 
+				data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
 		</div>
