@@ -232,24 +232,24 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		
 		// construct "available" section
 		html = $('<div class="accordion" id="plugin-list"/>');
-		GROUPS: for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
+		for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
 			groupName = groupedPlugins.groupNames[i];
 			groupBody = null; // don't create yet, we might filter out entire group
 			group = groupedPlugins.groups[groupName];
-			for ( j = 0, jMax = group.length; j < jMax; j++ ) {
+			GROUP: for ( j = 0, jMax = group.length; j < jMax; j++ ) {
 				plugin = group[j];
 				
 				// skip upgradable plugins
 				for ( k = 0, kMax = groupedPlugins.upgradable.length; k < kMax; k++ ) {
 					if ( plugin.uid === groupedPlugins.upgradable[k].uid ) {
-						continue GROUPS;
+						continue GROUP;
 					}
 				}
 				
 				// skip up-to-date plugins
 				for ( k = 0, kMax = groupedPlugins.upToDate.length; k < kMax; k++ ) {
 					if ( plugin.uid === groupedPlugins.upToDate[k].uid ) {
-						continue GROUPS;
+						continue GROUP;
 					}
 				}
 				
