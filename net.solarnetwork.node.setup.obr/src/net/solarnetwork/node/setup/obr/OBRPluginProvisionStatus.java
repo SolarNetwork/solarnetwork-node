@@ -48,6 +48,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	private Set<Plugin> pluginsStarted = Collections.emptySet();
 	private List<Plugin> pluginsToRemove = Collections.emptyList();
 	private Set<Plugin> pluginsRemoved = Collections.emptySet();
+	private Boolean backupComplete;
 
 	/**
 	 * Construct with an ID.
@@ -84,6 +85,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		pluginsStarted = new HashSet<Plugin>(other.pluginsStarted);
 		pluginsToRemove = new ArrayList<Plugin>(other.pluginsToRemove);
 		pluginsRemoved = new HashSet<Plugin>(other.pluginsRemoved);
+		backupComplete = other.backupComplete;
 	}
 
 	@Override
@@ -175,6 +177,11 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	public float getOverallProgress() {
 		int steps = 0;
 		float progress = 0;
+		if ( backupComplete != null ) {
+			steps++;
+			// the backup can either fail or succeed, so for progress it only matters if it was non-null
+			progress += 1f;
+		}
 		if ( overallDownloadSize != null && overallDownloadSize.longValue() > 0
 				&& overallDownloadedSize != null ) {
 			steps++;
@@ -242,6 +249,14 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 
 	public long getCreationDate() {
 		return creationDate;
+	}
+
+	public Boolean getBackupComplete() {
+		return backupComplete;
+	}
+
+	public void setBackupComplete(Boolean backupComplete) {
+		this.backupComplete = backupComplete;
 	}
 
 }

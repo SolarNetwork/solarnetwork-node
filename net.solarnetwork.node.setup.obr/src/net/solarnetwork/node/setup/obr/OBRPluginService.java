@@ -45,7 +45,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
@@ -387,9 +386,9 @@ public class OBRPluginService implements PluginService {
 		}
 		OBRPluginProvisionStatus status = new OBRPluginProvisionStatus(generateProvisionID());
 		status.setPluginsToRemove(pluginsToRemove);
-		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
+		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath),
+				(backupManager != null ? backupManager.service() : null));
 		saveProvisionTask(task);
-		handleBackupBeforeProvisioningOperation(status);
 
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);
@@ -399,31 +398,12 @@ public class OBRPluginService implements PluginService {
 		return new OBRPluginProvisionStatus(status);
 	}
 
-	private void handleBackupBeforeProvisioningOperation(OBRPluginProvisionStatus status) {
-		// if we are actually going to provision something, let's make a backup
-		if ( backupManager != null && status.getOverallProgress() < 1 ) {
-			BackupManager mgr = backupManager.service();
-			if ( mgr != null ) {
-				log.info("Creating backup before provisioning operation");
-				try {
-					Backup backup = mgr.createBackup();
-					if ( backup != null ) {
-						log.info("Created backup {} (size {})", backup.getKey(), backup.getSize());
-					}
-				} catch ( RuntimeException e ) {
-					log.warn("Error creating backup for provisioning operation {}",
-							status.getProvisionID(), e);
-				}
-			}
-		}
-	}
-
 	@Override
 	public synchronized PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
 		OBRPluginProvisionStatus status = resolveInstall(uids, locale, generateProvisionID());
-		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath));
+		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath),
+				(backupManager != null ? backupManager.service() : null));
 		saveProvisionTask(task);
-		handleBackupBeforeProvisioningOperation(status);
 
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
 		task.setFuture(future);

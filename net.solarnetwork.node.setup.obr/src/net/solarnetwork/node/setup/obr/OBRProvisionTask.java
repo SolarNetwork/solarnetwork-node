@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.Plugin;
 import org.osgi.framework.Bundle;
@@ -63,35 +65,68 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	private final OBRPluginProvisionStatus status;
 	private Future<OBRPluginProvisionStatus> future;
 	private final File directory;
+	private final BackupManager backupManager;
 
 	/**
 	 * Construct with a status.
 	 * 
+	 * @param bundleContext
+	 *        the BundleContext to manipulate bundles with
 	 * @param status
 	 *        the status, which defines the plugins to install
 	 * @param directory
 	 *        the directory to download plugins to
+	 * @param backupManager
+	 *        if provided, then a backup will be performed before provisioning
+	 *        any bundles
 	 */
-	public OBRProvisionTask(BundleContext bundleContext, OBRPluginProvisionStatus status, File directory) {
+	public OBRProvisionTask(BundleContext bundleContext, OBRPluginProvisionStatus status,
+			File directory, BackupManager backupManager) {
 		super();
 		this.bundleContext = bundleContext;
 		this.status = status;
 		this.directory = directory;
+		this.backupManager = backupManager;
+		this.status.setBackupComplete(backupManager == null);
 	}
 
 	@Override
 	public OBRPluginProvisionStatus call() throws Exception {
 		try {
+			status.setStatusMessage("Starting provisioning operation.");
+			handleBackupBeforeProvisioningOperation();
 			if ( status.getPluginsToInstall() != null && status.getPluginsToInstall().size() > 0 ) {
 				downloadPlugins(status.getPluginsToInstall());
 			}
 			if ( status.getPluginsToRemove() != null && status.getPluginsToRemove().size() > 0 ) {
 				removePlugins(status.getPluginsToRemove());
 			}
+			status.setStatusMessage("Provisioning operation complete.");
 			return status;
 		} catch ( Exception e ) {
 			LOG.warn("Error in provision task: {}", e.getMessage(), e);
+			status.setStatusMessage("Error in provisioning operation: " + e.getMessage());
 			throw e;
+		}
+	}
+
+	private void handleBackupBeforeProvisioningOperation() {
+		// if we are actually going to provision something, let's make a backup
+		if ( backupManager != null && status.getOverallProgress() < 1 ) {
+			status.setStatusMessage("Creating backup before provisioning operation.");
+			LOG.info("Creating backup before provisioning operation.");
+			try {
+				Backup backup = backupManager.createBackup();
+				if ( backup != null ) {
+					LOG.info("Created backup {} (size {})", backup.getKey(), backup.getSize());
+					status.setStatusMessage("Backup complete.");
+					status.setBackupComplete(Boolean.TRUE);
+				}
+			} catch ( RuntimeException e ) {
+				status.setBackupComplete(Boolean.FALSE);
+				LOG.warn("Error creating backup for provisioning operation {}", status.getProvisionID(),
+						e);
+			}
 		}
 	}
 
@@ -127,6 +162,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			Plugin plugin = itr.previous();
 			assert plugin instanceof OBRResourcePlugin;
 			LOG.debug("Starting install of plugin: {}", plugin.getUID());
+			status.setStatusMessage("Starting install of plugin " + plugin.getUID());
 
 			OBRResourcePlugin obrPlugin = (OBRResourcePlugin) plugin;
 			Resource resource = obrPlugin.getResource();
@@ -196,6 +232,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		}
 		for ( ListIterator<Bundle> itr = installedBundles.listIterator(); itr.hasNext(); ) {
 			Bundle b = itr.next();
+			status.setStatusMessage("Starting plugin: " + b.getSymbolicName());
 			try {
 				if ( !(b.getState() == Bundle.ACTIVE || b.getState() == Bundle.STARTING) ) {
 					b.start();
@@ -209,10 +246,12 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			}
 		}
 		if ( refreshNeeded ) {
+			status.setStatusMessage("Refreshing OSGi framework.");
 			FrameworkWiring fw = bundleContext.getBundle(0).adapt(FrameworkWiring.class);
 			fw.refreshBundles(null);
 		}
 		LOG.debug("Install of {} plugins complete", plugins.size());
+		status.setStatusMessage("Install of " + plugins.size() + " plugins complete");
 	}
 
 	private void removePlugins(List<Plugin> plugins) {
@@ -223,6 +262,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		for ( Plugin plugin : plugins ) {
 			assert plugin instanceof BundlePlugin;
 			LOG.debug("Starting removal of plugin: {}", plugin.getUID());
+			status.setStatusMessage("Starting removal of plugin " + plugin.getUID());
 			BundlePlugin bundlePlugin = (BundlePlugin) plugin;
 			Bundle oldBundle = bundlePlugin.getBundle();
 			if ( oldBundle != null ) {
@@ -243,9 +283,11 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			}
 
 			LOG.debug("Removed plugin: {}", plugin.getUID());
+			status.setStatusMessage("Removed plugin " + plugin.getUID());
 			status.markPluginRemoved(plugin);
 		}
 		if ( refreshNeeded ) {
+			status.setStatusMessage("Refreshing OSGi framework.");
 			FrameworkWiring fw = bundleContext.getBundle(0).adapt(FrameworkWiring.class);
 			fw.refreshBundles(null);
 		}
