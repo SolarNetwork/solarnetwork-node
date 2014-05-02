@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Rxtx Serial Port Support
 Bundle-SymbolicName: net.solarnetwork.node.io.rxtx
+Bundle-Description: Communication support for RFXCOM devices.
 Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

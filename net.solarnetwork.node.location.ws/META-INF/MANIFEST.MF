@@ -2,6 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNet Location Service
 Bundle-SymbolicName: net.solarnetwork.node.location.ws
+Bundle-Description: Service to find location details, such as price or weather locations, 
+ and associate the location to collected data.
 Bundle-Version: 1.1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

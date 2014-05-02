@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Weather Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.weather.dao.jdbc
+Bundle-Description: Database storage cache for weather data.
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

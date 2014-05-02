@@ -2,6 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Network Ping Control
 Bundle-SymbolicName: net.solarnetwork.node.control.ping
+Bundle-Description: Service that periodically makes a HTTP request to an arbitrary URL 
+ to test for network connectivity, and toggle a switch control value when connectivity 
+ cannot be established.
 Bundle-Version: 1.3.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

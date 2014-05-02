@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Weather Datum Support
 Bundle-SymbolicName: net.solarnetwork.node.weather
+Bundle-Description: Support for the collection of weather and related solar data.
 Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CurrentCost Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.currentcost
+Bundle-Description: Collect consumption data from CurrentCost (and compatible) meter devices.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

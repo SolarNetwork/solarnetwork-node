@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Reactor XML Support
 Bundle-SymbolicName: net.solarnetwork.node.reactor.io.xml
+Bundle-Description: Communication support for SolarNet XML based Reactor messages.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

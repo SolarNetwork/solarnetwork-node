@@ -2,6 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Toggle Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus.toggle
+Bundle-Description: Service to control arbitrary Modbus-accessible digital switches, 
+ turning the switches on or off.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

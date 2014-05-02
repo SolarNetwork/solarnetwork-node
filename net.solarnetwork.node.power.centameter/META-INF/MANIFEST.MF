@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Cent-a-meter Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.centameter
+Bundle-Description: Collect generation data from Cent-a-meter amp meters.
 Bundle-Version: 1.8.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

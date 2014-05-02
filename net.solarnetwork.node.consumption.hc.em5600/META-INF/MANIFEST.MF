@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Hsiang Cheng Electric EM56XX Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.hc.em5600
+Bundle-Description: Collect consumption data from Hsiang Cheng EM56XX series meter devices.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

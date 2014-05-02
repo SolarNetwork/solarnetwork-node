@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNet Bulk Datum Upload Service
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkxmlwebpost
+Bundle-Description: Upload collected data to SolarNet periodically, in bulk.
 Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

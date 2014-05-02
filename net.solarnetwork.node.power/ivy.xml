@@ -12,6 +12,6 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" conf="runtime"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="1.19.0"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.19,2.0)"/>
 	</dependencies>
 </ivy-module>

@@ -1,7 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Simple Reactor Service
+Bundle-Name: Core Reactor Service
 Bundle-SymbolicName: net.solarnetwork.node.reactor.simple
+Bundle-Description: Decode SolarNet Reactor messages and persist them for 
+ deferred execution.
 Bundle-Version: 1.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

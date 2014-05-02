@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SMA yasdi4j Support
 Bundle-SymbolicName: net.solarnetwork.node.io.yasdi4j
+Bundle-Description: Communication support for SMA devices using the yasdi4j framework.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

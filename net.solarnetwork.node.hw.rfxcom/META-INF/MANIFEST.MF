@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RFXCOM Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfxcom
+Bundle-Description: Hardware support for RFXCOM devices, such as the RFXtrx433 transceiver.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

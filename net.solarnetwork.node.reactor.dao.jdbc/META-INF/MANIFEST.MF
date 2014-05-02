@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Reactor Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc
+Bundle-Description: Database storage cache for SolarNet instruction requests.
 Bundle-Version: 1.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

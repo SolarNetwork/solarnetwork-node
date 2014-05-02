@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Core URL Support
 Bundle-SymbolicName: net.solarnetwork.node.io.url
-Bundle-Description: Provides support for collecting data from network resources.
+Bundle-Description: Communication support for collecting data from network resources.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
