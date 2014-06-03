@@ -24,11 +24,14 @@ package net.solarnetwork.node.power.enasolar.ws.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import javax.annotation.Resource;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 /**
@@ -40,11 +43,30 @@ import org.springframework.test.context.ContextConfiguration;
 @ContextConfiguration
 public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
-	@Autowired
+	@Resource(name = "datumDataSource")
 	private DeviceInfoDatumDataSource dataSource;
 
+	@Resource(name = "datumDataSourceList")
+	private DeviceInfoDatumDataSource dataSourceList;
+
+	@Before
+	public void setup() {
+		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
+		deviceInfoMap.put("pvVolts", "//data[@key='pvVolts']/@value");
+		deviceInfoMap.put("pvPower", "//data[@key='pvPower']/@value");
+		deviceInfoMap.put("acOutputVolts", "//data[@key='acOutputVolts']/@value");
+		deviceInfoMap.put("acPower", "//data[@key='acPower']/@value");
+		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
+		dataSource.setXpathMap(deviceInfoMap);
+
+		Map<String, String> metersDataMap = new LinkedHashMap<String, String>(10);
+		metersDataMap.put("outputPower", "//OutputPower");
+		metersDataMap.put("energyLifetime", "//EnergyLifetime");
+		dataSourceList.setXpathMap(metersDataMap);
+	}
+
 	@Test
-	public void parseDatum() {
+	public void parseDeviceInfoDatum() {
 		PowerDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
 		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
@@ -52,5 +74,13 @@ public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest
 		assertEquals(241.1, datum.getAcOutputVolts().doubleValue(), 0.001);
 		assertNotNull(datum.getAcOutputAmps());
 		assertEquals(2.604, datum.getAcOutputAmps().doubleValue(), 0.001);
+	}
+
+	@Test
+	public void parseMetersDataDatum() {
+		PowerDatum datum = dataSourceList.readCurrentDatum();
+		log.debug("Got datum: {}", datum);
+		assertEquals(Integer.valueOf(214), datum.getWatts());
+		assertEquals(Long.valueOf(7629660), datum.getWattHourReading());
 	}
 }

@@ -37,6 +37,12 @@
 		<property name="settingDao" ref="settingDao"/>
 	</bean>
 
+	<bean id="datumDataSourceList" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource"
+			init-method="init" depends-on="databaseSetup">
+		<property name="urlList" value="${enasolar.urls}"/>
+		<property name="settingDao" ref="settingDao"/>
+	</bean>
+
 	<bean id="settingDao" class="net.solarnetwork.node.dao.jdbc.JdbcSettingDao">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>

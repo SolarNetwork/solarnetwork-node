@@ -30,11 +30,11 @@ import org.slf4j.LoggerFactory;
  * Extension of {@link PowerDatum} to map EnaSolar data appropriately.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EnaSolarPowerDatum extends PowerDatum {
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
 
 	/**
 	 * Default constructor.
@@ -95,6 +95,30 @@ public class EnaSolarPowerDatum extends PowerDatum {
 			acOutputAmps = (power.floatValue() * 1000F) / volts;
 		}
 		setAcOutputAmps(acOutputAmps);
+	}
+
+	/**
+	 * Get the watt output power, in kW. This will set the {@code watts} value.
+	 * 
+	 * @param power
+	 *        the output power, in kW
+	 */
+	public void setOutputPower(Float power) {
+		Integer w = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
+		setWatts(w);
+	}
+
+	/**
+	 * Set the overall lifetime energy produced, as a deca-watt hour hexidecimal
+	 * string value. This is an alias for {@link #setDecaWattHoursTotal(String)}
+	 * .
+	 * 
+	 * @param energyLifetime
+	 *        the lifetime energy value
+	 * @see #setDecaWattHoursTotal(String)
+	 */
+	public void setEnergyLifetime(String energyLifetime) {
+		setDecaWattHoursTotal(energyLifetime);
 	}
 
 }

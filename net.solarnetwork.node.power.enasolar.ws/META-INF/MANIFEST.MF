@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: EnaSolar Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.enasolar.ws
 Bundle-Description: Collect generation data from EnaSolar inverters.
-Bundle-Version: 1.8.0
+Bundle-Version: 1.9.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
