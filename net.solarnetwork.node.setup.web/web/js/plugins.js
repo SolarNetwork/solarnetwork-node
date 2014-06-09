@@ -55,6 +55,11 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		}
 		var n = match[1];
 
+		// special case: "io"
+		if ( n === 'io' ) {
+			return 'I/O';
+		}
+		
 		// capitalize
 		return (n.charAt(0).toUpperCase() + n.substring(1));
 	};
