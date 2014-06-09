@@ -124,7 +124,7 @@ public class OBRPluginService implements PluginService {
 	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { ".mock", ".test",
-			"net.solarnetwork.node.dao.", "net.solarnetwork.node.io.", "net.solarnetwork.node.hw." };
+			"net.solarnetwork.node.dao.", "net.solarnetwork.node.hw." };
 
 	private static final String[] DEFAULT_CORE_FEATURE_EXPRESSIONS = { "net\\.solarnetwork\\.node",
 			"net\\.solarnetwork\\.node\\.dao(?:\\..*)*", "net\\.solarnetwork\\.node\\.setup(?:\\..*)*",
