@@ -164,4 +164,96 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum implements ACEnergy
 		return sample.getFrequency(PM3200Data.ADDR_DATA_FREQUENCY);
 	}
 
+	@Override
+	public Float getPhaseVoltage() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_V_L1_L2;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_V_L2_L3;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_V_L3_L1;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_V_L_L_AVERAGE;
+				break;
+		}
+		return sample.getVoltage(addr);
+	}
+
+	@Override
+	public Float getVoltage() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_V_L1_NEUTRAL;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_V_L2_NEUTRAL;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_V_L3_NEUTRAL;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_V_NEUTRAL_AVERAGE;
+				break;
+		}
+		return sample.getVoltage(addr);
+	}
+
+	@Override
+	public Float getCurrent() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_I1;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_I2;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_I3;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_I_NEUTRAL;
+				break;
+		}
+		return sample.getVoltage(addr);
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = PM3200Data.ADDR_DATA_POWER_FACTOR_P1;
+				break;
+
+			case PhaseB:
+				addr = PM3200Data.ADDR_DATA_POWER_FACTOR_P2;
+				break;
+
+			case PhaseC:
+				addr = PM3200Data.ADDR_DATA_POWER_FACTOR_P3;
+				break;
+
+			default:
+				addr = PM3200Data.ADDR_DATA_POWER_FACTOR_TOTAL;
+				break;
+		}
+		return sample.getPowerFactor(addr);
+	}
+
 }
