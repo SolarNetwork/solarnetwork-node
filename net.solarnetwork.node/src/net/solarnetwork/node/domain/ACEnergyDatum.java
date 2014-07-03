@@ -81,4 +81,31 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 */
 	Float getFrequency();
 
+	/**
+	 * Get the instantaneous neutral voltage.
+	 * 
+	 * @return the volts, or <em>null</em> if not known
+	 */
+	Float getVoltage();
+
+	/**
+	 * Get the instantaneous current, in amps.
+	 * 
+	 * @return the amps, or <em>null</em> if not known
+	 */
+	Float getCurrent();
+
+	/**
+	 * Get the instantaneous phase line voltage.
+	 * 
+	 * @return the volts, or <em>null</em> if not known
+	 */
+	Float getPhaseVoltage();
+
+	/**
+	 * Get the instantaneous power factor.
+	 * 
+	 * @return the power factor, or <em>null</em> if not known
+	 */
+	Float getPowerFactor();
 }
