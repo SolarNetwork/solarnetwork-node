@@ -20,8 +20,11 @@
 
 	<!-- Published Services -->
 
-	<service id="mockConsumptionDatumDataSourceService" ref="mockPriceConsumptionDatumDataSource" 
-		interface="net.solarnetwork.node.DatumDataSource" ranking="-1">
+	<service ref="mockPriceConsumptionDatumDataSource" ranking="-1">
+		<interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.MultiDatumDataSource</value>
+		</interfaces>
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
 		</service-properties>

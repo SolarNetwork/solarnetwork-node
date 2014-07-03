@@ -25,8 +25,12 @@
 package net.solarnetwork.node.consumption.mock;
 
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.Mock;
+import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,9 +64,10 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class MockConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum> {
+public class MockConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
+		MultiDatumDataSource<ConsumptionDatum> {
 
 	/** The default value for the {@code hourDayStart} property. */
 	public static final int DEFAULT_HOUR_DAY_START = 8;
@@ -73,11 +78,9 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 	/** The default value for the {@code sourceId} property. */
 	public static final String DEFAULT_MOCK_SOURCE_ID = "MockSource";
 
-	private static final ConsumptionDatum DAY = new ConsumptionDatum(DEFAULT_MOCK_SOURCE_ID, 2.1F,
-			230.0F);
+	private static final ConsumptionDatum DAY = new MockConsumptionDatum(DEFAULT_MOCK_SOURCE_ID, 480);
 
-	private static final ConsumptionDatum NIGHT = new ConsumptionDatum(DEFAULT_MOCK_SOURCE_ID, 0.2F,
-			230.0F);
+	private static final ConsumptionDatum NIGHT = new MockConsumptionDatum(DEFAULT_MOCK_SOURCE_ID, 45);
 
 	private final Logger log = LoggerFactory.getLogger(MockConsumptionDatumDataSource.class);
 
@@ -85,10 +88,18 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 	private String groupUID = "Mock";
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
 	private int hourNightStart = DEFAULT_HOUR_NIGHT_START;
-	private int dayAmpRandomness = 16;
-	private int nightAmpRandomness = 1;
+	private int dayWattRandomness = 16;
+	private int nightWattRandomness = 1;
 
 	private final AtomicLong counter = new AtomicLong(0);
+
+	public static final class MockConsumptionDatum extends ConsumptionDatum implements Mock {
+
+		public MockConsumptionDatum(String sourceId, Integer watts) {
+			super(sourceId, watts);
+		}
+
+	}
 
 	@Override
 	public Class<? extends ConsumptionDatum> getDatumType() {
@@ -106,13 +117,13 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 						+ (this.hourNightStart - 12) + "pm");
 			}
 			result = (ConsumptionDatum) DAY.clone();
-			applyRandomness(result, dayAmpRandomness);
+			applyRandomness(result, dayWattRandomness);
 		} else {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Returning night consumption after " + (this.hourNightStart - 12) + "pm");
 			}
 			result = (ConsumptionDatum) NIGHT.clone();
-			applyRandomness(result, nightAmpRandomness);
+			applyRandomness(result, nightWattRandomness);
 		}
 		result.setSourceId(sourceId);
 		long wattHours = counter.addAndGet(Math.round(Math.random() * 100.0));
@@ -120,13 +131,27 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 		return result;
 	}
 
-	private void applyRandomness(final ConsumptionDatum datum, final float r) {
-		float amps = datum.getAmps();
-		amps += (float) (Math.random() * r * (Math.random() > 0.2 ? 1.0f : -1.0f));
-		if ( amps < 0 ) {
-			amps = 0;
+	@Override
+	public Class<? extends ConsumptionDatum> getMultiDatumType() {
+		return getDatumType();
+	}
+
+	@Override
+	public Collection<ConsumptionDatum> readMultipleDatum() {
+		ConsumptionDatum d = readCurrentDatum();
+		if ( d == null ) {
+			return Collections.emptyList();
 		}
-		datum.setAmps(amps);
+		return Collections.singleton(d);
+	}
+
+	private void applyRandomness(final ConsumptionDatum datum, final int r) {
+		int watts = datum.getWatts();
+		watts += (int) (Math.random() * r * (Math.random() > 0.2 ? 1.0f : -1.0f));
+		if ( watts < 0 ) {
+			watts = 0;
+		}
+		datum.setWatts(watts);
 	}
 
 	@Override
@@ -167,20 +192,20 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 		this.hourNightStart = hourNightStart;
 	}
 
-	public int getDayAmpRandomness() {
-		return dayAmpRandomness;
+	public int getDayWattRandomness() {
+		return dayWattRandomness;
 	}
 
-	public void setDayAmpRandomness(int dayAmpRandomness) {
-		this.dayAmpRandomness = dayAmpRandomness;
+	public void setDayWattRandomness(int dayAmpRandomness) {
+		this.dayWattRandomness = dayAmpRandomness;
 	}
 
-	public int getNightAmpRandomness() {
-		return nightAmpRandomness;
+	public int getNightWattRandomness() {
+		return nightWattRandomness;
 	}
 
-	public void setNightAmpRandomness(int nightAmpRandomness) {
-		this.nightAmpRandomness = nightAmpRandomness;
+	public void setNightWattRandomness(int nightAmpRandomness) {
+		this.nightWattRandomness = nightAmpRandomness;
 	}
 
 }
