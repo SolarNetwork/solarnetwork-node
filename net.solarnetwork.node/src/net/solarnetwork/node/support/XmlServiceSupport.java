@@ -24,11 +24,10 @@ package net.solarnetwork.node.support;
 
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyEditor;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -39,8 +38,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.zip.DeflaterInputStream;
-import java.util.zip.GZIPInputStream;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -64,6 +61,7 @@ import net.solarnetwork.node.util.ClassUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -113,6 +111,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	private DocumentBuilderFactory docBuilderFactory = null;
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
+
 	/**
 	 * Initialize this class after properties are set.
 	 */
@@ -512,33 +511,15 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 */
 	protected InputSource getInputSourceFromURLConnection(URLConnection conn) throws IOException {
-		BufferedReader resp = null;
+		Reader resp = null;
 		try {
-			InputStream is = conn.getInputStream();
-
-			// look for gzip/deflate encoding
-			String enc = conn.getContentEncoding();
-			String type = conn.getContentType();
-
-			log.trace("Got content type [{}] encoded as [{}]", type, enc);
-
-			if ( "gzip".equalsIgnoreCase(enc) ) {
-				is = new GZIPInputStream(is);
-			} else if ( "deflate".equalsIgnoreCase("enc") ) {
-				is = new DeflaterInputStream(is);
-			}
-
-			resp = new BufferedReader(new UnicodeReader(is, null));
+			resp = getUnicodeReaderFromURLConnection(conn);
 
 			// for now we are reading entire response into memory... might want
 			// to save to a temporary file if response very large, but we assume
 			// for now the responses will be fairly small
-			StringBuilder buf = new StringBuilder();
-			String str;
-			while ( (str = resp.readLine()) != null ) {
-				buf.append(str);
-			}
-			String respXml = buf.toString();
+			String respXml = FileCopyUtils.copyToString(resp);
+
 			log.trace("Got response XML from URL [{}]:\n{}", conn.getURL(), respXml);
 			if ( respXml.length() < 1 ) {
 				// no data in response... can't be valid so throw IOException
