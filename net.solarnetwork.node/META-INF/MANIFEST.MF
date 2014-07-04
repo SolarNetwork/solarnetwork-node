@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
-Bundle-Description: The core of the SolarNode framework that providing basic 
+Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
 Bundle-Version: 1.21.0
 Bundle-Vendor: SolarNetwork
