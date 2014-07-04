@@ -121,7 +121,7 @@ public class OBRPluginService implements PluginService {
 
 	private static final String PREVIEW_PROVISION_ID = "preview";
 
-	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node.";
+	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node";
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { ".mock", ".test",
 			"net.solarnetwork.node.dao.", "net.solarnetwork.node.hw." };
@@ -361,7 +361,11 @@ public class OBRPluginService implements PluginService {
 					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
 			filter.put("restrict", restrict);
 		}
-		return new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
+		String result = new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
+		if ( result == null || result.length() < 1 ) {
+			return null;
+		}
+		return result;
 	}
 
 	private String generateProvisionID() {
