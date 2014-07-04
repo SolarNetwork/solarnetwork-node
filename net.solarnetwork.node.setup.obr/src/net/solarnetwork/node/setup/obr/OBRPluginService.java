@@ -603,7 +603,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		OBRPluginService defaults = new OBRPluginService();
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(new BasicTextFieldSettingSpecifier("RestrictingSymbolicNameFilter", defaults
+		result.add(new BasicTextFieldSettingSpecifier("restrictingSymbolicNameFilter", defaults
 				.getRestrictingSymbolicNameFilter()));
 		return result;
 	}
