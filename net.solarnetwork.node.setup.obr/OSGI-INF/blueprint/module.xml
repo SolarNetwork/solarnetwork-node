@@ -36,10 +36,17 @@
 
 	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" 
 			init-method="init" destroy-method="destroy">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.obr.OBRPluginService" 
+             autowire-on-update="true"/>
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="repositoryAdmin" ref="repositoryAdmin"/>
 		<property name="repositories" ref="obrRepos"/>
 		<property name="backupManager" ref="backupManager"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames" value="net.solarnetwork.node.setup.obr.OBRPluginService"/>
+			</bean>
+		</property>
 	</bean>
 	
 	<bean id="repoMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -71,6 +78,11 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
-	<service ref="repoService" interface="net.solarnetwork.node.setup.PluginService"/>
+	<service ref="repoService">
+		<interfaces>
+			<value>net.solarnetwork.node.setup.PluginService</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
 
 </blueprint>

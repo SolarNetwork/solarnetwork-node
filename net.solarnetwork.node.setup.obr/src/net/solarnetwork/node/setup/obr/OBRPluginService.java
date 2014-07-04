@@ -25,6 +25,7 @@ package net.solarnetwork.node.setup.obr;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,6 +47,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
@@ -68,6 +72,7 @@ import org.osgi.service.obr.Resolver;
 import org.osgi.service.obr.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 
 /**
  * OBR implementation of {@link PluginService}, using the Apache Felix OBR
@@ -90,13 +95,14 @@ import org.slf4j.LoggerFactory;
  * associated {@code org.osgi.service.obr.Repository} instance with the
  * {@code repositoryAdmin} service.</dd>
  * 
- * <dt>restrictingSymbolicNameFilter</dt>
- * <dd>An optional filter to include when
+ * <dt>restrictingSymbolicNameFilters</dt>
+ * <dd>An optional list of filters to include when
  * {@link #availablePlugins(PluginQuery, Locale)} or
  * {@link #installedPlugins(Locale)} are called that restricts the results to
  * those <em>starting with</em> this value. The idea here is to provide a way to
  * focus the results on just a core subset of all plugins so the results are
- * more relevant to users.</dd>
+ * more relevant to users. The filters are <b>or-ed</b> together, so any filter
+ * that matches allows the matching bundle to be used.</dd>
  * 
  * <dt>exclusionSymbolicNameFilters</dt>
  * <dd>An optional list of symbolic bundle name <em>substrings</em> to exclude
@@ -117,11 +123,11 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.0
  */
-public class OBRPluginService implements PluginService {
+public class OBRPluginService implements PluginService, SettingSpecifierProvider {
 
 	private static final String PREVIEW_PROVISION_ID = "preview";
 
-	public static final String DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = "net.solarnetwork.node";
+	public static final String[] DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = { "net.solarnetwork.node" };
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { ".mock", ".test",
 			"net.solarnetwork.node.dao.", "net.solarnetwork.node.hw." };
@@ -134,12 +140,14 @@ public class OBRPluginService implements PluginService {
 	private BundleContext bundleContext;
 	private List<OBRRepository> repositories;
 	private String downloadPath = "app/main";
-	private String restrictingSymbolicNameFilter = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
+	private String[] restrictingSymbolicNameFilters = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
 	private Pattern[] coreFeatureSymbolicNamePatterns = StringUtils.patterns(
 			DEFAULT_CORE_FEATURE_EXPRESSIONS, 0);
 	private OptionalService<BackupManager> backupManager;
 	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
+
+	private MessageSource messageSource;
 
 	private TaskCleaner cleanerTask;
 
@@ -323,8 +331,17 @@ public class OBRPluginService implements PluginService {
 		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(bundles.length);
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
-			if ( restrictingSymbolicNameFilter != null && !uid.startsWith(restrictingSymbolicNameFilter) ) {
-				continue;
+			if ( restrictingSymbolicNameFilters != null && restrictingSymbolicNameFilters.length > 0 ) {
+				boolean allowed = false;
+				for ( String filter : restrictingSymbolicNameFilters ) {
+					if ( uid.startsWith(filter) ) {
+						allowed = true;
+						break;
+					}
+				}
+				if ( !allowed ) {
+					continue;
+				}
 			}
 			installedBundles.put(uid, b);
 		}
@@ -356,10 +373,19 @@ public class OBRPluginService implements PluginService {
 					CompareOperator.SUBSTRING);
 			filter.put("id", id);
 		}
-		if ( restrictingSymbolicNameFilter != null && restrictingSymbolicNameFilter.length() > 0 ) {
-			SearchFilter restrict = new SearchFilter(Resource.SYMBOLIC_NAME,
-					restrictingSymbolicNameFilter, CompareOperator.SUBSTRING_AT_START);
-			filter.put("restrict", restrict);
+		if ( restrictingSymbolicNameFilters != null && restrictingSymbolicNameFilters.length > 0 ) {
+			Map<String, Object> restrictions = new LinkedHashMap<String, Object>(
+					restrictingSymbolicNameFilters.length);
+			for ( String oneFilter : restrictingSymbolicNameFilters ) {
+				SearchFilter restrict = new SearchFilter(Resource.SYMBOLIC_NAME, oneFilter,
+						CompareOperator.SUBSTRING_AT_START);
+				restrictions.put(oneFilter, restrict);
+			}
+			if ( restrictions.size() > 1 ) {
+				filter.put("restrict", new SearchFilter(restrictions, LogicOperator.OR));
+			} else {
+				filter.putAll(restrictions);
+			}
 		}
 		String result = new SearchFilter(filter, LogicOperator.AND).asLDAPSearchFilterString();
 		if ( result == null || result.length() < 1 ) {
@@ -556,6 +582,34 @@ public class OBRPluginService implements PluginService {
 		}
 	}
 
+	// Settings
+
+	@Override
+	public String getSettingUID() {
+		return getClass().getName();
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "OBR Plugin Service";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		OBRPluginService defaults = new OBRPluginService();
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		result.add(new BasicTextFieldSettingSpecifier("RestrictingSymbolicNameFilter", defaults
+				.getRestrictingSymbolicNameFilter()));
+		return result;
+	}
+
+	// Accessors
+
 	public void setRepositoryAdmin(RepositoryAdmin repositoryAdmin) {
 		this.repositoryAdmin = repositoryAdmin;
 	}
@@ -564,8 +618,18 @@ public class OBRPluginService implements PluginService {
 		this.repositories = repositories;
 	}
 
+	public String getRestrictingSymbolicNameFilter() {
+		if ( this.restrictingSymbolicNameFilters == null ) {
+			return null;
+		}
+		return StringUtils.commaDelimitedStringFromCollection(Arrays
+				.asList(this.restrictingSymbolicNameFilters));
+	}
+
 	public void setRestrictingSymbolicNameFilter(String restrictingSymbolicNameFilter) {
-		this.restrictingSymbolicNameFilter = restrictingSymbolicNameFilter;
+		Set<String> set = StringUtils.commaDelimitedStringToSet(restrictingSymbolicNameFilter);
+		this.restrictingSymbolicNameFilters = (set.size() > 0 ? set.toArray(new String[set.size()])
+				: null);
 	}
 
 	public void setExclusionSymbolicNameFilters(String[] exclusionSymbolicNameFilters) {
@@ -622,6 +686,10 @@ public class OBRPluginService implements PluginService {
 	 */
 	public void setCoreFeatureSymbolicNamePatterns(Pattern[] coreFeatureSymbolicNamePatterns) {
 		this.coreFeatureSymbolicNamePatterns = coreFeatureSymbolicNamePatterns;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }
