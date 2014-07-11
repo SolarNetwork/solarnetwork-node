@@ -171,6 +171,13 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			for ( String channelName : otherChannelNames ) {
 				captureDataValue(device, channelName, channelName, map);
 			}
+			if ( map.size() > 0 ) {
+				if ( datum.getChannelData() == null ) {
+					datum.setChannelData(map);
+				} else {
+					datum.getChannelData().putAll(map);
+				}
+			}
 		}
 
 		if ( !isValidDatum(datum) ) {

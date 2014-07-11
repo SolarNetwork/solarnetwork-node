@@ -65,11 +65,11 @@ public class SMAPowerDatum extends PowerDatum {
 	}
 
 	public String getStatusMessage() {
-		return getStringChannelData("Status");
+		return getStringChannelData("Op.Health");
 	}
 
 	public void setStatusMessage(String statusMessage) {
-		setChannelDataValue("Status", statusMessage);
+		setChannelDataValue("Op.Health", statusMessage);
 	}
 
 	public String getFaultMessage() {
@@ -78,6 +78,14 @@ public class SMAPowerDatum extends PowerDatum {
 
 	public void setFaultMessage(String faultMessage) {
 		setChannelDataValue("Error", faultMessage);
+	}
+
+	public Map<String, Object> getChannelData() {
+		return channelData;
+	}
+
+	public void setChannelData(Map<String, Object> channelData) {
+		this.channelData = channelData;
 	}
 
 }
