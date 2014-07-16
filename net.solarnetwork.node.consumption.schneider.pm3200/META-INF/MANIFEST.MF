@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider Electirc PM3200 Meter Consumption DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.schneider.pm3200
 Bundle-Description: Collect consumption data from Schneider Electirc PM32XX series meter devices.
-Bundle-Version: 1.3.0
+Bundle-Version: 1.4.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

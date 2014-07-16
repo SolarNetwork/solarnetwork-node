@@ -34,7 +34,9 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
 import org.springframework.context.MessageSource;
 
@@ -49,22 +51,25 @@ import org.springframework.context.MessageSource;
  * <dl class="class-properties">
  * <dt>messageSource</dt>
  * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
+ * 
+ * <dt>sampleCacheSeconds</dt>
+ * <dd>The maximum number of seconds to cache data read from the meter, until
+ * the data will be read from the meter again.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
 		SettingSpecifierProvider {
 
-	private static final long MIN_TIME_READ_DATA = 1000L * 5L; // 5 seconds
-
 	private MessageSource messageSource;
+	private int sampleCacheSeconds = 5;
 
 	private PM3200Data getCurrentSample(final SerialConnection conn) {
 		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
-		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
+		if ( lastReadDiff > (sampleCacheSeconds * 1000) ) {
 			sample.readMeterData(conn, getUnitId());
 			if ( log.isTraceEnabled() ) {
 				log.trace(sample.dataDebugString());
@@ -157,6 +162,23 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		PM3200ConsumptionDatumDataSource defaults = new PM3200ConsumptionDatumDataSource();
+		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds", String.valueOf(defaults
+				.getSampleCacheSeconds())));
+		return results;
+	}
+
+	public int getSampleCacheSeconds() {
+		return sampleCacheSeconds;
+	}
+
+	public void setSampleCacheSeconds(int sampleCacheSeconds) {
+		this.sampleCacheSeconds = sampleCacheSeconds;
 	}
 
 }
