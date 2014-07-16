@@ -88,8 +88,8 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 	private String groupUID = "Mock";
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
 	private int hourNightStart = DEFAULT_HOUR_NIGHT_START;
-	private int dayWattRandomness = 16;
-	private int nightWattRandomness = 1;
+	private int dayWattRandomness = 200;
+	private int nightWattRandomness = 50;
 
 	private final AtomicLong counter = new AtomicLong(0);
 
