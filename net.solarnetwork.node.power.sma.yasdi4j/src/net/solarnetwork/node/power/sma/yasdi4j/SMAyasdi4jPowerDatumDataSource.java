@@ -331,7 +331,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("channelMaxAgeSeconds", String.valueOf(defaults
 				.getChannelMaxAgeSeconds())));
 		results.add(new BasicTextFieldSettingSpecifier("deviceLockTimeoutSeconds", String
-				.valueOf(defaults.getChannelMaxAgeSeconds())));
+				.valueOf(defaults.getDeviceLockTimeoutSeconds())));
 
 		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue", defaults
 				.getPvWattsChannelNamesValue()));
