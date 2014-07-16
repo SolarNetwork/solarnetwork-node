@@ -77,7 +77,7 @@ import de.michaeldenk.yasdi4j.YasdiDriver;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, ObjectFactory<YasdiMaster> {
 

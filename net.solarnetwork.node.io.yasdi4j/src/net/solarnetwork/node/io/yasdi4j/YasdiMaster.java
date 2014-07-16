@@ -31,7 +31,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * API for a YASDI master component.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface YasdiMaster {
 

@@ -72,7 +72,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport implements
 		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
