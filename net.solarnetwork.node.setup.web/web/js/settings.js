@@ -143,7 +143,6 @@ SolarNode.Settings.addLocationFinder = function(params) {
 	var modalRuntimeKey = lcType+'Modal';
 	var modal = $('#'+lcType+'-lookup-modal');
 	var chooseBtn = $('#'+lcType+'-lookup-choose');
-	var selectedLocation = undefined;
 	var tbody = modal.find('tbody');
 	var searchBtn = modal.find('button[type=submit]');
 	
@@ -154,6 +153,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			beforeSubmit: function(dataArray, form, options) {
 				// start a spinner on the search button so we know a search is happening
 				SolarNode.showLoading(searchBtn);
+				chooseBtn.removeData('location'); // clear any previous selection
 				//searchBtn.attr('disabled', 'disabled');
 			},
 			success: function(json, status, xhr, form) {
@@ -188,7 +188,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 							me.parent().find('tr.success').removeClass('success');
 							me.addClass('success');
 						}
-						selectedLocation = me.data('location');
+						chooseBtn.data('location', me.data('location'));
 						chooseBtn.removeAttr('disabled');
 					});
 					tbody.append(tr);
@@ -205,12 +205,25 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		});
 		modal.on('hidden', function() {
 			chooseBtn.attr('disabled', 'disabled');
-			chooseBtn.unbind();
+			chooseBtn.removeData('params');
+			chooseBtn.removeData('label');
 			tbody.find('tr.success').removeClass('success');
 		});
 		modal.on('shown', function() {
 			var firstInput = modal.find('input').first();
 			firstInput.focus().select();
+		});
+		chooseBtn.on('click', function() {
+			var me = $(this);
+			var selectedLocation = me.data('location');
+			var currParams = me.data('params');
+			var nameSpan = me.data('label');
+			if ( selectedLocation !== undefined ) {
+				var msg = SolarNode.i18n(currParams.valueLabel, [selectedLocation.sourceName, selectedLocation.locationName]);
+				nameSpan.text(msg);
+				SolarNode.Settings.updateSetting(currParams, selectedLocation.id);
+			}
+			modal.modal('hide');
 		});
 	}
 	btn.click(function() {
@@ -225,14 +238,10 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		modal.find('input[name="location.country"]').val(params.country);
 		modal.find('input[name="location.postalCode"]').val(params.postalCode);
 		
-		chooseBtn.on('click', function() {
-			if ( selectedLocation !== undefined ) {
-				var msg = SolarNode.i18n(params.valueLabel, [selectedLocation.sourceName, selectedLocation.locationName]);
-				labelSpan.text(msg);
-				SolarNode.Settings.updateSetting(params, selectedLocation.id);
-			}
-			modal.modal('hide');
-		});
+		// associate data with singleton modal
+		chooseBtn.data('params', params);
+		chooseBtn.data('label', labelSpan);
+		
 		modal.modal('show');
 	});
 };
