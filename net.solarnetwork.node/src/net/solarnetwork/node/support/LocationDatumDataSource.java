@@ -74,13 +74,10 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * 
  * <dt>locationService</dt>
  * <dd>The {@link LocationService} to use to lookup {@link Location} instances
- * via the configured {@code sourceName} and {@code locationName} properties.</dd>
+ * via the configured {@code locationId} property.</dd>
  * 
- * <dt>sourceName</dt>
- * <dd>The {@link Location} source to look up.</dd>
- * 
- * <dt>locationName</dt>
- * <dd>The {@link Location} location to look up.</dd>
+ * <dt>locationId</dt>
+ * <dd>The {@link Location} ID to assign.</dd>
  * 
  * <dt>locationIdPropertyName</dt>
  * <dd>The JavaBean property name to set the found
@@ -101,7 +98,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -179,13 +176,13 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 				results.add(datum);
 			}
 		}
-		LocationService service = locationService.service();
-		if ( results != null && service != null ) {
+		if ( results != null && locationId != null ) {
 			for ( T datum : results ) {
-				populateLocation(datum, service);
+				populateLocation(datum);
 			}
-		} else if ( results != null && results.size() > 0 && requireLocationService ) {
-			log.warn("LocationService required but not available, discarding datum: {}", results);
+		} else if ( results != null && results.size() > 0 && locationId == null
+				&& requireLocationService ) {
+			log.warn("Location required but not available, discarding datum: {}", results);
 			results = Collections.emptyList();
 		}
 		return results;
@@ -194,27 +191,20 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	@Override
 	public T readCurrentDatum() {
 		T datum = delegate.readCurrentDatum();
-		LocationService service = locationService.service();
-		if ( datum != null && service != null ) {
-			populateLocation(datum, service);
-		} else if ( datum != null && requireLocationService ) {
+		if ( datum != null && locationId != null ) {
+			populateLocation(datum);
+		} else if ( datum != null && locationId == null && requireLocationService ) {
 			log.warn("LocationService required but not available, discarding datum: {}", datum);
 			datum = null;
 		}
 		return datum;
 	}
 
-	private void populateLocation(T datum, LocationService service) {
-		if ( location == null ) {
-			location = service.getLocation(locationType, locationId);
-			if ( location == null ) {
-				log.debug("Location not found for ID {}", locationId);
-			}
-		}
-		if ( location != null ) {
-			log.debug("Augmenting datum {} with Locaiton {}", datum, location);
+	private void populateLocation(T datum) {
+		if ( locationId != null ) {
+			log.debug("Augmenting datum {} with Locaiton ID {}", datum, locationId);
 			BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-			bean.setPropertyValue(locationIdPropertyName, location.getLocationId());
+			bean.setPropertyValue(locationIdPropertyName, locationId);
 		}
 	}
 
@@ -298,7 +288,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
-		if ( location == null && locationService != null ) {
+		if ( location == null && locationService != null && locationId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
 				location = service.getLocation(locationType, locationId);
