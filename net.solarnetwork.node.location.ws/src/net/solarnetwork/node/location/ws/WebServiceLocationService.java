@@ -38,7 +38,7 @@ import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 
 /**
- * Web service implementation of {@link PriceLocationService}.
+ * Web service implementation of {@link WebServiceLocationService}.
  * 
  * @author matt
  * @version 1.1
