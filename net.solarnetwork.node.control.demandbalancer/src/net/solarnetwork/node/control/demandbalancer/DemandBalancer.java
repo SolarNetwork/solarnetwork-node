@@ -42,6 +42,7 @@ import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
@@ -65,6 +66,7 @@ import org.springframework.context.MessageSource;
  * <dd>The ID of the control that should respond to the
  * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
  * generation levels to consumption levels.</dd>
+ * 
  * <dt>powerControl</dt>
  * <dd>The {@link NodeControlProvider} that manages the configured
  * {@code powerControlId}, and can report back its current status, whose value
@@ -73,25 +75,30 @@ import org.springframework.context.MessageSource;
  * {@link FilterableService} and will automatically have a filter property set
  * for the {@code availableControlIds} property to match the
  * {@code powerControlId} value.</dd>
+ * 
  * <dt>powerDataSource</dt>
  * <dd>The collection of {@link DatumDataSource} that provide real-time power
  * generation data. If more than one {@code DatumDataSource} is configured the
  * effective generation will be aggregated as a sum total of all of them.</dd>
  * <dt>powerMaximumWatts</dt>
+ * 
  * <dd>The maximum watts the configured {@code powerDataSource} is capable of
  * producing. This value is used to calculate the output percentage level passed
  * on {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For example,
  * if the {@code powerMaximumWatts} is {@bold 1000} and the current
  * consumption is {@bold 800} then the demand balance will be requested
- * as {@bold 80%}.</dd
+ * as {@bold 80%}.</dd>
+ * 
  * <dt>consumptionDataSource</dt>
  * <dd>The collection of {@link DatumDataSource} that provide real-time
  * consumption generation data. If more than one {@code DatumDataSource} is
  * configured the effective demand will be aggregated as a sum total of all of
  * them.</dd>
+ * 
  * <dt>balanceStrategy</dt>
  * <dd>The strategy implementation to use to decide how to balance the demand
  * and generation. Defaults to {@link SimpleDemandBalanceStrategy}.</dd>
+ * 
  * <dt>instructionHandlers</dt>
  * <dd>A collection of {@link InstructionHandler} instances. When
  * {@link #evaluateBalance()} is called, if a balancing adjustment is necessary
@@ -99,8 +106,17 @@ import org.springframework.context.MessageSource;
  * to process it being assumed the only handler that need respond.</dd>
  * </dl>
  * 
+ * <dt>collectPower</dt> <dd>If <em>true</em> then collect {@link PowerDatum}
+ * from all configured data sources for passing to the
+ * {@link DemandBalanceStrategy}. Not all strategies need power information, and
+ * it may take too long to collect this information, however, so this can be
+ * turned off by setting to <em>false</em>. When disabled, <b>-1</b> is passed
+ * for the {@code generationWatts} parameter on
+ * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
+ * Defaults to <em>false</em>.</dd>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
@@ -113,6 +129,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			new SimpleDemandBalanceStrategy());
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private MessageSource messageSource;
+	private boolean collectPower = false;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -121,19 +138,29 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * to maximize power generation up to the current demand level.
 	 */
 	public void evaluateBalance() {
+		log.debug("Collecting current consumption data to inform demand balancer...");
 		final Iterable<ConsumptionDatum> demand = getCurrentDatum(consumptionDataSource);
 		final Integer demandWatts = wattsForEnergyDatum(demand);
-		final Iterable<PowerDatum> generation = getCurrentDatum(powerDataSource);
-		final Integer generationWatts = wattsForEnergyDatum(generation);
+		final Integer generationWatts;
+		if ( collectPower ) {
+			log.debug("Collecting current generation data to inform demand balancer...");
+			final Iterable<PowerDatum> generation = getCurrentDatum(powerDataSource);
+			generationWatts = wattsForEnergyDatum(generation);
+		} else {
+			generationWatts = null;
+		}
+		log.debug("Reading current {} value to inform demand balancer...", powerControlId);
 		final NodeControlInfo generationLimit = getCurrentControlValue(powerControl, powerControlId);
 		final Integer generationLimitPercent = percentForLimit(generationLimit);
 		log.debug("Current demand: {}, generation: {}, capacity: {}, limit: {}",
 				(demandWatts == null ? "N/A" : demandWatts.toString()), (generationWatts == null ? "N/A"
 						: generationWatts.toString()), powerMaximumWatts,
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
-		if ( demandWatts != null && generationWatts != null ) {
-			evaluateBalance(demandWatts.intValue(), generationWatts.intValue(),
+		if ( demandWatts != null && (generationWatts != null || !collectPower) ) {
+			evaluateBalance(demandWatts.intValue(),
+					(generationWatts == null ? -1 : generationWatts.intValue()),
 					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
+
 		}
 	}
 
@@ -161,7 +188,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		if ( desiredLimit != currentLimit ) {
 			log.info("Demand of {} with generation {} (capacity {}) will be adjusted from {}% to {}%",
 					demandWatts, powerControlId, powerMaximumWatts, currentLimit, desiredLimit);
-			return adjustLimit(desiredLimit);
+			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
+			log.info("Demand adjumstment instruction result: {}", result);
+			return result;
 		}
 		return null;
 	}
@@ -231,6 +260,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			return null;
 		}
 		NodeControlProvider provider = service.service();
+		if ( provider == null ) {
+			return null;
+		}
 		return provider.getCurrentControlInfo(controlId);
 	}
 
@@ -284,6 +316,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				"Main"));
 		results.add(new BasicTextFieldSettingSpecifier(
 				"consumptionDataSource.propertyFilters['groupUID']", ""));
+		results.add(new BasicToggleSettingSpecifier("collectPower", defaults.isCollectPower()));
 		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['UID']", "Main"));
 		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUID']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("powerControlId", defaults.powerControlId));
@@ -364,6 +397,14 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	public Collection<InstructionHandler> getInstructionHandlers() {
 		return instructionHandlers;
+	}
+
+	public boolean isCollectPower() {
+		return collectPower;
+	}
+
+	public void setCollectPower(boolean collectPower) {
+		this.collectPower = collectPower;
 	}
 
 }
