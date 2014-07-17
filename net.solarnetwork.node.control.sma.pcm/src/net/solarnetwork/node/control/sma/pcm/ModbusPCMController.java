@@ -69,7 +69,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusPCMController implements SettingSpecifierProvider, NodeControlProvider,
 		InstructionHandler {
@@ -323,7 +323,7 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 				String str = instruction.getParameterValue(paramName);
 				// by default, treat parameter value as a decimal integer, value between 0-15
 				Integer desiredValue = Integer.parseInt(str);
-				if ( controlId.equals(percentControlId)
+				if ( paramName.equals(percentControlId)
 						|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(instruction.getTopic()) ) {
 					// treat as a percentage integer 0-100, translate to 0-15
 					Integer val = pcmValueForPercentValue(desiredValue);
