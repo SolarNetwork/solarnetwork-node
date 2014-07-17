@@ -26,7 +26,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
@@ -47,6 +49,8 @@ import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -120,7 +124,23 @@ import org.springframework.context.MessageSource;
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
+	/**
+	 * The EventAdmin topic used to post events with statistics on balance
+	 * execution.
+	 */
+	public static final String EVENT_TOPIC_STATISTICS = "net/solarnetwork/node/control/demandbalancer/DemandBalancer/STATISTICS";
+
+	public static final String STAT_LAST_CONSUMPTION_COLLECTION_DATE = "ConsumptionCollectionDate";
+	public static final String STAT_LAST_CONSUMPTION_COLLECTION_ERROR = "ConsumptionCollectionError";
+	public static final String STAT_LAST_POWER_COLLECTION_DATE = "PowerCollectionDate";
+	public static final String STAT_LAST_POWER_COLLECTION_ERROR = "PowerCollectionError";
+	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_DATE = "PowerControlCollectionDate";
+	public static final String STAT_LAST_POWER_CONTROL_COLLECTION_ERROR = "PowerControlCollectionError";
+	public static final String STAT_LAST_POWER_CONTROL_MODIFY_DATE = "PowerControlModifyDate";
+	public static final String STAT_LAST_POWER_CONTROL_MODIFY_ERROR = "PowerControlModifyError";
+
 	private String powerControlId = "/power/pcm/1?percent";
+	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalService<NodeControlProvider> powerControl;
 	private OptionalServiceCollection<DatumDataSource<PowerDatum>> powerDataSource;
 	private int powerMaximumWatts = 1000;
@@ -131,6 +151,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private MessageSource messageSource;
 	private boolean collectPower = false;
 
+	final Map<String, Object> stats = new LinkedHashMap<String, Object>(8);
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
@@ -138,29 +160,85 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * to maximize power generation up to the current demand level.
 	 */
 	public void evaluateBalance() {
-		log.debug("Collecting current consumption data to inform demand balancer...");
-		final Iterable<ConsumptionDatum> demand = getCurrentDatum(consumptionDataSource);
-		final Integer demandWatts = wattsForEnergyDatum(demand);
-		final Integer generationWatts;
-		if ( collectPower ) {
-			log.debug("Collecting current generation data to inform demand balancer...");
-			final Iterable<PowerDatum> generation = getCurrentDatum(powerDataSource);
-			generationWatts = wattsForEnergyDatum(generation);
-		} else {
-			generationWatts = null;
-		}
-		log.debug("Reading current {} value to inform demand balancer...", powerControlId);
-		final NodeControlInfo generationLimit = getCurrentControlValue(powerControl, powerControlId);
-		final Integer generationLimitPercent = percentForLimit(generationLimit);
+		final Integer demandWatts = collectDemandWatts();
+		final Integer generationWatts = collectGenerationWatts();
+		final Integer generationLimitPercent = readCurrentGenerationLimitPercent();
 		log.debug("Current demand: {}, generation: {}, capacity: {}, limit: {}",
 				(demandWatts == null ? "N/A" : demandWatts.toString()), (generationWatts == null ? "N/A"
 						: generationWatts.toString()), powerMaximumWatts,
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
 		if ( demandWatts != null && (generationWatts != null || !collectPower) ) {
-			evaluateBalance(demandWatts.intValue(),
+			executeDemandBalanceStrategy(demandWatts, generationWatts, generationLimitPercent);
+		}
+		postStatisticsEvent();
+	}
+
+	private Integer collectDemandWatts() {
+		log.debug("Collecting current consumption data to inform demand balancer...");
+		Iterable<ConsumptionDatum> demand = null;
+		try {
+			demand = getCurrentDatum(consumptionDataSource);
+			stats.put(STAT_LAST_CONSUMPTION_COLLECTION_DATE, System.currentTimeMillis());
+			stats.remove(STAT_LAST_CONSUMPTION_COLLECTION_ERROR);
+		} catch ( RuntimeException e ) {
+			log.error("Error collecting consumption data: {}", e.getMessage());
+			stats.put(STAT_LAST_CONSUMPTION_COLLECTION_ERROR, e.getMessage());
+		}
+		return wattsForEnergyDatum(demand);
+	}
+
+	private Integer collectGenerationWatts() {
+		final Integer generationWatts;
+		if ( collectPower ) {
+			log.debug("Collecting current generation data to inform demand balancer...");
+			Iterable<PowerDatum> generation = null;
+			try {
+				generation = getCurrentDatum(powerDataSource);
+				stats.put(STAT_LAST_POWER_COLLECTION_DATE, System.currentTimeMillis());
+				stats.remove(STAT_LAST_POWER_COLLECTION_ERROR);
+			} catch ( RuntimeException e ) {
+				log.error("Error collecting generation data: {}", e.getMessage());
+				stats.put(STAT_LAST_POWER_COLLECTION_ERROR, e.getMessage());
+			}
+			generationWatts = wattsForEnergyDatum(generation);
+		} else {
+			generationWatts = null;
+		}
+		return generationWatts;
+	}
+
+	private Integer readCurrentGenerationLimitPercent() {
+		log.debug("Reading current {} value to inform demand balancer...", powerControlId);
+		NodeControlInfo generationLimit = null;
+		try {
+			generationLimit = getCurrentControlValue(powerControl, powerControlId);
+			stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_DATE, System.currentTimeMillis());
+			stats.remove(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR);
+		} catch ( RuntimeException e ) {
+			log.error("Error collecting {} data: {}", powerControlId, e.getMessage());
+			stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR, e.getMessage());
+		}
+		return percentForLimit(generationLimit);
+	}
+
+	private void executeDemandBalanceStrategy(final Integer demandWatts, final Integer generationWatts,
+			final Integer generationLimitPercent) {
+		try {
+			InstructionStatus.InstructionState result = evaluateBalance(demandWatts.intValue(),
 					(generationWatts == null ? -1 : generationWatts.intValue()),
 					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
-
+			if ( result != null ) {
+				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_DATE, System.currentTimeMillis());
+			}
+			if ( result == null || result == InstructionStatus.InstructionState.Completed ) {
+				stats.remove(STAT_LAST_POWER_CONTROL_MODIFY_ERROR);
+			} else {
+				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, "Instruction result not Completed: "
+						+ result);
+			}
+		} catch ( RuntimeException e ) {
+			log.error("Error modifying power control {}: {}", powerControlId, e.getMessage());
+			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, e.getMessage());
 		}
 	}
 
@@ -212,6 +290,17 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		final InstructionStatus.InstructionState result = InstructionUtils.handleInstruction(
 				instructionHandlers, instr);
 		return (result == null ? InstructionStatus.InstructionState.Declined : result);
+	}
+
+	private void postStatisticsEvent() {
+		if ( eventAdmin == null ) {
+			return;
+		}
+		final EventAdmin admin = eventAdmin.service();
+		if ( admin == null ) {
+			return;
+		}
+		admin.postEvent(new Event(EVENT_TOPIC_STATISTICS, stats));
 	}
 
 	private Integer percentForLimit(NodeControlInfo limit) {
@@ -405,6 +494,14 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	public void setCollectPower(boolean collectPower) {
 		this.collectPower = collectPower;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
