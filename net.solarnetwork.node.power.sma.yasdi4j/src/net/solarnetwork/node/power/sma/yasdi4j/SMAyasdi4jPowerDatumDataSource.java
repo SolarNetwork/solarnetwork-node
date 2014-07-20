@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -72,7 +73,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport implements
 		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
@@ -156,6 +157,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	public PowerDatum readCurrentDatum() {
 		YasdiDevice device = null;
 		final SMAPowerDatum datum = new SMAPowerDatum();
+		datum.setCreated(new Date());
 		try {
 			device = getYasdiDevice();
 			if ( device == null ) {
@@ -202,6 +204,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			log.debug("No valid data available.");
 			return null;
 		}
+
+		postDatumCapturedEvent(datum, PowerDatum.class);
 
 		return datum;
 	}

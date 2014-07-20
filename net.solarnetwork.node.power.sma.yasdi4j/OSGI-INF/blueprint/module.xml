@@ -40,6 +40,11 @@
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -56,6 +61,7 @@
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.power.sma.yasdi4j.SMAyasdi4jPowerDatumDataSource">
+					<property name="eventAdmin" ref="eventAdmin"/>
 					<property name="messageSource" ref="messageSource"/>
 					<property name="yasdi">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
