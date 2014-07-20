@@ -27,17 +27,23 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 
 /**
  * Supporting class for the PM3200 series power meter.
@@ -50,10 +56,13 @@ import org.joda.time.format.DateTimeFormat;
  * <dt>sourceMapping</dt>
  * <dd>A mapping of {@link ACPhase} to associated Source ID values to assign to
  * collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * 
+ * <dt>eventAdmin</dt>
+ * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PM3200Support extends ModbusSupport {
 
@@ -67,6 +76,8 @@ public class PM3200Support extends ModbusSupport {
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+
+	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * An instance of {@link PM3200Data} to support keeping the last-read values
@@ -334,6 +345,56 @@ public class PM3200Support extends ModbusSupport {
 		return results;
 	}
 
+	/**
+	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the {@link Datum} to post the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @since 1.3
+	 */
+	protected final void postDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @since 1.3
+	 */
+	protected Event createDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+	}
+
 	public boolean isCaptureTotal() {
 		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
 	}
@@ -356,6 +417,14 @@ public class PM3200Support extends ModbusSupport {
 
 	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

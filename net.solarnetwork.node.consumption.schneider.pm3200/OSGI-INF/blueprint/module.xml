@@ -38,6 +38,11 @@
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -55,6 +60,7 @@
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource">
+					<property name="eventAdmin" ref="eventAdmin"/>
 					<property name="messageSource" ref="messageSource"/>
 					<property name="connectionFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">

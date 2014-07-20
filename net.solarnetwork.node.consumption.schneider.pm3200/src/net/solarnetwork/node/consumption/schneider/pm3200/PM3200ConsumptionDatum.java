@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.consumption.schneider.pm3200;
 
+import java.util.Date;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
@@ -32,7 +33,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
  * the PM3200 series meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PM3200ConsumptionDatum extends ConsumptionDatum implements ACEnergyDatum {
 
@@ -49,6 +50,9 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum implements ACEnergy
 		super();
 		this.sample = sample;
 		this.phase = phase;
+		if ( sample.getDataTimestamp() > 0 ) {
+			setCreated(new Date(sample.getDataTimestamp()));
+		}
 		extractMeasurements();
 	}
 
