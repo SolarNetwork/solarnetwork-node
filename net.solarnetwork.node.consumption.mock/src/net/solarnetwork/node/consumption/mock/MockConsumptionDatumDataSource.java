@@ -24,11 +24,13 @@
 
 package net.solarnetwork.node.consumption.mock;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.DatumDataSource;
@@ -38,12 +40,17 @@ import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 
 /**
  * Mock implementation of {@link DatumDataSource} for {@link ConsumptionDatum}
@@ -77,7 +84,7 @@ import org.slf4j.LoggerFactory;
  * @version 1.3
  */
 public class MockConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
-		MultiDatumDataSource<ConsumptionDatum> {
+		MultiDatumDataSource<ConsumptionDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code hourDayStart} property. */
 	public static final int DEFAULT_HOUR_DAY_START = 8;
@@ -94,6 +101,7 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	private final Logger log = LoggerFactory.getLogger(MockConsumptionDatumDataSource.class);
 
+	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 	private String sourceId = DEFAULT_MOCK_SOURCE_ID;
 	private String groupUID = "Mock";
@@ -101,6 +109,8 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 	private int hourNightStart = DEFAULT_HOUR_NIGHT_START;
 	private int dayWattRandomness = 200;
 	private int nightWattRandomness = 50;
+	private boolean disableData = false;
+	private boolean mockException = false;
 
 	private final AtomicLong counter = new AtomicLong(0);
 
@@ -178,6 +188,12 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
+		if ( mockException ) {
+			throw new RuntimeException("Mock exception configured");
+		}
+		if ( disableData ) {
+			return null;
+		}
 		Calendar now = Calendar.getInstance();
 		ConsumptionDatum result = null;
 		if ( now.get(Calendar.HOUR_OF_DAY) >= this.hourDayStart
@@ -292,6 +308,40 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
+	// SettingSpecifierProvider
+
+	@Override
+	public String getSettingUID() {
+		return getClass().getName();
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Mock Consumption Data Source";
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		MockConsumptionDatumDataSource defaults = new MockConsumptionDatumDataSource();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicToggleSettingSpecifier("disableData", defaults.isDisableData()));
+		results.add(new BasicToggleSettingSpecifier("mockException", defaults.isMockException()));
+		return results;
+	}
+
+	// Accessors
+
 	@Override
 	public String getUID() {
 		return getSourceId();
@@ -352,6 +402,22 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	public boolean isDisableData() {
+		return disableData;
+	}
+
+	public void setDisableData(boolean disableData) {
+		this.disableData = disableData;
+	}
+
+	public boolean isMockException() {
+		return mockException;
+	}
+
+	public void setMockException(boolean mockException) {
+		this.mockException = mockException;
 	}
 
 }
