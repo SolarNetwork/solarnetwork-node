@@ -12,7 +12,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
     	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.17,2.0)"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.19,2.0)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.22,2.0)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>
 	</dependencies>
 </ivy-module>
