@@ -24,14 +24,24 @@
 
 package net.solarnetwork.node.consumption.mock;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,7 +74,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MockConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
 		MultiDatumDataSource<ConsumptionDatum> {
@@ -84,6 +94,7 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	private final Logger log = LoggerFactory.getLogger(MockConsumptionDatumDataSource.class);
 
+	private OptionalService<EventAdmin> eventAdmin;
 	private String sourceId = DEFAULT_MOCK_SOURCE_ID;
 	private String groupUID = "Mock";
 	private int hourDayStart = DEFAULT_HOUR_DAY_START;
@@ -93,10 +104,69 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	private final AtomicLong counter = new AtomicLong(0);
 
-	public static final class MockConsumptionDatum extends ConsumptionDatum implements Mock {
+	public static final class MockConsumptionDatum extends ConsumptionDatum implements Mock,
+			ACEnergyDatum {
+
+		private final ACPhase phase;
 
 		public MockConsumptionDatum(String sourceId, Integer watts) {
+			this(ACPhase.Total, sourceId, watts, null);
+		}
+
+		public MockConsumptionDatum(ACPhase phase, String sourceId, Integer watts, Long wattHourReading) {
 			super(sourceId, watts);
+			this.phase = phase;
+			setWattHourReading(wattHourReading);
+		}
+
+		@Override
+		public ACPhase getPhase() {
+			return phase;
+		}
+
+		@Override
+		public Integer getRealPower() {
+			return getWatts();
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return getWatts();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return getWatts();
+		}
+
+		@Override
+		public Float getEffectivePowerFactor() {
+			return getPowerFactor();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return 50f;
+		}
+
+		@Override
+		public Float getVoltage() {
+			return 240.33f;
+		}
+
+		@Override
+		public Float getCurrent() {
+			return getWatts().floatValue() / getVoltage();
+		}
+
+		@Override
+		public Float getPhaseVoltage() {
+			return getVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return 1.123f;
 		}
 
 	}
@@ -125,9 +195,11 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 			result = (ConsumptionDatum) NIGHT.clone();
 			applyRandomness(result, nightWattRandomness);
 		}
+		result.setCreated(now.getTime());
 		result.setSourceId(sourceId);
 		long wattHours = counter.addAndGet(Math.round(Math.random() * 100.0));
 		result.setWattHourReading(wattHours);
+		postDatumCapturedEvent(result, ConsumptionDatum.class);
 		return result;
 	}
 
@@ -142,7 +214,23 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 		if ( d == null ) {
 			return Collections.emptyList();
 		}
-		return Collections.singleton(d);
+		Collection<ConsumptionDatum> results = Arrays.asList(
+				d,
+				new MockConsumptionDatum(ACPhase.PhaseA, d.getSourceId(), d.getWatts(), d
+						.getWattHourReading()),
+				new MockConsumptionDatum(ACPhase.PhaseB, d.getSourceId(), d.getWatts(), d
+						.getWattHourReading()),
+				new MockConsumptionDatum(ACPhase.PhaseC, d.getSourceId(), d.getWatts(), d
+						.getWattHourReading()));
+		Date created = d.getCreated();
+		for ( ConsumptionDatum datum : results ) {
+			if ( datum == d ) {
+				continue; // already posted in readCurrentDatum
+			}
+			datum.setCreated(created);
+			postDatumCapturedEvent(datum, ConsumptionDatum.class);
+		}
+		return results;
 	}
 
 	private void applyRandomness(final ConsumptionDatum datum, final int r) {
@@ -152,6 +240,56 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 			watts = 0;
 		}
 		datum.setWatts(watts);
+	}
+
+	/**
+	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the {@link Datum} to post the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @since 1.3
+	 */
+	protected final void postDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @since 1.3
+	 */
+	protected Event createDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
 	@Override
@@ -206,6 +344,14 @@ public class MockConsumptionDatumDataSource implements DatumDataSource<Consumpti
 
 	public void setNightWattRandomness(int nightAmpRandomness) {
 		this.nightWattRandomness = nightAmpRandomness;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

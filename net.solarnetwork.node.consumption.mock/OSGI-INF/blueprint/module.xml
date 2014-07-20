@@ -18,6 +18,11 @@
 		<property name="service" ref="locationServiceRef"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published Services -->
 
 	<service ref="mockPriceConsumptionDatumDataSource" ranking="-1">
@@ -34,7 +39,9 @@
 	
 	<bean id="mockConsumptionDatumDao" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDao"/>
 		
-	<bean id="mockConsumptionDatumDataSource" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource"/>
+	<bean id="mockConsumptionDatumDataSource" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource">
+		<property name="eventAdmin" ref="eventAdmin"/>
+	</bean>
 
 	<bean id="mockPriceConsumptionDatumDataSource" class="net.solarnetwork.node.support.LocationDatumDataSource"
 		factory-method="getInstance">
