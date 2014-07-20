@@ -144,7 +144,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 				// we read from the meter
 				postDatumCapturedEvent(d, ConsumptionDatum.class);
 			}
-			if ( isCaptureTotal() ) {
+			if ( isCapturePhaseA() ) {
 				results.add(d);
 			}
 		}
@@ -155,7 +155,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 				// we read from the meter
 				postDatumCapturedEvent(d, ConsumptionDatum.class);
 			}
-			if ( isCaptureTotal() ) {
+			if ( isCapturePhaseB() ) {
 				results.add(d);
 			}
 		}
@@ -166,7 +166,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 				// we read from the meter
 				postDatumCapturedEvent(d, ConsumptionDatum.class);
 			}
-			if ( isCaptureTotal() ) {
+			if ( isCapturePhaseC() ) {
 				results.add(d);
 			}
 		}
