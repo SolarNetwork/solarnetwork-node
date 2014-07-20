@@ -35,9 +35,20 @@ import net.solarnetwork.domain.NodeControlInfo;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface NodeControlProvider extends Identifiable {
+
+	/**
+	 * An {@link org.osgi.service.event.Event} topic for when a
+	 * {@link NodeControlInfo} has been read, sampled, or in some way captured
+	 * by a {@link NodeControlProvider}. The properties of the event shall be
+	 * any of the JavaBean properties of the NodeControlInfo supported by events
+	 * (i.e. any simple Java property such as numbers and strings).
+	 * 
+	 * @since 1.2
+	 */
+	public static final String EVENT_TOPIC_CONTROL_INFO_CAPTURED = "net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CAPTURED";
 
 	/**
 	 * Get a list of available controls this provider supports.
@@ -54,4 +65,5 @@ public interface NodeControlProvider extends Identifiable {
 	 * @return the current value
 	 */
 	NodeControlInfo getCurrentControlInfo(String controlId);
+
 }

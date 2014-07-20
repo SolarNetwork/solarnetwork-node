@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -147,6 +148,53 @@ public final class ClassUtils {
 			Object propValue = bean.getPropertyValue(propName);
 			if ( propValue == null ) {
 				continue;
+			}
+			result.put(propName, propValue);
+		}
+		return result;
+	}
+
+	/**
+	 * Get a Map of non-null <em>simple</em> bean properties for an object.
+	 * 
+	 * @param o
+	 *        the object to inspect
+	 * @param ignore
+	 *        a set of property names to ignore (optional)
+	 * @return Map (never <em>null</em>)
+	 * @since 1.1
+	 */
+	public static Map<String, Object> getSimpleBeanProperties(Object o, Set<String> ignore) {
+		if ( ignore == null ) {
+			ignore = DEFAULT_BEAN_PROP_NAME_IGNORE;
+		}
+		Map<String, Object> result = new LinkedHashMap<String, Object>();
+		BeanWrapper bean = new BeanWrapperImpl(o);
+		PropertyDescriptor[] props = bean.getPropertyDescriptors();
+		for ( PropertyDescriptor prop : props ) {
+			if ( prop.getReadMethod() == null ) {
+				continue;
+			}
+			String propName = prop.getName();
+			if ( ignore != null && ignore.contains(propName) ) {
+				continue;
+			}
+			Class<?> propType = bean.getPropertyType(propName);
+			if ( !(propType.isPrimitive() || propType.isEnum()
+					|| String.class.isAssignableFrom(propType)
+					|| Number.class.isAssignableFrom(propType)
+					|| Character.class.isAssignableFrom(propType)
+					|| Byte.class.isAssignableFrom(propType) || Date.class.isAssignableFrom(propType)) ) {
+				continue;
+			}
+			Object propValue = bean.getPropertyValue(propName);
+			if ( propValue == null ) {
+				continue;
+			}
+			if ( propType.isEnum() ) {
+				propValue = propValue.toString();
+			} else if ( Date.class.isAssignableFrom(propType) ) {
+				propValue = ((Date) propValue).getTime();
 			}
 			result.put(propName, propValue);
 		}
