@@ -25,14 +25,21 @@ package net.solarnetwork.node.control.demandbalancer.mock;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,12 +65,13 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class MockGenerationLimitControl implements NodeControlProvider, InstructionHandler {
 
 	private final AtomicInteger limit = new AtomicInteger(100);
 
+	private OptionalService<EventAdmin> eventAdmin;
 	private String controlId = "/power/limit/mock";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -91,6 +99,7 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 		info.setType(NodeControlPropertyType.Integer);
 		info.setReadonly(false);
 		info.setValue(limit.toString());
+		postControlCapturedEvent(info);
 		return info;
 	}
 
@@ -128,6 +137,50 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 		return result;
 	}
 
+	/**
+	 * Post a {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
+	 * {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createControlCapturedEvent(NodeControlInfo)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param info
+	 *        the {@link NodeControlInfo} to post the event for
+	 * @since 1.1
+	 */
+	protected final void postControlCapturedEvent(final NodeControlInfo info) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || info == null ) {
+			return;
+		}
+		Event event = createControlCapturedEvent(info);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new
+	 * {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param info
+	 *        the info to create the event for
+	 * @return the new Event instance
+	 * @since 1.1
+	 */
+	protected Event createControlCapturedEvent(final NodeControlInfo info) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+		log.debug("Created {} event with props {}",
+				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
+		return new Event(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
+	}
+
 	// Accessors
 
 	public String getControlId() {
@@ -136,6 +189,14 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

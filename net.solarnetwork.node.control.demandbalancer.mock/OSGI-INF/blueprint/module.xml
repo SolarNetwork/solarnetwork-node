@@ -7,7 +7,14 @@
 
 	<!-- Services -->
 	
-	<bean id="control" class="net.solarnetwork.node.control.demandbalancer.mock.MockGenerationLimitControl"/>
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
+	<bean id="control" class="net.solarnetwork.node.control.demandbalancer.mock.MockGenerationLimitControl">
+		<property name="eventAdmin" ref="eventAdmin"/>
+	</bean>
 	
 	<!-- Published Services -->
 	
