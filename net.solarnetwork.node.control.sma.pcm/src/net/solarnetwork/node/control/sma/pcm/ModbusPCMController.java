@@ -28,9 +28,12 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
@@ -42,8 +45,11 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.net.SerialConnection;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -66,10 +72,13 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dd>The Modbus address for the PCM D3 input.</dd>
  * <dt>d4Address</dt>
  * <dd>The Modbus address for the PCM D4 input.</dd>
+ * 
+ * <dt>eventAdmin</dt>
+ * <dd>An {@link EventAdmin} to publish events with.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusPCMController implements SettingSpecifierProvider, NodeControlProvider,
 		InstructionHandler {
@@ -86,10 +95,23 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";
 	private String groupUID;
+	private int sampleCacheSeconds = 1;
 
 	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
+	private OptionalService<EventAdmin> eventAdmin;
+
+	private final long sampleCaptureDate = 0;
+	private BitSet cachedSample = null;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	private boolean isCachedSampleExpired() {
+		final long lastReadDiff = System.currentTimeMillis() - sampleCaptureDate;
+		if ( lastReadDiff > (sampleCacheSeconds * 1000) ) {
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Get the values of the D1 - D4 discreet values, as a BitSet.
@@ -98,10 +120,16 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 	 *         etc.
 	 */
 	private synchronized BitSet currentDiscreetValue() {
-		BitSet result = ModbusHelper.readDiscreetValues(connectionFactory, new Integer[] { d1Address,
-				d2Address, d3Address, d4Address }, 1, this.unitId);
-		if ( log.isInfoEnabled() ) {
+		BitSet result;
+		if ( isCachedSampleExpired() ) {
+			result = ModbusHelper.readDiscreetValues(connectionFactory, new Integer[] { d1Address,
+					d2Address, d3Address, d4Address }, 1, this.unitId);
 			log.info("Read discreet PCM values: {}", result);
+			Integer status = integerValueForBitSet(result);
+			postControlCapturedEvent(newNodeControlInfoDatum(getPercentControlId(), status, true));
+			cachedSample = result;
+		} else {
+			result = cachedSample;
 		}
 		return result;
 	}
@@ -283,23 +311,26 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		NodeControlInfoDatum result = null;
 		try {
 			Integer value = integerValueForBitSet(currentDiscreetValue());
-			if ( controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX) ) {
-				value = percentValueForIntegerValue(value);
-			}
-			result = newNodeControlInfoDatum(controlId, value);
+			result = newNodeControlInfoDatum(controlId, value,
+					controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX));
 		} catch ( RuntimeException e ) {
 			log.error("Error reading PCM {} status: {}", controlId, e.getMessage());
 		}
 		return result;
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Integer status) {
+	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Integer status,
+			boolean asPercent) {
 		NodeControlInfoDatum info = new NodeControlInfoDatum();
 		info.setCreated(new Date());
 		info.setSourceId(controlId);
 		info.setType(NodeControlPropertyType.Integer);
 		info.setReadonly(false);
-		info.setValue(status.toString());
+		if ( asPercent ) {
+			info.setValue(percentValueForIntegerValue(status).toString());
+		} else {
+			info.setValue(status.toString());
+		}
 		return info;
 	}
 
@@ -339,6 +370,50 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Post a {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
+	 * {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createControlCapturedEvent(NodeControlInfo)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param info
+	 *        the {@link NodeControlInfo} to post the event for
+	 * @since 1.2
+	 */
+	protected final void postControlCapturedEvent(final NodeControlInfo info) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || info == null ) {
+			return;
+		}
+		Event event = createControlCapturedEvent(info);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new
+	 * {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param info
+	 *        the info to create the event for
+	 * @return the new Event instance
+	 * @since 1.2
+	 */
+	protected Event createControlCapturedEvent(final NodeControlInfo info) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+		log.debug("Created {} event with props {}",
+				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
+		return new Event(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
 	}
 
 	// SettingSpecifierProvider
@@ -384,6 +459,9 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		results.add(new BasicTextFieldSettingSpecifier("d2Address", defaults.d2Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d4Address", defaults.d4Address.toString()));
+
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds", String.valueOf(defaults
+				.getSampleCacheSeconds())));
 
 		return results;
 	}
@@ -462,6 +540,22 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
+
+	public int getSampleCacheSeconds() {
+		return sampleCacheSeconds;
+	}
+
+	public void setSampleCacheSeconds(int sampleCacheSeconds) {
+		this.sampleCacheSeconds = sampleCacheSeconds;
 	}
 
 }

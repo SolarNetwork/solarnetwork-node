@@ -25,6 +25,11 @@
 		</property>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" 
@@ -40,6 +45,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.sma.pcm"/>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.sma.pcm.ModbusPCMController">
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="connectionFactory">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>
