@@ -124,6 +124,8 @@ import org.springframework.context.MessageSource;
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
+	private static final String ERROR_NO_DATA_RETURNED = "No data returned.";
+
 	/**
 	 * The EventAdmin topic used to post events with statistics on balance
 	 * execution.
@@ -173,16 +175,44 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		postStatisticsEvent();
 	}
 
+	/**
+	 * Get a message for an exception. This will try to return the root cause's
+	 * message. If that is not available the name of the root cause's class will
+	 * be returned.
+	 * 
+	 * @param t
+	 *        the exception
+	 * @return message
+	 */
+	private String messageForException(Throwable t) {
+		Throwable root = t;
+		while ( root.getCause() != null ) {
+			root = root.getCause();
+		}
+		String msg = root.getMessage();
+		if ( msg == null || msg.length() < 1 ) {
+			msg = t.getMessage();
+			if ( msg == null || msg.length() < 1 ) {
+				msg = root.getClass().getName();
+			}
+		}
+		return msg;
+	}
+
 	private Integer collectDemandWatts() {
 		log.debug("Collecting current consumption data to inform demand balancer...");
 		Iterable<ConsumptionDatum> demand = null;
 		try {
 			demand = getCurrentDatum(consumptionDataSource);
-			stats.put(STAT_LAST_CONSUMPTION_COLLECTION_DATE, System.currentTimeMillis());
-			stats.remove(STAT_LAST_CONSUMPTION_COLLECTION_ERROR);
+			if ( demand.iterator().hasNext() ) {
+				stats.put(STAT_LAST_CONSUMPTION_COLLECTION_DATE, System.currentTimeMillis());
+				stats.remove(STAT_LAST_CONSUMPTION_COLLECTION_ERROR);
+			} else {
+				stats.put(STAT_LAST_CONSUMPTION_COLLECTION_ERROR, ERROR_NO_DATA_RETURNED);
+			}
 		} catch ( RuntimeException e ) {
 			log.error("Error collecting consumption data: {}", e.getMessage());
-			stats.put(STAT_LAST_CONSUMPTION_COLLECTION_ERROR, e.getMessage());
+			stats.put(STAT_LAST_CONSUMPTION_COLLECTION_ERROR, messageForException(e));
 		}
 		return wattsForEnergyDatum(demand);
 	}
@@ -194,11 +224,15 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			Iterable<PowerDatum> generation = null;
 			try {
 				generation = getCurrentDatum(powerDataSource);
-				stats.put(STAT_LAST_POWER_COLLECTION_DATE, System.currentTimeMillis());
-				stats.remove(STAT_LAST_POWER_COLLECTION_ERROR);
+				if ( generation.iterator().hasNext() ) {
+					stats.put(STAT_LAST_POWER_COLLECTION_DATE, System.currentTimeMillis());
+					stats.remove(STAT_LAST_POWER_COLLECTION_ERROR);
+				} else {
+					stats.put(STAT_LAST_POWER_COLLECTION_ERROR, ERROR_NO_DATA_RETURNED);
+				}
 			} catch ( RuntimeException e ) {
 				log.error("Error collecting generation data: {}", e.getMessage());
-				stats.put(STAT_LAST_POWER_COLLECTION_ERROR, e.getMessage());
+				stats.put(STAT_LAST_POWER_COLLECTION_ERROR, messageForException(e));
 			}
 			generationWatts = wattsForEnergyDatum(generation);
 		} else {
@@ -212,11 +246,15 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		NodeControlInfo generationLimit = null;
 		try {
 			generationLimit = getCurrentControlValue(powerControl, powerControlId);
-			stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_DATE, System.currentTimeMillis());
-			stats.remove(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR);
+			if ( generationLimit != null ) {
+				stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_DATE, System.currentTimeMillis());
+				stats.remove(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR);
+			} else {
+				stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR, ERROR_NO_DATA_RETURNED);
+			}
 		} catch ( RuntimeException e ) {
 			log.error("Error collecting {} data: {}", powerControlId, e.getMessage());
-			stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR, e.getMessage());
+			stats.put(STAT_LAST_POWER_CONTROL_COLLECTION_ERROR, messageForException(e));
 		}
 		return percentForLimit(generationLimit);
 	}
@@ -238,7 +276,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			}
 		} catch ( RuntimeException e ) {
 			log.error("Error modifying power control {}: {}", powerControlId, e.getMessage());
-			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, e.getMessage());
+			stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, messageForException(e));
 		}
 	}
 
