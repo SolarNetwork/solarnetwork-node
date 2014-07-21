@@ -41,6 +41,7 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
+import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -169,9 +170,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				(demandWatts == null ? "N/A" : demandWatts.toString()), (generationWatts == null ? "N/A"
 						: generationWatts.toString()), powerMaximumWatts,
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
-		if ( demandWatts != null && (generationWatts != null || !collectPower) ) {
-			executeDemandBalanceStrategy(demandWatts, generationWatts, generationLimitPercent);
-		}
+		executeDemandBalanceStrategy(demandWatts, generationWatts, generationLimitPercent);
 		postStatisticsEvent();
 	}
 
@@ -262,7 +261,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private void executeDemandBalanceStrategy(final Integer demandWatts, final Integer generationWatts,
 			final Integer generationLimitPercent) {
 		try {
-			InstructionStatus.InstructionState result = evaluateBalance(demandWatts.intValue(),
+			InstructionStatus.InstructionState result = evaluateBalance((demandWatts == null ? -1
+					: demandWatts.intValue()),
 					(generationWatts == null ? -1 : generationWatts.intValue()),
 					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
 			if ( result != null ) {
@@ -416,6 +416,15 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return balanceStrategy.service();
 	}
 
+	/**
+	 * Getter for the current {@link DemandBalanceStrategy}.
+	 * 
+	 * @return the strategy
+	 */
+	public DemandBalanceStrategy getStrategy() {
+		return getDemandBalanceStrategy();
+	}
+
 	// SettingSpecifierProvider
 
 	@Override
@@ -449,6 +458,24 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		results.add(new BasicTextFieldSettingSpecifier("powerControlId", defaults.powerControlId));
 		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts", String
 				.valueOf(defaults.powerMaximumWatts)));
+
+		DemandBalanceStrategy strategy = getDemandBalanceStrategy();
+		if ( strategy instanceof SettingSpecifierProvider ) {
+			SettingSpecifierProvider stratSettingProvider = (SettingSpecifierProvider) strategy;
+			List<SettingSpecifier> strategySpecifiers = stratSettingProvider.getSettingSpecifiers();
+			if ( strategySpecifiers != null && strategySpecifiers.size() > 0 ) {
+				for ( SettingSpecifier spec : strategySpecifiers ) {
+					if ( spec instanceof KeyedSettingSpecifier<?> ) {
+						KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
+						keyedSpec.mappedTo("strategy.");
+						results.add(keyedSpec.mappedTo("strategy."));
+					} else {
+						results.add(spec);
+					}
+				}
+			}
+		}
+
 		return results;
 	}
 
