@@ -301,7 +301,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 		int desiredLimit = strategy.evaluateBalance(powerControlId, demandWatts, generationWatts,
 				powerMaximumWatts, currentLimit);
-		if ( desiredLimit != currentLimit ) {
+		if ( desiredLimit > 0 && desiredLimit != currentLimit ) {
 			log.info("Demand of {} with generation {} (capacity {}) will be adjusted from {}% to {}%",
 					demandWatts, powerControlId, powerMaximumWatts, currentLimit, desiredLimit);
 			InstructionStatus.InstructionState result = adjustLimit(desiredLimit);
