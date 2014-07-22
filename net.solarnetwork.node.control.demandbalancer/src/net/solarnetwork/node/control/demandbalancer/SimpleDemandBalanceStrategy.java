@@ -76,6 +76,9 @@ public class SimpleDemandBalanceStrategy implements DemandBalanceStrategy, Setti
 			desiredLimit = (int) Math.floor(100.0 * demandWatts / generationCapacityWatts);
 			log.debug("Demand of {} is less than {} capacity of {}, limiting to {}%", demandWatts,
 					powerControlId, generationCapacityWatts, desiredLimit);
+		} else {
+			// go for it
+			desiredLimit = 100;
 		}
 		return desiredLimit;
 	}
