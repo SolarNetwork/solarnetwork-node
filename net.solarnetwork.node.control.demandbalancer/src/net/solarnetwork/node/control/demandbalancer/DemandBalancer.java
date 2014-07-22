@@ -26,13 +26,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.power.PowerDatum;
@@ -50,6 +56,7 @@ import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.util.StringUtils;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -153,6 +160,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private MessageSource messageSource;
 	private boolean collectPower = false;
+	private Set<ACPhase> acEnergyPhaseFilter = EnumSet.copyOf(Collections.singleton(ACPhase.Total));
 
 	final Map<String, Object> stats = new LinkedHashMap<String, Object>(8);
 
@@ -369,6 +377,13 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 		int total = -1;
 		for ( EnergyDatum datum : datums ) {
+			if ( datum instanceof ACEnergyDatum && acEnergyPhaseFilter != null
+					&& acEnergyPhaseFilter.size() > 0 ) {
+				ACPhase phase = ((ACEnergyDatum) datum).getPhase();
+				if ( !acEnergyPhaseFilter.contains(phase) ) {
+					continue;
+				}
+			}
 			Integer w = wattsForEnergyDatum(datum);
 			if ( w != null ) {
 				if ( total < 0 ) {
@@ -401,9 +416,19 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		Iterable<DatumDataSource<T>> dataSources = service.services();
 		List<T> results = new ArrayList<T>();
 		for ( DatumDataSource<T> dataSource : dataSources ) {
-			T datum = dataSource.readCurrentDatum();
-			if ( datum != null ) {
-				results.add(datum);
+			if ( dataSource instanceof MultiDatumDataSource<?> ) {
+				@SuppressWarnings("unchecked")
+				Collection<T> datums = ((MultiDatumDataSource<T>) dataSource).readMultipleDatum();
+				if ( datums != null ) {
+					for ( T datum : datums ) {
+						results.add(datum);
+					}
+				}
+			} else {
+				T datum = dataSource.readCurrentDatum();
+				if ( datum != null ) {
+					results.add(datum);
+				}
 			}
 		}
 		return results;
@@ -452,6 +477,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				"Main"));
 		results.add(new BasicTextFieldSettingSpecifier(
 				"consumptionDataSource.propertyFilters['groupUID']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("acEnergyPhaseFilter", defaults
+				.getAcEnergyPhaseFilterValue()));
 		results.add(new BasicToggleSettingSpecifier("collectPower", defaults.isCollectPower()));
 		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['UID']", "Main"));
 		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUID']", ""));
@@ -567,6 +594,51 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	public Set<ACPhase> getAcEnergyPhaseFilter() {
+		return acEnergyPhaseFilter;
+	}
+
+	public void setAcEnergyPhaseFilter(Set<ACPhase> acEnergyPhaseFilter) {
+		this.acEnergyPhaseFilter = acEnergyPhaseFilter;
+	}
+
+	/**
+	 * Get the value of the {@code acEnergyPhaseFilter} property as a
+	 * comma-delimited string.
+	 * 
+	 * @return the AC phase as a delimited string
+	 */
+	public String getAcEnergyPhaseFilterValue() {
+		return (acEnergyPhaseFilter == null ? null : StringUtils
+				.commaDelimitedStringFromCollection(acEnergyPhaseFilter));
+	}
+
+	/**
+	 * Set the {@code acEnergyPhaseFilter} property via a comma-delimited
+	 * string.
+	 * 
+	 * @param value
+	 *        the comma delimited string
+	 * @see #getAcEnergyTotalPhaseOnlyPropertiesValue()
+	 */
+	public void getAcEnergyPhaseFilterValue(String value) {
+		Set<String> set = StringUtils.commaDelimitedStringToSet(value);
+		if ( set == null ) {
+			acEnergyPhaseFilter = null;
+			return;
+		}
+		Set<ACPhase> result = new LinkedHashSet<ACPhase>(set.size());
+		for ( String phase : set ) {
+			try {
+				ACPhase p = ACPhase.valueOf(phase);
+				result.add(p);
+			} catch ( IllegalArgumentException e ) {
+				log.warn("Ignoring unsupported ACPhase value [{}]", phase);
+			}
+		}
+		acEnergyPhaseFilter = EnumSet.copyOf(result);
 	}
 
 }
