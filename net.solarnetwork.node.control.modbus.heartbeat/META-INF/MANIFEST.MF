@@ -4,7 +4,7 @@ Bundle-Name: Modbus Heartbeat Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus.heartbeat
 Bundle-Description: Service to periodically "ping" a device to let the device know 
  that SolarNode is running.
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
