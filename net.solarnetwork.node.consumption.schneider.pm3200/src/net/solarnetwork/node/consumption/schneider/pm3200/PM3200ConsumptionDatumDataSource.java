@@ -65,7 +65,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		SettingSpecifierProvider {
 
 	private MessageSource messageSource;
-	private int sampleCacheSeconds = 5;
+	private long sampleCacheMs = 5000;
 
 	private PM3200Data getCurrentSample() {
 		PM3200Data currSample;
@@ -91,7 +91,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 
 	private boolean isCachedSampleExpired() {
 		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
-		if ( lastReadDiff > (sampleCacheSeconds * 1000) ) {
+		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
 		return false;
@@ -198,17 +198,40 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		PM3200ConsumptionDatumDataSource defaults = new PM3200ConsumptionDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds", String.valueOf(defaults
-				.getSampleCacheSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
+				.getSampleCacheMs())));
 		return results;
 	}
 
+	/**
+	 * Get the sample cache maximum age, in seconds.
+	 * 
+	 * @return the cache seconds
+	 * @deprecated use {@link #getSampleCacheMs()}
+	 */
+	@Deprecated
 	public int getSampleCacheSeconds() {
-		return sampleCacheSeconds;
+		return (int) (getSampleCacheMs() / 1000);
 	}
 
+	/**
+	 * Set the sample cache maximum age, in seconds.
+	 * 
+	 * @param sampleCacheSeconds
+	 *        the cache seconds
+	 * @deprecated use {@link #setSampleCacheMs(long)}
+	 */
+	@Deprecated
 	public void setSampleCacheSeconds(int sampleCacheSeconds) {
-		this.sampleCacheSeconds = sampleCacheSeconds;
+		setSampleCacheMs(sampleCacheSeconds * 1000L);
+	}
+
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }
