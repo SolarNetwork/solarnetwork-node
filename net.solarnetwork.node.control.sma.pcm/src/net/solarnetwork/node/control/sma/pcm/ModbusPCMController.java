@@ -35,9 +35,9 @@ import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -47,13 +47,9 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import net.wimpi.modbus.net.SerialConnection;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Toggle four Modbus "coil" type addresses to control the SMA Power Control
@@ -78,32 +74,27 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class ModbusPCMController implements SettingSpecifierProvider, NodeControlProvider,
-		InstructionHandler {
+public class ModbusPCMController extends ModbusDeviceSupport implements SettingSpecifierProvider,
+		NodeControlProvider, InstructionHandler {
 
 	private static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
-
-	private static MessageSource MESSAGE_SOURCE;
 
 	private Integer d1Address = 0x4000;
 	private Integer d2Address = 0x4002;
 	private Integer d3Address = 0x4004;
 	private Integer d4Address = 0x4006;
 
-	private Integer unitId = 1;
 	private String controlId = "/power/pcm/1";
 	private String groupUID;
 	private int sampleCacheSeconds = 1;
 
-	private OptionalService<ModbusSerialConnectionFactory> connectionFactory;
 	private OptionalService<EventAdmin> eventAdmin;
+	private MessageSource messageSource;
 
 	private final long sampleCaptureDate = 0;
 	private BitSet cachedSample = null;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private boolean isCachedSampleExpired() {
 		final long lastReadDiff = System.currentTimeMillis() - sampleCaptureDate;
@@ -113,17 +104,28 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		return false;
 	}
 
+	@Override
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return null;
+	}
+
 	/**
 	 * Get the values of the D1 - D4 discreet values, as a BitSet.
 	 * 
 	 * @return BitSet, with index 0 representing D1 and index 1 representing D2,
 	 *         etc.
 	 */
-	private synchronized BitSet currentDiscreetValue() {
+	private synchronized BitSet currentDiscreetValue() throws IOException {
 		BitSet result;
 		if ( isCachedSampleExpired() ) {
-			result = ModbusHelper.readDiscreetValues(connectionFactory, new Integer[] { d1Address,
-					d2Address, d3Address, d4Address }, 1, this.unitId);
+			result = performAction(new ModbusConnectionAction<BitSet>() {
+
+				@Override
+				public BitSet doWithConnection(ModbusConnection conn) throws IOException {
+					return conn.readDiscreetValues(new Integer[] { d1Address, d2Address, d3Address,
+							d4Address }, 1);
+				}
+			});
 			log.info("Read discreet PCM values: {}", result);
 			Integer status = integerValueForBitSet(result);
 			postControlCapturedEvent(newNodeControlInfoDatum(getPercentControlId(), status, true));
@@ -278,14 +280,18 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		log.info("Setting PCM status to {} ({}%)", desiredValue,
 				percentValueForIntegerValue(desiredValue));
 		final Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
-		return ModbusHelper.execute(connectionFactory, new ModbusConnectionCallback<Boolean>() {
+		try {
+			return performAction(new ModbusConnectionAction<Boolean>() {
 
-			@Override
-			public Boolean doInConnection(SerialConnection conn) throws IOException {
-				return ModbusHelper.writeDiscreetValues(conn, addresses, bits, unitId);
-			}
-
-		});
+				@Override
+				public Boolean doWithConnection(ModbusConnection conn) throws IOException {
+					return conn.writeDiscreetValues(addresses, bits);
+				}
+			});
+		} catch ( IOException e ) {
+			log.error("Error communicating with PCM: {}", e.getMessage());
+		}
+		return false;
 	}
 
 	// NodeControlProvider
@@ -313,7 +319,7 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 			Integer value = integerValueForBitSet(currentDiscreetValue());
 			result = newNodeControlInfoDatum(controlId, value,
 					controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX));
-		} catch ( RuntimeException e ) {
+		} catch ( Exception e ) {
 			log.error("Error reading PCM {} status: {}", controlId, e.getMessage());
 		}
 		return result;
@@ -445,16 +451,16 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 			}
 			status.setDefaultValue(String.format("%s%s - %d%%", padding, binValue,
 					percentValueForIntegerValue(val)));
-		} catch ( RuntimeException e ) {
+		} catch ( Exception e ) {
 			log.debug("Error reading PCM status: {}", e.getMessage());
 		}
 		results.add(status);
 
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("d1Address", defaults.d1Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d2Address", defaults.d2Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
@@ -468,13 +474,11 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(getClass().getClassLoader());
-			source.setBasename(getClass().getName());
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	public Integer getD1Address() {
@@ -509,22 +513,6 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		this.d4Address = d4Address;
 	}
 
-	public OptionalService<ModbusSerialConnectionFactory> getConnectionFactory() {
-		return connectionFactory;
-	}
-
-	public void setConnectionFactory(OptionalService<ModbusSerialConnectionFactory> connectionFactory) {
-		this.connectionFactory = connectionFactory;
-	}
-
-	public Integer getUnitId() {
-		return unitId;
-	}
-
-	public void setUnitId(Integer unitId) {
-		this.unitId = unitId;
-	}
-
 	public String getControlId() {
 		return controlId;
 	}
@@ -538,6 +526,7 @@ public class ModbusPCMController implements SettingSpecifierProvider, NodeContro
 		return groupUID;
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
 	}
