@@ -28,12 +28,14 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -42,12 +44,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.DynamicServiceTracker;
-import net.wimpi.modbus.net.SerialConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Control a Modbus "coil" type register to turn a switch on or off.
@@ -70,46 +67,49 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @author matt
  * @version 1.0
  */
-public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
-
-	private static MessageSource MESSAGE_SOURCE;
+public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifierProvider,
+		NodeControlProvider, InstructionHandler {
 
 	private Integer address = 0x4008;
 
-	private Integer unitId = 1;
 	private String controlId = "/switch/1";
-	private String groupUID;
+	private MessageSource messageSource;
 
-	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	@Override
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return null;
+	}
 
 	/**
 	 * Get the values of the discreet values, as a Boolean.
 	 * 
 	 * @return Boolean for the switch status
 	 */
-	private synchronized Boolean currentValue() {
-		BitSet result = ModbusHelper.readDiscreetValues(connectionFactory, new Integer[] { address }, 1,
-				this.unitId);
+	private synchronized Boolean currentValue() throws IOException {
+		BitSet result = performAction(new ModbusConnectionAction<BitSet>() {
+
+			@Override
+			public BitSet doWithConnection(ModbusConnection conn) throws IOException {
+				return conn.readDiscreetValues(new Integer[] { address }, 1);
+			}
+		});
 		if ( log.isInfoEnabled() ) {
 			log.info("Read {} value: {}", controlId, result.get(0));
 		}
 		return result.get(0);
 	}
 
-	private synchronized Boolean setValue(Boolean desiredValue) {
+	private synchronized Boolean setValue(Boolean desiredValue) throws IOException {
 		final BitSet bits = new BitSet(1);
 		bits.set(0, desiredValue);
 		log.info("Setting {} value to {}", controlId, desiredValue);
 		final Integer[] addresses = new Integer[] { address };
-		return ModbusHelper.execute(connectionFactory, new ModbusConnectionCallback<Boolean>() {
+		return performAction(new ModbusConnectionAction<Boolean>() {
 
 			@Override
-			public Boolean doInConnection(SerialConnection conn) throws IOException {
-				return ModbusHelper.writeDiscreetValues(conn, addresses, bits, unitId);
+			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
+				return conn.writeDiscreetValues(addresses, bits);
 			}
-
 		});
 	}
 
@@ -133,7 +133,7 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 		try {
 			Boolean value = currentValue();
 			result = newNodeControlInfoDatum(controlId, value);
-		} catch ( RuntimeException e ) {
+		} catch ( Exception e ) {
 			log.error("Error reading {} status: {}", controlId, e.getMessage());
 		}
 		return result;
@@ -167,7 +167,13 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 				// treat parameter value as a boolean String
 				String str = instruction.getParameterValue(controlId);
 				Boolean desiredValue = Boolean.parseBoolean(str);
-				final Boolean modbusResult = setValue(desiredValue);
+				Boolean modbusResult = null;
+				try {
+					modbusResult = setValue(desiredValue);
+				} catch ( Exception e ) {
+					log.warn("Error handling instruction {} on control {}: {}", instruction.getTopic(),
+							controlId, e.getMessage());
+				}
 				if ( modbusResult != null && modbusResult.booleanValue() ) {
 					result = InstructionState.Completed;
 				} else {
@@ -187,7 +193,7 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 
 	@Override
 	public String getDisplayName() {
-		return "Modbus Modem Resetter";
+		return "Modbus Switch Toggler";
 	}
 
 	@Override
@@ -200,16 +206,16 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 		try {
 			Boolean val = currentValue();
 			status.setDefaultValue(val.toString());
-		} catch ( RuntimeException e ) {
+		} catch ( Exception e ) {
 			log.debug("Error reading {} status: {}", controlId, e.getMessage());
 		}
 		results.add(status);
 
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
 
 		return results;
@@ -217,13 +223,11 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(getClass().getClassLoader());
-			source.setBasename(getClass().getName());
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	public Integer getAddress() {
@@ -234,38 +238,12 @@ public class ModbusToggler implements SettingSpecifierProvider, NodeControlProvi
 		this.address = address;
 	}
 
-	public Integer getUnitId() {
-		return unitId;
-	}
-
-	public void setUnitId(Integer unitId) {
-		this.unitId = unitId;
-	}
-
 	public String getControlId() {
 		return controlId;
 	}
 
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
-	}
-
-	public DynamicServiceTracker<ModbusSerialConnectionFactory> getConnectionFactory() {
-		return connectionFactory;
-	}
-
-	public void setConnectionFactory(
-			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
-		this.connectionFactory = connectionFactory;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }

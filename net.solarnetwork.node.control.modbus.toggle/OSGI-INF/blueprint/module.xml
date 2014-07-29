@@ -14,15 +14,20 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.modbus.toggle.ModbusToggler</value>
+				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+			</list>
+		</property>
+	</bean>
+	
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="Modbus Toggler"/>
 		<property name="factoryUID" value="net.solarnetwork.node.control.modbus.toggle"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.control.modbus.toggle.ModbusToggler"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -40,14 +45,15 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.modbus.toggle"/>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.modbus.toggle.ModbusToggler">
-			<property name="connectionFactory">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="modbusNetwork">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>
 					<property name="serviceClassName" 
-						value="net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory"/>
+						value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="UID" value="/dev/ttyUSB0"/>
+							<entry key="UID" value="Serial Port"/>
 						</map>
 					</property>
 				</bean>	
