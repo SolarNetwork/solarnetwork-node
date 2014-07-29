@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusDevice.java - Jul 29, 2014 11:17:48 AM
+ * ModbusNetwork.java - Jul 29, 2014 11:17:48 AM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -37,14 +37,7 @@ import net.solarnetwork.node.Identifiable;
  * @version 1.0
  * @since 2.0
  */
-public interface ModbusDevice extends Identifiable {
-
-	/**
-	 * Get the Modbus Unit ID this device represents.
-	 * 
-	 * @return the unit ID
-	 */
-	int getUnitId();
+public interface ModbusNetwork extends Identifiable {
 
 	/**
 	 * Perform some action that requires a {@link ModbusConnection}, returning
@@ -52,13 +45,28 @@ public interface ModbusDevice extends Identifiable {
 	 * {@link ModbusConnectionAction#doWithConnection(ModbusConnection)} method
 	 * will be called and the result returned by this method.
 	 * 
+	 * The {@link ModbusConnection} passed will already be opened, and it will
+	 * be closed automatically after the action is complete.
+	 * 
 	 * @param action
 	 *        the callback whose result to return
+	 * @param unitId
+	 *        the Modbus unit ID to address
 	 * @return the result of calling
 	 *         {@link ModbusConnectionAction#doWithConnection(ModbusConnection)}
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	<T> T performAction(ModbusConnectionAction<T> action) throws IOException;
+	<T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException;
+
+	/**
+	 * Create a connection to a specific Modbus device. The returned connection
+	 * will not be opened and must be closed when finished being used.
+	 * 
+	 * @param unitId
+	 *        the Modbus unit ID to connect with
+	 * @return a new connection
+	 */
+	ModbusConnection createConnection(int unitId);
 
 }

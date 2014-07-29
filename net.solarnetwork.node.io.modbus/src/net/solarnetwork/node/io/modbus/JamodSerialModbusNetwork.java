@@ -1,5 +1,5 @@
 /* ==================================================================
- * JamodSerialModbusDevice.java - Jul 29, 2014 12:54:53 PM
+ * JamodSerialModbusNetwork.java - Jul 29, 2014 12:54:53 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -39,18 +39,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 /**
- * Jamod implementation of {@link ModbusDevice}.
+ * Jamod implementation of {@link ModbusNetwork}.
  * 
  * @author matt
  * @version 1.0
  * @since 2.0
  */
-public class JamodSerialModbusDevice implements ModbusDevice, SettingSpecifierProvider {
+public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifierProvider {
 
 	private SerialParametersBean serialParams = getDefaultSerialParametersInstance();
-	private String uid = "Meter";
+	private String uid = "Serial Port";
 	private String groupUID;
-	private int unitId = 1;
 	private long timeout = 10L;
 	private TimeUnit unit = TimeUnit.SECONDS;
 	private MessageSource messageSource;
@@ -73,7 +72,7 @@ public class JamodSerialModbusDevice implements ModbusDevice, SettingSpecifierPr
 
 	@Override
 	public String toString() {
-		return "JamodSerialModbusDevice{port=" + serialParams.getPortName() + ",unit=" + unitId + '}';
+		return "JamodSerialModbusNetwork{port=" + serialParams.getPortName() + '}';
 	}
 
 	@Override
@@ -81,13 +80,30 @@ public class JamodSerialModbusDevice implements ModbusDevice, SettingSpecifierPr
 		if ( uid != null ) {
 			return uid;
 		}
-		return serialParams.getPortName() + "-" + unitId;
+		return serialParams.getPortName();
 	}
 
 	@Override
-	public <T> T performAction(ModbusConnectionAction<T> action) throws IOException {
-		return action.doWithConnection(new JamodModbusConnection(new LockingSerialConnection(
-				serialParams), unitId));
+	public <T> T performAction(ModbusConnectionAction<T> action, final int unitId) throws IOException {
+		ModbusConnection conn = null;
+		try {
+			conn = createConnection(unitId);
+			conn.open();
+			return action.doWithConnection(conn);
+		} finally {
+			if ( conn != null ) {
+				try {
+					conn.close();
+				} catch ( RuntimeException e ) {
+					// ignore this
+				}
+			}
+		}
+	}
+
+	@Override
+	public ModbusConnection createConnection(int unitId) {
+		return new JamodModbusConnection(new LockingSerialConnection(serialParams), unitId);
 	}
 
 	/**
@@ -191,10 +207,9 @@ public class JamodSerialModbusDevice implements ModbusDevice, SettingSpecifierPr
 	}
 
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		JamodSerialModbusDevice defaults = new JamodSerialModbusDevice();
+		JamodSerialModbusNetwork defaults = new JamodSerialModbusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.uid)));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.unitId)));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", defaults.serialParams
 				.getPortName()));
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
@@ -258,15 +273,6 @@ public class JamodSerialModbusDevice implements ModbusDevice, SettingSpecifierPr
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
-	}
-
-	@Override
-	public int getUnitId() {
-		return unitId;
-	}
-
-	public void setUnitId(int unitId) {
-		this.unitId = unitId;
 	}
 
 	public String getUid() {

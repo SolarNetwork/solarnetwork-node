@@ -31,15 +31,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A base helper class to support {@link ModbusDevice} based services.
+ * A base helper class to support {@link ModbusNetwork} based services.
  * 
  * <p>
  * The configurable properties of this class are:
  * </p>
  * 
  * <dl class="class-properties">
- * <dt>modbusDevice</dt>
- * <dd>The {@link ModbusDevice} to use.</dd>
+ * <dt>modbusNetwork</dt>
+ * <dd>The {@link ModbusNetwork} to use.</dd>
+ * <dt>unitId</dt>
+ * <dd>The Modbus unit ID to communicate with.</dd>
  * <dt>uid</dt>
  * <dd>A service name to use.</dd>
  * <dt>groupUID</dt>
@@ -71,21 +73,22 @@ public abstract class ModbusDeviceSupport {
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	private Map<String, Object> deviceInfo;
+	private int unitId = 1;
 	private String uid;
 	private String groupUID;
-	private OptionalService<ModbusDevice> modbusDevice;
+	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
-	 * Get the {@link ModbusDevice} from the configured {@code modbusDevice}
+	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
 	 * service, or <em>null</em> if not available or not configured.
 	 * 
-	 * @return ModbusDevice
+	 * @return ModbusNetwork
 	 */
-	protected final ModbusDevice modbusDevice() {
-		return (modbusDevice == null ? null : modbusDevice.service());
+	protected final ModbusNetwork modbusNetwork() {
+		return (modbusNetwork == null ? null : modbusNetwork.service());
 	}
 
 	/**
@@ -181,9 +184,9 @@ public abstract class ModbusDeviceSupport {
 
 	/**
 	 * Perform some work with a Modbus {@link ModbusConnection}. This method
-	 * attempts to obtain a {@link ModbusDevice} from the configured
-	 * {@code modbusDevice} service, calling
-	 * {@link ModbusDevice#performAction(ModbusConnectionAction)} if one can be
+	 * attempts to obtain a {@link ModbusNetwork} from the configured
+	 * {@code modbusNetwork} service, calling
+	 * {@link ModbusNetwork#performAction(ModbusConnectionAction)} if one can be
 	 * obtained.
 	 * 
 	 * @param action
@@ -191,11 +194,11 @@ public abstract class ModbusDeviceSupport {
 	 * @return the result of the callback, or <em>null</em> if the action is
 	 *         never invoked
 	 */
-	protected final <T> T performAction(ModbusConnectionAction<T> action) throws IOException {
+	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
 		T result = null;
-		ModbusDevice device = (modbusDevice == null ? null : modbusDevice.service());
+		ModbusNetwork device = (modbusNetwork == null ? null : modbusNetwork.service());
 		if ( device != null ) {
-			result = device.performAction(action);
+			result = device.performAction(action, unitId);
 		}
 		return result;
 	}
@@ -248,12 +251,20 @@ public abstract class ModbusDeviceSupport {
 		this.groupUID = groupUID;
 	}
 
-	public OptionalService<ModbusDevice> getModbusDevice() {
-		return modbusDevice;
+	public OptionalService<ModbusNetwork> getModbusNetwork() {
+		return modbusNetwork;
 	}
 
-	public void setModbusDevice(OptionalService<ModbusDevice> modbusDevice) {
-		this.modbusDevice = modbusDevice;
+	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
+		this.modbusNetwork = modbusDevice;
+	}
+
+	public int getUnitId() {
+		return unitId;
+	}
+
+	public void setUnitId(int unitId) {
+		this.unitId = unitId;
 	}
 
 }
