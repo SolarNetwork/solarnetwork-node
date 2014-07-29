@@ -62,14 +62,14 @@
 				<bean class="net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource">
 					<property name="eventAdmin" ref="eventAdmin"/>
 					<property name="messageSource" ref="messageSource"/>
-					<property name="connectionFactory">
+					<property name="modbusDevice">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>
 							<property name="serviceClassName" 
-								value="net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory"/>
+								value="net.solarnetwork.node.io.modbus.ModbusDevice"/>
 							<property name="propertyFilters">
 								<map>
-									<entry key="UID" value="/dev/ttyUSB0"/>
+									<entry key="UID" value="Meter"/>
 								</map>
 							</property>
 						</bean>	

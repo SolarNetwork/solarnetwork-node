@@ -11,31 +11,33 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 	
-	<bean id="listenerSettingsFactory" 
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.io.modbus.JamodSerialModbusDevice"/>
+	</bean>
+	
+	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="Modbus serial port"/>
 		<property name="factoryUID" value="net.solarnetwork.node.io.modbus"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.io.modbus.JamodModbusSerialConnectionFactory"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
 	<!-- Published Services -->
 	
-	<service ref="listenerSettingsFactory" 
+	<service ref="settingsFactory" 
 		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory</beans:value>
+			<beans:value>net.solarnetwork.node.io.modbus.ModbusDevice</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.JamodModbusSerialConnectionFactory"/>
+		<bean class="net.solarnetwork.node.io.modbus.JamodSerialModbusDevice">
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
 	</osgix:managed-service-factory>
 	
 </blueprint>

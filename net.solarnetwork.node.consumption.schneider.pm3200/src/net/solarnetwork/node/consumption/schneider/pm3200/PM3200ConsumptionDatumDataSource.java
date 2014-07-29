@@ -32,12 +32,11 @@ import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.wimpi.modbus.net.SerialConnection;
 import org.springframework.context.MessageSource;
 
 /**
@@ -58,7 +57,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
@@ -70,19 +69,25 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 	private PM3200Data getCurrentSample() {
 		PM3200Data currSample;
 		if ( isCachedSampleExpired() ) {
-			currSample = ModbusHelper.execute(getConnectionFactory(),
-					new ModbusConnectionCallback<PM3200Data>() {
+			try {
+				currSample = performAction(new ModbusConnectionAction<PM3200Data>() {
 
-						@Override
-						public PM3200Data doInConnection(SerialConnection conn) throws IOException {
-							sample.readMeterData(conn, getUnitId());
-							return new PM3200Data(sample);
-						}
-					});
-			if ( log.isTraceEnabled() ) {
-				log.trace(currSample.dataDebugString());
+					@Override
+					public PM3200Data doWithConnection(ModbusConnection conn) throws IOException {
+						conn.open();
+						sample.readMeterData(conn);
+						return new PM3200Data(sample);
+					}
+
+				});
+				if ( log.isTraceEnabled() ) {
+					log.trace(currSample.dataDebugString());
+				}
+				log.debug("Read PM3200 data: {}", currSample);
+			} catch ( IOException e ) {
+				throw new RuntimeException("Communication problem reading from Modbus device "
+						+ modbusDevice(), e);
 			}
-			log.debug("Read PM3200 data: {}", currSample);
 		} else {
 			currSample = new PM3200Data(sample);
 		}

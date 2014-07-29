@@ -25,14 +25,14 @@ package net.solarnetwork.node.hw.schneider.meter;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
 import java.util.Arrays;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.wimpi.modbus.net.SerialConnection;
 
 /**
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PM3200Data {
 
@@ -175,32 +175,29 @@ public class PM3200Data {
 	 * 
 	 * @param conn
 	 *        the Modbus connection
-	 * @param unitId
-	 *        the Modbus unit ID to query
 	 */
-	public synchronized void readMeterData(final SerialConnection conn, final int unitId) {
+	public synchronized void readMeterData(final ModbusConnection conn) {
 		// current
-		readIntData(conn, unitId, ADDR_DATA_I1, ADDR_DATA_I_AVERAGE + 1);
+		readIntData(conn, ADDR_DATA_I1, ADDR_DATA_I_AVERAGE + 1);
 
 		// voltage
-		readIntData(conn, unitId, ADDR_DATA_V_L1_L2, ADDR_DATA_V_NEUTRAL_AVERAGE + 1);
+		readIntData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_V_NEUTRAL_AVERAGE + 1);
 
 		// power, power factor
-		readIntData(conn, unitId, ADDR_DATA_ACTIVE_POWER_P1, ADDR_DATA_POWER_FACTOR_TOTAL + 1);
+		readIntData(conn, ADDR_DATA_ACTIVE_POWER_P1, ADDR_DATA_POWER_FACTOR_TOTAL + 1);
 
 		// tangent phi, frequency, temp (Float32)
-		readIntData(conn, unitId, ADDR_DATA_REACTIVE_FACTOR_TOTAL, ADDR_DATA_TEMP + 1);
+		readIntData(conn, ADDR_DATA_REACTIVE_FACTOR_TOTAL, ADDR_DATA_TEMP + 1);
 
 		// total energy
-		readIntData(conn, unitId, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
+		readIntData(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
 				ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT + 1);
 
 		dataTimestamp = System.currentTimeMillis();
 	}
 
-	private void readIntData(final SerialConnection conn, final int unitId, final int startAddr,
-			final int endAddr) {
-		int[] data = ModbusHelper.readInts(conn, startAddr, (endAddr - startAddr + 1), unitId);
+	private void readIntData(final ModbusConnection conn, final int startAddr, final int endAddr) {
+		int[] data = conn.readInts(startAddr, (endAddr - startAddr + 1));
 		saveDataArray(data, startAddr);
 	}
 
