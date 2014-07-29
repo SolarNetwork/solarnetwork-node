@@ -336,7 +336,9 @@ public class PM3200Support extends ModbusDeviceSupport {
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("modbusDevice.propertyFilters['UID']", "Meter"));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
 				.getSourceMappingValue()));
 

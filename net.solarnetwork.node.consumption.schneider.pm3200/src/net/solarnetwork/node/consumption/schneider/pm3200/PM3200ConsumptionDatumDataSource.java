@@ -74,7 +74,6 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 
 					@Override
 					public PM3200Data doWithConnection(ModbusConnection conn) throws IOException {
-						conn.open();
 						sample.readMeterData(conn);
 						return new PM3200Data(sample);
 					}
@@ -86,7 +85,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 				log.debug("Read PM3200 data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException("Communication problem reading from Modbus device "
-						+ modbusDevice(), e);
+						+ modbusNetwork(), e);
 			}
 		} else {
 			currSample = new PM3200Data(sample);
@@ -130,6 +129,9 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 		final long start = System.currentTimeMillis();
 		final PM3200Data currSample = getCurrentSample();
 		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(4);
+		if ( currSample == null ) {
+			return results;
+		}
 		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
 		if ( isCaptureTotal() || postCapturedEvent ) {
 			PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.Total);
