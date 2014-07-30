@@ -164,4 +164,96 @@ public class EM5600ConsumptionDatum extends ConsumptionDatum implements ACEnergy
 		return sample.getFrequency(EM5600Data.ADDR_DATA_FREQUENCY);
 	}
 
+	@Override
+	public Float getVoltage() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_V_L1_NEUTRAL;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_V_L2_NEUTRAL;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_V_L3_NEUTRAL;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_V_NEUTRAL_AVERAGE;
+				break;
+		}
+		return sample.getVoltage(addr);
+	}
+
+	@Override
+	public Float getCurrent() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_I1;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_I2;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_I3;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_I_AVERAGE;
+				break;
+		}
+		return sample.getCurrent(addr);
+	}
+
+	@Override
+	public Float getPhaseVoltage() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_V_L1_L2;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_V_L2_L3;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_V_L3_L1;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_V_L_L_AVERAGE;
+				break;
+		}
+		return sample.getVoltage(addr);
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		final int addr;
+		switch (phase) {
+			case PhaseA:
+				addr = EM5600Data.ADDR_DATA_POWER_FACTOR_P1;
+				break;
+
+			case PhaseB:
+				addr = EM5600Data.ADDR_DATA_POWER_FACTOR_P2;
+				break;
+
+			case PhaseC:
+				addr = EM5600Data.ADDR_DATA_POWER_FACTOR_P3;
+				break;
+
+			default:
+				addr = EM5600Data.ADDR_DATA_POWER_FACTOR_TOTAL;
+				break;
+		}
+		return sample.getPowerFactor(addr);
+	}
+
 }
