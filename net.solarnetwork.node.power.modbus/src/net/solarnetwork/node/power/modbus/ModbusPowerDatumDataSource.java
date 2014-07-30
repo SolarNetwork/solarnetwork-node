@@ -1,5 +1,5 @@
 /* ===================================================================
- * JamodPowerDatumDataSource.java
+ * ModbusPowerDatumDataSource.java
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,27 +20,28 @@
 
 package net.solarnetwork.node.power.modbus;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.PropertyAccessException;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * {@link GenerationDataSource} implementation using the Jamod modbus serial
@@ -68,28 +69,24 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dt>unitId</dt>
  * <dd>The Modbus unit ID to use.</dd>
  * 
- * <dt>connectionFactory</dt>
- * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
+ * <dt>modbusNetwork</dt>
+ * <dd>The {@link ModbusNetwork} to use.</dd>
  * 
  * @author matt.magoffin
- * @version 1.3
+ * @version 2.0
  */
-public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
+public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
+		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
-	private static MessageSource MESSAGE_SOURCE;
+	private DynamicServiceTracker<ModbusNetwork> modbusNetwork;
 
-	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
-
-	private Integer unitId = 1;
 	private Integer[] addresses = new Integer[] { 0x8, 0x10 };
 	private Integer count = 5;
 	private String sourceId = "Main";
 	private Map<Integer, String> registerMapping = defaultRegisterMapping();
 	private Map<Integer, Double> registerScaleFactor = defaultRegisterScaleFactor();
 	private Map<Integer, String> hiLoRegisterMapping = defaultHiLoRegisterMapping();
-	private String groupUID;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private MessageSource messageSource;
 
 	@Override
 	public Class<? extends PowerDatum> getDatumType() {
@@ -98,8 +95,18 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	@Override
 	public PowerDatum readCurrentDatum() {
-		Map<Integer, Integer> words = ModbusHelper.readInputValues(connectionFactory, addresses, count,
-				unitId);
+		Map<Integer, Integer> words = null;
+		try {
+			words = performAction(new ModbusConnectionAction<Map<Integer, Integer>>() {
+
+				@Override
+				public Map<Integer, Integer> doWithConnection(ModbusConnection conn) throws IOException {
+					return conn.readInputValues(addresses, count);
+				}
+			});
+		} catch ( IOException e ) {
+			log.error("Error communicating with Modbus device: {}", e.getMessage());
+		}
 		if ( words == null ) {
 			return null;
 		}
@@ -361,6 +368,11 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 		return buf.toString();
 	}
 
+	@Override
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return null;
+	}
+
 	// SettingSpecifierProvider
 
 	@Override
@@ -375,15 +387,15 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		JamodPowerDatumDataSource defaults = new JamodPowerDatumDataSource();
+		ModbusPowerDatumDataSource defaults = new ModbusPowerDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", (defaults.sourceId == null ? ""
 				: defaults.sourceId)));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("addressesValue", defaults.getAddressessValue()));
 		results.add(new BasicTextFieldSettingSpecifier("count", (defaults.getCount() == null ? ""
 				: defaults.getCount().toString())));
@@ -398,35 +410,12 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(getClass().getClassLoader());
-			source.setBasename(getClass().getName());
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	@Override
 	public String getUID() {
 		return getSourceId();
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	public Integer getUnitId() {
-		return unitId;
-	}
-
-	public void setUnitId(Integer unitId) {
-		this.unitId = unitId;
 	}
 
 	public Integer[] getAddresses() {
@@ -435,15 +424,6 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	public void setAddresses(Integer[] addresses) {
 		this.addresses = addresses;
-	}
-
-	public DynamicServiceTracker<ModbusSerialConnectionFactory> getConnectionFactory() {
-		return connectionFactory;
-	}
-
-	public void setConnectionFactory(
-			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
-		this.connectionFactory = connectionFactory;
 	}
 
 	public Integer getCount() {
@@ -484,6 +464,19 @@ public class JamodPowerDatumDataSource implements DatumDataSource<PowerDatum>, S
 
 	public void setHiLoRegisterMapping(Map<Integer, String> hiLoRegisterMapping) {
 		this.hiLoRegisterMapping = hiLoRegisterMapping;
+	}
+
+	@Override
+	public DynamicServiceTracker<ModbusNetwork> getModbusNetwork() {
+		return modbusNetwork;
+	}
+
+	public void setModbusNetwork(DynamicServiceTracker<ModbusNetwork> modbusNetwork) {
+		this.modbusNetwork = modbusNetwork;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }
