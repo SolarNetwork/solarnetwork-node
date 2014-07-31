@@ -26,8 +26,11 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.sma.pcm.ModbusPCMController;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
@@ -108,6 +111,73 @@ public class ModbusPCMControllerTest {
 
 		Assert.assertEquals("Instruction should be processed",
 				InstructionStatus.InstructionState.Completed, state);
+	}
+
+	@Test
+	public void exposesPercentControl() {
+		Assert.assertEquals(
+				"Percent control included in supported control IDs",
+				Arrays.asList(TEST_CONTROL_ID, TEST_CONTROL_ID
+						+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX),
+				service.getAvailableControlIds());
+	}
+
+	@Test
+	public void readControlInfo() throws IOException {
+		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
+				new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+		expect(conn.readDiscreetValues(EasyMock.aryEq(new Integer[] { 1, 2, 3, 4 }), EasyMock.eq(1)))
+				.andReturn(expectedBitSet);
+
+		replay(modbus, conn);
+
+		NodeControlInfo info = service.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		verify(modbus, conn);
+
+		Assert.assertEquals("Read control ID", TEST_CONTROL_ID, info.getControlId());
+		Assert.assertEquals("Read value type", NodeControlPropertyType.Integer, info.getType());
+		Assert.assertEquals("Read value", String.valueOf(8), info.getValue());
+	}
+
+	@Test
+	public void readControlInfoAsPercent() throws IOException {
+		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
+				new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+		expect(conn.readDiscreetValues(EasyMock.aryEq(new Integer[] { 1, 2, 3, 4 }), EasyMock.eq(1)))
+				.andReturn(expectedBitSet);
+
+		replay(modbus, conn);
+
+		NodeControlInfo info = service.getCurrentControlInfo(TEST_CONTROL_ID
+				+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX);
+
+		verify(modbus, conn);
+
+		Assert.assertEquals("Read control ID", TEST_CONTROL_ID
+				+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX, info.getControlId());
+		Assert.assertEquals("Read value type", NodeControlPropertyType.Integer, info.getType());
+		Assert.assertEquals("Read value", String.valueOf(50), info.getValue());
 	}
 
 }
