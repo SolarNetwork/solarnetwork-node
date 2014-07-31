@@ -22,24 +22,25 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StringUtils;
-import net.wimpi.modbus.net.SerialConnection;
+import org.easymock.EasyMock;
 import org.joda.time.LocalDateTime;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Test cases for the {@link PM3200Support} class.
@@ -51,115 +52,151 @@ import org.springframework.test.context.ContextConfiguration;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-@ContextConfiguration
 public class PM3200SupportTests extends AbstractNodeTest {
 
-	@Autowired
-	private net.solarnetwork.node.io.modbus.JamodModbusSerialConnectionFactory connectionFactory;
-
-	@Value("${meter.unitId}")
-	private Integer unitId;
-
-	@Value("${meter.name}")
-	private String meterName;
-
-	@Value("${meter.model}")
-	private String meterModel;
-
-	@Value("${meter.manufacturer}")
-	private String meterManufacturer;
-
-	@Value("${meter.serialNumber}")
-	private Long meterSerialNumber;
-
-	@Value("${meter.manufactureDate}")
-	private Long meterManufactureDate;
-
-	private OptionalService<ModbusSerialConnectionFactory> connectionFactoryService;
+	private ModbusNetwork modbus;
+	private ModbusConnection conn;
 	private PM3200Support support;
 
 	@Before
 	public void setup() {
-		connectionFactoryService = new StaticOptionalService<ModbusSerialConnectionFactory>(
-				connectionFactory);
+		modbus = EasyMock.createMock(ModbusNetwork.class);
+		conn = EasyMock.createMock(ModbusConnection.class);
 		support = new PM3200Support();
-		support.setConnectionFactory(connectionFactoryService);
-		support.setUnitId(unitId);
+		support.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		support.setUnitId(UNIT_ID);
+	}
+
+	private static final String METER_NAME = "Test Meter";
+	private static final String METER_MODEL = "PM32XX_TEST";
+	private static final String METER_MANF = "Test Corporation";
+	private static final Long METER_SERIAL = 123456L;
+	private static final int UNIT_ID = 1;
+
+	@SuppressWarnings("unchecked")
+	private <T> ModbusConnectionAction<T> anyAction(Class<T> type) {
+		return EasyMock.anyObject(ModbusConnectionAction.class);
 	}
 
 	@Test
-	public void testReadMeterName() {
-		String result = connectionFactory.execute(new ModbusConnectionCallback<String>() {
+	public void readMeterName() throws IOException {
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_NAME);
 
-			@Override
-			public String doInConnection(SerialConnection conn) throws IOException {
-				return support.getMeterName(conn);
-			}
-		});
-		Assert.assertEquals("Meter name", meterName, result);
+		replay(conn);
+
+		String result = support.getMeterName(conn);
+
+		verify(conn);
+
+		Assert.assertEquals("Meter name", METER_NAME, result);
 	}
 
 	@Test
-	public void testReadMeterModel() {
-		String result = connectionFactory.execute(new ModbusConnectionCallback<String>() {
+	public void readMeterModel() {
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_MODEL);
+		replay(conn);
 
-			@Override
-			public String doInConnection(SerialConnection conn) throws IOException {
-				return support.getMeterModel(conn);
-			}
-		});
-		Assert.assertEquals("Meter model", meterModel, result);
+		String result = support.getMeterName(conn);
+
+		verify(conn);
+
+		Assert.assertEquals("Meter model", METER_MODEL, result);
 	}
 
 	@Test
-	public void testReadMeterManufacturer() {
-		String result = connectionFactory.execute(new ModbusConnectionCallback<String>() {
+	public void readMeterManufacturer() {
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_MANF);
+		replay(conn);
 
-			@Override
-			public String doInConnection(SerialConnection conn) throws IOException {
-				return support.getMeterManufacturer(conn);
-			}
-		});
-		Assert.assertEquals("Meter manufacturer", meterManufacturer, result);
+		String result = support.getMeterManufacturer(conn);
+
+		verify(conn);
+
+		Assert.assertEquals("Meter manufacturer", METER_MANF, result);
 	}
 
 	@Test
-	public void testReadMeterSerialNumber() {
-		Long result = connectionFactory.execute(new ModbusConnectionCallback<Long>() {
+	public void readMeterSerialNumber() {
+		expect(conn.readValues(PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2)).andReturn(
+				new Integer[] { 1, 57920 });
 
-			@Override
-			public Long doInConnection(SerialConnection conn) throws IOException {
-				return support.getMeterSerialNumber(conn);
-			}
-		});
-		Assert.assertEquals("Meter serial number", meterSerialNumber, result);
+		replay(conn);
+
+		Long result = support.getMeterSerialNumber(conn);
+
+		verify(conn);
+		Assert.assertEquals("Meter serial number", METER_SERIAL, result);
 	}
 
 	@Test
 	public void testReadMeterManufactureDate() {
-		LocalDateTime result = connectionFactory.execute(new ModbusConnectionCallback<LocalDateTime>() {
+		expect(conn.readInts(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4)).andReturn(
+				new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
 
-			@Override
-			public LocalDateTime doInConnection(SerialConnection conn) throws IOException {
-				return support.getMeterManufactureDate(conn);
-			}
-		});
-		LocalDateTime expected = new LocalDateTime(meterManufactureDate);
-		Assert.assertEquals("Meter manufacture date", expected, result);
+		replay(conn);
+
+		LocalDateTime result = support.getMeterManufactureDate(conn);
+
+		verify(conn);
+
+		LocalDateTime expectedDate = new LocalDateTime(2014, 7, 31, 12, 27, 30, 599);
+		Assert.assertEquals("Meter manufacture date", expectedDate, result);
 	}
 
 	@Test
-	public void testReadMeterInfoMessage() {
+	public void readMeterInfoMessage() throws IOException {
+		expect(modbus.performAction(anyAction(Map.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
+				new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						try {
+							conn.open();
+							return action.doWithConnection(conn);
+						} finally {
+							conn.close();
+						}
+					}
+
+				});
+
+		conn.open();
+
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_NAME);
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_MODEL, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_MODEL);
+		expect(
+				conn.readString(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true,
+						ModbusConnection.UTF8_CHARSET)).andReturn(METER_MANF);
+		expect(conn.readInts(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4)).andReturn(
+				new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
+		expect(conn.readValues(PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2)).andReturn(
+				new Integer[] { 1, 57920 });
+
+		conn.close();
+
+		replay(modbus, conn);
+
 		String result = support.getDeviceInfoMessage();
 		List<Object> data = new ArrayList<Object>(10);
-		data.add(meterName);
-		data.add(meterModel);
-		data.add(meterManufacturer);
-		LocalDateTime expectedDate = new LocalDateTime(meterManufactureDate);
+		data.add(METER_NAME);
+		data.add(METER_MODEL);
+		data.add(METER_MANF);
+		LocalDateTime expectedDate = new LocalDateTime(2014, 7, 31, 12, 27, 30, 599);
 		data.add(expectedDate.toLocalDate().toString());
-		data.add(meterSerialNumber);
+		data.add(METER_SERIAL);
 		String expected = StringUtils.delimitedStringFromCollection(data, " / ");
 		Assert.assertEquals("Meter info message", expected, result);
 	}
