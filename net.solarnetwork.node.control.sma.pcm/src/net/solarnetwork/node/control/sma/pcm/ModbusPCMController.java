@@ -79,7 +79,13 @@ import org.springframework.context.MessageSource;
 public class ModbusPCMController extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler {
 
-	private static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
+	/**
+	 * The suffix added to the configured control ID to handle percent-based PCM
+	 * values.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
 
 	private Integer d1Address = 0x4000;
 	private Integer d2Address = 0x4002;
