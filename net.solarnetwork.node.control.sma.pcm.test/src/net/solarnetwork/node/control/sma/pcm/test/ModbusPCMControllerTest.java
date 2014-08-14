@@ -65,7 +65,7 @@ public class ModbusPCMControllerTest {
 	public void setup() {
 		service = new ModbusPCMController();
 		service.setControlId(TEST_CONTROL_ID);
-		service.setUnitId(1);
+		service.setUnitId(UNIT_ID);
 		service.setD1Address(1);
 		service.setD2Address(2);
 		service.setD3Address(3);
