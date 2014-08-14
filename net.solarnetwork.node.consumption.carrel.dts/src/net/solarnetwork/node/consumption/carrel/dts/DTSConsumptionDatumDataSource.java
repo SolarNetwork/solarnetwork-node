@@ -28,13 +28,13 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.wimpi.modbus.net.SerialConnection;
 import org.springframework.context.MessageSource;
 
 /**
@@ -64,9 +64,9 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class DTSConsumptionDatumDataSource extends ModbusSupport implements
+public class DTSConsumptionDatumDataSource extends ModbusDeviceSupport implements
 		DatumDataSource<ConsumptionDatum>, SettingSpecifierProvider {
 
 	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 40001;
@@ -75,7 +75,7 @@ public class DTSConsumptionDatumDataSource extends ModbusSupport implements
 	private MessageSource messageSource;
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		return null;
 	}
 
@@ -86,22 +86,25 @@ public class DTSConsumptionDatumDataSource extends ModbusSupport implements
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
-		return ModbusHelper.execute(getConnectionFactory(),
-				new ModbusConnectionCallback<ConsumptionDatum>() {
+		try {
+			return performAction(new ModbusConnectionAction<ConsumptionDatum>() {
 
-					@Override
-					public ConsumptionDatum doInConnection(SerialConnection conn) throws IOException {
-						ConsumptionDatum d = new ConsumptionDatum();
-						int[] data = ModbusHelper.readInts(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
-								2, getUnitId());
-						Long hectoWh = ModbusHelper.parseInt32(data, 0);
-						if ( hectoWh != null ) {
-							d.setWattHourReading(hectoWh * 100L);
-						}
-						d.setSourceId(sourceId);
-						return (d.getWattHourReading() != null ? d : null);
+				@Override
+				public ConsumptionDatum doWithConnection(ModbusConnection conn) throws IOException {
+					ConsumptionDatum d = new ConsumptionDatum();
+					int[] data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
+					Long hectoWh = ModbusHelper.parseInt32(data, 0);
+					if ( hectoWh != null ) {
+						d.setWattHourReading(hectoWh * 100L);
 					}
-				});
+					d.setSourceId(sourceId);
+					return (d.getWattHourReading() != null ? d : null);
+				}
+			});
+		} catch ( IOException e ) {
+			log.error("Error communicating with meter: {}", e.getMessage());
+			throw new RuntimeException(e);
+		}
 	}
 
 	// SettingSpecifierProvider
@@ -124,9 +127,9 @@ public class DTSConsumptionDatumDataSource extends ModbusSupport implements
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 
 		return results;
 	}

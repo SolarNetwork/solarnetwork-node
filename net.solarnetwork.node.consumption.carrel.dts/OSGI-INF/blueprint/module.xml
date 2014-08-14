@@ -26,7 +26,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.consumption.carrel.dts.DTSConsumptionDatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusSupport</value>
+				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -55,14 +55,14 @@
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.consumption.carrel.dts.DTSConsumptionDatumDataSource">
 					<property name="messageSource" ref="messageSource"/>
-					<property name="connectionFactory">
+					<property name="modbusNetwork">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>
 							<property name="serviceClassName" 
-								value="net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory"/>
+								value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
 							<property name="propertyFilters">
 								<map>
-									<entry key="UID" value="/dev/ttyUSB0"/>
+									<entry key="UID" value="Serial Port"/>
 								</map>
 							</property>
 						</bean>	

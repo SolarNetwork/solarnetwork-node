@@ -28,9 +28,9 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -38,7 +38,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
-import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.DateTime;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
@@ -59,22 +58,22 @@ import org.springframework.context.MessageSource;
  * <dd>The Modbus unit ID to use.</dd>
  * <dt>registerValue</dt>
  * <dd>The value to set the Modbus register to.</dd>
- * <dt>connectionFactory</dt>
- * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
+ * <dt>modbusNetwork</dt>
+ * <dd>The {@link ModbusNetwork} service to use.</dd>
  * <dt>messageSource</dt>
  * <dd>The {@link MessageSource} to use to support
  * {@link SettingSpecifierProvider}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
 
 	private Integer address = 0x4008;
 	private Integer unitId = 1;
 	private Boolean registerValue = Boolean.TRUE;
-	private DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory;
+	private DynamicServiceTracker<ModbusNetwork> modbusNetwork;
 	private MessageSource messageSource;
 
 	// static map to keep track of job execution status info
@@ -113,19 +112,23 @@ public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, Sett
 				| (address == null ? 0L : address.longValue());
 	}
 
-	private synchronized Boolean setValue(Boolean desiredValue) {
+	private synchronized Boolean setValue(Boolean desiredValue) throws IOException {
+		final ModbusNetwork network = (modbusNetwork == null ? null : modbusNetwork.service());
+		if ( network == null ) {
+			log.debug("No ModbusNetwork avaialble");
+			return Boolean.FALSE;
+		}
 		final BitSet bits = new BitSet(1);
 		bits.set(0, desiredValue);
 		log.info("Setting modbus unit {} register {} value to {}", unitId, address, desiredValue);
 		final Integer[] addresses = new Integer[] { address };
-		return ModbusHelper.execute(connectionFactory, new ModbusConnectionCallback<Boolean>() {
+		return network.performAction(new ModbusConnectionAction<Boolean>() {
 
 			@Override
-			public Boolean doInConnection(SerialConnection conn) throws IOException {
-				return ModbusHelper.writeDiscreetValues(conn, addresses, bits, unitId);
+			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
+				return conn.writeDiscreetValues(addresses, bits);
 			}
-
-		});
+		}, unitId);
 	}
 
 	// SettingSpecifierProvider
@@ -164,8 +167,8 @@ public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, Sett
 					.getMessage(), true));
 		}
 
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
 		results.add(new BasicToggleSettingSpecifier("registerValue", defaults.registerValue.toString()));
@@ -182,17 +185,16 @@ public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, Sett
 		this.unitId = unitId;
 	}
 
-	public void setConnectionFactory(
-			DynamicServiceTracker<ModbusSerialConnectionFactory> connectionFactory) {
-		this.connectionFactory = connectionFactory;
-	}
-
 	public void setRegisterValue(Boolean registerValue) {
 		this.registerValue = registerValue;
 	}
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	public void setModbusNetwork(DynamicServiceTracker<ModbusNetwork> modbusNetwork) {
+		this.modbusNetwork = modbusNetwork;
 	}
 
 }

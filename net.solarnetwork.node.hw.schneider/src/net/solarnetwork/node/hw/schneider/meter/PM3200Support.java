@@ -30,15 +30,15 @@ import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -62,9 +62,9 @@ import org.osgi.service.event.EventAdmin;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class PM3200Support extends ModbusSupport {
+public class PM3200Support extends ModbusDeviceSupport {
 
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
@@ -104,8 +104,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter name, or <em>null</em> if not available
 	 */
-	public String getMeterName(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_NAME, 20, getUnitId(), true);
+	public String getMeterName(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -115,8 +115,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter model, or <em>null</em> if not available
 	 */
-	public String getMeterModel(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MODEL, 20, getUnitId(), true);
+	public String getMeterModel(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_MODEL, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -126,8 +126,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter manufacturer, or <em>null</em> if not available
 	 */
-	public String getMeterManufacturer(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MANUFACTURER, 20, getUnitId(), true);
+	public String getMeterManufacturer(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_MANUFACTURER, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -137,9 +137,9 @@ public class PM3200Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter serial number, or <em>null</em> if not available
 	 */
-	public Long getMeterSerialNumber(SerialConnection conn) {
+	public Long getMeterSerialNumber(ModbusConnection conn) {
 		Long result = null;
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_SERIAL_NUMBER, 2, getUnitId());
+		Integer[] data = conn.readValues(ADDR_SYSTEM_METER_SERIAL_NUMBER, 2);
 		if ( data != null && data.length == 2 ) {
 			int longValue = ModbusHelper.getLongWord(data[0], data[1]);
 			result = (long) longValue;
@@ -154,13 +154,13 @@ public class PM3200Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
-	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4, getUnitId());
+	public LocalDateTime getMeterManufactureDate(ModbusConnection conn) {
+		int[] data = conn.readInts(ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4);
 		return parseDateTime(data);
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
 		String str = getMeterName(conn);
 		if ( str != null ) {
@@ -308,7 +308,7 @@ public class PM3200Support extends ModbusSupport {
 		try {
 			msg = getDeviceInfoMessage();
 		} catch ( RuntimeException e ) {
-			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
+			log.debug("Error reading info: {}", e.getMessage());
 		}
 		return (msg == null ? "N/A" : msg);
 	}
@@ -336,9 +336,9 @@ public class PM3200Support extends ModbusSupport {
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
 				.getSourceMappingValue()));
 
