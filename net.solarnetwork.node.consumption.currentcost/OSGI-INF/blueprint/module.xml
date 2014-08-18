@@ -21,16 +21,37 @@
 	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
 		<property name="service" ref="locationServiceRef"/>
 	</bean>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.consumption.currentcost.CCConsumptionDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.currentcost.CCSupport</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="serialParams."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.support.SerialPortBeanParameters</value>
+								<value>net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
 		
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="CurrentCost watt meter"/>
 		<property name="factoryUID" value="net.solarnetwork.node.consumption.currentcost"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.consumption.currentcost.CCConsumptionDatumDataSource"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -50,6 +71,7 @@
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.consumption.currentcost.CCConsumptionDatumDataSource">
+					<property name="messageSource" ref="messageSource"/>
 					<property name="dataCollectorFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>

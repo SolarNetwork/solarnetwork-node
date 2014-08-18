@@ -79,6 +79,13 @@ public class CCMessageParser extends XmlServiceSupport {
 	 */
 	public CCDatum parseMessage(byte[] messageXML) {
 		CCDatum d = new CCDatum();
+		if ( log.isDebugEnabled() ) {
+			try {
+				log.debug("Parsing CC XML: {}", new String(messageXML, "UTF-8"));
+			} catch ( UnsupportedEncodingException e ) {
+				// shouldn't get here
+			}
+		}
 		try {
 			extractBeanDataFromXml(
 					d,

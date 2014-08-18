@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,12 +42,10 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.DynamicServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Support class for reading CurrentCost watt meter data.
@@ -118,7 +117,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CCSupport {
 
@@ -139,8 +138,6 @@ public class CCSupport {
 
 	/** The default value for the {@code ampSensorIndex} property. */
 	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
-
-	private static MessageSource MESSAGE_SOURCE;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -163,6 +160,8 @@ public class CCSupport {
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private String uid = null;
 	private String groupUID = null;
+	private long sampleCacheMs = 5000;
+	private MessageSource messageSource;
 
 	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
 		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
@@ -188,14 +187,18 @@ public class CCSupport {
 	 * <p>
 	 * This adds the address to the cached set of <em>known</em> addresses,
 	 * which are shown as a read-only setting property to aid in mapping the
-	 * right device address.
+	 * right device address, as long as the {@link CCDatum#getDeviceAddress()}
+	 * value is not <em>null</em>.
 	 * </p>
 	 * 
 	 * @param datum
 	 *        the datum to add
 	 */
 	protected void addKnownAddress(CCDatum datum) {
-		knownAddresses.add(datum);
+		if ( datum != null && datum.getDeviceAddress() != null ) {
+			knownAddresses.remove(datum); // remove old copy, if present
+			knownAddresses.add(datum);
+		}
 	}
 
 	/**
@@ -226,6 +229,53 @@ public class CCSupport {
 	 */
 	protected void clearKnownAddresses(Collection<CCDatum> toRemove) {
 		knownAddresses.removeAll(toRemove);
+	}
+
+	/**
+	 * Get an address value for a given sample and sensor index.
+	 * 
+	 * @param datum
+	 *        the sample data
+	 * @param ampIndex
+	 *        the sensor index
+	 * @return the address value to use
+	 */
+	protected String addressValue(CCDatum datum, int ampIndex) {
+		return String.format(sourceIdFormat, datum.getDeviceAddress(), ampIndex);
+	}
+
+	/**
+	 * Return all cached data from the {@code knownAddresses} Map whose address
+	 * is currently configured in the {@link #getAddressSourceMapping()} map.
+	 * The data is only returned if it is not older than
+	 * {@link #getSampleCacheMs()} (if that is configured as anything greater
+	 * than zero).
+	 * 
+	 * @return set of cached {@link CCDatum}, or an empty Set if none available
+	 */
+	protected Set<CCDatum> allCachedDataForConfiguredAddresses() {
+		Set<String> captureAddresses = (addressSourceMapping == null ? null : addressSourceMapping
+				.keySet());
+		if ( captureAddresses == null ) {
+			return Collections.emptySet();
+		}
+		Set<CCDatum> result = new HashSet<CCDatum>(4);
+		final long now = System.currentTimeMillis();
+		for ( CCDatum datum : knownAddresses ) {
+			for ( int i = 1; i <= 3; i++ ) {
+				String anAddress = addressValue(datum, i);
+				if ( captureAddresses.contains(anAddress) ) {
+					if ( sampleCacheMs < 1 || (now - datum.getCreated()) <= sampleCacheMs ) {
+						result.add(datum);
+						break;
+					}
+				}
+			}
+		}
+		if ( log.isDebugEnabled() && result.size() > 0 ) {
+			log.debug("Returning cached CCDatum samples: {}", result);
+		}
+		return result;
 	}
 
 	/**
@@ -296,11 +346,14 @@ public class CCSupport {
 			}
 			status.append(datum.getStatusMessage());
 		}
+		CCSupport defaults = new CCSupport();
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
+				.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", String
 				.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
@@ -317,26 +370,6 @@ public class CCSupport {
 				getDefaultSerialParams(), "serialParams.");
 		results.addAll(serialSpecs);
 		return results;
-	}
-
-	public synchronized MessageSource getDefaultSettingsMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
-			serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-			serial.setBasenames(new String[] { SerialPortBeanParameters.class.getName(),
-					DataCollectorSerialPortBeanParameters.class.getName() });
-
-			PrefixedMessageSource serialSource = new PrefixedMessageSource();
-			serialSource.setDelegate(serial);
-			serialSource.setPrefix("serialParams.");
-
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(CCSupport.class.getClassLoader());
-			source.setBasename(CCSupport.class.getName());
-			source.setParentMessageSource(serialSource);
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
 	}
 
 	public DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> getDataCollectorFactory() {
@@ -438,6 +471,22 @@ public class CCSupport {
 
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
+	}
+
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
+	}
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

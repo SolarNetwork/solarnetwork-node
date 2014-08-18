@@ -39,8 +39,6 @@ import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * {@link DatumDataSource} implementation for CurrentCost watt monitors, reading
@@ -60,13 +58,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CCConsumptionDatumDataSource extends CCSupport implements
 		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
 		SettingSpecifierProvider {
-
-	private static MessageSource MESSAGE_SOURCE;
 
 	@Override
 	public Class<? extends ConsumptionDatum> getDatumType() {
@@ -75,6 +71,11 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 
 	@Override
 	public ConsumptionDatum readCurrentDatum() {
+		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
+		if ( !datumSet.isEmpty() ) {
+			return getConsumptionDatumInstance(datumSet.iterator().next(), getAmpSensorIndex());
+		}
+
 		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory()
 				.service();
 		if ( df == null ) {
@@ -108,18 +109,25 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 
 	@Override
 	public Collection<ConsumptionDatum> readMultipleDatum() {
+		Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter() == null ? 0
+				: getSourceIdFilter().size());
+		List<ConsumptionDatum> result = new ArrayList<ConsumptionDatum>(3);
+		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
+		for ( CCDatum ccDatum : datumSet ) {
+			processSample(result, sourceIdSet, ccDatum);
+		}
+		if ( !needMoreSamplesForSources(sourceIdSet) ) {
+			return result;
+		}
 		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory()
 				.service();
 		if ( df == null ) {
 			return Collections.emptyList();
 		}
 
-		List<ConsumptionDatum> result = new ArrayList<ConsumptionDatum>(3);
 		long endTime = isCollectAllSourceIds() && getSourceIdFilter() != null
 				&& getSourceIdFilter().size() > 1 ? System.currentTimeMillis()
 				+ (getCollectAllSourceIdsTimeout() * 1000) : 0;
-		Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter() == null ? 0
-				: getSourceIdFilter().size());
 		DataCollector dc = null;
 		try {
 			dc = df.getDataCollectorInstance(getSerialParams());
@@ -132,32 +140,15 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 				}
 				CCDatum ccDatum = messageParser.parseMessage(data);
 
-				if ( ccDatum == null ) {
+				if ( ccDatum == null || ccDatum.getDeviceAddress() == null ) {
 					continue;
 				}
 
 				// add a known address for this reading
 				addKnownAddress(ccDatum);
 
-				if ( log.isDebugEnabled() ) {
-					log.debug("Got CCDatum: {}", ccDatum.getStatusMessage());
-				}
-
-				for ( int ampIndex = 1; ampIndex <= 3; ampIndex++ ) {
-					if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
-						continue;
-					}
-					ConsumptionDatum datum = getConsumptionDatumInstance(ccDatum, ampIndex);
-					if ( datum != null ) {
-						if ( !sourceIdSet.contains(datum.getSourceId()) ) {
-							result.add(datum);
-							sourceIdSet.add(datum.getSourceId());
-						}
-					}
-				}
-			} while ( System.currentTimeMillis() < endTime
-					&& sourceIdSet.size() < (getSourceIdFilter() == null ? 0 : getSourceIdFilter()
-							.size()) );
+				processSample(result, sourceIdSet, ccDatum);
+			} while ( System.currentTimeMillis() < endTime && needMoreSamplesForSources(sourceIdSet) );
 		} finally {
 			if ( dc != null ) {
 				dc.stopCollecting();
@@ -167,11 +158,35 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 		return result;
 	}
 
+	private boolean needMoreSamplesForSources(Set<String> sourceIdSet) {
+		return (sourceIdSet.isEmpty() || sourceIdSet.size() < (getSourceIdFilter() == null ? 0
+				: getSourceIdFilter().size()));
+	}
+
+	private void processSample(List<ConsumptionDatum> result, Set<String> sourceIdSet, CCDatum ccDatum) {
+		if ( log.isDebugEnabled() ) {
+			log.debug("Got CCDatum: {}", ccDatum.getStatusMessage());
+		}
+
+		for ( int ampIndex = 1; ampIndex <= 3; ampIndex++ ) {
+			if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
+				continue;
+			}
+			ConsumptionDatum datum = getConsumptionDatumInstance(ccDatum, ampIndex);
+			if ( datum != null ) {
+				if ( !sourceIdSet.contains(datum.getSourceId()) ) {
+					result.add(datum);
+					sourceIdSet.add(datum.getSourceId());
+				}
+			}
+		}
+	}
+
 	private ConsumptionDatum getConsumptionDatumInstance(CCDatum datum, int ampIndex) {
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = String.format(getSourceIdFormat(), datum.getDeviceAddress(), ampIndex);
+		String addr = addressValue(datum, ampIndex);
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}
@@ -188,7 +203,7 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 				.floatValue() / getVoltage());
 
 		ConsumptionDatum result = new ConsumptionDatum(addr, ampReading, getVoltage());
-		result.setCreated(new Date());
+		result.setCreated(new Date(datum.getCreated()));
 		return result;
 	}
 
@@ -200,20 +215,6 @@ public class CCConsumptionDatumDataSource extends CCSupport implements
 	@Override
 	public String getDisplayName() {
 		return "CurrentCost consumption meter";
-	}
-
-	@Override
-	public synchronized MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			MessageSource parent = getDefaultSettingsMessageSource();
-
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(CCConsumptionDatumDataSource.class.getClassLoader());
-			source.setBasename(CCConsumptionDatumDataSource.class.getName());
-			source.setParentMessageSource(parent);
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
 	}
 
 	@Override
