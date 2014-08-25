@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Reactor JSON Support
+Bundle-SymbolicName: net.solarnetwork.node.reactor.io.json
+Bundle-Description: Communication support for SolarNet JSON based Reactor messages.
+Bundle-Version: 1.0.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ net.solarnetwork.node.reactor;version="1.1.0",
+ net.solarnetwork.node.reactor.support;version="1.2.0",
+ net.solarnetwork.node.support;version="1.10.1",
+ org.codehaus.jackson;version="[1.9,2.0)",
+ org.codehaus.jackson.map;version="[1.9,2.0)",
+ org.codehaus.jackson.map.annotate;version="[1.9,2.0)",
+ org.codehaus.jackson.map.deser.std;version="[1.9,2.0)",
+ org.codehaus.jackson.map.ser.std;version="[1.9,2.0)"
