@@ -4,7 +4,7 @@ Bundle-Name: SolarNode JDBC DAO Test
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="1.4.0"
+Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="1.9.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node.test;version="1.0.0",
