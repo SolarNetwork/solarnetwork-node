@@ -105,7 +105,7 @@ import org.xml.sax.SAXException;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BulkXmlWebPostUploadService extends XmlServiceSupport implements BulkUploadService,
 		InstructionAcknowledgementService {
@@ -145,9 +145,8 @@ public class BulkXmlWebPostUploadService extends XmlServiceSupport implements Bu
 		for ( int i = 0; i < count; i++ ) {
 			Node n = resultIds.item(i);
 			String idStr = n.getNodeValue();
-			Long id = Long.parseLong(idStr);
 			Datum datum = dataArray[i];
-			uploads.add(new BulkUploadResult(datum, id));
+			uploads.add(new BulkUploadResult(datum, idStr));
 		}
 		return uploads;
 	}
