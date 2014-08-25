@@ -154,7 +154,7 @@
 		init-method="init">
 		<property name="objectMapper" ref="objectMapper"/>
 		<property name="dataSource" ref="dataSource"/>
-		<property name="initSqlResource" value="JdbcGeneralNodeDatumDao.initSqlResource"/>
+		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}"/>
 		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}"/>
 	</bean>
 
