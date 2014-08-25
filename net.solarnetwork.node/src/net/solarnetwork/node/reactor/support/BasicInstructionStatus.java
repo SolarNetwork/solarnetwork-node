@@ -18,22 +18,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor.support;
 
 import java.io.Serializable;
 import java.util.Date;
-
 import net.solarnetwork.node.reactor.InstructionStatus;
 
 /**
  * Basic implementation of {@link InstructionStatus}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicInstructionStatus implements InstructionStatus, Serializable {
 
@@ -43,46 +40,78 @@ public class BasicInstructionStatus implements InstructionStatus, Serializable {
 	private final InstructionState instructionState;
 	private final InstructionState acknowledgedInstructionState;
 	private final Date statusDate;
-	
+
 	/**
 	 * Constructor.
 	 * 
-	 * @param instructionId the instruction ID
-	 * @param instructionState the instruction state
-	 * @param statusDate the status date
+	 * @param instructionId
+	 *        the instruction ID
+	 * @param instructionState
+	 *        the instruction state
+	 * @param statusDate
+	 *        the status date
 	 */
-	public BasicInstructionStatus(Long instructionId,
-			InstructionState instructionState, Date statusDate) {
+	public BasicInstructionStatus(Long instructionId, InstructionState instructionState, Date statusDate) {
 		this(instructionId, instructionState, statusDate, null);
 	}
-	
+
 	/**
 	 * Constructor.
 	 * 
-	 * @param instructionId the instruction ID
-	 * @param instructionState the instruction state
-	 * @param statusDate the status date
-	 * @param ackInstructionState the acknowledged state
+	 * @param instructionId
+	 *        the instruction ID
+	 * @param instructionState
+	 *        the instruction state
+	 * @param statusDate
+	 *        the status date
+	 * @param ackInstructionState
+	 *        the acknowledged state
 	 */
-	public BasicInstructionStatus(Long instructionId,
-			InstructionState instructionState, Date statusDate, 
-			InstructionState ackInstructionState) {
+	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
+			Date statusDate, InstructionState ackInstructionState) {
 		this.instructionId = instructionId;
 		this.instructionState = instructionState;
 		this.statusDate = (statusDate == null ? new Date() : statusDate);
 		this.acknowledgedInstructionState = ackInstructionState;
 	}
-	
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("BasicInstructionStatus{");
+		if ( instructionId != null ) {
+			builder.append("instructionId=");
+			builder.append(instructionId);
+			builder.append(", ");
+		}
+		if ( instructionState != null ) {
+			builder.append("instructionState=");
+			builder.append(instructionState);
+			builder.append(", ");
+		}
+		if ( acknowledgedInstructionState != null ) {
+			builder.append("acknowledgedInstructionState=");
+			builder.append(acknowledgedInstructionState);
+			builder.append(", ");
+		}
+		if ( statusDate != null ) {
+			builder.append("statusDate=");
+			builder.append(statusDate);
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	@Override
 	public InstructionStatus newCopyWithState(InstructionState newState) {
-		return new BasicInstructionStatus(this.instructionId, newState, 
-				this.statusDate, this.acknowledgedInstructionState);
+		return new BasicInstructionStatus(this.instructionId, newState, this.statusDate,
+				this.acknowledgedInstructionState);
 	}
-	
+
 	@Override
 	public InstructionStatus newCopyWithAcknowledgedState(InstructionState newState) {
-		return new BasicInstructionStatus(
-				this.instructionId, this.instructionState, this.statusDate, newState);
+		return new BasicInstructionStatus(this.instructionId, this.instructionState, this.statusDate,
+				newState);
 	}
 
 	@Override
