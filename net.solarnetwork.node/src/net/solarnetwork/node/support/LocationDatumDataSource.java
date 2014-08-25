@@ -38,6 +38,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +111,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
 
 	private DatumDataSource<T> delegate;
-	private OptionalServiceTracker<LocationService> locationService;
+	private OptionalService<LocationService> locationService;
 	private Class<? extends Location> locationType = PriceLocation.class;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private boolean requireLocationService = false;
@@ -242,11 +243,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	@Override
 	public synchronized MessageSource getMessageSource() {
-		MessageSource other = null;
-		if ( delegate instanceof SettingSpecifierProvider ) {
-			other = ((SettingSpecifierProvider) delegate).getMessageSource();
-		}
 		if ( messageSource == null ) {
+			MessageSource other = null;
+			if ( delegate instanceof SettingSpecifierProvider ) {
+				other = ((SettingSpecifierProvider) delegate).getMessageSource();
+			}
 			PrefixedMessageSource delegateSource = null;
 			if ( other != null ) {
 				delegateSource = new PrefixedMessageSource();
@@ -264,6 +265,10 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 			messageSource = proxySource;
 		}
 		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	@Override
@@ -305,11 +310,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.delegate = delegate;
 	}
 
-	public OptionalServiceTracker<LocationService> getLocationService() {
+	public OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
-	public void setLocationService(OptionalServiceTracker<LocationService> locationService) {
+	public void setLocationService(OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 

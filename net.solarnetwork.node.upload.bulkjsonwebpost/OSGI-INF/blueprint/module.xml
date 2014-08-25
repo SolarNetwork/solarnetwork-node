@@ -69,10 +69,6 @@
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer"/>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer"/>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer"/>
-				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
 			</list>
 		</property>
 	</bean>
