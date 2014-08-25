@@ -111,7 +111,7 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 			int count = 0;
 			List<BulkUploadResult> results = uploadService.uploadBulkDatum(uploadList);
 			for ( BulkUploadResult result : results ) {
-				Long tid = result.getId();
+				String tid = result.getId();
 				if ( log.isTraceEnabled() ) {
 					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]", new Object[] {
 							result.getDatum().getClass().getSimpleName(),

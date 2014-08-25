@@ -82,7 +82,7 @@ public interface DatumDao<T extends Datum> {
 	 * @param trackingId
 	 *        the remote tracking ID assigned to the uploaded Datum
 	 */
-	void setDatumUploaded(T datum, Date date, String destination, Long trackingId);
+	void setDatumUploaded(T datum, Date date, String destination, String trackingId);
 
 	/**
 	 * Delete both Datum and DatumUpload objects that have been successfully

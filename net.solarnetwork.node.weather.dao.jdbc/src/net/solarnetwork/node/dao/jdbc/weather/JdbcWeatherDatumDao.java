@@ -58,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class JdbcWeatherDatumDao extends AbstractJdbcDatumDao<WeatherDatum> {
 
@@ -141,7 +141,7 @@ public class JdbcWeatherDatumDao extends AbstractJdbcDatumDao<WeatherDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(WeatherDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(WeatherDatum datum, Date date, String destination, String trackingId) {
 		updateDatumUpload(datum.getCreated().getTime(), datum.getLocationId(), date.getTime());
 	}
 

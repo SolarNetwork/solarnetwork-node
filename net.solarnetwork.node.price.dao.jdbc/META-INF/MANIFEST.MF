@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Price Datum Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.price.dao.jdbc
 Bundle-Description: Database storage cache for market price data.
-Bundle-Version: 1.6.0
+Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  javax.sql,
  net.solarnetwork.node;version="1.11.0",
- net.solarnetwork.node.dao;version="1.5.0",
+ net.solarnetwork.node.dao;version="1.6.0",
  net.solarnetwork.node.dao.jdbc;version="1.7.0",
  net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.price;version="1.5.0",

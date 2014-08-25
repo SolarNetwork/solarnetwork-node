@@ -103,7 +103,7 @@ public class JdbcConsumptionDatumDao extends AbstractJdbcDatumDao<ConsumptionDat
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(ConsumptionDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(ConsumptionDatum datum, Date date, String destination, String trackingId) {
 		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.getTime());
 	}
 
