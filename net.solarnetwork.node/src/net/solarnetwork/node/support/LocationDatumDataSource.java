@@ -26,12 +26,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.domain.PriceLocation;
+import net.solarnetwork.node.domain.PricedDatum;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -99,7 +102,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -117,6 +120,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
 	private Long locationId = null;
+	private Set<String> datumClassNameIgnore;
 
 	private Location location = null;
 	private MessageSource messageSource;
@@ -202,11 +206,21 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private void populateLocation(T datum) {
-		if ( locationId != null ) {
+		if ( locationId != null && !shouldIgnoreDatum(datum) ) {
 			log.debug("Augmenting datum {} with Locaiton ID {}", datum, locationId);
-			BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-			bean.setPropertyValue(locationIdPropertyName, locationId);
+			if ( datum instanceof GeneralNodeDatum ) {
+				((GeneralNodeDatum) datum).putStatusSampleValue(PricedDatum.PRICE_LOCATION_KEY,
+						locationId);
+			} else {
+				BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
+				bean.setPropertyValue(locationIdPropertyName, locationId);
+			}
 		}
+	}
+
+	private boolean shouldIgnoreDatum(T datum) {
+		return (datumClassNameIgnore != null && datumClassNameIgnore
+				.contains(datum.getClass().getName()));
 	}
 
 	@Override
@@ -364,6 +378,14 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public Location getLocation() {
 		return location;
+	}
+
+	public Set<String> getDatumClassNameIgnore() {
+		return datumClassNameIgnore;
+	}
+
+	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
+		this.datumClassNameIgnore = datumClassNameIgnore;
 	}
 
 }
