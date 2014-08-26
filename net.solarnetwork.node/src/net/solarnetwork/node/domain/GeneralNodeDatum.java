@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
 
 /**
@@ -33,6 +34,215 @@ import net.solarnetwork.domain.GeneralNodeDatumSamples;
 public class GeneralNodeDatum extends BaseDatum implements Datum, Cloneable {
 
 	private GeneralNodeDatumSamples samples;
+
+	/**
+	 * Put a value into the {@link GeneralNodeDatumSamples#getInstantaneous()}
+	 * map, creating the sample if it doesn't exist.
+	 * 
+	 * @param key
+	 *        the key to put
+	 * @param n
+	 *        the value to put
+	 */
+	public void putInstantaneousSampleValue(String key, Number n) {
+		GeneralNodeDatumSamples s = samples;
+		if ( s == null ) {
+			s = new GeneralNodeDatumSamples();
+			samples = s;
+		}
+		s.putInstantaneousSampleValue(key, n);
+	}
+
+	/**
+	 * Put a value into the {@link GeneralNodeDatumSamples#getAccumulating()}
+	 * map, creating the sample if it doesn't exist.
+	 * 
+	 * @param key
+	 *        the key to put
+	 * @param n
+	 *        the value to put
+	 */
+	public void putAccumulatingSampleValue(String key, Number n) {
+		GeneralNodeDatumSamples s = samples;
+		if ( s == null ) {
+			s = new GeneralNodeDatumSamples();
+			samples = s;
+		}
+		s.putAccumulatingSampleValue(key, n);
+	}
+
+	/**
+	 * Put a value into the {@link GeneralNodeDatumSamples#getStatus()} map,
+	 * creating the sample if it doesn't exist.
+	 * 
+	 * @param key
+	 *        the key to put
+	 * @param value
+	 *        the value to put
+	 */
+	public void putStatusSampleValue(String key, String value) {
+		GeneralNodeDatumSamples s = samples;
+		if ( s == null ) {
+			s = new GeneralNodeDatumSamples();
+			samples = s;
+		}
+		s.putStatusSampleValue(key, value);
+	}
+
+	/**
+	 * Get an Integer value from the
+	 * {@link GeneralNodeDatumSamples#getInstantaneous()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Integer, or <em>null</em> if not available
+	 */
+	public Integer getInstantaneousSampleInteger(String key) {
+		return (samples == null ? null : samples.getInstantaneousSampleInteger(key));
+	}
+
+	/**
+	 * Get a Long value from the
+	 * {@link GeneralNodeDatumSamples#getInstantaneous()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Long, or <em>null</em> if not available
+	 */
+	public Long getInstantaneousSampleLong(String key) {
+		return (samples == null ? null : samples.getInstantaneousSampleLong(key));
+	}
+
+	/**
+	 * Get a Float value from the
+	 * {@link GeneralNodeDatumSamples#getInstantaneous()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Float, or <em>null</em> if not available
+	 */
+	public Float getInstantaneousSampleFloat(String key) {
+		return (samples == null ? null : samples.getInstantaneousSampleFloat(key));
+	}
+
+	/**
+	 * Get a Double value from the
+	 * {@link GeneralNodeDatumSamples#getInstantaneous()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Double, or <em>null</em> if not available
+	 */
+	public Double getInstantaneousSampleDouble(String key) {
+		return (samples == null ? null : samples.getInstantaneousSampleDouble(key));
+	}
+
+	/**
+	 * Get a BigDecimal value from the
+	 * {@link GeneralNodeDatumSamples#getInstantaneous()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an BigDecimal, or <em>null</em> if not available
+	 */
+	public BigDecimal getInstantaneousSampleBigDecimal(String key) {
+		return (samples == null ? null : samples.getInstantaneousSampleBigDecimal(key));
+	}
+
+	/**
+	 * Get an Integer value from the
+	 * {@link GeneralNodeDatumSamples#getAccumulating()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Integer, or <em>null</em> if not available
+	 */
+	public Integer getAccumulatingSampleInteger(String key) {
+		return (samples == null ? null : samples.getAccumulatingSampleInteger(key));
+	}
+
+	/**
+	 * Get a Long value from the
+	 * {@link GeneralNodeDatumSamples#getAccumulating()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Long, or <em>null</em> if not available
+	 */
+	public Long getAccumulatingSampleLong(String key) {
+		return (samples == null ? null : samples.getAccumulatingSampleLong(key));
+	}
+
+	/**
+	 * Get a Float value from the
+	 * {@link GeneralNodeDatumSamples#getAccumulating()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Float, or <em>null</em> if not available
+	 */
+	public Float getAccumulatingSampleFloat(String key) {
+		return (samples == null ? null : samples.getAccumulatingSampleFloat(key));
+	}
+
+	/**
+	 * Get a Double value from the
+	 * {@link GeneralNodeDatumSamples#getAccumulating()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Double, or <em>null</em> if not available
+	 */
+	public Double getAccumulatingSampleDouble(String key) {
+		return (samples == null ? null : samples.getAccumulatingSampleDouble(key));
+	}
+
+	/**
+	 * Get a BigDecimal value from the
+	 * {@link GeneralNodeDatumSamples#getAccumulating()} map, or <em>null</em>
+	 * if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an BigDecimal, or <em>null</em> if not available
+	 */
+	public BigDecimal getAccumulatingSampleBigDecimal(String key) {
+		return (samples == null ? null : samples.getAccumulatingSampleBigDecimal(key));
+	}
+
+	/**
+	 * Get a String value from the {@link GeneralNodeDatumSamples#getSample()}
+	 * map, or <em>null</em> if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as a String, or <em>null</em> if not available
+	 */
+	public String getStatusSampleString(String key) {
+		return (samples == null ? null : samples.getStatusSampleString(key));
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append(getClass().getSimpleName()).append("{sourceId=");
+		builder.append(getSourceId());
+		builder.append(",samples=");
+		if ( samples != null ) {
+			builder.append(samples.getSampleData());
+		}
+		builder.append("}");
+		return builder.toString();
+	}
 
 	public GeneralNodeDatumSamples getSamples() {
 		return samples;
