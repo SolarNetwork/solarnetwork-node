@@ -23,10 +23,12 @@
 package net.solarnetwork.node.datum.currentcost;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import net.solarnetwork.node.DataCollector;
@@ -38,6 +40,7 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
+import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
@@ -244,9 +247,23 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		return "CurrentCost amp meter";
 	}
 
+	private final Set<String> SPECS_FILTER = new HashSet<String>(Arrays.asList("sourceIdFormat",
+			"voltage"));
+
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
+		List<SettingSpecifier> specs = getDefaultSettingSpecifiers();
+		// remove some we don't want
+		for ( Iterator<SettingSpecifier> itr = specs.iterator(); itr.hasNext(); ) {
+			SettingSpecifier spec = itr.next();
+			if ( spec instanceof KeyedSettingSpecifier<?> ) {
+				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
+				if ( SPECS_FILTER.contains(keyedSpec.getKey()) ) {
+					itr.remove();
+				}
+			}
+		}
+		return specs;
 	}
 
 }
