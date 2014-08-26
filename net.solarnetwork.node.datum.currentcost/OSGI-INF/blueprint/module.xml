@@ -97,6 +97,7 @@
 							</entry>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
 											<property name="messageSource" ref="messageSource"/>
@@ -119,21 +120,15 @@
 											<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
 										</bean>	
 									</property>
+									<property name="datumClassNameIgnore">
+										<set>
+											<!-- We only want to add price location to GeneralNodeACEnergyDatum -->
+											<value>net.solarnetwork.node.domain.GeneralNodeDatum</value>
+										</set>
+									</property>
 								</bean>
 							</entry>
 						</map>
-					</property>
-				</bean>
-			</property>
-			<property name="settingSpecifierProvider">
-				<bean class="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob">
-					<property name="multiDatumDataSource">
-						<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
-							<property name="delegate">
-								<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource"/>
-							</property>
-							<property name="messageSource" ref="jobMessageSource"/>
-						</bean>
 					</property>
 				</bean>
 			</property>
