@@ -80,7 +80,7 @@ public class GeneralNodeDatum extends BaseDatum implements Datum, Cloneable {
 	 * @param value
 	 *        the value to put
 	 */
-	public void putStatusSampleValue(String key, String value) {
+	public void putStatusSampleValue(String key, Object value) {
 		GeneralNodeDatumSamples s = samples;
 		if ( s == null ) {
 			s = new GeneralNodeDatumSamples();
@@ -220,7 +220,68 @@ public class GeneralNodeDatum extends BaseDatum implements Datum, Cloneable {
 	}
 
 	/**
-	 * Get a String value from the {@link GeneralNodeDatumSamples#getSample()}
+	 * Get an Integer value from the {@link GeneralNodeDatumSamples#getStatus()}
+	 * map, or <em>null</em> if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Integer, or <em>null</em> if not available
+	 */
+	public Integer getStatusSampleInteger(String key) {
+		return (samples == null ? null : samples.getStatusSampleInteger(key));
+	}
+
+	/**
+	 * Get a Long value from the {@link GeneralNodeDatumSamples#getStatus()}
+	 * map, or <em>null</em> if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Long, or <em>null</em> if not available
+	 */
+	public Long getStatusSampleLong(String key) {
+		return (samples == null ? null : samples.getStatusSampleLong(key));
+	}
+
+	/**
+	 * Get a Float value from the {@link GeneralNodeDatumSamples#getStatus()}
+	 * map, or <em>null</em> if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Float, or <em>null</em> if not available
+	 */
+	public Float getStatusSampleFloat(String key) {
+		return (samples == null ? null : samples.getStatusSampleFloat(key));
+	}
+
+	/**
+	 * Get a Double value from the {@link GeneralNodeDatumSamples#getStatus()}
+	 * map, or <em>null</em> if not available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an Double, or <em>null</em> if not available
+	 */
+	public Double getStatusSampleDouble(String key) {
+		return (samples == null ? null : samples.getStatusSampleDouble(key));
+	}
+
+	/**
+	 * Get a BigDecimal value from the
+	 * {@link GeneralNodeDatumSamples#getStatus()} map, or <em>null</em> if not
+	 * available.
+	 * 
+	 * @param key
+	 *        the key of the value to get
+	 * @return the value as an BigDecimal, or <em>null</em> if not available
+	 */
+	public BigDecimal getStatusSampleBigDecimal(String key) {
+		return (samples == null ? null : samples.getStatusSampleBigDecimal(key));
+	}
+
+	/**
+	 * Get a String value from the {@link GeneralNodeDatumSamples#getStatus()}
 	 * map, or <em>null</em> if not available.
 	 * 
 	 * @param key
