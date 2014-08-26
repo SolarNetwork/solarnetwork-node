@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.currentcost.CCDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.currentcost.CCSupport</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="serialParams."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.support.SerialPortBeanParameters</value>
+								<value>net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.support.PriceLocationDatumDataSource"/>
+						<property name="parentMessageSource" ref="messageSource"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+		
+	<bean id="settingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="CurrentCost watt meter"/>
+		<property name="factoryUID" value="net.solarnetwork.node.datum.currentcost"/>
+		<property name="messageSource" ref="messageSource"/>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.currentcost" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.currentcost"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+					<property name="name" value="ccDatumLoggerTrigger"/>
+					<property name="jobName" value="ccDatumLoggerJob"/>
+					<property name="cronExpression" value="0 * * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+					<property name="name" value="ccDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao">
+								<bean class="net.solarnetwork.util.DynamicServiceTracker">
+									<property name="bundleContext" ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+									<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+								</bean>	
+							</entry>
+							<entry key="multiDatumDataSource">
+								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+									<property name="delegate">
+										<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
+											<property name="messageSource" ref="messageSource"/>
+											<property name="dataCollectorFactory">
+												<bean class="net.solarnetwork.util.DynamicServiceTracker">
+													<property name="bundleContext" ref="bundleContext"/>
+													<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+													<property name="propertyFilters">
+														<map>
+															<entry key="UID" value="/dev/ttyUSB0"/>
+														</map>
+													</property>
+												</bean>	
+											</property>
+										</bean>
+									</property>
+									<property name="locationService">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+										</bean>	
+									</property>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
+			<property name="settingSpecifierProvider">
+				<bean class="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob">
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+							<property name="delegate">
+								<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource"/>
+							</property>
+							<property name="messageSource" ref="jobMessageSource"/>
+						</bean>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>
