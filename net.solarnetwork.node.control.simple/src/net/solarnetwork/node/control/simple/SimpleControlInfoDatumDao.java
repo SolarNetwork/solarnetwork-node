@@ -113,7 +113,7 @@ public class SimpleControlInfoDatumDao implements DatumDao<NodeControlInfoDatum>
 
 	@Override
 	public void setDatumUploaded(NodeControlInfoDatum datum, Date date, String destination,
-			Long trackingId) {
+			String trackingId) {
 		// nothing to do here
 	}
 
