@@ -47,6 +47,12 @@ public interface EnergyDatum extends Datum {
 	 */
 	public static final String WATTS_KEY = "watts";
 
+	/** A tag for "consumption" of energy. */
+	public static final String TAG_CONSUMPTION = "consumption";
+
+	/** A tag for "generation" of energy. */
+	public static final String TAG_GENERATION = "power";
+
 	/**
 	 * Get a watt-hour reading. Generally this is an accumulating value and
 	 * represents the overall energy used or produced since some reference date.
