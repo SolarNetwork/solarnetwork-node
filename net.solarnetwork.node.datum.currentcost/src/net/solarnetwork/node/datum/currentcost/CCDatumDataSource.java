@@ -43,6 +43,7 @@ import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 
 /**
@@ -67,6 +68,9 @@ import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
  */
 public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
 		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+
+	private boolean tagConsumption = true;
+	private boolean tagIndoor = true;
 
 	@Override
 	public Class<? extends GeneralNodeDatum> getDatumType() {
@@ -212,6 +216,11 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		result.setCreated(new Date(datum.getCreated()));
 		result.setSourceId(addr);
 		result.setWatts(wattReading);
+		if ( isTagConsumption() ) {
+			result.tagAsConsumption();
+		} else {
+			result.tagAsGeneration();
+		}
 		return result;
 	}
 
@@ -234,6 +243,11 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		result.setCreated(new Date(datum.getCreated()));
 		result.setSourceId(addr);
 		result.putInstantaneousSampleValue(AtmosphereDatum.TEMPERATURE_KEY, datum.getTemperature());
+		if ( isTagIndoor() ) {
+			result.addTag(AtmosphereDatum.TAG_ATMOSPHERE_INDOOR);
+		} else {
+			result.addTag(AtmosphereDatum.TAG_ATMOSPHERE_OUTDOOR);
+		}
 		return result;
 	}
 
@@ -252,7 +266,19 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		CCDatumDataSource defaults = new CCDatumDataSource();
 		List<SettingSpecifier> specs = getDefaultSettingSpecifiers();
+		SettingSpecifier energyTag = new BasicToggleSettingSpecifier("tagConsumption",
+				Boolean.valueOf(defaults.isTagConsumption()));
+		SettingSpecifier atmosTag = new BasicToggleSettingSpecifier("tagIndoor",
+				Boolean.valueOf(defaults.isTagIndoor()));
+		if ( specs.size() > 4 ) {
+			specs.add(4, atmosTag);
+			specs.add(4, energyTag);
+		} else {
+			specs.add(energyTag);
+			specs.add(atmosTag);
+		}
 		// remove some we don't want
 		for ( Iterator<SettingSpecifier> itr = specs.iterator(); itr.hasNext(); ) {
 			SettingSpecifier spec = itr.next();
@@ -264,6 +290,22 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			}
 		}
 		return specs;
+	}
+
+	public boolean isTagConsumption() {
+		return tagConsumption;
+	}
+
+	public void setTagConsumption(boolean tagConsumption) {
+		this.tagConsumption = tagConsumption;
+	}
+
+	public boolean isTagIndoor() {
+		return tagIndoor;
+	}
+
+	public void setTagIndoor(boolean tagIndoor) {
+		this.tagIndoor = tagIndoor;
 	}
 
 }
