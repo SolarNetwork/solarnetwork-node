@@ -42,6 +42,12 @@ public interface AtmosphereDatum {
 	 */
 	public static final String HUMIDITY_KEY = "hum";
 
+	/** A tag for an "indoor" atmosphere sample. */
+	public static final String TAG_ATMOSPHERE_INDOOR = "indoor";
+
+	/** A tag for an "outdoor" atmosphere sample. */
+	public static final String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
+
 	/**
 	 * Get the instantaneous temperature, in degrees Celsius.
 	 * 
