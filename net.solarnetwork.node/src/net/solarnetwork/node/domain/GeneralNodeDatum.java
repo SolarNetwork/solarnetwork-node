@@ -292,6 +292,52 @@ public class GeneralNodeDatum extends BaseDatum implements Datum, Cloneable {
 		return (samples == null ? null : samples.getStatusSampleString(key));
 	}
 
+	/**
+	 * Return <em>true</em> if {@code GeneralNodeDatumSamples#getTags()}
+	 * contains {@code tag}.
+	 * 
+	 * @param tag
+	 *        the tag value to test for existence
+	 * @return boolean
+	 */
+	public boolean hasTag(String tag) {
+		return (samples != null && samples.hasTag(tag));
+	}
+
+	/**
+	 * Add a tag value via {@link GeneralNodeDatumSamples#addTag(String)}.
+	 * 
+	 * @param tag
+	 *        the tag value to add
+	 */
+	public void addTag(String tag) {
+		if ( tag == null ) {
+			return;
+		}
+		GeneralNodeDatumSamples s = samples;
+		if ( s == null ) {
+			s = new GeneralNodeDatumSamples();
+			samples = s;
+		}
+		s.addTag(tag);
+	}
+
+	/**
+	 * Add a tag value via {@link GeneralNodeDatumSamples#removeTag(String)}.
+	 * 
+	 * @param tag
+	 *        the tag value to add
+	 */
+	public void removeTag(String tag) {
+		if ( tag == null ) {
+			return;
+		}
+		GeneralNodeDatumSamples s = samples;
+		if ( s != null ) {
+			s.removeTag(tag);
+		}
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
