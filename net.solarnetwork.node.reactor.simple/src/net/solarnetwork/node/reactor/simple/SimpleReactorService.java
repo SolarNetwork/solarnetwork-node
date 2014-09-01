@@ -18,57 +18,61 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor.simple;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
-
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorSerializationService;
 import net.solarnetwork.node.reactor.ReactorService;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Simple implementation of {@link ReactorService}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class SimpleReactorService implements ReactorService {
-	
-	private ReactorSerializationService serializationService;
+
+	private Collection<ReactorSerializationService> serializationServices;
 	private InstructionDao instructionDao;
-	
+
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for an existing status...
-		Instruction instr = instructionDao.getInstruction(
-				instruction.getRemoteInstructionId(),
+		Instruction instr = instructionDao.getInstruction(instruction.getRemoteInstructionId(),
 				instruction.getInstructorId());
 		if ( instr == null ) {
 			// persist new status
-			instr = instructionDao.getInstruction(
-					instructionDao.storeInstruction(instruction));
+			instr = instructionDao.getInstruction(instructionDao.storeInstruction(instruction));
 		}
 		return instr.getStatus();
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public List<InstructionStatus> processInstruction(String instructorId, Object data,
-			String dataType, Map<String, ?> properties) {
-		List<Instruction> instructions = serializationService.decodeInstructions(
-				instructorId, data, dataType, properties);
+	public List<InstructionStatus> processInstruction(String instructorId, Object data, String dataType,
+			Map<String, ?> properties) {
+		List<Instruction> instructions = null;
+		for ( ReactorSerializationService rss : serializationServices ) {
+			try {
+				instructions = rss.decodeInstructions(instructorId, data, dataType, properties);
+			} catch ( IllegalArgumentException e ) {
+				// ignore this, and just move on
+			}
+			if ( instructions != null ) {
+				break;
+			}
+		}
 		List<InstructionStatus> results = new ArrayList<InstructionStatus>(instructions.size());
 		for ( Instruction instruction : instructions ) {
 			InstructionStatus status = processInstruction(instruction);
@@ -79,17 +83,10 @@ public class SimpleReactorService implements ReactorService {
 		return results;
 	}
 
-	/**
-	 * @param serializationService the serializationService to set
-	 */
-	public void setSerializationService(
-			ReactorSerializationService serializationService) {
-		this.serializationService = serializationService;
+	public void setSerializationServices(Collection<ReactorSerializationService> serializationServices) {
+		this.serializationServices = serializationServices;
 	}
 
-	/**
-	 * @param instructionDao the instructionDao to set
-	 */
 	public void setInstructionDao(InstructionDao instructionDao) {
 		this.instructionDao = instructionDao;
 	}

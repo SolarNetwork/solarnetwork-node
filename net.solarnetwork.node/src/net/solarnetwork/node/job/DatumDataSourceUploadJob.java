@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.job;
@@ -37,42 +35,42 @@ import org.quartz.StatefulJob;
  * uploads it immediately via {@link UploadService}, without persisting the
  * Datum locally first.
  * 
- * <p>This job can be used to collect data such as weather where the
- * resolution of the data is not very fine and persisting it locally would
- * be overkill.</p>
- *
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * This job can be used to collect data such as weather where the resolution of
+ * the data is not very fine and persisting it locally would be overkill.
+ * </p>
+ * 
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>datumDataSource</dt>
- *   <dd>The {@link DatumDataSource} to collect the data from. The 
- *   {@link DatumDataSource#readCurrentDatum()} method will be called
- *   to get the currently available data.</dd>
- *   
- *   <dt>uploadService</dt>
- *   <dd>The {@link UploadService} implementation to use to upload the
- *   datum to.</dd>
+ * <dt>datumDataSource</dt>
+ * <dd>The {@link DatumDataSource} to collect the data from. The
+ * {@link DatumDataSource#readCurrentDatum()} method will be called to get the
+ * currently available data.</dd>
+ * 
+ * <dt>uploadService</dt>
+ * <dd>The {@link UploadService} implementation to use to upload the datum to.</dd>
  * </dl>
- *
- * @param <T> the Datum type for this job
+ * 
+ * @param <T>
+ *        the Datum type for this job
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class DatumDataSourceUploadJob<T extends Datum> extends AbstractJob
-implements StatefulJob {
+public class DatumDataSourceUploadJob<T extends Datum> extends AbstractJob implements StatefulJob {
 
 	private DatumDataSource<T> datumDataSource = null;
 	private UploadService uploadService;
-	
+
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext)
-			throws Exception {
+	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		if ( log.isInfoEnabled() ) {
-			log.info("Collecting [" 
-					+datumDataSource.getDatumType().getSimpleName() 
-					+"] now from [" +datumDataSource +']');
+			log.info("Collecting [" + datumDataSource.getDatumType().getSimpleName() + "] now from ["
+					+ datumDataSource + ']');
 		}
-		
+
 		T datum = datumDataSource.readCurrentDatum();
 		if ( datum == null ) {
 			if ( log.isInfoEnabled() ) {
@@ -80,19 +78,17 @@ implements StatefulJob {
 			}
 			return;
 		}
-		
+
 		if ( log.isInfoEnabled() ) {
-			log.info("Uploading [" +datum
-					+"] to [" +uploadService.getKey() +']');
+			log.info("Uploading [" + datum + "] to [" + uploadService.getKey() + ']');
 		}
-		
-		Long tid = uploadService.uploadDatum(datum);
+
+		String tid = uploadService.uploadDatum(datum);
 		if ( log.isTraceEnabled() ) {
-			log.trace("Just uploaded [" 
-				+datumDataSource.getDatumType().getSimpleName() 
-				+"] and received tid [" + tid +"]");
+			log.trace("Just uploaded [" + datumDataSource.getDatumType().getSimpleName()
+					+ "] and received tid [" + tid + "]");
 		}
-		
+
 	}
 
 	/**
@@ -103,7 +99,8 @@ implements StatefulJob {
 	}
 
 	/**
-	 * @param datumDataSource the datumDataSource to set
+	 * @param datumDataSource
+	 *        the datumDataSource to set
 	 */
 	public void setDatumDataSource(DatumDataSource<T> datumDataSource) {
 		this.datumDataSource = datumDataSource;
@@ -117,7 +114,8 @@ implements StatefulJob {
 	}
 
 	/**
-	 * @param uploadService the uploadService to set
+	 * @param uploadService
+	 *        the uploadService to set
 	 */
 	public void setUploadService(UploadService uploadService) {
 		this.uploadService = uploadService;

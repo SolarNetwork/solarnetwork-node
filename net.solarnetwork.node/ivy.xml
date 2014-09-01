@@ -14,7 +14,7 @@
 		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2"/>
 		<dependency org="commons-beanutils" name="commons-beanutils" rev="1.8.3"/>
     	<dependency org="commons-codec" name="commons-codec" rev="1.7"/>
-    	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.18,2.0)"/>
+    	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.19,2.0)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>

@@ -58,7 +58,7 @@ import org.springframework.transaction.annotation.Transactional;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcDayDatumDao extends AbstractJdbcDatumDao<DayDatum> {
 
@@ -130,7 +130,7 @@ public class JdbcDayDatumDao extends AbstractJdbcDatumDao<DayDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(DayDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(DayDatum datum, Date date, String destination, String trackingId) {
 		updateDatumUpload(datum.getCreated().getTime(), datum.getLocationId(), date.getTime());
 	}
 

@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-
 /**
  * Standardized API for energy related datum to implement. By "energy" we simply
  * mean this datum represents information tracked during the production or
@@ -32,9 +31,27 @@ package net.solarnetwork.node.domain;
  * power and accumulated energy production readings.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface EnergyDatum extends Datum {
+
+	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} accumulating
+	 * sample key for {@link #getWattHourReading()} values.
+	 */
+	public static final String WATT_HOUR_READING_KEY = "watt_hours";
+
+	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for {@link #getWatts()} values.
+	 */
+	public static final String WATTS_KEY = "watts";
+
+	/** A tag for "consumption" of energy. */
+	public static final String TAG_CONSUMPTION = "consumption";
+
+	/** A tag for "generation" of energy. */
+	public static final String TAG_GENERATION = "power";
 
 	/**
 	 * Get a watt-hour reading. Generally this is an accumulating value and

@@ -26,18 +26,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.domain.PriceLocation;
+import net.solarnetwork.node.domain.PricedDatum;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +102,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -110,12 +114,13 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
 
 	private DatumDataSource<T> delegate;
-	private OptionalServiceTracker<LocationService> locationService;
+	private OptionalService<LocationService> locationService;
 	private Class<? extends Location> locationType = PriceLocation.class;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
 	private Long locationId = null;
+	private Set<String> datumClassNameIgnore;
 
 	private Location location = null;
 	private MessageSource messageSource;
@@ -201,11 +206,21 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private void populateLocation(T datum) {
-		if ( locationId != null ) {
+		if ( locationId != null && !shouldIgnoreDatum(datum) ) {
 			log.debug("Augmenting datum {} with Locaiton ID {}", datum, locationId);
-			BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-			bean.setPropertyValue(locationIdPropertyName, locationId);
+			if ( datum instanceof GeneralNodeDatum ) {
+				((GeneralNodeDatum) datum).putStatusSampleValue(PricedDatum.PRICE_LOCATION_KEY,
+						locationId);
+			} else {
+				BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
+				bean.setPropertyValue(locationIdPropertyName, locationId);
+			}
 		}
+	}
+
+	private boolean shouldIgnoreDatum(T datum) {
+		return (datumClassNameIgnore != null && datumClassNameIgnore
+				.contains(datum.getClass().getName()));
 	}
 
 	@Override
@@ -242,11 +257,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	@Override
 	public synchronized MessageSource getMessageSource() {
-		MessageSource other = null;
-		if ( delegate instanceof SettingSpecifierProvider ) {
-			other = ((SettingSpecifierProvider) delegate).getMessageSource();
-		}
 		if ( messageSource == null ) {
+			MessageSource other = null;
+			if ( delegate instanceof SettingSpecifierProvider ) {
+				other = ((SettingSpecifierProvider) delegate).getMessageSource();
+			}
 			PrefixedMessageSource delegateSource = null;
 			if ( other != null ) {
 				delegateSource = new PrefixedMessageSource();
@@ -264,6 +279,10 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 			messageSource = proxySource;
 		}
 		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	@Override
@@ -305,11 +324,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.delegate = delegate;
 	}
 
-	public OptionalServiceTracker<LocationService> getLocationService() {
+	public OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
-	public void setLocationService(OptionalServiceTracker<LocationService> locationService) {
+	public void setLocationService(OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 
@@ -359,6 +378,14 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public Location getLocation() {
 		return location;
+	}
+
+	public Set<String> getDatumClassNameIgnore() {
+		return datumClassNameIgnore;
+	}
+
+	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
+		this.datumClassNameIgnore = datumClassNameIgnore;
 	}
 
 }

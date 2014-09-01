@@ -42,7 +42,7 @@ import org.springframework.transaction.annotation.Transactional;
  * {@link PowerDatum} domain objects.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
@@ -87,8 +87,8 @@ public class JdbcPowerDatumDao extends AbstractJdbcDatumDao<PowerDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(PowerDatum datum, Date date, String destination, Long trackingId) {
-		updateDatumUpload(datum, date.getTime());
+	public void setDatumUploaded(PowerDatum datum, Date date, String destination, String trackingId) {
+		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.getTime());
 	}
 
 	@Override

@@ -60,7 +60,7 @@ import org.springframework.transaction.annotation.Transactional;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 
@@ -106,7 +106,7 @@ public class JdbcPriceDatumDao extends AbstractJdbcDatumDao<PriceDatum> {
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(PriceDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(PriceDatum datum, Date date, String destination, String trackingId) {
 		updateDatumUpload(datum.getCreated().getTime(), datum.getLocationId(), date.getTime());
 	}
 
