@@ -29,14 +29,13 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.weather.DayDatum;
+import org.codehaus.jackson.JsonNode;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * MetService implementation of a {@link DayDatum} {@link DatumDataSource}.
@@ -72,7 +71,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 		DatumDataSource<DayDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code riseSet} property. */
-	public static final String DEFAULT_RISE_SET = "riseSet93434M";
+	public static final String DEFAULT_RISE_SET = "riseSet_wellington-city";
 
 	/** The default value for the {@code dayDateFormat} property. */
 	public static final String DEFAULT_DAY_DATE_FORMAT = "d MMMM yyyy";
@@ -80,9 +79,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 	/** The default value for the {@code timeDateFormat} property. */
 	public static final String DEFAULT_TIME_DATE_FORMAT = "h:mma";
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
+	private MessageSource messageSource;
 	private String riseSet;
 	private String dayDateFormat;
 	private String timeDateFormat;
@@ -126,7 +123,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(getDayDateFormat());
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
-			Map<String, String> data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
+			JsonNode data = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
 
 			Date day = parseDateAttribute("day", data, dayFormat);
 			Date sunrise = parseDateAttribute("sunRise", data, timeFormat);
@@ -161,26 +158,20 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(getClass().getClassLoader());
-				source.setBasename(getClass().getName());
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
+		MetserviceDayDatumDataSource defaults = new MetserviceDayDatumDataSource();
+		return Arrays.asList(
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
 				(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl", DEFAULT_BASE_URL),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("riseSet", DEFAULT_RISE_SET),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dayDateFormat",
-						DEFAULT_DAY_DATE_FORMAT), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-						"timeDayFormat", DEFAULT_TIME_DATE_FORMAT));
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl", defaults.getBaseUrl()),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("riseSet", defaults.getRiseSet()),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dayDateFormat", defaults
+						.getDayDateFormat()), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
+						"timeDayFormat", defaults.getTimeDateFormat()));
 	}
 
 	public String getRiseSet() {
@@ -205,6 +196,10 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 
 	public void setTimeDateFormat(String timeDateFormat) {
 		this.timeDateFormat = timeDateFormat;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

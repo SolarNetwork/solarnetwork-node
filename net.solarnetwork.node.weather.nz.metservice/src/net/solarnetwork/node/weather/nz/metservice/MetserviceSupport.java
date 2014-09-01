@@ -27,14 +27,13 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.support.UnicodeReader;
 import net.solarnetwork.node.support.XmlServiceSupport;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.util.FileCopyUtils;
 
 /**
@@ -48,12 +47,15 @@ import org.springframework.util.FileCopyUtils;
  * <dt>baseUrl</dt>
  * <dd>The base URL for queries to MetService. Defaults to
  * {@link #DEFAULT_BASE_URL}.</dd>
+ * 
+ * <dt>objectMapper</dt>
+ * <dd>The {@link ObjectMapper} to use for parsing JSON.</dd>
  * </dl>
  * 
  * @param T
  *        the datum type
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSupport {
 
@@ -63,12 +65,9 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
 
-	// this pattern matches very roughly JSON properties and values
-	private static final Pattern SIMPLE_JSON_PATTERN = Pattern
-			.compile("\"?(\\w+)\"?\\s*:\\s*\"?([^\"]+)\"?\\s*[,}]");
-
 	private final Map<String, T> datumCache;
 	private String baseUrl;
+	private ObjectMapper objectMapper;
 
 	public MetserviceSupport() {
 		datumCache = new ConcurrentHashMap<String, T>(2);
@@ -76,7 +75,7 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 	}
 
 	/**
-	 * an InputStream as Unicode text and retur as a String.
+	 * an InputStream as Unicode text and return as a String.
 	 * 
 	 * @param in
 	 *        the InputStream to read
@@ -89,59 +88,6 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 		String data = FileCopyUtils.copyToString(reader);
 		reader.close();
 		return data;
-	}
-
-	/**
-	 * Parse an InputStream as Unicode text JavaScript properties.
-	 * 
-	 * <p>
-	 * This method will call the
-	 * {@link #parseSimpleJavaScriptObjectProperties(String)} method after
-	 * reading the entire InputStream into memory. The InputStream is assumed to
-	 * be text encoded in Unicode.
-	 * </p>
-	 * 
-	 * @param in
-	 *        the InputStream to read
-	 * @return the parsed JavaScript properties
-	 * @throws IOException
-	 *         if an IO error occurs
-	 */
-	protected Map<String, String> parseSimpleJavaScriptObjectProperties(InputStream in)
-			throws IOException {
-		return parseSimpleJavaScriptObjectProperties(readUnicodeInputStream(in));
-	}
-
-	/**
-	 * Parse a String for simple JavaScript object properties.
-	 * 
-	 * <p>
-	 * This method is not a true JavaScript or JSON parser. It uses simple
-	 * regular expressions to extract JavaScript properties in the form
-	 * </p>
-	 * 
-	 * <pre>
-	 * "prop":"value"
-	 * </pre>
-	 * 
-	 * @param data
-	 *        the data to parse
-	 * @return the parsed properties, or an empty Map if none found
-	 */
-	protected Map<String, String> parseSimpleJavaScriptObjectProperties(String data) {
-		Map<String, String> result = new LinkedHashMap<String, String>(10);
-
-		Matcher m = SIMPLE_JSON_PATTERN.matcher(data);
-		while ( m.find() ) {
-			String attrName = m.group(1);
-			String attrValue = m.group(2);
-			result.put(attrName, attrValue);
-		}
-
-		log.trace("Parsed {} attributes from data [{}]: {}",
-				new Object[] { result.size(), data, result });
-
-		return result;
 	}
 
 	/**
@@ -160,17 +106,20 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 	 * @return the parsed {@link Date} instance, or <em>null</em> if an error
 	 *         occurs or the specified attribute {@code key} is not available
 	 */
-	protected Date parseDateAttribute(String key, Map<String, String> data, SimpleDateFormat dateFormat) {
-		Date sunrise = null;
-		if ( data.containsKey(key) ) {
-			try {
-				sunrise = dateFormat.parse(data.get(key));
-			} catch ( ParseException e ) {
-				log.debug("Error parsing date attribute [{}] value [{}] using pattern {}: {}",
-						new Object[] { key, data.get(key), dateFormat.toPattern(), e.getMessage() });
+	protected Date parseDateAttribute(String key, JsonNode data, SimpleDateFormat dateFormat) {
+		Date result = null;
+		if ( data != null ) {
+			JsonNode node = data.get(key);
+			if ( node != null ) {
+				try {
+					result = dateFormat.parse(node.asText());
+				} catch ( ParseException e ) {
+					log.debug("Error parsing date attribute [{}] value [{}] using pattern {}: {}",
+							new Object[] { key, data.get(key), dateFormat.toPattern(), e.getMessage() });
+				}
 			}
 		}
-		return sunrise;
+		return result;
 	}
 
 	/**
@@ -187,14 +136,17 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 	 * @return the parsed {@link Double}, or <em>null</em> if an error occurs or
 	 *         the specified attribute {@code key} is not available
 	 */
-	protected Double parseDoubleAttribute(String key, Map<String, String> data) {
+	protected Double parseDoubleAttribute(String key, JsonNode data) {
 		Double num = null;
-		if ( data.containsKey(key) ) {
-			try {
-				num = Double.valueOf(data.get(key));
-			} catch ( NumberFormatException e ) {
-				log.debug("Error parsing double attribute [{}] value [{}]: {}",
-						new Object[] { key, data.get(key), e.getMessage() });
+		if ( data != null ) {
+			JsonNode node = data.get(key);
+			if ( node != null ) {
+				try {
+					num = Double.valueOf(node.asText());
+				} catch ( NumberFormatException e ) {
+					log.debug("Error parsing double attribute [{}] value [{}]: {}", new Object[] { key,
+							data.get(key), e.getMessage() });
+				}
 			}
 		}
 		return num;
@@ -215,6 +167,14 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 
 	public void setBaseUrl(String baseUrl) {
 		this.baseUrl = baseUrl;
+	}
+
+	public ObjectMapper getObjectMapper() {
+		return objectMapper;
+	}
+
+	public void setObjectMapper(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
 	}
 
 }

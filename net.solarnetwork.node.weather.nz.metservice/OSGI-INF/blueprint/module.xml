@@ -14,26 +14,26 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
+	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
+	</bean>
+
 	<bean id="daySettingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="New Zealand Metservice day information"/>
 		<property name="factoryUID" value="net.solarnetwork.node.weather.nz.metservice.day"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="dayMessageSource"/>
 	</bean>
 	
+	<bean id="weatherMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
+	</bean>
+
 	<bean id="weatherSettingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="New Zealand Metservice weather information"/>
 		<property name="factoryUID" value="net.solarnetwork.node.weather.nz.metservice.weather"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="weatherMessageSource"/>
 	</bean>
 	
 	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
@@ -44,6 +44,8 @@
 		<property name="service" ref="locationServiceRef"/>
 	</bean>
 
+	<bean id="objectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
+	
 	<!-- Published Services -->
 	
 	<service ref="daySettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -60,7 +62,10 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
-				<bean id="weatherDataSource" class="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
+				<bean id="weatherDataSource" class="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource">
+					<property name="objectMapper" ref="objectMapper"/>
+					<property name="messageSource" ref="dayMessageSource"/>
+				</bean>
 			</property>
 			<property name="locationService" ref="locationService"/>
 			<property name="requireLocationService" value="true"/>
@@ -80,7 +85,10 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
-				<bean id="weatherDataSource" class="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
+				<bean id="weatherDataSource" class="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource">
+					<property name="objectMapper" ref="objectMapper"/>
+					<property name="messageSource" ref="weatherMessageSource"/>
+				</bean>
 			</property>
 			<property name="locationService" ref="locationService"/>
 			<property name="requireLocationService" value="true"/>
