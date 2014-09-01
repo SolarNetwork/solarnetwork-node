@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Bulk JSON Web Post
+Bundle-Name: SolarNet Bulk JSON Web Uploader
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkjsonwebpost
 Bundle-Description: Upload collected data to SolarNet periodically, in bulk.
 Bundle-Version: 1.0.0
