@@ -33,6 +33,7 @@
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
+		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 4 ? * *</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
@@ -64,7 +65,7 @@
 		</service-properties>
 	</service>
 
-	<service ref="jdbcGeneralNodeDatumDao" ranking="1" depends-on="databaseSetup">
+	<service ref="generalNodeDatumDao" ranking="1" depends-on="databaseSetup">
 		<interfaces>
 			<value>net.solarnetwork.node.dao.DatumDao</value>
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
@@ -74,6 +75,9 @@
 		</service-properties>
 	</service>
 	
+	<service ref="generalNodeDatumCleaner" 
+		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
 	<!--  Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="dao.jdbc.cfg"/>
@@ -150,7 +154,7 @@
 		<property name="mapper" ref="jacksonObjectMapper"/>
 	</bean>
 
-	<bean id="jdbcGeneralNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
 		<property name="objectMapper" ref="objectMapper"/>
 		<property name="dataSource" ref="dataSource"/>
@@ -161,4 +165,29 @@
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager"/>
 
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS"/>
+	</bean>
+	
+	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="generalNodeDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
+		<property name="cronExpression" value="${job.generalNodeDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="generalNodeDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
 </blueprint>
