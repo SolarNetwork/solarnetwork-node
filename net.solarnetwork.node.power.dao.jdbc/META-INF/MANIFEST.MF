@@ -10,7 +10,7 @@ Import-Package:
  javax.sql,
  net.solarnetwork.node;version="1.9.0",
  net.solarnetwork.node.dao;version="1.6.0",
- net.solarnetwork.node.dao.jdbc;version="1.7.0",
+ net.solarnetwork.node.dao.jdbc;version="1.8.0",
  net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.power;version="1.7.0",
  net.solarnetwork.node.support;version="1.8.0",
