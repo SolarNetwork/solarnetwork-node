@@ -39,7 +39,7 @@ public interface EnergyDatum extends Datum {
 	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} accumulating
 	 * sample key for {@link #getWattHourReading()} values.
 	 */
-	public static final String WATT_HOUR_READING_KEY = "watt_hours";
+	public static final String WATT_HOUR_READING_KEY = "wattHours";
 
 	/**
 	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
