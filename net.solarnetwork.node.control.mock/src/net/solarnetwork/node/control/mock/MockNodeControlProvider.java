@@ -106,8 +106,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 					for ( int i = 0; i < booleanControlIds.length; i++ ) {
 						String id = booleanControlIds[i];
 						if ( id.equals(controlId) ) {
-							info = newNodeControlInfoDatum(controlId, "Boolean Mock " + i,
-									NodeControlPropertyType.Boolean, false, null);
+							info = newNodeControlInfoDatum(controlId, (i == 0 ? null : "Boolean Mock "
+									+ i), NodeControlPropertyType.Boolean, false, null);
 							controlValues.put(controlId, info);
 							break;
 						}
