@@ -54,7 +54,9 @@ public class NodeControlInfoSerializer extends SerializerBase<NodeControlInfo> {
 		if ( info.getPropertyName() != null ) {
 			generator.writeStringField("propertyName", info.getPropertyName());
 		}
-		generator.writeStringField("unit", info.getUnit());
+		if ( info.getUnit() != null ) {
+			generator.writeStringField("unit", info.getUnit());
+		}
 		generator.writeStringField("value", info.getValue());
 		generator.writeEndObject();
 	}
