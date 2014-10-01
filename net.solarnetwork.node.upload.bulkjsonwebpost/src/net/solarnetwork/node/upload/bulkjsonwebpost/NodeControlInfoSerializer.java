@@ -33,7 +33,7 @@ import org.codehaus.jackson.map.ser.std.SerializerBase;
  * Serialize {@link NodeControlInfo} to JSON.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class NodeControlInfoSerializer extends SerializerBase<NodeControlInfo> {
 
@@ -51,7 +51,9 @@ public class NodeControlInfoSerializer extends SerializerBase<NodeControlInfo> {
 		generator.writeStringField("__type__", "NodeControlInfo");
 		generator.writeStringField("controlId", info.getControlId());
 		generator.writeStringField("type", info.getType().toString());
-		generator.writeStringField("propertyName", info.getPropertyName());
+		if ( info.getPropertyName() != null ) {
+			generator.writeStringField("propertyName", info.getPropertyName());
+		}
 		generator.writeStringField("unit", info.getUnit());
 		generator.writeStringField("value", info.getValue());
 		generator.writeEndObject();

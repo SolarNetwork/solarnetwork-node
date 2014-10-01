@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNet Bulk JSON Web Uploader
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkjsonwebpost
 Bundle-Description: Upload collected data to SolarNet periodically, in bulk.
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
