@@ -36,6 +36,7 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
+import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
@@ -162,6 +163,7 @@ public class CCSupport {
 	private String groupUID = null;
 	private long sampleCacheMs = 5000;
 	private MessageSource messageSource;
+	private DatumMetadataService datumMetadataService;
 
 	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
 		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
@@ -487,6 +489,14 @@ public class CCSupport {
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	public DatumMetadataService getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	public void setDatumMetadataService(DatumMetadataService datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }

@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
@@ -216,12 +217,25 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		result.setCreated(new Date(datum.getCreated()));
 		result.setSourceId(addr);
 		result.setWatts(wattReading);
+
+		// associate consumption/generation tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagConsumption() ) {
-			result.tagAsConsumption();
+			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_CONSUMPTION);
 		} else {
-			result.tagAsGeneration();
+			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
 		}
+		addSourceMetadata(addr, sourceMeta);
+
 		return result;
+	}
+
+	private void addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		try {
+			getDatumMetadataService().addSourceMetadata(sourceId, meta);
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
 	}
 
 	private GeneralNodeDatum getGeneralNodeDatumTemperatureInstance(CCDatum datum) {
@@ -243,11 +257,16 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		result.setCreated(new Date(datum.getCreated()));
 		result.setSourceId(addr);
 		result.putInstantaneousSampleValue(AtmosphereDatum.TEMPERATURE_KEY, datum.getTemperature());
+
+		// associate indoor/outdoor tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagIndoor() ) {
-			result.addTag(AtmosphereDatum.TAG_ATMOSPHERE_INDOOR);
+			sourceMeta.addTag(AtmosphereDatum.TAG_ATMOSPHERE_INDOOR);
 		} else {
-			result.addTag(AtmosphereDatum.TAG_ATMOSPHERE_OUTDOOR);
+			sourceMeta.addTag(AtmosphereDatum.TAG_ATMOSPHERE_OUTDOOR);
 		}
+		addSourceMetadata(addr, sourceMeta);
+
 		return result;
 	}
 
