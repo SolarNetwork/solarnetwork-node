@@ -205,7 +205,14 @@ public abstract class HttpClientSupport {
 		return conn;
 	}
 
-	private void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
+	/**
+	 * Append a URL-escaped key/value pair to a string buffer.
+	 * 
+	 * @param buf
+	 * @param key
+	 * @param value
+	 */
+	protected void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
 		if ( value == null ) {
 			return;
 		}
@@ -213,7 +220,8 @@ public abstract class HttpClientSupport {
 			buf.append('&');
 		}
 		try {
-			buf.append(key).append('=').append(URLEncoder.encode(value.toString(), "UTF-8"));
+			buf.append(URLEncoder.encode(key, "UTF-8")).append('=')
+					.append(URLEncoder.encode(value.toString(), "UTF-8"));
 		} catch ( UnsupportedEncodingException e ) {
 			// should not get here ever
 			throw new RuntimeException(e);
