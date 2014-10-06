@@ -24,14 +24,11 @@ package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.zip.GZIPOutputStream;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.domain.Datum;
@@ -39,7 +36,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
-import net.solarnetwork.node.support.HttpClientSupport;
+import net.solarnetwork.node.support.JsonHttpClientSupport;
 import net.solarnetwork.util.OptionalServiceTracker;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
@@ -62,12 +59,10 @@ import org.codehaus.jackson.map.ObjectMapper;
  * @author matt
  * @version 1.0
  */
-public class BulkJsonWebPostUploadService extends HttpClientSupport implements BulkUploadService,
+public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implements BulkUploadService,
 		InstructionAcknowledgementService {
 
-	private ObjectMapper objectMapper;
 	private String url = "/bulkUpload.do";
-	private boolean compress = true;
 	private OptionalServiceTracker<ReactorService> reactorService;
 
 	@Override
@@ -143,7 +138,7 @@ public class BulkJsonWebPostUploadService extends HttpClientSupport implements B
 		InputStream response = handlePost(data);
 		List<UploadResult> result = new ArrayList<UploadResult>(data.size());
 		try {
-			JsonNode root = objectMapper.readTree(response);
+			JsonNode root = getObjectMapper().readTree(response);
 			if ( root.isObject() ) {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
@@ -165,7 +160,7 @@ public class BulkJsonWebPostUploadService extends HttpClientSupport implements B
 						if ( instrArray != null && instrArray.isArray() && reactor != null ) {
 							List<InstructionStatus> status = reactor.processInstruction(
 									getIdentityService().getSolarInBaseUrl(), instrArray,
-									"application/json", null);
+									JSON_MIME_TYPE, null);
 							log.debug("Instructions processed: {}", status);
 						}
 					} else {
@@ -185,28 +180,9 @@ public class BulkJsonWebPostUploadService extends HttpClientSupport implements B
 	}
 
 	private InputStream handlePost(Collection<?> data) {
-		String postUrl = getIdentityService().getSolarInBaseUrl() + url;
+		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
-			URLConnection conn = getURLConnection(postUrl, "POST", "application/json");
-			conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
-			if ( compress ) {
-				conn.setRequestProperty("Content-Encoding", "gzip");
-			}
-			OutputStream out = conn.getOutputStream();
-			if ( compress ) {
-				out = new GZIPOutputStream(out);
-			}
-
-			if ( log.isDebugEnabled() ) {
-				log.debug("Posting JSON data: {}", objectMapper.writeValueAsString(data));
-			}
-
-			objectMapper.writeValue(out, data);
-
-			out.flush();
-			out.close();
-
-			return getInputStreamFromURLConnection(conn);
+			return doJson(postUrl, HTTP_METHOD_POST, data);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException bulk posting data to " + postUrl, e);
@@ -217,28 +193,12 @@ public class BulkJsonWebPostUploadService extends HttpClientSupport implements B
 		}
 	}
 
-	public ObjectMapper getObjectMapper() {
-		return objectMapper;
-	}
-
-	public void setObjectMapper(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
-	}
-
 	public String getUrl() {
 		return url;
 	}
 
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public boolean isCompress() {
-		return compress;
-	}
-
-	public void setCompress(boolean compress) {
-		this.compress = compress;
 	}
 
 	public OptionalServiceTracker<ReactorService> getReactorService() {
