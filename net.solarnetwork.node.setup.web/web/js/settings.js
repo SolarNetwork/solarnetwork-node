@@ -172,15 +172,19 @@ SolarNode.Settings.addLocationFinder = function(params) {
 					tr.data('location', results[i]);
 					// common lookup
 					$('<td>').text(results[i].sourceName).appendTo(tr);
-					$('<td>').text(results[i].locationName).appendTo(tr);
 					
 					// price lookup
 					if ( lcType === 'price' ) {
+						$('<td>').text(results[i].locationName).appendTo(tr);
 						$('<td>').text(results[i].currency).appendTo(tr);
 					} else if ( lcType === 'weather' ) {
 						loc = results[i].location;
-						$('<td>').text(loc.country !== undefined ? loc.country : '').appendTo(tr);
-						$('<td>').text(loc.postalCode !== undefined ? loc.postalCode : '').appendTo(tr);
+						if ( loc ) {
+							$('<td>').text(loc.country !== undefined ? loc.country : '').appendTo(tr);
+							$('<td>').text(loc.region !== undefined ? loc.region : '').appendTo(tr);
+							$('<td>').text(loc.locality !== undefined ? loc.locality : '').appendTo(tr);
+							$('<td>').text(loc.postalCode !== undefined ? loc.postalCode : '').appendTo(tr);
+						}
 					}
 					tr.on('click', function() {
 						var me = $(this);

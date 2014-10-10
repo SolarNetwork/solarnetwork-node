@@ -151,9 +151,7 @@ $(function() {
 	<div class="modal-body">
 		<p><fmt:message key='lookup.weather.intro'/></p>
 		<div class="form-inline">
-			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.weather.locationName'/>"/>
-			<input type="text" class="span1" maxlength="2" name="location.country" placeholder="<fmt:message key='lookup.weather.country'/>"/>
-			<input type="text" class="span2" maxlength="10" name="location.postalCode" placeholder="<fmt:message key='lookup.weather.postalCode'/>"/>
+			<input type="text" class="span6" maxlength="64" name="location.region" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right" 
 				data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
@@ -164,8 +162,9 @@ $(function() {
 			<thead>
 				<tr>
 					<th><fmt:message key='lookup.weather.sourceName'/></th>
-					<th><fmt:message key='lookup.weather.locationName'/></th>
 					<th><fmt:message key='lookup.weather.country'/></th>
+					<th><fmt:message key='lookup.weather.region'/></th>
+					<th><fmt:message key='lookup.weather.locality'/></th>
 					<th><fmt:message key='lookup.weather.postalCode'/></th>
 				</tr>
 			</thead>
