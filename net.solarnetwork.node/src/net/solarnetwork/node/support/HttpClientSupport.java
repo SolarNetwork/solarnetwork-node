@@ -96,6 +96,13 @@ public abstract class HttpClientSupport {
 		String enc = conn.getContentEncoding();
 		String type = conn.getContentType();
 
+		if ( conn instanceof HttpURLConnection ) {
+			HttpURLConnection httpConn = (HttpURLConnection) conn;
+			if ( httpConn.getResponseCode() < 200 || httpConn.getResponseCode() > 299 ) {
+				log.info("Non-200 HTTP response from {}: {}", conn.getURL(), httpConn.getResponseCode());
+			}
+		}
+
 		log.trace("Got content type [{}] encoded as [{}]", type, enc);
 
 		InputStream is = conn.getInputStream();

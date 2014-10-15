@@ -561,7 +561,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException posting " + bean + " to " + url, e);
 			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " + e.getMessage());
+				log.debug("Unable to post data to " + url + ": " + e.getMessage());
 			}
 			throw new RuntimeException(e);
 		}
