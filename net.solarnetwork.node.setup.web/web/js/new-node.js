@@ -3,10 +3,21 @@ $(document).ready(function() {
 		var pass = $('#invitation-certpass');
 		var passAgain = $('#invitation-certpass-again');
 		var reiterate = $('#invitation-certpass-reiterate');
-		if ( pass.val().length > 0 && pass.val() !== passAgain.val() ) {
+		
+		function fail(msg) {
 			event.preventDefault();
-			alert(passAgain.data('mismatch'));
+			if ( msg ) {
+				alert(msg);
+			}
 			return false;
+		}
+		
+		if ( pass.val().length > 0 ) {
+			if ( pass.val() !== passAgain.val() ) {
+				return fail(passAgain.data('mismatch'));
+			} else if ( pass.val().length < 8 ) {
+				return fail(passAgain.data('tooshort'));
+			}
 		}
 		
 		if ( reiterate.hasClass('hidden') ) {

@@ -186,6 +186,9 @@ public class NodeAssociationController extends BaseSetupController {
 			if ( cert.getNetworkCertificateStatus() != null ) {
 				details.setNetworkCertificateStatus(cert.getNetworkCertificateStatus());
 				details.setNetworkCertificateSubjectDN(cert.getNetworkCertificateSubjectDN());
+				details.setNetworkCertificate(cert.getNetworkCertificate());
+				pkiService.savePKCS12Keystore(cert.getNetworkCertificate(),
+						command.getKeystorePassword());
 			} else {
 				// generate certificate request
 				model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());

@@ -46,7 +46,7 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	void saveCACertificate(X509Certificate cert) throws net.solarnetwork.support.CertificateException;
+	void saveCACertificate(X509Certificate cert) throws CertificateException;
 
 	/**
 	 * Get the configured CA certificate.
@@ -55,7 +55,7 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	X509Certificate getCACertificate() throws net.solarnetwork.support.CertificateException;
+	X509Certificate getCACertificate() throws CertificateException;
 
 	/**
 	 * Get the configured node certificate.
@@ -103,7 +103,7 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	public String generateNodePKCS10CertificateRequestString() throws CertificateException;
+	String generateNodePKCS10CertificateRequestString() throws CertificateException;
 
 	/**
 	 * Generate a PKCS#7 PEM encoding of the node's certificate.
@@ -112,7 +112,7 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	public String generateNodePKCS7CertificateString() throws CertificateException;
+	String generateNodePKCS7CertificateString() throws CertificateException;
 
 	/**
 	 * Generate a PKCS#7 PEM encoding of the node's certificate chain.
@@ -121,10 +121,11 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	public String generateNodePKCS7CertificateChainString() throws CertificateException;
+	String generateNodePKCS7CertificateChainString() throws CertificateException;
 
 	/**
-	 * Save a signed node certificate.
+	 * Save a signed node certificate (previously created via
+	 * {@link #generateNodeSelfSignedCertificate(String)}).
 	 * 
 	 * <p>
 	 * The issuer of the certificate must match the subject of the configured CA
@@ -137,7 +138,23 @@ public interface PKIService {
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
-	public void saveNodeSignedCertificate(String certificateChain)
-			throws net.solarnetwork.support.CertificateException;
+	void saveNodeSignedCertificate(String certificateChain) throws CertificateException;
+
+	/**
+	 * Save a PKCS#12 keystore as the node's certificate.
+	 * 
+	 * <p>
+	 * The keystore can contain either a single self-signed certificate or a
+	 * signed certificate chain.
+	 * </p>
+	 * 
+	 * @param keystore
+	 *        the PKCS#12 keystore as a Base64 encoded string
+	 * @param password
+	 *        the keystore password
+	 * @throws CertificateException
+	 *         if any certificate related error occurs
+	 */
+	void savePKCS12Keystore(String keystore, String password) throws CertificateException;
 
 }

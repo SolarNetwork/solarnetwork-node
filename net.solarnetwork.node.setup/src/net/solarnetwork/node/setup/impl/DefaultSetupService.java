@@ -118,6 +118,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
 	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
 	private static final String VERIFICATION_CODE_NODE_ID_KEY = "networkId";
+	private static final String VERIFICATION_CODE_NODE_CERT = "networkCertificate";
 	private static final String VERIFICATION_CODE_NODE_CERT_STATUS = "networkCertificateStatus";
 	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
@@ -137,6 +138,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@networkId");
 		xpathMap.put(VERIFICATION_CODE_NODE_CERT_DN_KEY, "/*/@networkCertificateSubjectDN");
 		xpathMap.put(VERIFICATION_CODE_NODE_CERT_STATUS, "/*/@networkCertificateStatus");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT, "/*/@networkCertificate");
 		xpathMap.put(VERIFICATION_CODE_USER_NAME_KEY, "/*/@username");
 		xpathMap.put(VERIFICATION_CODE_CONFIRMATION_KEY, "/*/@confirmationKey");
 		return getXPathExpressionMap(xpathMap);

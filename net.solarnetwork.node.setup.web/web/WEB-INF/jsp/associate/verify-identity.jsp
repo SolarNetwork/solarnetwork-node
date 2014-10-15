@@ -42,6 +42,7 @@
 			<label class="control-label" for="invitation-certpass-again"><fmt:message key="node.setup.associate.certpass.again"/></label>
 			<div class="controls">
 				<input type="password" name="keystorePasswordAgain" maxlength="64" id="invitation-certpass-again"
+					data-tooshort="<fmt:message key='node.setup.associate.certpass.tooshort'/>"
 					data-mismatch="<fmt:message key='node.setup.associate.certpass.mismatch'/>"/>
 			</div>
 		</div>
