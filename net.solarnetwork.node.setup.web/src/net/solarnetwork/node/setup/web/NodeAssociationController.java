@@ -55,13 +55,15 @@ import org.springframework.web.multipart.MultipartFile;
  * @version 1.0
  */
 @Controller
-@SessionAttributes("details")
+@SessionAttributes(NodeAssociationController.KEY_DETAILS)
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
 	private static final String PAGE_ENTER_CODE = "associate/enter-code";
 	private static final String PAGE_RESTORE_FROM_BACKUP = "associate/restore-from-backup";
-	private static final String KEY_DETAILS = "details";
+
+	/** The model attribute for the network association details. */
+	public static final String KEY_DETAILS = "details";
 
 	@Autowired
 	private PKIService pkiService;
@@ -175,11 +177,19 @@ public class NodeAssociationController extends BaseSetupController {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
-			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(details);
+			NetworkAssociationDetails req = new NetworkAssociationDetails(details);
+			req.setUsername(details.getUsername());
+			req.setKeystorePassword(command.getKeystorePassword());
+			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(req);
 			details.setNetworkId(cert.getNetworkId());
 
-			// generate certificate request
-			model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());
+			if ( cert.getNetworkCertificateStatus() != null ) {
+				details.setNetworkCertificateStatus(cert.getNetworkCertificateStatus());
+				details.setNetworkCertificateSubjectDN(cert.getNetworkCertificateSubjectDN());
+			} else {
+				// generate certificate request
+				model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());
+			}
 
 			return "associate/setup-success";
 		} catch ( Exception e ) {

@@ -168,6 +168,11 @@ div.plugin .desc {
 	font-style: italic;
 }
 
+.form-actions .alert {
+	margin-top: 12px;
+	margin-bottom: 0;
+}
+
 @media (max-width: 767px) {
 	div.plugin {
 		border-top: 1px solid #ccc;
