@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web.support;
@@ -28,11 +26,12 @@ package net.solarnetwork.node.setup.web.support;
  * A command object for associating a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version $Revision$
+ * @version 1.1
  */
 public class AssociateNodeCommand {
-	
+
 	private String verificationCode;
+	private String keystorePassword;
 
 	public String getVerificationCode() {
 		return verificationCode;
@@ -40,6 +39,14 @@ public class AssociateNodeCommand {
 
 	public void setVerificationCode(String associationCode) {
 		this.verificationCode = associationCode;
+	}
+
+	public String getKeystorePassword() {
+		return keystorePassword;
+	}
+
+	public void setKeystorePassword(String keystorePassword) {
+		this.keystorePassword = keystorePassword;
 	}
 
 }

@@ -54,8 +54,6 @@ import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -120,6 +118,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
 	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
 	private static final String VERIFICATION_CODE_NODE_ID_KEY = "networkId";
+	private static final String VERIFICATION_CODE_NODE_CERT = "networkCertificate";
+	private static final String VERIFICATION_CODE_NODE_CERT_STATUS = "networkCertificateStatus";
 	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
@@ -137,6 +137,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		Map<String, String> xpathMap = new HashMap<String, String>();
 		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@networkId");
 		xpathMap.put(VERIFICATION_CODE_NODE_CERT_DN_KEY, "/*/@networkCertificateSubjectDN");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT_STATUS, "/*/@networkCertificateStatus");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT, "/*/@networkCertificate");
 		xpathMap.put(VERIFICATION_CODE_USER_NAME_KEY, "/*/@username");
 		xpathMap.put(VERIFICATION_CODE_CONFIRMATION_KEY, "/*/@confirmationKey");
 		return getXPathExpressionMap(xpathMap);
@@ -293,7 +295,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		NetworkAssociationRequest req = new NetworkAssociationRequest();
 		req.setUsername(details.getUsername());
 		req.setKey(details.getConfirmationKey());
-		webFormGetForBean(new BeanWrapperImpl(req), association,
+		webFormGetForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), association,
 				getAbsoluteUrl(details, SOLAR_NET_IDENTITY_URL), null, getIdentityPropertyMapping());
 		return association;
 	}
@@ -310,12 +312,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 		try {
 			// Get confirmation code from the server
-			NetworkAssociationRequest req = new NetworkAssociationRequest();
-			req.setUsername(details.getUsername());
-			req.setKey(details.getConfirmationKey());
-			final BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(req);
+			NetworkAssociationDetails req = new NetworkAssociationDetails(details.getUsername(),
+					details.getConfirmationKey(), details.getKeystorePassword());
 			final NetworkCertificate result = new NetworkAssociationDetails();
-			webFormPostForBean(beanWrapper, result, getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
+			webFormPostForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), result,
+					getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
 					getNodeAssociationPropertyMapping());
 
 			final TransactionTemplate tt = new TransactionTemplate(transactionManager);
@@ -332,10 +333,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				}
 			});
 
-			// create the node's CSR based on the given subjectDN
-			log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
-
-			pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			if ( result.getNetworkCertificateStatus() == null ) {
+				// create the node's CSR based on the given subjectDN
+				log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
+				pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			}
 
 			makeBackup();
 

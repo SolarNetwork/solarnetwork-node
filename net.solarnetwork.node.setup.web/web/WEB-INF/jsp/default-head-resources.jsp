@@ -17,5 +17,6 @@
 	/js/global.js
 	/js/certs.js
 	/js/settings.js
+	/js/new-node.js
 	/js/plugins.js
 </pack:script>
