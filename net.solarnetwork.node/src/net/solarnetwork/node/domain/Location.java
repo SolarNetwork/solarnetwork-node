@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+
 /**
  * API for a location object.
  * 
@@ -31,35 +32,42 @@ package net.solarnetwork.node.domain;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface Location {
+
+	/** A price location type. */
+	static final String PRICE_TYPE = "price";
+
+	/** A weather location type. */
+	static final String WEATHER_TYPE = "weather";
 
 	/**
 	 * Get a unique ID of this location.
 	 * 
 	 * @return the location ID
 	 */
-	public Long getLocationId();
+	Long getLocationId();
 
 	/**
 	 * Get a name for this location.
 	 * 
 	 * @return the location name
 	 */
-	public String getLocationName();
+	String getLocationName();
 
 	/**
 	 * Get a unique ID of the source of this location.
 	 * 
 	 * @return the source ID
 	 */
-	public Long getSourceId();
+	String getSourceId();
 
 	/**
 	 * Get the name of the source of this location.
 	 * 
 	 * @return the source name
 	 */
-	public String getSourceName();
+	String getSourceName();
+
 }

@@ -22,18 +22,17 @@
 
 package net.solarnetwork.node.domain;
 
-
 /**
  * Basic implementation of {@link Location}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicLocation implements Location {
 
 	private Long locationId;
 	private String locationName;
-	private Long sourceId;
+	private String sourceId;
 	private String sourceName;
 
 	@Override
@@ -55,11 +54,11 @@ public class BasicLocation implements Location {
 	}
 
 	@Override
-	public Long getSourceId() {
+	public String getSourceId() {
 		return sourceId;
 	}
 
-	public void setSourceId(Long sourceId) {
+	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 

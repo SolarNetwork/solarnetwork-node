@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import net.solarnetwork.node.LocationService;
+import net.solarnetwork.node.domain.GeneralLocation;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import org.springframework.beans.BeanWrapper;
@@ -72,6 +73,7 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 			// create default XML response mapping
 			Map<String, String> defaults = new LinkedHashMap<String, String>(3);
 			defaults.put("locationId", "//*[@id][1]/@id"); // grab the first result ID
+			defaults.put("sourceId", "//*[@id][1]/@sourceId"); // grab the first result ID
 			defaults.put("sourceName", "//*[@id][1]/@sourceName"); // grab the first result ID
 			defaults.put("locationName", "//*[@id][1]/@locationName"); // grab the first result ID
 			datumXPathMapping = defaults;
@@ -190,6 +192,18 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 		log.info("Looking up {} for source [{}] location [{}] from [{}]", locationType.getSimpleName(),
 				sourceName, locationName, url);
 		return postForLocations(locationType, bean, postUrl, cacheKey);
+	}
+
+	@Override
+	public Collection<GeneralLocation> findLocations(String query, String sourceId, Set<String> tags) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public GeneralLocation getLocation(Long locationId, String sourceId) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private static class CachedLocation {

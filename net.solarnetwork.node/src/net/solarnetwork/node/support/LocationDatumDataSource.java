@@ -31,6 +31,7 @@ import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralLocation;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.domain.PriceLocation;
@@ -102,7 +103,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -115,14 +116,15 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	private DatumDataSource<T> delegate;
 	private OptionalService<LocationService> locationService;
-	private Class<? extends Location> locationType = PriceLocation.class;
+	private String locationType = Location.PRICE_TYPE;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
 	private Long locationId = null;
+	private String sourceId = null;
 	private Set<String> datumClassNameIgnore;
 
-	private Location location = null;
+	private GeneralLocation location = null;
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -307,10 +309,10 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
-		if ( location == null && locationService != null && locationId != null ) {
+		if ( location == null && locationService != null && locationId != null && sourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				location = service.getLocation(locationType, locationId);
+				location = service.getLocation(locationId, sourceId);
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("locationId", locationType, location);
@@ -348,11 +350,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.requireLocationService = requireLocationService;
 	}
 
-	public Class<? extends Location> getLocationType() {
+	public String getLocationType() {
 		return locationType;
 	}
 
-	public void setLocationType(Class<? extends Location> locationType) {
+	public void setLocationType(String locationType) {
 		this.locationType = locationType;
 	}
 
@@ -376,7 +378,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.locationId = locationId;
 	}
 
-	public Location getLocation() {
+	public GeneralLocation getLocation() {
 		return location;
 	}
 
@@ -386,6 +388,14 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
 		this.datumClassNameIgnore = datumClassNameIgnore;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }
