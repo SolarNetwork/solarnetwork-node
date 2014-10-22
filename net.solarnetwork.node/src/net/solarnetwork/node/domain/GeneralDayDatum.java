@@ -1,5 +1,5 @@
 /* ==================================================================
- * PricedDatum.java - Aug 26, 2014 8:34:45 PM
+ * GeneralDayDatum.java - Oct 22, 2014 2:46:53 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,41 +22,41 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.node.util.DateUtils;
+import org.joda.time.LocalTime;
+
 /**
- * Standardized API for datum associated with a price to implement.
+ * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface PricedDatum {
+public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceLocationId()} values.
-	 */
-	public static final String PRICE_LOCATION_KEY = "priceLocationId";
+	@Override
+	public LocalTime getSunrise() {
+		String time = getStatusSampleString(SUNRISE_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
 
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceSourceId()} values.
-	 * 
-	 * @since 1.1
-	 */
-	public static final String PRICE_SOURCE_KEY = "priceSourceId";
+	public void setSunrise(LocalTime value) {
+		putStatusSampleValue(SUNRISE_KEY, DateUtils.format(value));
+	}
 
-	/**
-	 * Get the location ID associated with this datum.
-	 * 
-	 * @return the price location ID
-	 */
-	public Long getPriceLocationId();
+	@Override
+	public LocalTime getSunset() {
+		String time = getStatusSampleString(SUNSET_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
 
-	/**
-	 * Get the location source ID associated with this datum.
-	 * 
-	 * @return the price source ID
-	 * @since 1.1
-	 */
-	public String getPriceSourceId();
+	public void setSunset(LocalTime value) {
+		putStatusSampleValue(SUNSET_KEY, DateUtils.format(value));
+	}
 
 }

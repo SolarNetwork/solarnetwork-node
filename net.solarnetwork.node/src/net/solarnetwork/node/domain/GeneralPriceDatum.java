@@ -1,5 +1,5 @@
 /* ==================================================================
- * PricedDatum.java - Aug 26, 2014 8:34:45 PM
+ * GeneralPriceDatum.java - Oct 22, 2014 4:01:27 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,41 +22,23 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
+
 /**
- * Standardized API for datum associated with a price to implement.
+ * Extension of {@link GeneralLocationDatum} that implements {@link PriceDatum}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface PricedDatum {
+public class GeneralPriceDatum extends GeneralLocationDatum implements PriceDatum {
 
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceLocationId()} values.
-	 */
-	public static final String PRICE_LOCATION_KEY = "priceLocationId";
+	@Override
+	public BigDecimal getPrice() {
+		return getInstantaneousSampleBigDecimal(PRICE_KEY);
+	}
 
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceSourceId()} values.
-	 * 
-	 * @since 1.1
-	 */
-	public static final String PRICE_SOURCE_KEY = "priceSourceId";
-
-	/**
-	 * Get the location ID associated with this datum.
-	 * 
-	 * @return the price location ID
-	 */
-	public Long getPriceLocationId();
-
-	/**
-	 * Get the location source ID associated with this datum.
-	 * 
-	 * @return the price source ID
-	 * @since 1.1
-	 */
-	public String getPriceSourceId();
+	public void setPrice(BigDecimal value) {
+		putInstantaneousSampleValue(PRICE_KEY, value);
+	}
 
 }

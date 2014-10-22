@@ -24,7 +24,7 @@ package net.solarnetwork.node;
 
 import java.util.Collection;
 import java.util.Set;
-import net.solarnetwork.node.domain.GeneralLocation;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.domain.Location;
 
 /**
@@ -71,7 +71,7 @@ public interface LocationService {
 	<T extends Location> T getLocation(Class<T> locationType, Long locationId);
 
 	/**
-	 * Query for general locations.
+	 * Query for general location metadata.
 	 * 
 	 * @param query
 	 *        the query text
@@ -79,20 +79,21 @@ public interface LocationService {
 	 *        an optional source ID to limit the results to
 	 * @param tags
 	 *        the optional tags
-	 * @return the matching locations, never <em>null</em>
+	 * @return the matching location metadata, never <em>null</em>
 	 * @since 1.1
 	 */
-	Collection<GeneralLocation> findLocations(String query, String sourceId, Set<String> tags);
+	Collection<GeneralLocationSourceMetadata> findLocationMetadata(String query, String sourceId,
+			Set<String> tags);
 
 	/**
-	 * Get a specific general location.
+	 * Get a specific general location metadata.
 	 * 
 	 * @param locationId
 	 *        the location ID
 	 * @param sourceId
 	 *        the source ID
-	 * @return the location, or <em>null</em> if not found
+	 * @return the location metadata, or <em>null</em> if not found
 	 * @since 1.1
 	 */
-	GeneralLocation getLocation(Long locationId, String sourceId);
+	GeneralLocationSourceMetadata getLocationMetadata(Long locationId, String sourceId);
 }

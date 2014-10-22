@@ -1,5 +1,5 @@
 /* ==================================================================
- * GeneralLocationDatum.java - Oct 20, 2014 12:06:00 PM
+ * BasicGeneralLocation.java - Oct 21, 2014 2:48:57 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,30 +22,46 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
+
 /**
- * General location datum.
+ * Basic implementation of {@link GeneralLocation}.
  * 
  * @author matt
  * @version 1.0
  */
-public class GeneralLocationDatum extends GeneralNodeDatum {
+public class BasicGeneralLocation extends BasicLocation implements GeneralLocation {
 
-	private Long locationId;
+	private GeneralLocationSourceMetadata sourceMetadata;
 
-	/**
-	 * Default constructor.
-	 */
-	public GeneralLocationDatum() {
-		super();
-		setSourceId(null);
+	@Override
+	public GeneralDatumMetadata getMetadata() {
+		return (sourceMetadata == null ? null : sourceMetadata.getMeta());
 	}
 
-	public Long getLocationId() {
-		return locationId;
+	@Override
+	public String getLocationName() {
+		if ( sourceMetadata != null ) {
+			return sourceMetadata.getMeta().getInfoString("name");
+		}
+		return super.getLocationName();
 	}
 
-	public void setLocationId(Long locationId) {
-		this.locationId = locationId;
+	@Override
+	public String getSourceName() {
+		if ( sourceMetadata != null ) {
+			return getSourceId();
+		}
+		return super.getSourceName();
+	}
+
+	public GeneralLocationSourceMetadata getSourceMetadata() {
+		return sourceMetadata;
+	}
+
+	public void setSourceMetadata(GeneralLocationSourceMetadata sourceMetadata) {
+		this.sourceMetadata = sourceMetadata;
 	}
 
 }

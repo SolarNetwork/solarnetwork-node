@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain;
 
-
 /**
  * API for a location object.
  * 
@@ -38,6 +37,9 @@ public interface Location {
 
 	/** A price location type. */
 	static final String PRICE_TYPE = "price";
+
+	/** A day location type. */
+	static final String DAY_TYPE = "day";
 
 	/** A weather location type. */
 	static final String WEATHER_TYPE = "weather";
