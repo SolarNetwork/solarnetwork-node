@@ -121,8 +121,8 @@
 							<span class="setting-value">
 								<c:if test="${not empty setting.sourceName}">
 									<fmt:message key="lookup.selected.item">
-										<fmt:param value="${setting.sourceName}"/>
 										<fmt:param value="${setting.locationName}"/>
+										<fmt:param value="${setting.sourceName}"/>
 									</fmt:message>
 								</c:if>
 							</span>

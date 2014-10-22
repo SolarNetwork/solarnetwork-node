@@ -59,6 +59,10 @@ legend {
 	line-height: 13px;
 }
 
+.template {
+	display: none;
+}
+
 /* slider */
 
 .ui-slider {
