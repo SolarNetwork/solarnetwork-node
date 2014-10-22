@@ -124,7 +124,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
 
 	/** Default value for the {@code sourceIdPropertyName} property. */
-	public static final String DEFAULT_SOURCE_ID_PROP_NAME = "sourceId";
+	public static final String DEFAULT_SOURCE_ID_PROP_NAME = "locationSourceId";
 
 	/** Bundle name for price location lookup messages. */
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
@@ -236,8 +236,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 				gDatum.putStatusSampleValue(PricedDatum.PRICE_SOURCE_KEY, sourceId);
 			} else {
 				BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-				bean.setPropertyValue(locationIdPropertyName, locationId);
-				bean.setPropertyValue(sourceIdPropertyName, sourceId);
+				if ( bean.isWritableProperty(locationIdPropertyName)
+						&& bean.isWritableProperty(sourceIdPropertyName) ) {
+					bean.setPropertyValue(locationIdPropertyName, locationId);
+					bean.setPropertyValue(sourceIdPropertyName, sourceId);
+				}
 			}
 		}
 	}
