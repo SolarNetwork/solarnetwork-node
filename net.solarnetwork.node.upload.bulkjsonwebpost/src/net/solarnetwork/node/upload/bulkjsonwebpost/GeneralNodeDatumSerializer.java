@@ -23,7 +23,7 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
-import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
@@ -31,10 +31,11 @@ import org.codehaus.jackson.map.SerializerProvider;
 import org.codehaus.jackson.map.ser.std.SerializerBase;
 
 /**
- * Serialize {@link NodeControlInfo} to JSON.
+ * Serialize {@link GeneralNodeDatum} to JSON. The {@link GeneralLocationDatum}
+ * is also supported.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralNodeDatumSerializer extends SerializerBase<GeneralNodeDatum> {
 
@@ -50,6 +51,10 @@ public class GeneralNodeDatumSerializer extends SerializerBase<GeneralNodeDatum>
 			throws IOException, JsonGenerationException {
 		generator.writeStartObject();
 		generator.writeNumberField("created", datum.getCreated().getTime());
+		if ( datum instanceof GeneralLocationDatum ) {
+			GeneralLocationDatum loc = (GeneralLocationDatum) datum;
+			generator.writeNumberField("locationId", loc.getLocationId());
+		}
 		generator.writeStringField("sourceId", datum.getSourceId());
 		generator.writeObjectField("samples", datum.getSamples());
 		generator.writeEndObject();

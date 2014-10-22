@@ -1,5 +1,5 @@
 /* ==================================================================
- * AtmosphereDatum.java - Aug 26, 2014 1:52:01 PM
+ * DayDatum.java - Oct 22, 2014 2:41:56 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,45 +22,40 @@
 
 package net.solarnetwork.node.domain;
 
+import org.joda.time.LocalTime;
+
 /**
- * Standardized API for atmospheric related datum to implement.
+ * Solar day related datum.
  * 
  * @author matt
  * @version 1.0
  */
-public interface AtmosphereDatum {
+public interface DayDatum {
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for {@link #getTemperature()} values.
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getSunrise()} values.
 	 */
-	public static final String TEMPERATURE_KEY = "temp";
+	static final String SUNRISE_KEY = "sunrise";
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for {@link #getHumidity()} values.
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getSunset()} values.
 	 */
-	public static final String HUMIDITY_KEY = "hum";
-
-	/** A tag for an "indoor" atmosphere sample. */
-	public static final String TAG_ATMOSPHERE_INDOOR = "indoor";
-
-	/** A tag for an "outdoor" atmosphere sample. */
-	public static final String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
+	static final String SUNSET_KEY = "sunset";
 
 	/**
-	 * Get the instantaneous temperature, in degrees Celsius.
+	 * Get the sunrise time.
 	 * 
-	 * @return the temperature, in Celsius
+	 * @return the sunrise
 	 */
-	public Float getTemperature();
+	LocalTime getSunrise();
 
 	/**
-	 * Get the instantaneous humidity, as an integer percentage (where 100
-	 * represents 100%).
+	 * Get the sunset time.
 	 * 
-	 * @return the humidity, as an integer percentage
+	 * @return the sunset
 	 */
-	public Integer getHumidity();
+	LocalTime getSunset();
 
 }

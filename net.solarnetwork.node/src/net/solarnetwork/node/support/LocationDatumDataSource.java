@@ -27,10 +27,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
+import net.solarnetwork.node.domain.BasicGeneralLocation;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralLocation;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.domain.PriceLocation;
@@ -89,6 +93,15 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * configured {@code delegate}. The object must support a JavaBean setter method
  * for this property. Defaults to {@link #DEFAULT_LOCATION_ID_PROP_NAME}.</dd>
  * 
+ * <dt>sourceIdId</dt>
+ * <dd>The location source ID to assign.</dd>
+ * 
+ * <dt>sourceIdPropertyName</dt>
+ * <dd>The JavaBean property name to set the found
+ * {@link Location#getSourceId()} to on the {@link Datum} returned from the
+ * configured {@code delegate}. The object must support a JavaBean setter method
+ * for this property. Defaults to {@link #DEFAULT_SOURCE_ID_PROP_NAME}.</dd>
+ * 
  * <dt>requireLocationService</dt>
  * <dd>If configured as <em>true</em> then return <em>null</em> data only
  * instead of calling the delegate. This is designed for services that require a
@@ -102,7 +115,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
 		MultiDatumDataSource<T>, SettingSpecifierProvider {
@@ -110,19 +123,24 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	/** Default value for the {@code locationIdPropertyName} property. */
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
 
+	/** Default value for the {@code sourceIdPropertyName} property. */
+	public static final String DEFAULT_SOURCE_ID_PROP_NAME = "sourceId";
+
 	/** Bundle name for price location lookup messages. */
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
 
 	private DatumDataSource<T> delegate;
 	private OptionalService<LocationService> locationService;
-	private Class<? extends Location> locationType = PriceLocation.class;
+	private String locationType = Location.PRICE_TYPE;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
+	private String sourceIdPropertyName = DEFAULT_SOURCE_ID_PROP_NAME;
 	private boolean requireLocationService = false;
 	private String messageBundleBasename = PRICE_LOCATION_MESSAGE_BUNDLE;
 	private Long locationId = null;
+	private String sourceId = null;
 	private Set<String> datumClassNameIgnore;
 
-	private Location location = null;
+	private GeneralLocation location = null;
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -206,14 +224,20 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private void populateLocation(T datum) {
-		if ( locationId != null && !shouldIgnoreDatum(datum) ) {
-			log.debug("Augmenting datum {} with Locaiton ID {}", datum, locationId);
-			if ( datum instanceof GeneralNodeDatum ) {
-				((GeneralNodeDatum) datum).putStatusSampleValue(PricedDatum.PRICE_LOCATION_KEY,
-						locationId);
+		if ( locationId != null && sourceId != null && !shouldIgnoreDatum(datum) ) {
+			log.debug("Augmenting datum {} with locaiton ID {} ({})", datum, locationId, sourceId);
+			if ( datum instanceof GeneralLocationDatum ) {
+				GeneralLocationDatum gDatum = (GeneralLocationDatum) datum;
+				gDatum.setLocationId(locationId);
+				gDatum.setSourceId(sourceId);
+			} else if ( datum instanceof GeneralNodeDatum ) {
+				GeneralNodeDatum gDatum = (GeneralNodeDatum) datum;
+				gDatum.putStatusSampleValue(PricedDatum.PRICE_LOCATION_KEY, locationId);
+				gDatum.putStatusSampleValue(PricedDatum.PRICE_SOURCE_KEY, sourceId);
 			} else {
 				BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
 				bean.setPropertyValue(locationIdPropertyName, locationId);
+				bean.setPropertyValue(sourceIdPropertyName, sourceId);
 			}
 		}
 	}
@@ -307,13 +331,18 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
-		if ( location == null && locationService != null && locationId != null ) {
+		if ( location == null && locationService != null && locationId != null && sourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				location = service.getLocation(locationType, locationId);
+				GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId, sourceId);
+				BasicGeneralLocation loc = new BasicGeneralLocation();
+				loc.setLocationId(locationId);
+				loc.setSourceId(sourceId);
+				loc.setSourceMetadata(meta);
+				location = loc;
 			}
 		}
-		return new BasicLocationLookupSettingSpecifier("locationId", locationType, location);
+		return new BasicLocationLookupSettingSpecifier("locationKey", locationType, location);
 	}
 
 	public DatumDataSource<T> getDelegate() {
@@ -348,11 +377,11 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.requireLocationService = requireLocationService;
 	}
 
-	public Class<? extends Location> getLocationType() {
+	public String getLocationType() {
 		return locationType;
 	}
 
-	public void setLocationType(Class<? extends Location> locationType) {
+	public void setLocationType(String locationType) {
 		this.locationType = locationType;
 	}
 
@@ -362,6 +391,27 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public void setMessageBundleBasename(String messageBundleBaseName) {
 		this.messageBundleBasename = messageBundleBaseName;
+	}
+
+	/**
+	 * Set the location ID and source ID as a single string value. The format of
+	 * the key is {@code locationId:sourceId}.
+	 * 
+	 * @param key
+	 *        the location and source ID key
+	 */
+	public void setLocationKey(String key) {
+		Long newLocationId = null;
+		String newSourceId = null;
+		if ( key != null ) {
+			int idx = key.indexOf(':');
+			if ( idx > 0 && idx + 1 < key.length() ) {
+				newLocationId = Long.valueOf(key.substring(0, idx));
+				newSourceId = key.substring(idx + 1);
+			}
+		}
+		setLocationId(newLocationId);
+		setSourceId(newSourceId);
 	}
 
 	public Long getLocationId() {
@@ -376,7 +426,7 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		this.locationId = locationId;
 	}
 
-	public Location getLocation() {
+	public GeneralLocation getLocation() {
 		return location;
 	}
 
@@ -386,6 +436,25 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 
 	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
 		this.datumClassNameIgnore = datumClassNameIgnore;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		if ( this.location != null && sourceId != null && !sourceId.equals(this.location.getSourceId()) ) {
+			this.location = null; // set to null so we re-fetch from server
+		}
+		this.sourceId = sourceId;
+	}
+
+	public String getSourceIdPropertyName() {
+		return sourceIdPropertyName;
+	}
+
+	public void setSourceIdPropertyName(String sourceIdPropertyName) {
+		this.sourceIdPropertyName = sourceIdPropertyName;
 	}
 
 }

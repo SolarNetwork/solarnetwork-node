@@ -283,6 +283,36 @@ SolarNode.hideSpinner = function(button, hideLoading) {
 	}
 };
 
+/**
+ * Extract a key path value from an object. A key path is a period-delimited 
+ * list of property names, e.g. {@code location.name}.
+ * 
+ * @param {Object} root - The object to extract a value from.
+ * @param {String} path - The key path to extract.
+ * @returns {Object} The value associated with the given {@code path}, or <em>undefined</em> if not available. 
+ */
+SolarNode.extractJSONPath = function(root, path) {
+	var child;
+	if ( path === undefined ) {
+		return undefined;
+	}
+	if ( Array.isArray(path) === false ) {
+		path = path.split('.');
+	}
+	if ( path.length < 1 ) {
+		return undefined;
+	}
+	child = root[path[0]];
+	if ( child === undefined ) {
+		return undefined;
+	}
+	if ( path.length === 1 ) {
+		return child;
+	}
+	return SolarNode.extractJSONPath(child, path.slice(1));
+};
+
+
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');

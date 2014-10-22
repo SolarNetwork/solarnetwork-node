@@ -1,7 +1,7 @@
 /* ==================================================================
- * LocationLookupSettingSpecifier.java - Nov 19, 2013 1:07:03 PM
+ * PriceDatum.java - Oct 22, 2014 4:01:43 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,30 +20,29 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.settings;
+package net.solarnetwork.node.domain;
 
-import net.solarnetwork.node.domain.Location;
+import java.math.BigDecimal;
 
 /**
- * A setting for a location ID.
+ * API for price data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Long>, Location {
+public interface PriceDatum {
 
 	/**
-	 * Get the location this setting is for.
-	 * 
-	 * @return a Location, or <em>null</em> if none available
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link PriceDatum#getPrice()} values.
 	 */
-	Location getLocation();
+	static final String PRICE_KEY = "price";
 
 	/**
-	 * Get the location type or tag, e.g. "weather", "price", etc.
+	 * Get the price value.
 	 * 
-	 * @return the location type
+	 * @return the price
 	 */
-	String getLocationTypeKey();
+	BigDecimal getPrice();
 
 }

@@ -27,8 +27,8 @@ import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.node.weather.DayDatum;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
@@ -60,21 +60,23 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 	@Test
 	public void parseRiseSet() throws Exception {
 		MetserviceDayDatumDataSource ds = createDataSourceInstance();
-		DayDatum datum = ds.readCurrentDatum();
+		GeneralDayDatum datum = (GeneralDayDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
 
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(ds.getDayDateFormat());
 
-		assertNotNull(datum.getDay());
-		assertEquals("1 September 2014", dayFormat.format(datum.getDay()));
+		assertNotNull(datum.getCreated());
+		assertEquals("1 September 2014", dayFormat.format(datum.getCreated()));
 
 		final SimpleDateFormat timeFormat = new SimpleDateFormat(ds.getTimeDateFormat());
 
 		assertNotNull(datum.getSunrise());
-		assertEquals("6:47am", timeFormat.format(datum.getSunrise()).toLowerCase());
+		assertEquals("6:47am", timeFormat.format(datum.getSunrise().toDateTimeToday().toDate())
+				.toLowerCase());
 
 		assertNotNull(datum.getSunset());
-		assertEquals("5:56pm", timeFormat.format(datum.getSunset()).toLowerCase());
+		assertEquals("5:56pm", timeFormat.format(datum.getSunset().toDateTimeToday().toDate())
+				.toLowerCase());
 	}
 
 }

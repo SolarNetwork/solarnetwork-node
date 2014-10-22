@@ -1,7 +1,7 @@
 /* ==================================================================
- * BasicLocation.java - Nov 17, 2013 7:37:13 PM
+ * BasicGeneralLocation.java - Oct 21, 2014 2:48:57 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,53 +22,46 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
+
 /**
- * Basic implementation of {@link Location}.
+ * Basic implementation of {@link GeneralLocation}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class BasicLocation implements Location {
+public class BasicGeneralLocation extends BasicLocation implements GeneralLocation {
 
-	private Long locationId;
-	private String locationName;
-	private String sourceId;
-	private String sourceName;
+	private GeneralLocationSourceMetadata sourceMetadata;
 
 	@Override
-	public Long getLocationId() {
-		return locationId;
-	}
-
-	public void setLocationId(Long locationId) {
-		this.locationId = locationId;
+	public GeneralDatumMetadata getMetadata() {
+		return (sourceMetadata == null ? null : sourceMetadata.getMeta());
 	}
 
 	@Override
 	public String getLocationName() {
-		return locationName;
-	}
-
-	public void setLocationName(String locationName) {
-		this.locationName = locationName;
-	}
-
-	@Override
-	public String getSourceId() {
-		return sourceId;
-	}
-
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
+		if ( sourceMetadata != null ) {
+			return sourceMetadata.getMeta().getInfoString("name");
+		}
+		return super.getLocationName();
 	}
 
 	@Override
 	public String getSourceName() {
-		return sourceName;
+		if ( sourceMetadata != null ) {
+			return getSourceId();
+		}
+		return super.getSourceName();
 	}
 
-	public void setSourceName(String sourceName) {
-		this.sourceName = sourceName;
+	public GeneralLocationSourceMetadata getSourceMetadata() {
+		return sourceMetadata;
+	}
+
+	public void setSourceMetadata(GeneralLocationSourceMetadata sourceMetadata) {
+		this.sourceMetadata = sourceMetadata;
 	}
 
 }

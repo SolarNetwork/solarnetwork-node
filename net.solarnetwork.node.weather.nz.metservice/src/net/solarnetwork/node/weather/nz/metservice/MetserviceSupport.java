@@ -55,7 +55,7 @@ import org.springframework.util.FileCopyUtils;
  * @param T
  *        the datum type
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSupport {
 
@@ -145,6 +145,66 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 					num = Double.valueOf(node.asText());
 				} catch ( NumberFormatException e ) {
 					log.debug("Error parsing double attribute [{}] value [{}]: {}", new Object[] { key,
+							data.get(key), e.getMessage() });
+				}
+			}
+		}
+		return num;
+	}
+
+	/**
+	 * Parse a FLoat from an attribute value.
+	 * 
+	 * <p>
+	 * If the Float cannot be parsed, <em>null</em> will be returned.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the attribute key to obtain from the {@code data} node
+	 * @param data
+	 *        the attributes
+	 * @return the parsed {@link Float}, or <em>null</em> if an error occurs or
+	 *         the specified attribute {@code key} is not available
+	 */
+	protected Float parseFloatAttribute(String key, JsonNode data) {
+		Float num = null;
+		if ( data != null ) {
+			JsonNode node = data.get(key);
+			if ( node != null ) {
+				try {
+					num = Float.valueOf(node.asText());
+				} catch ( NumberFormatException e ) {
+					log.debug("Error parsing float attribute [{}] value [{}]: {}", new Object[] { key,
+							data.get(key), e.getMessage() });
+				}
+			}
+		}
+		return num;
+	}
+
+	/**
+	 * Parse a Integer from an attribute value.
+	 * 
+	 * <p>
+	 * If the Integer cannot be parsed, <em>null</em> will be returned.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the attribute key to obtain from the {@code data} node
+	 * @param data
+	 *        the attributes
+	 * @return the parsed {@link Integer}, or <em>null</em> if an error occurs
+	 *         or the specified attribute {@code key} is not available
+	 */
+	protected Integer parseIntegerAttribute(String key, JsonNode data) {
+		Integer num = null;
+		if ( data != null ) {
+			JsonNode node = data.get(key);
+			if ( node != null ) {
+				try {
+					num = Integer.valueOf(node.asText());
+				} catch ( NumberFormatException e ) {
+					log.debug("Error parsing integer attribute [{}] value [{}]: {}", new Object[] { key,
 							data.get(key), e.getMessage() });
 				}
 			}

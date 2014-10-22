@@ -29,15 +29,17 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.weather.WeatherDatum;
 import org.codehaus.jackson.JsonNode;
 import org.springframework.context.MessageSource;
 
 /**
- * MetService implementation of a {@link WeatherDatum} {@link DatumDataSource}.
+ * MetService implementation of a {@link GeneralAtmosphericDatum}
+ * {@link DatumDataSource}.
  * 
  * <p>
  * This implementation reads public data available on the MetService website to
@@ -83,8 +85,8 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.1
  */
-public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherDatum> implements
-		DatumDataSource<WeatherDatum>, SettingSpecifierProvider {
+public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralAtmosphericDatum>
+		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code oneMinObs} property. */
 	public static final String DEFAULT_LOCAL_OBS_SET = "localObs_wellington-city";
@@ -109,13 +111,13 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 	}
 
 	@Override
-	public Class<? extends WeatherDatum> getDatumType() {
-		return WeatherDatum.class;
+	public Class<? extends GeneralLocationDatum> getDatumType() {
+		return GeneralAtmosphericDatum.class;
 	}
 
 	@Override
-	public WeatherDatum readCurrentDatum() {
-		WeatherDatum result = null;
+	public GeneralLocationDatum readCurrentDatum() {
+		GeneralAtmosphericDatum result = null;
 
 		String url = getBaseUrl() + '/' + localObs;
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(getTimestampDateFormat());
@@ -129,18 +131,23 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 				return null;
 			}
 			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
-			Double temp = parseDoubleAttribute("temp", data);
+			Float temp = parseFloatAttribute("temp", data);
 
 			if ( infoDate == null || temp == null ) {
 				log.debug("Date and/or temperature missing from {}", url);
 				return null;
 			}
-			result = new WeatherDatum();
+			result = new GeneralAtmosphericDatum();
 			result.setCreated(infoDate);
-			result.setTemperatureCelsius(temp);
+			result.setTemperature(temp);
 
-			result.setHumidity(parseDoubleAttribute("humidity", data));
-			result.setBarometricPressure(parseDoubleAttribute("pressure", data));
+			result.setHumidity(parseIntegerAttribute("humidity", data));
+
+			Double millibar = parseDoubleAttribute("pressure", data);
+			if ( millibar != null ) {
+				int pascals = (int) (millibar.doubleValue() * 100);
+				result.setAtmosphericPressure(pascals);
+			}
 
 			// get local forecast
 			try {

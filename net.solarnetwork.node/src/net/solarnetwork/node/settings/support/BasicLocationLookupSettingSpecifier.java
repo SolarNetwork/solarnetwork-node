@@ -36,18 +36,19 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 		LocationLookupSettingSpecifier {
 
 	private final Location location;
-	private final Class<? extends Location> locationType;
+	private final String locationType;
 
 	/**
 	 * Construct with a key and default value.
 	 * 
 	 * @param key
 	 *        the key
-	 * @param defaultValue
-	 *        the default value
+	 * @param locationType
+	 *        the location type
+	 * @param location
+	 *        the location
 	 */
-	public BasicLocationLookupSettingSpecifier(String key, Class<? extends Location> locationType,
-			Location location) {
+	public BasicLocationLookupSettingSpecifier(String key, String locationType, Location location) {
 		super(key, (location == null ? null : location.getLocationId()));
 		this.locationType = locationType;
 		this.location = location;
@@ -75,11 +76,6 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	}
 
 	@Override
-	public Class<? extends Location> getLocationType() {
-		return locationType;
-	}
-
-	@Override
 	public Long getLocationId() {
 		return (location == null ? null : location.getLocationId());
 	}
@@ -90,7 +86,7 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	}
 
 	@Override
-	public Long getSourceId() {
+	public String getSourceId() {
 		return (location == null ? null : location.getSourceId());
 	}
 
@@ -101,7 +97,7 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 
 	@Override
 	public String getLocationTypeKey() {
-		String t = (locationType == null ? "basic" : locationType.getSimpleName());
+		String t = (locationType == null ? "basic" : locationType);
 		if ( t.endsWith("Location") ) {
 			t = t.substring(0, t.length() - 8);
 		}

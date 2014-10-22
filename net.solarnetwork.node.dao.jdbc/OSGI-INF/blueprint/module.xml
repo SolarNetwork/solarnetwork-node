@@ -33,7 +33,10 @@
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 4 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 4 ? * *</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
@@ -75,8 +78,19 @@
 		</service-properties>
 	</service>
 	
-	<service ref="generalNodeDatumCleaner" 
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+		</interfaces>
+		<service-properties>
+			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+		</service-properties>
+	</service>
+	
+	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
 	<!--  Supporting Services -->
 
@@ -137,22 +151,7 @@
 		</property>
 	</bean>
 
-	<bean id="jacksonObjectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
-	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-		<property name="targetObject">
-			<bean factory-ref="jacksonObjectMapper" factory-method="getSerializationConfig" />
-		</property>
-		<property name="targetMethod" value="setSerializationInclusion" />
-		<property name="arguments">
-			<list>
-				<value type="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion">NON_NULL</value>
-			</list>
-		</property>
-	</bean>
-	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-		<property name="mapper" ref="jacksonObjectMapper"/>
-	</bean>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
 
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
@@ -160,6 +159,14 @@
 		<property name="dataSource" ref="dataSource"/>
 		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}"/>
 		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}"/>
+	</bean>
+
+	<bean id="generalLocationDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
+		init-method="init">
+		<property name="objectMapper" ref="objectMapper"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initSqlResource" value="${JdbcGeneralLocationDatumDao.initSqlResource}"/>
+		<property name="sqlResourcePrefix" value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}"/>
 	</bean>
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->
@@ -186,6 +193,27 @@
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="generalLocationDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalLocationDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="generalLocationDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
+		<property name="cronExpression" value="${job.generalLocationDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="generalLocationDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="generalLocationDatumDao"/>
 			</map>
 		</property>
 	</bean>

@@ -30,15 +30,18 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.GeneralDayDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.weather.DayDatum;
 import org.codehaus.jackson.JsonNode;
+import org.joda.time.LocalTime;
 import org.springframework.context.MessageSource;
 
 /**
- * MetService implementation of a {@link DayDatum} {@link DatumDataSource}.
+ * MetService implementation of a {@link GeneralDayDatum}
+ * {@link DatumDataSource}.
  * 
  * <p>
  * This implementation reads public data available on the MetService website to
@@ -67,8 +70,8 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.1
  */
-public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> implements
-		DatumDataSource<DayDatum>, SettingSpecifierProvider {
+public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDatum> implements
+		DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code riseSet} property. */
 	public static final String DEFAULT_RISE_SET = "riseSet_wellington-city";
@@ -95,19 +98,19 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 	}
 
 	@Override
-	public Class<? extends DayDatum> getDatumType() {
-		return DayDatum.class;
+	public Class<? extends GeneralLocationDatum> getDatumType() {
+		return GeneralDayDatum.class;
 	}
 
 	@Override
-	public DayDatum readCurrentDatum() {
+	public GeneralLocationDatum readCurrentDatum() {
 
 		// first see if we have cached data
-		DayDatum result = getDatumCache().get(LAST_DATUM_CACHE_KEY);
+		GeneralDayDatum result = getDatumCache().get(LAST_DATUM_CACHE_KEY);
 		if ( result != null ) {
 			Calendar now = Calendar.getInstance();
 			Calendar datumCal = Calendar.getInstance();
-			datumCal.setTime(result.getDay());
+			datumCal.setTime(result.getCreated());
 			if ( now.get(Calendar.YEAR) == datumCal.get(Calendar.YEAR)
 					&& now.get(Calendar.DAY_OF_YEAR) == datumCal.get(Calendar.DAY_OF_YEAR) ) {
 				// cached data is for same date, so return that
@@ -130,11 +133,10 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<DayDatum> im
 			Date sunset = parseDateAttribute("sunSet", data, timeFormat);
 
 			if ( day != null && sunrise != null && sunset != null ) {
-				result = new DayDatum();
-				result.setDay(day);
-				result.setSunrise(sunrise);
-				result.setSunset(sunset);
-				result.setTimeZoneId("Pacific/Auckland");
+				result = new GeneralDayDatum();
+				result.setCreated(day);
+				result.setSunrise(new LocalTime(sunrise));
+				result.setSunset(new LocalTime(sunset));
 
 				log.debug("Obtained new DayDatum: {}", result);
 				getDatumCache().put(LAST_DATUM_CACHE_KEY, result);

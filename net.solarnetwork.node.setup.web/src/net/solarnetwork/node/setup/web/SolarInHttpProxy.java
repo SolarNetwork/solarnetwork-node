@@ -114,6 +114,7 @@ public class SolarInHttpProxy extends HttpClientSupport {
 			FileCopyUtils.copy(conn.getInputStream(), response.getOutputStream());
 			response.flushBuffer();
 		} catch ( IOException e ) {
+			log.debug("Error proxying SolarIn URL [{}]", url, e);
 			response.sendError(502, "Problem communicating with SolarIn: " + e.getMessage());
 		}
 	}

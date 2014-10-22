@@ -1,5 +1,5 @@
 /* ==================================================================
- * GeneralNodeDatum.java - Aug 25, 2014 10:48:30 AM
+ * GeneralDayDatum.java - Oct 22, 2014 2:46:53 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -22,13 +22,41 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.node.util.DateUtils;
+import org.joda.time.LocalTime;
+
 /**
- * General node datum. Note that no {@code nodeId} property is added to this
- * class because the node ID is implied by the node's identity.
+ * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
  * 
  * @author matt
  * @version 1.0
  */
-public class GeneralNodeDatum extends GeneralDatumSupport implements Cloneable {
+public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
+
+	@Override
+	public LocalTime getSunrise() {
+		String time = getStatusSampleString(SUNRISE_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setSunrise(LocalTime value) {
+		putStatusSampleValue(SUNRISE_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public LocalTime getSunset() {
+		String time = getStatusSampleString(SUNSET_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setSunset(LocalTime value) {
+		putStatusSampleValue(SUNSET_KEY, DateUtils.format(value));
+	}
 
 }

@@ -141,11 +141,12 @@ SolarNode.Settings.addLocationFinder = function(params) {
 	var btn = label.find('.btn');
 	var lcType = params.locationType.toLowerCase();
 	var modalRuntimeKey = lcType+'Modal';
-	var modal = $('#'+lcType+'-lookup-modal');
-	var chooseBtn = $('#'+lcType+'-lookup-choose');
+	var modal = $('.'+lcType+'-lookup-modal');
+	var chooseBtn = modal.find('.choose');
 	var tbody = modal.find('tbody');
+	var templateRow = modal.find('tr.template');
 	var searchBtn = modal.find('button[type=submit]');
-	
+		
 	if ( SolarNode.Settings.runtime[modalRuntimeKey] === undefined ) {
 		SolarNode.Settings.runtime[modalRuntimeKey] = modal.modal({show:false});
 		modal.ajaxForm({
@@ -153,7 +154,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			beforeSubmit: function(dataArray, form, options) {
 				// start a spinner on the search button so we know a search is happening
 				SolarNode.showLoading(searchBtn);
-				chooseBtn.removeData('location'); // clear any previous selection
+				chooseBtn.removeData('locationMeta'); // clear any previous selection
 				//searchBtn.attr('disabled', 'disabled');
 			},
 			success: function(json, status, xhr, form) {
@@ -165,36 +166,23 @@ SolarNode.Settings.addLocationFinder = function(params) {
 				var results = json.data.results;
 				var i, len;
 				var tr;
-				var loc;
+				var meta;
 				tbody.empty();
 				for ( i = 0, len = results.length; i < len; i++ ) {
-					tr = $('<tr>');
-					tr.data('location', results[i]);
-					// common lookup
-					$('<td>').text(results[i].sourceName).appendTo(tr);
+					tr = templateRow.clone(true);
+					tr.removeClass('template');
+					meta = results[i];
+					tr.data('locationMeta', meta);
 					
-					// price lookup
-					if ( lcType === 'price' ) {
-						$('<td>').text(results[i].locationName).appendTo(tr);
-						$('<td>').text(results[i].currency).appendTo(tr);
-					} else if ( lcType === 'weather' ) {
-						loc = results[i].location;
-						if ( loc ) {
-							$('<td>').text(loc.country !== undefined ? loc.country : '').appendTo(tr);
-							$('<td>').text(loc.region !== undefined ? loc.region : '').appendTo(tr);
-							$('<td>').text(loc.locality !== undefined ? loc.locality : '').appendTo(tr);
-							$('<td>').text(loc.postalCode !== undefined ? loc.postalCode : '').appendTo(tr);
+					tr.children('td').each(function(idx, el) {
+						var td = $(el);
+						var prop = td.data('tprop');
+						var val = SolarNode.extractJSONPath(meta, prop);
+						if ( val ) {
+							td.text(val);
 						}
-					}
-					tr.on('click', function() {
-						var me = $(this);
-						if ( me.hasClass('success') === false ) {
-							me.parent().find('tr.success').removeClass('success');
-							me.addClass('success');
-						}
-						chooseBtn.data('location', me.data('location'));
-						chooseBtn.removeAttr('disabled');
 					});
+					
 					tbody.append(tr);
 				}
 				tbody.parent().removeClass('hidden');
@@ -206,28 +194,6 @@ SolarNode.Settings.addLocationFinder = function(params) {
 				//searchBtn.removeAttr('disabled', 'disabled');
 				SolarNode.hideLoading(searchBtn);
 			}
-		});
-		modal.on('hidden', function() {
-			chooseBtn.attr('disabled', 'disabled');
-			chooseBtn.removeData('params');
-			chooseBtn.removeData('label');
-			tbody.find('tr.success').removeClass('success');
-		});
-		modal.on('shown', function() {
-			var firstInput = modal.find('input').first();
-			firstInput.focus().select();
-		});
-		chooseBtn.on('click', function() {
-			var me = $(this);
-			var selectedLocation = me.data('location');
-			var currParams = me.data('params');
-			var nameSpan = me.data('label');
-			if ( selectedLocation !== undefined ) {
-				var msg = SolarNode.i18n(currParams.valueLabel, [selectedLocation.sourceName, selectedLocation.locationName]);
-				nameSpan.text(msg);
-				SolarNode.Settings.updateSetting(currParams, selectedLocation.id);
-			}
-			modal.modal('hide');
 		});
 	}
 	btn.click(function() {
@@ -245,7 +211,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		// associate data with singleton modal
 		chooseBtn.data('params', params);
 		chooseBtn.data('label', labelSpan);
-		
+		modal.find('input[name=tags]').val(params.locationType);
 		modal.modal('show');
 	});
 };
@@ -363,4 +329,44 @@ $(document).ready(function() {
 			l.stop();
 		});
 	});
+	
+	$('.lookup-modal table.search-results').on('click', 'tr', function() {
+		var me = $(this);
+		var form = me.closest('form');
+		var chooseBtn = form.find('button.choose');
+		if ( me.hasClass('success') === false ) {
+			me.parent().find('tr.success').removeClass('success');
+			me.addClass('success');
+		}
+		chooseBtn.data('locationMeta', me.data('locationMeta'));
+		chooseBtn.removeAttr('disabled');
+	});
+
+	$('.lookup-modal').on('hidden', function() {
+		var form = $(this);
+		var chooseBtn = form.find('button.choose');
+		chooseBtn.attr('disabled', 'disabled');
+		chooseBtn.removeData('params');
+		chooseBtn.removeData('label');
+		form.find('table.search-results tr.success').removeClass('success');
+	});
+	$('.lookup-modal').on('shown', function() {
+		var firstInput = $(this).find('input').first();
+		firstInput.focus().select();
+	});
+	$('.lookup-modal button.choose').on('click', function() {
+		var me = $(this);
+		var modal = me.closest('.modal');
+		var selectedLocation = me.data('locationMeta');
+		var currParams = me.data('params');
+		var nameSpan = me.data('label');
+		if ( selectedLocation !== undefined ) {
+			var msg = SolarNode.i18n(currParams.valueLabel, [SolarNode.extractJSONPath(selectedLocation, 'm.name'),
+			                                                 SolarNode.extractJSONPath(selectedLocation, 'sourceId')]);
+			nameSpan.text(msg);
+			SolarNode.Settings.updateSetting(currParams, selectedLocation.locationId + ':' +selectedLocation.sourceId);
+		}
+		modal.modal('hide');
+	});
+
 });
