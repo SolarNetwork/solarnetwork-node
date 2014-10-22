@@ -112,7 +112,7 @@ $(function() {
 		<p><fmt:message key='lookup.price.intro'/></p>
 		<div class="form-inline">
 			<input type="hidden" name="tags" value="price"/>
-			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.locationName'/>"/>
+			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
@@ -123,11 +123,15 @@ $(function() {
 				<tr>
 					<th><fmt:message key='lookup.price.sourceName'/></th>
 					<th><fmt:message key='lookup.price.locationName'/></th>
+					<th><fmt:message key='lookup.price.country'/></th>
+					<th><fmt:message key='lookup.price.region'/></th>
 					<th><fmt:message key='lookup.price.currency'/></th>
 				</tr>
 				<tr class="template">
 					<td data-tprop="sourceId"></td>
 					<td data-tprop="m.name"></td>
+					<td data-tprop="location.country"></td>
+					<td data-tprop="location.region"></td>
 					<td data-tprop="m.currency"></td>
 				</tr>
 			</thead>
