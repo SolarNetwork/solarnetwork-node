@@ -16,7 +16,7 @@ Import-Package:
  net.solarnetwork.node.domain;version="1.3.0",
  net.solarnetwork.node.job;version="1.10.0",
  net.solarnetwork.node.support;version="1.10.0",
- net.solarnetwork.util;version="1.15.0",
+ net.solarnetwork.util;version="1.17.0",
  org.aopalliance.aop;version="1.0.0",
  org.apache.derby.jdbc;resolution:=optional,
  org.apache.tomcat.jdbc.pool;version="1.0.9.3",

@@ -78,8 +78,19 @@
 		</service-properties>
 	</service>
 	
-	<service ref="generalNodeDatumCleaner" 
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+		</interfaces>
+		<service-properties>
+			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+		</service-properties>
+	</service>
+	
+	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
 	<!--  Supporting Services -->
 
@@ -140,22 +151,7 @@
 		</property>
 	</bean>
 
-	<bean id="jacksonObjectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
-	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-		<property name="targetObject">
-			<bean factory-ref="jacksonObjectMapper" factory-method="getSerializationConfig" />
-		</property>
-		<property name="targetMethod" value="setSerializationInclusion" />
-		<property name="arguments">
-			<list>
-				<value type="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion">NON_NULL</value>
-			</list>
-		</property>
-	</bean>
-	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-		<property name="mapper" ref="jacksonObjectMapper"/>
-	</bean>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
 
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
