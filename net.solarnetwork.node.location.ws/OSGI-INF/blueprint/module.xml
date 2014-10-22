@@ -22,24 +22,33 @@
 	
 	<!-- Referenced Services -->
 	
-	<reference id="identityService" availability="optional"
-		interface="net.solarnetwork.node.IdentityService"/>
+	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 
 	<!-- Published Services -->
 
-	<service ref="wsLocationServiceService" 
-		interface="net.solarnetwork.node.LocationService"
-		ranking="1"/>
+	<service ref="wsLocationServiceService" interface="net.solarnetwork.node.LocationService" ranking="1"/>
 
 	<!-- Supporting Services -->
 	
 	<ctx:property-placeholder properties-ref="ws.cfg"/>
 	
-	<bean id="wsLocationServiceService"
-		class="net.solarnetwork.node.location.ws.WebServiceLocationService"
-		init-method="init">
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="deserializers">
+			<list>
+				<bean class="net.solarnetwork.util.JodaDateTimeDeserializer"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="wsLocationServiceService" class="net.solarnetwork.node.location.ws.WebServiceLocationService">
+		<property name="objectMapper" ref="objectMapper"/>
 		<property name="identityService" ref="identityService"/>
-		<property name="url" value="/locationSearch.do"/>
+		<property name="sslService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
+			</bean>	
+		</property>
 		<property name="cacheTtl" value="${WebServiceLocationService.cacheTtl}"/>
 	</bean>
 	
