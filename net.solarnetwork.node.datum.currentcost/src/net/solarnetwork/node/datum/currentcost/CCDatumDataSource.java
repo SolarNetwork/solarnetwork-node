@@ -36,7 +36,7 @@ import net.solarnetwork.node.DataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.AtmosphereDatum;
+import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.hw.currentcost.CCDatum;
@@ -256,14 +256,14 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		GeneralNodeDatum result = new GeneralNodeDatum();
 		result.setCreated(new Date(datum.getCreated()));
 		result.setSourceId(addr);
-		result.putInstantaneousSampleValue(AtmosphereDatum.TEMPERATURE_KEY, datum.getTemperature());
+		result.putInstantaneousSampleValue(AtmosphericDatum.TEMPERATURE_KEY, datum.getTemperature());
 
 		// associate indoor/outdoor tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagIndoor() ) {
-			sourceMeta.addTag(AtmosphereDatum.TAG_ATMOSPHERE_INDOOR);
+			sourceMeta.addTag(AtmosphericDatum.TAG_ATMOSPHERE_INDOOR);
 		} else {
-			sourceMeta.addTag(AtmosphereDatum.TAG_ATMOSPHERE_OUTDOOR);
+			sourceMeta.addTag(AtmosphericDatum.TAG_ATMOSPHERE_OUTDOOR);
 		}
 		addSourceMetadata(addr, sourceMeta);
 
