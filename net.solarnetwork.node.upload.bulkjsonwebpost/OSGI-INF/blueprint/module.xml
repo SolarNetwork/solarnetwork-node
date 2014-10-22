@@ -48,23 +48,7 @@
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
-	<!-- All this craziness just to set the serializationInclusion property without getting a
-	 	"Invalid property 'serializationInclusion'" exception from Spring. -->
-	<bean id="jacksonObjectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
-	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-		<property name="targetObject">
-			<bean factory-ref="jacksonObjectMapper" factory-method="getSerializationConfig" />
-		</property>
-		<property name="targetMethod" value="setSerializationInclusion" />
-		<property name="arguments">
-			<list>
-				<value type="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion">NON_NULL</value>
-			</list>
-		</property>
-	</bean>
-	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-		<property name="mapper" ref="jacksonObjectMapper"/>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="serializers">
 			<list>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer"/>
