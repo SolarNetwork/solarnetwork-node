@@ -26,6 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.GZIPOutputStream;
 import net.solarnetwork.node.RemoteServiceException;
 import org.codehaus.jackson.JsonNode;
@@ -48,7 +52,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
@@ -148,6 +152,53 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 					child = root.get("data");
 					if ( child != null ) {
 						return objectMapper.readValue(child, dataType);
+					}
+					log.debug("Server returned no data for request.");
+					return null;
+				}
+			}
+			throw new RemoteServiceException(
+					"Server response not successful: " + root.get("message") == null ? "(no message)"
+							: root.get("message").asText());
+		} finally {
+			if ( in != null ) {
+				in.close();
+			}
+		}
+	}
+
+	/**
+	 * Parse a standard {@code Response} HTTP response and return the
+	 * {@code data} object as the provided type.
+	 * 
+	 * @param in
+	 *        the InputStream to read, which will be closed before returning
+	 *        from this method
+	 * @param dataType
+	 *        the type of object to extract from the response
+	 * @return the extracted object, or <em>null</em>
+	 * @throws RemoteServiceException
+	 *         if the response does not include the success flag
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.1
+	 */
+	protected <T> Collection<T> extractCollectionResponseData(InputStream in, Class<T> dataType)
+			throws RemoteServiceException, IOException {
+		try {
+			JsonNode root = getObjectMapper().readTree(in);
+			if ( root.isObject() ) {
+				JsonNode child = root.get("success");
+				if ( child != null && child.asBoolean() ) {
+					child = root.get("data");
+					if ( child != null && child.isArray() ) {
+						Iterator<JsonNode> children = child.getElements();
+						List<T> result = new ArrayList<T>();
+						while ( children.hasNext() ) {
+							child = children.next();
+							result.add(objectMapper.readValue(child, dataType));
+						}
+						return result;
 					}
 					log.debug("Server returned no data for request.");
 					return null;
