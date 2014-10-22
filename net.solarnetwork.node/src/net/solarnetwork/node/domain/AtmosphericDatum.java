@@ -64,7 +64,7 @@ public interface AtmosphericDatum {
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
 	 * for {@link AtmosphericDatum#getSkyConditions()} values.
 	 */
-	static final String SKY_CONDITIONS_KEY = "visibility";
+	static final String SKY_CONDITIONS_KEY = "sky";
 
 	/** A tag for an "indoor" atmosphere sample. */
 	static final String TAG_ATMOSPHERE_INDOOR = "indoor";
