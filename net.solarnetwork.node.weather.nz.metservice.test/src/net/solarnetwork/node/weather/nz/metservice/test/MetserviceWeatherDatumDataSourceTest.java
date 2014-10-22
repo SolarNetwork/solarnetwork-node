@@ -27,8 +27,8 @@ import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.node.weather.WeatherDatum;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
@@ -59,7 +59,7 @@ public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactio
 	@Test
 	public void parseRiseSet() throws Exception {
 		MetserviceWeatherDatumDataSource ds = createDataSourceInstance();
-		WeatherDatum datum = ds.readCurrentDatum();
+		GeneralAtmosphericDatum datum = (GeneralAtmosphericDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
 
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(ds.getTimestampDateFormat());
@@ -67,14 +67,14 @@ public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactio
 		assertNotNull(datum.getCreated());
 		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getCreated()).toLowerCase());
 
-		assertNotNull(datum.getTemperatureCelsius());
-		assertEquals(14.0, datum.getTemperatureCelsius().doubleValue(), 0.001);
+		assertNotNull(datum.getTemperature());
+		assertEquals(14.0, datum.getTemperature().doubleValue(), 0.001);
 
 		assertNotNull(datum.getHumidity());
 		assertEquals(60.0, datum.getHumidity().doubleValue(), 0.001);
 
-		assertNotNull(datum.getBarometricPressure());
-		assertEquals(1017.0, datum.getBarometricPressure().doubleValue(), 0.001);
+		assertNotNull(datum.getAtmosphericPressure());
+		assertEquals(101700, datum.getAtmosphericPressure().intValue());
 
 		assertEquals("Fine", datum.getSkyConditions());
 	}
