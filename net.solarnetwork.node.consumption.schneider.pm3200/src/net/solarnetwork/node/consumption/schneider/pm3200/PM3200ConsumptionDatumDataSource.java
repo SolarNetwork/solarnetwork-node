@@ -28,8 +28,9 @@ import java.util.Collection;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -40,8 +41,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.springframework.context.MessageSource;
 
 /**
- * DatumDataSource for ConsumptionDatum with the Schneider Electric PM3200
- * series kWh meter.
+ * DatumDataSource for GeneralNodeACEnergyDatum with the Schneider Electric
+ * PM3200 series kWh meter.
  * 
  * <p>
  * The configurable properties of this class are:
@@ -51,16 +52,16 @@ import org.springframework.context.MessageSource;
  * <dt>messageSource</dt>
  * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
  * 
- * <dt>sampleCacheSeconds</dt>
- * <dd>The maximum number of seconds to cache data read from the meter, until
- * the data will be read from the meter again.</dd>
+ * <dt>sampleCacheMs</dt>
+ * <dd>The maximum number of milliseconds to cache data read from the meter,
+ * until the data will be read from the meter again.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
-		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
+		DatumDataSource<GeneralNodeACEnergyDatum>, MultiDatumDataSource<GeneralNodeACEnergyDatum>,
 		SettingSpecifierProvider {
 
 	private MessageSource messageSource;
@@ -102,33 +103,33 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getDatumType() {
+	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
 		return PM3200ConsumptionDatum.class;
 	}
 
 	@Override
-	public ConsumptionDatum readCurrentDatum() {
+	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
 		final PM3200Data currSample = getCurrentSample();
 		PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.Total);
 		d.setSourceId(getSourceMapping().get(ACPhase.Total));
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the meter
-			postDatumCapturedEvent(d, ConsumptionDatum.class);
+			postDatumCapturedEvent(d, ACEnergyDatum.class);
 		}
 		return d;
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getMultiDatumType() {
+	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
 		return PM3200ConsumptionDatum.class;
 	}
 
 	@Override
-	public Collection<ConsumptionDatum> readMultipleDatum() {
+	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
 		final long start = System.currentTimeMillis();
 		final PM3200Data currSample = getCurrentSample();
-		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(4);
+		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
 		if ( currSample == null ) {
 			return results;
 		}
@@ -138,7 +139,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.Total));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ConsumptionDatum.class);
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
 			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
@@ -149,7 +150,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ConsumptionDatum.class);
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
 			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
@@ -160,7 +161,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ConsumptionDatum.class);
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
 			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
@@ -171,7 +172,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ConsumptionDatum.class);
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
 			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
