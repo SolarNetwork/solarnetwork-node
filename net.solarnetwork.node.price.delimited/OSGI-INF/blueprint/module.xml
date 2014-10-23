@@ -61,26 +61,6 @@
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<!--
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.price.delimited" autowire-on-update="true">
-		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
-		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.price.PriceDatum"/>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.price.delimited"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
-			<property name="delegate">
-				<bean id="priceDataSource" class="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource"/>
-			</property>
-			<property name="locationService" ref="locationService"/>
-			<property name="requireLocationService" value="true"/>
-		</bean>
-	</osgix:managed-service-factory>
-	-->
-
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.price.delimited" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>

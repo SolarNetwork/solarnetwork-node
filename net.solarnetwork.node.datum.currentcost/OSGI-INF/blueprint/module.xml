@@ -42,21 +42,10 @@
 
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
-		<property name="delegate">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
-				<property name="prefix" value="delegate."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.support.PriceLocationDatumDataSource"/>
-						<property name="parentMessageSource" ref="messageSource"/>
-					</bean>
-				</property>
-			</bean>
-		</property>
+		<property name="delegate" ref="messageSource"/>
 	</bean>
 		
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="CurrentCost watt meter"/>
 		<property name="factoryUID" value="net.solarnetwork.node.datum.currentcost"/>
 		<property name="messageSource" ref="messageSource"/>
@@ -98,37 +87,20 @@
 								</bean>	
 							</entry>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="delegate">
-										<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
-											<property name="messageSource" ref="messageSource"/>
-											<property name="dataCollectorFactory">
-												<bean class="net.solarnetwork.util.DynamicServiceTracker">
-													<property name="bundleContext" ref="bundleContext"/>
-													<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
-													<property name="propertyFilters">
-														<map>
-															<entry key="UID" value="/dev/ttyUSB0"/>
-														</map>
-													</property>
-												</bean>	
-											</property>
-											<property name="datumMetadataService" ref="datumMetadataService"/>
-										</bean>
-									</property>
-									<property name="locationService">
+									<property name="dataCollectorFactory">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value="/dev/ttyUSB0"/>
+												</map>
+											</property>
 										</bean>	
 									</property>
-									<property name="datumClassNameIgnore">
-										<set>
-											<!-- We only want to add price location to GeneralNodeACEnergyDatum -->
-											<value>net.solarnetwork.node.domain.GeneralNodeDatum</value>
-										</set>
-									</property>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 								</bean>
 							</entry>
 						</map>
