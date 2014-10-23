@@ -89,7 +89,7 @@ public class PM3200ConsumptionDatum extends GeneralNodeACEnergyDatum {
 		setWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
 
 		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
-		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I_NEUTRAL));
+		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I_AVERAGE));
 		setPhaseVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L_L_AVERAGE));
 		setReactivePower(sample.getPower(PM3200Data.ADDR_DATA_REACTIVE_POWER_TOTAL));
 		setRealPower(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
