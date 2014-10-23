@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Schneider Electirc PM3200 Meter Consumption DataSource
+Bundle-Name: Schneider Electric PM3200 Meter Consumption DataSource
 Bundle-SymbolicName: net.solarnetwork.node.consumption.schneider.pm3200
 Bundle-Description: Collect consumption data from Schneider Electric PM32XX series meter devices.
 Bundle-Version: 2.1.0
