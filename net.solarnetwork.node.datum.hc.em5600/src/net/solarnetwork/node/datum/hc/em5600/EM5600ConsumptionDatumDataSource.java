@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -38,6 +39,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import org.springframework.context.MessageSource;
 
 /**
@@ -55,6 +57,10 @@ import org.springframework.context.MessageSource;
  * <dt>sampleCacheMs</dt>
  * <dd>The maximum number of milliseconds to cache data read from the meter,
  * until the data will be read from the meter again.</dd>
+ * 
+ * <dt>tagConsumption</dt>
+ * <dd>If {@link #getDatumMetadataService()} is available, then tag the
+ * configured source with
  * </dl>
  * 
  * @author matt
@@ -68,6 +74,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 
 	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
+	private boolean tagConsumption = true;
 
 	private EM5600Data getCurrentSample() {
 		EM5600Data currSample;
@@ -126,6 +133,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the meter
 			postDatumCapturedEvent(d, ACEnergyDatum.class);
+			addEnergyDatumSourceMetadata(d);
 		}
 		return d;
 	}
@@ -140,6 +148,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		final long start = System.currentTimeMillis();
 		final EM5600Data currSample = getCurrentSample();
 		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
+		final List<EM5600ConsumptionDatum> capturedResults = new ArrayList<EM5600ConsumptionDatum>(4);
 		if ( currSample == null ) {
 			return results;
 		}
@@ -153,6 +162,9 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
+				if ( postCapturedEvent ) {
+					capturedResults.add(d);
+				}
 			}
 		}
 		if ( isCapturePhaseA() || postCapturedEvent ) {
@@ -164,6 +176,9 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
+				if ( postCapturedEvent ) {
+					capturedResults.add(d);
+				}
 			}
 		}
 		if ( isCapturePhaseB() || postCapturedEvent ) {
@@ -175,6 +190,9 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
+				if ( postCapturedEvent ) {
+					capturedResults.add(d);
+				}
 			}
 		}
 		if ( isCapturePhaseC() || postCapturedEvent ) {
@@ -186,9 +204,28 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
+				if ( postCapturedEvent ) {
+					capturedResults.add(d);
+				}
 			}
 		}
+
+		for ( EM5600ConsumptionDatum d : capturedResults ) {
+			addEnergyDatumSourceMetadata(d);
+		}
+
 		return results;
+	}
+
+	private void addEnergyDatumSourceMetadata(EM5600ConsumptionDatum d) {
+		// associate consumption/generation tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
+		if ( isTagConsumption() ) {
+			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_CONSUMPTION);
+		} else {
+			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+		}
+		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
 
 	// SettingSpecifierProvider
@@ -212,6 +249,9 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		EM5600ConsumptionDatumDataSource defaults = new EM5600ConsumptionDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		SettingSpecifier energyTag = new BasicToggleSettingSpecifier("tagConsumption",
+				Boolean.valueOf(defaults.isTagConsumption()));
+		results.add(energyTag);
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
 				.getSampleCacheMs())));
 		return results;
@@ -227,6 +267,14 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
+	}
+
+	public boolean isTagConsumption() {
+		return tagConsumption;
+	}
+
+	public void setTagConsumption(boolean tagConsumption) {
+		this.tagConsumption = tagConsumption;
 	}
 
 }

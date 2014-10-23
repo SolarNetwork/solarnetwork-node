@@ -19,6 +19,11 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
+
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
 		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -79,6 +84,7 @@
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.hc.em5600.EM5600ConsumptionDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
