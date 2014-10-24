@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
@@ -66,7 +67,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	private final Logger eventLog = LoggerFactory.getLogger(getClass().getName() + ".SERIAL_EVENT");
 
 	private final SerialPortBeanParameters serialParams;
-	private final long maxWait;
 	private final ExecutorService executor;
 	private long timeout = 0;
 
@@ -88,10 +88,9 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	 *        the maximum number of milliseconds to wait when waiting to read
 	 *        data
 	 */
-	public SerialPortConnection(SerialPortBeanParameters params, long maxWait) {
+	public SerialPortConnection(SerialPortBeanParameters params) {
 		this.serialParams = params;
-		this.maxWait = maxWait;
-		if ( maxWait > 0 ) {
+		if ( params.getMaxWait() > 0 ) {
 			executor = Executors.newFixedThreadPool(1);
 		} else {
 			executor = null;
@@ -103,8 +102,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		CommPortIdentifier portId = getCommPortIdentifier(serialParams.getSerialPort());
 		try {
 			serialPort = (SerialPort) portId.open(serialParams.getCommPortAppName(), 2000);
-			serialPort.addEventListener(this);
-			serialPort.notifyOnDataAvailable(true);
 			setupSerialPortParameters(this);
 		} catch ( PortInUseException e ) {
 			throw new IOException("Serial port " + serialParams.getSerialPort() + " in use", e);
@@ -135,6 +132,13 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		}
 		try {
 			log.debug("Closing serial port {}", this.serialPort);
+			if ( in != null ) {
+				try {
+					in.close();
+				} catch ( IOException e ) {
+					// ignore this
+				}
+			}
 			serialPort.close();
 			log.trace("Serial port closed");
 		} finally {
@@ -152,15 +156,17 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	@Override
 	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
-		final InputStream in = getInputStream();
+		final InputStream input = getInputStream();
 		final ByteArrayOutputStream sink = new ByteArrayOutputStream(1024);
 		boolean result = false;
-		if ( maxWait < 1 ) {
+		if ( serialParams.getMaxWait() < 1 ) {
 			do {
-				result = readMarkedMessage(in, sink, startMarker, endMarker);
+				result = readMarkedMessage(input, sink, startMarker, endMarker);
 			} while ( !result );
 			return sink.toByteArray();
 		}
+
+		final AtomicBoolean keepGoing = new AtomicBoolean(true);
 
 		Callable<Boolean> task = new Callable<Boolean>() {
 
@@ -168,14 +174,14 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			public Boolean call() throws Exception {
 				boolean found = false;
 				do {
-					found = readMarkedMessage(in, sink, startMarker, endMarker);
-				} while ( !found );
+					found = readMarkedMessage(input, sink, startMarker, endMarker);
+				} while ( !found && keepGoing.get() );
 				return found;
 			}
 		};
 		timeoutStart();
 		Future<Boolean> future = executor.submit(task);
-		final long maxMs = Math.max(1, this.maxWait - System.currentTimeMillis() + timeout);
+		final long maxMs = Math.max(1, serialParams.getMaxWait() - System.currentTimeMillis() + timeout);
 		eventLog.trace("Waiting at most {}ms for data", maxMs);
 		try {
 			result = future.get(maxMs, TimeUnit.MILLISECONDS);
@@ -189,94 +195,87 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		} catch ( TimeoutException e ) {
 			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
 			future.cancel(true);
-			throw new IOException("Timeout waiting {}ms for serial data", e.getCause());
+			throw new IOException("Timeout waiting " + maxMs + "ms for serial data", e.getCause());
+		} finally {
+			keepGoing.set(false);
 		}
 		return (result ? sink.toByteArray() : null);
 	}
 
 	private boolean readMarkedMessage(final InputStream in, final ByteArrayOutputStream sink,
-			final byte[] startMarker, final byte[] endMarker) {
+			final byte[] startMarker, final byte[] endMarker) throws IOException {
 		int sinkSize = sink.size();
 		boolean append = sinkSize > 0;
-		byte[] buf = new byte[1024];
+		int buf = 0;
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.trace("Sink contains {} bytes: {}", sinkSize, asciiDebugValue(sink.toByteArray()));
 		}
-		try {
-			int len = -1;
-			final int max = Math.min(in.available(), buf.length);
-			eventLog.trace("Attempting to read {} bytes from serial port", max);
-			while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
-				sink.write(buf, 0, len);
-				sinkSize += len;
+		int len = -1;
+		while ( (buf = in.read()) != -1 ) {
+			sink.write(buf);
+			sinkSize += len;
 
-				if ( append ) {
-					// look for eofBytes, starting where we last appended
-					if ( findEndMarkerBytes(sink, len, endMarker) ) {
-						if ( eventLog.isDebugEnabled() ) {
-							eventLog.debug("Found desired end marker {}", asciiDebugValue(endMarker));
-						}
-						return true;
+			if ( append ) {
+				// look for end marker, starting where we last appended
+				if ( findEndMarkerBytes(sink, len, endMarker) ) {
+					if ( eventLog.isDebugEnabled() ) {
+						eventLog.debug("Found desired end marker {}", asciiDebugValue(endMarker));
 					}
-					eventLog.debug("Looking for end marker {}", asciiDebugValue(endMarker));
-					return false;
-				} else {
-					eventLog.trace("Looking for {} start marker {} in buffer {}",
-							new Object[] { startMarker.length, asciiDebugValue(startMarker),
-									asciiDebugValue(sink.toByteArray()) });
+					return true;
 				}
+				eventLog.debug("Looking for end marker {}", asciiDebugValue(endMarker));
+				return false;
+			} else {
+				eventLog.trace("Looking for {} start marker {} in buffer {}",
+						new Object[] { startMarker.length, asciiDebugValue(startMarker),
+								asciiDebugValue(sink.toByteArray()) });
+			}
 
-				// look for magic in the buffer
-				int magicIdx = 0;
-				byte[] sinkBuf = sink.toByteArray();
-				boolean found = false;
-				for ( ; magicIdx < (sinkBuf.length - startMarker.length + 1); magicIdx++ ) {
-					found = true;
-					for ( int j = 0; j < startMarker.length; j++ ) {
-						if ( sinkBuf[magicIdx + j] != startMarker[j] ) {
-							found = false;
-							break;
-						}
-					}
-					if ( found ) {
+			// look for start marker in the buffer
+			int magicIdx = 0;
+			byte[] sinkBuf = sink.toByteArray();
+			boolean found = false;
+			for ( ; magicIdx < (sinkBuf.length - startMarker.length + 1); magicIdx++ ) {
+				found = true;
+				for ( int j = 0; j < startMarker.length; j++ ) {
+					if ( sinkBuf[magicIdx + j] != startMarker[j] ) {
+						found = false;
 						break;
 					}
 				}
-
 				if ( found ) {
-					// magic found!
-					if ( eventLog.isTraceEnabled() ) {
-						eventLog.trace("Found start marker " + asciiDebugValue(startMarker)
-								+ " at buffer index " + magicIdx);
-					}
-
-					int count = buf.length;
-					count = Math.min(buf.length, sinkBuf.length - magicIdx);
-					sink.reset();
-					sink.write(sinkBuf, magicIdx, count);
-					sinkSize = count;
-					if ( eventLog.isTraceEnabled() ) {
-						eventLog.trace("Sink contains {} bytes: {}", sinkSize,
-								asciiDebugValue(sink.toByteArray()));
-					}
-					if ( findEndMarkerBytes(sink, len, endMarker) ) {
-						// we got all the data here... we're done
-						return true;
-					}
-					append = true;
-				} else if ( sinkBuf.length > startMarker.length ) {
-					// haven't found the magic yet, and the sink is larger than magic size, so 
-					// trim sink down to just magic size
-					sink.reset();
-					sink.write(sinkBuf, sinkBuf.length - startMarker.length, startMarker.length);
-					sinkSize = startMarker.length;
+					break;
 				}
 			}
-		} catch ( IOException e ) {
-			log.error("Error reading from serial port: {}", e.getMessage());
-			throw new RuntimeException(e);
-		}
 
+			if ( found ) {
+				// start marker found!
+				if ( eventLog.isTraceEnabled() ) {
+					eventLog.trace("Found start marker " + asciiDebugValue(startMarker)
+							+ " at buffer index " + magicIdx);
+				}
+
+				int count = Math.min(1, sinkBuf.length - magicIdx);
+				sink.reset();
+				sink.write(sinkBuf, magicIdx, count);
+				sinkSize = count;
+				if ( eventLog.isTraceEnabled() ) {
+					eventLog.trace("Sink contains {} bytes: {}", sinkSize,
+							asciiDebugValue(sink.toByteArray()));
+				}
+				if ( findEndMarkerBytes(sink, len, endMarker) ) {
+					// we got all the data here... we're done
+					return true;
+				}
+				append = true;
+			} else if ( sinkBuf.length > startMarker.length ) {
+				// haven't found the magic yet, and the sink is larger than magic size, so 
+				// trim sink down to just magic size
+				sink.reset();
+				sink.write(sinkBuf, sinkBuf.length - startMarker.length, startMarker.length);
+				sinkSize = startMarker.length;
+			}
+		}
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.debug("Looking for marker {}, buffer: {}", (append ? asciiDebugValue(endMarker)
 					: asciiDebugValue(startMarker)), asciiDebugValue(sink.toByteArray()));
@@ -311,11 +310,12 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		Enumeration<CommPortIdentifier> portIdentifiers = CommPortIdentifier.getPortIdentifiers();
 		List<String> foundNames = new ArrayList<String>(5);
 		while ( portIdentifiers.hasMoreElements() ) {
-			commPortId = portIdentifiers.nextElement();
-			log.trace("Inspecting available port identifier: {}", commPortId.getName());
-			foundNames.add(commPortId.getName());
-			if ( commPortId.getPortType() == CommPortIdentifier.PORT_SERIAL
-					&& portId.equals(commPortId.getName()) ) {
+			CommPortIdentifier commPort = portIdentifiers.nextElement();
+			log.trace("Inspecting available port identifier: {}", commPort.getName());
+			foundNames.add(commPort.getName());
+			if ( commPort.getPortType() == CommPortIdentifier.PORT_SERIAL
+					&& portId.equals(commPort.getName()) ) {
+				commPortId = commPort;
 				log.debug("Found port identifier: {}", portId);
 				break;
 			}
@@ -348,7 +348,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	 * </p>
 	 */
 	protected void timeoutStart() {
-		if ( maxWait > 0 ) {
+		if ( serialParams.getMaxWait() > 0 ) {
 			timeout = System.currentTimeMillis();
 		}
 	}
@@ -374,13 +374,10 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	 *        a listener to pass to
 	 *        {@link SerialPort#addEventListener(SerialPortEventListener)}
 	 */
-	private void setupSerialPortParameters(SerialPortEventListener listener) {
+	private void setupSerialPortParameters(SerialPortEventListener listener)
+			throws TooManyListenersException {
 		if ( listener != null ) {
-			try {
-				serialPort.addEventListener(listener);
-			} catch ( TooManyListenersException e ) {
-				throw new RuntimeException(e);
-			}
+			serialPort.addEventListener(listener);
 		}
 
 		serialPort.notifyOnDataAvailable(true);
@@ -526,10 +523,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	public SerialPort getSerialPort() {
 		return serialPort;
-	}
-
-	public long getMaxWait() {
-		return maxWait;
 	}
 
 }

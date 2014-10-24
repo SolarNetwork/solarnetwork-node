@@ -116,7 +116,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		 *        the parameters
 		 */
 		private LockingSerialConnection() {
-			super(serialParams, unit.toMillis(timeout));
+			super(serialParams);
 		}
 
 		@Override
@@ -214,6 +214,8 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort", defaultSerialParams
 				.getSerialPort()));
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.maxWait", String
+				.valueOf(defaultSerialParams.getMaxWait())));
 		results.addAll(SerialPortBean.getDefaultSettingSpecifiers(defaultSerialParams, "serialParams."));
 
 		return results;
@@ -221,6 +223,22 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 
 	public void setSerialParams(SerialPortBeanParameters serialParams) {
 		this.serialParams = serialParams;
+	}
+
+	public SerialPortBeanParameters getSerialParams() {
+		return serialParams;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public long getTimeout() {
+		return timeout;
+	}
+
+	public TimeUnit getUnit() {
+		return unit;
 	}
 
 	public void setUid(String uid) {
