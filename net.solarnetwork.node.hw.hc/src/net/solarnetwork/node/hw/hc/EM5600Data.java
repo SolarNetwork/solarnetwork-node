@@ -30,7 +30,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EM5600Data {
 
@@ -413,6 +413,46 @@ public class EM5600Data {
 		assert energyUnit >= 0 && energyUnit <= 6;
 		this.energyUnit = energyUnit;
 		this.energyFactor = (int) Math.pow(10, energyUnit);
+	}
+
+	/**
+	 * Get a string of data values, useful for debugging. The generated string
+	 * will contain a register address followed by two register values per line,
+	 * printed as hexidecimal integers, with a prefix and suffix line. The
+	 * register addresses will be printed as {@bold 1-based} values, to
+	 * match Schneider's documentation. For example:
+	 * 
+	 * <pre>
+	 * EM5600Data{
+	 *      3000: 0x4141, 0x727E
+	 *      3002: 0xFFC0, 0x0000
+	 *      ...
+	 *      3240: 0x0000, 0x0000
+	 * }
+	 * </pre>
+	 * 
+	 * @return debug string
+	 */
+	public String dataDebugString() {
+		final StringBuilder buf = new StringBuilder("EM5600Data{\n");
+		EM5600Data snapshot = new EM5600Data(this);
+		int[] keys = snapshot.inputRegisters;
+		Arrays.sort(keys);
+		boolean odd = true;
+		for ( int k : keys ) {
+			if ( odd ) {
+				buf.append("\t").append(String.format("%5d", k + 1)).append(": ");
+			}
+			buf.append(String.format("0x%04X", snapshot.inputRegisters[k]));
+			if ( odd ) {
+				buf.append(", ");
+			} else {
+				buf.append("\n");
+			}
+			odd = !odd;
+		}
+		buf.append("}");
+		return buf.toString();
 	}
 
 }

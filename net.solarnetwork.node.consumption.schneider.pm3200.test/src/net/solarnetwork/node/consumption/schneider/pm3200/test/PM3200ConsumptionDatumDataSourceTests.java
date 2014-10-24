@@ -26,8 +26,8 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import java.io.IOException;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
@@ -38,7 +38,6 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Test cases for the {@link PM3200ConsumptionDatumDataSource} class.
@@ -46,7 +45,6 @@ import org.springframework.test.context.ContextConfiguration;
  * @author matt
  * @version 1.0
  */
-@ContextConfiguration
 public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 
 	private final int UNIT_ID = 1;
@@ -112,12 +110,12 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 
 		replay(modbus, conn);
 
-		ConsumptionDatum result = service.readCurrentDatum();
-		log.debug("Read ConsumptionDatum: {}", result);
+		GeneralNodeACEnergyDatum result = service.readCurrentDatum();
+		log.debug("Read GeneralNodeACEnergyDatum: {}", result);
 
 		verify(modbus, conn);
 
-		Assert.assertNotNull("ConsumptionDatum", result);
+		Assert.assertNotNull("GeneralNodeACEnergyDatum", result);
 		Assert.assertEquals("Source ID", PM3200ConsumptionDatumDataSource.MAIN_SOURCE_ID,
 				result.getSourceId());
 		Assert.assertEquals("Watts", Integer.valueOf(120), result.getWatts());
