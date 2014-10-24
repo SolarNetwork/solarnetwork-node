@@ -52,7 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * RXTX implentation of {@link SerialConnection}.
+ * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
  * @version 1.0
