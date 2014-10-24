@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.upload;
@@ -41,32 +39,32 @@ import org.slf4j.LoggerFactory;
  * Mock implementation of {@link UploadService}.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public class MockUploadService implements UploadService, BulkUploadService {
 
 	private final AtomicLong TRACKER_ID = new AtomicLong(0);
 
 	private final Logger log = LoggerFactory.getLogger(MockUploadService.class);
-	
+
 	@Override
 	public String getKey() {
 		return "MockUploadService";
 	}
 
 	@Override
-	public Long uploadDatum(Datum data) {
+	public String uploadDatum(Datum data) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("MOCK: uploading datum [" +data + ']');
+			log.debug("MOCK: uploading datum [" + data + ']');
 		}
-		return TRACKER_ID.incrementAndGet();
+		return String.valueOf(TRACKER_ID.incrementAndGet());
 	}
 
 	@Override
 	public List<BulkUploadResult> uploadBulkDatum(Collection<Datum> data) {
 		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(data.size());
 		for ( Datum d : data ) {
-			results.add(new BulkUploadResult(d, TRACKER_ID.incrementAndGet()));
+			results.add(new BulkUploadResult(d, String.valueOf(TRACKER_ID.incrementAndGet())));
 		}
 		return results;
 	}
