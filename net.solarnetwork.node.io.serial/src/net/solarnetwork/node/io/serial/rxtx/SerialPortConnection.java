@@ -61,10 +61,11 @@ import org.slf4j.LoggerFactory;
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
 	/** A class-level logger. */
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private static final Logger log = LoggerFactory.getLogger(SerialPortConnection.class);
 
 	/** A class-level logger with the suffix SERIAL_EVENT. */
-	private final Logger eventLog = LoggerFactory.getLogger(getClass().getName() + ".SERIAL_EVENT");
+	private static final Logger eventLog = LoggerFactory.getLogger(SerialPortConnection.class.getName()
+			+ ".SERIAL_EVENT");
 
 	private final SerialPortBeanParameters serialParams;
 	private final ExecutorService executor;
@@ -204,81 +205,32 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	private boolean readMarkedMessage(final InputStream in, final ByteArrayOutputStream sink,
 			final byte[] startMarker, final byte[] endMarker) throws IOException {
-		int sinkSize = sink.size();
-		boolean append = sinkSize > 0;
-		int buf = 0;
+		boolean lookingForEndMarker = (sink.size() > startMarker.length);
+		int max = (lookingForEndMarker ? endMarker.length : startMarker.length);
+		byte[] buf = new byte[(max > 64 ? max : 64)];
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.trace("Sink contains {} bytes: {}", sinkSize, asciiDebugValue(sink.toByteArray()));
+			eventLog.trace("Sink contains {} bytes: {}", sink.size(),
+					asciiDebugValue(sink.toByteArray()));
 		}
 		int len = -1;
-		while ( (buf = in.read()) != -1 ) {
-			sink.write(buf);
-			sinkSize += len;
-
-			if ( append ) {
-				// look for end marker, starting where we last appended
-				if ( findEndMarkerBytes(sink, len, endMarker) ) {
-					if ( eventLog.isDebugEnabled() ) {
-						eventLog.debug("Found desired end marker {}", asciiDebugValue(endMarker));
-					}
-					return true;
-				}
-				eventLog.debug("Looking for end marker {}", asciiDebugValue(endMarker));
-				return false;
-			} else {
-				eventLog.trace("Looking for {} start marker {} in buffer {}",
-						new Object[] { startMarker.length, asciiDebugValue(startMarker),
-								asciiDebugValue(sink.toByteArray()) });
+		eventLog.trace("Attempting to read up to {} bytes from serial port", max);
+		while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
+			sink.write(buf, 0, len);
+			int foundMarkerByteCount = findMarkerBytes(sink, len, (lookingForEndMarker ? endMarker
+					: startMarker), lookingForEndMarker);
+			if ( lookingForEndMarker == false && foundMarkerByteCount == startMarker.length ) {
+				lookingForEndMarker = true;
+				// immediately look for end marker, might already be in the buffer
+				foundMarkerByteCount = findMarkerBytes(sink, startMarker.length, endMarker, true);
 			}
-
-			// look for start marker in the buffer
-			int magicIdx = 0;
-			byte[] sinkBuf = sink.toByteArray();
-			boolean found = false;
-			for ( ; magicIdx < (sinkBuf.length - startMarker.length + 1); magicIdx++ ) {
-				found = true;
-				for ( int j = 0; j < startMarker.length; j++ ) {
-					if ( sinkBuf[magicIdx + j] != startMarker[j] ) {
-						found = false;
-						break;
-					}
-				}
-				if ( found ) {
-					break;
-				}
-			}
-
-			if ( found ) {
-				// start marker found!
-				if ( eventLog.isTraceEnabled() ) {
-					eventLog.trace("Found start marker " + asciiDebugValue(startMarker)
-							+ " at buffer index " + magicIdx);
-				}
-
-				int count = Math.min(1, sinkBuf.length - magicIdx);
-				sink.reset();
-				sink.write(sinkBuf, magicIdx, count);
-				sinkSize = count;
-				if ( eventLog.isTraceEnabled() ) {
-					eventLog.trace("Sink contains {} bytes: {}", sinkSize,
-							asciiDebugValue(sink.toByteArray()));
-				}
-				if ( findEndMarkerBytes(sink, len, endMarker) ) {
-					// we got all the data here... we're done
-					return true;
-				}
-				append = true;
-			} else if ( sinkBuf.length > startMarker.length ) {
-				// haven't found the magic yet, and the sink is larger than magic size, so 
-				// trim sink down to just magic size
-				sink.reset();
-				sink.write(sinkBuf, sinkBuf.length - startMarker.length, startMarker.length);
-				sinkSize = startMarker.length;
+			if ( lookingForEndMarker && foundMarkerByteCount == endMarker.length ) {
+				return true;
 			}
 		}
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.debug("Looking for marker {}, buffer: {}", (append ? asciiDebugValue(endMarker)
-					: asciiDebugValue(startMarker)), asciiDebugValue(sink.toByteArray()));
+			eventLog.debug("Looking for marker {}, buffer: {}",
+					(lookingForEndMarker ? asciiDebugValue(endMarker) : asciiDebugValue(startMarker)),
+					asciiDebugValue(sink.toByteArray()));
 		}
 		return false;
 	}
@@ -329,7 +281,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	@Override
 	public void serialEvent(SerialPortEvent event) {
-		if ( eventLog.isTraceEnabled() ) {
+		if ( eventLog.isTraceEnabled() && event.getEventType() != SerialPortEvent.DATA_AVAILABLE ) {
 			eventLog.trace("SerialPortEvent {}; listening {}; collecting {}",
 					new Object[] { event.getEventType(), listening, collecting });
 		}
@@ -449,37 +401,60 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		}
 	}
 
-	private boolean findEndMarkerBytes(final ByteArrayOutputStream sink, final int appendedLength,
-			final byte[] endMarker) {
-		byte[] sinkBuf = sink.toByteArray();
-		int eofIdx = Math.max(0, sinkBuf.length - appendedLength - endMarker.length);
-		boolean foundEOF = false;
-		for ( ; eofIdx < (sinkBuf.length - endMarker.length); eofIdx++ ) {
-			foundEOF = true;
-			for ( int j = 0; j < endMarker.length; j++ ) {
-				if ( sinkBuf[eofIdx + j] != endMarker[j] ) {
-					foundEOF = false;
+	private int findMarkerBytes(final ByteArrayOutputStream sink, final int appendedLength,
+			final byte[] marker, final boolean end) {
+		final byte[] sinkBuf = sink.toByteArray();
+		final int sinkBufLength = sinkBuf.length;
+		int markerIdx = Math.max(0, sinkBufLength - appendedLength - marker.length);
+		boolean foundMarker = false;
+		int j = 0;
+
+		// TODO: remove this
+		final String bufString = asciiDebugValue(sinkBuf);
+		int idx = bufString.indexOf("</msg>");
+		if ( idx > 0 ) {
+			log.debug("Break here");
+		}
+
+		eventLog.trace("Looking for {} marker bytes {} in buffer {}", new Object[] { marker.length,
+				asciiDebugValue(marker), asciiDebugValue(sinkBuf) });
+		for ( ; markerIdx < sinkBufLength; markerIdx++ ) {
+			foundMarker = true;
+			for ( j = 0; j < marker.length && (j + markerIdx) < sinkBufLength; j++ ) {
+				if ( sinkBuf[markerIdx + j] != marker[j] ) {
+					foundMarker = false;
 					break;
 				}
 			}
-			if ( foundEOF ) {
+			if ( foundMarker ) {
 				break;
 			}
 		}
-		if ( foundEOF ) {
+		// we may have only found a partial match at the end of the buffer, so test j here
+		if ( foundMarker && j == marker.length ) {
 			if ( eventLog.isDebugEnabled() ) {
-				eventLog.debug("Found desired {} end marker bytes at index {}",
-						asciiDebugValue(endMarker), eofIdx);
+				eventLog.debug("Found desired {} marker bytes at index {}", asciiDebugValue(marker),
+						markerIdx);
 			}
 			sink.reset();
-			sink.write(sinkBuf, 0, eofIdx + endMarker.length);
-			if ( eventLog.isDebugEnabled() ) {
-				eventLog.debug("Buffer message at end marker: {}", asciiDebugValue(sink.toByteArray()));
+			if ( end ) {
+				sink.write(sinkBuf, 0, markerIdx + marker.length);
+			} else {
+				sink.write(sinkBuf, markerIdx, sinkBufLength - markerIdx);
 			}
-			return true;
+			if ( eventLog.isDebugEnabled() ) {
+				eventLog.debug("Buffer message at marker: {}", asciiDebugValue(sink.toByteArray()));
+			}
+			return marker.length;
+		} else if ( !end ) {
+			// truncate sink to any partial match
+			sink.reset();
+			if ( j > 0 ) {
+				sink.write(sinkBuf, markerIdx, j);
+			}
 		}
-		eventLog.debug("Looking for end marker bytes {}", asciiDebugValue(endMarker));
-		return false;
+		//eventLog.debug("Looking for {} marker bytes {}", marker.length - j, asciiDebugValue(marker));
+		return j;
 	}
 
 	/**
