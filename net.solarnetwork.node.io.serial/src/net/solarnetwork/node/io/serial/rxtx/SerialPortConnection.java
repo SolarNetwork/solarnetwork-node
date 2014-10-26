@@ -405,13 +405,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		boolean foundMarker = false;
 		int j = 0;
 
-		// TODO: remove this
-		final String bufString = asciiDebugValue(sink.toArray());
-		int idx = bufString.indexOf("</msg>");
-		if ( idx > 0 ) {
-			log.debug("Break here");
-		}
-
 		eventLog.trace("Looking for {} marker bytes {} in buffer {}", new Object[] { marker.length,
 				asciiDebugValue(marker), asciiDebugValue(sink.toArray()) });
 		for ( ; markerIdx < sinkBufLength; markerIdx++ ) {
