@@ -102,7 +102,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		CommPortIdentifier portId = getCommPortIdentifier(serialParams.getSerialPort());
 		try {
 			serialPort = (SerialPort) portId.open(serialParams.getCommPortAppName(), 2000);
-			setupSerialPortParameters(this);
+			setupSerialPortParameters(serialPort, this);
 		} catch ( PortInUseException e ) {
 			throw new IOException("Serial port " + serialParams.getSerialPort() + " in use", e);
 		} catch ( TooManyListenersException e ) {
@@ -232,7 +232,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		if ( !isOpen() ) {
 			open();
 		}
-		in = serialPort.getInputStream();
+		in = getSerialPort().getInputStream();
 		return in;
 	}
 
@@ -310,11 +310,13 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	 * port.
 	 * </p>
 	 * 
+	 * @param serialPort
+	 *        the serial port to setup
 	 * @param listener
 	 *        a listener to pass to
 	 *        {@link SerialPort#addEventListener(SerialPortEventListener)}
 	 */
-	private void setupSerialPortParameters(SerialPortEventListener listener)
+	private void setupSerialPortParameters(SerialPort serialPort, SerialPortEventListener listener)
 			throws TooManyListenersException {
 		if ( listener != null ) {
 			serialPort.addEventListener(listener);
