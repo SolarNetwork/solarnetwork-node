@@ -29,7 +29,7 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
-import java.io.ByteArrayOutputStream;
+import gnu.trove.list.array.TByteArrayList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -74,7 +74,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	private SerialPort serialPort;
 	private InputStream in;
 	private OutputStream out;
-	private ByteArrayOutputStream buffer;
 	private final boolean listening = false;
 	private final boolean collecting = false;
 
@@ -158,13 +157,13 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	@Override
 	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
 		final InputStream input = getInputStream();
-		final ByteArrayOutputStream sink = new ByteArrayOutputStream(1024);
+		final TByteArrayList sink = new TByteArrayList(1024);
 		boolean result = false;
 		if ( serialParams.getMaxWait() < 1 ) {
 			do {
 				result = readMarkedMessage(input, sink, startMarker, endMarker);
 			} while ( !result );
-			return sink.toByteArray();
+			return sink.toArray();
 		}
 
 		final AtomicBoolean keepGoing = new AtomicBoolean(true);
@@ -200,22 +199,21 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		} finally {
 			keepGoing.set(false);
 		}
-		return (result ? sink.toByteArray() : null);
+		return (result ? sink.toArray() : null);
 	}
 
-	private boolean readMarkedMessage(final InputStream in, final ByteArrayOutputStream sink,
+	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink,
 			final byte[] startMarker, final byte[] endMarker) throws IOException {
 		boolean lookingForEndMarker = (sink.size() > startMarker.length);
 		int max = (lookingForEndMarker ? endMarker.length : startMarker.length);
 		byte[] buf = new byte[(max > 64 ? max : 64)];
 		if ( eventLog.isTraceEnabled() ) {
-			eventLog.trace("Sink contains {} bytes: {}", sink.size(),
-					asciiDebugValue(sink.toByteArray()));
+			eventLog.trace("Sink contains {} bytes: {}", sink.size(), asciiDebugValue(sink.toArray()));
 		}
 		int len = -1;
 		eventLog.trace("Attempting to read up to {} bytes from serial port", max);
 		while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
-			sink.write(buf, 0, len);
+			sink.add(buf, 0, len);
 			int foundMarkerByteCount = findMarkerBytes(sink, len, (lookingForEndMarker ? endMarker
 					: startMarker), lookingForEndMarker);
 			if ( lookingForEndMarker == false && foundMarkerByteCount == startMarker.length ) {
@@ -230,7 +228,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.debug("Looking for marker {}, buffer: {}",
 					(lookingForEndMarker ? asciiDebugValue(endMarker) : asciiDebugValue(startMarker)),
-					asciiDebugValue(sink.toByteArray()));
+					asciiDebugValue(sink.toArray()));
 		}
 		return false;
 	}
@@ -288,10 +286,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	}
 
 	/**
-	 * Set a "timeout" flag, so that all subsequent calls to
-	 * {@link #handleSerialEvent(SerialPortEvent, InputStream, ByteArrayOutputStream, byte[], int)}
-	 * use this as the reference point for calculating the maximum time to wait
-	 * for serial data.
+	 * Set a "timeout" flag, so that all subsequent calls to use as the
+	 * reference point for calculating the maximum time to wait for serial data.
 	 * 
 	 * <p>
 	 * When called, the {@code handleSerialEvent} method will treat the time
@@ -401,27 +397,27 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		}
 	}
 
-	private int findMarkerBytes(final ByteArrayOutputStream sink, final int appendedLength,
+	private int findMarkerBytes(final TByteArrayList sink, final int appendedLength,
 			final byte[] marker, final boolean end) {
-		final byte[] sinkBuf = sink.toByteArray();
-		final int sinkBufLength = sinkBuf.length;
+		//final byte[] sinkBuf = sink.toArray();
+		final int sinkBufLength = sink.size();
 		int markerIdx = Math.max(0, sinkBufLength - appendedLength - marker.length);
 		boolean foundMarker = false;
 		int j = 0;
 
 		// TODO: remove this
-		final String bufString = asciiDebugValue(sinkBuf);
+		final String bufString = asciiDebugValue(sink.toArray());
 		int idx = bufString.indexOf("</msg>");
 		if ( idx > 0 ) {
 			log.debug("Break here");
 		}
 
 		eventLog.trace("Looking for {} marker bytes {} in buffer {}", new Object[] { marker.length,
-				asciiDebugValue(marker), asciiDebugValue(sinkBuf) });
+				asciiDebugValue(marker), asciiDebugValue(sink.toArray()) });
 		for ( ; markerIdx < sinkBufLength; markerIdx++ ) {
 			foundMarker = true;
 			for ( j = 0; j < marker.length && (j + markerIdx) < sinkBufLength; j++ ) {
-				if ( sinkBuf[markerIdx + j] != marker[j] ) {
+				if ( sink.getQuick(markerIdx + j) != marker[j] ) {
 					foundMarker = false;
 					break;
 				}
@@ -436,24 +432,24 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 				eventLog.debug("Found desired {} marker bytes at index {}", asciiDebugValue(marker),
 						markerIdx);
 			}
-			sink.reset();
 			if ( end ) {
-				sink.write(sinkBuf, 0, markerIdx + marker.length);
+				sink.remove(markerIdx + marker.length, sink.size() - markerIdx - marker.length);
 			} else {
-				sink.write(sinkBuf, markerIdx, sinkBufLength - markerIdx);
+				// shift bytes to start at marker
+				sink.remove(0, markerIdx);
 			}
 			if ( eventLog.isDebugEnabled() ) {
-				eventLog.debug("Buffer message at marker: {}", asciiDebugValue(sink.toByteArray()));
+				eventLog.debug("Buffer message at marker: {}", asciiDebugValue(sink.toArray()));
 			}
 			return marker.length;
 		} else if ( !end ) {
 			// truncate sink to any partial match
-			sink.reset();
 			if ( j > 0 ) {
-				sink.write(sinkBuf, markerIdx, j);
+				sink.remove(0, markerIdx);
+			} else {
+				sink.resetQuick();
 			}
 		}
-		//eventLog.debug("Looking for {} marker bytes {}", marker.length - j, asciiDebugValue(marker));
 		return j;
 	}
 
