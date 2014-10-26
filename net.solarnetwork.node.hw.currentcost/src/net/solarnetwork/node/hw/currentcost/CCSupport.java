@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,7 +44,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
@@ -145,6 +143,12 @@ public class CCSupport extends SerialDeviceSupport {
 	/** The default value for the {@code ampSensorIndex} property. */
 	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
 
+	/** The starting message marker, which is the opening XML element. */
+	public static final String MESSAGE_START_MARKER = "<msg>";
+
+	/** The ending message marker, which is the closing XML element. */
+	public static final String MESSAGE_END_MARKER = "</msg>";
+
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -169,24 +173,6 @@ public class CCSupport extends SerialDeviceSupport {
 
 	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
 			4);
-
-	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
-		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
-		try {
-			defaults.setMagic("<msg>".getBytes("US-ASCII"));
-			defaults.setMagicEOF("</msg>".getBytes("US-ASCII"));
-		} catch ( UnsupportedEncodingException e ) {
-			// should never get here
-		}
-		defaults.setBaud(9600);
-		defaults.setBufferSize(2048);
-		defaults.setReceiveThreshold(4);
-		defaults.setReceiveTimeout(9000);
-		defaults.setMaxWait(90000);
-		defaults.setToggleDtr(true);
-		defaults.setToggleRts(false);
-		return defaults;
-	}
 
 	/**
 	 * Add a new cached "known" address value.
