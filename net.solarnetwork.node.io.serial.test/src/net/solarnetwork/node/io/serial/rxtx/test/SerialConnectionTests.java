@@ -119,6 +119,21 @@ public class SerialConnectionTests extends AbstractNodeTest {
 		Assert.assertArrayEquals(msg, result);
 	}
 
+	@Test(expected = LockTimeoutException.class)
+	public void readFixedMarkedMessageWithTimeout() throws IOException {
+		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		final SerialPortBeanParameters serialParams = serialParamsWithTimeout();
+		final SerialPort serialPort = new TestSerialPort() {
+
+			@Override
+			public InputStream getInputStream() throws IOException {
+				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 1000, 4, 0);
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		conn.readMarkedMessage(new byte[] { msg[0] }, 10);
+	}
+
 	@Test
 	public void drainInputBuffer() throws IOException {
 		final byte[] msg = { 1, 2, 3 };
