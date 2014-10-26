@@ -115,7 +115,7 @@ public class TestSerialPortInputStream extends InputStream {
 			readSize = chunkSize;
 		}
 		if ( readSize + off + len > b.length ) {
-			readSize = b.length - off - len;
+			readSize = b.length - off;
 		}
 		int result = stream.read(b, off, readSize);
 		chunkCounter += result;

@@ -31,7 +31,6 @@ import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
 
@@ -43,18 +42,11 @@ import org.springframework.util.FileCopyUtils;
  */
 public class SerialConnectionTests extends AbstractNodeTest {
 
-	private SerialPort serialPort;
-
-	@Before
-	public void setup() {
-
-	}
-
 	@Test
 	public void readMarkedMessageSmallChunks() throws IOException {
 		final byte[] xml = FileCopyUtils
 				.copyToByteArray(getClass().getResourceAsStream("message-1.xml"));
-		serialPort = new TestSerialPort() {
+		final SerialPort serialPort = new TestSerialPort() {
 
 			@Override
 			public InputStream getInputStream() throws IOException {
@@ -72,7 +64,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 	public void readMarkedMessageLargeChunks() throws IOException {
 		final byte[] xml = FileCopyUtils
 				.copyToByteArray(getClass().getResourceAsStream("message-1.xml"));
-		serialPort = new TestSerialPort() {
+		final SerialPort serialPort = new TestSerialPort() {
 
 			@Override
 			public InputStream getInputStream() throws IOException {
@@ -93,7 +85,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 				.copyToByteArray(getClass().getResourceAsStream("message-1.xml"));
 		final byte[] msg = FileCopyUtils
 				.copyToByteArray(getClass().getResourceAsStream("message-2.txt"));
-		serialPort = new TestSerialPort() {
+		final SerialPort serialPort = new TestSerialPort() {
 
 			@Override
 			public InputStream getInputStream() throws IOException {
@@ -110,7 +102,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 	@Test
 	public void readFixedMarkedMessage() throws IOException {
 		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-		serialPort = new TestSerialPort() {
+		final SerialPort serialPort = new TestSerialPort() {
 
 			@Override
 			public InputStream getInputStream() throws IOException {
@@ -122,4 +114,21 @@ public class SerialConnectionTests extends AbstractNodeTest {
 		byte[] result = conn.readMarkedMessage(new byte[] { msg[0] }, 10);
 		Assert.assertArrayEquals(msg, result);
 	}
+
+	@Test
+	public void drainInputBuffer() throws IOException {
+		final byte[] msg = { 1, 2, 3 };
+		final SerialPort serialPort = new TestSerialPort() {
+
+			@Override
+			public InputStream getInputStream() throws IOException {
+				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 0, 4, 0);
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters());
+		byte[] result = conn.drainInputBuffer();
+		Assert.assertArrayEquals(msg, result);
+	}
+
 }
