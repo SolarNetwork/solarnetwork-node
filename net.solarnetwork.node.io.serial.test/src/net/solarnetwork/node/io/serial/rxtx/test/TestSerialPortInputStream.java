@@ -92,6 +92,9 @@ public class TestSerialPortInputStream extends InputStream {
 
 	@Override
 	public int read(byte[] b) throws IOException {
+		if ( bytesRead == 0 ) {
+			snooze(initialDelay);
+		}
 		int readSize = (chunkSize - chunkCounter);
 		if ( readSize < 1 ) {
 			chunkCounter = 0;
@@ -103,11 +106,15 @@ public class TestSerialPortInputStream extends InputStream {
 		}
 		int result = stream.read(b, 0, readSize);
 		chunkCounter += result;
+		bytesRead += result;
 		return result;
 	}
 
 	@Override
 	public int read(byte[] b, int off, int len) throws IOException {
+		if ( bytesRead == 0 ) {
+			snooze(initialDelay);
+		}
 		int readSize = (chunkSize - chunkCounter);
 		if ( readSize < 1 ) {
 			chunkCounter = 0;
@@ -119,6 +126,7 @@ public class TestSerialPortInputStream extends InputStream {
 		}
 		int result = stream.read(b, off, readSize);
 		chunkCounter += result;
+		bytesRead += result;
 		return result;
 	}
 

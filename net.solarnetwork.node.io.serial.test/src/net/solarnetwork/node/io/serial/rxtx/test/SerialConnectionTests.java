@@ -23,9 +23,13 @@
 package net.solarnetwork.node.io.serial.rxtx.test;
 
 import gnu.io.SerialPort;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
@@ -129,6 +133,63 @@ public class SerialConnectionTests extends AbstractNodeTest {
 				new SerialPortBeanParameters());
 		byte[] result = conn.drainInputBuffer();
 		Assert.assertArrayEquals(msg, result);
+	}
+
+	@Test
+	public void writeMessage() throws IOException {
+		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		final ByteArrayOutputStream byos = new ByteArrayOutputStream();
+		final SerialPort serialPort = new TestSerialPort() {
+
+			@Override
+			public OutputStream getOutputStream() throws IOException {
+				return byos;
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters());
+		conn.writeMessage(msg);
+		Assert.assertArrayEquals(msg, byos.toByteArray());
+	}
+
+	private SerialPortBeanParameters serialParamsWithTimeout() {
+		final SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
+		serialParams.setMaxWait(500);
+		return serialParams;
+	}
+
+	@Test
+	public void writeMessageWithTimeout() throws IOException {
+		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		final ByteArrayOutputStream byos = new ByteArrayOutputStream();
+		final SerialPortBeanParameters serialParams = serialParamsWithTimeout();
+		final SerialPort serialPort = new TestSerialPort() {
+
+			@Override
+			public OutputStream getOutputStream() throws IOException {
+				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 0);
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		conn.writeMessage(msg);
+		Assert.assertArrayEquals(msg, byos.toByteArray());
+	}
+
+	@Test(expected = LockTimeoutException.class)
+	public void writeMessageWithTimeoutThrown() throws IOException {
+		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		final ByteArrayOutputStream byos = new ByteArrayOutputStream();
+		final SerialPortBeanParameters serialParams = serialParamsWithTimeout();
+		final SerialPort serialPort = new TestSerialPort() {
+
+			@Override
+			public OutputStream getOutputStream() throws IOException {
+				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 1000);
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		conn.writeMessage(msg);
+		Assert.assertArrayEquals(msg, byos.toByteArray());
 	}
 
 }
