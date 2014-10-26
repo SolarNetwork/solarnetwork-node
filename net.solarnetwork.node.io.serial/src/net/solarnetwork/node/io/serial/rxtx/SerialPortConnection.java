@@ -67,7 +67,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	private final SerialPortBeanParameters serialParams;
 	private final ExecutorService executor;
-	private long timeout = 0;
 
 	private SerialPort serialPort;
 	private InputStream in;
@@ -217,7 +216,9 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 			@Override
 			protected void doCall() throws Exception {
-				getOutputStream().write(message);
+				OutputStream stream = getOutputStream();
+				stream.write(message);
+				stream.flush();
 			}
 		});
 	}
@@ -305,24 +306,23 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	}
 
 	private <T> T performIOTaskWithMaxWait(AbortableCallable<T> task) throws IOException {
-		timeoutStart();
 		T result = null;
 		Future<T> future = executor.submit(task);
-		final long maxMs = Math.max(1, serialParams.getMaxWait() - System.currentTimeMillis() + timeout);
+		final long maxMs = Math.max(1, serialParams.getMaxWait());
 		eventLog.trace("Waiting at most {}ms for data", maxMs);
 		try {
 			result = future.get(maxMs, TimeUnit.MILLISECONDS);
 		} catch ( InterruptedException e ) {
-			log.debug("Interrupted waiting for serial data");
-			throw new IOException("Interrupted waiting for serial data", e);
+			log.debug("Interrupted communicating with serial port", e);
+			throw new IOException("Interrupted communicating with serial port", e);
 		} catch ( ExecutionException e ) {
-			// log stack trace in DEBUG
-			log.debug("Exception thrown reading from serial port", e.getCause());
-			throw new IOException("Exception thrown reading from serial port", e.getCause());
+			log.debug("Exception thrown communicating with serial port", e.getCause());
+			throw new IOException("Exception thrown communicating with serial port", e.getCause());
 		} catch ( TimeoutException e ) {
-			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
+			log.warn("Timeout waiting {}ms for serial data, aborting operation", maxMs);
 			future.cancel(true);
-			throw new IOException("Timeout waiting " + maxMs + "ms for serial data", e.getCause());
+			throw new LockTimeoutException("Timeout waiting " + serialParams.getMaxWait()
+					+ "ms for serial data");
 		} finally {
 			task.abort();
 		}
@@ -390,31 +390,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			eventLog.trace("SerialPortEvent {}; listening {}; collecting {}",
 					new Object[] { event.getEventType(), listening, collecting });
 		}
-	}
-
-	/**
-	 * Set a "timeout" flag, so that all subsequent calls to use as the
-	 * reference point for calculating the maximum time to wait for serial data.
-	 * 
-	 * <p>
-	 * When called, the {@code handleSerialEvent} method will treat the time
-	 * offset from the call to this method as the reference amount of time that
-	 * has passed before the {@code maxWait} value triggers a timeout.
-	 * </p>
-	 */
-	protected void timeoutStart() {
-		if ( serialParams.getMaxWait() > 0 ) {
-			timeout = System.currentTimeMillis();
-		}
-	}
-
-	/**
-	 * Clear the timeout flag, so no timeout used.
-	 * 
-	 * @see #timeoutStart()
-	 */
-	protected void timeoutClear() {
-		timeout = 0;
 	}
 
 	/**
