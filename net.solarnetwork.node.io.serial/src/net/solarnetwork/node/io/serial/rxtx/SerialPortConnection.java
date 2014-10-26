@@ -37,14 +37,12 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.TooManyListenersException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
@@ -147,50 +145,131 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	}
 
 	@Override
-	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
-		final InputStream input = getInputStream();
-		final TByteArrayList sink = new TByteArrayList(1024);
+	public byte[] readMarkedMessage(final byte[] startMarker, final int length) throws IOException {
+		final TByteArrayList sink = new TByteArrayList(startMarker.length + length);
 		boolean result = false;
 		if ( serialParams.getMaxWait() < 1 ) {
 			do {
-				result = readMarkedMessage(input, sink, startMarker, endMarker);
+				result = readMarkedMessage(getInputStream(), sink, startMarker, length);
 			} while ( !result );
 			return sink.toArray();
 		}
+		AbortableCallable<Boolean> task = new AbortableCallable<Boolean>() {
 
-		final AtomicBoolean keepGoing = new AtomicBoolean(true);
-
-		Callable<Boolean> task = new Callable<Boolean>() {
+			private boolean keepGoing = true;
 
 			@Override
 			public Boolean call() throws Exception {
 				boolean found = false;
 				do {
-					found = readMarkedMessage(input, sink, startMarker, endMarker);
-				} while ( !found && keepGoing.get() );
+					found = readMarkedMessage(getInputStream(), sink, startMarker, length);
+				} while ( !found && keepGoing );
 				return found;
 			}
+
+			@Override
+			public void abort() {
+				keepGoing = false;
+			}
+
 		};
-		timeoutStart();
-		Future<Boolean> future = executor.submit(task);
-		final long maxMs = Math.max(1, serialParams.getMaxWait() - System.currentTimeMillis() + timeout);
-		eventLog.trace("Waiting at most {}ms for data", maxMs);
-		try {
-			result = future.get(maxMs, TimeUnit.MILLISECONDS);
-		} catch ( InterruptedException e ) {
-			log.debug("Interrupted waiting for serial data");
-			throw new IOException("Interrupted waiting for serial data", e);
-		} catch ( ExecutionException e ) {
-			// log stack trace in DEBUG
-			log.debug("Exception thrown reading from serial port", e.getCause());
-			throw new IOException("Exception thrown reading from serial port", e.getCause());
-		} catch ( TimeoutException e ) {
-			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
-			future.cancel(true);
-			throw new IOException("Timeout waiting " + maxMs + "ms for serial data", e.getCause());
-		} finally {
-			keepGoing.set(false);
+		result = performIOTaskWithMaxWait(task);
+		return (result ? sink.toArray() : null);
+	}
+
+	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink,
+			final byte[] startMarker, final int length) throws IOException {
+		boolean lookingForEndMarker = (sink.size() > startMarker.length);
+		int max = (lookingForEndMarker ? length - sink.size() : startMarker.length);
+		final byte[] buf = new byte[(max > 64 ? max : 64)];
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Sink contains {} bytes: {}", sink.size(), asciiDebugValue(sink.toArray()));
 		}
+		int len = -1;
+		eventLog.trace("Attempting to read up to {} bytes from serial port", max);
+		while ( max > 0 && (len = in.read(buf, 0, max > buf.length ? buf.length : max)) > 0 ) {
+			sink.add(buf, 0, len);
+			if ( lookingForEndMarker == false ) {
+				int foundMarkerByteCount = findMarkerBytes(sink, len, startMarker, false);
+				if ( foundMarkerByteCount == startMarker.length ) {
+					lookingForEndMarker = true;
+				}
+			}
+			if ( lookingForEndMarker ) {
+				if ( sink.size() == length ) {
+					return true;
+				}
+				max = (length - sink.size());
+				eventLog.debug("Looking for {} more message bytes, buffer: {}", max,
+						asciiDebugValue(sink.toArray()));
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public void writeMessage(final byte[] message) throws IOException {
+		if ( serialParams.getMaxWait() < 1 ) {
+			getOutputStream().write(message);
+			return;
+		}
+		performIOTaskWithMaxWait(new NoResultUnabortableCallable() {
+
+			@Override
+			protected void doCall() throws Exception {
+				getOutputStream().write(message);
+			}
+		});
+	}
+
+	@Override
+	public byte[] drainInputBuffer() throws IOException {
+		InputStream in = getInputStream();
+		int avail = in.available();
+		if ( avail < 1 ) {
+			return new byte[0];
+		}
+		eventLog.trace("Attempting to drain {} bytes from serial port", avail);
+		byte[] result = new byte[avail];
+		int count = 0;
+		while ( count < result.length ) {
+			count += in.read(result, count, result.length - count);
+		}
+		eventLog.trace("Drained {} bytes from serial port", result.length);
+		return result;
+	}
+
+	@Override
+	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
+		final TByteArrayList sink = new TByteArrayList(1024);
+		boolean result = false;
+		if ( serialParams.getMaxWait() < 1 ) {
+			do {
+				result = readMarkedMessage(getInputStream(), sink, startMarker, endMarker);
+			} while ( !result );
+			return sink.toArray();
+		}
+
+		AbortableCallable<Boolean> task = new AbortableCallable<Boolean>() {
+
+			private boolean keepGoing = true;
+
+			@Override
+			public Boolean call() throws Exception {
+				boolean found = false;
+				do {
+					found = readMarkedMessage(getInputStream(), sink, startMarker, endMarker);
+				} while ( !found && keepGoing );
+				return found;
+			}
+
+			@Override
+			public void abort() {
+				keepGoing = false;
+			}
+
+		};
+		result = performIOTaskWithMaxWait(task);
 		return (result ? sink.toArray() : null);
 	}
 
@@ -225,6 +304,31 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		return false;
 	}
 
+	private <T> T performIOTaskWithMaxWait(AbortableCallable<T> task) throws IOException {
+		timeoutStart();
+		T result = null;
+		Future<T> future = executor.submit(task);
+		final long maxMs = Math.max(1, serialParams.getMaxWait() - System.currentTimeMillis() + timeout);
+		eventLog.trace("Waiting at most {}ms for data", maxMs);
+		try {
+			result = future.get(maxMs, TimeUnit.MILLISECONDS);
+		} catch ( InterruptedException e ) {
+			log.debug("Interrupted waiting for serial data");
+			throw new IOException("Interrupted waiting for serial data", e);
+		} catch ( ExecutionException e ) {
+			// log stack trace in DEBUG
+			log.debug("Exception thrown reading from serial port", e.getCause());
+			throw new IOException("Exception thrown reading from serial port", e.getCause());
+		} catch ( TimeoutException e ) {
+			log.warn("Timeout waiting {}ms for serial data, aborting read", maxMs);
+			future.cancel(true);
+			throw new IOException("Timeout waiting " + maxMs + "ms for serial data", e.getCause());
+		} finally {
+			task.abort();
+		}
+		return result;
+	}
+
 	private InputStream getInputStream() throws IOException {
 		if ( in != null ) {
 			return in;
@@ -234,6 +338,17 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		}
 		in = getSerialPort().getInputStream();
 		return in;
+	}
+
+	private OutputStream getOutputStream() throws IOException {
+		if ( out != null ) {
+			return out;
+		}
+		if ( !isOpen() ) {
+			open();
+		}
+		out = getSerialPort().getOutputStream();
+		return out;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -438,28 +553,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			}
 		}
 		return j;
-	}
-
-	/**
-	 * Read from the InputStream until it is empty.
-	 * 
-	 * @param in
-	 */
-	private void drainInputStream(InputStream in) {
-		byte[] buf = new byte[1024];
-		int len = -1;
-		int total = 0;
-		try {
-			final int max = Math.min(in.available(), buf.length);
-			eventLog.trace("Attempting to drain {} bytes from serial port", max);
-			while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
-				// keep draining
-				total += len;
-			}
-		} catch ( IOException e ) {
-			// ignore this
-		}
-		eventLog.trace("Drained {} bytes from serial port", total);
 	}
 
 	private String asciiDebugValue(byte[] data) {

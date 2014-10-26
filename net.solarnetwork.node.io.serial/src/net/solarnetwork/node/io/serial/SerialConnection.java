@@ -53,10 +53,45 @@ public interface SerialConnection {
 	 *        the starting byte sequence
 	 * @param endMarker
 	 *        the ending byte sequence
-	 * @return the message bytes
+	 * @return the message bytes, <b>including</b> {@code startMarker} and
+	 *         {@code endMarker}
 	 * @throws IOException
 	 *         if the connection fails
 	 */
 	byte[] readMarkedMessage(byte[] startMarker, byte[] endMarker) throws IOException;
+
+	/**
+	 * Read a message that is marked by some starting "magic" bytes and has a
+	 * fixed length;
+	 * 
+	 * @param startMarker
+	 *        the starting byte sequence
+	 * @param length
+	 *        the length of the message to read, <b>including</b> the length of
+	 *        {@code startMarker}
+	 * @return the message bytes, <b>including</b> {@code startMarker}
+	 * @throws IOException
+	 *         if the connection fails
+	 */
+	byte[] readMarkedMessage(byte[] startMarker, int length) throws IOException;
+
+	/**
+	 * Write a message.
+	 * 
+	 * @param message
+	 *        the message to write
+	 * @throws IOException
+	 *         if the connection fails
+	 */
+	void writeMessage(byte[] message) throws IOException;
+
+	/**
+	 * Drain the input buffer until it is empty.
+	 * 
+	 * @throws IOException
+	 *         if the connection fails
+	 * @return the drained bytes (never <em>null</em>)
+	 */
+	byte[] drainInputBuffer() throws IOException;
 
 }

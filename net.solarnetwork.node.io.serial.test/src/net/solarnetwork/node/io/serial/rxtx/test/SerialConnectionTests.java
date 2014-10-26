@@ -107,4 +107,19 @@ public class SerialConnectionTests extends AbstractNodeTest {
 		Assert.assertArrayEquals(xml, result);
 	}
 
+	@Test
+	public void readFixedMarkedMessage() throws IOException {
+		final byte[] msg = { 'T', 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+		serialPort = new TestSerialPort() {
+
+			@Override
+			public InputStream getInputStream() throws IOException {
+				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 0, 4, 0);
+			}
+		};
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters());
+		byte[] result = conn.readMarkedMessage(new byte[] { msg[0] }, 10);
+		Assert.assertArrayEquals(msg, result);
+	}
 }
