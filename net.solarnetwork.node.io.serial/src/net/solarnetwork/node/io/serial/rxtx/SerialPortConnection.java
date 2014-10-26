@@ -142,14 +142,6 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			serialPort.close();
 			log.trace("Serial port closed");
 		} finally {
-			if ( executor != null ) {
-				try {
-					// FIXME: this means it can't be started up again... should that be allowed?
-					executor.shutdownNow();
-				} catch ( Exception e ) {
-					log.debug("Exception shutting down Executor", e);
-				}
-			}
 			serialPort = null;
 		}
 	}
