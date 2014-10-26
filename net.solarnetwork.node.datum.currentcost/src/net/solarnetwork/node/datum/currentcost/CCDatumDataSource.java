@@ -42,6 +42,7 @@ import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -90,8 +91,9 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 
 				@Override
 				public CCDatum doWithConnection(SerialConnection conn) throws IOException {
-					byte[] data = conn.readMarkedMessage("<msg>".getBytes("US-ASCII"),
-							"</msg>".getBytes("US-ASCII"));
+					byte[] data = conn.readMarkedMessage(
+							MESSAGE_START_MARKER.getBytes(SerialUtils.ASCII_CHARSET),
+							MESSAGE_END_MARKER.getBytes(SerialUtils.ASCII_CHARSET));
 					if ( data != null && data.length > 0 ) {
 						return messageParser.parseMessage(data);
 					}
