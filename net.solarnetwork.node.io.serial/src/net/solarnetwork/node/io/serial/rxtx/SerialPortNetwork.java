@@ -157,7 +157,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 			return;
 		}
 		log.debug("Acquiring lock on serial port {}; waiting at most {} {}",
-				serialParams.getSerialPort(), timeout, unit);
+				new Object[] { serialParams.getSerialPort(), timeout, unit });
 		try {
 			if ( lock.tryLock(timeout, unit) ) {
 				log.debug("Acquired port {} lock", serialParams.getSerialPort());
