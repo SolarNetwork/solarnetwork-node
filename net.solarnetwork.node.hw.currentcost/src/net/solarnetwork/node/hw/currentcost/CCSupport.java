@@ -46,7 +46,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
@@ -54,7 +53,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 /**
- * Support class for reading CurrentCost watt meter data.
+ * Support class for reading CurrentCost watt meter data from a serial
+ * connection.
  * 
  * <p>
  * The configurable properties of this class are:
@@ -154,7 +154,6 @@ public class CCSupport extends SerialDeviceSupport {
 	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
 
 	private DynamicServiceTracker<SerialNetwork> serialNetwork;
-	private DataCollectorSerialPortBeanParameters serialParams = getDefaultSerialParams();
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -372,11 +371,6 @@ public class CCSupport extends SerialDeviceSupport {
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
 				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
 
-		// we don't need to provide magic byte configuration: we know what that is, so don't
-		// bother exposing that here
-		List<SettingSpecifier> serialSpecs = SerialPortBeanParameters.getDefaultSettingSpecifiers(
-				getDefaultSerialParams(), "serialParams.");
-		results.addAll(serialSpecs);
 		return results;
 	}
 
@@ -428,14 +422,6 @@ public class CCSupport extends SerialDeviceSupport {
 			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
 		}
 		return false;
-	}
-
-	public DataCollectorSerialPortBeanParameters getSerialParams() {
-		return serialParams;
-	}
-
-	public void setSerialParams(DataCollectorSerialPortBeanParameters serialParams) {
-		this.serialParams = serialParams;
 	}
 
 	public float getVoltage() {
