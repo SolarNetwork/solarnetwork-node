@@ -38,6 +38,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -56,8 +58,12 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.core.io.Resource;
@@ -100,7 +106,7 @@ import org.xml.sax.SAXException;
  * </dl>
  * 
  * @author matt.magoffin
- * @version $Revision$ $Date$
+ * @version 1.2
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
 
@@ -111,6 +117,11 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	private DocumentBuilderFactory docBuilderFactory = null;
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
+	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumMetadataService> datumMetadataService;
+
+	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	/**
 	 * Initialize this class after properties are set.
@@ -764,6 +775,47 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		return extractTrackingId(is, trackingIdXPath, xpath);
 	}
 
+	/**
+	 * Add source metadata using the configured {@link DatumMetadataService} (if
+	 * available). The metadata will be cached so that subseqent calls to this
+	 * method with the same metadata value will not try to re-save the unchanged
+	 * value. This method will catch all exceptions and silently discard them.
+	 * 
+	 * @param sourceId
+	 *        the source ID to add metadata to
+	 * @param meta
+	 *        the metadata to add
+	 * @param returns
+	 *        <em>true</em> if the metadata was saved successfully, or does not
+	 *        need to be updated
+	 */
+	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		if ( sourceId == null ) {
+			return false;
+		}
+		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		if ( cached != null && meta.equals(cached) ) {
+			// we've already posted this metadata... don't bother doing it again
+			log.debug("Source {} metadata already added, not posting again", sourceId);
+			return true;
+		}
+		DatumMetadataService service = null;
+		if ( datumMetadataService != null ) {
+			service = datumMetadataService.service();
+		}
+		if ( service == null ) {
+			return false;
+		}
+		try {
+			service.addSourceMetadata(sourceId, meta);
+			sourceMetadataCache.put(sourceId, meta);
+			return true;
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
+		return false;
+	}
+
 	public NamespaceContext getNsContext() {
 		return nsContext;
 	}
@@ -794,6 +846,22 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
+
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }

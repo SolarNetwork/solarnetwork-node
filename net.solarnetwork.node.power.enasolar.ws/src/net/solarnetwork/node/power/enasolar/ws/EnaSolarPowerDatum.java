@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
-import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.1
  */
-public class EnaSolarPowerDatum extends PowerDatum {
+public class EnaSolarPowerDatum extends GeneralNodeEnergyDatum {
 
 	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
 
@@ -77,7 +77,8 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	}
 
 	/**
-	 * Set the AC output power, as a kW reading.
+	 * Set the AC output power, as a kW reading. This is an alias for
+	 * {@link #setOutputPower(Float)}.
 	 * 
 	 * <p>
 	 * This actually converts the value into {@code acOutputAmps} and expects
@@ -89,16 +90,11 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	 *        the kW power reading
 	 */
 	public void setAcPower(Float power) {
-		Float acOutputAmps = null;
-		if ( power != null && getAcOutputVolts() != null ) {
-			float volts = getAcOutputVolts().floatValue();
-			acOutputAmps = (power.floatValue() * 1000F) / volts;
-		}
-		setAcOutputAmps(acOutputAmps);
+		setOutputPower(power);
 	}
 
 	/**
-	 * Get the watt output power, in kW. This will set the {@code watts} value.
+	 * Set the watt output power, in kW. This will set the {@code watts} value.
 	 * 
 	 * @param power
 	 *        the output power, in kW

@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.Resource;
-import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
 import net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import org.junit.Before;
@@ -52,10 +52,7 @@ public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest
 	@Before
 	public void setup() {
 		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
-		deviceInfoMap.put("pvVolts", "//data[@key='pvVolts']/@value");
-		deviceInfoMap.put("pvPower", "//data[@key='pvPower']/@value");
-		deviceInfoMap.put("acOutputVolts", "//data[@key='acOutputVolts']/@value");
-		deviceInfoMap.put("acPower", "//data[@key='acPower']/@value");
+		deviceInfoMap.put("outputPower", "//data[@key='acPower']/@value");
 		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
 		dataSource.setXpathMap(deviceInfoMap);
 
@@ -67,18 +64,16 @@ public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest
 
 	@Test
 	public void parseDeviceInfoDatum() {
-		PowerDatum datum = dataSource.readCurrentDatum();
+		GeneralNodeEnergyDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
 		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
-		assertNotNull(datum.getAcOutputVolts());
-		assertEquals(241.1, datum.getAcOutputVolts().doubleValue(), 0.001);
-		assertNotNull(datum.getAcOutputAmps());
-		assertEquals(2.604, datum.getAcOutputAmps().doubleValue(), 0.001);
+		assertNotNull(datum.getWatts());
+		assertEquals(Integer.valueOf(628), datum.getWatts());
 	}
 
 	@Test
 	public void parseMetersDataDatum() {
-		PowerDatum datum = dataSourceList.readCurrentDatum();
+		GeneralNodeEnergyDatum datum = dataSourceList.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
 		assertEquals(Integer.valueOf(214), datum.getWatts());
 		assertEquals(Long.valueOf(7629660), datum.getWattHourReading());
