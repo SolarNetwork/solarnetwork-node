@@ -97,8 +97,10 @@ public abstract class SerialDeviceSupport {
 	 * @param conn
 	 *        the connection to use
 	 * @return a map with general device information populated
+	 * @throws IOException
+	 *         if any IO error occurrs
 	 */
-	protected abstract Map<String, Object> readDeviceInfo(SerialConnection conn);
+	protected abstract Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException;
 
 	/**
 	 * Return an informational message composed of general device info. This
