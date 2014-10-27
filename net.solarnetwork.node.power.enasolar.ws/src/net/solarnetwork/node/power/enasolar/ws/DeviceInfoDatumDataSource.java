@@ -35,7 +35,7 @@ import javax.xml.xpath.XPathExpression;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -119,7 +119,7 @@ import org.springframework.context.MessageSource;
  * @version 1.2
  */
 public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
-		DatumDataSource<GeneralNodeEnergyDatum>, SettingSpecifierProvider {
+		DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
 	/** The {@link SettingDao} key for a Long Wh last-known-value value. */
 	public static final String SETTING_LAST_KNOWN_VALUE = "DeviceInfoDatumDataSource:globalWh";
@@ -162,17 +162,19 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	private static Map<String, String> defaultXpathMap() {
 		Map<String, String> result = new LinkedHashMap<String, String>(10);
 		result.put("outputPower", "//OutputPower");
+		result.put("voltage", "//OutputVoltage");
+		result.put("DCVoltage", "//InputVoltage");
 		result.put("energyLifetime", "//EnergyLifetime");
 		return result;
 	}
 
 	@Override
-	public Class<? extends GeneralNodeEnergyDatum> getDatumType() {
+	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
 		return EnaSolarPowerDatum.class;
 	}
 
 	@Override
-	public GeneralNodeEnergyDatum readCurrentDatum() {
+	public GeneralNodePVEnergyDatum readCurrentDatum() {
 		EnaSolarPowerDatum datum = new EnaSolarPowerDatum();
 		datum.setSourceId(sourceId);
 		for ( String url : urls ) {
