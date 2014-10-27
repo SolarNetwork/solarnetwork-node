@@ -36,6 +36,7 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -182,6 +183,7 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 		}
 		datum = validateDatum(datum);
 		addEnergyDatumSourceMetadata(datum);
+		postDatumCapturedEvent(datum, PVEnergyDatum.class);
 		return datum;
 	}
 
