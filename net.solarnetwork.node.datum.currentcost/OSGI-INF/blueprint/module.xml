@@ -14,38 +14,34 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
-	<reference id="datumMetadataService" interface="net.solarnetwork.node.DatumMetadataService"/>
-
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	</bean>
+	
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.currentcost.CCDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.currentcost.CCSupport</value>
+				<value>net.solarnetwork.node.io.serial.SerialDeviceSupport</value>
 			</list>
 		</property>
-		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
-				<property name="prefix" value="serialParams."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames">
-							<list>
-								<value>net.solarnetwork.node.support.SerialPortBeanParameters</value>
-								<value>net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters</value>
-							</list>
-						</property>
-					</bean>
-				</property>
-			</bean>
-		</property>
 	</bean>
-
+	
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
-	</bean>
-		
-	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	</bean>	
+
+	<bean id="settingsFactory" 
+		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="CurrentCost watt meter"/>
 		<property name="factoryUID" value="net.solarnetwork.node.datum.currentcost"/>
 		<property name="messageSource" ref="messageSource"/>
@@ -79,28 +75,23 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao">
-								<bean class="net.solarnetwork.util.DynamicServiceTracker">
-									<property name="bundleContext" ref="bundleContext"/>
-									<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-									<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
-								</bean>	
-							</entry>
+							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="dataCollectorFactory">
+									<property name="serialNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+											<property name="serviceClassName" 
+												value="net.solarnetwork.node.io.serial.SerialNetwork"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="/dev/ttyUSB0"/>
+													<entry key="UID" value="Serial Port"/>
 												</map>
 											</property>
 										</bean>	
 									</property>
-									<property name="datumMetadataService" ref="datumMetadataService"/>
 								</bean>
 							</entry>
 						</map>

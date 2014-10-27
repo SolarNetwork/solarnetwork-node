@@ -13,18 +13,21 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
-	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
-		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-
-	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="locationServiceRef"/>
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
-	
+
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
+		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -33,14 +36,21 @@
 		</property>
 	</bean>
 	
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate" ref="messageSource"/>
+	</bean>	
+
+	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="EnaSolar web service power generation"/>
 		<property name="factoryUID" value="net.solarnetwork.node.power.enasolar"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 		
-	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
 	
 	<!-- Published Services -->
 	
@@ -48,22 +58,40 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.power.enasolar" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
-			<beans:value>net.solarnetwork.node.MultiDatumDataSource</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.power.enasolar"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
-			<property name="delegate">
-				<bean init-method="init" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource">
-					<property name="messageSource" ref="messageSource"/>
-					<property name="settingDao" ref="settingDao"/>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+					<property name="name" value="enaSolarDatumLoggerTrigger"/>
+					<property name="jobName" value="enaSolarDatumLoggerJob"/>
+					<property name="cronExpression" value="15 * * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
-			<property name="locationService" ref="locationService"/>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+					<property name="name" value="enaSolarDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumDataSource">
+								<bean init-method="init" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource">
+									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
+									<property name="messageSource" ref="jobMessageSource"/>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 	

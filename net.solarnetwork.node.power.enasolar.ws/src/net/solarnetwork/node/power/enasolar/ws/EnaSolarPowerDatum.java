@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
-import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,16 +32,9 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.1
  */
-public class EnaSolarPowerDatum extends PowerDatum {
+public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 
 	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
-
-	/**
-	 * Default constructor.
-	 */
-	public EnaSolarPowerDatum() {
-		super();
-	}
 
 	/**
 	 * Set the deca-watt hour total reading, as a hexidecimal string.
@@ -63,42 +56,52 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	}
 
 	/**
-	 * Set the PV Power, as a kW reading.
+	 * Set the {@code wattHourReading} as an offset in kWh.
+	 * 
+	 * <p>
+	 * This method will multiply the value by 1000, set that on
+	 * {@code wattHourReading}.
+	 * </p>
+	 * 
+	 * @param kWattHoursToday
+	 *        the kWh reading to set
+	 */
+	public void setKWattHoursToday(Double kWattHoursToday) {
+		if ( kWattHoursToday != null ) {
+			setWattHourReading(Math.round(kWattHoursToday.doubleValue() * 1000));
+		} else {
+			setWattHourReading(null);
+		}
+	}
+
+	/**
+	 * Set the PV power, as a kW reading. This calls {@link #setWatts(Integer)}
+	 * which should be the AC output power but this is here for backwards
+	 * compatibility.
 	 * 
 	 * @param power
 	 *        the kW power reading
+	 * @deprecated use {@link #setOutputPower(Float)}
 	 */
+	@Deprecated
 	public void setPvPower(Float power) {
-		Integer watts = null;
-		if ( power != null ) {
-			watts = Math.round(power.floatValue() * 1000F);
-		}
+		Integer watts = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
 		setWatts(watts);
 	}
 
 	/**
-	 * Set the AC output power, as a kW reading.
-	 * 
-	 * <p>
-	 * This actually converts the value into {@code acOutputAmps} and expects
-	 * the {@link #getAcOutputVolts()} value to have been set before calling
-	 * this method.
-	 * </p>
+	 * Set the AC output power, as a kW reading. This is an alias for
+	 * {@link #setOutputPower(Float)}.
 	 * 
 	 * @param power
 	 *        the kW power reading
 	 */
 	public void setAcPower(Float power) {
-		Float acOutputAmps = null;
-		if ( power != null && getAcOutputVolts() != null ) {
-			float volts = getAcOutputVolts().floatValue();
-			acOutputAmps = (power.floatValue() * 1000F) / volts;
-		}
-		setAcOutputAmps(acOutputAmps);
+		setOutputPower(power);
 	}
 
 	/**
-	 * Get the watt output power, in kW. This will set the {@code watts} value.
+	 * Set the AC output power, in kW. This will set the {@code watts} value.
 	 * 
 	 * @param power
 	 *        the output power, in kW
@@ -106,6 +109,58 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	public void setOutputPower(Float power) {
 		Integer w = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
 		setWatts(w);
+	}
+
+	/**
+	 * Get the AC output power, in kW.
+	 * 
+	 * @return the AC output power, in kW
+	 */
+	public Float getOutputPower() {
+		Integer w = getWatts();
+		return (w == null ? null : w.floatValue() / 1000F);
+	}
+
+	/**
+	 * Set the DC input power, in kW. This will set the {@code DCPower} value.
+	 * 
+	 * @param power
+	 *        the input power, in kW
+	 */
+	public void setInputPower(Float power) {
+		Integer w = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
+		setDCPower(w);
+	}
+
+	/**
+	 * Get the DC input power, in kW.
+	 * 
+	 * @return the DC input power, in kW
+	 */
+	public Float getInputPower() {
+		Integer w = getDCPower();
+		return (w == null ? null : w.floatValue() / 1000F);
+	}
+
+	/**
+	 * Set the DC input voltage, in volts. This is an alias for
+	 * {@code #setDCVoltage(Float)}.
+	 * 
+	 * @param power
+	 *        the input voltage, in volts
+	 */
+	public void setInputVoltage(Float value) {
+		setDCVoltage(value);
+	}
+
+	/**
+	 * Get the DC input voltage, in volts. This is an alias for
+	 * {@link #getDCVoltage()}.
+	 * 
+	 * @return the DC input voltage, in volts
+	 */
+	public Float getInputVoltage() {
+		return getDCVoltage();
 	}
 
 	/**
@@ -119,6 +174,26 @@ public class EnaSolarPowerDatum extends PowerDatum {
 	 */
 	public void setEnergyLifetime(String energyLifetime) {
 		setDecaWattHoursTotal(energyLifetime);
+	}
+
+	/**
+	 * Set the AC output voltage, in volts. This is an alias for
+	 * {@link #setVoltage(Float)}.
+	 * 
+	 * @param power
+	 *        the output voltage, in volts
+	 */
+	public void setOutputVoltage(Float power) {
+		setVoltage(power);
+	}
+
+	/**
+	 * Get the AC output voltage, in volts.
+	 * 
+	 * @return the AC output voltage
+	 */
+	public Float getOutputVoltage() {
+		return getVoltage();
 	}
 
 }

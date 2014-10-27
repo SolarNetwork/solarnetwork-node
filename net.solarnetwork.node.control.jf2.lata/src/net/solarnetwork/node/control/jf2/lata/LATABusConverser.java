@@ -24,20 +24,25 @@
 
 package net.solarnetwork.node.control.jf2.lata;
 
+import java.io.IOException;
+import net.solarnetwork.node.control.jf2.lata.command.Command;
+import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.SerialUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.control.jf2.lata.command.Command;
-import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
-
 /**
- * Extension of {@link Converser} that initializes the LATA Bus prior to 
- * sending commands.
+ * Extension of {@link Converser} that initializes the LATA Bus prior to sending
+ * commands.
  * 
- * <p>Serial parameters known to work on Linux using <code>/dev/USB</code>:<p>
+ * <p>
+ * Serial parameters known to work on Linux using <code>/dev/USB</code>:
+ * <p>
  * 
- * <pre>baud               4800
+ * <pre>
+ * baud               4800
  * data bits          8
  * stop bits          1
  * parity             0
@@ -47,69 +52,74 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
  * receive framing    -1
  * dtr                -1
  * rts                -1
- * response timeout   60000</pre>
+ * response timeout   60000
+ * </pre>
  * 
  * @author shauryab
  */
-public class LATABusConverser extends Converser {
+public class LATABusConverser implements SerialConnectionAction<String> {
 
 	private static Logger LOG = LoggerFactory.getLogger(LATABusConverser.class);
-	
-	private static final byte[] MAGIC = new byte[] {'T'};
-	private static final int READ_LENGTH = 13; // e.g. 100000BD26464
-	
+
+	private static final byte[] MAGIC = new byte[] { 'T' };
+	private static final int READ_LENGTH = 14; // e.g. T100000BD26464
+
+	private final CommandInterface command;
+
 	/**
 	 * Construct with a specific command.
 	 * 
-	 * @param command the command
+	 * @param command
+	 *        the command
 	 */
 	public LATABusConverser(CommandInterface command) {
-		super(command);
+		super();
+		this.command = command;
 	}
-	
+
 	@Override
-	public String conductConversation(ConversationalDataCollector dataCollector) {
+	public String doWithConnection(SerialConnection conn) throws IOException {
+
 		// sets the Reset Mode in the LATA Bus
-		speakAndWait(dataCollector, Command.StartResetMode);
-		
+		speakAndWait(conn, Command.StartResetMode);
+
 		//sets the speed in the LATA Bus
-		speakAndWait(dataCollector, Command.SetSpeed);
-		
+		speakAndWait(conn, Command.SetSpeed);
+
 		//sets the Operational Mode in the LATA Bus
-		speakAndWait(dataCollector, Command.StartOperationalMode);
-		
+		speakAndWait(conn, Command.StartOperationalMode);
+
 		// drain the input buffer... the bus sometimes has stuff waiting around
 		LOG.trace("Drain the input buffer", getCommand());
-		dataCollector.listen();
-		LOG.trace("Drained buffer of {} bytes", dataCollector.getCollectedData().length);
-		
-		// TODO: what was this for, when we call this again immediately below?
-		//speakAndWait(dataCollector, getCommand());
-		
-		if ( getCommand().includesResponse() ) {
-			LOG.trace("Sending command {} ({}) and waiting for response", 
-					getCommand(), getCommand().getData());
-			dataCollector.speakAndCollect(getCommand().getCommandData(), MAGIC, READ_LENGTH);
-			return dataCollector.getCollectedDataAsString();
-		}
+		byte[] data = conn.drainInputBuffer();
+		LOG.trace("Drained buffer of {} bytes", data.length);
 
 		LOG.trace("Sending command {}: {}", getCommand(), getCommand().getData());
-		dataCollector.speak(getCommand().getCommandData());
+		conn.writeMessage(command.getCommandData());
+
+		if ( getCommand().includesResponse() ) {
+			LOG.trace("Waiting for response", getCommand(), getCommand().getData());
+			data = conn.readMarkedMessage(MAGIC, READ_LENGTH);
+			return (data == null ? null : new String(data, SerialUtils.ASCII_CHARSET));
+		}
+
 		return null;
 	}
-	
-	private void speakAndWait(ConversationalDataCollector dataCollector,
-			CommandInterface command) {
+
+	private void speakAndWait(SerialConnection conn, CommandInterface command) throws IOException {
 		LOG.trace("Sending command {}: {}", command, command.getData());
-		//dataCollector.speakAndListen(command.getCommandData());	
-		dataCollector.speak(command.getCommandData());
-		synchronized (this) {
+		conn.writeMessage(command.getCommandData());
+		synchronized ( this ) {
 			try {
 				this.wait(500);
-			} catch (InterruptedException e) {
+			} catch ( InterruptedException e ) {
 				// ignore
 			}
 		}
 	}
-	
+
+	public CommandInterface getCommand() {
+		return command;
+	}
+
 }

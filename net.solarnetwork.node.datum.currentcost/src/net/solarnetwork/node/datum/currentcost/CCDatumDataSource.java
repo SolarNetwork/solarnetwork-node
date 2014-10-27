@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.datum.currentcost;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.AtmosphericDatum;
@@ -41,11 +40,13 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
 
 /**
  * {@link MultiDatumDataSource} implementation for CurrentCost watt monitors,
@@ -65,7 +66,7 @@ import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
 		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -84,31 +85,31 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( !datumSet.isEmpty() ) {
 			return getGeneralNodeACEnergyDatumInstance(datumSet.iterator().next(), getAmpSensorIndex());
 		}
-
-		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory()
-				.service();
-		if ( df == null ) {
-			log.debug("No DataCollectorFactory available");
-			return null;
-		}
-
-		byte[] data = null;
-		DataCollector dc = df.getDataCollectorInstance(getSerialParams());
+		CCDatum sample = null;
 		try {
-			dc.collectData();
-			data = dc.getCollectedData();
-		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
-			}
-		}
+			sample = performAction(new SerialConnectionAction<CCDatum>() {
 
-		if ( data == null || data.length == 0 ) {
-			log.warn("No serial data received, serial communications problem");
+				@Override
+				public CCDatum doWithConnection(SerialConnection conn) throws IOException {
+					byte[] data = conn.readMarkedMessage(
+							MESSAGE_START_MARKER.getBytes(SerialUtils.ASCII_CHARSET),
+							MESSAGE_END_MARKER.getBytes(SerialUtils.ASCII_CHARSET));
+					if ( data != null && data.length > 0 ) {
+						return messageParser.parseMessage(data);
+					}
+					return null;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException("Communication problem reading from serial device "
+					+ serialNetwork(), e);
+		}
+		if ( sample == null ) {
+			log.warn("No serial data received for CurrentCost datum");
 			return null;
 		}
 
-		return getGeneralNodeACEnergyDatumInstance(messageParser.parseMessage(data), getAmpSensorIndex());
+		return getGeneralNodeACEnergyDatumInstance(sample, getAmpSensorIndex());
 	}
 
 	@Override
@@ -118,9 +119,9 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 
 	@Override
 	public Collection<GeneralNodeDatum> readMultipleDatum() {
-		Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter() == null ? 0
-				: getSourceIdFilter().size());
-		List<GeneralNodeDatum> result = new ArrayList<GeneralNodeDatum>(4);
+		final Set<String> sourceIdSet = (new HashSet<String>(getSourceIdFilter() == null ? 0
+				: getSourceIdFilter().size()));
+		final List<GeneralNodeDatum> result = new ArrayList<GeneralNodeDatum>(4);
 		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
 		for ( CCDatum ccDatum : datumSet ) {
 			processSample(result, sourceIdSet, ccDatum);
@@ -128,40 +129,40 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( !needMoreSamplesForSources(sourceIdSet) ) {
 			return result;
 		}
-		DataCollectorFactory<DataCollectorSerialPortBeanParameters> df = getDataCollectorFactory()
-				.service();
-		if ( df == null ) {
-			return Collections.emptyList();
-		}
-
-		long endTime = isCollectAllSourceIds() && getSourceIdFilter() != null
+		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
 				&& getSourceIdFilter().size() > 1 ? System.currentTimeMillis()
-				+ (getCollectAllSourceIdsTimeout() * 1000) : 0;
-		DataCollector dc = null;
+				+ (getCollectAllSourceIdsTimeout() * 1000) : 0);
+
 		try {
-			dc = df.getDataCollectorInstance(getSerialParams());
-			do {
-				dc.collectData();
-				byte[] data = dc.getCollectedData();
-				if ( data == null ) {
-					log.warn("Null serial data received, serial communications problem");
-					return Collections.emptyList();
+			performAction(new SerialConnectionAction<Object>() {
+
+				@Override
+				public Object doWithConnection(SerialConnection conn) throws IOException {
+					do {
+						byte[] data = conn.readMarkedMessage("<msg>".getBytes("US-ASCII"),
+								"</msg>".getBytes("US-ASCII"));
+						if ( data == null ) {
+							log.warn("Null serial data received, serial communications problem");
+							return null;
+						}
+						CCDatum ccDatum = messageParser.parseMessage(data);
+
+						if ( ccDatum == null || ccDatum.getDeviceAddress() == null ) {
+							continue;
+						}
+
+						// add a known address for this reading
+						addKnownAddress(ccDatum);
+
+						processSample(result, sourceIdSet, ccDatum);
+					} while ( System.currentTimeMillis() < endTime
+							&& needMoreSamplesForSources(sourceIdSet) );
+					return null;
 				}
-				CCDatum ccDatum = messageParser.parseMessage(data);
-
-				if ( ccDatum == null || ccDatum.getDeviceAddress() == null ) {
-					continue;
-				}
-
-				// add a known address for this reading
-				addKnownAddress(ccDatum);
-
-				processSample(result, sourceIdSet, ccDatum);
-			} while ( System.currentTimeMillis() < endTime && needMoreSamplesForSources(sourceIdSet) );
-		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
-			}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException("Communication problem reading from serial device "
+					+ serialNetwork(), e);
 		}
 
 		return result;
@@ -228,14 +229,6 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		addSourceMetadata(addr, sourceMeta);
 
 		return result;
-	}
-
-	private void addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		try {
-			getDatumMetadataService().addSourceMetadata(sourceId, meta);
-		} catch ( Exception e ) {
-			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
-		}
 	}
 
 	private GeneralNodeDatum getGeneralNodeDatumTemperatureInstance(CCDatum datum) {

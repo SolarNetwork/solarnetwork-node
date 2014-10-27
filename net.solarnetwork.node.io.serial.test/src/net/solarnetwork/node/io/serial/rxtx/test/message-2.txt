@@ -1,0 +1,44 @@
+  <sensor>0</sensor>
+  <id>00077</id>
+  <type>1</type>
+  <ch1>
+    <watts>00016</watts>
+  </ch1>
+</msg>
+
+
+
+
+
+
+
+
+
+
+
+
+<msg>
+  <src>CC128-v1.51</src>
+  <dsb>00004</dsb>
+  <time>14:14:27</time>
+  <tmpr>24.6</tmpr>
+  <sensor>0</sensor>
+  <id>00077</id>
+  <type>1</type>
+  <ch1>
+    <watts>00016</watts>
+  </ch1>
+</msg>
+
+
+
+
+
+
+
+
+<msg>
+  <src>CC128-v1.51</src>
+  <dsb>00004</dsb>
+  <time>14:14:27</time>
+  <tmpr>24.6</tmpr>

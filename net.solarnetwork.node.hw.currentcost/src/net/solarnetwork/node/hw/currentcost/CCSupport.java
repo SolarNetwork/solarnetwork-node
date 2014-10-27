@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,31 +32,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialDeviceSupport;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DataCollectorSerialPortBeanParameters;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 /**
- * Support class for reading CurrentCost watt meter data.
+ * Support class for reading CurrentCost watt meter data from a serial
+ * connection.
  * 
  * <p>
  * The configurable properties of this class are:
  * </p>
  * 
  * <dl class="class-properties">
- * <dt>dataCollectorFactory</dt>
- * <dd>The factory for creating {@link DataCollector} instances with.</dd>
+ * <dt>serialNetwork</dt>
+ * <dd>The {@link SerialNetwork} to use.</dd>
  * 
  * <dt>serialParams</dt>
  * <dd>The serial port parameters to use.</dd>
@@ -118,9 +121,9 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class CCSupport {
+public class CCSupport extends SerialDeviceSupport {
 
 	/** The data byte index for the device's address ID. */
 	public static final int DEVICE_ADDRESS_IDX = 2;
@@ -140,6 +143,12 @@ public class CCSupport {
 	/** The default value for the {@code ampSensorIndex} property. */
 	public static final int DEFAULT_AMP_SENSOR_INDEX = 1;
 
+	/** The starting message marker, which is the opening XML element. */
+	public static final String MESSAGE_START_MARKER = "<msg>";
+
+	/** The ending message marker, which is the closing XML element. */
+	public static final String MESSAGE_END_MARKER = "</msg>";
+
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -148,8 +157,7 @@ public class CCSupport {
 
 	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
 
-	private DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory;
-	private DataCollectorSerialPortBeanParameters serialParams = getDefaultSerialParams();
+	private DynamicServiceTracker<SerialNetwork> serialNetwork;
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -159,29 +167,12 @@ public class CCSupport {
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
-	private String uid = null;
-	private String groupUID = null;
 	private long sampleCacheMs = 5000;
 	private MessageSource messageSource;
-	private DatumMetadataService datumMetadataService;
+	private OptionalService<DatumMetadataService> datumMetadataService;
 
-	protected static final DataCollectorSerialPortBeanParameters getDefaultSerialParams() {
-		DataCollectorSerialPortBeanParameters defaults = new DataCollectorSerialPortBeanParameters();
-		try {
-			defaults.setMagic("<msg>".getBytes("US-ASCII"));
-			defaults.setMagicEOF("</msg>".getBytes("US-ASCII"));
-		} catch ( UnsupportedEncodingException e ) {
-			// should never get here
-		}
-		defaults.setBaud(9600);
-		defaults.setBufferSize(2048);
-		defaults.setReceiveThreshold(4);
-		defaults.setReceiveTimeout(9000);
-		defaults.setMaxWait(90000);
-		defaults.setToggleDtr(true);
-		defaults.setToggleRts(false);
-		return defaults;
-	}
+	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	/**
 	 * Add a new cached "known" address value.
@@ -350,10 +341,10 @@ public class CCSupport {
 		}
 		CCSupport defaults = new CCSupport();
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
 				.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
@@ -366,29 +357,57 @@ public class CCSupport {
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
 				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
 
-		// we don't need to provide magic byte configuration: we know what that is, so don't
-		// bother exposing that here
-		List<SettingSpecifier> serialSpecs = SerialPortBeanParameters.getDefaultSettingSpecifiers(
-				getDefaultSerialParams(), "serialParams.");
-		results.addAll(serialSpecs);
 		return results;
 	}
 
-	public DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> getDataCollectorFactory() {
-		return dataCollectorFactory;
+	/**
+	 * Returns an empty Map. Extending classes can override as appropriate.
+	 * 
+	 * @param conn
+	 *        the serial connection
+	 * @return empty map
+	 */
+	@Override
+	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
+		return Collections.emptyMap();
 	}
 
-	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<DataCollectorSerialPortBeanParameters>> dataCollectorFactory) {
-		this.dataCollectorFactory = dataCollectorFactory;
-	}
-
-	public DataCollectorSerialPortBeanParameters getSerialParams() {
-		return serialParams;
-	}
-
-	public void setSerialParams(DataCollectorSerialPortBeanParameters serialParams) {
-		this.serialParams = serialParams;
+	/**
+	 * Add source metadata using the configured {@link DatumMetadataService} (if
+	 * available). The metadata will be cached so that subseqent calls to this
+	 * method with the same metadata value will not try to re-save the unchanged
+	 * value. This method will catch all exceptions and silently discard them.
+	 * 
+	 * @param sourceId
+	 *        the source ID to add metadata to
+	 * @param meta
+	 *        the metadata to add
+	 * @param returns
+	 *        <em>true</em> if the metadata was saved successfully, or does not
+	 *        need to be updated
+	 */
+	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		if ( cached != null && meta.equals(cached) ) {
+			// we've already posted this metadata... don't bother doing it again
+			log.debug("Source {} metadata already added, not posting again", sourceId);
+			return true;
+		}
+		DatumMetadataService service = null;
+		if ( datumMetadataService != null ) {
+			service = datumMetadataService.service();
+		}
+		if ( service == null ) {
+			return false;
+		}
+		try {
+			service.addSourceMetadata(sourceId, meta);
+			sourceMetadataCache.put(sourceId, meta);
+			return true;
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
+		return false;
 	}
 
 	public float getVoltage() {
@@ -455,24 +474,9 @@ public class CCSupport {
 		this.collectAllSourceIdsTimeout = collectAllSourceIdsTimeout;
 	}
 
+	@Override
 	public String getUID() {
 		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	public long getSampleCacheMs() {
@@ -491,11 +495,20 @@ public class CCSupport {
 		this.messageSource = messageSource;
 	}
 
-	public DatumMetadataService getDatumMetadataService() {
+	@Override
+	public DynamicServiceTracker<SerialNetwork> getSerialNetwork() {
+		return serialNetwork;
+	}
+
+	public void setSerialNetwork(DynamicServiceTracker<SerialNetwork> serialNetwork) {
+		this.serialNetwork = serialNetwork;
+	}
+
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
 		return datumMetadataService;
 	}
 
-	public void setDatumMetadataService(DatumMetadataService datumMetadataService) {
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
 	}
 

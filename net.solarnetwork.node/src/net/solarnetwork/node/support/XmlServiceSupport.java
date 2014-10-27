@@ -16,8 +16,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.support;
@@ -38,6 +36,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -56,8 +56,15 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.core.io.Resource;
@@ -97,10 +104,16 @@ import org.xml.sax.SAXException;
  * 
  * <dt>identityService</dt>
  * <dd>The {@link IdentityService} for identifying node details.</dd>
+ * 
+ * <dt>eventAdmin</dt>
+ * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
+ * 
+ * <dt>datumMetadataService</dt>
+ * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
  * </dl>
  * 
  * @author matt.magoffin
- * @version $Revision$ $Date$
+ * @version 1.2
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
 
@@ -111,6 +124,11 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	private DocumentBuilderFactory docBuilderFactory = null;
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
+	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumMetadataService> datumMetadataService;
+
+	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	/**
 	 * Initialize this class after properties are set.
@@ -159,9 +177,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * @return the compiled Templates
 	 */
 	protected Templates getTemplates(Resource resource) {
-		TransformerFactory tf = TransformerFactory.newInstance();
 		try {
-			return tf.newTemplates(new StreamSource(resource.getInputStream()));
+			return getTransformerFactory().newTemplates(new StreamSource(resource.getInputStream()));
 		} catch ( TransformerConfigurationException e ) {
 			throw new RuntimeException("Unable to load XSLT from resource [" + resource + ']');
 		} catch ( IOException e ) {
@@ -764,6 +781,97 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		return extractTrackingId(is, trackingIdXPath, xpath);
 	}
 
+	/**
+	 * Add source metadata using the configured {@link DatumMetadataService} (if
+	 * available). The metadata will be cached so that subseqent calls to this
+	 * method with the same metadata value will not try to re-save the unchanged
+	 * value. This method will catch all exceptions and silently discard them.
+	 * 
+	 * @param sourceId
+	 *        the source ID to add metadata to
+	 * @param meta
+	 *        the metadata to add
+	 * @param returns
+	 *        <em>true</em> if the metadata was saved successfully, or does not
+	 *        need to be updated
+	 */
+	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		if ( sourceId == null ) {
+			return false;
+		}
+		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		if ( cached != null && meta.equals(cached) ) {
+			// we've already posted this metadata... don't bother doing it again
+			log.debug("Source {} metadata already added, not posting again", sourceId);
+			return true;
+		}
+		DatumMetadataService service = null;
+		if ( datumMetadataService != null ) {
+			service = datumMetadataService.service();
+		}
+		if ( service == null ) {
+			return false;
+		}
+		try {
+			service.addSourceMetadata(sourceId, meta);
+			sourceMetadataCache.put(sourceId, meta);
+			return true;
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
+		return false;
+	}
+
+	/**
+	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the {@link Datum} to post the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @since 2.1
+	 */
+	protected final void postDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @since 2.1
+	 */
+	protected Event createDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+	}
+
 	public NamespaceContext getNsContext() {
 		return nsContext;
 	}
@@ -773,7 +881,13 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public DocumentBuilderFactory getDocBuilderFactory() {
-		return docBuilderFactory;
+		DocumentBuilderFactory f = docBuilderFactory;
+		if ( f == null ) {
+			f = DocumentBuilderFactory.newInstance();
+			f.setNamespaceAware(true);
+			docBuilderFactory = f;
+		}
+		return f;
 	}
 
 	public void setDocBuilderFactory(DocumentBuilderFactory docBuilderFactory) {
@@ -781,7 +895,12 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public XPathFactory getXpathFactory() {
-		return xpathFactory;
+		XPathFactory f = xpathFactory;
+		if ( f == null ) {
+			f = XPathFactory.newInstance();
+			xpathFactory = f;
+		}
+		return f;
 	}
 
 	public void setXpathFactory(XPathFactory xpathFactory) {
@@ -789,11 +908,32 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public TransformerFactory getTransformerFactory() {
-		return transformerFactory;
+		TransformerFactory f = transformerFactory;
+		if ( f == null ) {
+			f = TransformerFactory.newInstance();
+			transformerFactory = f;
+		}
+		return f;
 	}
 
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
+
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }
