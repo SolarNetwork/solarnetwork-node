@@ -146,10 +146,11 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	@Override
 	public byte[] readMarkedMessage(final byte[] startMarker, final int length) throws IOException {
 		final TByteArrayList sink = new TByteArrayList(startMarker.length + length);
+		final byte[] buf = new byte[64];
 		boolean result = false;
 		if ( serialParams.getMaxWait() < 1 ) {
 			do {
-				result = readMarkedMessage(getInputStream(), sink, startMarker, length);
+				result = readMarkedMessage(getInputStream(), sink, buf, startMarker, length);
 			} while ( !result );
 			return sink.toArray();
 		}
@@ -161,7 +162,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			public Boolean call() throws Exception {
 				boolean found = false;
 				do {
-					found = readMarkedMessage(getInputStream(), sink, startMarker, length);
+					found = readMarkedMessage(getInputStream(), sink, buf, startMarker, length);
 				} while ( !found && keepGoing );
 				return found;
 			}
@@ -176,11 +177,10 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		return (result ? sink.toArray() : null);
 	}
 
-	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink,
+	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink, final byte[] buf,
 			final byte[] startMarker, final int length) throws IOException {
 		boolean lookingForEndMarker = (sink.size() > startMarker.length);
 		int max = (lookingForEndMarker ? length - sink.size() : startMarker.length);
-		final byte[] buf = new byte[(max > 64 ? max : 64)];
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.trace("Sink contains {} bytes: {}", sink.size(), asciiDebugValue(sink.toArray()));
 		}
@@ -243,10 +243,11 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	@Override
 	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
 		final TByteArrayList sink = new TByteArrayList(1024);
+		final byte[] buf = new byte[64];
 		boolean result = false;
 		if ( serialParams.getMaxWait() < 1 ) {
 			do {
-				result = readMarkedMessage(getInputStream(), sink, startMarker, endMarker);
+				result = readMarkedMessage(getInputStream(), sink, buf, startMarker, endMarker);
 			} while ( !result );
 			return sink.toArray();
 		}
@@ -259,7 +260,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			public Boolean call() throws Exception {
 				boolean found = false;
 				do {
-					found = readMarkedMessage(getInputStream(), sink, startMarker, endMarker);
+					found = readMarkedMessage(getInputStream(), sink, buf, startMarker, endMarker);
 				} while ( !found && keepGoing );
 				return found;
 			}
@@ -274,17 +275,16 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		return (result ? sink.toArray() : null);
 	}
 
-	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink,
+	private boolean readMarkedMessage(final InputStream in, final TByteArrayList sink, final byte[] buf,
 			final byte[] startMarker, final byte[] endMarker) throws IOException {
 		boolean lookingForEndMarker = (sink.size() > startMarker.length);
 		int max = (lookingForEndMarker ? endMarker.length : startMarker.length);
-		byte[] buf = new byte[(max > 64 ? max : 64)];
 		if ( eventLog.isTraceEnabled() ) {
 			eventLog.trace("Sink contains {} bytes: {}", sink.size(), asciiDebugValue(sink.toArray()));
 		}
 		int len = -1;
 		eventLog.trace("Attempting to read up to {} bytes from serial port", max);
-		while ( max > 0 && (len = in.read(buf, 0, max)) > 0 ) {
+		while ( max > 0 && (len = in.read(buf, 0, max > buf.length ? buf.length : max)) > 0 ) {
 			sink.add(buf, 0, len);
 			int foundMarkerByteCount = findMarkerBytes(sink, len, (lookingForEndMarker ? endMarker
 					: startMarker), lookingForEndMarker);
