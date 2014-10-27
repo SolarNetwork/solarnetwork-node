@@ -63,6 +63,25 @@ public class EnaSolarPowerDatum extends GeneralNodeEnergyDatum {
 	}
 
 	/**
+	 * Set the {@code wattHourReading} as an offset in kWh.
+	 * 
+	 * <p>
+	 * This method will multiply the value by 1000, set that on
+	 * {@code wattHourReading}.
+	 * </p>
+	 * 
+	 * @param kWattHoursToday
+	 *        the kWh reading to set
+	 */
+	public void setKWattHoursToday(Double kWattHoursToday) {
+		if ( kWattHoursToday != null ) {
+			setWattHourReading(Math.round(kWattHoursToday.doubleValue() * 1000));
+		} else {
+			setWattHourReading(null);
+		}
+	}
+
+	/**
 	 * Set the PV Power, as a kW reading.
 	 * 
 	 * @param power
