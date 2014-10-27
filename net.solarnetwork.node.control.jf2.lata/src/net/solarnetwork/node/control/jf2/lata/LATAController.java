@@ -86,7 +86,7 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 
 	private static final Pattern SWITCH_STATUS_RESULT_PATTERN = Pattern
-			.compile("^(\\w{8})2\\d{2}(\\w*)");
+			.compile("^T(\\w{8})2\\d{2}(\\w*)");
 
 	private MessageSource messageSource;
 
