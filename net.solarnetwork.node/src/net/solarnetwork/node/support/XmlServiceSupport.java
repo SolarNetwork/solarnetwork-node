@@ -177,9 +177,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * @return the compiled Templates
 	 */
 	protected Templates getTemplates(Resource resource) {
-		TransformerFactory tf = TransformerFactory.newInstance();
 		try {
-			return tf.newTemplates(new StreamSource(resource.getInputStream()));
+			return getTransformerFactory().newTemplates(new StreamSource(resource.getInputStream()));
 		} catch ( TransformerConfigurationException e ) {
 			throw new RuntimeException("Unable to load XSLT from resource [" + resource + ']');
 		} catch ( IOException e ) {
@@ -882,7 +881,13 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public DocumentBuilderFactory getDocBuilderFactory() {
-		return docBuilderFactory;
+		DocumentBuilderFactory f = docBuilderFactory;
+		if ( f == null ) {
+			f = DocumentBuilderFactory.newInstance();
+			f.setNamespaceAware(true);
+			docBuilderFactory = f;
+		}
+		return f;
 	}
 
 	public void setDocBuilderFactory(DocumentBuilderFactory docBuilderFactory) {
@@ -890,7 +895,12 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public XPathFactory getXpathFactory() {
-		return xpathFactory;
+		XPathFactory f = xpathFactory;
+		if ( f == null ) {
+			f = XPathFactory.newInstance();
+			xpathFactory = f;
+		}
+		return f;
 	}
 
 	public void setXpathFactory(XPathFactory xpathFactory) {
@@ -898,7 +908,12 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	public TransformerFactory getTransformerFactory() {
-		return transformerFactory;
+		TransformerFactory f = transformerFactory;
+		if ( f == null ) {
+			f = TransformerFactory.newInstance();
+			transformerFactory = f;
+		}
+		return f;
 	}
 
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
