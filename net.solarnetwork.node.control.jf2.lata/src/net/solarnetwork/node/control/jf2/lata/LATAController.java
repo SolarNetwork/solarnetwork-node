@@ -165,7 +165,7 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
-		String version = performAction(new GetVersionAction(false));
+		String version = new GetVersionAction(false).doWithConnection(conn);
 		if ( version != null ) {
 			return Collections.singletonMap(INFO_KEY_DEVICE_MODEL, (Object) version);
 		}
