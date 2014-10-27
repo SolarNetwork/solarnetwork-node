@@ -75,6 +75,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 	private boolean tagConsumption = true;
+	private long energyRatioReadTime = 0;
 
 	private EM5600Data getCurrentSample() {
 		EM5600Data currSample;
@@ -88,9 +89,12 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 							Integer model = getMeterModel(conn);
 							log.debug("Found meter model {}", model);
 						}
-						final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+						final long lastReadDiff = System.currentTimeMillis() - energyRatioReadTime;
 						if ( lastReadDiff > MIN_TIME_READ_ENERGY_RATIOS ) {
 							sample.readEnergyRatios(conn);
+							log.info("Refreshed energy ratios from meter: PT {} CT {}",
+									sample.getPtRatio(), sample.getCtRatio());
+							energyRatioReadTime = System.currentTimeMillis();
 						}
 						sample.readMeterData(conn);
 						return new EM5600Data(sample);
