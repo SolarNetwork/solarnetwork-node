@@ -29,20 +29,7 @@ import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
- * </dl>
+ * Implementation of {@link SerialPortConnection} for testing.
  * 
  * @author matt
  * @version 1.0
