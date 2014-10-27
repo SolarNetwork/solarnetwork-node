@@ -208,6 +208,10 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 
 	@Override
 	public void writeMessage(final byte[] message) throws IOException {
+		if ( eventLog.isTraceEnabled() ) {
+			eventLog.trace("Attempting to write {} bytes to serial port: {}", message.length,
+					asciiDebugValue(message));
+		}
 		if ( serialParams.getMaxWait() < 1 ) {
 			getOutputStream().write(message);
 			return;
