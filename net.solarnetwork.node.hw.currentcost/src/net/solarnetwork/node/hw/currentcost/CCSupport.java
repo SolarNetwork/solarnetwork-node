@@ -44,7 +44,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,8 +155,6 @@ public class CCSupport extends SerialDeviceSupport {
 	protected final CCMessageParser messageParser = new CCMessageParser();
 
 	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
-
-	private DynamicServiceTracker<SerialNetwork> serialNetwork;
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -493,15 +490,6 @@ public class CCSupport extends SerialDeviceSupport {
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
-	}
-
-	@Override
-	public DynamicServiceTracker<SerialNetwork> getSerialNetwork() {
-		return serialNetwork;
-	}
-
-	public void setSerialNetwork(DynamicServiceTracker<SerialNetwork> serialNetwork) {
-		this.serialNetwork = serialNetwork;
 	}
 
 	public OptionalService<DatumMetadataService> getDatumMetadataService() {
