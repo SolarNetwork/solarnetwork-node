@@ -98,15 +98,19 @@ public class DefaultBackupManagerTest {
 				FileSystemBackupService.ARCHIVE_KEY_NAME_FORMAT, backup.getKey()));
 		assertTrue(archiveFile.canRead());
 		ZipFile zipFile = new ZipFile(archiveFile);
-		Enumeration<? extends ZipEntry> entries = zipFile.entries();
-		int entryCount;
-		for ( entryCount = 0; entries.hasMoreElements(); entryCount++ ) {
-			ZipEntry entry = entries.nextElement();
-			assertEquals("The zip entry should be prefixed by the BackupResourceProvider key",
-					DefaultBackupManagerTest.class.getName() + '/' + TEST_FILE_TXT, entry.getName());
+		try {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			int entryCount;
+			for ( entryCount = 0; entries.hasMoreElements(); entryCount++ ) {
+				ZipEntry entry = entries.nextElement();
+				assertEquals("The zip entry should be prefixed by the BackupResourceProvider key",
+						DefaultBackupManagerTest.class.getName() + '/' + TEST_FILE_TXT, entry.getName());
+			}
+			assertEquals(1, entryCount);
+			this.backup = backup;
+		} finally {
+			zipFile.close();
 		}
-		assertEquals(1, entryCount);
-		this.backup = backup;
 	}
 
 	@Test
