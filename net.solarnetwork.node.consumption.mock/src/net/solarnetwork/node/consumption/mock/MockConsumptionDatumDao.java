@@ -70,7 +70,7 @@ public class MockConsumptionDatumDao implements DatumDao<ConsumptionDatum> {
 	}
 
 	@Override
-	public void setDatumUploaded(ConsumptionDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(ConsumptionDatum datum, Date date, String destination, String trackingId) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("MOCK: persisting ConsumptionDatum " + datum + " upload to [" + destination
 					+ "] with tracking ID [" + trackingId + ']');
