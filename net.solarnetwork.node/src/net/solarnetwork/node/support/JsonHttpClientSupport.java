@@ -32,8 +32,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
 import net.solarnetwork.node.RemoteServiceException;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * An abstract class to support HTTP based services that use JSON.
@@ -151,7 +151,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 				if ( child != null && child.asBoolean() ) {
 					child = root.get("data");
 					if ( child != null ) {
-						return objectMapper.readValue(child, dataType);
+						return objectMapper.treeToValue(child, dataType);
 					}
 					log.debug("Server returned no data for request.");
 					return null;
@@ -192,11 +192,11 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 				if ( child != null && child.asBoolean() ) {
 					child = root.get("data");
 					if ( child != null && child.isArray() ) {
-						Iterator<JsonNode> children = child.getElements();
+						Iterator<JsonNode> children = child.iterator();
 						List<T> result = new ArrayList<T>();
 						while ( children.hasNext() ) {
 							child = children.next();
-							result.add(objectMapper.readValue(child, dataType));
+							result.add(objectMapper.treeToValue(child, dataType));
 						}
 						return result;
 					}

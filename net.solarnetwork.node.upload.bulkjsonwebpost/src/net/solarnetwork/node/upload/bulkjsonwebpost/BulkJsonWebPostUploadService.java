@@ -38,9 +38,9 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 import net.solarnetwork.util.OptionalServiceTracker;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * {@link BulkUploadService} that uses an HTTP POST with body content formed as
@@ -57,7 +57,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implements BulkUploadService,
 		InstructionAcknowledgementService {

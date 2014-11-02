@@ -32,9 +32,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.support.UnicodeReader;
 import net.solarnetwork.node.support.XmlServiceSupport;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.util.FileCopyUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Base class to support MetService Day and Weather data sources.
@@ -55,7 +55,7 @@ import org.springframework.util.FileCopyUtils;
  * @param T
  *        the datum type
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSupport {
 

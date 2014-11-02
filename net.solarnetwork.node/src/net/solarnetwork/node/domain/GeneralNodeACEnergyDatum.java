@@ -23,7 +23,7 @@
 package net.solarnetwork.node.domain;
 
 import net.solarnetwork.util.SerializeIgnore;
-import org.codehaus.jackson.annotate.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.

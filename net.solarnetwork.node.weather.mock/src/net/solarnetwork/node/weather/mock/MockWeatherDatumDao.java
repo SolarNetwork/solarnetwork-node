@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockWeatherDatumDao implements DatumDao<WeatherDatum> {
 
@@ -70,7 +70,7 @@ public class MockWeatherDatumDao implements DatumDao<WeatherDatum> {
 	}
 
 	@Override
-	public void setDatumUploaded(WeatherDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(WeatherDatum datum, Date date, String destination, String trackingId) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("MOCK: persisting WeatherDatum " + datum + " upload to [" + destination
 					+ "] with tracking ID [" + trackingId + ']');

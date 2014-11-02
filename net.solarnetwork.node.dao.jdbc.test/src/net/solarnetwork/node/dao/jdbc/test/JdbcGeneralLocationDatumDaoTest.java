@@ -33,11 +33,11 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Test cases for the {@link JdbcGeneralLocationDatumDao} class.
@@ -59,7 +59,7 @@ public class JdbcGeneralLocationDatumDaoTest extends AbstractNodeTransactionalTe
 		setup.init();
 
 		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(Inclusion.NON_NULL);
+		mapper.setSerializationInclusion(Include.NON_NULL);
 
 		dao = new JdbcGeneralLocationDatumDao();
 		dao.setDataSource(dataSource);

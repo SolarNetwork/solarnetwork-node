@@ -11,8 +11,8 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.23,2.0)"/>
-		<dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.13"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.4.3" />
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.28,2.0)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>
 	</dependencies>
 </ivy-module>

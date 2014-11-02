@@ -30,15 +30,15 @@ import java.text.SimpleDateFormat;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 import org.springframework.util.ResourceUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Test case for the {@link MetserviceWeatherDatumDataSource} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
