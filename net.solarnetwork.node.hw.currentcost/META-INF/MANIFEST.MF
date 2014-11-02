@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CurrentCost Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.hw.currentcost;version="2.0.0"
+ net.solarnetwork.node.hw.currentcost;version="2.0.1"
 Import-Package: 
  javax.xml.namespace,
  javax.xml.parsers,
