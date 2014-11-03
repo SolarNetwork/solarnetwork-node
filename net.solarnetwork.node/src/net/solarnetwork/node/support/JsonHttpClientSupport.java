@@ -89,7 +89,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 			}
 
 			if ( log.isDebugEnabled() ) {
-				log.debug("Posting JSON data: {}", objectMapper.writeValueAsString(data));
+				log.debug("Posting JSON data: {}", objectMapper.writerWithDefaultPrettyPrinter()
+						.writeValueAsString(data));
 			}
 			objectMapper.writeValue(out, data);
 			out.flush();
