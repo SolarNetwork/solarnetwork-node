@@ -8,6 +8,7 @@
 			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<c:url value='/certs'/>"><fmt:message key='link.cert'/></a></li>
 			<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<c:url value='/settings'/>"><fmt:message key='link.settings'/></a></li>
 			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<c:url value='/controls'/>"><fmt:message key='link.controls'/></a></li>
+			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<c:url value='/plugins'/>"><fmt:message key='link.plugins'/></a></li>
  		</ul>
 	</div>
 </div>

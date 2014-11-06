@@ -28,19 +28,18 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.weather.WeatherDatum;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * MetService implementation of a {@link WeatherDatum} {@link DatumDataSource}.
+ * MetService implementation of a {@link GeneralAtmosphericDatum}
+ * {@link DatumDataSource}.
  * 
  * <p>
  * This implementation reads public data available on the MetService website to
@@ -61,11 +60,6 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * <dd>The name of the "localObs" file to parse. This file is expected to
  * contain a single JSON object declaration with the humidity, pressure, etc.
  * attributes. Defaults to {@link #DEFAULT_LOCAL_OBS_SET}.</dd>
- * 
- * <dt>uv</dt>
- * <dd>The name of the "uv" file to parse. This file is expected to contain a
- * single JSON object declaration with the UV attribute. Defaults to
- * {@link #DEFAULT_UV_SET}.</dd>
  * 
  * <dt>localForecast</dt>
  * <dd>The name of the "localForecast" file to parse. This file is expected to
@@ -89,106 +83,87 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherDatum> implements
-		DatumDataSource<WeatherDatum>, SettingSpecifierProvider {
+public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralAtmosphericDatum>
+		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code oneMinObs} property. */
-	public static final String DEFAULT_ONE_MIN_OBS_SET = "oneMinObs93437";
-
-	/** The default value for the {@code oneMinObs} property. */
-	public static final String DEFAULT_LOCAL_OBS_SET = "localObs93437";
-
-	/** The default value for the {@code oneMinObs} property. */
-	public static final String DEFAULT_UV_SET = "uvIndexWellington";
+	public static final String DEFAULT_LOCAL_OBS_SET = "localObs_wellington-city";
 
 	/** The default value for the {@code localForecast} property. */
-	public static final String DEFAULT_LOCAL_FORECAST_SET = "localForecastWellington";
+	public static final String DEFAULT_LOCAL_FORECAST_SET = "localForecastwellington-city";
 
 	/** The default value for the {@code timestampDateFormat} property. */
 	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "h:mma EEEE d MMM yyyy";
 
-	public static final String DEFAULT_LOCAL_FORECAST_DAY_PATTERN = "\"?days\"?\\s*:\\s*\\[([^}]+})";
-
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
+	private MessageSource messageSource;
 	private String timestampDateFormat;
-	private String oneMinObs;
 	private String localObs;
-	private String uv;
+	private String localObsContainerKey = "threeHour";
 	private String localForecast;
-	private Pattern localForecastDayPattern;
 
 	public MetserviceWeatherDatumDataSource() {
 		super();
 		timestampDateFormat = DEFAULT_TIMESTAMP_DATE_FORMAT;
-		oneMinObs = DEFAULT_ONE_MIN_OBS_SET;
 		localObs = DEFAULT_LOCAL_OBS_SET;
-		uv = DEFAULT_UV_SET;
 		localForecast = DEFAULT_LOCAL_FORECAST_SET;
-		setLocalForecastDayPattern(DEFAULT_LOCAL_FORECAST_DAY_PATTERN);
 	}
 
 	@Override
-	public Class<? extends WeatherDatum> getDatumType() {
-		return WeatherDatum.class;
+	public Class<? extends GeneralLocationDatum> getDatumType() {
+		return GeneralAtmosphericDatum.class;
 	}
 
 	@Override
-	public WeatherDatum readCurrentDatum() {
-		WeatherDatum result = null;
+	public GeneralLocationDatum readCurrentDatum() {
+		GeneralAtmosphericDatum result = null;
 
-		String url = getBaseUrl() + '/' + oneMinObs;
+		String url = getBaseUrl() + '/' + localObs;
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(getTimestampDateFormat());
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
-			Map<String, String> data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
-
-			Date infoDate = parseDateAttribute("time", data, tsFormat);
-			Double temp = parseDoubleAttribute("temperature", data);
-
-			if ( infoDate != null && temp != null ) {
-				result = new WeatherDatum();
-				result.setCreated(infoDate);
-				result.setTemperatureCelsius(temp);
-
-				// UV data discontinued? Removed for now.
-
-				// get local obs data
-				try {
-					url = getBaseUrl() + '/' + localObs;
-					conn = getURLConnection(url, HTTP_METHOD_GET);
-					data = parseSimpleJavaScriptObjectProperties(getInputStreamFromURLConnection(conn));
-
-					result.setHumidity(parseDoubleAttribute("humidity", data));
-					result.setBarometricPressure(parseDoubleAttribute("pressure", data));
-				} catch ( IOException e ) {
-					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
-				}
-
-				// get local forecast
-				try {
-					url = getBaseUrl() + '/' + localForecast;
-					conn = getURLConnection(url, HTTP_METHOD_GET);
-					String localForecast = readUnicodeInputStream(getInputStreamFromURLConnection(conn));
-					if ( localForecast != null ) {
-						// we have to extract just the current day to get the "conditions" value
-						Matcher m = localForecastDayPattern.matcher(localForecast);
-						if ( m.find() ) {
-							localForecast = m.group(1);
-
-							data = parseSimpleJavaScriptObjectProperties(localForecast);
-							result.setSkyConditions(data.get("forecastWord"));
-						}
-					}
-				} catch ( IOException e ) {
-					log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
-				}
-
-				log.debug("Obtained WeatherDatum: {}", result);
+			JsonNode root = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
+			JsonNode data = root.get(localObsContainerKey);
+			if ( data == null ) {
+				log.warn("Local observation container key '{}' not found in {}", localObsContainerKey,
+						url);
+				return null;
 			}
+			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
+			Float temp = parseFloatAttribute("temp", data);
+
+			if ( infoDate == null || temp == null ) {
+				log.debug("Date and/or temperature missing from {}", url);
+				return null;
+			}
+			result = new GeneralAtmosphericDatum();
+			result.setCreated(infoDate);
+			result.setTemperature(temp);
+
+			result.setHumidity(parseIntegerAttribute("humidity", data));
+
+			Double millibar = parseDoubleAttribute("pressure", data);
+			if ( millibar != null ) {
+				int pascals = (int) (millibar.doubleValue() * 100);
+				result.setAtmosphericPressure(pascals);
+			}
+
+			// get local forecast
+			try {
+				url = getBaseUrl() + '/' + localForecast;
+				conn = getURLConnection(url, HTTP_METHOD_GET);
+				root = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
+
+				JsonNode forecastWord = root.findValue("forecastWord");
+				if ( forecastWord != null ) {
+					result.setSkyConditions(forecastWord.asText());
+				}
+			} catch ( IOException e ) {
+				log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
+			}
+
+			log.debug("Obtained WeatherDatum: {}", result);
 
 		} catch ( IOException e ) {
 			log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
@@ -208,43 +183,24 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(getClass().getClassLoader());
-				source.setBasename(getClass().getName());
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		MetserviceWeatherDatumDataSource defaults = new MetserviceWeatherDatumDataSource();
 		return Arrays
 				.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl",
-								DEFAULT_BASE_URL),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecast",
-								DEFAULT_LOCAL_FORECAST_SET),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecastDayPattern",
-								DEFAULT_LOCAL_FORECAST_DAY_PATTERN),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localObs",
-								DEFAULT_LOCAL_OBS_SET),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("oneMinObs",
-								DEFAULT_ONE_MIN_OBS_SET),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl", defaults
+								.getBaseUrl()),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localForecast", defaults
+								.getLocalForecast()),
+						(SettingSpecifier) new BasicTextFieldSettingSpecifier("localObs", defaults
+								.getLocalObs()), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
+								"localObsContainerKey", defaults.getLocalObsContainerKey()),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("timestampDateFormat",
-								DEFAULT_TIMESTAMP_DATE_FORMAT),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("uv", DEFAULT_UV_SET));
-	}
-
-	public String getLocalForecastDayPattern() {
-		return localForecastDayPattern.pattern();
-	}
-
-	public void setLocalForecastDayPattern(String localForecastDayPattern) {
-		this.localForecastDayPattern = Pattern.compile(localForecastDayPattern);
+								defaults.getTimestampDateFormat()));
 	}
 
 	public String getTimestampDateFormat() {
@@ -255,14 +211,6 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 		this.timestampDateFormat = timestampDateFormat;
 	}
 
-	public String getOneMinObs() {
-		return oneMinObs;
-	}
-
-	public void setOneMinObs(String oneMinObs) {
-		this.oneMinObs = oneMinObs;
-	}
-
 	public String getLocalObs() {
 		return localObs;
 	}
@@ -271,20 +219,24 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<WeatherD
 		this.localObs = localObs;
 	}
 
-	public String getUv() {
-		return uv;
-	}
-
-	public void setUv(String uv) {
-		this.uv = uv;
-	}
-
 	public String getLocalForecast() {
 		return localForecast;
 	}
 
 	public void setLocalForecast(String localForecast) {
 		this.localForecast = localForecast;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public String getLocalObsContainerKey() {
+		return localObsContainerKey;
+	}
+
+	public void setLocalObsContainerKey(String localObsContainerKey) {
+		this.localObsContainerKey = localObsContainerKey;
 	}
 
 }

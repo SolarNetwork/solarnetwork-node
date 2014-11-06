@@ -25,10 +25,16 @@ package net.solarnetwork.node.support;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
+import java.util.Collection;
+import java.util.Map;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
 import javax.net.ssl.HttpsURLConnection;
@@ -38,6 +44,7 @@ import net.solarnetwork.node.SSLService;
 import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileCopyUtils;
 
 /**
  * Supporting methods for HTTP client operations.
@@ -88,6 +95,13 @@ public abstract class HttpClientSupport {
 	protected InputStream getInputStreamFromURLConnection(URLConnection conn) throws IOException {
 		String enc = conn.getContentEncoding();
 		String type = conn.getContentType();
+
+		if ( conn instanceof HttpURLConnection ) {
+			HttpURLConnection httpConn = (HttpURLConnection) conn;
+			if ( httpConn.getResponseCode() < 200 || httpConn.getResponseCode() > 299 ) {
+				log.info("Non-200 HTTP response from {}: {}", conn.getURL(), httpConn.getResponseCode());
+			}
+		}
 
 		log.trace("Got content type [{}] encoded as [{}]", type, enc);
 
@@ -196,6 +210,123 @@ public abstract class HttpClientSupport {
 		conn.setConnectTimeout(this.connectionTimeout);
 		conn.setReadTimeout(connectionTimeout);
 		return conn;
+	}
+
+	/**
+	 * Append a URL-escaped key/value pair to a string buffer.
+	 * 
+	 * @param buf
+	 * @param key
+	 * @param value
+	 */
+	protected void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
+		if ( value == null ) {
+			return;
+		}
+		if ( buf.length() > 0 ) {
+			buf.append('&');
+		}
+		try {
+			buf.append(URLEncoder.encode(key, "UTF-8")).append('=')
+					.append(URLEncoder.encode(value.toString(), "UTF-8"));
+		} catch ( UnsupportedEncodingException e ) {
+			// should not get here ever
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Encode a map of data into a string suitable for posting to a web server
+	 * as the content type {@code application/x-www-form-urlencoded}. Arrays and
+	 * Collections of values are supported as well.
+	 * 
+	 * @param data
+	 *        the map of data to encode
+	 * @return the encoded data, or an empty string if nothing to encode
+	 */
+	protected String xWWWFormURLEncoded(Map<String, ?> data) {
+		if ( data == null || data.size() < 0 ) {
+			return "";
+		}
+		StringBuilder buf = new StringBuilder();
+		for ( Map.Entry<String, ?> me : data.entrySet() ) {
+			String key;
+			try {
+				key = URLEncoder.encode(me.getKey(), "UTF-8");
+			} catch ( UnsupportedEncodingException e ) {
+				// should not get here ever
+				throw new RuntimeException(e);
+			}
+			Object val = me.getValue();
+			if ( val instanceof Collection<?> ) {
+				for ( Object colVal : (Collection<?>) val ) {
+					appendXWWWFormURLEncodedValue(buf, key, colVal);
+				}
+			} else if ( val.getClass().isArray() ) {
+				for ( Object arrayVal : (Object[]) val ) {
+					appendXWWWFormURLEncodedValue(buf, key, arrayVal);
+				}
+			} else {
+				appendXWWWFormURLEncodedValue(buf, key, val);
+			}
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * HTTP POST data as {@code application/x-www-form-urlencoded} (e.g. a web
+	 * form) to a URL.
+	 * 
+	 * @param url
+	 *        the URL to post to
+	 * @param accept
+	 *        the value to use for the Accept HTTP header
+	 * @param data
+	 *        the data to encode and send as the body of the HTTP POST
+	 * @return the URLConnection after the post data has been sent
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @throws RuntimeException
+	 *         if the HTTP response code is not within the 200 - 299 range
+	 */
+	protected URLConnection postXWWWFormURLEncodedData(String url, String accept, Map<String, ?> data)
+			throws IOException {
+		URLConnection conn = getURLConnection(url, HTTP_METHOD_POST, accept);
+		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		String body = xWWWFormURLEncoded(data);
+		log.trace("Encoded HTTP POST data {} as {}", data, body);
+		OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
+		FileCopyUtils.copy(new StringReader(body), out);
+		if ( conn instanceof HttpURLConnection ) {
+			HttpURLConnection http = (HttpURLConnection) conn;
+			int status = http.getResponseCode();
+			if ( status < 200 || status > 299 ) {
+				throw new RuntimeException("HTTP result status not in the 200-299 range: "
+						+ http.getResponseCode() + " " + http.getResponseMessage());
+			}
+		}
+		return conn;
+	}
+
+	/**
+	 * HTTP POST data as {@code application/x-www-form-urlencoded} (e.g. a web
+	 * form) to a URL and return the response body as a string.
+	 * 
+	 * @param url
+	 *        the URL to post to
+	 * @param data
+	 *        the data to encode and send as the body of the HTTP POST
+	 * @return the response body as a String
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @throws RuntimeException
+	 *         if the HTTP response code is not within the 200 - 299 range
+	 * @see #postXWWWFormURLEncodedData(String, String, Map)
+	 */
+	protected String postXWWWFormURLEncodedDataForString(String url, Map<String, ?> data)
+			throws IOException {
+		URLConnection conn = postXWWWFormURLEncodedData(url, "text/*, application/json", data);
+		return FileCopyUtils.copyToString(getUnicodeReaderFromURLConnection(conn));
 	}
 
 	public void setConnectionTimeout(int connectionTimeout) {

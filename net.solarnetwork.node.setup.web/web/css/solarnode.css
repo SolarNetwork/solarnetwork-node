@@ -59,6 +59,10 @@ legend {
 	line-height: 13px;
 }
 
+.template {
+	display: none;
+}
+
 /* slider */
 
 .ui-slider {
@@ -126,7 +130,77 @@ pre.pre-scrollable {
 	overflow-y: auto;
 }
 
+.label.suffix {
+	margin-left: 1em;
+}
+
 #weather-lookup-modal {
 	width: 700px;
 	margin-left: -350px;
+}
+
+#plugins {
+	margin-top: 1em;
+}
+
+#plugin-upgrades button,
+#plugins button {
+	width: 7em;
+}
+
+#plugin-preview-install-modal .progress {
+	margin-top: 20px;
+	margin-bottom: 5px;
+}
+
+#plugin-install-error .alert {
+	margin-bottom: 0;
+}
+
+div.plugin {
+	padding: 8px;
+}
+
+div.plugin .name {
+	font-weight: bold;
+	margin-bottom: 10px;
+}
+
+div.plugin .desc {
+	margin-bottom: 10px;
+	font-size: 0.9em;
+	font-style: italic;
+}
+
+.form-actions .alert {
+	margin-top: 12px;
+	margin-bottom: 0;
+}
+
+@media (max-width: 767px) {
+	div.plugin {
+		border-top: 1px solid #ccc;
+		padding: 0 8px 8px 8px;
+	}
+	div.plugin:first-child {
+		border-top: none !important;
+	}
+	div.plugin:nth-child(even) {
+		background-color: #fafafa;
+	}
+	div.plugin > div {
+		min-height: 0 !important;
+	}
+	div.plugin .name {
+		margin-top: 5px;
+		margin-bottom: 0;
+	}
+	div.plugin .version {
+		float: left;
+		width: auto;
+	}
+	div.plugin .action {
+		float: right;
+		width: auto;
+	}
 }

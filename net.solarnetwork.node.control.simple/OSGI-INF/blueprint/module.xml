@@ -26,7 +26,7 @@
 			<value>net.solarnetwork.node.dao.DatumDao</value>
 		</interfaces>
 		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.support.NodeControlInfoDatum"/>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.NodeControlInfoDatum"/>
 		</service-properties>
 	</service>
 	

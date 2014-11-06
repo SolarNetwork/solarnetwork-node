@@ -18,12 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.control.jf2.lata;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -35,28 +34,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.control.jf2.lata.command.AddressableCommand;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException;
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
+import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.NodeControlInfoDatum;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceTracker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -78,32 +72,23 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * the {@link #setControlIdMappingValue(String)} method, for easy configuration
  * via a property placeholder.</dd>
  * 
- * <dt>dataCollectorFactory</dt>
- * <dd>An ObjectFactory for creating the {@link ConversationalDataCollector} to
- * handle the IO communication with the LATA switch with.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
-public class LATAController implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
+public class LATAController extends SerialDeviceSupport implements NodeControlProvider,
+		InstructionHandler, SettingSpecifierProvider {
 
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
 
-	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
-	private SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
-	private String uid;
-	private String groupUID;
 
 	private static final Pattern SWITCH_STATUS_RESULT_PATTERN = Pattern
-			.compile("^(\\w{8})2\\d{2}(\\w*)");
+			.compile("^T(\\w{8})2\\d{2}(\\w*)");
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	private MessageSource messageSource;
 
 	/**
 	 * Default constructor.
@@ -136,17 +121,20 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 				if ( "false".equals(value) || "0".equals(value) ) {
 					newStatus = false;
 				}
-				if ( setSwitchStatus(controlId, newStatus) ) {
-					result = InstructionState.Completed;
-				} else {
-					result = InstructionState.Declined;
+				result = InstructionState.Declined;
+				try {
+					if ( setSwitchStatus(controlId, newStatus) ) {
+						result = InstructionState.Completed;
+					}
+				} catch ( IOException e ) {
+					log.warn("Serial communications error: {}", e.getMessage());
 				}
 			}
 		}
 		return result;
 	}
 
-	private synchronized boolean setSwitchStatus(String controlId, boolean newStatus) {
+	private synchronized boolean setSwitchStatus(String controlId, boolean newStatus) throws IOException {
 		String address = controlIdMapping.get(controlId);
 		log.debug("Setting switch {} status at address {}", controlId, address);
 		if ( address == null ) {
@@ -161,21 +149,10 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 					controlId, e.getMessage() });
 			return false;
 		}
-		DataCollectorFactory<SerialPortBeanParameters> df = dataCollectorFactory.service();
-		if ( df != null ) {
-			ConversationalDataCollector dc = df.getConversationalDataCollectorInstance(serialParams);
-			try {
-				dc.collectData(new LATABusConverser(cmd));
-				log.trace("Set status to {} for control {}, address {}", new Object[] { newStatus,
-						controlId, address });
-				return true;
-			} finally {
-				if ( dc != null ) {
-					dc.stopCollecting();
-				}
-			}
-		}
-		return false;
+		performAction(new LATABusConverser(cmd));
+		log.trace("Set status to {} for control {}, address {}", new Object[] { newStatus, controlId,
+				address });
+		return true;
 	}
 
 	@Override
@@ -184,6 +161,15 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 			return Collections.emptyList();
 		}
 		return new ArrayList<String>(controlIdMapping.keySet());
+	}
+
+	@Override
+	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
+		String version = new GetVersionAction(false).doWithConnection(conn);
+		if ( version != null ) {
+			return Collections.singletonMap(INFO_KEY_DEVICE_MODEL, (Object) version);
+		}
+		return Collections.emptyMap();
 	}
 
 	@Override
@@ -204,16 +190,9 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 			return null;
 		}
 
-		DataCollectorFactory<SerialPortBeanParameters> df = dataCollectorFactory.service();
-		if ( df == null ) {
-			log.info("No DataCollectorFactory instance available for port {}", dataCollectorFactory
-					.getPropertyFilters().get("UID"));
-			return null;
-		}
-		ConversationalDataCollector dc = df.getConversationalDataCollectorInstance(serialParams);
 		try {
 			log.trace("Executing command {} for control {}", cmd.getData(), controlId);
-			String result = dc.collectData(new LATABusConverser(cmd));
+			String result = performAction(new LATABusConverser(cmd));
 			if ( result == null ) {
 				log.info("Status unavailable for control {}, address {}", controlId, address);
 				return null;
@@ -235,12 +214,10 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 				}
 			}
 			log.info("Invalid status result [{}], ignoring", result);
-			return null;
-		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
-			}
+		} catch ( IOException e ) {
+			log.warn("Serial communications error: {}", e.getMessage());
 		}
+		return null;
 	}
 
 	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Boolean status) {
@@ -315,35 +292,23 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
-				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-				serial.setBasename(SerialPortBeanParameters.class.getName());
-
-				PrefixedMessageSource serialSource = new PrefixedMessageSource();
-				serialSource.setDelegate(serial);
-				serialSource.setPrefix("serialParams.");
-
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(getClass().getClassLoader());
-				source.setBasename(getClass().getName());
-				source.setParentMessageSource(serialSource);
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		LATAController defaults = new LATAController();
+		results.add(new BasicTitleSettingSpecifier("info", getDeviceInfoMessage(), true));
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("controlIdMappingValue",
 				DEFAULT_CONTROL_ID_MAPPING));
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers("serialParams."));
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+				"Serial Port"));
 		return results;
 	}
 
@@ -353,45 +318,6 @@ public class LATAController implements NodeControlProvider, InstructionHandler, 
 
 	public void setControlIdMapping(Map<String, String> controlIdMapping) {
 		this.controlIdMapping = controlIdMapping;
-	}
-
-	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
-		return dataCollectorFactory;
-	}
-
-	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
-		this.dataCollectorFactory = dataCollectorFactory;
-	}
-
-	public SerialPortBeanParameters getSerialParams() {
-		return serialParams;
-	}
-
-	public void setSerialParams(SerialPortBeanParameters serialParams) {
-		this.serialParams = serialParams;
-	}
-
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }

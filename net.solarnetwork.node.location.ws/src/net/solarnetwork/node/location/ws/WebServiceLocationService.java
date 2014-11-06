@@ -23,225 +23,255 @@
 package net.solarnetwork.node.location.ws;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.node.Location;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.LocationService;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.PropertyAccessorFactory;
+import net.solarnetwork.node.domain.BasicGeneralLocation;
+import net.solarnetwork.node.domain.BasicLocation;
+import net.solarnetwork.node.domain.GeneralLocation;
+import net.solarnetwork.node.domain.Location;
+import net.solarnetwork.node.domain.PriceLocation;
+import net.solarnetwork.node.domain.WeatherLocation;
+import net.solarnetwork.node.support.JsonHttpClientSupport;
 
 /**
- * Web service implementation of {@link PriceLocationService}.
+ * Web service implementation of {@link WebServiceLocationService}.
  * 
  * @author matt
  * @version 1.1
  */
-public class WebServiceLocationService extends XmlServiceSupport implements LocationService {
+public class WebServiceLocationService extends JsonHttpClientSupport implements LocationService {
 
 	/** Default value for the <code>cacheTtl</code> property. */
 	public static final Long DEFAULT_CACHE_TTL = 1000L * 60 * 60 * 24 * 7;
 
-	private String url;
-	private Map<String, String> datumXPathMapping = null;
+	private String url = "/api/v1/sec/location";
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 
 	private final ConcurrentHashMap<String, CachedLocation> cache = new ConcurrentHashMap<String, CachedLocation>(
 			2);
 
-	private Map<String, XPathExpression> datumXPathExpMap = null;
-
-	/**
-	 * Initialize this class after properties are set.
-	 */
-	@Override
-	public void init() {
-		super.init();
-		XPath xp = getXpathFactory().newXPath();
-		if ( getNsContext() != null ) {
-			xp.setNamespaceContext(getNsContext());
-		}
-		// FIXME: map element response attributes to bean property names automatically
-		if ( datumXPathMapping == null ) {
-			// create default XML response mapping
-			Map<String, String> defaults = new LinkedHashMap<String, String>(3);
-			defaults.put("locationId", "//*[@id][1]/@id"); // grab the first result ID
-			defaults.put("sourceName", "//*[@id][1]/@sourceName"); // grab the first result ID
-			defaults.put("locationName", "//*[@id][1]/@locationName"); // grab the first result ID
-			datumXPathMapping = defaults;
-		}
-		datumXPathExpMap = getXPathExpressionMap(datumXPathMapping);
-	}
-
 	@Override
 	public <T extends Location> T getLocation(Class<T> locationType, Long locationId) {
-		if ( locationId == null ) {
-			Collection<T> results = findLocations(locationType, UNKNOWN_SOURCE, UNKNOWN_LOCATION);
-			if ( results.isEmpty() ) {
-				return null;
-			}
-			return results.iterator().next();
+		Set<String> tags = new HashSet<String>(1);
+		if ( PriceLocation.class.isAssignableFrom(locationType) ) {
+			tags.add(Location.PRICE_TYPE);
+		} else if ( WeatherLocation.class.isAssignableFrom(locationType) ) {
+			tags.add(Location.WEATHER_TYPE);
+		} else {
+			throw new IllegalArgumentException("The locationType " + locationType.getName()
+					+ " is not supported");
 		}
-		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
-		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + locationId;
-		CachedLocation cachedLocation = cache.get(cacheKey);
-		if ( cachedLocation != null ) {
-			if ( cachedLocation.expires > System.currentTimeMillis() ) {
-				log.debug("Found cached {} (expires in {}ms)", cachedLocation.location,
-						(System.currentTimeMillis() - cachedLocation.expires));
-				@SuppressWarnings("unchecked")
-				T result = (T) cachedLocation.location;
-				return result;
-			}
-		}
-		final BeanWrapper bean = getQueryBean(locationType, locationId, null, null);
-		log.info("Looking up {} for location ID {} from [{}]", locationType.getSimpleName(), locationId,
-				url);
-		Collection<T> results = postForLocations(locationType, bean, postUrl, cacheKey);
-		if ( results.isEmpty() ) {
-			return null;
-		}
-		return results.iterator().next();
-	}
-
-	private BeanWrapper getQueryBean(Class<?> locationType, Long id, String sourceName,
-			String locationName) {
-		String queryType = locationType.getSimpleName();
-		if ( queryType.endsWith("Location") ) {
-			queryType = queryType.substring(0, queryType.length() - 8);
-		}
-		LocationQuery q = (id == null ? new LocationQuery(queryType, sourceName, locationName)
-				: new LocationQuery(queryType, id));
-		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(q);
-		return bean;
-	}
-
-	private <T extends Location> Collection<T> postForLocations(final Class<T> locationType,
-			BeanWrapper bean, String postUrl, String cacheKey) {
-		CachedLocation cachedLocation = null;
+		final String url = locationSourceMetadataUrl(null, locationId, null, tags);
 		try {
-			T loc = locationType.newInstance();
-			webFormGetForBean(bean, loc, postUrl, null, datumXPathExpMap);
-			if ( loc.getLocationId() == null ) {
-				log.warn("{} not found for {}", bean.getWrappedInstance());
-				return null;
+			final InputStream in = jsonGET(url);
+			Collection<GeneralLocationSourceMetadata> results = extractCollectionResponseData(in,
+					GeneralLocationSourceMetadata.class);
+			if ( results != null && results.size() > 0 ) {
+				GeneralLocationSourceMetadata meta = results.iterator().next();
+				return convertLocationSourceMetadata(locationType, meta);
 			}
+			return null;
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException querying for location source metadata at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to post data: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
+	}
 
-			log.debug("Caching {} for up to {}ms", loc, cacheTtl);
-
-			cachedLocation = new CachedLocation();
-			cachedLocation.location = loc;
-			cachedLocation.expires = Long.valueOf(System.currentTimeMillis() + cacheTtl);
-			cache.put(cacheKey, cachedLocation);
-			return Collections.singleton(loc);
-		} catch ( RuntimeException e ) {
-			Throwable root = e;
-			while ( root.getCause() != null ) {
-				root = root.getCause();
-			}
-			if ( root instanceof IOException ) {
-				// Perhaps the service is down right now... so if we have a cached location
-				// available, let's return that, even though if we reached here the cache
-				// has expired. This allows us to keep associating price data while the 
-				// service is not available as long as it was available previously.
-				if ( cachedLocation != null ) {
-					log.warn(
-							"IOException looking up {} Location from [{}], returning cached data even though cache has expired.",
-							locationType.getSimpleName(), postUrl);
-					@SuppressWarnings("unchecked")
-					Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
-					return locs;
-				}
-			} else {
-				throw e;
-			}
+	private <T extends Location> T convertLocationSourceMetadata(Class<T> locationType,
+			GeneralLocationSourceMetadata meta) {
+		T result;
+		try {
+			result = locationType.newInstance();
 		} catch ( InstantiationException e ) {
 			throw new RuntimeException(e);
 		} catch ( IllegalAccessException e ) {
 			throw new RuntimeException(e);
 		}
-		return Collections.emptyList();
+		if ( result instanceof BasicLocation ) {
+			BasicLocation loc = (BasicLocation) result;
+			loc.setLocationId(meta.getLocationId());
+			loc.setSourceId(meta.getSourceId());
+			if ( meta.getMeta() != null ) {
+				loc.setLocationName(meta.getMeta().getInfoString("name"));
+			}
+		}
+		return result;
 	}
 
 	@Override
 	public <T extends Location> Collection<T> findLocations(final Class<T> locationType,
 			final String sourceName, final String locationName) {
-		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
-		final String cacheKey = postUrl + ";" + locationType.getName() + ";" + sourceName + ";"
-				+ locationName;
-		CachedLocation cachedLocation = cache.get(cacheKey);
-		if ( cachedLocation != null ) {
-			if ( cachedLocation.expires > System.currentTimeMillis() ) {
-				log.debug("Found cached {} (expires in {}ms)", cachedLocation.location,
-						(System.currentTimeMillis() - cachedLocation.expires));
+		Set<String> tags = new HashSet<String>(1);
+		if ( PriceLocation.class.isAssignableFrom(locationType) ) {
+			tags.add(Location.PRICE_TYPE);
+		} else if ( WeatherLocation.class.isAssignableFrom(locationType) ) {
+			tags.add(Location.WEATHER_TYPE);
+		} else {
+			throw new IllegalArgumentException("The locationType " + locationType.getName()
+					+ " is not supported");
+		}
+		final String url = locationSourceMetadataUrl(sourceName + ' ' + locationName, null, null, tags);
+		try {
+			final InputStream in = jsonGET(url);
+			Collection<GeneralLocationSourceMetadata> results = extractCollectionResponseData(in,
+					GeneralLocationSourceMetadata.class);
+			Collection<T> col = new ArrayList<T>();
+			if ( results != null ) {
+				for ( GeneralLocationSourceMetadata meta : results ) {
+					col.add(convertLocationSourceMetadata(locationType, meta));
+				}
+			}
+			return col;
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException querying for location source metadata at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to post data: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
+	}
 
-				@SuppressWarnings("unchecked")
-				Set<T> locs = (Set<T>) Collections.singleton(cachedLocation.location);
-				return locs;
+	private String locationSourceMetadataUrl(String query, Long locationId, String sourceId,
+			Set<String> tags) {
+		StringBuilder buf = new StringBuilder(getIdentityService().getSolarInBaseUrl());
+		buf.append(url);
+		StringBuilder q = new StringBuilder();
+		if ( query != null ) {
+			appendXWWWFormURLEncodedValue(q, "query", query);
+		}
+		if ( locationId != null ) {
+			appendXWWWFormURLEncodedValue(q, "locationId", locationId);
+		}
+		if ( sourceId != null ) {
+			appendXWWWFormURLEncodedValue(q, "sourceId", sourceId);
+		}
+		if ( tags != null ) {
+			for ( String tag : tags ) {
+				appendXWWWFormURLEncodedValue(q, "tags", tag);
 			}
 		}
-		final BeanWrapper bean = getQueryBean(locationType, null, sourceName, locationName);
-		log.info("Looking up {} for source [{}] location [{}] from [{}]", locationType.getSimpleName(),
-				sourceName, locationName, url);
-		return postForLocations(locationType, bean, postUrl, cacheKey);
+		if ( q.length() > 0 ) {
+			buf.append('?').append(q);
+		}
+		return buf.toString();
+	}
+
+	private CachedLocation getCachedLocation(String key) {
+		CachedLocation cachedLocation = cache.get(key);
+		if ( cachedLocation != null ) {
+			if ( cachedLocation.expires > System.currentTimeMillis() ) {
+				log.debug("Found cached location {} (expires in {}ms)", cachedLocation,
+						(System.currentTimeMillis() - cachedLocation.expires));
+				return cachedLocation;
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public Collection<GeneralLocationSourceMetadata> findLocationMetadata(String query, String sourceId,
+			Set<String> tags) {
+		final String url = locationSourceMetadataUrl(query, null, sourceId, tags);
+		try {
+			final InputStream in = jsonGET(url);
+			return extractCollectionResponseData(in, GeneralLocationSourceMetadata.class);
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException querying for location source metadata at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to post data: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
+	}
+
+	private String locationSourceMetadataUrl(Long locationId, String sourceId) {
+		StringBuilder buf = new StringBuilder(getIdentityService().getSolarInBaseUrl());
+		buf.append(url);
+		if ( locationId != null ) {
+			buf.append('/').append(locationId);
+		}
+		StringBuilder q = new StringBuilder();
+		if ( sourceId != null ) {
+			appendXWWWFormURLEncodedValue(q, "sourceId", sourceId);
+		}
+		if ( q.length() > 0 ) {
+			buf.append('?').append(q);
+		}
+		return buf.toString();
+	}
+
+	@Override
+	public GeneralLocationSourceMetadata getLocationMetadata(Long locationId, String sourceId) {
+		final String url = locationSourceMetadataUrl(locationId, sourceId);
+		final String cacheKey = url;
+		CachedLocation cached = getCachedLocation(cacheKey);
+		if ( cached != null && cached instanceof GeneralLocation ) {
+			return cached.asGeneralLocationSourceMetadata();
+		}
+
+		try {
+			final InputStream in = jsonGET(url);
+			GeneralLocationSourceMetadata meta = extractResponseData(in,
+					GeneralLocationSourceMetadata.class);
+			CachedLocation cachedLocation = new CachedLocation(meta);
+			cachedLocation.expires = Long.valueOf(System.currentTimeMillis() + cacheTtl);
+			cache.put(cacheKey, cachedLocation);
+			return cachedLocation.asGeneralLocationSourceMetadata();
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException querying for location source metadata at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to post data: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
 	}
 
 	private static class CachedLocation {
 
 		private Long expires;
-		private Location location;
-	}
+		private final BasicGeneralLocation location;
 
-	public static class LocationQuery {
-
-		private final String type;
-		private final Long id;
-		private final String sourceName;
-		private final String locationName;
-
-		private LocationQuery(String type, Long id) {
+		private CachedLocation(GeneralLocationSourceMetadata meta) {
 			super();
-			this.id = id;
-			this.type = type;
-			this.sourceName = null;
-			this.locationName = null;
+			BasicGeneralLocation loc = new BasicGeneralLocation();
+			loc.setLocationId(meta.getLocationId());
+			loc.setSourceId(meta.getSourceId());
+			loc.setSourceMetadata(meta);
+			this.location = loc;
 		}
 
-		private LocationQuery(String type, String sourceName, String locationName) {
-			super();
-			this.id = null;
-			this.type = type;
-			this.sourceName = sourceName;
-			this.locationName = locationName;
+		public GeneralLocationSourceMetadata asGeneralLocationSourceMetadata() {
+			if ( location != null && location.getSourceMetadata() != null ) {
+				return location.getSourceMetadata();
+			}
+			return new GeneralLocationSourceMetadata();
 		}
 
 		@Override
 		public String toString() {
-			return "LocationQuery{type=" + type + (id != null ? ",id=" + id : "")
-					+ (sourceName != null ? ",source=" + sourceName : "")
-					+ (locationName != null ? ",location=" + locationName : "") + "}";
-		}
-
-		public String getType() {
-			return type;
-		}
-
-		public String getSourceName() {
-			return sourceName;
-		}
-
-		public String getLocationName() {
-			return locationName;
-		}
-
-		public Long getId() {
-			return id;
+			StringBuilder buf = new StringBuilder("CachedLocation{locationId=");
+			if ( location != null ) {
+				buf.append(location.getLocationId());
+			}
+			buf.append(",sourceId=");
+			if ( location != null ) {
+				buf.append(location.getSourceId());
+			}
+			buf.append('}');
+			return buf.toString();
 		}
 
 	}
@@ -252,14 +282,6 @@ public class WebServiceLocationService extends XmlServiceSupport implements Loca
 
 	public void setUrl(String url) {
 		this.url = url;
-	}
-
-	public Map<String, String> getDatumXPathMapping() {
-		return datumXPathMapping;
-	}
-
-	public void setDatumXPathMapping(Map<String, String> datumXPathMapping) {
-		this.datumXPathMapping = datumXPathMapping;
 	}
 
 	public Long getCacheTtl() {

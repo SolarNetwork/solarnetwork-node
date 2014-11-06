@@ -4,6 +4,7 @@
 	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
 	xmlns:beans="http://www.springframework.org/schema/beans"
 	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
@@ -12,7 +13,9 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
 
 	<!-- Configuration -->
 	
@@ -28,6 +31,12 @@
 		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
 		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
+		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 4 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 4 ? * *</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
@@ -58,6 +67,30 @@
 			<entry key="db" value="node"/>
 		</service-properties>
 	</service>
+
+	<service ref="generalNodeDatumDao" ranking="1" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+		</interfaces>
+		<service-properties>
+			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
+		</service-properties>
+	</service>
+	
+	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+		</interfaces>
+		<service-properties>
+			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+		</service-properties>
+	</service>
+	
+	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
 	<!--  Supporting Services -->
 
@@ -118,4 +151,71 @@
 		</property>
 	</bean>
 
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
+		init-method="init">
+		<property name="objectMapper" ref="objectMapper"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}"/>
+		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}"/>
+	</bean>
+
+	<bean id="generalLocationDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
+		init-method="init">
+		<property name="objectMapper" ref="objectMapper"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="initSqlResource" value="${JdbcGeneralLocationDatumDao.initSqlResource}"/>
+		<property name="sqlResourcePrefix" value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}"/>
+	</bean>
+
+	<!-- Use Java @Transactional annotations to declare transactions. -->
+	<tx:annotation-driven transaction-manager="txManager"/>
+
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS"/>
+	</bean>
+	
+	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="generalNodeDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
+		<property name="cronExpression" value="${job.generalNodeDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="generalNodeDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
+	<bean id="generalLocationDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalLocationDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="generalLocationDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
+		<property name="cronExpression" value="${job.generalLocationDatumCleaner.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	</bean>
+
+	<bean id="generalLocationDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+			</map>
+		</property>
+	</bean>
+	
 </blueprint>

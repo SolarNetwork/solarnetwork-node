@@ -1,0 +1,199 @@
+{
+"days":[{
+  "date":"1 Sep",
+  "dow":"Monday",
+  "dowTLA":"Mon",
+  "forecast":"Mostly sunny. Southerly breeze.",
+  "forecastWord":"Fine",
+  "issuedAt":"1:41pm 1 Sep",
+  "max":"15",
+  "min":"7",
+  "riseSet":{
+    "day":"1 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"9:58am",
+    "sunRise":"6:47am",
+    "sunSet":"5:56pm"
+    },
+  "source":"IPS"
+  },{
+  "date":"2 Sep",
+  "dow":"Tuesday",
+  "dowTLA":"Tue",
+  "forecast":"Mostly fine. Southeast breeze.",
+  "forecastWord":"Fine",
+  "issuedAt":"1:41pm 1 Sep",
+  "max":"13",
+  "min":"6",
+  "riseSet":{
+    "day":"2 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"10:41am",
+    "moonSet":"12:21am",
+    "sunRise":"6:45am",
+    "sunSet":"5:57pm"
+    },
+  "source":"IPS"
+  },{
+  "date":"3 Sep",
+  "dow":"Wednesday",
+  "dowTLA":"Wed",
+  "forecast":"Mostly sunny. Light winds.",
+  "forecastWord":"Fine",
+  "issuedAt":"2:27pm 1 Sep",
+  "max":"14",
+  "min":"7",
+  "riseSet":{
+    "day":"3 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"11:30am",
+    "moonSet":"1:21am",
+    "sunRise":"6:43am",
+    "sunSet":"5:58pm"
+    },
+  "source":"IPS"
+  },{
+  "date":"4 Sep",
+  "dow":"Thursday",
+  "dowTLA":"Thu",
+  "forecast":"Mainly fine. Light winds.",
+  "forecastWord":"Fine",
+  "issuedAt":"2:27pm 1 Sep",
+  "max":"15",
+  "min":"9",
+  "riseSet":{
+    "day":"4 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"12:26pm",
+    "moonSet":"2:19am",
+    "sunRise":"6:42am",
+    "sunSet":"5:59pm"
+    },
+  "source":"IPS"
+  },{
+  "date":"5 Sep",
+  "dow":"Friday",
+  "dowTLA":"Fri",
+  "forecast":"Light rain developing. Southeasterlies freshening.",
+  "forecastWord":"Showers",
+  "issuedAt":"2:27pm 1 Sep",
+  "max":"13",
+  "min":"8",
+  "riseSet":{
+    "day":"5 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"1:30pm",
+    "moonSet":"3:14am",
+    "sunRise":"6:40am",
+    "sunSet":"6:00pm"
+    },
+  "source":"IPS"
+  },{
+  "date":"6 Sep",
+  "dow":"Saturday",
+  "dowTLA":"Sat",
+  "forecast":"Rain. Southerlies.",
+  "forecastWord":"Rain",
+  "issuedAt":"12:34pm 1 Sep",
+  "max":"11",
+  "min":"9",
+  "riseSet":{
+    "day":"6 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"2:38pm",
+    "moonSet":"4:04am",
+    "sunRise":"6:38am",
+    "sunSet":"6:01pm"
+    },
+  "source":"EC"
+  },{
+  "date":"7 Sep",
+  "dow":"Sunday",
+  "dowTLA":"Sun",
+  "forecast":"Rain, clearing around midday to fine weather with southeasterlies.",
+  "forecastWord":"Rain",
+  "issuedAt":"12:34pm 1 Sep",
+  "max":"11",
+  "min":"8",
+  "riseSet":{
+    "day":"7 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"3:51pm",
+    "moonSet":"4:50am",
+    "sunRise":"6:37am",
+    "sunSet":"6:02pm"
+    },
+  "source":"EC"
+  },{
+  "date":"8 Sep",
+  "dow":"Monday",
+  "dowTLA":"Mon",
+  "forecast":"Showers with southerlies.",
+  "forecastWord":"Showers",
+  "issuedAt":"12:34pm 1 Sep",
+  "max":"11",
+  "min":"7",
+  "riseSet":{
+    "day":"8 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"5:04pm",
+    "moonSet":"5:33am",
+    "sunRise":"6:35am",
+    "sunSet":"6:03pm"
+    },
+  "source":"EC"
+  },{
+  "date":"9 Sep",
+  "dow":"Tuesday",
+  "dowTLA":"Tue",
+  "forecast":"Showers with northeasterlies.",
+  "forecastWord":"Showers",
+  "issuedAt":"12:34pm 1 Sep",
+  "max":"10",
+  "min":"8",
+  "riseSet":{
+    "day":"9 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"6:18pm",
+    "moonSet":"6:11am",
+    "sunRise":"6:33am",
+    "sunSet":"6:04pm"
+    },
+  "source":"EC"
+  },{
+  "date":"10 Sep",
+  "dow":"Wednesday",
+  "dowTLA":"Wed",
+  "forecast":"Showers with northerlies.",
+  "forecastWord":"Showers",
+  "issuedAt":"12:34pm 1 Sep",
+  "max":"11",
+  "min":"10",
+  "riseSet":{
+    "day":"10 September 2014",
+    "id":"loc13001",
+    "location":"Wellington",
+    "moonRise":"7:32pm",
+    "moonSet":"6:49am",
+    "sunRise":"6:32am",
+    "sunSet":"6:05pm"
+    },
+  "source":"EC"
+  }
+  ],
+"locationECWasp":"WELLINGTON",
+"locationGFS":"93434",
+"locationIPS":"WELLINGTON",
+"locationWASP":"WELLINGTON AERO",
+"saturdayForecastWord":"Rain",
+"sundayForecastWord":"Rain"
+}

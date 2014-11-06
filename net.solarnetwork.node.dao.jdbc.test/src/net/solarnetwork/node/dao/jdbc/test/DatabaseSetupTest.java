@@ -38,7 +38,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
  * Unit tests for the {@link DatabaseSetup} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
 
@@ -57,7 +57,7 @@ public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
 				"SELECT * FROM solarnode.sn_settings WHERE skey = ?", "solarnode.sn_settings.version");
 		log.debug("Got sn_settings.version record {}", results);
 		assertNotNull(results);
-		assertEquals("Should have key, value, type, and modified values", 4, results.size());
-		assertEquals("4", results.get("svalue"));
+		assertEquals("Should have key, value, type, flags, and modified values", 5, results.size());
+		assertEquals("5", results.get("svalue"));
 	}
 }

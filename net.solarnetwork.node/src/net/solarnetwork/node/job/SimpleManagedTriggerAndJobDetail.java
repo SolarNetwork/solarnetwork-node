@@ -24,11 +24,14 @@ package net.solarnetwork.node.job;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
+import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.node.util.TemplatedMessageSource;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
@@ -40,31 +43,47 @@ import org.springframework.context.MessageSource;
  * {@link SettingSpecifierProvider} to manage the job at runtime.
  * 
  * <p>
+ * There are two basic ways to configure this class. The first way involves
+ * configuring the {@code settingSpecifierProvider} property manually. In this
+ * case the keyed settings and message keys will be dynamically adjusted to work
+ * with a {@code jobDetail.jobDataMap['%s']} style pattern, where the {@code %s}
+ * will be replaced by the top-level property names of all keys.
+ * </p>
+ * 
+ * <p>
+ * The second way involves leaving the {@code settingSpecifierProvider} not
+ * configured, and letting this class find the first available
+ * {@link SettingSpecifierProvider} instance in the configured
+ * {@link JobDetail#getJobDataMap()}. In this case the keyed settings provided
+ * by that {@link SettingSpecifierProvider} and all message keys will be
+ * prefixed with {@code jobDetail.jobDataMap['$mapKey'].} where {@code $mapKey}
+ * is the associated key of that object in the JobDataMap.
+ * </p>
+ * 
+ * <p>
+ * In most situations the later approach is simplest to set up.
+ * </p>
+ * 
+ * <p>
  * The configurable properties of this class are:
  * </p>
  * 
  * <dl>
  * <dt>settingSpecifierProvider</dt>
  * <dd>The {@link SettingSpecifierProvider} that this class proxies all methods
- * for.</dd>
+ * for. If not configured, then {@link JobDetail#getJobDataMap()} will be
+ * examined and the first value that implements {@link SettingSpecifierProvider}
+ * will be used.</dd>
+ * 
  * <dt>trigger</dt>
  * <dd>The job trigger.</dd>
+ * 
  * <dt>jobDetail</dt>
  * <dd>The job detail.</dd>
- * <dt>messageSource</dt>
- * <dd>A {@link MessageSource} to use for
- * {@link SettingSpecifierProvider#getMessageSource()}. If not configured, and a
- * {@code settingSpecifierProvider} is configured, then a
- * {@link TemplatedMessageSource} will automatically be created using that
- * provider as its delegate and a mapping regular expression of
- * {@code jobDetail\.jobDataMap\['([a-zA-Z0-9_]*)'\](.*)}. This essentially
- * allows the delegate provider to configure properties as if they were directly
- * named after its own settings, without needing to wrap each key with
- * {@code jobDetail.jobDataMap[...]}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail {
 
@@ -80,6 +99,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	private Trigger trigger;
 	private JobDetail jobDetail;
 	private MessageSource messageSource;
+	private String simplePrefix;
 
 	private static KeyedSmartQuotedTemplateMapper getMapper() {
 		KeyedSmartQuotedTemplateMapper result = new KeyedSmartQuotedTemplateMapper();
@@ -113,12 +133,12 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 
 	@Override
 	public String getSettingUID() {
-		return settingSpecifierProvider.getSettingUID();
+		return getSettingSpecifierProvider().getSettingUID();
 	}
 
 	@Override
 	public String getDisplayName() {
-		return settingSpecifierProvider.getDisplayName();
+		return getSettingSpecifierProvider().getDisplayName();
 	}
 
 	@Override
@@ -129,10 +149,14 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 			result.add(new BasicTextFieldSettingSpecifier("trigger.cronExpression", ct
 					.getCronExpression()));
 		}
-		for ( SettingSpecifier spec : settingSpecifierProvider.getSettingSpecifiers() ) {
+		for ( SettingSpecifier spec : getSettingSpecifierProvider().getSettingSpecifiers() ) {
 			if ( spec instanceof KeyedSettingSpecifier<?> ) {
 				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-				result.add(keyedSpec.mappedWithMapper(MAPPER));
+				if ( simplePrefix != null ) {
+					result.add(keyedSpec.mappedTo(simplePrefix));
+				} else {
+					result.add(keyedSpec.mappedWithMapper(MAPPER));
+				}
 			} else {
 				result.add(spec);
 			}
@@ -144,14 +168,33 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	public MessageSource getMessageSource() {
 		if ( messageSource == null ) {
 			TemplatedMessageSource tSource = new TemplatedMessageSource();
-			tSource.setDelegate(settingSpecifierProvider.getMessageSource());
+			tSource.setDelegate(getSettingSpecifierProvider().getMessageSource());
 			tSource.setRegex(JOB_DETAIL_PROPERTY_MAPPING_REGEX);
 			messageSource = tSource;
 		}
 		return messageSource;
 	}
 
+	@SuppressWarnings("unchecked")
 	public SettingSpecifierProvider getSettingSpecifierProvider() {
+		if ( settingSpecifierProvider != null ) {
+			return settingSpecifierProvider;
+		}
+		for ( Map.Entry<String, Object> me : (Set<Map.Entry<String, Object>>) jobDetail.getJobDataMap()
+				.entrySet() ) {
+			Object o = me.getValue();
+			if ( o instanceof SettingSpecifierProvider ) {
+				SettingSpecifierProvider ssp = (SettingSpecifierProvider) o;
+				PrefixedMessageSource pSource = new PrefixedMessageSource();
+				String prefix = "jobDetail.jobDataMap['" + me.getKey() + "'].";
+				pSource.setPrefix(prefix);
+				pSource.setDelegate(ssp.getMessageSource());
+				messageSource = pSource;
+				settingSpecifierProvider = ssp;
+				simplePrefix = prefix;
+				break;
+			}
+		}
 		return settingSpecifierProvider;
 	}
 

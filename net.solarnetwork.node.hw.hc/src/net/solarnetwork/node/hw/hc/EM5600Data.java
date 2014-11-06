@@ -23,14 +23,14 @@
 package net.solarnetwork.node.hw.hc;
 
 import java.util.Arrays;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.wimpi.modbus.net.SerialConnection;
 
 /**
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EM5600Data {
 
@@ -146,23 +146,20 @@ public class EM5600Data {
 	 * Read data from the meter and store it internally. If data is populated
 	 * successfully, the {@link dataTimestamp} will be updated to the current
 	 * system time. <b>Note</b> this does <b>not</b> call
-	 * {@link #readEnergyRatios(SerialConnection, int)}. Those values are not
+	 * {@link #readEnergyRatios(ModbusConnection)}. Those values are not
 	 * expected to change much, so those values should be called manually as
 	 * needed.
 	 * 
 	 * @param conn
 	 *        the Modbus connection
-	 * @param unitId
-	 *        the Modbus unit ID to query
 	 */
-	public void readMeterData(final SerialConnection conn, final int unitId) {
-		int[] data = ModbusHelper.readInts(conn, ADDR_DATA_I1,
-				(ADDR_DATA_PHASE_ROTATION - ADDR_DATA_I1 + 1), unitId);
+	public void readMeterData(final ModbusConnection conn) {
+		int[] data = conn.readInts(ADDR_DATA_I1, (ADDR_DATA_PHASE_ROTATION - ADDR_DATA_I1 + 1));
 
 		// re-read some data to get signed values... these are mixed with unsigned values
 		// so we are reading some registers twice, but in fewer transactions
-		short[] signedData = ModbusHelper.readSignedShorts(conn, ADDR_DATA_ACTIVE_POWER_TOTAL,
-				(ADDR_DATA_POWER_FACTOR_P3 - ADDR_DATA_APPARENT_POWER_TOTAL + 1), unitId);
+		short[] signedData = conn.readSignedShorts(ADDR_DATA_ACTIVE_POWER_TOTAL,
+				(ADDR_DATA_POWER_FACTOR_P3 - ADDR_DATA_APPARENT_POWER_TOTAL + 1));
 		final int signedDataOffset = ADDR_DATA_ACTIVE_POWER_TOTAL - ADDR_DATA_I1;
 		for ( int i = 0; i < signedData.length; i++ ) {
 			final int addr = ADDR_DATA_ACTIVE_POWER_TOTAL + i;
@@ -181,8 +178,8 @@ public class EM5600Data {
 		}
 		setCurrentVoltagePower(data);
 
-		data = ModbusHelper.readInts(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, (ADDR_DATA_ENERGY_UNIT
-				- ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1), unitId);
+		data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, (ADDR_DATA_ENERGY_UNIT
+				- ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1));
 		setEnergy(data);
 		dataTimestamp = System.currentTimeMillis();
 	}
@@ -195,18 +192,16 @@ public class EM5600Data {
 	 * 
 	 * @param conn
 	 *        the Modbus connection
-	 * @param unitId
-	 *        the Modbus unit ID to query
 	 */
-	public void readEnergyRatios(final SerialConnection conn, final int unitId) {
-		int[] eUnit = ModbusHelper.readInts(conn, ADDR_DATA_ENERGY_UNIT, 1, unitId);
+	public void readEnergyRatios(final ModbusConnection conn) {
+		int[] eUnit = conn.readInts(ADDR_DATA_ENERGY_UNIT, 1);
 		if ( eUnit != null && eUnit.length > 0 ) {
 			// a value of 0 here means we should treat the energy unit as 1, e.g. 5610
 			int eu = eUnit[0];
 			inputRegisters[ADDR_DATA_ENERGY_UNIT - ADDR_INPUT_REG_START] = eu;
 			setEnergyUnit(eu < 0 ? 0 : eu);
 		}
-		int[] transformerRatios = ModbusHelper.readInts(conn, ADDR_DATA_PT_RATIO, 2, unitId);
+		int[] transformerRatios = conn.readInts(ADDR_DATA_PT_RATIO, 2);
 		if ( transformerRatios != null && transformerRatios.length > 1 ) {
 			int ptr = transformerRatios[0];
 			ptRatio = (ptr < 1 ? 1 : ptr / 10);
@@ -217,7 +212,7 @@ public class EM5600Data {
 
 	/**
 	 * Get the system time for the last time data was successfully populated via
-	 * {@link #readMeterData(SerialConnection, int)}.
+	 * {@link #readMeterData(ModbusConnection)}.
 	 * 
 	 * @return the system time
 	 */
@@ -258,9 +253,9 @@ public class EM5600Data {
 
 	/**
 	 * Get the value of an input register. This will not return useful data
-	 * until after {@link #readMeterData(SerialConnection, int)} has been
-	 * called. Use the various {@code ADDR_*} constants to query specific
-	 * supported registers.
+	 * until after {@link #readMeterData(ModbusConnection)} has been called. Use
+	 * the various {@code ADDR_*} constants to query specific supported
+	 * registers.
 	 * 
 	 * @param addr
 	 *        the input register address to get the value of
@@ -303,7 +298,7 @@ public class EM5600Data {
 	 * Get the effective PT ratio. This will return {@code 1} unless the
 	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
 	 * return {@link #getPtRatio()} which has presumably be set by reading from
-	 * the meter via {@link #readEnergyRatios(SerialConnection, int)}.
+	 * the meter via {@link #readEnergyRatios(ModbusConnection)}.
 	 * 
 	 * @return effective PT ratio
 	 */
@@ -315,7 +310,7 @@ public class EM5600Data {
 	 * Get the effective CT ratio. This will return {@code 1} unless the
 	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
 	 * return {@link #getCtRatio()} which has presumably be set by reading from
-	 * the meter via {@link #readEnergyRatios(SerialConnection, int)}.
+	 * the meter via {@link #readEnergyRatios(ModbusConnection)}.
 	 * 
 	 * @return effective PT ratio
 	 */
@@ -418,6 +413,46 @@ public class EM5600Data {
 		assert energyUnit >= 0 && energyUnit <= 6;
 		this.energyUnit = energyUnit;
 		this.energyFactor = (int) Math.pow(10, energyUnit);
+	}
+
+	/**
+	 * Get a string of data values, useful for debugging. The generated string
+	 * will contain a register address followed by two register values per line,
+	 * printed as hexidecimal integers, with a prefix and suffix line. The
+	 * register addresses will be printed as {@bold 1-based} values, to
+	 * match Schneider's documentation. For example:
+	 * 
+	 * <pre>
+	 * EM5600Data{
+	 *      3000: 0x4141, 0x727E
+	 *      3002: 0xFFC0, 0x0000
+	 *      ...
+	 *      3240: 0x0000, 0x0000
+	 * }
+	 * </pre>
+	 * 
+	 * @return debug string
+	 */
+	public String dataDebugString() {
+		final StringBuilder buf = new StringBuilder("EM5600Data{\n");
+		EM5600Data snapshot = new EM5600Data(this);
+		int[] keys = snapshot.inputRegisters;
+		Arrays.sort(keys);
+		boolean odd = true;
+		for ( int k : keys ) {
+			if ( odd ) {
+				buf.append("\t").append(String.format("%5d", k + 1)).append(": ");
+			}
+			buf.append(String.format("0x%04X", snapshot.inputRegisters[k]));
+			if ( odd ) {
+				buf.append(", ");
+			} else {
+				buf.append("\n");
+			}
+			odd = !odd;
+		}
+		buf.append("}");
+		return buf.toString();
 	}
 
 }

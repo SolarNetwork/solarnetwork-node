@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.price.delimited;
@@ -29,6 +27,7 @@ package net.solarnetwork.node.price.delimited;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -38,14 +37,15 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.price.PriceDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
+import net.solarnetwork.node.domain.GeneralPriceDatum;
+import net.solarnetwork.node.domain.PriceDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Implementation of {@link DatumDataSource} that parses a delimited text
@@ -104,9 +104,9 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum>,
+public class DelimitedPriceDatumDataSource implements DatumDataSource<GeneralLocationDatum>,
 		SettingSpecifierProvider {
 
 	/** The default value for the {@code delimiter} property. */
@@ -121,9 +121,6 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 	/** The default value for the {@code url} property. */
 	public static final String DEFAULT_URL = "http://www.electricityinfo.co.nz/comitFta/five_min_prices.download?INchoice=HAY&INdate=%1$td/%1$tm/%1$tY&INgip=ABY0111&INperiodfrom=1&INperiodto=50&INtype=Price";
 
-	/** The default value for the {@code sourceId} property. */
-	public static final Integer DEFAULT_SOURCE_ID_COLUMN = 0;
-
 	/** The default value for the {@code priceColumn} property. */
 	public static final int DEFAULT_PRICE_COLUMN = 4;
 
@@ -134,23 +131,20 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 
 	private final Logger log = LoggerFactory.getLogger(DelimitedPriceDatumDataSource.class);
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
+	private MessageSource messageSource;
 	private String url = DEFAULT_URL;
 	private String delimiter = DEFAULT_DELIMITER;
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private int skipLines = DEFAULT_SKIP_LINES;
 	private int[] dateTimeColumns = DEFAULT_DATE_TIME_COLUMNS;
 	private int priceColumn = DEFAULT_PRICE_COLUMN;
-	private Integer sourceIdColumn = DEFAULT_SOURCE_ID_COLUMN;
 	private String dateFormat = DEFAULT_DATE_FORMAT;
 	private String uid = null;
 	private String groupUID = null;
 
 	@Override
-	public Class<? extends PriceDatum> getDatumType() {
-		return PriceDatum.class;
+	public Class<? extends GeneralLocationDatum> getDatumType() {
+		return GeneralPriceDatum.class;
 	}
 
 	@Override
@@ -166,7 +160,7 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 	}
 
 	@Override
-	public PriceDatum readCurrentDatum() {
+	public GeneralLocationDatum readCurrentDatum() {
 		URL theUrl = getFormattedUrl();
 		String dataRow = readDataRow(theUrl);
 		String[] data = dataRow.split(this.delimiter);
@@ -197,16 +191,11 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 			throw new RuntimeException(e);
 		}
 
-		// set the sourceId to the URL, or a column if sourceIdColumn configured
-		String sourceId = theUrl.toExternalForm();
-		if ( sourceIdColumn != null ) {
-			sourceId = data[sourceIdColumn];
-		}
+		BigDecimal price = new BigDecimal(data[priceColumn]);
 
-		double price = Double.parseDouble(data[priceColumn]);
-
-		PriceDatum datum = new PriceDatum(sourceId, price, null);
+		GeneralPriceDatum datum = new GeneralPriceDatum();
 		datum.setCreated(created);
+		datum.setPrice(price);
 		return datum;
 	}
 
@@ -271,15 +260,11 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(getClass().getClassLoader());
-				source.setBasename(getClass().getName());
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	@Override
@@ -291,8 +276,6 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("delimiter",
 								DEFAULT_DELIMITER),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("sourceIdColumn",
-								DEFAULT_SOURCE_ID_COLUMN.toString()),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("priceColumn", String
 								.valueOf(DEFAULT_PRICE_COLUMN)),
 						(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateTimeColumns", "1,3"),
@@ -348,14 +331,6 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<PriceDatum
 
 	public void setPriceColumn(int priceColumn) {
 		this.priceColumn = priceColumn;
-	}
-
-	public Integer getSourceIdColumn() {
-		return sourceIdColumn;
-	}
-
-	public void setSourceIdColumn(Integer sourceIdColumn) {
-		this.sourceIdColumn = sourceIdColumn;
 	}
 
 	public String getDateFormat() {

@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.settings;
 
-import net.solarnetwork.node.Location;
+import net.solarnetwork.node.domain.Location;
 
 /**
  * A setting for a location ID.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Long>, Location {
 
@@ -40,16 +40,9 @@ public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Lo
 	Location getLocation();
 
 	/**
-	 * Get a location type to use with this setting.
+	 * Get the location type or tag, e.g. "weather", "price", etc.
 	 * 
-	 * @return the type of location
-	 */
-	Class<? extends Location> getLocationType();
-
-	/**
-	 * Get the location type as a key.
-	 * 
-	 * @return the location type key
+	 * @return the location type
 	 */
 	String getLocationTypeKey();
 

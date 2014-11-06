@@ -24,15 +24,38 @@
 
 package net.solarnetwork.node;
 
+import net.solarnetwork.node.domain.Datum;
+
 /**
  * API for collecting {@link Datum} objects from some device.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @param <T>
  *        the Datum type
  */
 public interface DatumDataSource<T extends Datum> extends Identifiable {
+
+	/**
+	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}
+	 * has been read, sampled, or in some way captured by a
+	 * {@link DatumDataSource}. The properties of the event shall be any of the
+	 * JavaBean properties of the Datum supported by events (i.e. any simple
+	 * Java property such as numbers and strings). In addition, the
+	 * {@link #EVENT_DATUM_CAPTURED_DATUM_TYPE} property shall be populated with
+	 * the name of the <em>core</em> class name of the datum type.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String EVENT_TOPIC_DATUM_CAPTURED = "net/solarnetwork/node/DatumDataSource/DATUM_CAPTURED";
+
+	/**
+	 * An {@link org.osgi.service.event.Event} property for the string name of
+	 * the <em>core</em> class of the datum type associated with the event.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String EVENT_DATUM_CAPTURED_DATUM_TYPE = "_DatumType";
 
 	/**
 	 * Get the class supported by this DataSource.

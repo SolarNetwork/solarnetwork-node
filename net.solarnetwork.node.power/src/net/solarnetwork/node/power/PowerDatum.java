@@ -24,18 +24,17 @@
 
 package net.solarnetwork.node.power;
 
-import net.solarnetwork.node.support.BaseDatum;
+import net.solarnetwork.node.domain.BaseEnergyDatum;
 
 /**
  * A unit of data collected from a solar-electricity generating device.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class PowerDatum extends BaseDatum {
+public class PowerDatum extends BaseEnergyDatum {
 
 	private Long locationId = null; // the price location
-	private Integer watts = null; // the watts being generated
 	private Float batteryVolts = null; // this is the volts on the battery
 	private Double batteryAmpHours = null; // this is the storage level in amp hours on the battery
 	private Float dcOutputVolts = null; // this is the dc volts output on the charger/inverter
@@ -43,7 +42,6 @@ public class PowerDatum extends BaseDatum {
 	private Float acOutputVolts = null; // this is the ac volts output on the charger/inverter
 	private Float acOutputAmps = null; // this is the ac current in amps on the charger/inverter
 	private Double ampHourReading = null;
-	private Long wattHourReading = null;
 
 	// these are for backwards compatibility only
 	private Float pvVolts = null; // this is the volts on the PV
@@ -90,17 +88,9 @@ public class PowerDatum extends BaseDatum {
 		this.acOutputVolts = acOutputVolts;
 		this.dcOutputAmps = dcOutputAmps;
 		this.dcOutputVolts = dcOutputVolts;
-		this.watts = watts;
+		setWatts(watts);
 		this.ampHourReading = ampHourReading;
 		setKWattHoursToday(kWattHoursToday);
-	}
-
-	@Override
-	public String toString() {
-		return "PowerDatum{watts=" + getWatts()
-				+ (this.batteryVolts == null ? "" : ",batVolts=" + this.batteryVolts)
-				+ (this.ampHourReading == null ? "" : ",ampHourReading=" + this.ampHourReading)
-				+ (this.wattHourReading == null ? "" : ",wattHourReading=" + this.wattHourReading) + '}';
 	}
 
 	/**
@@ -114,7 +104,9 @@ public class PowerDatum extends BaseDatum {
 	 * @return watts, or <em>null</em> if watts not available and either amps or
 	 *         volts are null
 	 */
+	@Override
 	public Integer getWatts() {
+		Integer watts = super.getWatts();
 		if ( watts != null ) {
 			return watts;
 		}
@@ -122,14 +114,6 @@ public class PowerDatum extends BaseDatum {
 			return null;
 		}
 		return Integer.valueOf((int) Math.round(pvAmps.doubleValue() * pvVolts.doubleValue()));
-	}
-
-	public Long getWattHourReading() {
-		return wattHourReading;
-	}
-
-	public void setWattHourReading(Long wattHours) {
-		this.wattHourReading = wattHours;
 	}
 
 	/**
@@ -153,14 +137,11 @@ public class PowerDatum extends BaseDatum {
 
 	@Deprecated
 	public Double getKWattHoursToday() {
-		if ( wattHourReading == null ) {
+		Long wh = getWattHourReading();
+		if ( wh == null ) {
 			return null;
 		}
-		return wattHourReading.doubleValue() / 1000.0;
-	}
-
-	public void setWatts(Integer watts) {
-		this.watts = watts;
+		return wh.doubleValue() / 1000.0;
 	}
 
 	@Deprecated

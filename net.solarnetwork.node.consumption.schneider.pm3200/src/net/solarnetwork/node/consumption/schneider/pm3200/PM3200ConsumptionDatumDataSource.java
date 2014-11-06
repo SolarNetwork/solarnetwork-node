@@ -28,19 +28,21 @@ import java.util.Collection;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
-import net.solarnetwork.node.io.modbus.ModbusConnectionCallback;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.wimpi.modbus.net.SerialConnection;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.springframework.context.MessageSource;
 
 /**
- * DatumDataSource for ConsumptionDatum with the Schneider Electric PM3200
- * series kWh meter.
+ * DatumDataSource for GeneralNodeACEnergyDatum with the Schneider Electric
+ * PM3200 series kWh meter.
  * 
  * <p>
  * The configurable properties of this class are:
@@ -49,94 +51,134 @@ import org.springframework.context.MessageSource;
  * <dl class="class-properties">
  * <dt>messageSource</dt>
  * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
+ * 
+ * <dt>sampleCacheMs</dt>
+ * <dd>The maximum number of milliseconds to cache data read from the meter,
+ * until the data will be read from the meter again.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
-		DatumDataSource<ConsumptionDatum>, MultiDatumDataSource<ConsumptionDatum>,
+		DatumDataSource<GeneralNodeACEnergyDatum>, MultiDatumDataSource<GeneralNodeACEnergyDatum>,
 		SettingSpecifierProvider {
 
-	private static final long MIN_TIME_READ_DATA = 1000L * 5L; // 5 seconds
-
 	private MessageSource messageSource;
+	private long sampleCacheMs = 5000;
 
-	private PM3200Data getCurrentSample(final SerialConnection conn) {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
-		if ( lastReadDiff > MIN_TIME_READ_DATA ) {
-			sample.readMeterData(conn, getUnitId());
-			if ( log.isTraceEnabled() ) {
-				log.trace(sample.dataDebugString());
+	private PM3200Data getCurrentSample() {
+		PM3200Data currSample;
+		if ( isCachedSampleExpired() ) {
+			try {
+				currSample = performAction(new ModbusConnectionAction<PM3200Data>() {
+
+					@Override
+					public PM3200Data doWithConnection(ModbusConnection conn) throws IOException {
+						sample.readMeterData(conn);
+						return new PM3200Data(sample);
+					}
+
+				});
+				if ( log.isTraceEnabled() ) {
+					log.trace(currSample.dataDebugString());
+				}
+				log.debug("Read PM3200 data: {}", currSample);
+			} catch ( IOException e ) {
+				throw new RuntimeException("Communication problem reading from Modbus device "
+						+ modbusNetwork(), e);
 			}
-			log.debug("Read PM3200 data: {}", sample);
+		} else {
+			currSample = new PM3200Data(sample);
 		}
-		return new PM3200Data(sample);
+		return currSample;
+	}
+
+	private boolean isCachedSampleExpired() {
+		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		if ( lastReadDiff > sampleCacheMs ) {
+			return true;
+		}
+		return false;
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getDatumType() {
+	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
 		return PM3200ConsumptionDatum.class;
 	}
 
 	@Override
-	public ConsumptionDatum readCurrentDatum() {
-		return ModbusHelper.execute(getConnectionFactory(),
-				new ModbusConnectionCallback<ConsumptionDatum>() {
-
-					@Override
-					public ConsumptionDatum doInConnection(SerialConnection conn) throws IOException {
-						final PM3200Data currSample = getCurrentSample(conn);
-						PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-								MeasurementKind.Total);
-						d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
-						return d;
-					}
-				});
+	public GeneralNodeACEnergyDatum readCurrentDatum() {
+		final long start = System.currentTimeMillis();
+		final PM3200Data currSample = getCurrentSample();
+		PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.Total);
+		d.setSourceId(getSourceMapping().get(ACPhase.Total));
+		if ( currSample.getDataTimestamp() >= start ) {
+			// we read from the meter
+			postDatumCapturedEvent(d, ACEnergyDatum.class);
+		}
+		return d;
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getMultiDatumType() {
+	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
 		return PM3200ConsumptionDatum.class;
 	}
 
 	@Override
-	public Collection<ConsumptionDatum> readMultipleDatum() {
-		return ModbusHelper.execute(getConnectionFactory(),
-				new ModbusConnectionCallback<List<ConsumptionDatum>>() {
-
-					@Override
-					public List<ConsumptionDatum> doInConnection(SerialConnection conn)
-							throws IOException {
-						final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(4);
-						final PM3200Data currSample = getCurrentSample(conn);
-						if ( isCaptureTotal() ) {
-							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.Total);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.Total));
-							results.add(d);
-						}
-						if ( isCapturePhaseA() ) {
-							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseA);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseA));
-							results.add(d);
-						}
-						if ( isCapturePhaseB() ) {
-							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseB);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseB));
-							results.add(d);
-						}
-						if ( isCapturePhaseC() ) {
-							PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample,
-									MeasurementKind.PhaseC);
-							d.setSourceId(getSourceMapping().get(MeasurementKind.PhaseC));
-							results.add(d);
-						}
-						return results;
-					}
-				});
+	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
+		final long start = System.currentTimeMillis();
+		final PM3200Data currSample = getCurrentSample();
+		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
+		if ( currSample == null ) {
+			return results;
+		}
+		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
+		if ( isCaptureTotal() || postCapturedEvent ) {
+			PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.Total);
+			d.setSourceId(getSourceMapping().get(ACPhase.Total));
+			if ( postCapturedEvent ) {
+				// we read from the meter
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
+			}
+			if ( isCaptureTotal() ) {
+				results.add(d);
+			}
+		}
+		if ( isCapturePhaseA() || postCapturedEvent ) {
+			PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.PhaseA);
+			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
+			if ( postCapturedEvent ) {
+				// we read from the meter
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
+			}
+			if ( isCapturePhaseA() ) {
+				results.add(d);
+			}
+		}
+		if ( isCapturePhaseB() || postCapturedEvent ) {
+			PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.PhaseB);
+			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
+			if ( postCapturedEvent ) {
+				// we read from the meter
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
+			}
+			if ( isCapturePhaseB() ) {
+				results.add(d);
+			}
+		}
+		if ( isCapturePhaseC() || postCapturedEvent ) {
+			PM3200ConsumptionDatum d = new PM3200ConsumptionDatum(currSample, ACPhase.PhaseC);
+			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
+			if ( postCapturedEvent ) {
+				// we read from the meter
+				postDatumCapturedEvent(d, ACEnergyDatum.class);
+			}
+			if ( isCapturePhaseC() ) {
+				results.add(d);
+			}
+		}
+		return results;
 	}
 
 	// SettingSpecifierProvider
@@ -158,6 +200,46 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support implements
 	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		PM3200ConsumptionDatumDataSource defaults = new PM3200ConsumptionDatumDataSource();
+		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
+				.getSampleCacheMs())));
+		return results;
+	}
+
+	/**
+	 * Get the sample cache maximum age, in seconds.
+	 * 
+	 * @return the cache seconds
+	 * @deprecated use {@link #getSampleCacheMs()}
+	 */
+	@Deprecated
+	public int getSampleCacheSeconds() {
+		return (int) (getSampleCacheMs() / 1000);
+	}
+
+	/**
+	 * Set the sample cache maximum age, in seconds.
+	 * 
+	 * @param sampleCacheSeconds
+	 *        the cache seconds
+	 * @deprecated use {@link #setSampleCacheMs(long)}
+	 */
+	@Deprecated
+	public void setSampleCacheSeconds(int sampleCacheSeconds) {
+		setSampleCacheMs(sampleCacheSeconds * 1000L);
+	}
+
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }

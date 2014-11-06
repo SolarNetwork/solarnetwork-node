@@ -23,8 +23,15 @@
 package net.solarnetwork.node.io.yasdi4j;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.solarnetwork.node.LockTimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
@@ -37,6 +44,9 @@ public class YasdiMasterDevice implements YasdiMaster {
 
 	private final Collection<YasdiDevice> devices;
 	private final String commDevice;
+	private final Map<Long, ReentrantLock> locks;
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Constructor.
@@ -48,6 +58,12 @@ public class YasdiMasterDevice implements YasdiMaster {
 		super();
 		this.devices = devices;
 		this.commDevice = commDevice;
+		this.locks = new HashMap<Long, ReentrantLock>(devices == null ? 0 : devices.size());
+		if ( devices != null ) {
+			for ( YasdiDevice device : devices ) {
+				locks.put(device.getSN(), new ReentrantLock(true));
+			}
+		}
 	}
 
 	@Override
@@ -91,6 +107,49 @@ public class YasdiMasterDevice implements YasdiMaster {
 			}
 		}
 		return null;
+	}
+
+	@Override
+	public void acquireDeviceLock(YasdiDevice device, long timeout, TimeUnit timeoutUnit)
+			throws LockTimeoutException {
+		assert device != null;
+		final Long deviceID = device.getSN();
+		ReentrantLock lock = locks.get(deviceID);
+		if ( lock == null ) {
+			throw new RuntimeException("No lock available for device " + device);
+		}
+		if ( lock.isLocked() ) {
+			log.debug("YasdiDevice {} lock already acquired", deviceID);
+			return;
+		}
+		log.debug("Acquiring lock on YasdiDevice {}; waiting at most {} {}", deviceID, timeout,
+				timeoutUnit);
+		try {
+			if ( lock.tryLock(timeout, timeoutUnit) ) {
+				log.debug("Acquired YasdiDevice {} lock", deviceID);
+				return;
+			}
+			log.debug("Timeout acquiring YasdiDevice {} lock", deviceID);
+		} catch ( InterruptedException e ) {
+			log.debug("Interrupted waiting for YasdiDevice {} lock", deviceID);
+		}
+		throw new LockTimeoutException("Could not acquire YasdiDevice " + deviceID + " lock");
+	}
+
+	@Override
+	public void releaseDeviceLock(YasdiDevice device) {
+		assert device != null;
+		final Long deviceID = device.getSN();
+		ReentrantLock lock = locks.get(deviceID);
+		if ( lock == null ) {
+			throw new RuntimeException("No lock available for YasdiDevice " + deviceID);
+		}
+		if ( lock.isLocked() ) {
+			log.debug("Releasing lock on YasdiDevice {}", deviceID);
+			lock.unlock();
+		} else if ( log.isDebugEnabled() ) {
+			log.debug("YasdiDevice {} not locked, nothing to release", deviceID);
+		}
 	}
 
 }

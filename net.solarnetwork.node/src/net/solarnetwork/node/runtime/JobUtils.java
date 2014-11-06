@@ -35,20 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.quartz.CronTriggerBean;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
- * </dl>
+ * Utility methods for dealing with Quartz jobs.
  * 
  * @author matt
  * @version 1.0

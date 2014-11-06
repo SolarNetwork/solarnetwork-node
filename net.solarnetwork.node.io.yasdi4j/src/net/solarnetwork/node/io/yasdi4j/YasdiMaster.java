@@ -23,13 +23,15 @@
 package net.solarnetwork.node.io.yasdi4j;
 
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+import net.solarnetwork.node.LockTimeoutException;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
  * API for a YASDI master component.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface YasdiMaster {
 
@@ -89,5 +91,32 @@ public interface YasdiMaster {
 	 * @return the device, or <em>null</em> if not found
 	 */
 	YasdiDevice getDeviceMatchingName(String name);
+
+	/**
+	 * To support multiple threads accessing the same device, all threads should
+	 * call this method to acquire an exclusive lock on the device before using
+	 * any methods on it.
+	 * 
+	 * @param device
+	 *        the device to acquire an exclusive lock for
+	 * @param timeout
+	 *        the longest amount of time to wait
+	 * @param timeoutUnit
+	 *        the time unit of the {@code timeout} parameter
+	 * @throws LockTimeoutException
+	 *         if a timeout occurrs before the lock can be acquired
+	 */
+	void acquireDeviceLock(YasdiDevice device, long timeout, TimeUnit timeoutUnit)
+			throws LockTimeoutException;
+
+	/**
+	 * Any thread that calls
+	 * {@link #acquireDeviceLock(YasdiDevice, long, TimeUnit)} must call this
+	 * method to release that lock when it is finished using the device.
+	 * 
+	 * @param device
+	 *        the device to release the exclusive lock for
+	 */
+	void releaseDeviceLock(YasdiDevice device);
 
 }

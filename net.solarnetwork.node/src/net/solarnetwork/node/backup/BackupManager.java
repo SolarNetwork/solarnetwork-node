@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.concurrent.Future;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
@@ -56,6 +57,15 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * @return the backup, or <em>null</em> if none could be created
 	 */
 	Backup createBackup();
+
+	/**
+	 * Create a new Backup, using the active backup service, in the background.
+	 * This method will immediately return a Future where you can track the
+	 * status of the background backup, if desired.
+	 * 
+	 * @return the backup, or <em>null</em> if none could be created
+	 */
+	Future<Backup> createAsynchronousBackup();
 
 	/**
 	 * Restore all resources from a given backup.

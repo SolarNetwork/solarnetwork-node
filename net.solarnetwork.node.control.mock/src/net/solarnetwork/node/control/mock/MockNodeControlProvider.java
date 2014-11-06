@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.control.mock;
@@ -32,10 +30,10 @@ import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.support.NodeControlInfoDatum;
 
 /**
  * Mock implementation of {@link NodeControlProvider} combined with
@@ -50,7 +48,7 @@ import net.solarnetwork.node.support.NodeControlInfoDatum;
  * </p>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler {
 
@@ -108,8 +106,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 					for ( int i = 0; i < booleanControlIds.length; i++ ) {
 						String id = booleanControlIds[i];
 						if ( id.equals(controlId) ) {
-							info = newNodeControlInfoDatum(controlId, "Boolean Mock " + i,
-									NodeControlPropertyType.Boolean, false, null);
+							info = newNodeControlInfoDatum(controlId, (i == 0 ? null : "Boolean Mock "
+									+ i), NodeControlPropertyType.Boolean, false, null);
 							controlValues.put(controlId, info);
 							break;
 						}

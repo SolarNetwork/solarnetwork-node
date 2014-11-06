@@ -1,0 +1,28 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Serial Communication Support
+Bundle-SymbolicName: net.solarnetwork.node.io.serial
+Bundle-Description: Communication support for serial networks.
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Eclipse-ExtensibleAPI: true
+Export-Package: 
+ net.solarnetwork.node.io.serial;version="1.0.0",
+ net.solarnetwork.node.io.serial.rxtx;version="1.0.0"
+Import-Package: 
+ gnu.io,
+ gnu.trove.list;version="[3.0,4.0)",
+ gnu.trove.list.array;version="[3.0,4.0)",
+ net.solarnetwork.node;version="1.16.0",
+ net.solarnetwork.node.settings;version="1.1.0",
+ net.solarnetwork.node.settings.support;version="1.0.0",
+ net.solarnetwork.node.support;version="1.12.0",
+ net.solarnetwork.node.util;version="1.5.0",
+ net.solarnetwork.util;version="1.17.0",
+ org.apache.commons.codec;version="1.4.0",
+ org.apache.commons.codec.binary;version="1.4.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
+ org.slf4j;version="[1.5.0,2.0.0)",
+ org.springframework.context;version="[3.1,4.0)",
+ org.springframework.context.support;version="[3.1,4.0)"

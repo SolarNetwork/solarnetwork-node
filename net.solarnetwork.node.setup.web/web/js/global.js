@@ -60,7 +60,7 @@ var SolarNode = {
 	 */
 	errorAlert : function(contents) {
 		$('body').append(
-				$('<div class="alert alert-error"><button class="close btn" data-dismiss="alert"><i class="icon-remove"></i></button></div>')
+				$('<div class="alert alert-error"><button class="close btn" data-dismiss="alert">&times;</button></div>')
 				.append(contents));
 	},
 	
@@ -80,6 +80,38 @@ var SolarNode = {
 			msg = msg.replace(new RegExp('\\{'+(i)+'\\}','g'),params[i]);
 		}
 		return msg;
+	 },
+	 
+	 alert : function(title, message, style, container) {
+		 container = container || $('#body-container');
+		 if ( container ) {
+			 var alert = $('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+			 if ( title ) {
+				 $('<strong/>').append(title).appendTo(alert);
+				 if ( message ) {
+					 $(' ').appendTo(alert);
+				 }
+			 }
+			 if ( message ) {
+				 alert.append(message);
+			 }
+			 if ( style ) {
+				 alert.addClass(style);
+			 }
+			 container.prepend(alert);
+		 }
+	 },
+	 
+	 info : function(message, container) {
+		 SolarNode.alert(null, message, 'alert-info', container);
+	 },
+	 
+	 warn : function(title, message, container) {
+		 SolarNode.alert(title, message, null, container);
+	 },
+	 
+	 error : function(message, container) {
+		 SolarNode.alert(null, message, 'alert-error', container);
 	 }
 	
 };
@@ -189,6 +221,97 @@ SolarNode.Class.Slider = function(el, config) {
 SolarNode.Class.Slider.prototype = {
 	
 };
+
+SolarNode.context = (function() {
+	var basePath = undefined;
+	
+	var contextPath = function() {
+		if ( basePath === undefined ) {
+			basePath = $('meta[name=base-path]').attr('content');
+		}
+		return (basePath === undefined ? "" : basePath);
+	};
+	
+	var helper = {
+		
+		basePath : contextPath,
+		
+		path : function(path) {
+			var p = contextPath();
+			var p1 = String(path);
+			if ( p.search(/\/$/) >= 0 && p1.length > 0 && p1.charAt(0) === '/' ) {
+				p += p1.substring(1);
+			} else {
+				p += p1;
+			}
+			return p;
+		}
+		
+	};
+	
+	return helper;
+})();
+
+SolarNode.showLoading = function(button) {
+	SolarNode.showSpinner(button, true);
+};
+
+SolarNode.hideLoading = function(button) {
+	SolarNode.hideSpinner(button, true);
+};
+
+SolarNode.showSpinner = function(button, showLoading) {
+	var ladda = button.data('ladda');
+	if ( ladda === undefined ) {
+		if ( showLoading ) {
+			button.button('loading');
+		}
+		ladda = Ladda.create(button.get(0));
+		button.data('ladda', ladda);
+		ladda.start();
+	}
+};
+
+SolarNode.hideSpinner = function(button, hideLoading) {
+	var ladda = button.data('ladda');
+	if ( ladda !== undefined ) {
+		if ( hideLoading ) {
+			button.button('reset');
+		}
+		ladda.stop();
+		button.removeData('ladda');
+	}
+};
+
+/**
+ * Extract a key path value from an object. A key path is a period-delimited 
+ * list of property names, e.g. {@code location.name}.
+ * 
+ * @param {Object} root - The object to extract a value from.
+ * @param {String} path - The key path to extract.
+ * @returns {Object} The value associated with the given {@code path}, or <em>undefined</em> if not available. 
+ */
+SolarNode.extractJSONPath = function(root, path) {
+	var child;
+	if ( path === undefined ) {
+		return undefined;
+	}
+	if ( Array.isArray(path) === false ) {
+		path = path.split('.');
+	}
+	if ( path.length < 1 ) {
+		return undefined;
+	}
+	child = root[path[0]];
+	if ( child === undefined ) {
+		return undefined;
+	}
+	if ( path.length === 1 ) {
+		return child;
+	}
+	return SolarNode.extractJSONPath(child, path.slice(1));
+};
+
 
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {

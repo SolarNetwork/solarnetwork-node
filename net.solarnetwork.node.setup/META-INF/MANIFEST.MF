@@ -1,8 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Setup
+Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
-Bundle-Version: 1.4.0
+Bundle-Description: Provides core SolarNode setup infrastructure support.
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -12,9 +13,9 @@ Import-Package:
  javax.xml.xpath,
  net.solarnetwork.domain;version="1.2.0",
  net.solarnetwork.node;version="1.7.0",
- net.solarnetwork.node.backup;version="1.0.0",
+ net.solarnetwork.node.backup;version="1.1.0",
  net.solarnetwork.node.dao;version="1.0.0",
- net.solarnetwork.node.setup;version="1.3.0",
+ net.solarnetwork.node.setup;version="1.5.0",
  net.solarnetwork.node.support;version="1.4.0",
  net.solarnetwork.support;version="1.0.0",
  net.solarnetwork.util;version="1.10.0",

@@ -33,6 +33,10 @@
 	
 	<reference id="certificateService" interface="net.solarnetwork.support.CertificateService"/>
 	
+	<reference id="backupManagerService" interface="net.solarnetwork.node.backup.BackupManager" availability="optional">
+		<reference-listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
+	
 	<!-- Published Services -->
 	
 	<service ref="setupService">
@@ -54,12 +58,17 @@
 
 	<ctx:property-placeholder properties-ref="setup.cfg"/>
 	
+	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="backupManagerService"/>
+	</bean>
+
 	<bean id="setupService" class="net.solarnetwork.node.setup.impl.DefaultSetupService" 
 		init-method="init" >
 		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
 		<property name="transactionManager" ref="txManager"/>
 		<property name="settingDao" ref="settingDao"/>
 		<property name="pkiService" ref="pkiService"/>
+		<property name="backupManager" ref="backupManager"/>
 	</bean>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService">

@@ -22,21 +22,21 @@
 
 package net.solarnetwork.node.consumption.schneider.pm3200;
 
-import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.hw.schneider.meter.MeasurementKind;
+import java.util.Date;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 
 /**
- * Extension of {@link ConsumptionDatum} with additional properties supported by
- * the PM3200 series meters.
+ * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
+ * supported by the PM3200 series meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PM3200ConsumptionDatum extends ConsumptionDatum {
+public class PM3200ConsumptionDatum extends GeneralNodeACEnergyDatum {
 
 	private final PM3200Data sample;
-	private final MeasurementKind kind;
 
 	/**
 	 * Construct with a sample.
@@ -44,11 +44,14 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 	 * @param sample
 	 *        the sample
 	 */
-	public PM3200ConsumptionDatum(PM3200Data sample, MeasurementKind kind) {
+	public PM3200ConsumptionDatum(PM3200Data sample, ACPhase phase) {
 		super();
 		this.sample = sample;
-		this.kind = kind;
-		extractMeasurements();
+		setPhase(phase);
+		if ( sample.getDataTimestamp() > 0 ) {
+			setCreated(new Date(sample.getDataTimestamp()));
+		}
+		extractMeasurements(phase);
 	}
 
 	/**
@@ -60,8 +63,8 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 		return (getWatts() != null || getWattHourReading() != null);
 	}
 
-	private void extractMeasurements() {
-		switch (kind) {
+	private void extractMeasurements(ACPhase phase) {
+		switch (phase) {
 			case Total:
 				extractTotalMeasurements();
 				break;
@@ -81,19 +84,50 @@ public class PM3200ConsumptionDatum extends ConsumptionDatum {
 	}
 
 	private void extractTotalMeasurements() {
-		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
+		setEffectivePowerFactor(sample.getEffectiveTotalPowerFactor());
+		setFrequency(sample.getFrequency(PM3200Data.ADDR_DATA_FREQUENCY));
 		setWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+
+		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
+		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I_AVERAGE));
+		setPhaseVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L_L_AVERAGE));
+		setReactivePower(sample.getPower(PM3200Data.ADDR_DATA_REACTIVE_POWER_TOTAL));
+		setRealPower(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
+		setPowerFactor(sample.getPowerFactor(PM3200Data.ADDR_DATA_POWER_FACTOR_TOTAL));
+		setVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_NEUTRAL_AVERAGE));
+		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
 	}
 
 	private void extractPhaseAMeasurements() {
+		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_P1));
+		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I1));
+		setPhaseVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L1_L2));
+		setReactivePower(sample.getPower(PM3200Data.ADDR_DATA_REACTIVE_POWER_P1));
+		setRealPower(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P1));
+		setPowerFactor(sample.getPowerFactor(PM3200Data.ADDR_DATA_POWER_FACTOR_P1));
+		setVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L1_NEUTRAL));
 		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P1));
 	}
 
 	private void extractPhaseBMeasurements() {
+		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_P2));
+		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I2));
+		setPhaseVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L2_L3));
+		setReactivePower(sample.getPower(PM3200Data.ADDR_DATA_REACTIVE_POWER_P2));
+		setRealPower(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P2));
+		setPowerFactor(sample.getPowerFactor(PM3200Data.ADDR_DATA_POWER_FACTOR_P2));
+		setVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L2_NEUTRAL));
 		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P2));
 	}
 
 	private void extractPhaseCMeasurements() {
+		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_P3));
+		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I3));
+		setPhaseVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L3_L1));
+		setReactivePower(sample.getPower(PM3200Data.ADDR_DATA_REACTIVE_POWER_P3));
+		setRealPower(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P3));
+		setPowerFactor(sample.getPowerFactor(PM3200Data.ADDR_DATA_POWER_FACTOR_P3));
+		setVoltage(sample.getVoltage(PM3200Data.ADDR_DATA_V_L3_NEUTRAL));
 		setWatts(sample.getPower(PM3200Data.ADDR_DATA_ACTIVE_POWER_P3));
 	}
 

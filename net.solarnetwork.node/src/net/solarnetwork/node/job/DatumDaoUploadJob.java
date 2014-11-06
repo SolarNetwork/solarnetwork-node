@@ -30,9 +30,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 
@@ -62,7 +62,7 @@ import org.quartz.StatefulJob;
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatumDaoUploadJob<T extends Datum> extends AbstractJob implements StatefulJob {
 
@@ -93,7 +93,7 @@ public class DatumDaoUploadJob<T extends Datum> extends AbstractJob implements S
 			final Date uploadDate = new Date();
 			try {
 				for ( Datum datum : toUpload ) {
-					Long tid = uploadService.uploadDatum(datum);
+					String tid = uploadService.uploadDatum(datum);
 					if ( log.isTraceEnabled() ) {
 						log.trace("Just uploaded [" + datumDao.getDatumType().getSimpleName() + "] ["
 								+ datum.getCreated().getTime() + " " + datum.getSourceId()

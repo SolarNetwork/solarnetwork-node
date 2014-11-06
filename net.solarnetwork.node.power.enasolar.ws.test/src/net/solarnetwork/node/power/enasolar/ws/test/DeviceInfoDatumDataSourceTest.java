@@ -24,12 +24,12 @@ package net.solarnetwork.node.power.enasolar.ws.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import net.solarnetwork.node.power.PowerDatum;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Test case for the {@link DeviceInfoDatumDataSource} class.
@@ -37,20 +37,53 @@ import org.springframework.test.context.ContextConfiguration;
  * @author matt
  * @version 1.1
  */
-@ContextConfiguration
-public class DeviceInfoDatumDataSourceTest extends AbstractNodeTransactionalTest {
-
-	@Autowired
-	private DeviceInfoDatumDataSource dataSource;
+public class DeviceInfoDatumDataSourceTest extends AbstractNodeTest {
 
 	@Test
-	public void parseDatum() {
-		PowerDatum datum = dataSource.readCurrentDatum();
+	public void parseDeviceInfoDatum() {
+		DeviceInfoDatumDataSource dataSource = new DeviceInfoDatumDataSource();
+		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		dataSource.init();
+		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
+		deviceInfoMap.put("outputVoltage", "//data[@key='acOutputVolts']/@value");
+		deviceInfoMap.put("outputPower", "//data[@key='acPower']/@value");
+		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
+		deviceInfoMap.put("inputVoltage", "//data[@key='pvVolts']/@value");
+		deviceInfoMap.put("inputPower", "//data[@key='pvPower']/@value");
+		dataSource.setXpathMap(deviceInfoMap);
+
+		GeneralNodePVEnergyDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
 		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
-		assertNotNull(datum.getAcOutputVolts());
-		assertEquals(241.1, datum.getAcOutputVolts().doubleValue(), 0.001);
-		assertNotNull(datum.getAcOutputAmps());
-		assertEquals(2.604, datum.getAcOutputAmps().doubleValue(), 0.001);
+		assertEquals(Integer.valueOf(628), datum.getWatts());
+		assertNotNull(datum.getVoltage());
+		assertEquals(241.1, datum.getVoltage().floatValue(), 0.01);
+		assertNotNull(datum.getDCPower());
+		assertEquals(Integer.valueOf(681), datum.getDCPower());
+		assertNotNull(datum.getDCVoltage());
+		assertEquals(304.3F, datum.getDCVoltage().floatValue(), 0.01);
+	}
+
+	@Test
+	public void parseMetersDataDatum() {
+		DeviceInfoDatumDataSource dataSource = new DeviceInfoDatumDataSource();
+		dataSource.setUrls(new String[] { getClass().getResource("data.xml").toString(),
+				getClass().getResource("meters.xml").toString() });
+		dataSource.init();
+		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
+		deviceInfoMap.put("outputPower", "//OutputPower");
+		deviceInfoMap.put("outputVoltage", "//OutputVoltage");
+		deviceInfoMap.put("inputVoltage", "//InputVoltage");
+		deviceInfoMap.put("energyLifetime", "//EnergyLifetime");
+		dataSource.setXpathMap(deviceInfoMap);
+
+		GeneralNodePVEnergyDatum datum = dataSource.readCurrentDatum();
+		log.debug("Got datum: {}", datum);
+		assertEquals(Integer.valueOf(214), datum.getWatts());
+		assertEquals(Long.valueOf(7629660), datum.getWattHourReading());
+		assertNotNull(datum.getVoltage());
+		assertEquals(237.2F, datum.getVoltage().floatValue(), 0.01);
+		assertNotNull(datum.getDCVoltage());
+		assertEquals(419.3F, datum.getDCVoltage().floatValue(), 0.01);
 	}
 }

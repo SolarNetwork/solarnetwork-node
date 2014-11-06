@@ -21,7 +21,6 @@
 	<bean id="mockPowerDatumDataSource" class="net.solarnetwork.node.power.mock.MockPowerDatumDataSource">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.power.mock.MockPowerDatumDataSource" 
 			autowire-on-update="true"/>
-		<property name="dayPvAmps" value="5.0"/>
 	</bean>
 
 	<bean id="mockPricePowerDatumDataSource" class="net.solarnetwork.node.support.LocationDatumDataSource"

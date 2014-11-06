@@ -22,12 +22,13 @@
 
 package net.solarnetwork.node.control.demandbalancer;
 
+
 /**
  * API for evaluating current demand balance conditions and producing a desired
  * generation limit.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface DemandBalanceStrategy {
 
@@ -47,16 +48,18 @@ public interface DemandBalanceStrategy {
 	 * @param powerControlId
 	 *        the ID if the control managing the generation limit
 	 * @param demandWatts
-	 *        the current demand, in watts
+	 *        the current demand, in watts, or <b>-1</b> if unknown
 	 * @param generationWatts
-	 *        the current generation, in watts
+	 *        the current generation, in watts, or <b>-1</b> if unknown
 	 * @param generationCapacityWatts
-	 *        the generation capacity, in watts
+	 *        the generation capacity, in watts, or <b>-1</b> if unknown
 	 * @param currentLimit
-	 *        the current generation limit, as an integer percentage, or
-	 *        anything less than {@code 0} if unknown
-	 * @return the desired generation limit, as an integer percentage
+	 *        the current generation limit as an integer percentage, or
+	 *        <b>-1</b> if unknown
+	 * @return the desired generation limit, as an integer percentage, or
+	 *         <b>-1</b> for no change
 	 */
 	int evaluateBalance(final String powerControlId, final int demandWatts, final int generationWatts,
 			final int generationCapacityWatts, final int currentLimit);
+
 }

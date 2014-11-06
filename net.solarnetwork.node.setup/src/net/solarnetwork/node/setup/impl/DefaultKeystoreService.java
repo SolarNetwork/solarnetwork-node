@@ -25,12 +25,14 @@ package net.solarnetwork.node.setup.impl;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -67,6 +69,7 @@ import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -97,6 +100,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	/** The settings key for the key store password. */
 	public static final String KEY_PASSWORD = "solarnode.keystore.pw";
 
+	private static final String PKCS12_KEYSTORE_TYPE = "pkcs12";
 	private static final int PASSWORD_LENGTH = 20;
 
 	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
@@ -392,6 +396,63 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	}
 
 	@Override
+	public void savePKCS12Keystore(String keystore, String password) throws CertificateException {
+		KeyStore keyStore = loadKeyStore(PKCS12_KEYSTORE_TYPE,
+				new ByteArrayInputStream(Base64.decodeBase64(keystore)), password);
+		deleteSetting(KEY_PASSWORD);
+		final String newPassword = getKeyStorePassword();
+		KeyStore newKeyStore = loadKeyStore(KeyStore.getDefaultType(), null, newPassword);
+		try {
+			// change the password to our local random one
+			Key key = keyStore.getKey(nodeAlias, password.toCharArray());
+			Certificate[] chain = keyStore.getCertificateChain(nodeAlias);
+			X509Certificate[] x509Chain = new X509Certificate[chain.length];
+			for ( int i = 0; i < chain.length; i += 1 ) {
+				x509Chain[i] = (X509Certificate) chain[i];
+			}
+			newKeyStore.setKeyEntry(nodeAlias, key, newPassword.toCharArray(), chain);
+			saveNodeCertificateChain(newKeyStore, key, x509Chain[0], x509Chain);
+		} catch ( GeneralSecurityException e ) {
+			throw new CertificateException(e);
+		}
+		File ksFile = new File(keyStorePath);
+		if ( ksFile.isFile() ) {
+			ksFile.delete();
+		}
+		saveKeyStore(newKeyStore);
+	}
+
+	private KeyStore loadKeyStore(String type, InputStream in, String password) {
+		if ( password == null ) {
+			password = "";
+		}
+		KeyStore keyStore = null;
+		try {
+			keyStore = KeyStore.getInstance(type);
+			keyStore.load(in, password.toCharArray());
+			return keyStore;
+		} catch ( GeneralSecurityException e ) {
+			throw new CertificateException("Error loading certificate key store", e);
+		} catch ( IOException e ) {
+			String msg;
+			if ( e.getCause() instanceof UnrecoverableKeyException ) {
+				msg = "Invalid password loading key store";
+			} else {
+				msg = "Error loading certificate key store";
+			}
+			throw new CertificateException(msg, e);
+		} finally {
+			if ( in != null ) {
+				try {
+					in.close();
+				} catch ( IOException e ) {
+					// ignore this one
+				}
+			}
+		}
+	}
+
+	@Override
 	public void saveNodeSignedCertificate(String pem) throws CertificateException {
 		KeyStore keyStore = loadKeyStore();
 		Key key;
@@ -409,9 +470,17 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			throw new CertificateException(
 					"The node does not have a private key, start the association process over.");
 		}
-		X509Certificate caCert = getCACertificate(keyStore);
 
 		X509Certificate[] chain = certificateService.parsePKCS7CertificateChainString(pem);
+
+		saveNodeCertificateChain(keyStore, key, nodeCert, chain);
+
+		saveKeyStore(keyStore);
+	}
+
+	private void saveNodeCertificateChain(KeyStore keyStore, Key key, X509Certificate nodeCert,
+			X509Certificate[] chain) {
+		X509Certificate caCert = getCACertificate(keyStore);
 
 		if ( chain.length < 1 ) {
 			throw new CertificateException("No certificates avaialble");
@@ -475,8 +544,6 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error opening node certificate", e);
 		}
-
-		saveKeyStore(keyStore);
 	}
 
 	private synchronized void resetFromKeyStoreChange() {
@@ -580,37 +647,14 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	private synchronized KeyStore loadKeyStore() {
 		File ksFile = new File(keyStorePath);
 		InputStream in = null;
-		KeyStore keyStore = null;
 		String passwd = getKeyStorePassword();
 		try {
-			keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
 			if ( ksFile.isFile() ) {
 				in = new BufferedInputStream(new FileInputStream(ksFile));
 			}
-			keyStore.load(in, passwd.toCharArray());
-			return keyStore;
-		} catch ( KeyStoreException e ) {
-			throw new CertificateException("Error loading certificate key store", e);
-		} catch ( NoSuchAlgorithmException e ) {
-			throw new CertificateException("Error loading certificate key store", e);
-		} catch ( java.security.cert.CertificateException e ) {
-			throw new CertificateException("Error loading certificate key store", e);
+			return loadKeyStore(KeyStore.getDefaultType(), in, passwd);
 		} catch ( IOException e ) {
-			String msg;
-			if ( e.getCause() instanceof UnrecoverableKeyException ) {
-				msg = "Invalid password loading key store";
-			} else {
-				msg = "Error loading certificate key store";
-			}
-			throw new CertificateException(msg, e);
-		} finally {
-			if ( in != null ) {
-				try {
-					in.close();
-				} catch ( IOException e ) {
-					log.warn("Error closing key store file {}: {}", ksFile.getPath(), e.getMessage());
-				}
-			}
+			throw new CertificateException("Error opening file " + keyStorePath, e);
 		}
 	}
 

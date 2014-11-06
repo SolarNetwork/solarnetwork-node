@@ -1,23 +1,26 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode SMA via yasdi4j
+Bundle-Name: SMA Power Datum DataSource (yasdi4j)
 Bundle-SymbolicName: net.solarnetwork.node.power.sma.yasdi4j
-Bundle-Version: 1.54.0
+Bundle-Description: Collect generation data from SMA inverts using the SMANet protocol via yasdi4j.
+Bundle-Version: 1.9.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  de.michaeldenk.yasdi4j;version="0.1.5",
- net.solarnetwork.node;version="1.11.0",
+ net.solarnetwork.node;version="1.13.0",
  net.solarnetwork.node.dao;version="1.5.0",
- net.solarnetwork.node.io.yasdi4j;version="1.1.0",
+ net.solarnetwork.node.domain;version="1.0.0",
+ net.solarnetwork.node.io.yasdi4j;version="1.2.0",
  net.solarnetwork.node.hw.sma;version="1.0.0",
  net.solarnetwork.node.power;version="1.5.0",
  net.solarnetwork.node.settings;version="1.0.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
  net.solarnetwork.node.support;version="1.8.0",
- net.solarnetwork.node.util;version="1.1.1",
+ net.solarnetwork.node.util;version="1.5.0",
  net.solarnetwork.util;version="1.10.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
  org.springframework.beans;version="[3.1,4.0)",
  org.springframework.beans.factory;version="[3.1,4.0)",

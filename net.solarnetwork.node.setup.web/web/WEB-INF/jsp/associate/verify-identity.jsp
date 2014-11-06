@@ -28,8 +28,31 @@
 	<fmt:message key="node.setup.identity.end"/>
 </p>
 <c:url value="/associate/confirm" var="action"/>
-<form:form action="${action}" method="post" class="form">
-	<form:errors cssClass="alert alert-error" element="div"/>
-	<a class="btn" href="<c:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
-	<button type="submit" class="btn btn-primary" name="confirm"><fmt:message key='node.setup.identity.confirm'/></button>
+<form:form action="${action}" method="post" class="form-horizontal" id="associate-confirm-form">
+	<fieldset>
+		<form:errors cssClass="alert alert-error" element="div"/>
+		<div class="control-group">
+			<label class="control-label" for="invitation-certpass"><fmt:message key="node.setup.associate.certpass"/></label>
+			<div class="controls">
+				<input type="password" name="keystorePassword" maxlength="64" id="invitation-certpass"/>
+				<span class="help-block"><fmt:message key="node.setup.associate.certpass.caption"/></span>
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="invitation-certpass-again"><fmt:message key="node.setup.associate.certpass.again"/></label>
+			<div class="controls">
+				<input type="password" name="keystorePasswordAgain" maxlength="64" id="invitation-certpass-again"
+					data-tooshort="<fmt:message key='node.setup.associate.certpass.tooshort'/>"
+					data-mismatch="<fmt:message key='node.setup.associate.certpass.mismatch'/>"/>
+			</div>
+		</div>
+	</fieldset>
+	<div class="form-actions">
+		<a class="btn" href="<c:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
+		<button type="submit" class="btn btn-primary" name="confirm"><fmt:message key='node.setup.identity.confirm'/></button>
+		<div class="alert alert-error hidden" id="invitation-certpass-reiterate">
+	 		<strong><fmt:message key='node.setup.associate.certpass.reiterate.title'/></strong>
+	 		<fmt:message key='node.setup.associate.certpass.reiterate'/>
+	 	</div>
+	</div>
 </form:form>

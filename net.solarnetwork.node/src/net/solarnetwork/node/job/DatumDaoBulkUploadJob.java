@@ -31,8 +31,8 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.Datum;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 
@@ -111,7 +111,7 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 			int count = 0;
 			List<BulkUploadResult> results = uploadService.uploadBulkDatum(uploadList);
 			for ( BulkUploadResult result : results ) {
-				Long tid = result.getId();
+				String tid = result.getId();
 				if ( log.isTraceEnabled() ) {
 					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]", new Object[] {
 							result.getDatum().getClass().getSimpleName(),

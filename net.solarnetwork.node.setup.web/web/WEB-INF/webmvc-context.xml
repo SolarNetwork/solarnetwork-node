@@ -27,47 +27,29 @@
 
 	<mvc:annotation-driven>
 		<mvc:message-converters register-defaults="true">
-			<bean class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
 				<property name="prefixJson" value="false" />
 				<property name="supportedMediaTypes" value="application/json" />
-				<property name="objectMapper">
-					<bean class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-						<property name="mapper" ref="jacksonObjectMapper"/>
-						<property name="serializers">
-							<list>
-								<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
-								<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
-								<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
-								<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
-							</list>
-						</property>
-					</bean>
-				</property>
+				<property name="objectMapper" ref="objectMapper"/>
 		    </bean>
 		</mvc:message-converters>
 	</mvc:annotation-driven>
 	
-	<!-- All this craziness just to set the serializationInclusion property without getting a
-	 	"Invalid property 'serializationInclusion'" exception from Spring. -->
-	<bean id="jacksonObjectMapper" class="org.codehaus.jackson.map.ObjectMapper" />
-	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-		<property name="targetObject">
-			<bean factory-bean="jacksonObjectMapper" factory-method="getSerializationConfig" />
-		</property>
-		<property name="targetMethod" value="setSerializationInclusion" />
-		<property name="arguments">
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
+		<property name="serializers">
 			<list>
-				<value type="org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion">NON_NULL</value>
+				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
 			</list>
 		</property>
 	</bean>
-
+	
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
 	<!-- Dispatch requests mapped to POJO @Controllers implementations -->
-	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping"
-		p:alwaysUseFullPath="true"/>
-	<bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter"
+	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
 		p:alwaysUseFullPath="true"/>
 
 	<!-- Resolves logical view names returned by Controllers to Tiles; 

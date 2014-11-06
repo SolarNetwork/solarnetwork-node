@@ -22,20 +22,22 @@
 
 package net.solarnetwork.node.consumption.schneider.pm3200.test;
 
-import java.util.Collection;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import java.io.IOException;
 import net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource;
-import net.solarnetwork.node.io.modbus.JamodModbusSerialConnectionFactory;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
+import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.test.context.ContextConfiguration;
 
 /**
  * Test cases for the {@link PM3200ConsumptionDatumDataSource} class.
@@ -43,51 +45,80 @@ import org.springframework.test.context.ContextConfiguration;
  * @author matt
  * @version 1.0
  */
-@ContextConfiguration
 public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 
-	@Autowired
-	private JamodModbusSerialConnectionFactory connectionFactory;
+	private final int UNIT_ID = 1;
 
-	@Value("${meter.unitId}")
-	private Integer unitId;
-
-	private OptionalService<ModbusSerialConnectionFactory> connectionFactoryService;
+	private ModbusNetwork modbus;
+	private ModbusConnection conn;
 	private PM3200ConsumptionDatumDataSource service;
 
 	@Before
 	public void setup() {
-		connectionFactoryService = new StaticOptionalService<ModbusSerialConnectionFactory>(
-				connectionFactory);
 		service = new PM3200ConsumptionDatumDataSource();
-		service.setConnectionFactory(connectionFactoryService);
-		service.setUnitId(unitId);
+		service.setUnitId(UNIT_ID);
+		modbus = EasyMock.createMock(ModbusNetwork.class);
+		conn = EasyMock.createMock(ModbusConnection.class);
+		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
 	}
 
-	@Test
-	public void testReadConsumptionDatumMain() {
-		ConsumptionDatum result = service.readCurrentDatum();
-		log.debug("Read ConsumptionDatum: {}", result);
-		Assert.assertNotNull("ConsumptionDatum", result);
-		Assert.assertEquals("Source ID", PM3200ConsumptionDatumDataSource.MAIN_SOURCE_ID,
-				result.getSourceId());
-		Assert.assertNotNull("Current", result.getAmps());
-		Assert.assertNotNull("Voltage", result.getVolts());
-		Assert.assertNotNull("Total energy", result.getWattHourReading());
+	@SuppressWarnings("unchecked")
+	private <T> ModbusConnectionAction<T> anyAction(Class<T> type) {
+		return EasyMock.anyObject(ModbusConnectionAction.class);
 	}
 
+	// 2099
+	private final int[] TEST_DATA_SET_1 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+
+	// 3019
+	private final int[] TEST_DATA_SET_2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+			16, 17, 18 };
+
+	// 3053
+	private final int[] TEST_DATA_SET_3 = new int[] { 1, 2, 3, 4, 5, 6,
+			((Float.floatToIntBits(.12f) >> 16) & 0xFFFF), (Float.floatToIntBits(.12f) & 0xFFFF), 9, 10,
+			11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
+
+	// 3107
+	private final int[] TEST_DATA_SET_4 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+			16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
+
+	// 3203
+	private final int[] TEST_DATA_SET_5 = new int[] { (int) ((2323L >> 48) & 0xFFFF),
+			(int) ((2323L >> 32) & 0xFFFF), (int) ((2323L >> 16) & 0xFFFF),
+			(int) ((2323L >> 0) & 0xFFFF), 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+			21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 };
+
 	@Test
-	public void testReadConsumptionDatumsMain() {
-		Collection<ConsumptionDatum> results = service.readMultipleDatum();
-		log.debug("Read multi ConsumptionDatum: {}", results);
-		Assert.assertNotNull("ConsumptionDatum Collection", results);
-		Assert.assertEquals("ConsumptionDatum count", 1, results.size());
-		ConsumptionDatum result = results.iterator().next();
-		Assert.assertNotNull("ConsumptionDatum", result);
+	public void testReadConsumptionDatumMain() throws IOException {
+		expect(modbus.performAction(anyAction(PM3200Data.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
+				new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+
+		expect(conn.readInts(2999, 12)).andReturn(TEST_DATA_SET_1);
+		expect(conn.readInts(3019, 18)).andReturn(TEST_DATA_SET_2);
+		expect(conn.readInts(3053, 32)).andReturn(TEST_DATA_SET_3);
+		expect(conn.readInts(3107, 26)).andReturn(TEST_DATA_SET_4);
+		expect(conn.readInts(3203, 38)).andReturn(TEST_DATA_SET_5);
+
+		replay(modbus, conn);
+
+		GeneralNodeACEnergyDatum result = service.readCurrentDatum();
+		log.debug("Read GeneralNodeACEnergyDatum: {}", result);
+
+		verify(modbus, conn);
+
+		Assert.assertNotNull("GeneralNodeACEnergyDatum", result);
 		Assert.assertEquals("Source ID", PM3200ConsumptionDatumDataSource.MAIN_SOURCE_ID,
 				result.getSourceId());
-		Assert.assertNotNull("Current", result.getAmps());
-		Assert.assertNotNull("Voltage", result.getVolts());
-		Assert.assertNotNull("Total energy", result.getWattHourReading());
+		Assert.assertEquals("Watts", Integer.valueOf(120), result.getWatts());
+		Assert.assertEquals("Total energy", Long.valueOf(2323), result.getWattHourReading());
 	}
 }

@@ -50,4 +50,8 @@
 	<osgi:list id="instructionHandlerList" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
 
+	<osgi:reference id="pluginServiceRef" interface="net.solarnetwork.node.setup.PluginService" availability="optional">
+		<osgi:listener ref="pluginService" bind-method="onBind" unbind-method="onUnbind"/>
+	</osgi:reference>
+	
 </beans>

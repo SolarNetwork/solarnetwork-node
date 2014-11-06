@@ -24,29 +24,34 @@
 
 package net.solarnetwork.node;
 
+import net.solarnetwork.node.domain.Datum;
+
 /**
  * Result object for a specific datum uploaded in bulk.
  * 
- * <p>The {@code id} value represents the remote ID received 
- * from the server for the given {@code datum}. This value
- * can be stored in {@link DatumUpload} objects as a receipt
- * for the upload transaction.</p>
+ * <p>
+ * The {@code id} value represents the remote ID received from the server for
+ * the given {@code datum}. This value can be stored in {@link DatumUpload}
+ * objects as a receipt for the upload transaction.
+ * </p>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BulkUploadResult {
 
 	private final Datum datum;
-	private final Long id;
-	
+	private final String id;
+
 	/**
 	 * Constructor.
 	 * 
-	 * @param datum the datum
-	 * @param id the ID
+	 * @param datum
+	 *        the datum
+	 * @param id
+	 *        the ID
 	 */
-	public BulkUploadResult(Datum datum, Long id) {
+	public BulkUploadResult(Datum datum, String id) {
 		this.datum = datum;
 		this.id = id;
 	}
@@ -61,8 +66,8 @@ public class BulkUploadResult {
 	/**
 	 * @return the id
 	 */
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
-	
+
 }

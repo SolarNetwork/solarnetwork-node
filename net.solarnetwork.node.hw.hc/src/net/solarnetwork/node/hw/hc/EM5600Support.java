@@ -30,16 +30,26 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSupport;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 
 /**
  * Supporting class for the EM5600 series power meter.
@@ -65,19 +75,30 @@ import org.joda.time.format.DateTimeFormat;
  * 
  * <dl class="class-properties">
  * <dt>sourceMapping</dt>
- * <dd>A mapping of {@link MeasurementKind} to associated Source ID values to
- * assign to collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * <dd>A mapping of {@link ACPhase} to associated Source ID values to assign to
+ * collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * 
+ * <dt>eventAdmin</dt>
+ * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
+ * 
+ * <dt>datumMetadataService</dt>
+ * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.1
  */
-public class EM5600Support extends ModbusSupport {
+public class EM5600Support extends ModbusDeviceSupport {
 
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
-	private Map<MeasurementKind, String> sourceMapping = getDefaulSourceMapping();
+	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumMetadataService> datumMetadataService;
+
+	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	/**
 	 * An instance of {@link EM5600Data} to support keeping the last-read values
@@ -93,9 +114,9 @@ public class EM5600Support extends ModbusSupport {
 	 * 
 	 * @return mapping
 	 */
-	public static Map<MeasurementKind, String> getDefaulSourceMapping() {
-		Map<MeasurementKind, String> result = new EnumMap<MeasurementKind, String>(MeasurementKind.class);
-		result.put(MeasurementKind.Total, MAIN_SOURCE_ID);
+	public static Map<ACPhase, String> getDefaulSourceMapping() {
+		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
+		result.put(ACPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -121,16 +142,15 @@ public class EM5600Support extends ModbusSupport {
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<MeasurementKind, String> kindMap = new EnumMap<MeasurementKind, String>(
-				MeasurementKind.class);
+		Map<ACPhase, String> kindMap = new EnumMap<ACPhase, String>(ACPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				MeasurementKind mk;
+				ACPhase mk;
 				try {
-					mk = MeasurementKind.valueOf(k);
+					mk = ACPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid MeasurementKind value, ignoring.", k);
+					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());
@@ -164,7 +184,7 @@ public class EM5600Support extends ModbusSupport {
 	 *        the measurement kind
 	 * @return the source ID value, or <em>null</em> if not available
 	 */
-	public String getSourceIdForMeasurementKind(MeasurementKind kind) {
+	public String getSourceIdForACPhase(ACPhase kind) {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
@@ -193,9 +213,9 @@ public class EM5600Support extends ModbusSupport {
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
 				.getSourceMappingValue()));
 
@@ -228,7 +248,7 @@ public class EM5600Support extends ModbusSupport {
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		// note the order of these elements determines the output of getDeviceInfoMessage()
 		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
 		String str;
@@ -255,8 +275,8 @@ public class EM5600Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter serial number, or <em>null</em> if not available
 	 */
-	public String getMeterSerialNumber(SerialConnection conn) {
-		return ModbusHelper.readASCIIString(conn, ADDR_SYSTEM_METER_SERIAL_NUMBER, 4, getUnitId(), true);
+	public String getMeterSerialNumber(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_SERIAL_NUMBER, 4, true, ModbusConnection.ASCII_CHARSET);
 	}
 
 	/**
@@ -267,8 +287,8 @@ public class EM5600Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter model number, or <em>null</em> if not available
 	 */
-	public Integer getMeterModel(SerialConnection conn) {
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_MODEL, 1, getUnitId());
+	public Integer getMeterModel(ModbusConnection conn) {
+		Integer[] data = conn.readValues(ADDR_SYSTEM_METER_MODEL, 1);
 		if ( data != null && data.length > 0 ) {
 			if ( unitFactor == null ) {
 				switch (data[0].intValue()) {
@@ -296,8 +316,8 @@ public class EM5600Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
-	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 2, getUnitId());
+	public LocalDateTime getMeterManufactureDate(ModbusConnection conn) {
+		int[] data = conn.readInts(ADDR_SYSTEM_METER_MANUFACTURE_DATE, 2);
 		return parseDate(data);
 	}
 
@@ -321,27 +341,115 @@ public class EM5600Support extends ModbusSupport {
 		return result;
 	}
 
+	/**
+	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the {@link Datum} to post the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @since 2.1
+	 */
+	protected final void postDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @since 2.1
+	 */
+	protected Event createDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+	}
+
+	/**
+	 * Add source metadata using the configured {@link DatumMetadataService} (if
+	 * available). The metadata will be cached so that subseqent calls to this
+	 * method with the same metadata value will not try to re-save the unchanged
+	 * value. This method will catch all exceptions and silently discard them.
+	 * 
+	 * @param sourceId
+	 *        the source ID to add metadata to
+	 * @param meta
+	 *        the metadata to add
+	 * @param returns
+	 *        <em>true</em> if the metadata was saved successfully, or does not
+	 *        need to be updated
+	 */
+	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		if ( cached != null && meta.equals(cached) ) {
+			// we've already posted this metadata... don't bother doing it again
+			log.debug("Source {} metadata already added, not posting again", sourceId);
+			return true;
+		}
+		DatumMetadataService service = null;
+		if ( datumMetadataService != null ) {
+			service = datumMetadataService.service();
+		}
+		if ( service == null ) {
+			return false;
+		}
+		try {
+			service.addSourceMetadata(sourceId, meta);
+			sourceMetadataCache.put(sourceId, meta);
+			return true;
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
+		return false;
+	}
+
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
 	}
 
-	public Map<MeasurementKind, String> getSourceMapping() {
+	public Map<ACPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
-	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
+	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
@@ -353,6 +461,22 @@ public class EM5600Support extends ModbusSupport {
 		assert unitFactor != null;
 		this.unitFactor = unitFactor;
 		this.sample.setUnitFactor(unitFactor);
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
+
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }

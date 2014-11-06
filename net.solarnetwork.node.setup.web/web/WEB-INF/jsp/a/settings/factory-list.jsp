@@ -102,8 +102,8 @@ $(function() {
 		<fmt:message key="delete.label"/>
 	</button>
 </div>
-<form id="price-lookup-modal" class="modal dynamic hide fade lookup-modal" 
-		action="<c:url value='/api/v1/sec/location/price'/>" method="get">
+<form class="modal dynamic hide fade lookup-modal price-lookup-modal" 
+		action="<c:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.price.title'/></h3>
@@ -111,20 +111,28 @@ $(function() {
 	<div class="modal-body">
 		<p><fmt:message key='lookup.price.intro'/></p>
 		<div class="form-inline">
-			<input type="text" class="span2" maxlength="64" name="sourceName" placeholder="<fmt:message key='lookup.price.sourceName'/>"/>
-			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.price.locationName'/>"/>
-			<input type="text" class="span2" maxlength="6" name="currency" placeholder="<fmt:message key='lookup.price.currency'/>"/>
-			<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.action.search'/>">
+			<input type="hidden" name="tags" value="price"/>
+			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
+			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
 		</div>
 
-		<table class="table table-striped table-hover hidden">
+		<table class="table table-striped table-hover hidden search-results">
 			<thead>
 				<tr>
 					<th><fmt:message key='lookup.price.sourceName'/></th>
 					<th><fmt:message key='lookup.price.locationName'/></th>
+					<th><fmt:message key='lookup.price.country'/></th>
+					<th><fmt:message key='lookup.price.region'/></th>
 					<th><fmt:message key='lookup.price.currency'/></th>
+				</tr>
+				<tr class="template">
+					<td data-tprop="sourceId"></td>
+					<td data-tprop="m.name"></td>
+					<td data-tprop="location.country"></td>
+					<td data-tprop="location.region"></td>
+					<td data-tprop="m.currency"></td>
 				</tr>
 			</thead>
 			<tbody>
@@ -138,13 +146,13 @@ $(function() {
 	</div>
 	<div class="modal-footer">
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button id="price-lookup-choose" type="button" class="btn btn-primary" disabled="disabled">
+		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
 	</div>
 </form>
-<form id="weather-lookup-modal" class="modal dynamic hide fade lookup-modal" 
-		action="<c:url value='/api/v1/sec/location/weather'/>" method="get">
+<form class="modal dynamic hide fade lookup-modal weather-lookup-modal day-lookup-modal" 
+		action="<c:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.weather.title'/></h3>
@@ -152,22 +160,29 @@ $(function() {
 	<div class="modal-body">
 		<p><fmt:message key='lookup.weather.intro'/></p>
 		<div class="form-inline">
-			<input type="text" class="span2" maxlength="64" name="sourceName" placeholder="<fmt:message key='lookup.weather.sourceName'/>"/>
-			<input type="text" class="span2" maxlength="64" name="locationName" placeholder="<fmt:message key='lookup.weather.locationName'/>"/>
-			<input type="text" class="span2" maxlength="2" name="location.country" placeholder="<fmt:message key='lookup.weather.country'/>"/>
-			<input type="text" class="span2" maxlength="10" name="location.postalCode" placeholder="<fmt:message key='lookup.weather.postalCode'/>"/>
-			<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.action.search'/>">
+			<input type="hidden" name="tags" value="weather"/>
+			<input type="text" class="span4" maxlength="64" name="location.region" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
+			<button type="submit" class="btn btn-primary ladda-button expand-right" 
+				data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
 		</div>
 
-		<table class="table table-striped table-hover hidden">
+		<table class="table table-striped table-hover hidden search-results">
 			<thead>
 				<tr>
 					<th><fmt:message key='lookup.weather.sourceName'/></th>
-					<th><fmt:message key='lookup.weather.locationName'/></th>
 					<th><fmt:message key='lookup.weather.country'/></th>
+					<th><fmt:message key='lookup.weather.region'/></th>
+					<th><fmt:message key='lookup.weather.locality'/></th>
 					<th><fmt:message key='lookup.weather.postalCode'/></th>
+				</tr>
+				<tr class="template">
+					<td data-tprop="sourceId"></td>
+					<td data-tprop="location.country"></td>
+					<td data-tprop="location.region"></td>
+					<td data-tprop="location.locality"></td>
+					<td data-tprop="location.postalCode"></td>
 				</tr>
 			</thead>
 			<tbody>
@@ -181,7 +196,7 @@ $(function() {
 	</div>
 	<div class="modal-footer">
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button id="weather-lookup-choose" type="button" class="btn btn-primary" disabled="disabled">
+		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
 	</div>

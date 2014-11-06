@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockPowerDatumDao implements DatumDao<PowerDatum> {
 
@@ -70,7 +70,7 @@ public class MockPowerDatumDao implements DatumDao<PowerDatum> {
 	}
 
 	@Override
-	public void setDatumUploaded(PowerDatum datum, Date date, String destination, Long trackingId) {
+	public void setDatumUploaded(PowerDatum datum, Date date, String destination, String trackingId) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("MOCK: persisting PowerDatum " + datum + " upload to [" + destination
 					+ "] with tracking ID [" + trackingId + ']');

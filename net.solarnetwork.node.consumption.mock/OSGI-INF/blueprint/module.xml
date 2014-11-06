@@ -2,9 +2,12 @@
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
 	xsi:schemaLocation="
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
@@ -18,10 +21,27 @@
 		<property name="service" ref="locationServiceRef"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource</value>
+			</list>
+		</property>
+	</bean>
+	
 	<!-- Published Services -->
 
-	<service id="mockConsumptionDatumDataSourceService" ref="mockPriceConsumptionDatumDataSource" 
-		interface="net.solarnetwork.node.DatumDataSource" ranking="-1">
+	<service ref="mockPriceConsumptionDatumDataSource" ranking="-1">
+		<interfaces>
+			<value>net.solarnetwork.node.DatumDataSource</value>
+			<value>net.solarnetwork.node.MultiDatumDataSource</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
 		</service-properties>
@@ -31,10 +51,15 @@
 	
 	<bean id="mockConsumptionDatumDao" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDao"/>
 		
-	<bean id="mockConsumptionDatumDataSource" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource"/>
+	<bean id="mockConsumptionDatumDataSource" class="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource">
+		<property name="eventAdmin" ref="eventAdmin"/>
+		<property name="messageSource" ref="messageSource"/>
+	</bean>
 
 	<bean id="mockPriceConsumptionDatumDataSource" class="net.solarnetwork.node.support.LocationDatumDataSource"
 		factory-method="getInstance">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.consumption.mock.MockConsumptionDatumDataSource" 
+             autowire-on-update="true"/>
 		<argument ref="mockConsumptionDatumDataSource"/>
 		<argument ref="locationService"/>
 	</bean>

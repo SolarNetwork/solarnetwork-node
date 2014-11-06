@@ -1,19 +1,22 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JF2 LATA Support
+Bundle-Name: JF2 LATA Switch Control
 Bundle-SymbolicName: net.solarnetwork.node.control.jf2.lata
-Bundle-Version: 1.3.0
+Bundle-Description: Control the digital switches on a LATA device.
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.domain;version="1.2.0",
- net.solarnetwork.node;version="1.11.0",
+ net.solarnetwork.domain;version="1.6.0",
+ net.solarnetwork.node;version="1.16.0",
+ net.solarnetwork.node.domain;version="1.3.0",
+ net.solarnetwork.node.io.serial;version="1.0.0",
  net.solarnetwork.node.reactor;version="1.0.0",
- net.solarnetwork.node.settings;version="1.0.0",
- net.solarnetwork.node.settings.support;version="1.0.0",
- net.solarnetwork.node.support;version="1.3.0",
- net.solarnetwork.node.util;version="1.1.0",
- net.solarnetwork.util;version="1.10.0",
+ net.solarnetwork.node.settings;version="1.5.0",
+ net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.support;version="1.12.0",
+ net.solarnetwork.node.util;version="1.5.0",
+ net.solarnetwork.util;version="1.17.0",
  org.aopalliance.aop;version="1.0.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.slf4j;version="[1.5.0,2.0.0)",

@@ -41,6 +41,7 @@ import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.PKIService;
@@ -48,12 +49,11 @@ import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.JavaBeanXmlSerializer;
+import net.solarnetwork.util.OptionalService;
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -68,6 +68,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </p>
  * 
  * <dl class="class-properties">
+ * <dt>backupManager</dt>
+ * <dd>An optional {@link BackupManager} to trigger an immediate backup after
+ * associating.</dd>
+ * 
  * <dt>settingDao</dt>
  * <dd>The {@link SettingDao} to use for querying/storing application state
  * information.</dd>
@@ -92,7 +96,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -114,6 +118,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_EXPIRATION_KEY = "expiration";
 	private static final String VERIFICATION_CODE_SECURITY_PHRASE = "securityPhrase";
 	private static final String VERIFICATION_CODE_NODE_ID_KEY = "networkId";
+	private static final String VERIFICATION_CODE_NODE_CERT = "networkCertificate";
+	private static final String VERIFICATION_CODE_NODE_CERT_STATUS = "networkCertificateStatus";
 	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
@@ -121,6 +127,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 
+	private OptionalService<BackupManager> backupManager;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
@@ -130,6 +137,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		Map<String, String> xpathMap = new HashMap<String, String>();
 		xpathMap.put(VERIFICATION_CODE_NODE_ID_KEY, "/*/@networkId");
 		xpathMap.put(VERIFICATION_CODE_NODE_CERT_DN_KEY, "/*/@networkCertificateSubjectDN");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT_STATUS, "/*/@networkCertificateStatus");
+		xpathMap.put(VERIFICATION_CODE_NODE_CERT, "/*/@networkCertificate");
 		xpathMap.put(VERIFICATION_CODE_USER_NAME_KEY, "/*/@username");
 		xpathMap.put(VERIFICATION_CODE_CONFIRMATION_KEY, "/*/@confirmationKey");
 		return getXPathExpressionMap(xpathMap);
@@ -286,7 +295,7 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		NetworkAssociationRequest req = new NetworkAssociationRequest();
 		req.setUsername(details.getUsername());
 		req.setKey(details.getConfirmationKey());
-		webFormGetForBean(new BeanWrapperImpl(req), association,
+		webFormGetForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), association,
 				getAbsoluteUrl(details, SOLAR_NET_IDENTITY_URL), null, getIdentityPropertyMapping());
 		return association;
 	}
@@ -303,12 +312,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 		try {
 			// Get confirmation code from the server
-			NetworkAssociationRequest req = new NetworkAssociationRequest();
-			req.setUsername(details.getUsername());
-			req.setKey(details.getConfirmationKey());
-			final BeanWrapper beanWrapper = PropertyAccessorFactory.forBeanPropertyAccess(req);
+			NetworkAssociationDetails req = new NetworkAssociationDetails(details.getUsername(),
+					details.getConfirmationKey(), details.getKeystorePassword());
 			final NetworkCertificate result = new NetworkAssociationDetails();
-			webFormPostForBean(beanWrapper, result, getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
+			webFormPostForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), result,
+					getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
 					getNodeAssociationPropertyMapping());
 
 			final TransactionTemplate tt = new TransactionTemplate(transactionManager);
@@ -325,10 +333,13 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				}
 			});
 
-			// create the node's CSR based on the given subjectDN
-			log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
+			if ( result.getNetworkCertificateStatus() == null ) {
+				// create the node's CSR based on the given subjectDN
+				log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
+				pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			}
 
-			pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			makeBackup();
 
 			return result;
 		} catch ( Exception e ) {
@@ -336,6 +347,15 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
+	}
+
+	private void makeBackup() {
+		BackupManager mgr = (backupManager == null ? null : backupManager.service());
+		if ( mgr == null ) {
+			return;
+		}
+		log.info("Requesting background backup.");
+		mgr.createAsynchronousBackup();
 	}
 
 	private String getSetting(String key) {
@@ -363,6 +383,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
+	}
+
+	public void setBackupManager(OptionalService<BackupManager> backupManager) {
+		this.backupManager = backupManager;
 	}
 
 }

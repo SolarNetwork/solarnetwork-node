@@ -1,13 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode SMA SunnyNet
+Bundle-Name: SMA Power Datum DataSource (SunnyNet)
 Bundle-SymbolicName: net.solarnetwork.node.power.sma.sunnynet
-Bundle-Version: 1.5.0
+Bundle-Description: Collect generation data from SMA inverts using the SunnyNet protocol.
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node;version="1.11.0",
  net.solarnetwork.node.dao;version="1.5.0",
+ net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.hw.sma;version="1.0.0",
  net.solarnetwork.node.hw.sma.sunnynet;version="1.0.0",
  net.solarnetwork.node.power;version="1.0.0",

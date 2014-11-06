@@ -237,15 +237,13 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 			if ( wh > 0 ) {
 				d.setWattHourReading(Math.round(wh));
 			}
-			d.setAmps((float) (w / voltage));
-			d.setVolts(voltage);
+			d.setWatts((int) Math.ceil(w));
 			d = filterConsumptionDatumInstance(d);
 			addToResultsCheckingData(d, results);
 		} else {
 			// assume CurrentMessage
 			CurrentMessage cmsg = (CurrentMessage) msg;
 			ConsumptionDatum d = new ConsumptionDatum();
-			d.setVolts(voltage);
 
 			// we turn each sensor into its own ConsumptionDatum, the sensors we collect
 			// from are specified by the currentSensorIndexFlags property
@@ -256,13 +254,13 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 				d.setSourceId(address + "." + i);
 				switch (i) {
 					case 1:
-						d.setAmps((float) cmsg.getAmpReading1());
+						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading1()));
 						break;
 					case 2:
-						d.setAmps((float) cmsg.getAmpReading2());
+						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading2()));
 						break;
 					case 3:
-						d.setAmps((float) cmsg.getAmpReading3());
+						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading3()));
 						break;
 				}
 				ConsumptionDatum filtered = filterConsumptionDatumInstance(d);

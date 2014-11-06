@@ -26,8 +26,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
@@ -44,7 +47,6 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import de.michaeldenk.yasdi4j.YasdiChannel;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 
@@ -71,7 +73,7 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport implements
 		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
@@ -102,17 +104,17 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(CHANNEL_NAME_PV_AMPS,
 					CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private Set<String> pvWattsChannelNames = null;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
+	private Set<String> otherChannelNames = null;
 	private int channelMaxAgeSeconds = 30;
 	private long deviceSerialNumber = DEFAULT_SERIAL_NUMBER;
+	private long deviceLockTimeoutSeconds = 20;
 
 	private DynamicServiceTracker<ObjectFactory<YasdiMaster>> yasdi;
+	private MessageSource messageSource;
 
 	public SMAyasdi4jPowerDatumDataSource() {
 		super();
@@ -138,44 +140,73 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		return device;
 	}
 
+	private void releaseYasdiDevice(YasdiDevice device) {
+		if ( device == null ) {
+			return;
+		}
+		final ObjectFactory<YasdiMaster> service = yasdi.service();
+		if ( service == null ) {
+			log.debug("No YASDI service available.");
+			return;
+		}
+		final YasdiMaster master = service.getObject();
+		master.releaseDeviceLock(device);
+	}
+
 	@Override
 	public PowerDatum readCurrentDatum() {
-		final YasdiDevice device = getYasdiDevice();
-		if ( device == null ) {
-			return null;
-		}
-
-		PowerDatum datum = new PowerDatum();
-		datum.setSourceId(getSourceId());
-		PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-
-		final boolean newDay = isNewDay();
-
-		// Issue GetData command for each channel we're interested in
-		if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
-			// we sum up all channels into a single value
-			PowerDatum tmp = new PowerDatum();
-			PropertyAccessor tmpBean = PropertyAccessorFactory.forBeanPropertyAccess(tmp);
-			int totalWatts = 0;
-			for ( String channelName : this.pvWattsChannelNames ) {
-				captureNumericDataValue(device, channelName, "watts", tmpBean, newDay);
-				totalWatts += (tmp.getWatts() == null ? 0 : tmp.getWatts().intValue());
+		YasdiDevice device = null;
+		final SMAPowerDatum datum = new SMAPowerDatum();
+		datum.setCreated(new Date());
+		try {
+			device = getYasdiDevice();
+			if ( device == null ) {
+				return null;
 			}
-			datum.setWatts(totalWatts);
-		} else {
-			captureNumericDataValue(device, this.pvVoltsChannelName, "pvVolts", bean, newDay);
-			captureNumericDataValue(device, this.pvAmpsChannelName, "pvAmps", bean, newDay);
+
+			datum.setSourceId(getSourceId());
+			PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
+
+			if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
+				// we sum up all channels into a single value
+				PowerDatum tmp = new PowerDatum();
+				PropertyAccessor tmpBean = PropertyAccessorFactory.forBeanPropertyAccess(tmp);
+				int totalWatts = 0;
+				for ( String channelName : this.pvWattsChannelNames ) {
+					captureDataValue(device, channelName, "watts", tmpBean);
+					totalWatts += (tmp.getWatts() == null ? 0 : tmp.getWatts().intValue());
+				}
+				datum.setWatts(totalWatts);
+			} else {
+				captureDataValue(device, this.pvVoltsChannelName, "pvVolts", bean);
+				captureDataValue(device, this.pvAmpsChannelName, "pvAmps", bean);
+			}
+			captureDataValue(device, this.kWhChannelName, "wattHourReading", bean);
+
+			if ( otherChannelNames != null ) {
+				Map<String, Object> map = new LinkedHashMap<String, Object>(otherChannelNames.size());
+				for ( String channelName : otherChannelNames ) {
+					captureDataValue(device, channelName, channelName, map);
+				}
+				if ( map.size() > 0 ) {
+					if ( datum.getChannelData() == null ) {
+						datum.setChannelData(map);
+					} else {
+						datum.getChannelData().putAll(map);
+					}
+				}
+			}
+		} finally {
+			releaseYasdiDevice(device);
 		}
-		captureNumericDataValue(device, this.kWhChannelName, "wattHourReading", bean, newDay);
 
 		if ( !isValidDatum(datum) ) {
 			log.debug("No valid data available.");
 			return null;
 		}
 
-		if ( newDay ) {
-			storeLastKnownDay();
-		}
+		postDatumCapturedEvent(datum, PowerDatum.class);
+
 		return datum;
 	}
 
@@ -187,49 +218,76 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		return true;
 	}
 
-	/**
-	 * Read a specific channel that returns numeric values and set that value
-	 * onto a PowerDatum instance.
-	 * 
-	 * @param device
-	 *        the YasdiDevice to collect the data from
-	 * @param channelName
-	 *        the name of the channel to read
-	 * @param beanProperty
-	 *        the PowerDatum bean property to set with the numeric data value
-	 * @param accessor
-	 *        the datum to update
-	 * @param newDay
-	 *        flag if today is considered a "new day" for purposes of calling
-	 *        {@link #handleDailyChannelOffset(String, Number, boolean)}
-	 */
-	private void captureNumericDataValue(YasdiDevice device, String channelName, String beanProperty,
-			PropertyAccessor accessor, final boolean newDay) {
-		log.trace("Capturing channel {} as property {}", channelName, beanProperty);
+	private Object captureChannelValue(YasdiDevice device, String channelName) {
+		log.trace("Reading SMA channel {}", channelName);
 		YasdiChannel channel = device.getChannel(channelName);
 		if ( channel == null ) {
 			log.warn("Channel {} not available from YASDI device", channelName);
-			return;
+			return null;
 		}
 		try {
 			// get updated value, at most channelMaxAgeSeconds old
 			channel.updateValue(channelMaxAgeSeconds);
 		} catch ( IOException e ) {
 			log.debug("Exception updating channel {} value: {}", channelName, e.toString());
+			return null;
 		}
-		Number n = Double.valueOf(channel.getValue());
-		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, n);
-		if ( n != null ) {
-			Class<?> propType = accessor.getPropertyType(beanProperty);
-			Number value = n;
+		Object value = null;
+		if ( channel.hasText() ) {
+			value = channel.getValueText();
+		} else {
+			double v = channel.getValue();
 			String unit = channel.getUnit();
 			if ( unit != null ) {
-				if ( "mA".equals(unit.toString()) ) {
-					value = divide(propType, n, Integer.valueOf(1000));
-				} else if ( "kWh".equals(unit.toString()) ) {
-					value = mult(n, 1000);
+				if ( unit.startsWith("m") ) {
+					v /= 1000.0;
+				} else if ( unit.startsWith("k") ) {
+					v *= 1000;
 				}
 			}
+			value = Double.valueOf(v);
+		}
+		log.trace("Read SMA channel {}: {}", channelName, value);
+		return value;
+	}
+
+	/**
+	 * Read a specific channel and set that value into a Map.
+	 * 
+	 * @param device
+	 *        the YasdiDevice to collect the data from
+	 * @param channelName
+	 *        the name of the channel to read
+	 * @param key
+	 *        the Map key to set with the data value
+	 * @param accessor
+	 *        the datum to update
+	 */
+	private void captureDataValue(YasdiDevice device, String channelName, String key,
+			Map<String, Object> map) {
+		Object value = captureChannelValue(device, channelName);
+		if ( value != null ) {
+			map.put(key, value);
+		}
+	}
+
+	/**
+	 * Read a specific channel and set that value onto a PowerDatum instance.
+	 * 
+	 * @param device
+	 *        the YasdiDevice to collect the data from
+	 * @param channelName
+	 *        the name of the channel to read
+	 * @param beanProperty
+	 *        the PowerDatum bean property to set with the data value
+	 * @param accessor
+	 *        the datum to update
+	 */
+	private void captureDataValue(YasdiDevice device, String channelName, String beanProperty,
+			PropertyAccessor accessor) {
+		Object value = captureChannelValue(device, channelName);
+		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, value);
+		if ( value != null ) {
 			accessor.setPropertyValue(beanProperty, value);
 		}
 	}
@@ -246,15 +304,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(SMAyasdi4jPowerDatumDataSource.class.getClassLoader());
-				source.setBasename(SMAyasdi4jPowerDatumDataSource.class.getName());
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	@Override
@@ -263,13 +313,16 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		SMAyasdi4jPowerDatumDataSource defaults = new SMAyasdi4jPowerDatumDataSource();
 
 		String yasdiDeviceName = "N/A";
+		YasdiDevice device = null;
 		try {
-			final YasdiDevice device = getYasdiDevice();
+			device = getYasdiDevice();
 			if ( device != null ) {
 				yasdiDeviceName = device.getName();
 			}
 		} catch ( RuntimeException e ) {
 			log.warn("Exception getting YASDI device name: {}", e.getMessage());
+		} finally {
+			releaseYasdiDevice(device);
 		}
 		results.add(new BasicTitleSettingSpecifier("address", yasdiDeviceName, true));
 
@@ -279,6 +332,11 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 
+		results.add(new BasicTextFieldSettingSpecifier("channelMaxAgeSeconds", String.valueOf(defaults
+				.getChannelMaxAgeSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("deviceLockTimeoutSeconds", String
+				.valueOf(defaults.getDeviceLockTimeoutSeconds())));
+
 		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue", defaults
 				.getPvWattsChannelNamesValue()));
 		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", defaults
@@ -286,6 +344,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", defaults
 				.getPvAmpsChannelName()));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", defaults.getkWhChannelName()));
+		results.add(new BasicTextFieldSettingSpecifier("otherChannelNamesValue", defaults
+				.getOtherChannelNamesValue()));
 
 		return results;
 	}
@@ -303,6 +363,9 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			}
 		}
 		s.add(getkWhChannelName());
+		if ( otherChannelNames != null ) {
+			s.addAll(otherChannelNames);
+		}
 
 		if ( !s.equals(this.getChannelNamesToMonitor()) ) {
 			setChannelNamesToMonitor(s);
@@ -349,7 +412,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	/**
-	 * Get the pvWattsChannelNames as a comma-delimited string value.
+	 * Get {@code pvWattsChannelNames} as a comma-delimited string value.
 	 * 
 	 * @return the channel names, as a delimited string
 	 */
@@ -359,7 +422,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	/**
-	 * Set the pvWattsChannelNames as a comma-delimited string value.
+	 * Set {@code pvWattsChannelNames} as a comma-delimited string value.
 	 * 
 	 * @param value
 	 *        the channel names, as a delimited string
@@ -379,6 +442,50 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public void setDeviceSerialNumber(long deviceSerialNumber) {
 		this.deviceSerialNumber = deviceSerialNumber;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public Set<String> getOtherChannelNames() {
+		return otherChannelNames;
+	}
+
+	public void setOtherChannelNames(Set<String> otherChannelNames) {
+		this.otherChannelNames = otherChannelNames;
+	}
+
+	/**
+	 * Get {@code otherChannelNames} as a comma-delimited string value.
+	 * 
+	 * @return the other channel names, as a delimited string
+	 */
+	public String getOtherChannelNamesValue() {
+		return (otherChannelNames == null ? null : StringUtils
+				.commaDelimitedStringFromCollection(otherChannelNames));
+	}
+
+	/**
+	 * Set {@code otherChannelNames} as a comma-delimited string value.
+	 * 
+	 * @param value
+	 *        the channel names, as a delimited string
+	 */
+	public void setOtherChannelNamesValue(String value) {
+		setOtherChannelNames(StringUtils.commaDelimitedStringToSet(value));
+	}
+
+	public long getDeviceLockTimeoutSeconds() {
+		return deviceLockTimeoutSeconds;
+	}
+
+	public void setDeviceLockTimeoutSeconds(long deviceLockTimeoutSeconds) {
+		this.deviceLockTimeoutSeconds = deviceLockTimeoutSeconds;
+	}
+
+	public int getChannelMaxAgeSeconds() {
+		return channelMaxAgeSeconds;
 	}
 
 }

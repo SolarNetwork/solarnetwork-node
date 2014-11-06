@@ -27,6 +27,7 @@ package net.solarnetwork.node.power.mock;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.power.PowerDatum;
@@ -82,8 +83,10 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 
 	private final Logger log = LoggerFactory.getLogger(MockPowerDatumDataSource.class);
 
-	private Float dayPvAmps = 5.0F;
-	private Float nightPvAmps = 0.0F;
+	private final AtomicLong counter = new AtomicLong(0);
+
+	private Integer dayWatts = 5;
+	private Integer nightWatts = 0;
 	private int dayWattRandomness = 900;
 	private boolean enabled = true;
 
@@ -100,7 +103,6 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		return PowerDatum.class;
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public PowerDatum readCurrentDatum() {
 		if ( !enabled ) {
@@ -108,22 +110,26 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 			return null;
 		}
 		Calendar now = Calendar.getInstance();
+		PowerDatum result = null;
 		if ( now.get(Calendar.HOUR_OF_DAY) >= this.hourDayStart
 				&& now.get(Calendar.HOUR_OF_DAY) < this.hourNightStart ) {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Returning day power between {}am and {}pm", this.hourDayStart,
 						(this.hourNightStart - 12));
 			}
-			PowerDatum result = (PowerDatum) DAY_POWER.clone();
-			result.setPvAmps(dayPvAmps);
+			result = (PowerDatum) DAY_POWER.clone();
+			result.setWatts(dayWatts);
 			applyRandomness(result, dayWattRandomness);
-			return result;
+		} else {
+			if ( log.isDebugEnabled() ) {
+				log.debug("Returning night power after {}pm", (this.hourNightStart - 12));
+			}
+			result = (PowerDatum) NIGHT_POWER.clone();
+			result.setWatts(nightWatts);
 		}
-		if ( log.isDebugEnabled() ) {
-			log.debug("Returning night power after {}pm", (this.hourNightStart - 12));
-		}
-		PowerDatum result = (PowerDatum) NIGHT_POWER.clone();
-		result.setPvAmps(nightPvAmps);
+		result.setSourceId(sourceId);
+		long wattHours = counter.addAndGet(Math.round(Math.random() * 100.0));
+		result.setWattHourReading(wattHours);
 		return result;
 	}
 
@@ -136,13 +142,19 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		datum.setWatts(watts);
 	}
 
-	private static class MockPowerDatum extends PowerDatum implements Mock, Cloneable {
+	public static class MockPowerDatum extends PowerDatum implements Mock, Cloneable {
+
+		private final String statusMessage = "All clear";
 
 		private MockPowerDatum(Double batteryAmpHours, Float batteryVolts, Float acOutputAmps,
 				Float acOutputVolts, Float dcOutputAmps, Float dcOutputVolts, Integer watts,
 				Double ampHoursToday, Double kWattHoursToday) {
 			super(batteryAmpHours, batteryVolts, acOutputAmps, acOutputVolts, dcOutputAmps,
 					dcOutputVolts, watts, ampHoursToday, kWattHoursToday);
+		}
+
+		public String getStatusMessage() {
+			return statusMessage;
 		}
 
 	}
@@ -161,8 +173,8 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		return Arrays.asList((SettingSpecifier) new BasicToggleSettingSpecifier("enabled", true),
-				(SettingSpecifier) new BasicSliderSettingSpecifier("dayPvAmps", 5.0, 0.0, 20.0, 0.1),
-				(SettingSpecifier) new BasicSliderSettingSpecifier("nightPvAmps", 0.0, 0.0, 5.0, 0.1));
+				(SettingSpecifier) new BasicSliderSettingSpecifier("dayWatts", 5.0, 0.0, 20.0, 0.1),
+				(SettingSpecifier) new BasicSliderSettingSpecifier("nightWatts", 0.0, 0.0, 5.0, 0.1));
 	}
 
 	@Override
@@ -191,20 +203,20 @@ public class MockPowerDatumDataSource implements DatumDataSource<PowerDatum>, Se
 		this.hourNightStart = hourNightStart;
 	}
 
-	public Float getDayPvAmps() {
-		return dayPvAmps;
+	public Integer getDayWatts() {
+		return dayWatts;
 	}
 
-	public void setDayPvAmps(Float dayPvAmps) {
-		this.dayPvAmps = dayPvAmps;
+	public void setDayWatts(Integer dayWatts) {
+		this.dayWatts = dayWatts;
 	}
 
-	public Float getNightPvAmps() {
-		return nightPvAmps;
+	public Integer getNightWatts() {
+		return nightWatts;
 	}
 
-	public void setNightPvAmps(Float nightPvAmps) {
-		this.nightPvAmps = nightPvAmps;
+	public void setNightWatts(Integer nightWatts) {
+		this.nightWatts = nightWatts;
 	}
 
 	public boolean isEnabled() {

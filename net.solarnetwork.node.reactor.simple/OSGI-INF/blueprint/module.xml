@@ -35,7 +35,7 @@
 	<reference id="instructionDao"  availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionDao"/>
 	
-	<reference id="serializationService"  availability="optional"
+	<reference-list id="serializationServices" availability="optional" 
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
 	
 	<reference id="instructionAcknowledgementService" availability="optional"
@@ -68,7 +68,7 @@
 
 	<bean id="simpleReactorService" class="net.solarnetwork.node.reactor.simple.SimpleReactorService">
 		<property name="instructionDao" ref="instructionDao"/>
-		<property name="serializationService" ref="serializationService"/>
+		<property name="serializationServices" ref="serializationServices"/>
 	</bean>
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->

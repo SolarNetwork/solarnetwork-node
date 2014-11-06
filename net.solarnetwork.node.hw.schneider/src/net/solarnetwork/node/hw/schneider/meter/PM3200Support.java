@@ -27,16 +27,23 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import net.wimpi.modbus.net.SerialConnection;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 
 /**
  * Supporting class for the PM3200 series power meter.
@@ -47,14 +54,17 @@ import org.joda.time.format.DateTimeFormat;
  * 
  * <dl class="class-properties">
  * <dt>sourceMapping</dt>
- * <dd>A mapping of {@link MeasurementKind} to associated Source ID values to
- * assign to collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * <dd>A mapping of {@link ACPhase} to associated Source ID values to assign to
+ * collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * 
+ * <dt>eventAdmin</dt>
+ * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.4
  */
-public class PM3200Support extends ModbusSupport {
+public class PM3200Support extends ModbusDeviceSupport {
 
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
@@ -65,7 +75,9 @@ public class PM3200Support extends ModbusSupport {
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
-	private Map<MeasurementKind, String> sourceMapping = getDefaulSourceMapping();
+	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+
+	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * An instance of {@link PM3200Data} to support keeping the last-read values
@@ -79,9 +91,9 @@ public class PM3200Support extends ModbusSupport {
 	 * 
 	 * @return mapping
 	 */
-	public static Map<MeasurementKind, String> getDefaulSourceMapping() {
-		Map<MeasurementKind, String> result = new EnumMap<MeasurementKind, String>(MeasurementKind.class);
-		result.put(MeasurementKind.Total, MAIN_SOURCE_ID);
+	public static Map<ACPhase, String> getDefaulSourceMapping() {
+		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
+		result.put(ACPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -92,8 +104,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter name, or <em>null</em> if not available
 	 */
-	public String getMeterName(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_NAME, 20, getUnitId(), true);
+	public String getMeterName(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -103,8 +115,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter model, or <em>null</em> if not available
 	 */
-	public String getMeterModel(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MODEL, 20, getUnitId(), true);
+	public String getMeterModel(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_MODEL, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -114,8 +126,8 @@ public class PM3200Support extends ModbusSupport {
 	 *        the serial connection
 	 * @return the meter manufacturer, or <em>null</em> if not available
 	 */
-	public String getMeterManufacturer(SerialConnection conn) {
-		return ModbusHelper.readUTF8String(conn, ADDR_SYSTEM_METER_MANUFACTURER, 20, getUnitId(), true);
+	public String getMeterManufacturer(ModbusConnection conn) {
+		return conn.readString(ADDR_SYSTEM_METER_MANUFACTURER, 20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -125,9 +137,9 @@ public class PM3200Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter serial number, or <em>null</em> if not available
 	 */
-	public Long getMeterSerialNumber(SerialConnection conn) {
+	public Long getMeterSerialNumber(ModbusConnection conn) {
 		Long result = null;
-		Integer[] data = ModbusHelper.readValues(conn, ADDR_SYSTEM_METER_SERIAL_NUMBER, 2, getUnitId());
+		Integer[] data = conn.readValues(ADDR_SYSTEM_METER_SERIAL_NUMBER, 2);
 		if ( data != null && data.length == 2 ) {
 			int longValue = ModbusHelper.getLongWord(data[0], data[1]);
 			result = (long) longValue;
@@ -142,13 +154,13 @@ public class PM3200Support extends ModbusSupport {
 	 *        the connection
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
-	public LocalDateTime getMeterManufactureDate(SerialConnection conn) {
-		int[] data = ModbusHelper.readInts(conn, ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4, getUnitId());
+	public LocalDateTime getMeterManufactureDate(ModbusConnection conn) {
+		int[] data = conn.readInts(ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4);
 		return parseDateTime(data);
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(8);
 		String str = getMeterName(conn);
 		if ( str != null ) {
@@ -245,16 +257,15 @@ public class PM3200Support extends ModbusSupport {
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<MeasurementKind, String> kindMap = new EnumMap<MeasurementKind, String>(
-				MeasurementKind.class);
+		Map<ACPhase, String> kindMap = new EnumMap<ACPhase, String>(ACPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				MeasurementKind mk;
+				ACPhase mk;
 				try {
-					mk = MeasurementKind.valueOf(k);
+					mk = ACPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid MeasurementKind value, ignoring.", k);
+					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());
@@ -288,7 +299,7 @@ public class PM3200Support extends ModbusSupport {
 	 *        the measurement kind
 	 * @return the source ID value, or <em>null</em> if not available
 	 */
-	public String getSourceIdForMeasurementKind(MeasurementKind kind) {
+	public String getSourceIdForACPhase(ACPhase kind) {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
@@ -297,7 +308,7 @@ public class PM3200Support extends ModbusSupport {
 		try {
 			msg = getDeviceInfoMessage();
 		} catch ( RuntimeException e ) {
-			log.debug("Error reading {} info: {}", getUnitId(), e.getMessage());
+			log.debug("Error reading info: {}", e.getMessage());
 		}
 		return (msg == null ? "N/A" : msg);
 	}
@@ -325,37 +336,95 @@ public class PM3200Support extends ModbusSupport {
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("connectionFactory.propertyFilters['UID']",
-				"/dev/ttyUSB0"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.getUnitId().toString()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Serial Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
 				.getSourceMappingValue()));
 
 		return results;
 	}
 
+	/**
+	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * 
+	 * <p>
+	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * create the actual Event, which may be overridden by extending classes.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the {@link Datum} to post the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @since 1.3
+	 */
+	protected final void postDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all simple properties of the given
+	 * {@link Datum} into the event properties, along with the
+	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @since 1.3
+	 */
+	protected Event createDatumCapturedEvent(final Datum datum,
+			final Class<? extends Datum> eventDatumType) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+	}
+
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(MeasurementKind.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
 	}
 
-	public Map<MeasurementKind, String> getSourceMapping() {
+	public Map<ACPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
-	public void setSourceMapping(Map<MeasurementKind, String> sourceMapping) {
+	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

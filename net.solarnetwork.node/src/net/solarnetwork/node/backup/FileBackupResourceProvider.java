@@ -87,7 +87,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			File rootDir = (rootPath != null && rootPath.length() > 0 ? new File(rootPath, path)
 					: new File(path));
 			if ( !rootDir.isDirectory() ) {
-				log.warn("Skipping path {} because does not exist or is not a directory",
+				log.info("Skipping path {} because does not exist or is not a directory",
 						rootDir.getAbsolutePath());
 				continue;
 			}

@@ -23,11 +23,21 @@
 		
 	<reference-list id="instructionHandlers" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
-
+		
 	<!-- Supporting Services -->
 	
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.control.demandbalancer.DemandBalancer"/>
+	<bean id="messageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="strategy."/>
+		<property name="delegate">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.control.demandbalancer.DemandBalancer</value>
+						<value>net.solarnetwork.node.control.demandbalancer.SimpleDemandBalancerStrategy</value>
+					</list>
+				</property>
+			</bean>
+		</property>
 	</bean>
 	
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
@@ -42,6 +52,11 @@
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" 
@@ -121,6 +136,7 @@
 											<property name="serviceClassName" value="net.solarnetwork.node.NodeControlProvider"/>
 										</bean>	
 									</property>
+									<property name="eventAdmin" ref="eventAdmin"/>
 								</bean>
 							</entry>
 						</map>

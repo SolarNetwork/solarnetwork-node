@@ -1,7 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Configuration Admin Settings
+Bundle-Name: Core Settings Support
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca
+Bundle-Description: Provides persistent storage of user-customized SolarNode settings.
 Bundle-Version: 1.3.3
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

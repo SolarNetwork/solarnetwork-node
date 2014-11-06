@@ -18,65 +18,65 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.weather.nz.metservice.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
 import java.io.File;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-
+import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.node.weather.DayDatum;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
-
 import org.junit.Test;
 import org.springframework.util.ResourceUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Test case for the {@link MetserviceDayDatumDataSource} class.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.2
  */
 public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
-	private MetserviceDayDatumDataSource createDataSourceInstance() 
-	throws Exception {
-		
-		URL url = getClass().getResource("riseSet.txt");
+	private static final String RISE_SET_RESOURCE_NAME = "riseSet_wellington-city.json";
+
+	private MetserviceDayDatumDataSource createDataSourceInstance() throws Exception {
+
+		URL url = getClass().getResource(RISE_SET_RESOURCE_NAME);
 		File f = ResourceUtils.getFile(url);
 		String baseDirectory = f.getParent();
-		
+
 		MetserviceDayDatumDataSource ds = new MetserviceDayDatumDataSource();
-		ds.setBaseUrl("file://"+baseDirectory);
-		ds.setRiseSet("riseSet.txt");
+		ds.setBaseUrl("file://" + baseDirectory);
+		ds.setRiseSet(RISE_SET_RESOURCE_NAME);
+		ds.setObjectMapper(new ObjectMapper());
 		return ds;
 	}
-	
+
 	@Test
 	public void parseRiseSet() throws Exception {
 		MetserviceDayDatumDataSource ds = createDataSourceInstance();
-		DayDatum datum = ds.readCurrentDatum();
+		GeneralDayDatum datum = (GeneralDayDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
-		
+
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(ds.getDayDateFormat());
-		
-		assertNotNull(datum.getDay());
-		assertEquals("18 October 2011", dayFormat.format(datum.getDay()));
-		
+
+		assertNotNull(datum.getCreated());
+		assertEquals("1 September 2014", dayFormat.format(datum.getCreated()));
+
 		final SimpleDateFormat timeFormat = new SimpleDateFormat(ds.getTimeDateFormat());
-		
+
 		assertNotNull(datum.getSunrise());
-		assertEquals("6:28am", timeFormat.format(datum.getSunrise()).toLowerCase());
+		assertEquals("6:47am", timeFormat.format(datum.getSunrise().toDateTimeToday().toDate())
+				.toLowerCase());
 
 		assertNotNull(datum.getSunset());
-		assertEquals("7:45pm", timeFormat.format(datum.getSunset()).toLowerCase());
+		assertEquals("5:56pm", timeFormat.format(datum.getSunset().toDateTimeToday().toDate())
+				.toLowerCase());
 	}
 
 }

@@ -32,7 +32,7 @@ import org.joda.time.format.DateTimeFormatter;
  * A CurrentCost datum.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CCDatum implements Comparable<CCDatum> {
 
@@ -211,6 +211,10 @@ public class CCDatum implements Comparable<CCDatum> {
 
 	public void setTemperature(Float temperature) {
 		this.temperature = temperature;
+	}
+
+	public long getCreated() {
+		return created;
 	}
 
 }
