@@ -35,9 +35,9 @@ import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.codehaus.jackson.JsonNode;
 import org.joda.time.LocalTime;
 import org.springframework.context.MessageSource;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * MetService implementation of a {@link GeneralDayDatum}
@@ -68,7 +68,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDatum> implements
 		DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {

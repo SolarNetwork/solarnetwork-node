@@ -24,18 +24,18 @@ package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
 import net.solarnetwork.domain.NodeControlInfo;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.SerializerProvider;
-import org.codehaus.jackson.map.ser.std.SerializerBase;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 
 /**
  * Serialize {@link NodeControlInfo} to JSON.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class NodeControlInfoSerializer extends SerializerBase<NodeControlInfo> {
+public class NodeControlInfoSerializer extends StdScalarSerializer<NodeControlInfo> {
 
 	/**
 	 * Default constructor.

@@ -24,8 +24,8 @@ package net.solarnetwork.node.setup;
 
 import java.util.Locale;
 import net.solarnetwork.util.SerializeIgnore;
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.osgi.framework.Bundle;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Implementation of {@link Plugin} that wraps a {@link Bundle}.

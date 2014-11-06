@@ -26,10 +26,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.LocationService;
+import net.solarnetwork.node.domain.BasicGeneralLocation;
 import net.solarnetwork.node.domain.Location;
-import net.solarnetwork.node.domain.PriceLocation;
-import net.solarnetwork.node.domain.WeatherLocation;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -46,7 +46,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SettingsPlaypen implements SettingSpecifierProvider {
 
@@ -65,9 +65,11 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	private OptionalServiceTracker<LocationService> locationService;
 	private Long locationId;
+	private String sourceId;
 	private Location location;
 
 	private Long weatherLocationId;
+	private String weatherSourceId;
 	private Location weatherLocation;
 
 	@Override
@@ -118,24 +120,78 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	}
 
 	private LocationLookupSettingSpecifier getLocationSettingSpecifier() {
-		if ( location == null && locationService != null ) {
+		if ( location == null && locationService != null && locationId != null && sourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				location = service.getLocation(PriceLocation.class, locationId);
+				GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId, sourceId);
+				BasicGeneralLocation loc = new BasicGeneralLocation();
+				loc.setLocationId(locationId);
+				loc.setSourceId(sourceId);
+				loc.setSourceMetadata(meta);
+				location = loc;
 			}
 		}
-		return new BasicLocationLookupSettingSpecifier("locationId", PriceLocation.class, location);
+		return new BasicLocationLookupSettingSpecifier("locationKey", Location.PRICE_TYPE, location);
 	}
 
 	private LocationLookupSettingSpecifier getWeatherLocationSettingSpecifier() {
-		if ( weatherLocation == null && locationService != null ) {
+		if ( weatherLocation == null && locationService != null && weatherLocationId != null
+				&& weatherSourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				weatherLocation = service.getLocation(WeatherLocation.class, weatherLocationId);
+				GeneralLocationSourceMetadata meta = service.getLocationMetadata(weatherLocationId,
+						weatherSourceId);
+				BasicGeneralLocation loc = new BasicGeneralLocation();
+				loc.setLocationId(weatherLocationId);
+				loc.setSourceId(weatherSourceId);
+				loc.setSourceMetadata(meta);
+				weatherLocation = loc;
 			}
 		}
-		return new BasicLocationLookupSettingSpecifier("weatherLocationId", WeatherLocation.class,
+		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", Location.WEATHER_TYPE,
 				weatherLocation);
+	}
+
+	/**
+	 * Set the location ID and source ID as a single string value. The format of
+	 * the key is {@code locationId:sourceId}.
+	 * 
+	 * @param key
+	 *        the location and source ID key
+	 */
+	public void setLocationKey(String key) {
+		Long newLocationId = null;
+		String newSourceId = null;
+		if ( key != null ) {
+			int idx = key.indexOf(':');
+			if ( idx > 0 && idx + 1 < key.length() ) {
+				newLocationId = Long.valueOf(key.substring(0, idx));
+				newSourceId = key.substring(idx + 1);
+			}
+		}
+		setLocationId(newLocationId);
+		setSourceId(newSourceId);
+	}
+
+	/**
+	 * Set the weather location ID and source ID as a single string value. The
+	 * format of the key is {@code locationId:sourceId}.
+	 * 
+	 * @param key
+	 *        the location and source ID key
+	 */
+	public void setWeatherLocationKey(String key) {
+		Long newLocationId = null;
+		String newSourceId = null;
+		if ( key != null ) {
+			int idx = key.indexOf(':');
+			if ( idx > 0 && idx + 1 < key.length() ) {
+				newLocationId = Long.valueOf(key.substring(0, idx));
+				newSourceId = key.substring(idx + 1);
+			}
+		}
+		setWeatherLocationId(newLocationId);
+		setWeatherSourceId(newSourceId);
 	}
 
 	public String getString() {
@@ -208,6 +264,29 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 			this.weatherLocation = null; // set to null so we re-fetch from server
 		}
 		this.weatherLocationId = weatherLocationId;
+	}
+
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	public void setSourceId(String sourceId) {
+		if ( this.location != null && sourceId != null && !sourceId.equals(this.location.getSourceId()) ) {
+			this.location = null;
+		}
+		this.sourceId = sourceId;
+	}
+
+	public String getWeatherSourceId() {
+		return weatherSourceId;
+	}
+
+	public void setWeatherSourceId(String weatherSourceId) {
+		if ( this.weatherLocation != null && weatherSourceId != null
+				&& !weatherSourceId.equals(this.weatherLocation.getSourceId()) ) {
+			this.weatherLocation = null;
+		}
+		this.weatherSourceId = weatherSourceId;
 	}
 
 }

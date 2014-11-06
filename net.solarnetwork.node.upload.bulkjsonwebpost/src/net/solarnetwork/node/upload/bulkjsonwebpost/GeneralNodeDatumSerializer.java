@@ -25,10 +25,10 @@ package net.solarnetwork.node.upload.bulkjsonwebpost;
 import java.io.IOException;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.SerializerProvider;
-import org.codehaus.jackson.map.ser.std.SerializerBase;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 
 /**
  * Serialize {@link GeneralNodeDatum} to JSON. The {@link GeneralLocationDatum}
@@ -37,7 +37,7 @@ import org.codehaus.jackson.map.ser.std.SerializerBase;
  * @author matt
  * @version 1.1
  */
-public class GeneralNodeDatumSerializer extends SerializerBase<GeneralNodeDatum> {
+public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum> {
 
 	/**
 	 * Default constructor.

@@ -4,7 +4,7 @@ Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.27.0
+Bundle-Version: 1.28.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
@@ -21,6 +21,11 @@ Export-Package:
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.node.util;version="1.5.0"
 Import-Package: 
+ com.fasterxml.jackson.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.core;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
  javax.net.ssl,
  javax.xml.namespace,
  javax.xml.parsers,
@@ -34,11 +39,6 @@ Import-Package:
  org.apache.commons.codec;version="1.4.0",
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.logging;version="[1.1,1.2)",
- org.codehaus.jackson;version="[1.9,2.0)",
- org.codehaus.jackson.annotate;version="[1.9,2.0)",
- org.codehaus.jackson.map;version="[1.9,2.0)",
- org.codehaus.jackson.map.annotate;version="[1.9,2.0)",
- org.codehaus.jackson.map.ser.std;version="[1.9,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.joda.time;version="[1.6,3.0)",
  org.joda.time.base;version="[1.6,3.0)",

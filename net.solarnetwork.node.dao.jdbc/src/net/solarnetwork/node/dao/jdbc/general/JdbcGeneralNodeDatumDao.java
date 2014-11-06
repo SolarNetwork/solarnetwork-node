@@ -31,11 +31,11 @@ import java.util.List;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for

@@ -28,18 +28,18 @@ import java.util.Date;
 import java.util.Map;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.util.ClassUtils;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.map.SerializerProvider;
-import org.codehaus.jackson.map.ser.std.SerializerBase;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 
 /**
  * Serialize {@link Datum} to JSON.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class DatumSerializer extends SerializerBase<Datum> {
+public class DatumSerializer extends StdScalarSerializer<Datum> {
 
 	/**
 	 * Default constructor.

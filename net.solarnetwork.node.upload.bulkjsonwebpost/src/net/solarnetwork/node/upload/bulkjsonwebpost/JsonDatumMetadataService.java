@@ -28,7 +28,7 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * JSON based web service implementation of {@link DatumMetadataService}.
@@ -56,7 +56,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService {
 
