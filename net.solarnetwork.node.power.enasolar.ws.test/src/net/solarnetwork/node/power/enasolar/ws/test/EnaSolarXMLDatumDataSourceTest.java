@@ -1,5 +1,5 @@
 /* ==================================================================
- * DeviceInfoDatumDataSourceTest.java - Oct 2, 2011 9:24:34 PM
+ * EnaSolarXMLDatumDataSourceTest.java - Oct 2, 2011 9:24:34 PM
  * 
  * Copyright 2007-2011 SolarNetwork.net Dev Team
  * 
@@ -27,21 +27,21 @@ import static org.junit.Assert.assertNotNull;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource;
+import net.solarnetwork.node.power.enasolar.ws.EnaSolarXMLDatumDataSource;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Test;
 
 /**
- * Test case for the {@link DeviceInfoDatumDataSource} class.
+ * Test case for the {@link EnaSolarXMLDatumDataSource} class.
  * 
  * @author matt
  * @version 1.1
  */
-public class DeviceInfoDatumDataSourceTest extends AbstractNodeTest {
+public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 
 	@Test
 	public void parseDeviceInfoDatum() {
-		DeviceInfoDatumDataSource dataSource = new DeviceInfoDatumDataSource();
+		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
 		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
 		dataSource.init();
 		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
@@ -66,7 +66,7 @@ public class DeviceInfoDatumDataSourceTest extends AbstractNodeTest {
 
 	@Test
 	public void parseMetersDataDatum() {
-		DeviceInfoDatumDataSource dataSource = new DeviceInfoDatumDataSource();
+		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
 		dataSource.setUrls(new String[] { getClass().getResource("data.xml").toString(),
 				getClass().getResource("meters.xml").toString() });
 		dataSource.init();
