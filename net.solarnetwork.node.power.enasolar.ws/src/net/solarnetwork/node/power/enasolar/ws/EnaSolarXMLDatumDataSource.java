@@ -42,6 +42,7 @@ import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.StringUtils;
 import org.springframework.context.MessageSource;
@@ -368,25 +369,40 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
+		EnaSolarXMLDatumDataSource defaults = new EnaSolarXMLDatumDataSource();
+		defaults.init();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		results.add(new BasicTextFieldSettingSpecifier("urlList", defaults.getUrlList()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String
+				.valueOf(defaults.sampleCacheMs)));
+		return results;
+	}
+
+	private String getInfoMessage() {
+		String msg = null;
+		EnaSolarPowerDatum snap = null;
+		try {
+			snap = getCurrentSample();
+		} catch ( Exception e ) {
+			// we must ignore exceptions here
+		}
+		if ( snap != null ) {
+			StringBuilder buf = new StringBuilder();
+			buf.append(snap.getWatts()).append(" W; ");
+			buf.append(snap.getWattHourReading()).append(" Wh; sample created ");
+			buf.append(String.format("%tc", snap.getCreated()));
+			msg = buf.toString();
+		}
+		return (msg == null ? "N/A" : msg);
 	}
 
 	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
-	}
-
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		EnaSolarXMLDatumDataSource defaults = new EnaSolarXMLDatumDataSource();
-		defaults.init();
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(10);
-		result.add(new BasicTextFieldSettingSpecifier("urlList", defaults.getUrlList()));
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		result.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
-		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String
-				.valueOf(defaults.sampleCacheMs)));
-		return result;
 	}
 
 	public String getUrl() {
