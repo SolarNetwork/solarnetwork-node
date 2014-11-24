@@ -24,6 +24,8 @@ package net.solarnetwork.node.power.enasolar.ws.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
@@ -35,7 +37,7 @@ import org.junit.Test;
  * Test case for the {@link EnaSolarXMLDatumDataSource} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 
@@ -62,6 +64,59 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 		assertEquals(Integer.valueOf(681), datum.getDCPower());
 		assertNotNull(datum.getDCVoltage());
 		assertEquals(304.3F, datum.getDCVoltage().floatValue(), 0.01);
+	}
+
+	@Test
+	public void parseDeviceInfoDatumAcrossDays() {
+		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
+		dataSource.setSampleCacheMs(0); // disable cache
+		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		dataSource.init();
+		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
+		deviceInfoMap.put("outputVoltage", "//data[@key='acOutputVolts']/@value");
+		deviceInfoMap.put("outputPower", "//data[@key='acPower']/@value");
+		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
+		deviceInfoMap.put("inputVoltage", "//data[@key='pvVolts']/@value");
+		deviceInfoMap.put("inputPower", "//data[@key='pvPower']/@value");
+		dataSource.setXpathMap(deviceInfoMap);
+
+		GeneralNodePVEnergyDatum datum = dataSource.readCurrentDatum();
+		log.debug("Got datum: {}", datum);
+		assertEquals(Integer.valueOf(628), datum.getWatts());
+		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+
+		// read in zero-watt reading, for threshold
+		dataSource.setUrl(getClass().getResource("deviceinfo-dayend.xml").toString());
+		for ( int i = 0; i < (int) EnaSolarXMLDatumDataSource.ZERO_WATT_THRESHOLD; i++ ) {
+			datum = dataSource.readCurrentDatum();
+			assertNotNull("Day end datum " + i, datum);
+			assertEquals(Integer.valueOf(0), datum.getWatts());
+			assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+		}
+		for ( int i = 0; i < 5; i++ ) {
+			GeneralNodePVEnergyDatum invalidDatum = dataSource.readCurrentDatum();
+			assertNull(invalidDatum);
+		}
+
+		// now trick the data source into being the next day; we are changing the cached sample's creation date
+		// to yesterday
+		Calendar c = Calendar.getInstance();
+		c.setTime(datum.getCreated());
+		c.add(Calendar.DATE, -1);
+		datum.setCreated(c.getTime());
+
+		dataSource.setUrl(getClass().getResource("deviceinfo-daystart.xml").toString());
+		for ( int i = 0; i < 5; i++ ) {
+			GeneralNodePVEnergyDatum nextDayDatum = dataSource.readCurrentDatum();
+			assertNotNull(nextDayDatum);
+			assertEquals(Integer.valueOf(0), nextDayDatum.getWatts());
+			assertEquals(Long.valueOf(0), nextDayDatum.getWattHourReading());
+		}
+
+		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		datum = dataSource.readCurrentDatum();
+		assertEquals(Integer.valueOf(628), datum.getWatts());
+		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
 	}
 
 	@Test

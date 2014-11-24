@@ -24,6 +24,7 @@ package net.solarnetwork.node.power.enasolar.ws;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -229,21 +230,35 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		return (result == null ? 0L : result);
 	}
 
+	private boolean isSampleOnSameDay(final Date sampleDate) {
+		final Date lastKnownDate = (sample != null ? sample.getCreated() : null);
+		if ( sampleDate == null || lastKnownDate == null ) {
+			return true;
+		}
+		final Calendar sampleCal = Calendar.getInstance();
+		sampleCal.setTime(sampleDate);
+		final Calendar lastKnownCal = Calendar.getInstance();
+		lastKnownCal.setTime(lastKnownDate);
+		return (sampleCal.get(Calendar.DAY_OF_YEAR) == lastKnownCal.get(Calendar.DAY_OF_YEAR) && sampleCal
+				.get(Calendar.YEAR) == lastKnownCal.get(Calendar.YEAR));
+	}
+
 	private EnaSolarPowerDatum validateDatum(EnaSolarPowerDatum datum) {
 		final Long currValue = datum.getWattHourReading();
 		final Long zeroWattCount = zeroWattCount();
 		final Long lastKnownValue = lastKnownValue();
+		final boolean sameDay = isSampleOnSameDay(datum.getCreated());
 
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
 		// on single day, so we verify that current decaWattHoursTotal is not less 
 		// than last known decaWattHoursTotal value
-		if ( currValue != null && currValue.longValue() < lastKnownValue.longValue() ) {
+		if ( sameDay && currValue != null && currValue.longValue() < lastKnownValue.longValue() ) {
 			log.warn(
 					"Inverter [{}] reported value {} -- less than last known value {}. Discarding this datum.",
 					sourceId, currValue, lastKnownValue);
 			datum = null;
-		} else if ( datum.getWatts() != null && datum.getWatts() < 1 ) {
+		} else if ( sameDay && (datum.getWatts() == null || datum.getWatts() < 1) ) {
 			final Long newCount = (zeroWattCount.longValue() + 1);
 			if ( zeroWattCount >= ZERO_WATT_THRESHOLD ) {
 				log.debug("Skipping zero-watt reading #{}", zeroWattCount);
@@ -253,6 +268,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		} else {
 			if ( zeroWattCount > 0 ) {
 				// reset zero-watt counter
+				log.debug("Resetting zero-watt reading count from non-zero reading or new calendar day.");
 				validationCache.remove(SETTING_ZERO_WATT_COUNT);
 			}
 		}
