@@ -120,6 +120,39 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 	}
 
 	@Test
+	public void parseDeviceInfoDatumWithTemporaryOutage() {
+		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
+		dataSource.setSampleCacheMs(0); // disable cache
+		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		dataSource.init();
+		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
+		deviceInfoMap.put("outputVoltage", "//data[@key='acOutputVolts']/@value");
+		deviceInfoMap.put("outputPower", "//data[@key='acPower']/@value");
+		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
+		deviceInfoMap.put("inputVoltage", "//data[@key='pvVolts']/@value");
+		deviceInfoMap.put("inputPower", "//data[@key='pvPower']/@value");
+		dataSource.setXpathMap(deviceInfoMap);
+
+		GeneralNodePVEnergyDatum datum = dataSource.readCurrentDatum();
+		log.debug("Got datum: {}", datum);
+		assertEquals(Integer.valueOf(628), datum.getWatts());
+		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+
+		// read in a few zero-watt reading, (less than) threshold times, i.e. inverter power went out
+		dataSource.setUrl(getClass().getResource("deviceinfo-daystart.xml").toString());
+		for ( int i = 0; i < 5; i++ ) {
+			GeneralNodePVEnergyDatum invalidDatum = dataSource.readCurrentDatum();
+			assertNull(invalidDatum);
+		}
+
+		// power comes back on, and readings go back to normal
+		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		datum = dataSource.readCurrentDatum();
+		assertEquals(Integer.valueOf(628), datum.getWatts());
+		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+	}
+
+	@Test
 	public void parseMetersDataDatum() {
 		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
 		dataSource.setUrls(new String[] { getClass().getResource("data.xml").toString(),
@@ -141,4 +174,5 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 		assertNotNull(datum.getDCVoltage());
 		assertEquals(419.3F, datum.getDCVoltage().floatValue(), 0.01);
 	}
+
 }
