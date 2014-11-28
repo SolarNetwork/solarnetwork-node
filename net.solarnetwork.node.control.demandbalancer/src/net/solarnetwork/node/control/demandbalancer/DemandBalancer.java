@@ -36,12 +36,9 @@ import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -152,9 +149,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private String powerControlId = "/power/pcm/1?percent";
 	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalService<NodeControlProvider> powerControl;
-	private OptionalServiceCollection<DatumDataSource<PowerDatum>> powerDataSource;
+	private OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> powerDataSource;
 	private int powerMaximumWatts = 1000;
-	private OptionalServiceCollection<DatumDataSource<ConsumptionDatum>> consumptionDataSource;
+	private OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> consumptionDataSource;
 	private OptionalService<DemandBalanceStrategy> balanceStrategy = new StaticOptionalService<DemandBalanceStrategy>(
 			new SimpleDemandBalanceStrategy());
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
@@ -208,7 +205,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	private Integer collectDemandWatts() {
 		log.debug("Collecting current consumption data to inform demand balancer...");
-		Iterable<ConsumptionDatum> demand = null;
+		Iterable<EnergyDatum> demand = null;
 		try {
 			demand = getCurrentDatum(consumptionDataSource);
 			if ( demand.iterator().hasNext() ) {
@@ -228,7 +225,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		final Integer generationWatts;
 		if ( collectPower ) {
 			log.debug("Collecting current generation data to inform demand balancer...");
-			Iterable<PowerDatum> generation = null;
+			Iterable<EnergyDatum> generation = null;
 			try {
 				generation = getCurrentDatum(powerDataSource);
 				if ( generation.iterator().hasNext() ) {
@@ -408,24 +405,25 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return provider.getCurrentControlInfo(controlId);
 	}
 
-	private <T extends Datum> Iterable<T> getCurrentDatum(
-			OptionalServiceCollection<DatumDataSource<T>> service) {
+	private Iterable<EnergyDatum> getCurrentDatum(
+			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> service) {
 		if ( service == null ) {
 			return null;
 		}
-		Iterable<DatumDataSource<T>> dataSources = service.services();
-		List<T> results = new ArrayList<T>();
-		for ( DatumDataSource<T> dataSource : dataSources ) {
+		Iterable<DatumDataSource<? extends EnergyDatum>> dataSources = service.services();
+		List<EnergyDatum> results = new ArrayList<EnergyDatum>();
+		for ( DatumDataSource<? extends EnergyDatum> dataSource : dataSources ) {
 			if ( dataSource instanceof MultiDatumDataSource<?> ) {
 				@SuppressWarnings("unchecked")
-				Collection<T> datums = ((MultiDatumDataSource<T>) dataSource).readMultipleDatum();
+				Collection<? extends EnergyDatum> datums = ((MultiDatumDataSource<? extends EnergyDatum>) dataSource)
+						.readMultipleDatum();
 				if ( datums != null ) {
-					for ( T datum : datums ) {
+					for ( EnergyDatum datum : datums ) {
 						results.add(datum);
 					}
 				}
 			} else {
-				T datum = dataSource.readCurrentDatum();
+				EnergyDatum datum = dataSource.readCurrentDatum();
 				if ( datum != null ) {
 					results.add(datum);
 				}
@@ -527,7 +525,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	}
 
-	public void setPowerDataSource(OptionalServiceCollection<DatumDataSource<PowerDatum>> powerDataSource) {
+	public void setPowerDataSource(
+			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> powerDataSource) {
 		this.powerDataSource = powerDataSource;
 	}
 
@@ -536,7 +535,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	}
 
 	public void setConsumptionDataSource(
-			OptionalServiceCollection<DatumDataSource<ConsumptionDatum>> consumptionDataSource) {
+			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
 	}
 
@@ -560,7 +559,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return powerControl;
 	}
 
-	public OptionalServiceCollection<DatumDataSource<PowerDatum>> getPowerDataSource() {
+	public OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> getPowerDataSource() {
 		return powerDataSource;
 	}
 
@@ -568,7 +567,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return powerMaximumWatts;
 	}
 
-	public OptionalServiceCollection<DatumDataSource<ConsumptionDatum>> getConsumptionDataSource() {
+	public OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 

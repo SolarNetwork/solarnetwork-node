@@ -5,16 +5,14 @@ Bundle-SymbolicName: net.solarnetwork.node.control.demandbalancer
 Bundle-Description: Service to monitor demand conditions (consumption) and generation 
  (power) and make adjustments to another control to limit generation to an amount that 
  keeps generation at or below current consumption levels.
-Bundle-Version: 1.2.1
+Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.domain;version="1.2.0",
  net.solarnetwork.node;version="1.11.0",
- net.solarnetwork.node.consumption;version="1.5.0",
  net.solarnetwork.node.domain;version="1.0.0",
  net.solarnetwork.node.job;version="1.9.0",
- net.solarnetwork.node.power;version="1.7.0",
  net.solarnetwork.node.reactor;version="1.1.0",
  net.solarnetwork.node.reactor.support;version="1.2.0",
  net.solarnetwork.node.settings;version="1.2.0",
