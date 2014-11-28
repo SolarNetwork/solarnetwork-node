@@ -1,7 +1,7 @@
 /* ==================================================================
- * ManagedTriggerAndJobDetail.java - Jul 22, 2013 6:53:49 AM
+ * SimpleServiceProviderConfiguration.java - Nov 28, 2014 3:19:52 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,31 +22,45 @@
 
 package net.solarnetwork.node.job;
 
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import org.quartz.JobDetail;
-import org.quartz.Trigger;
+import java.util.Map;
 
 /**
- * A bean that combines a trigger and a job, designed to be managed via
- * settings.
+ * Basic configuration bean for a service provider.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider, ServiceProvider {
+public class SimpleServiceProviderConfiguration implements ServiceProvider.ServiceConfiguration {
 
-	/**
-	 * Get the Trigger.
-	 * 
-	 * @return the trigger
-	 */
-	Trigger getTrigger();
+	private Object service;
+	private String[] interfaces;
+	private Map<String, Object> properties;
 
-	/**
-	 * Get the JobDetail.
-	 * 
-	 * @return the jobDetail
-	 */
-	JobDetail getJobDetail();
+	@Override
+	public Object getService() {
+		return service;
+	}
+
+	public void setService(Object service) {
+		this.service = service;
+	}
+
+	@Override
+	public String[] getInterfaces() {
+		return interfaces;
+	}
+
+	public void setInterfaces(String[] interfaces) {
+		this.interfaces = interfaces;
+	}
+
+	@Override
+	public Map<String, Object> getProperties() {
+		return properties;
+	}
+
+	public void setProperties(Map<String, Object> properties) {
+		this.properties = properties;
+	}
 
 }

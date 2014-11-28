@@ -23,6 +23,7 @@
 package net.solarnetwork.node.job;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -80,12 +81,20 @@ import org.springframework.context.MessageSource;
  * 
  * <dt>jobDetail</dt>
  * <dd>The job detail.</dd>
+ * 
+ * <dt>serviceProviderConfigurations</dt>
+ * <dd>An optional mapping of {@code jobDetail} keys to associated
+ * {@link SimpleServiceProviderConfiguration} objects. The object on the given
+ * key will be extracted from the {@code jobDetail} map and that object will be
+ * returned as a {@link ServiceProvider.ServiceConfiguration} instance when
+ * {@link #getServiceConfigurations()} is called. This allows services used by
+ * the job to be exposed as services themselves in the runtime.</dd>
  * </dl>
  * 
  * @author matt
  * @version 1.2
  */
-public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail {
+public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider {
 
 	/**
 	 * The regular expression used to delegate properties to the delegate
@@ -100,6 +109,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	private JobDetail jobDetail;
 	private MessageSource messageSource;
 	private String simplePrefix;
+	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
 
 	private static KeyedSmartQuotedTemplateMapper getMapper() {
 		KeyedSmartQuotedTemplateMapper result = new KeyedSmartQuotedTemplateMapper();
@@ -198,8 +208,37 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		return settingSpecifierProvider;
 	}
 
+	@Override
+	public Collection<ServiceConfiguration> getServiceConfigurations() {
+		Collection<ServiceConfiguration> result = null;
+		if ( jobDetail != null && serviceProviderConfigurations != null
+				&& serviceProviderConfigurations.size() > 0 ) {
+			for ( Map.Entry<String, SimpleServiceProviderConfiguration> me : serviceProviderConfigurations
+					.entrySet() ) {
+				Object o = jobDetail.getJobDataMap().get(me.getKey());
+				if ( o != null ) {
+					SimpleServiceProviderConfiguration conf = me.getValue();
+					SimpleServiceProviderConfiguration ser = new SimpleServiceProviderConfiguration();
+					ser.setService(o);
+					ser.setInterfaces(conf.getInterfaces());
+					ser.setProperties(conf.getProperties());
+					if ( result == null ) {
+						result = new ArrayList<ServiceProvider.ServiceConfiguration>();
+					}
+					result.add(ser);
+				}
+			}
+		}
+		return result;
+	}
+
 	public void setSettingSpecifierProvider(SettingSpecifierProvider settingSpecifierProvider) {
 		this.settingSpecifierProvider = settingSpecifierProvider;
+	}
+
+	public void setServiceProviderConfigurations(
+			Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations) {
+		this.serviceProviderConfigurations = serviceProviderConfigurations;
 	}
 
 }
