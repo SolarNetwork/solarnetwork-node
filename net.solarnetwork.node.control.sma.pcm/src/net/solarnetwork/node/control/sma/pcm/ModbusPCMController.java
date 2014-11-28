@@ -74,7 +74,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ModbusPCMController extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler {
@@ -132,7 +132,7 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 							d4Address }, 1);
 				}
 			});
-			log.info("Read discreet PCM values: {}", result);
+			log.debug("Read discreet PCM values: {}", result);
 			Integer status = integerValueForBitSet(result);
 			postControlCapturedEvent(newNodeControlInfoDatum(getPercentControlId(), status, true));
 			cachedSample = result;
