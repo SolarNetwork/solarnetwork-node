@@ -32,19 +32,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.io.yasdi4j.YasdiMaster;
-import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.MessageSource;
 import de.michaeldenk.yasdi4j.YasdiChannel;
@@ -73,13 +73,16 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport implements
-		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
+		DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code sourceId} property. */
 	public static final String DEFAULT_SOURCE_ID = "Main";
+
+	/** The watts output channel name. */
+	public static final String CHANNEL_NAME_WATTS = "Pac";
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -106,7 +109,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
-	private Set<String> pvWattsChannelNames = null;
+	private Set<String> pvWattsChannelNames = Collections.singleton(CHANNEL_NAME_WATTS);
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private Set<String> otherChannelNames = null;
 	private int channelMaxAgeSeconds = 30;
@@ -122,8 +125,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends PowerDatum> getDatumType() {
-		return PowerDatum.class;
+	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
+		return SMAPowerDatum.class;
 	}
 
 	private YasdiDevice getYasdiDevice() {
@@ -154,7 +157,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	@Override
-	public PowerDatum readCurrentDatum() {
+	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		YasdiDevice device = null;
 		final SMAPowerDatum datum = new SMAPowerDatum();
 		datum.setCreated(new Date());
@@ -165,23 +168,28 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			}
 
 			datum.setSourceId(getSourceId());
-			PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
 
 			if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
 				// we sum up all channels into a single value
-				PowerDatum tmp = new PowerDatum();
-				PropertyAccessor tmpBean = PropertyAccessorFactory.forBeanPropertyAccess(tmp);
 				int totalWatts = 0;
 				for ( String channelName : this.pvWattsChannelNames ) {
-					captureDataValue(device, channelName, "watts", tmpBean);
-					totalWatts += (tmp.getWatts() == null ? 0 : tmp.getWatts().intValue());
+					Object v = captureChannelValue(device, channelName);
+					if ( v instanceof Number ) {
+						totalWatts += ((Number) v).intValue();
+					}
 				}
 				datum.setWatts(totalWatts);
 			} else {
-				captureDataValue(device, this.pvVoltsChannelName, "pvVolts", bean);
-				captureDataValue(device, this.pvAmpsChannelName, "pvAmps", bean);
+				Object volts = captureChannelValue(device, this.pvVoltsChannelName);
+				Object amps = captureChannelValue(device, this.pvAmpsChannelName);
+				if ( volts instanceof Number && amps instanceof Number ) {
+					datum.setWatts(((Number) volts).intValue() * ((Number) amps).intValue());
+				}
 			}
-			captureDataValue(device, this.kWhChannelName, "wattHourReading", bean);
+			Object wh = captureChannelValue(device, this.kWhChannelName);
+			if ( wh instanceof Number ) {
+				datum.setWattHourReading(((Number) wh).longValue());
+			}
 
 			if ( otherChannelNames != null ) {
 				Map<String, Object> map = new LinkedHashMap<String, Object>(otherChannelNames.size());
@@ -205,12 +213,20 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			return null;
 		}
 
-		postDatumCapturedEvent(datum, PowerDatum.class);
+		postDatumCapturedEvent(datum, ACEnergyDatum.class);
+		addEnergyDatumSourceMetadata(datum);
 
 		return datum;
 	}
 
-	private boolean isValidDatum(PowerDatum d) {
+	private void addEnergyDatumSourceMetadata(SMAPowerDatum d) {
+		// associate generation tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
+		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+		addSourceMetadata(d.getSourceId(), sourceMeta);
+	}
+
+	private boolean isValidDatum(SMAPowerDatum d) {
 		if ( (d.getWatts() == null || d.getWatts() < 1)
 				&& (d.getWattHourReading() == null || d.getWattHourReading() < 1) ) {
 			return false;
@@ -219,6 +235,9 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	private Object captureChannelValue(YasdiDevice device, String channelName) {
+		if ( channelName == null || channelName.length() < 1 ) {
+			return null;
+		}
 		log.trace("Reading SMA channel {}", channelName);
 		YasdiChannel channel = device.getChannel(channelName);
 		if ( channel == null ) {
@@ -268,27 +287,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		Object value = captureChannelValue(device, channelName);
 		if ( value != null ) {
 			map.put(key, value);
-		}
-	}
-
-	/**
-	 * Read a specific channel and set that value onto a PowerDatum instance.
-	 * 
-	 * @param device
-	 *        the YasdiDevice to collect the data from
-	 * @param channelName
-	 *        the name of the channel to read
-	 * @param beanProperty
-	 *        the PowerDatum bean property to set with the data value
-	 * @param accessor
-	 *        the datum to update
-	 */
-	private void captureDataValue(YasdiDevice device, String channelName, String beanProperty,
-			PropertyAccessor accessor) {
-		Object value = captureChannelValue(device, channelName);
-		log.trace("Captured channel {} for property {}: {}", channelName, beanProperty, value);
-		if ( value != null ) {
-			accessor.setPropertyValue(beanProperty, value);
 		}
 	}
 

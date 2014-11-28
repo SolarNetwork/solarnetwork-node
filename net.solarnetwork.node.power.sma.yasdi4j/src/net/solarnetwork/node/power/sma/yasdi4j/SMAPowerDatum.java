@@ -22,46 +22,24 @@
 
 package net.solarnetwork.node.power.sma.yasdi4j;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.node.power.PowerDatum;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 
 /**
- * Extension of {@link PowerDatum} with SMA-specific details.
+ * Extension of {@link GeneralNodeACEnergyDatum} with SMA-specific details.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SMAPowerDatum extends PowerDatum {
-
-	private Map<String, Object> channelData;
+public class SMAPowerDatum extends GeneralNodeACEnergyDatum {
 
 	private String getStringChannelData(String key) {
-		if ( channelData == null ) {
-			return null;
-		}
-		Object value = channelData.get(key);
-		if ( value == null ) {
-			return null;
-		}
-		if ( value instanceof String ) {
-			return (String) value;
-		}
-		return value.toString();
+		return getStatusSampleString(key);
 	}
 
 	private void setChannelDataValue(String key, Object value) {
-		if ( channelData == null ) {
-			if ( value == null ) {
-				return;
-			}
-			channelData = new LinkedHashMap<String, Object>(4);
-		}
-		if ( value == null ) {
-			channelData.remove(key);
-		} else {
-			channelData.put(key, value);
-		}
+		putStatusSampleValue(key, value);
 	}
 
 	public String getStatusMessage() {
@@ -81,11 +59,15 @@ public class SMAPowerDatum extends PowerDatum {
 	}
 
 	public Map<String, Object> getChannelData() {
-		return channelData;
+		return (getSamples() != null ? getSamples().getStatus() : null);
 	}
 
 	public void setChannelData(Map<String, Object> channelData) {
-		this.channelData = channelData;
+		if ( getSamples() == null ) {
+			setSamples(new GeneralDatumSamples(null, null, channelData));
+		} else {
+			getSamples().setStatus(channelData);
+		}
 	}
 
 }

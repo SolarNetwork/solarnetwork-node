@@ -26,7 +26,11 @@ import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Datum;
@@ -54,10 +58,13 @@ import org.slf4j.LoggerFactory;
  * 
  * <dt>eventAdmin</dt>
  * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
+ * 
+ * <dt>datumMetadataService</dt>
+ * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public abstract class SMAInverterDataSourceSupport {
 
@@ -71,6 +78,10 @@ public abstract class SMAInverterDataSourceSupport {
 	private String sourceId = DEFAULT_SOURCE_ID;
 	private String groupUID = null;
 	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumMetadataService> datumMetadataService;
+
+	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	protected final String getSettingPrefixDayStartValue() {
 		return getClass().getSimpleName() + "." + sourceId + ".start:";
@@ -329,6 +340,44 @@ public abstract class SMAInverterDataSourceSupport {
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
+	/**
+	 * Add source metadata using the configured {@link DatumMetadataService} (if
+	 * available). The metadata will be cached so that subseqent calls to this
+	 * method with the same metadata value will not try to re-save the unchanged
+	 * value. This method will catch all exceptions and silently discard them.
+	 * 
+	 * @param sourceId
+	 *        the source ID to add metadata to
+	 * @param meta
+	 *        the metadata to add
+	 * @param returns
+	 *        <em>true</em> if the metadata was saved successfully, or does not
+	 *        need to be updated
+	 */
+	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
+		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		if ( cached != null && meta.equals(cached) ) {
+			// we've already posted this metadata... don't bother doing it again
+			log.debug("Source {} metadata already added, not posting again", sourceId);
+			return true;
+		}
+		DatumMetadataService service = null;
+		if ( datumMetadataService != null ) {
+			service = datumMetadataService.service();
+		}
+		if ( service == null ) {
+			return false;
+		}
+		try {
+			service.addSourceMetadata(sourceId, meta);
+			sourceMetadataCache.put(sourceId, meta);
+			return true;
+		} catch ( Exception e ) {
+			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
+		}
+		return false;
+	}
+
 	public Set<String> getChannelNamesToMonitor() {
 		return channelNamesToMonitor;
 	}
@@ -367,6 +416,14 @@ public abstract class SMAInverterDataSourceSupport {
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }
