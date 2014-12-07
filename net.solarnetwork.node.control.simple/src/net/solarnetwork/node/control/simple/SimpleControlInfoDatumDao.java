@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SimpleControlInfoDatumDao implements DatumDao<NodeControlInfoDatum> {
 
@@ -68,7 +68,13 @@ public class SimpleControlInfoDatumDao implements DatumDao<NodeControlInfoDatum>
 				List<String> controlIds = provider.getAvailableControlIds();
 				log.debug("Requesting control info from provider {}: {}", provider, controlIds);
 				for ( String controlId : provider.getAvailableControlIds() ) {
-					NodeControlInfo info = provider.getCurrentControlInfo(controlId);
+					NodeControlInfo info;
+					try {
+						info = provider.getCurrentControlInfo(controlId);
+					} catch ( Exception e ) {
+						log.error("Error reading control {}: {}", controlId, e.getMessage());
+						continue;
+					}
 					if ( info == null ) {
 						log.debug("No info returned for control {}", controlId);
 						continue;
