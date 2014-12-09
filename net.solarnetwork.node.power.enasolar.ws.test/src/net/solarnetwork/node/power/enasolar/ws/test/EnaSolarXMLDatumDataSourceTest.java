@@ -70,12 +70,12 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 	public void parseDeviceInfoDatumAcrossDays() {
 		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
 		dataSource.setSampleCacheMs(0); // disable cache
-		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		dataSource.setUrl(getClass().getResource("deviceinfo-daily-resetting.xml").toString());
 		dataSource.init();
 		Map<String, String> deviceInfoMap = new LinkedHashMap<String, String>(10);
 		deviceInfoMap.put("outputVoltage", "//data[@key='acOutputVolts']/@value");
 		deviceInfoMap.put("outputPower", "//data[@key='acPower']/@value");
-		deviceInfoMap.put("decaWattHoursTotal", "//data[@key='decaWattHoursTotal']/@value");
+		deviceInfoMap.put("kWattHoursToday", "//data[@key='kWattHoursToday']/@value");
 		deviceInfoMap.put("inputVoltage", "//data[@key='pvVolts']/@value");
 		deviceInfoMap.put("inputPower", "//data[@key='pvPower']/@value");
 		dataSource.setXpathMap(deviceInfoMap);
@@ -83,7 +83,7 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 		GeneralNodePVEnergyDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got datum: {}", datum);
 		assertEquals(Integer.valueOf(628), datum.getWatts());
-		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+		assertEquals(Long.valueOf(17940), datum.getWattHourReading());
 
 		// read in zero-watt reading, for threshold
 		dataSource.setUrl(getClass().getResource("deviceinfo-dayend.xml").toString());
@@ -91,7 +91,7 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 			datum = dataSource.readCurrentDatum();
 			assertNotNull("Day end datum " + i, datum);
 			assertEquals(Integer.valueOf(0), datum.getWatts());
-			assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+			assertEquals(Long.valueOf(17940), datum.getWattHourReading());
 		}
 		for ( int i = 0; i < 5; i++ ) {
 			GeneralNodePVEnergyDatum invalidDatum = dataSource.readCurrentDatum();
@@ -108,15 +108,13 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 		dataSource.setUrl(getClass().getResource("deviceinfo-daystart.xml").toString());
 		for ( int i = 0; i < 5; i++ ) {
 			GeneralNodePVEnergyDatum nextDayDatum = dataSource.readCurrentDatum();
-			assertNotNull(nextDayDatum);
-			assertEquals(Integer.valueOf(0), nextDayDatum.getWatts());
-			assertEquals(Long.valueOf(0), nextDayDatum.getWattHourReading());
+			assertNull(nextDayDatum);
 		}
 
-		dataSource.setUrl(getClass().getResource("deviceinfo.xml").toString());
+		dataSource.setUrl(getClass().getResource("deviceinfo-daily-resetting.xml").toString());
 		datum = dataSource.readCurrentDatum();
 		assertEquals(Integer.valueOf(628), datum.getWatts());
-		assertEquals(Long.valueOf(57540), datum.getWattHourReading());
+		assertEquals(Long.valueOf(17940), datum.getWattHourReading());
 	}
 
 	@Test

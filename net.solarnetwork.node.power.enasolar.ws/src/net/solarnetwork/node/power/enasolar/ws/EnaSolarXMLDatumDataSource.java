@@ -234,7 +234,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 	private boolean isSampleOnSameDay(final Date sampleDate) {
 		final Date lastKnownDate = (sample != null ? sample.getCreated() : null);
 		if ( sampleDate == null || lastKnownDate == null ) {
-			return true;
+			return false;
 		}
 		final Calendar sampleCal = Calendar.getInstance();
 		sampleCal.setTime(sampleDate);
@@ -248,30 +248,34 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		final Long currValue = datum.getWattHourReading();
 		final Long zeroWattCount = zeroWattCount();
 		final Long lastKnownValue = lastKnownValue();
-		final boolean sameDay = isSampleOnSameDay(datum.getCreated());
+		final boolean dailyResettingWh = datum.isUsingDailyResettingTotal();
 
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
 		// on single day, so we verify that current decaWattHoursTotal is not less 
 		// than last known decaWattHoursTotal value
-		if ( sameDay && currValue != null && currValue.longValue() < lastKnownValue.longValue() ) {
+		if ( currValue != null && currValue.longValue() < lastKnownValue.longValue()
+				&& (dailyResettingWh == false || (dailyResettingWh && zeroWattCount < 1L)) ) {
 			log.warn(
 					"Inverter [{}] reported value {} -- less than last known value {}. Discarding this datum.",
 					sourceId, currValue, lastKnownValue);
 			datum = null;
-		} else if ( sameDay && (datum.getWatts() == null || datum.getWatts() < 1) ) {
+		} else if ( currValue != null && currValue.longValue() < 1L && dailyResettingWh
+				&& isSampleOnSameDay(datum.getCreated()) == false ) {
+			log.debug("Resetting last known sample for new day zero Wh");
+			sample = datum;
+			datum = null;
+		} else if ( datum.getWatts() == null || datum.getWatts() < 1 ) {
 			final Long newCount = (zeroWattCount.longValue() + 1);
 			if ( zeroWattCount >= ZERO_WATT_THRESHOLD ) {
 				log.debug("Skipping zero-watt reading #{}", zeroWattCount);
 				datum = null;
 			}
 			validationCache.put(SETTING_ZERO_WATT_COUNT, newCount);
-		} else {
-			if ( zeroWattCount > 0 ) {
-				// reset zero-watt counter
-				log.debug("Resetting zero-watt reading count from non-zero reading or new calendar day.");
-				validationCache.remove(SETTING_ZERO_WATT_COUNT);
-			}
+		} else if ( zeroWattCount > 0 ) {
+			// reset zero-watt counter
+			log.debug("Resetting zero-watt reading count from non-zero reading or new calendar day.");
+			validationCache.remove(SETTING_ZERO_WATT_COUNT);
 		}
 
 		// everything checks out
