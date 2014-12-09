@@ -25,6 +25,8 @@ package net.solarnetwork.node.io.serial.rxtx;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,7 +47,7 @@ import org.springframework.context.MessageSource;
  * RXTX implementation of {@link SerialNetwork}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvider {
 
@@ -56,6 +58,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 	private TimeUnit unit = TimeUnit.SECONDS;
 	private MessageSource messageSource;
 
+	private final ExecutorService executor = Executors.newCachedThreadPool();
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -68,6 +71,16 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		params.setReceiveTimeout(9000);
 		params.setMaxWait(90000);
 		return params;
+	}
+
+	/**
+	 * Call to shut down internal resources. Once called, this network may not
+	 * be used again.
+	 */
+	public void shutdown() {
+		if ( executor.isShutdown() == false ) {
+			executor.shutdown();
+		}
 	}
 
 	@Override
@@ -116,7 +129,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		 *        the parameters
 		 */
 		private LockingSerialConnection() {
-			super(serialParams);
+			super(serialParams, executor);
 		}
 
 		@Override

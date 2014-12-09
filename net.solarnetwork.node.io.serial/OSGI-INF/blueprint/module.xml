@@ -47,7 +47,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.serial"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork">
+		<bean class="net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork" destroy-method="shutdown">
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
