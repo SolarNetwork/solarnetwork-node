@@ -274,7 +274,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 			validationCache.put(SETTING_ZERO_WATT_COUNT, newCount);
 		} else if ( zeroWattCount > 0 ) {
 			// reset zero-watt counter
-			log.debug("Resetting zero-watt reading count from non-zero reading or new calendar day.");
+			log.debug("Resetting zero-watt reading count from non-zero reading");
 			validationCache.remove(SETTING_ZERO_WATT_COUNT);
 		}
 
