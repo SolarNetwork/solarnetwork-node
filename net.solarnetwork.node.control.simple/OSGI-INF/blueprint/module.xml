@@ -10,31 +10,64 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
-	<!-- Service References -->
+	<reference-list id="providers" interface="net.solarnetwork.node.NodeControlProvider" availability="optional"/>
 
-	<reference-list id="providers" availability="optional"
-		interface="net.solarnetwork.node.NodeControlProvider"/>
+	<service ref="job" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	</bean>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.simple.SimpleControlInfoDatumDataSource</value>
+			</list>
+		</property>
+	</bean>
 	
-	<!-- Published Services -->
+	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate" ref="messageSource"/>
+	</bean>	
 
-	<service ref="controlDatumDao" ranking="1">
-		<interfaces>
-			<value>net.solarnetwork.node.dao.DatumDao</value>
-		</interfaces>
-		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.domain.NodeControlInfoDatum"/>
-		</service-properties>
-	</service>
-	
-	<!-- Supporting Services -->
-
-	<bean id="controlDatumDao"
-		class="net.solarnetwork.node.control.simple.SimpleControlInfoDatumDao">
-		<property name="providers" ref="providers"/>
+	<bean id="job" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<osgix:managed-properties 
+				persistent-id="net.solarnetwork.node.control.simple" 
+				autowire-on-update="true"/>
+		<property name="trigger">
+			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+				<property name="name" value="simpleControlLoggerTrigger"/>
+				<property name="jobName" value="simpleControlLoggerJob"/>
+				<property name="cronExpression" value="5 * * * * ?"/>
+				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+				<property name="randomSecond" value="true"/>
+			</bean>
+		</property>
+		<property name="jobDetail">
+			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+				<property name="name" value="simpleControlLoggerJob"/>
+				<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+				<property name="jobDataAsMap">
+					<map>
+						<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+						<entry key="multiDatumDataSource">
+							<bean class="net.solarnetwork.node.control.simple.SimpleControlInfoDatumDataSource">
+								<property name="messageSource" ref="jobMessageSource"/>
+								<property name="providers" ref="providers"/>
+							</bean>
+						</entry>
+					</map>
+				</property>
+			</bean>
+		</property>
+		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
 </blueprint>
