@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
@@ -129,11 +129,24 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 					in.close();
 				} catch ( IOException e ) {
 					// ignore this
+					log.warn("Exception closing serial port {} input stream: {}", this.serialPort,
+							e.getMessage());
+				}
+			}
+			if ( out != null ) {
+				try {
+					out.close();
+				} catch ( IOException e ) {
+					// ignore this
+					log.warn("Exception closing serial port {} output stream: {}", this.serialPort,
+							e.getMessage());
 				}
 			}
 			serialPort.close();
-			log.trace("Serial port closed");
+			log.trace("Serial port {} closed", this.serialPort);
 		} finally {
+			in = null;
+			out = null;
 			serialPort = null;
 		}
 	}
