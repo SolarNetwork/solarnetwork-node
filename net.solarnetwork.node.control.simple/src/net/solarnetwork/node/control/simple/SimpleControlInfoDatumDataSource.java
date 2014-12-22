@@ -85,7 +85,8 @@ public class SimpleControlInfoDatumDataSource implements MultiDatumDataSource<Ge
 		for ( NodeControlProvider provider : providers ) {
 			List<String> controlIds = provider.getAvailableControlIds();
 			log.debug("Requesting control info from provider {}: {}", provider, controlIds);
-			List<NodeControlInfo> infos = new ArrayList<NodeControlInfo>(controlIds.size());
+			Map<String, List<NodeControlInfo>> infos = new LinkedHashMap<String, List<NodeControlInfo>>(
+					controlIds.size());
 			for ( String controlId : controlIds ) {
 				NodeControlInfo info;
 				try {
@@ -99,20 +100,27 @@ public class SimpleControlInfoDatumDataSource implements MultiDatumDataSource<Ge
 					continue;
 				}
 				log.trace("Read NodeControlInfo: {}", info);
-				infos.add(info);
+				List<NodeControlInfo> list = infos.get(controlId);
+				if ( list == null ) {
+					list = new ArrayList<NodeControlInfo>(controlIds.size());
+					infos.put(controlId, list);
+				}
+				list.add(info);
 			}
 			if ( infos.size() > 0 ) {
-				GeneralNodeControlInfoDatum datum = new GeneralNodeControlInfoDatum(infos);
-				GeneralNodeControlInfoDatum cached = cache.get(datum.getSourceId());
-				if ( cached == null
-						|| (cached.getCreated().getTime() + CACHE_MAX_MS) < now
-						|| (cached.getSamples() != null && !cached.getSamples().equals(
-								datum.getSamples())) ) {
-					results.add(datum);
-					cache.put(datum.getSourceId(), datum);
-				} else {
-					log.debug("Control {} has not changed from cached value: {}", datum.getSourceId(),
-							cached);
+				for ( List<NodeControlInfo> list : infos.values() ) {
+					GeneralNodeControlInfoDatum datum = new GeneralNodeControlInfoDatum(list);
+					GeneralNodeControlInfoDatum cached = cache.get(datum.getSourceId());
+					if ( cached == null
+							|| (cached.getCreated().getTime() + CACHE_MAX_MS) < now
+							|| (cached.getSamples() != null && !cached.getSamples().equals(
+									datum.getSamples())) ) {
+						results.add(datum);
+						cache.put(datum.getSourceId(), datum);
+					} else {
+						log.debug("Control {} has not changed from cached value: {}",
+								datum.getSourceId(), cached);
+					}
 				}
 			}
 		}
