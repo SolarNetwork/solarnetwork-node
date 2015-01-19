@@ -64,7 +64,7 @@ import org.quartz.StatefulJob;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 
@@ -94,13 +94,6 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 			}
 
 			uploadList.addAll(toUpload);
-		}
-		if ( uploadList.size() < 1 ) {
-			if ( log.isDebugEnabled() ) {
-				log.debug("Collected {} datum to bulk upload to [{}]", uploadList.size(),
-						uploadService.getKey());
-			}
-			return;
 		}
 		if ( log.isInfoEnabled() ) {
 			log.info("Collected {} datum to bulk upload to [{}]", uploadList.size(),
