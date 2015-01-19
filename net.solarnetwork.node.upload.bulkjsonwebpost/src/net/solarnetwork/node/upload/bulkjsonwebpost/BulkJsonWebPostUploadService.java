@@ -36,8 +36,12 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 import net.solarnetwork.util.OptionalServiceTracker;
+import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,16 +58,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * <dt>objectMapper</dt>
  * <dd>The {@link ObjectMapper} to marshall objects to JSON with and parse the
  * response with.</dd>
+ * 
+ * <dt>uploadEmptyDataset</dt>
+ * <dd>If <em>true</em> then make a POST request to SolarIn even if there isn't
+ * any datum data to upload. This can be useful in situations where we want to
+ * be able to receive instructions in the HTTP response even if the node has not
+ * produced any data to upload. Defaults to <em>false</em>.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implements BulkUploadService,
-		InstructionAcknowledgementService {
+		InstructionAcknowledgementService, SettingSpecifierProvider {
 
 	private String url = "/bulkUpload.do";
 	private OptionalServiceTracker<ReactorService> reactorService;
+	private boolean uploadEmptyDataset = false;
+	private MessageSource messageSource;
 
 	@Override
 	public String getKey() {
@@ -72,7 +84,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 
 	@Override
 	public List<BulkUploadResult> uploadBulkDatum(Collection<Datum> data) {
-		if ( data == null ) {
+		if ( data == null && uploadEmptyDataset == false ) {
 			return Collections.emptyList();
 		}
 		List<UploadResult> uploadResults;
@@ -193,6 +205,33 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 		}
 	}
 
+	// Settings
+
+	@Override
+	public String getSettingUID() {
+		return getClass().getName();
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Bulk JSON Upload Service";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		BulkJsonWebPostUploadService defaults = new BulkJsonWebPostUploadService();
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		result.add(new BasicToggleSettingSpecifier("uploadEmptyDataset", defaults.isUploadEmptyDataset()));
+		return result;
+	}
+
+	// Accessors
+
 	public String getUrl() {
 		return url;
 	}
@@ -207,6 +246,28 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 
 	public void setReactorService(OptionalServiceTracker<ReactorService> reactorService) {
 		this.reactorService = reactorService;
+	}
+
+	public boolean isUploadEmptyDataset() {
+		return uploadEmptyDataset;
+	}
+
+	/**
+	 * Flag to make HTTP POST requests even if there isn't any datum data to
+	 * upload. This can be useful in situations where we want to be able to
+	 * receive instructions in the HTTP response even if the node has not
+	 * produced any data to upload.
+	 * 
+	 * @param uploadEmptyDataset
+	 *        The upload empty data flag to set.
+	 * @since 1.2
+	 */
+	public void setUploadEmptyDataset(boolean uploadEmptyDataset) {
+		this.uploadEmptyDataset = uploadEmptyDataset;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }
