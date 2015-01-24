@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.8.0
+Bundle-Version: 1.9.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
@@ -40,6 +40,7 @@ Import-Package:
  net.solarnetwork.support;version="1.2",
  net.solarnetwork.util;version="1.18",
  net.solarnetwork.web.domain;version="1.0",
+ net.solarnetwork.web.gemini;version="1.0.0",
  net.solarnetwork.web.support;version="1.7",
  org.aopalliance.aop;version="1.0",
  org.apache.commons.fileupload;version="[1.2.2,2.0)",
@@ -72,7 +73,6 @@ Import-Package:
  org.apache.tiles.servlet.context;version="[2.2,3.0)",
  org.apache.tiles.servlet.context.wildcard;version="[2.2,3.0)",
  org.apache.tiles.web.util;version="[2.2,3.0)",
- org.eclipse.virgo.web.dm;version="[3.6,4.0)",
  org.joda.time;version="[1.6,3.0)",
  org.joda.time.base;version="[1.6,3.0)",
  org.mortbay.servlet;version="[6.1,7.0)",
