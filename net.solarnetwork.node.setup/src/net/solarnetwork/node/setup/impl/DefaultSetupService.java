@@ -96,7 +96,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -202,6 +202,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	@Override
 	public String getSolarInBaseUrl() {
 		final int port = getPort();
+		final String host = getSolarNetHostName();
+		if ( host == null ) {
+			throw new SetupException(
+					"SolarNet host not configured. Perhaps this node is not yet set up?");
+		}
 		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + getSolarNetHostName()
 				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
 	}
