@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
@@ -35,7 +33,7 @@ import java.util.Map;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface SettingsService {
 
@@ -57,7 +55,7 @@ public interface SettingsService {
 	 * Get a specific factory for a given UID.
 	 * 
 	 * @param factoryUID
-	 *            the factory UID to get the providers for
+	 *        the factory UID to get the providers for
 	 * 
 	 * @return the factory, or <em>null</em> if not available
 	 */
@@ -67,7 +65,7 @@ public interface SettingsService {
 	 * Add a new factory instance, and return the new instance ID.
 	 * 
 	 * @param factoryUID
-	 *            the factory UID to create the new instance for
+	 *        the factory UID to create the new instance for
 	 * @return the new instance ID
 	 */
 	String addProviderFactoryInstance(String factoryUID);
@@ -76,18 +74,18 @@ public interface SettingsService {
 	 * Delete an existing factory instance.
 	 * 
 	 * @param factoryUID
-	 *            the factory UID to create the new instance for
+	 *        the factory UID to create the new instance for
 	 * @param instanceUID
-	 *            the instance UID to create the new instance for
+	 *        the instance UID to create the new instance for
 	 */
 	void deleteProviderFactoryInstance(String factoryUID, String instanceUID);
 
 	/**
-	 * Get all possible setting providers for a specific factory UID,
-	 * grouped by instance ID.
+	 * Get all possible setting providers for a specific factory UID, grouped by
+	 * instance ID.
 	 * 
 	 * @param factoryUID
-	 *            the factory UID to get the providers for
+	 *        the factory UID to get the providers for
 	 * 
 	 * @return mapping of instance IDs to list of setting providers (never
 	 *         <em>null</em>)
@@ -98,9 +96,9 @@ public interface SettingsService {
 	 * Get the current value of a setting.
 	 * 
 	 * @param provider
-	 *            the provider of the setting
+	 *        the provider of the setting
 	 * @param setting
-	 *            the setting
+	 *        the setting
 	 * @return the currernt setting value
 	 */
 	Object getSettingValue(SettingSpecifierProvider provider, SettingSpecifier setting);
@@ -109,46 +107,64 @@ public interface SettingsService {
 	 * Update setting values.
 	 * 
 	 * @param command
-	 *            the update command
+	 *        the update command
 	 */
 	void updateSettings(SettingsCommand command);
-	
+
 	/**
 	 * Export all settings as CSV formatted text.
 	 * 
-	 * @param out the output stream
+	 * @param out
+	 *        the output stream
 	 */
 	void exportSettingsCSV(Writer out) throws IOException;
-	
+
 	/**
 	 * Import all settings from a CSV formatted text stream.
 	 * 
-	 * @param in the input stream
+	 * @param in
+	 *        the input stream
 	 */
 	void importSettingsCSV(Reader in) throws IOException;
-	
+
 	/**
-	 * Create a backup of all settings, and return a backup object if the backup was performed.
+	 * Import all settings from a CSV formatted text stream, with options.
 	 * 
-	 * <p>A new backup need not be created if the settings are unchanged. In that case,
-	 * or if this method does not create a backup for any reason, this method should return
-	 * <em>null</em>.</p>
+	 * @param in
+	 *        The input stream to import.
+	 * @param options
+	 *        The import options.
+	 * @since 1.2
+	 */
+	void importSettingsCSV(Reader in, SettingsImportOptions options) throws IOException;
+
+	/**
+	 * Create a backup of all settings, and return a backup object if the backup
+	 * was performed.
+	 * 
+	 * <p>
+	 * A new backup need not be created if the settings are unchanged. In that
+	 * case, or if this method does not create a backup for any reason, this
+	 * method should return <em>null</em>.
+	 * </p>
 	 * 
 	 * @return the backup object, or <em>null</em> if no backup created
 	 */
 	SettingsBackup backupSettings();
-	
+
 	/**
 	 * Get a collection of all known settings backups.
 	 * 
 	 * @return the backups, never <em>null</em>
 	 */
 	Collection<SettingsBackup> getAvailableBackups();
-	
+
 	/**
-	 * Get a {@link Reader} to the backup data for a given SettingsBackup object.
+	 * Get a {@link Reader} to the backup data for a given SettingsBackup
+	 * object.
 	 * 
-	 * @param backup the backup to get the Reader for
+	 * @param backup
+	 *        the backup to get the Reader for
 	 * @return the Reader, or <em>null</em> if the backup cannot be found
 	 */
 	Reader getReaderForBackup(SettingsBackup backup);

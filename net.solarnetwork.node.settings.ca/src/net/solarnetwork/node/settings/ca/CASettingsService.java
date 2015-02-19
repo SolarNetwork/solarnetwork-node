@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.ca;
@@ -72,6 +70,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
+import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
 import net.solarnetwork.node.support.KeyValuePair;
@@ -109,7 +108,7 @@ import org.supercsv.util.CsvContext;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider {
 
@@ -570,13 +569,29 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void importSettingsCSV(Reader in) throws IOException {
+		importSettingsCSV(in, new SettingsImportOptions());
+	}
+
+	@Override
+	public void importSettingsCSV(final Reader in, final SettingsImportOptions options)
+			throws IOException {
 		// TODO: need a better way to organize settings into "do not restore" category
 		final Pattern allowed = Pattern.compile("^(?!solarnode).*", Pattern.CASE_INSENSITIVE);
 		importSettingsCSV(in, new ImportCallback() {
 
 			@Override
 			public boolean shouldImportSetting(Setting s) {
-				return allowed.matcher(s.getKey()).matches();
+				if ( allowed.matcher(s.getKey()).matches() == false ) {
+					return false;
+				}
+				if ( options.isAddOnly() ) {
+					// check if setting exists already, and if so do not import it
+					if ( settingDao.getSetting(s.getKey(), s.getType()) != null ) {
+						log.debug("Not updating existing setting {}", s.getKey());
+						return false;
+					}
+				}
+				return true;
 			}
 		});
 	}

@@ -14,7 +14,7 @@
     	<dependency org="commons-codec" name="commons-codec" rev="1.7" />
 		<dependency org="joda-time" name="joda-time" rev="2.1"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.1.0"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.19,2.0)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.31,2.0)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="4.2.0"/>
 		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" />
