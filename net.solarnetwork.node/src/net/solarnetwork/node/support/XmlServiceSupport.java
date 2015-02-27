@@ -113,7 +113,7 @@ import org.xml.sax.SAXException;
  * </dl>
  * 
  * @author matt.magoffin
- * @version 1.2
+ * @version 1.3
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
 
@@ -134,16 +134,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * Initialize this class after properties are set.
 	 */
 	public void init() {
-		if ( this.docBuilderFactory == null ) {
-			this.docBuilderFactory = DocumentBuilderFactory.newInstance();
-			this.docBuilderFactory.setNamespaceAware(true);
-		}
-		if ( this.xpathFactory == null ) {
-			this.xpathFactory = XPathFactory.newInstance();
-		}
-		if ( this.transformerFactory == null ) {
-			this.transformerFactory = TransformerFactory.newInstance();
-		}
+		// nothing here; retained for backwards compatibility
 	}
 
 	/**
@@ -897,8 +888,16 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	public XPathFactory getXpathFactory() {
 		XPathFactory f = xpathFactory;
 		if ( f == null ) {
-			f = XPathFactory.newInstance();
-			xpathFactory = f;
+			// work around Oracle JDK issues loading XPathFactory, see
+			// https://java.net/projects/glassfish/lists/users/archive/2012-02/message/371
+			final ClassLoader origClassLoader = Thread.currentThread().getContextClassLoader();
+			Thread.currentThread().setContextClassLoader(XPathFactory.class.getClassLoader());
+			try {
+				f = XPathFactory.newInstance();
+				xpathFactory = f;
+			} finally {
+				Thread.currentThread().setContextClassLoader(origClassLoader);
+			}
 		}
 		return f;
 	}
