@@ -61,7 +61,7 @@ public class GetVersionActionTests {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), null);
 		GetVersionAction action = new GetVersionAction(false);
 		String result = action.doWithConnection(conn);
 		Assert.assertEquals("9999", result);
@@ -85,7 +85,7 @@ public class GetVersionActionTests {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), null);
 		GetVersionAction action = new GetVersionAction(true);
 		String result = action.doWithConnection(conn);
 		Assert.assertEquals("0106", result);

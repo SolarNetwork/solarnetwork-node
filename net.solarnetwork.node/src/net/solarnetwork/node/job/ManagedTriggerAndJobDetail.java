@@ -31,9 +31,9 @@ import org.quartz.Trigger;
  * settings.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider {
+public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider, ServiceProvider {
 
 	/**
 	 * Get the Trigger.

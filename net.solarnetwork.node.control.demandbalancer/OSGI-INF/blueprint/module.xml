@@ -110,7 +110,6 @@
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
 											<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
-											<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.consumption.ConsumptionDatum)"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="Main"/>
@@ -122,7 +121,6 @@
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
 											<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
-											<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.power.PowerDatum)"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="Main"/>

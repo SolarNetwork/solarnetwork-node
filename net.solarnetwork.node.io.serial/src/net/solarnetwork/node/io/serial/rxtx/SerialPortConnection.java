@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.TooManyListenersException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -54,7 +53,7 @@ import org.slf4j.LoggerFactory;
  * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
@@ -77,21 +76,17 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	/**
 	 * Constructor.
 	 * 
-	 * @param serialPort
-	 *        the SerialPort to use
 	 * @param serialParams
 	 *        the parameters to use with the SerialPort
+	 * @param executor
+	 *        A thread pool to use for I/O tasks with timeouts.
 	 * @param maxWait
 	 *        the maximum number of milliseconds to wait when waiting to read
 	 *        data
 	 */
-	public SerialPortConnection(SerialPortBeanParameters params) {
+	public SerialPortConnection(SerialPortBeanParameters params, ExecutorService executor) {
 		this.serialParams = params;
-		if ( params.getMaxWait() > 0 ) {
-			executor = Executors.newFixedThreadPool(1);
-		} else {
-			executor = null;
-		}
+		this.executor = executor;
 	}
 
 	@Override
@@ -134,11 +129,24 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 					in.close();
 				} catch ( IOException e ) {
 					// ignore this
+					log.warn("Exception closing serial port {} input stream: {}", this.serialPort,
+							e.getMessage());
+				}
+			}
+			if ( out != null ) {
+				try {
+					out.close();
+				} catch ( IOException e ) {
+					// ignore this
+					log.warn("Exception closing serial port {} output stream: {}", this.serialPort,
+							e.getMessage());
 				}
 			}
 			serialPort.close();
-			log.trace("Serial port closed");
+			log.trace("Serial port {} closed", this.serialPort);
 		} finally {
+			in = null;
+			out = null;
 			serialPort = null;
 		}
 	}

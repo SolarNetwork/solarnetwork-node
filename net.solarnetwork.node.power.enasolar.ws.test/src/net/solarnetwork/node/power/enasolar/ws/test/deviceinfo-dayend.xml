@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<info time="16180F57">
+	<data key="vendor" value="EnaSolar" />
+	<data key="model" value="2" />
+	<data key="acOutputVolts" value="0" />
+	<data key="pvVolts" value="0" />
+	<data key="pvPower" value="0" />
+	<data key="acPower" value="0" />
+	<data key="kWattHoursToday" value="17.94" />
+</info>

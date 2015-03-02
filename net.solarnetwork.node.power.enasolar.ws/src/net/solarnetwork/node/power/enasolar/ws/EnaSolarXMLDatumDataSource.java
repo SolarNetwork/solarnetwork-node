@@ -1,5 +1,5 @@
 /* ==================================================================
- * DeviceInfoDatumDataSource.java - Oct 2, 2011 8:50:13 PM
+ * EnaSolarXMLDatumDataSource.java - Oct 2, 2011 8:50:13 PM
  * 
  * Copyright 2007-2011 SolarNetwork.net Dev Team
  * 
@@ -24,6 +24,8 @@ package net.solarnetwork.node.power.enasolar.ws;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +42,7 @@ import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.StringUtils;
 import org.springframework.context.MessageSource;
@@ -117,16 +120,13 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
+public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
-	/** The {@link SettingDao} key for a Long Wh last-known-value value. */
-	public static final String SETTING_LAST_KNOWN_VALUE = "DeviceInfoDatumDataSource:globalWh";
-
 	/** The {@link SettingDao} key for a Long counter of 0 watt readings. */
-	public static final String SETTING_ZERO_WATT_COUNT = "DeviceInfoDatumDataSource:0W";
+	public static final String SETTING_ZERO_WATT_COUNT = "EnaSolarXMLDatumDataSource:0W";
 
 	/** The maximum number of consecutive zero-watt readings to return. */
 	public static final long ZERO_WATT_THRESHOLD = 10;
@@ -141,8 +141,46 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	private Map<String, XPathExpression> xpathMapping;
 	private Map<String, String> xpathMap;
 	private MessageSource messageSource;
+	private long sampleCacheMs = 5000;
 
+	private EnaSolarPowerDatum sample;
 	private final Map<String, Long> validationCache = new HashMap<String, Long>(4);
+
+	private EnaSolarPowerDatum getCurrentSample() {
+		EnaSolarPowerDatum datum;
+		if ( isCachedSampleExpired() ) {
+			datum = new EnaSolarPowerDatum();
+			datum.setCreated(new Date());
+			datum.setSourceId(sourceId);
+			for ( String url : urls ) {
+				webFormGetForBean(null, datum, url, null, xpathMapping);
+			}
+			datum = validateDatum(datum);
+			if ( datum != null ) {
+				sample = datum;
+				addEnergyDatumSourceMetadata(datum);
+				postDatumCapturedEvent(datum, PVEnergyDatum.class);
+			}
+		} else {
+			datum = sample;
+		}
+		return datum;
+	}
+
+	private boolean isCachedSampleExpired() {
+		EnaSolarPowerDatum snap = sample;
+		if ( snap == null || sample.getCreated() == null ) {
+			return true;
+		}
+		final long lastReadDiff = System.currentTimeMillis() - sample.getCreated().getTime();
+		if ( lastReadDiff > sampleCacheMs ) {
+			return true;
+		}
+		if ( validateDatum(snap) == null ) {
+			return true; // not valid
+		}
+		return false;
+	}
 
 	@Override
 	public String toString() {
@@ -176,48 +214,68 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 
 	@Override
 	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		EnaSolarPowerDatum datum = new EnaSolarPowerDatum();
-		datum.setSourceId(sourceId);
-		for ( String url : urls ) {
-			webFormGetForBean(null, datum, url, null, xpathMapping);
+		return getCurrentSample();
+	}
+
+	private Long zeroWattCount() {
+		return (validationCache.containsKey(SETTING_ZERO_WATT_COUNT) ? validationCache
+				.get(SETTING_ZERO_WATT_COUNT) : 0L);
+	}
+
+	private Long lastKnownValue() {
+		EnaSolarPowerDatum snap = sample;
+		Long result = null;
+		if ( snap != null ) {
+			result = snap.getWattHourReading();
 		}
-		datum = validateDatum(datum);
-		addEnergyDatumSourceMetadata(datum);
-		postDatumCapturedEvent(datum, PVEnergyDatum.class);
-		return datum;
+		return (result == null ? 0L : result);
+	}
+
+	private boolean isSampleOnSameDay(final Date sampleDate) {
+		final Date lastKnownDate = (sample != null ? sample.getCreated() : null);
+		if ( sampleDate == null || lastKnownDate == null ) {
+			return false;
+		}
+		final Calendar sampleCal = Calendar.getInstance();
+		sampleCal.setTime(sampleDate);
+		final Calendar lastKnownCal = Calendar.getInstance();
+		lastKnownCal.setTime(lastKnownDate);
+		return (sampleCal.get(Calendar.DAY_OF_YEAR) == lastKnownCal.get(Calendar.DAY_OF_YEAR) && sampleCal
+				.get(Calendar.YEAR) == lastKnownCal.get(Calendar.YEAR));
 	}
 
 	private EnaSolarPowerDatum validateDatum(EnaSolarPowerDatum datum) {
 		final Long currValue = datum.getWattHourReading();
-		final Long zeroWattCount = (validationCache.containsKey(SETTING_ZERO_WATT_COUNT) ? validationCache
-				.get(SETTING_ZERO_WATT_COUNT) : 0L);
-		final Long lastKnownValue = (validationCache.containsKey(SETTING_LAST_KNOWN_VALUE) ? validationCache
-				.get(SETTING_LAST_KNOWN_VALUE) : 0L);
+		final Long zeroWattCount = zeroWattCount();
+		final Long lastKnownValue = lastKnownValue();
+		final boolean dailyResettingWh = datum.isUsingDailyResettingTotal();
 
 		// we've seen values reported less than last known value after
 		// a power outage (i.e. after inverter turns off, then back on)
 		// on single day, so we verify that current decaWattHoursTotal is not less 
 		// than last known decaWattHoursTotal value
-		if ( currValue != null && currValue.longValue() < lastKnownValue.longValue() ) {
+		if ( currValue != null && currValue.longValue() < lastKnownValue.longValue()
+				&& (dailyResettingWh == false || (dailyResettingWh && zeroWattCount < 1L)) ) {
 			log.warn(
 					"Inverter [{}] reported value {} -- less than last known value {}. Discarding this datum.",
 					sourceId, currValue, lastKnownValue);
 			datum = null;
-		} else if ( datum.getWatts() != null && datum.getWatts() < 1 ) {
+		} else if ( currValue != null && currValue.longValue() < 1L && dailyResettingWh
+				&& isSampleOnSameDay(datum.getCreated()) == false ) {
+			log.debug("Resetting last known sample for new day zero Wh");
+			sample = datum;
+			datum = null;
+		} else if ( datum.getWatts() == null || datum.getWatts() < 1 ) {
 			final Long newCount = (zeroWattCount.longValue() + 1);
 			if ( zeroWattCount >= ZERO_WATT_THRESHOLD ) {
 				log.debug("Skipping zero-watt reading #{}", zeroWattCount);
 				datum = null;
 			}
 			validationCache.put(SETTING_ZERO_WATT_COUNT, newCount);
-		} else {
-			if ( currValue != null && currValue.longValue() != lastKnownValue.longValue() ) {
-				validationCache.put(SETTING_LAST_KNOWN_VALUE, currValue);
-			}
-			if ( zeroWattCount > 0 ) {
-				// reset zero-watt counter
-				validationCache.remove(SETTING_ZERO_WATT_COUNT);
-			}
+		} else if ( zeroWattCount > 0 ) {
+			// reset zero-watt counter
+			log.debug("Resetting zero-watt reading count from non-zero reading");
+			validationCache.remove(SETTING_ZERO_WATT_COUNT);
 		}
 
 		// everything checks out
@@ -315,23 +373,40 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
+		EnaSolarXMLDatumDataSource defaults = new EnaSolarXMLDatumDataSource();
+		defaults.init();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		results.add(new BasicTextFieldSettingSpecifier("urlList", defaults.getUrlList()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String
+				.valueOf(defaults.sampleCacheMs)));
+		return results;
+	}
+
+	private String getInfoMessage() {
+		String msg = null;
+		EnaSolarPowerDatum snap = null;
+		try {
+			snap = getCurrentSample();
+		} catch ( Exception e ) {
+			// we must ignore exceptions here
+		}
+		if ( snap != null ) {
+			StringBuilder buf = new StringBuilder();
+			buf.append(snap.getWatts()).append(" W; ");
+			buf.append(snap.getWattHourReading()).append(" Wh; sample created ");
+			buf.append(String.format("%tc", snap.getCreated()));
+			msg = buf.toString();
+		}
+		return (msg == null ? "N/A" : msg);
 	}
 
 	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
-	}
-
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		DeviceInfoDatumDataSource defaults = new DeviceInfoDatumDataSource();
-		defaults.init();
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(10);
-		result.add(new BasicTextFieldSettingSpecifier("urlList", defaults.getUrlList()));
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		result.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
-		return result;
 	}
 
 	public String getUrl() {
@@ -393,6 +468,10 @@ public class DeviceInfoDatumDataSource extends XmlServiceSupport implements
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 		validationCache.clear();
+	}
+
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }

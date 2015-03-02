@@ -29,12 +29,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.test.AbstractNodeTest;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
 
@@ -45,6 +49,18 @@ import org.springframework.util.FileCopyUtils;
  * @version 1.0
  */
 public class SerialConnectionTests extends AbstractNodeTest {
+
+	private ExecutorService executor;
+
+	@Before
+	public void setup() {
+		executor = Executors.newCachedThreadPool();
+	}
+
+	@After
+	public void shutdown() {
+		executor.shutdown();
+	}
 
 	@Test
 	public void readMarkedMessageSmallChunks() throws IOException {
@@ -58,7 +74,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), executor);
 		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
 				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
 		Assert.assertArrayEquals(xml, result);
@@ -77,7 +93,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 		};
 		SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
 		serialParams.setReceiveThreshold(64);
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
 		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
 				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
 		Assert.assertArrayEquals(xml, result);
@@ -97,7 +113,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), executor);
 		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
 				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
 		Assert.assertArrayEquals(xml, result);
@@ -114,7 +130,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), executor);
 		byte[] result = conn.readMarkedMessage(new byte[] { msg[0] }, 10);
 		Assert.assertArrayEquals(msg, result);
 	}
@@ -130,7 +146,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 1000, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
 		conn.readMarkedMessage(new byte[] { msg[0] }, 10);
 	}
 
@@ -145,7 +161,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), executor);
 		byte[] result = conn.drainInputBuffer();
 		Assert.assertArrayEquals(msg, result);
 	}
@@ -162,7 +178,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), executor);
 		conn.writeMessage(msg);
 		Assert.assertArrayEquals(msg, byos.toByteArray());
 	}
@@ -185,7 +201,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
 		conn.writeMessage(msg);
 		Assert.assertArrayEquals(msg, byos.toByteArray());
 	}
@@ -202,7 +218,7 @@ public class SerialConnectionTests extends AbstractNodeTest {
 				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 1000);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams);
+		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
 		conn.writeMessage(msg);
 		Assert.assertArrayEquals(msg, byos.toByteArray());
 	}

@@ -76,7 +76,7 @@ public class LATABusConverserTests extends AbstractNodeTest {
 
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), null);
 		LATABusConverser action = new LATABusConverser(new AddressableCommand(SWITCH_1_IDENTIFIER,
 				Command.SwitchOff));
 		String result = action.doWithConnection(conn);
@@ -116,7 +116,7 @@ public class LATABusConverserTests extends AbstractNodeTest {
 			}
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters());
+				new SerialPortBeanParameters(), null);
 		LATABusConverser action = new LATABusConverser(cmd);
 		String result = action.doWithConnection(conn);
 		Assert.assertEquals(new String(msg), result);

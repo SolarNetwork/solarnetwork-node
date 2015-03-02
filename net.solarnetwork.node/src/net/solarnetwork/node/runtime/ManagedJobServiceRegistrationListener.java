@@ -23,13 +23,19 @@
 package net.solarnetwork.node.runtime;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.job.ManagedTriggerAndJobDetail;
+import net.solarnetwork.node.job.ServiceProvider;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
@@ -82,6 +88,14 @@ import org.slf4j.LoggerFactory;
  * </p>
  * 
  * <p>
+ * As {@link ManagedTriggerAndJobDetail} implements {@link ServiceProvider} as
+ * well, any service configurations returned by
+ * {@link ServiceProvider#getServiceConfigurations()} will be automatically
+ * registered along with the job. When the job is unregistered the associated
+ * services will be unregistered as well.
+ * </p>
+ * 
+ * <p>
  * The configurable properties of this class are:
  * </p>
  * 
@@ -105,6 +119,7 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 	private BundleContext bundleContext;
 
 	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
+	private final Map<String, List<ServiceRegistration<?>>> registeredServices = new HashMap<String, List<ServiceRegistration<?>>>();
 	private final Map<String, ManagedTriggerAndJobDetail> pidMap = new HashMap<String, ManagedTriggerAndJobDetail>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -153,8 +168,38 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			pidMap.put(pid, trigJob);
 		}
 
+		Collection<ServiceProvider.ServiceConfiguration> services = trigJob.getServiceConfigurations();
+		if ( services != null ) {
+			for ( ServiceProvider.ServiceConfiguration conf : services ) {
+				Object service = conf.getService();
+				String[] interfaces = conf.getInterfaces();
+				Dictionary<String, ?> props = dictionaryForMap(conf.getProperties());
+				if ( service != null && interfaces != null && interfaces.length > 0 ) {
+					log.debug("Registering managed service {} as {} with props {}", service,
+							Arrays.toString(interfaces), props);
+					ServiceRegistration<?> ref = bundleContext.registerService(interfaces, service,
+							props);
+					synchronized ( this ) {
+						List<ServiceRegistration<?>> refs = registeredServices.get(pid);
+						if ( refs == null ) {
+							refs = new ArrayList<ServiceRegistration<?>>(services.size());
+							registeredServices.put(pid, refs);
+						}
+						refs.add(ref);
+					}
+				}
+			}
+		}
+
 		JobUtils.scheduleCronJob(scheduler, trigger, trigJob.getJobDetail(),
 				trigger.getCronExpression(), trigger.getJobDataMap());
+	}
+
+	private Dictionary<String, ?> dictionaryForMap(Map<String, ?> map) {
+		if ( map == null ) {
+			return null;
+		}
+		return new Hashtable<String, Object>(map);
 	}
 
 	/**
@@ -181,6 +226,14 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 
 		synchronized ( this ) {
 			pidMap.remove(pid);
+			List<ServiceRegistration<?>> refs = registeredServices.get(pid);
+			if ( refs != null ) {
+				for ( ServiceRegistration<?> reg : refs ) {
+					log.debug("Unregistering managed service " + reg);
+					reg.unregister();
+				}
+				registeredServices.remove(pid);
+			}
 		}
 	}
 

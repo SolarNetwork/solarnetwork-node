@@ -31,7 +31,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource</value>
+				<value>net.solarnetwork.node.power.enasolar.ws.EnaSolarXMLDatumDataSource</value>
 			</list>
 		</property>
 	</bean>
@@ -82,7 +82,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
-								<bean init-method="init" class="net.solarnetwork.node.power.enasolar.ws.DeviceInfoDatumDataSource">
+								<bean init-method="init" class="net.solarnetwork.node.power.enasolar.ws.EnaSolarXMLDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>

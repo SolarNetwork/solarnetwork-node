@@ -39,6 +39,8 @@ import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalServiceTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
@@ -71,6 +73,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Long weatherLocationId;
 	private String weatherSourceId;
 	private Location weatherLocation;
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
 	public String getSettingUID() {
@@ -123,12 +127,18 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		if ( location == null && locationService != null && locationId != null && sourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId, sourceId);
-				BasicGeneralLocation loc = new BasicGeneralLocation();
-				loc.setLocationId(locationId);
-				loc.setSourceId(sourceId);
-				loc.setSourceMetadata(meta);
-				location = loc;
+				try {
+					GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId,
+							sourceId);
+					BasicGeneralLocation loc = new BasicGeneralLocation();
+					loc.setLocationId(locationId);
+					loc.setSourceId(sourceId);
+					loc.setSourceMetadata(meta);
+					location = loc;
+				} catch ( RuntimeException e ) {
+					log.error("Error getting location metadata for location {} source {}", locationId,
+							sourceId, e);
+				}
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("locationKey", Location.PRICE_TYPE, location);
@@ -139,13 +149,18 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 				&& weatherSourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				GeneralLocationSourceMetadata meta = service.getLocationMetadata(weatherLocationId,
-						weatherSourceId);
-				BasicGeneralLocation loc = new BasicGeneralLocation();
-				loc.setLocationId(weatherLocationId);
-				loc.setSourceId(weatherSourceId);
-				loc.setSourceMetadata(meta);
-				weatherLocation = loc;
+				try {
+					GeneralLocationSourceMetadata meta = service.getLocationMetadata(weatherLocationId,
+							weatherSourceId);
+					BasicGeneralLocation loc = new BasicGeneralLocation();
+					loc.setLocationId(weatherLocationId);
+					loc.setSourceId(weatherSourceId);
+					loc.setSourceMetadata(meta);
+					weatherLocation = loc;
+				} catch ( RuntimeException e ) {
+					log.error("Error getting weather location metadata for location {} source {}",
+							weatherLocationId, weatherSourceId, e);
+				}
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", Location.WEATHER_TYPE,

@@ -17,14 +17,17 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
-		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-
-	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="locationServiceRef"/>
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
-	
+
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
+		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -33,17 +36,28 @@
 		</property>
 	</bean>
 	
+	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate" ref="messageSource"/>
+	</bean>	
+
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="SMA inverter (YASDI)"/>
 		<property name="factoryUID" value="net.solarnetwork.node.power.sma.yasdi4j"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
-	
+
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
+
+	<bean id="yasdiMaster" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.beans.factory.ObjectFactory"/>
+		<property name="serviceFilter" value="(serviceClass=net.solarnetwork.node.io.yasdi4j.YasdiMaster)"/>
+	</bean>	
 	
 	<!-- Published services -->
 	
@@ -51,29 +65,61 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.power.sma.yasdi4j" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.power.sma.yasdi4j"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
-			<property name="delegate">
-				<bean class="net.solarnetwork.node.power.sma.yasdi4j.SMAyasdi4jPowerDatumDataSource">
-					<property name="eventAdmin" ref="eventAdmin"/>
-					<property name="messageSource" ref="messageSource"/>
-					<property name="yasdi">
-						<bean class="net.solarnetwork.util.DynamicServiceTracker">
-							<property name="bundleContext" ref="bundleContext"/>
-							<property name="serviceClassName" value="org.springframework.beans.factory.ObjectFactory"/>
-							<property name="serviceFilter" value="(serviceClass=net.solarnetwork.node.io.yasdi4j.YasdiMaster)"/>
-						</bean>	
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+					<property name="name" value="smaYasdiDatumLoggerTrigger"/>
+					<property name="jobName" value="smaYasdiDatumLoggerJob"/>
+					<property name="cronExpression" value="5 * * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.DatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.ACEnergyDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+					<property name="name" value="smaYasdiDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumDataSource">
+								<bean class="net.solarnetwork.node.power.sma.yasdi4j.SMAyasdi4jPowerDatumDataSource">
+									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
+									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="yasdi" ref="yasdiMaster"/>
+								</bean>
+							</entry>
+						</map>
 					</property>
 				</bean>
 			</property>
-			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
-	
+
 </blueprint>

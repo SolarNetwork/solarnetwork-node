@@ -30,11 +30,13 @@ import org.slf4j.LoggerFactory;
  * Extension of {@link PowerDatum} to map EnaSolar data appropriately.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 
 	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
+
+	private boolean usingDailyResettingTotal = false;
 
 	/**
 	 * Set the deca-watt hour total reading, as a hexidecimal string.
@@ -65,8 +67,11 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 * 
 	 * @param kWattHoursToday
 	 *        the kWh reading to set
+	 * @deprecated use {@link #setDecaWattHoursTotal(String)}
 	 */
+	@Deprecated
 	public void setKWattHoursToday(Double kWattHoursToday) {
+		usingDailyResettingTotal = true;
 		if ( kWattHoursToday != null ) {
 			setWattHourReading(Math.round(kWattHoursToday.doubleValue() * 1000));
 		} else {
@@ -194,6 +199,15 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 */
 	public Float getOutputVoltage() {
 		return getVoltage();
+	}
+
+	/**
+	 * Return <em>true</em> if {@link #setKWattHoursToday(Double)} was called.
+	 * 
+	 * @return boolean
+	 */
+	public boolean isUsingDailyResettingTotal() {
+		return usingDailyResettingTotal;
 	}
 
 }
