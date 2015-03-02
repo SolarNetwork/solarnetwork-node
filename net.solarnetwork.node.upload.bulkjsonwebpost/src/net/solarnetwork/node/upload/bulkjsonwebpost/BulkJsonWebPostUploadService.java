@@ -67,7 +67,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implements BulkUploadService,
 		InstructionAcknowledgementService, SettingSpecifierProvider {
@@ -84,7 +84,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 
 	@Override
 	public List<BulkUploadResult> uploadBulkDatum(Collection<Datum> data) {
-		if ( data == null && uploadEmptyDataset == false ) {
+		if ( (data == null || data.size() < 1) && uploadEmptyDataset == false ) {
 			return Collections.emptyList();
 		}
 		List<UploadResult> uploadResults;
