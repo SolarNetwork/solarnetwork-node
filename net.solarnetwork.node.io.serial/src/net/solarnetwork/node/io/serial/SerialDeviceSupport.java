@@ -140,7 +140,7 @@ public abstract class SerialDeviceSupport {
 					}
 				});
 				deviceInfo = info;
-			} catch ( IOException e ) {
+			} catch ( Exception e ) {
 				log.warn("Communcation problem with {}: {}", uid, e.getMessage());
 			}
 		}
