@@ -57,6 +57,16 @@
 
 	<!-- Sync backup job -->
 
+	<service ref="syncBackupService" interface="org.osgi.service.event.EventHandler">
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.setup.SetupService).TOPIC_NETWORK_ASSOCIATION_ACCEPTED}</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
+
 	<bean id="syncBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="syncBackupTrigger"/>
 		<property name="jobDetail" ref="syncBackupJob"/>
@@ -70,13 +80,16 @@
 		<property name="randomSecond" value="true"/>
 	</bean>
 	
+	<bean id="syncBackupService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncService">
+		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="destinationPath" value="${job.syncBackup.destinationPath}"/>
+	</bean>
+	
 	<bean id="syncBackupJob" class="org.springframework.scheduling.quartz.JobDetailBean">
 		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncJob"/>
 		<property name="jobDataAsMap">
 			<map>
-				<entry key="jdbcOperations" value-ref="jdbcOps"/>
-				<!--entry key="syncCommand" value="${job.syncBackup.syncCommand}"/-->
-				<entry key="destinationPath" value="${job.syncBackup.destinationPath}"/>
+				<entry key="syncService" value-ref="syncBackupService"/>
 			</map>
 		</property>
 	</bean>

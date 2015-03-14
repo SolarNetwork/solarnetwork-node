@@ -54,6 +54,8 @@ import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -96,7 +98,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -128,10 +130,19 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 
 	private OptionalService<BackupManager> backupManager;
+	private OptionalService<EventAdmin> eventAdmin;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
+
+	/**
+	 * Default constructor.
+	 */
+	public DefaultSetupService() {
+		super();
+		setConnectionTimeout(60000);
+	}
 
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
 		Map<String, String> xpathMap = new HashMap<String, String>();
@@ -346,12 +357,27 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 			makeBackup();
 
+			// post NETWORK_ASSOCIATION_ACCEPTED event
+			Map<String, Object> props = new HashMap<String, Object>(2);
+			if ( result.getNetworkId() != null ) {
+				props.put(KEY_NODE_ID, result.getNetworkId());
+			}
+			postEvent(new Event(SetupService.TOPIC_NETWORK_ASSOCIATION_ACCEPTED, props));
+
 			return result;
 		} catch ( Exception e ) {
 			log.error("Error while confirming server details: {}", details, e);
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
+	}
+
+	private void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
 	}
 
 	private void makeBackup() {
@@ -392,6 +418,16 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
+	}
+
+	@Override
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	@Override
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
