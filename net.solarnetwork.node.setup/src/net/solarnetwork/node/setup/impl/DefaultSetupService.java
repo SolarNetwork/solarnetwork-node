@@ -125,6 +125,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
+	private static final String VERIFICATION_URL_SOLARUSER = "solarUserServiceURL";
+	private static final String VERIFICATION_URL_SOLARQUERY = "solarQueryServiceURL";
 
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
@@ -163,6 +165,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		identityXpathMap.put(VERIFICATION_CODE_IDENTITY_KEY, "/*/@identityKey");
 		identityXpathMap.put(VERIFICATION_CODE_TERMS_OF_SERVICE, "/*/@termsOfService");
 		identityXpathMap.put(VERIFICATION_CODE_SECURITY_PHRASE, "/*/@securityPhrase");
+		identityXpathMap.put(VERIFICATION_URL_SOLARUSER,
+				"/*/networkServiceURLs/entry[@key='solaruser']/value/@value");
+		identityXpathMap.put(VERIFICATION_URL_SOLARQUERY,
+				"/*/networkServiceURLs/entry[@key='solarquery']/value/@value");
 		return getXPathExpressionMap(identityXpathMap);
 	}
 

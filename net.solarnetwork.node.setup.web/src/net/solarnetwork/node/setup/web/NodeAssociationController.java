@@ -55,7 +55,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @version 1.0
  */
 @Controller
-@SessionAttributes(NodeAssociationController.KEY_DETAILS)
+@SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
@@ -64,6 +64,9 @@ public class NodeAssociationController extends BaseSetupController {
 
 	/** The model attribute for the network association details. */
 	public static final String KEY_DETAILS = "details";
+
+	/** The model attribute for the network identity details. */
+	public static final String KEY_IDENTITY = "association";
 
 	@Autowired
 	private PKIService pkiService;
@@ -142,7 +145,7 @@ public class NodeAssociationController extends BaseSetupController {
 		try {
 			// Retrieve the identity from the server
 			NetworkAssociation na = getSetupBiz().retrieveNetworkAssociation(details);
-			model.addAttribute("association", na);
+			model.addAttribute(KEY_IDENTITY, na);
 		} catch ( SetupException e ) {
 			errors.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
 			return setupForm(model);
