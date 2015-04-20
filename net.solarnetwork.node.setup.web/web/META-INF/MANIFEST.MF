@@ -3,11 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.10.0
+Bundle-Version: 1.11.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
-Web-ContextPath: /setup
+Web-ContextPath: /
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.core.type;version="[2.4,3.0)",
