@@ -359,6 +359,11 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				// create the node's CSR based on the given subjectDN
 				log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
 				pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			} else if ( details.getKeystorePassword() != null ) {
+				log.debug("Saving node certificate for subject {}",
+						result.getNetworkCertificateSubjectDN());
+				pkiService.savePKCS12Keystore(result.getNetworkCertificate(),
+						details.getKeystorePassword());
 			}
 
 			makeBackup();
