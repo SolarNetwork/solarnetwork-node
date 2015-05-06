@@ -45,6 +45,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -124,6 +125,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private static final Pattern BACKUP_FILENAME_PATTERN = Pattern.compile('^' + BACKUP_FILENAME_PREFIX
 			+ "(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." + BACKUP_FILENAME_EXT + "$");
 	private static final int DEFAULT_BACKUP_MAX_COUNT = 5;
+	private static final String FACTORY_SETTING_KEY_SUFFIX = ".FACTORY";
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
@@ -141,7 +143,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private String getFactorySettingKey(String factoryPid) {
-		return factoryPid + ".FACTORY";
+		return factoryPid + FACTORY_SETTING_KEY_SUFFIX;
 	}
 
 	private String getFactoryInstanceSettingKey(String factoryPid, String instanceKey) {
@@ -576,24 +578,26 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	public void importSettingsCSV(final Reader in, final SettingsImportOptions options)
 			throws IOException {
 		// TODO: need a better way to organize settings into "do not restore" category
-		final Pattern allowed = Pattern.compile("^(?!solarnode).*", Pattern.CASE_INSENSITIVE);
-		importSettingsCSV(in, new ImportCallback() {
+		synchronized ( factories ) {
+			final Pattern allowed = Pattern.compile("^(?!solarnode).*", Pattern.CASE_INSENSITIVE);
+			importSettingsCSV(in, new ImportCallback() {
 
-			@Override
-			public boolean shouldImportSetting(Setting s) {
-				if ( allowed.matcher(s.getKey()).matches() == false ) {
-					return false;
-				}
-				if ( options.isAddOnly() ) {
-					// check if setting exists already, and if so do not import it
-					if ( settingDao.getSetting(s.getKey(), s.getType()) != null ) {
-						log.debug("Not updating existing setting {}", s.getKey());
+				@Override
+				public boolean shouldImportSetting(Setting s) {
+					if ( allowed.matcher(s.getKey()).matches() == false ) {
 						return false;
 					}
+					if ( options.isAddOnly() ) {
+						// check if setting exists already, and if so do not import it
+						if ( settingDao.getSetting(s.getKey(), s.getType()) != null ) {
+							log.debug("Not updating existing setting {}", s.getKey());
+							return false;
+						}
+					}
+					return true;
 				}
-				return true;
-			}
-		});
+			});
+		}
 	}
 
 	private void importSettingsCSV(Reader in, final ImportCallback callback) throws IOException {
@@ -612,6 +616,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					}
 				}, new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT) };
 		reader.getHeader(true);
+		final List<Setting> importedSettings = new ArrayList<Setting>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override
@@ -622,10 +627,14 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						if ( !callback.shouldImportSetting(s) ) {
 							continue;
 						}
+						if ( s.getKey() == null ) {
+							continue;
+						}
 						if ( s.getValue() == null ) {
 							settingDao.deleteSetting(s.getKey(), s.getType());
 						} else {
 							settingDao.storeSetting(s);
+							importedSettings.add(s);
 						}
 					}
 				} catch ( IOException e ) {
@@ -637,9 +646,87 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					} catch ( IOException e ) {
 						// ingore
 					}
+					if ( status.isRollbackOnly() ) {
+						importedSettings.clear();
+					}
 				}
 			}
 		});
+
+		// now that settings have been imported into DAO layer, we need to apply them to the existing runtime
+
+		// first, determine what factories we have... these have keys like <factoryPID>.FACTORY
+		final Map<String, Setting> factorySettings = new HashMap<String, Setting>();
+		for ( Setting s : importedSettings ) {
+			if ( s.getKey() == null || !s.getKey().endsWith(FACTORY_SETTING_KEY_SUFFIX) ) {
+				continue;
+			}
+			String factoryPID = s.getKey().substring(0,
+					s.getKey().length() - FACTORY_SETTING_KEY_SUFFIX.length());
+			log.debug("Discovered imported factory setting {}", factoryPID);
+			factorySettings.put(factoryPID, s);
+
+			// Now create the CA configuration for all defined factories, to handle situation where we don't actually
+			// configure any custom settings on the factory. In that case we don't have any settings, but we need
+			// to instantiate the factory so we create a default instance.
+			try {
+				int instanceCount = Integer.valueOf(s.getValue());
+				for ( int i = 1; i <= instanceCount; i++ ) {
+					String instanceKey = String.valueOf(i);
+					Configuration conf = getConfiguration(factoryPID, instanceKey);
+					@SuppressWarnings("unchecked")
+					Dictionary<String, Object> props = conf.getProperties();
+					if ( props == null ) {
+						props = new Hashtable<String, Object>();
+						props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
+						conf.update(props);
+					}
+				}
+			} catch ( NumberFormatException e ) {
+				log.warn("Factory {} setting does not have instance count value: {}", factoryPID,
+						e.getMessage());
+			} catch ( InvalidSyntaxException e ) {
+				log.warn("Factory {} setting has invalid syntax: {}", factoryPID, e.getMessage());
+			}
+		}
+
+		// now convert imported settings into a SettingsCommand, so values are applied to Configuration Admin
+		SettingsCommand cmd = new SettingsCommand();
+
+		for ( Setting s : importedSettings ) {
+			if ( s.getKey() == null ) {
+				continue;
+			}
+
+			// skip factory instance definitions
+			if ( s.getKey().endsWith(FACTORY_SETTING_KEY_SUFFIX) ) {
+				continue;
+			}
+
+			SettingValueBean bean = new SettingValueBean();
+
+			// find out if this is a factory
+			for ( String factoryPID : factorySettings.keySet() ) {
+				if ( s.getKey().startsWith(factoryPID + ".")
+						&& s.getKey().length() > (factoryPID.length() + 1) ) {
+					bean.setProviderKey(factoryPID);
+					bean.setInstanceKey(s.getKey().substring(factoryPID.length() + 1));
+					break;
+				}
+			}
+
+			if ( bean.getProviderKey() == null ) {
+				// not a factory setting
+				bean.setProviderKey(s.getKey());
+			}
+			bean.setKey(s.getType());
+			bean.setValue(s.getValue());
+			bean.setTransient(s.getFlags() != null && s.getFlags().contains(SettingFlag.Volatile));
+			cmd.getValues().add(bean);
+		}
+		if ( cmd.getValues().size() > 0 ) {
+			updateSettings(cmd);
+		}
 	}
 
 	@Override
