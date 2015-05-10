@@ -5,7 +5,7 @@
 	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
 	xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
@@ -15,6 +15,7 @@
 
 	<osgix:cm-properties id="setup.web.cfg" persistent-id="net.solarnetwork.node.setup.web">
 		<prop key="mail.sender">nobody@localhost.localdomain</prop>
+		<prop key="link.solaruser">https://data.solarnetwork.net/solaruser</prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->

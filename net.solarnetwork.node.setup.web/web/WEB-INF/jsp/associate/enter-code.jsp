@@ -1,6 +1,9 @@
 <p class="lead"><fmt:message key="new-node.intro"/></p>
 
-<p><fmt:message key="node.setup.code.intro"/></p>
+<c:set var="myNodesURL" value='${networkLinks["solaruser"]}/u/sec/my-nodes'/>
+<p><fmt:message key="node.setup.code.intro">
+	<fmt:param value="${myNodesURL}"/>
+</fmt:message></p>
 
 <p><fmt:message key="node.setup.restore.option">
 	<fmt:param><c:url value="/associate/restore"/></fmt:param>
