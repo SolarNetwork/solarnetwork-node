@@ -21,10 +21,7 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
 	</bean>
 
-	<bean id="scheduler" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.quartz.Scheduler"/>
-	</bean>
+	<reference id="scheduler" availability="optional" interface="org.quartz.Scheduler"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.ocpp.ConfigurableCentralSystemServiceFactory"/>

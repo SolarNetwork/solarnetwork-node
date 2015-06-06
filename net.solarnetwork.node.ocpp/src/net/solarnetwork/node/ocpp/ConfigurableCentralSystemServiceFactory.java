@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.soap.AddressingFeature;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -38,6 +39,7 @@ import ocpp.v15.BootNotificationRequest;
 import ocpp.v15.BootNotificationResponse;
 import ocpp.v15.CentralSystemService;
 import ocpp.v15.CentralSystemService_Service;
+import ocpp.v15.RegistrationStatus;
 import org.osgi.framework.Version;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -58,6 +60,15 @@ import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 public class ConfigurableCentralSystemServiceFactory implements CentralSystemServiceFactory,
 		SettingSpecifierProvider {
 
+	/** The name used to schedule the {@link HeartbeatJob} as. */
+	public static final String HEARTBEAT_JOB_NAME = "OCPP_Heartbeat";
+
+	/**
+	 * The job and trigger group used to schedule the {@link HeartbeatJob} with.
+	 * Note the trigger name will be the {@code url} property value.
+	 */
+	public static final String SCHEDULER_GROUP = "OCPP";
+
 	private String url = "http://localhost:9000/";
 	private String uid = "OCPP Central System";
 	private String groupUID;
@@ -67,7 +78,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 	private MessageSource messageSource;
 	private OptionalService<IdentityService> identityService;
-	private OptionalService<Scheduler> scheduler;
+	private Scheduler scheduler;
 
 	private CentralSystemService service;
 	private BootNotificationResponse bootNotificationResponse;
@@ -82,7 +93,11 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			try {
 				postBootNotification();
 			} catch ( RuntimeException e ) {
-				log.warn("Error posting BootNotification message to {}: {}", url, e.getMessage());
+				if ( log.isDebugEnabled() ) {
+					log.debug("Error posting BootNotification message to {}", url, e);
+				} else {
+					log.warn("Error posting BootNotification message to {}: {}", url, e.getMessage());
+				}
 			}
 		}
 		return client;
@@ -98,10 +113,11 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	}
 
 	/**
-	 * Shutdown the OCPP client.
+	 * Shutdown the OCPP client, releasing any associated resources.
 	 */
 	public void shutdown() {
 		configureHeartbeat(0);
+		bootNotificationResponse = null;
 	}
 
 	private CentralSystemService getServiceInternal() {
@@ -111,7 +127,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 					.getResource("ocpp_centralsystemservice_1.5_final.wsdl");
 			QName name = new QName("urn://Ocpp/Cs/2012/06/", "CentralSystemService");
 			CentralSystemService client = new CentralSystemService_Service(wsdl, name)
-					.getCentralSystemServiceSoap12();
+					.getCentralSystemServiceSoap12(new AddressingFeature());
 			((BindingProvider) client).getRequestContext().put(
 					BindingProvider.ENDPOINT_ADDRESS_PROPERTY, this.url);
 			result = client;
@@ -143,7 +159,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		return nodePrincipal.getName();
 	}
 
-	public boolean postBootNotification() {
+	private boolean postBootNotification() {
 		IdentityService ident = (identityService != null ? identityService.service() : null);
 		if ( ident == null ) {
 			log.debug("IdentityService not available; cannot post BootNotification");
@@ -178,21 +194,29 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		if ( response == bootNotificationResponse ) {
 			return;
 		}
-		if ( configureHeartbeat(response.getHeartbeatInterval()) ) {
+		if ( response == null ) {
+			bootNotificationResponse = null;
+			return;
+		}
+		log.info("OCPP BootNotification reply: {} @ {}; heartbeat {}s", response.getStatus(),
+				response.getCurrentTime(), response.getHeartbeatInterval());
+		if ( RegistrationStatus.ACCEPTED == response.getStatus()
+				&& configureHeartbeat(response.getHeartbeatInterval()) ) {
 			bootNotificationResponse = response;
 		}
 	}
 
 	private boolean configureHeartbeat(int heartbeatInterval) {
-		Scheduler sched = (scheduler != null ? scheduler.service() : null);
+		Scheduler sched = scheduler;
 		if ( sched == null ) {
 			log.warn("No scheduler avaialable, cannot schedule heartbeat job");
 			return false;
 		}
+		final long repeatInterval = heartbeatInterval * 1000L;
 		SimpleTrigger trigger = heartbeatTrigger;
 		if ( trigger != null ) {
 			// check if heartbeatInterval actually changed
-			if ( trigger.getRepeatInterval() == heartbeatInterval * 1000L ) {
+			if ( trigger.getRepeatInterval() == repeatInterval ) {
 				log.debug("Heartbeat interval unchanged at {}s", heartbeatInterval);
 				return true;
 			}
@@ -206,7 +230,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 					heartbeatTrigger = null;
 				}
 			} else {
-				trigger.setRepeatInterval(heartbeatInterval * 1000L);
+				trigger.setRepeatInterval(repeatInterval);
 			}
 			return true;
 		} else if ( heartbeatInterval < 1 ) {
@@ -216,24 +240,26 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 		synchronized ( sched ) {
 			try {
-				JobDetail jobDetail = sched.getJobDetail("OCPP_Heartbeat", "OCPP");
+				JobDetail jobDetail = sched.getJobDetail(HEARTBEAT_JOB_NAME, SCHEDULER_GROUP);
 				if ( jobDetail == null ) {
 					JobDetail jd = new JobDetail();
 					jd.setJobClass(HeartbeatJob.class);
-					jd.setName("OCPP_Heartbeat");
-					jd.setGroup("OCPP");
+					jd.setName(HEARTBEAT_JOB_NAME);
+					jd.setGroup(SCHEDULER_GROUP);
 					jd.setDurability(true);
 					sched.addJob(jd, true);
 					jobDetail = jd;
 				}
 				SimpleTriggerFactoryBean t = new SimpleTriggerFactoryBean();
 				t.setName(this.url);
-				t.setGroup("OCPP");
+				t.setGroup(SCHEDULER_GROUP);
 				t.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
+				t.setRepeatInterval(repeatInterval);
+				t.setStartDelay(repeatInterval);
 				t.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
 				t.setJobDataAsMap(Collections.singletonMap("service", this));
-				t.afterPropertiesSet();
 				t.setJobDetail(jobDetail);
+				t.afterPropertiesSet();
 				trigger = t.getObject();
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
@@ -399,7 +425,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	 * @param scheduler
 	 *        The scheduler to use.
 	 */
-	public void setScheduler(OptionalService<Scheduler> scheduler) {
+	public void setScheduler(Scheduler scheduler) {
 		this.scheduler = scheduler;
 	}
 
