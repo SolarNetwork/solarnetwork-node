@@ -6,21 +6,45 @@ Bundle-Description: Provides core Open Charge Point Protocol (OCPP) support.
 Bundle-Version: 0.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: 
+ net.solarnetwork.node.ocpp;version="0.1.0"
 Import-Package: 
  javax.xml.namespace,
  javax.xml.ws,
  javax.xml.ws.soap,
  net.solarnetwork.node;version="1.17.0",
+ net.solarnetwork.node.dao;version="1.6.0",
+ net.solarnetwork.node.dao.jdbc;version="1.9.1",
  net.solarnetwork.node.job;version="1.12.0",
  net.solarnetwork.node.settings;version="1.6.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
  net.solarnetwork.util;version="1.19.0",
  ocpp.v15;version="1.5.0",
+ org.aopalliance.aop;version="1.0.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
  org.osgi.framework;version="[1.5,2.0)",
  org.quartz;version="[1.6.2,2.0.0)",
  org.quartz.simpl;version="[1.6.2,2.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
+ org.springframework.aop;version="[3.0,4.0)",
+ org.springframework.aop.framework;version="[3.1,4.0)",
+ org.springframework.beans;version="[3.1,4.0)",
+ org.springframework.beans.factory;version="[3.1,4.0)",
+ org.springframework.beans.factory.config;version="[3.1,4.0)",
  org.springframework.context;version="[3.1,4.0)",
  org.springframework.context.support;version="[3.1,4.0)",
- org.springframework.scheduling.quartz;version="[3.1,4.0)"
+ org.springframework.core;version="[3.1,4.0)",
+ org.springframework.core.io;version="[3.1,4.0)",
+ org.springframework.dao;version="[3.1,4.0)",
+ org.springframework.dao.support;version="[3.1,4.0)",
+ org.springframework.jdbc;version="[3.1,4.0)",
+ org.springframework.jdbc.core;version="[3.1,4.0)",
+ org.springframework.jdbc.core.simple;version="[3.1,4.0)",
+ org.springframework.jdbc.core.support;version="[3.1,4.0)",
+ org.springframework.jdbc.datasource;version="[3.1,4.0)",
+ org.springframework.jdbc.support;version="[3.1,4.0)",
+ org.springframework.scheduling.quartz;version="[3.1,4.0)",
+ org.springframework.transaction;version="[3.1,4.0)",
+ org.springframework.transaction.annotation;version="[3.1,4.0)",
+ org.springframework.transaction.support;version="[3.1,4.0)",
+ org.springframework.util;version="[3.1,4.0)"
