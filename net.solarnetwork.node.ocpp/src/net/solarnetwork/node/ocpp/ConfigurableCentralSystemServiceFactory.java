@@ -264,7 +264,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
 				return true;
-			} catch ( SchedulerException e ) {
+			} catch ( Exception e ) {
 				log.error("Error scheduling OCPP heartbeat job", e);
 				return false;
 			}
