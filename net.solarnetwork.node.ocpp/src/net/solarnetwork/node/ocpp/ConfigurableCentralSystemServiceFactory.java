@@ -27,6 +27,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.soap.AddressingFeature;
@@ -34,6 +35,7 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.BootNotificationRequest;
 import ocpp.v15.BootNotificationResponse;
@@ -82,6 +84,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 	private CentralSystemService service;
 	private BootNotificationResponse bootNotificationResponse;
+	private Throwable bootNotificationError;
 	private SimpleTrigger heartbeatTrigger;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -93,6 +96,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			try {
 				postBootNotification();
 			} catch ( RuntimeException e ) {
+				bootNotificationError = e;
 				if ( log.isDebugEnabled() ) {
 					log.debug("Error posting BootNotification message to {}", url, e);
 				} else {
@@ -118,6 +122,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	public void shutdown() {
 		configureHeartbeat(0);
 		bootNotificationResponse = null;
+		bootNotificationError = null;
 	}
 
 	private CentralSystemService getServiceInternal() {
@@ -203,6 +208,8 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		if ( RegistrationStatus.ACCEPTED == response.getStatus()
 				&& configureHeartbeat(response.getHeartbeatInterval()) ) {
 			bootNotificationResponse = response;
+		} else {
+			bootNotificationResponse = response;
 		}
 	}
 
@@ -285,23 +292,46 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	private static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		ConfigurableCentralSystemServiceFactory defaults = new ConfigurableCentralSystemServiceFactory();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.uid)));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
 		results.add(new BasicTextFieldSettingSpecifier("chargePointModel", defaults.chargePointModel));
 		results.add(new BasicTextFieldSettingSpecifier("chargePointVendor", defaults.chargePointVendor));
 		return results;
+	}
+
+	private String getInfoMessage() {
+		StringBuilder buf = new StringBuilder();
+		BootNotificationResponse bootResponse = bootNotificationResponse;
+		Throwable bootError = bootNotificationError;
+		if ( bootResponse != null ) {
+			if ( bootResponse.getStatus() == RegistrationStatus.ACCEPTED ) {
+				buf.append(messageSource.getMessage(
+						"status.accepted",
+						new Object[] {
+								(bootResponse.getCurrentTime() != null ? bootResponse.getCurrentTime()
+										.toString() : "N/A"), bootResponse.getHeartbeatInterval() / 60 },
+						Locale.getDefault()));
+			} else {
+				buf.append(messageSource.getMessage("status.rejected", new Object[] {
+						chargeBoxIdentity(), bootResponse.getCurrentTime() }, Locale.getDefault()));
+			}
+		} else if ( bootError != null ) {
+			while ( bootError.getCause() != null ) {
+				bootError = bootError.getCause();
+			}
+			buf.append(messageSource.getMessage("status.error", new Object[] { bootError.getMessage() },
+					Locale.getDefault()));
+		}
+		return (buf.length() > 0 ? buf.toString() : "N/A");
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
 	}
 
 	// Accessors
