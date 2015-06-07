@@ -24,7 +24,7 @@
 	<reference id="scheduler" availability="optional" interface="org.quartz.Scheduler"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.ocpp.ConfigurableCentralSystemServiceFactory"/>
+		<property name="basenames" value="net.solarnetwork.node.ocpp.impl.ConfigurableCentralSystemServiceFactory"/>
 	</bean>
 	
 	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
@@ -45,7 +45,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.ocpp.central"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.ocpp.ConfigurableCentralSystemServiceFactory" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.ocpp.impl.ConfigurableCentralSystemServiceFactory" init-method="startup" destroy-method="shutdown">
 			<property name="messageSource" ref="messageSource"/>
 			<property name="identityService" ref="identityService"/>
 			<property name="scheduler" ref="scheduler"/>

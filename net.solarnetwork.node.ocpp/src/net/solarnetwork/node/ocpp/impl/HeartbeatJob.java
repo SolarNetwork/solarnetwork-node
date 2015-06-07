@@ -20,9 +20,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.ocpp;
+package net.solarnetwork.node.ocpp.impl;
 
 import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import ocpp.v15.CentralSystemService;
 import ocpp.v15.HeartbeatRequest;
 import ocpp.v15.HeartbeatResponse;

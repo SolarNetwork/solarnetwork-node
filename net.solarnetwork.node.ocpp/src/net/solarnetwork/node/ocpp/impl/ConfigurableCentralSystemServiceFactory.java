@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.ocpp;
+package net.solarnetwork.node.ocpp.impl;
 
 import java.net.URL;
 import java.security.Principal;
@@ -32,6 +32,7 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.soap.AddressingFeature;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
