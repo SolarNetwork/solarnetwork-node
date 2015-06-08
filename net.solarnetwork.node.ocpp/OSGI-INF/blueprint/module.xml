@@ -3,14 +3,28 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
 	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 	
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.ocpp">
+		<beans:prop key="purgeExpiredJob.cronExpression">5 15 3 * * ?</beans:prop>
+		<beans:prop key="purgeExpiredJob.minPurgeExpiredAuthorizationDays">1</beans:prop>
+	</osgix:cm-properties>
+	
+	<ctx:property-placeholder properties-ref="cfg"/>
+	
+	<!-- Support -->
+
 	<bean id="identityService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
@@ -60,5 +74,41 @@
 			<property name="version" value="#{bundleContext.bundle.version}"/>
 		</bean>
 	</osgix:managed-service-factory>
+	
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.ocpp.dao.Job</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="purgeExpiredAuthorizationsJob" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger">
+			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+				<property name="name" value="purgeExpiredAuthorizationsTrigger"/>
+				<property name="jobName" value="purgeExpiredAuthorizationsJob"/>
+				<property name="cronExpression" value="${purgeExpiredJob.cronExpression}"/>
+				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+				<property name="randomSecond" value="true"/>
+			</bean>
+		</property>
+		<property name="jobDetail">
+			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+				<property name="name" value="purgeExpiredAuthorizationsJob"/>
+				<property name="jobClass" value="net.solarnetwork.node.ocpp.dao.PurgeExpiredAuthorizationsJob"/>
+				<property name="jobDataAsMap">
+					<map>
+						<entry key="authorizationDao" value-ref="authDao"/>
+						<entry key="minPurgeExpiredAuthorizationDays" 
+							value="#{T(java.lang.Integer).valueOf(@cfg['purgeExpiredJob.minPurgeExpiredAuthorizationDays'])}"/>
+					</map>
+				</property>
+			</bean>
+		</property>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+	
+	<service ref="purgeExpiredAuthorizationsJob" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	
 </blueprint>
