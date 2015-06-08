@@ -60,6 +60,9 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 		Authorization auth = authorizationForTag(idTag);
 		if ( isAuthorized(auth) ) {
 			return true;
+		} else if ( isCachedAuthorizationValid(auth) ) {
+			// no need to validate with central system
+			return false;
 		}
 		AuthorizeRequest req = new AuthorizeRequest();
 		req.setIdTag(idTag);
@@ -71,6 +74,19 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 			return auth.isAccepted();
 		}
 		return false;
+	}
+
+	/**
+	 * Return <em>true</em> if {@code auth} has an {@code expiryDate} whose date
+	 * is in the future.
+	 * 
+	 * @param auth
+	 *        The authorization to check (mey be <em>null</em>).
+	 * @return Cached validity flag.
+	 */
+	private boolean isCachedAuthorizationValid(Authorization auth) {
+		return (auth != null && auth.getExpiryDate() != null && auth.getExpiryDate()
+				.toGregorianCalendar().getTimeInMillis() > System.currentTimeMillis());
 	}
 
 	private boolean isAuthorized(Authorization auth) {

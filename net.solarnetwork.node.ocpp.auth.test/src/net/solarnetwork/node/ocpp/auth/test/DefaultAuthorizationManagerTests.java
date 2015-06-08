@@ -25,6 +25,10 @@ package net.solarnetwork.node.ocpp.auth.test;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import java.util.GregorianCalendar;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
@@ -80,11 +84,18 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 		EasyMock.replay(centralSystem, client, authorizationDao);
 	}
 
+	private IdTagInfo newIdTagInfo(String parentTagId, AuthorizationStatus status,
+			XMLGregorianCalendar expiryDate) {
+		IdTagInfo info = new IdTagInfo();
+		info.setParentIdTag(parentTagId);
+		info.setStatus(status);
+		info.setExpiryDate(expiryDate);
+		return info;
+	}
+
 	private AuthorizeResponse newAuthResponse(AuthorizationStatus status) {
 		AuthorizeResponse r = new AuthorizeResponse();
-		IdTagInfo info = new IdTagInfo();
-		info.setStatus(status);
-		r.setIdTagInfo(info);
+		r.setIdTagInfo(newIdTagInfo(null, status, null));
 		return r;
 	}
 
@@ -94,6 +105,105 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(null);
 
 		// not found in DAO, so query central system
+		expect(centralSystem.chargeBoxIdentity()).andReturn(TEST_CHARGE_BOX_IDENT);
+		expect(centralSystem.service()).andReturn(client);
+		Capture<AuthorizeRequest> reqCapture = new Capture<AuthorizeRequest>();
+		AuthorizeResponse authResp = newAuthResponse(AuthorizationStatus.ACCEPTED);
+		expect(client.authorize(capture(reqCapture), eq(TEST_CHARGE_BOX_IDENT))).andReturn(authResp);
+
+		// cache result in DAO
+		Capture<Authorization> authCapture = new Capture<Authorization>();
+		authorizationDao.storeAuthorization(capture(authCapture));
+
+		replayAll();
+
+		boolean authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertTrue("Authorized", authorized);
+
+		Assert.assertEquals("Req IdTag", TEST_ID_TAG, reqCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG, authCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.ACCEPTED, authCapture
+				.getValue().getStatus());
+	}
+
+	@Test
+	public void acceptedCached() {
+		// look in DAO first
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
+				AuthorizationStatus.ACCEPTED, null));
+		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
+
+		replayAll();
+
+		boolean authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertTrue("Authorized", authorized);
+	}
+
+	@Test
+	public void invalidCachedNoExpiry() {
+		// look in DAO first
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
+				AuthorizationStatus.INVALID, null));
+		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
+
+		// invalid in DAO but no expiry date, so query central system
+		expect(centralSystem.chargeBoxIdentity()).andReturn(TEST_CHARGE_BOX_IDENT);
+		expect(centralSystem.service()).andReturn(client);
+		Capture<AuthorizeRequest> reqCapture = new Capture<AuthorizeRequest>();
+		AuthorizeResponse authResp = newAuthResponse(AuthorizationStatus.INVALID);
+		expect(client.authorize(capture(reqCapture), eq(TEST_CHARGE_BOX_IDENT))).andReturn(authResp);
+
+		// cache result in DAO
+		Capture<Authorization> authCapture = new Capture<Authorization>();
+		authorizationDao.storeAuthorization(capture(authCapture));
+
+		replayAll();
+
+		boolean authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertFalse("Authorized", authorized);
+
+		Assert.assertEquals("Req IdTag", TEST_ID_TAG, reqCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG, authCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.INVALID, authCapture
+				.getValue().getStatus());
+	}
+
+	private XMLGregorianCalendar newXmlCalendar() {
+		DatatypeFactory factory;
+		try {
+			factory = DatatypeFactory.newInstance();
+		} catch ( DatatypeConfigurationException e ) {
+			throw new RuntimeException(e);
+		}
+		GregorianCalendar cal = new GregorianCalendar();
+		return factory.newXMLGregorianCalendar(cal);
+	}
+
+	@Test
+	public void invalidCachedExpiryInFuture() {
+		// look in DAO first
+		XMLGregorianCalendar futureExipryDate = newXmlCalendar();
+		futureExipryDate.setYear(futureExipryDate.getYear() + 1);
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
+				AuthorizationStatus.INVALID, futureExipryDate));
+		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
+
+		replayAll();
+
+		boolean authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertFalse("Authorized", authorized);
+	}
+
+	@Test
+	public void invalidCachedExpiryInPastAccepted() {
+		// look in DAO first
+		XMLGregorianCalendar pastExipryDate = newXmlCalendar();
+		pastExipryDate.setYear(pastExipryDate.getYear() - 1);
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
+				AuthorizationStatus.INVALID, null));
+		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
+
+		// invalid in DAO but expiry date in past, so query central system (which says accepted)
 		expect(centralSystem.chargeBoxIdentity()).andReturn(TEST_CHARGE_BOX_IDENT);
 		expect(centralSystem.service()).andReturn(client);
 		Capture<AuthorizeRequest> reqCapture = new Capture<AuthorizeRequest>();
