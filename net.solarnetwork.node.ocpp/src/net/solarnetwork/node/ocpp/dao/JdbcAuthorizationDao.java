@@ -31,7 +31,9 @@ import java.sql.Types;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -43,6 +45,7 @@ import ocpp.v15.AuthorizationStatus;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +75,7 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 	public static final String SQL_UPDATE = "update";
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_DELETE_EXPIRED = "delete-expired";
+	public static final String SQL_FIND_STATUS_COUNTS = "statuscounts";
 
 	private final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	private final DatatypeFactory datatypeFactory = getDatatypeFactory();
@@ -168,6 +172,24 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 					}
 
 				});
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public Map<AuthorizationStatus, Integer> statusCounts() {
+		final Map<AuthorizationStatus, Integer> result = new LinkedHashMap<AuthorizationStatus, Integer>(
+				AuthorizationStatus.values().length);
+		getJdbcTemplate().query(getSqlResource(SQL_FIND_STATUS_COUNTS), new RowCallbackHandler() {
+
+			@Override
+			public void processRow(ResultSet rs) throws SQLException {
+				AuthorizationStatus key = AuthorizationStatus.valueOf(rs.getString(1));
+				int count = rs.getInt(2);
+				result.put(key, count);
+			}
+
+		});
+		return result;
 	}
 
 	private DatatypeFactory getDatatypeFactory() {

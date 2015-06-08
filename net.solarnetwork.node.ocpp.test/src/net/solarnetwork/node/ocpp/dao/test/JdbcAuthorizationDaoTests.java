@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.ocpp.dao.test;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import javax.xml.datatype.DatatypeFactory;
@@ -161,4 +163,65 @@ public class JdbcAuthorizationDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertNull("Still exists", dao.getAuthorization(lastAuth.getIdTag()));
 	}
 
+	@Test
+	public void statusCountsEmpty() {
+		Map<AuthorizationStatus, Integer> counts = dao.statusCounts();
+		Assert.assertNotNull("Counts should not be null", counts);
+		Assert.assertEquals("Counts count", 0, counts.size());
+	}
+
+	@Test
+	public void statusCountsSingle() {
+		insert();
+		Map<AuthorizationStatus, Integer> counts = dao.statusCounts();
+		Assert.assertNotNull("Counts should not be null", counts);
+		Assert.assertEquals("Counts count", 1, counts.size());
+		Assert.assertEquals("Count", Integer.valueOf(1), counts.get(AuthorizationStatus.ACCEPTED));
+	}
+
+	@Test
+	public void statusCountsMulti() throws Exception {
+		insert();
+
+		lastAuth.setIdTag("accepted.2");
+		dao.storeAuthorization(lastAuth);
+
+		lastAuth.setIdTag("blocked");
+		lastAuth.setStatus(AuthorizationStatus.BLOCKED);
+		dao.storeAuthorization(lastAuth);
+
+		lastAuth.setIdTag("invalid");
+		lastAuth.setStatus(AuthorizationStatus.INVALID);
+		dao.storeAuthorization(lastAuth);
+
+		lastAuth.setIdTag("invalid.2");
+		dao.storeAuthorization(lastAuth);
+
+		Map<AuthorizationStatus, Integer> counts = dao.statusCounts();
+		Assert.assertNotNull("Counts should not be null", counts);
+		Assert.assertEquals("Counts count", 3, counts.size());
+		Assert.assertEquals("Count", Integer.valueOf(2), counts.get(AuthorizationStatus.ACCEPTED));
+		Assert.assertEquals("Count", Integer.valueOf(1), counts.get(AuthorizationStatus.BLOCKED));
+		Assert.assertEquals("Count", Integer.valueOf(2), counts.get(AuthorizationStatus.INVALID));
+	}
+
+	@Test
+	public void statusCountsExpired() throws Exception {
+		insert();
+
+		// add a 2nd, expired auth
+		DatatypeFactory dtFactory = DatatypeFactory.newInstance();
+		GregorianCalendar cal = new GregorianCalendar();
+		cal.add(Calendar.YEAR, -1);
+		XMLGregorianCalendar expires = dtFactory.newXMLGregorianCalendar(cal);
+		lastAuth.setIdTag("expired");
+		lastAuth.setExpiryDate(expires);
+		lastAuth.setStatus(AuthorizationStatus.BLOCKED);
+		dao.storeAuthorization(lastAuth);
+
+		Map<AuthorizationStatus, Integer> counts = dao.statusCounts();
+		Assert.assertNotNull("Counts should not be null", counts);
+		Assert.assertEquals("Counts count", 1, counts.size());
+		Assert.assertEquals("Count", Integer.valueOf(1), counts.get(AuthorizationStatus.ACCEPTED));
+	}
 }

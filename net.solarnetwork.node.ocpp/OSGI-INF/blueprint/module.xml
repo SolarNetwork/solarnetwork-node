@@ -32,9 +32,17 @@
 		<property name="factoryUID" value="net.solarnetwork.node.ocpp.central"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
+	
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node)"/>
+	
+	<bean id="authDao" class="net.solarnetwork.node.ocpp.dao.JdbcAuthorizationDao" init-method="init">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
 
 	<!-- Published Services -->
 	
+	<service ref="authDao" interface="net.solarnetwork.node.ocpp.AuthorizationDao"/>
+
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.ocpp.central" autowire-on-update="true">

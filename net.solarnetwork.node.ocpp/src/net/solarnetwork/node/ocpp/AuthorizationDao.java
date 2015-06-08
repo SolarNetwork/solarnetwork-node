@@ -23,6 +23,8 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
+import java.util.Map;
+import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.IdTagInfo;
 
 /**
@@ -61,5 +63,13 @@ public interface AuthorizationDao {
 	 * @return The number of authorizations deleted.
 	 */
 	int deleteExpiredAuthorizations(Date olderThanDate);
+
+	/**
+	 * Get a Map of status values with corresponding counts representing the
+	 * number of records in the database of that status.
+	 * 
+	 * @return Map of status counts, never <em>null</em>.
+	 */
+	Map<AuthorizationStatus, Integer> statusCounts();
 
 }
