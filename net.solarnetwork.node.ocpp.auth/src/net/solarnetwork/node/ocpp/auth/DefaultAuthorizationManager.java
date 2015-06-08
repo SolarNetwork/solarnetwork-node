@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.AuthorizationManager;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
@@ -56,14 +57,40 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 
 	@Override
 	public boolean authorize(String idTag) {
+		Authorization auth = authorizationForTag(idTag);
+		if ( isAuthorized(auth) ) {
+			return true;
+		}
 		AuthorizeRequest req = new AuthorizeRequest();
 		req.setIdTag(idTag);
 		AuthorizeResponse res = centralSystem.service()
 				.authorize(req, centralSystem.chargeBoxIdentity());
 		if ( res != null && res.getIdTagInfo() != null ) {
-			return AuthorizationStatus.ACCEPTED.equals(res.getIdTagInfo().getStatus());
+			auth = new Authorization(idTag, res.getIdTagInfo());
+			saveAuthorization(auth);
+			return auth.isAccepted();
 		}
 		return false;
+	}
+
+	private boolean isAuthorized(Authorization auth) {
+		return (auth != null && auth.isAccepted());
+	}
+
+	private Authorization authorizationForTag(String idTag) {
+		AuthorizationDao dao = (authorizationDao != null ? authorizationDao.service() : null);
+		if ( dao == null ) {
+			return null;
+		}
+		return dao.getAuthorization(idTag);
+	}
+
+	private void saveAuthorization(Authorization auth) {
+		AuthorizationDao dao = (authorizationDao != null ? authorizationDao.service() : null);
+		if ( dao == null ) {
+			return;
+		}
+		dao.storeAuthorization(auth);
 	}
 
 	// SettingSpecifierProvider
