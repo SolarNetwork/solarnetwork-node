@@ -22,24 +22,16 @@
 
 package net.solarnetwork.node.ocpp.auth;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.AuthorizationManager;
-import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.node.ocpp.support.CentralSystemServiceFactorySupport;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.AuthorizeRequest;
 import ocpp.v15.AuthorizeResponse;
-import org.springframework.context.MessageSource;
 
 /**
  * Default implementation of {@link AuthorizationManager}. This implementation
@@ -48,12 +40,10 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.0
  */
-public class DefaultAuthorizationManager implements AuthorizationManager, SettingSpecifierProvider {
+public class DefaultAuthorizationManager extends CentralSystemServiceFactorySupport implements
+		AuthorizationManager {
 
-	private CentralSystemServiceFactory centralSystem;
-	private FilterableService filterableCentralSystem;
 	private OptionalService<AuthorizationDao> authorizationDao;
-	private MessageSource messageSource;
 
 	@Override
 	public boolean authorize(String idTag) {
@@ -66,8 +56,8 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 		}
 		AuthorizeRequest req = new AuthorizeRequest();
 		req.setIdTag(idTag);
-		AuthorizeResponse res = centralSystem.service()
-				.authorize(req, centralSystem.chargeBoxIdentity());
+		AuthorizeResponse res = getCentralSystem().service().authorize(req,
+				getCentralSystem().chargeBoxIdentity());
 		if ( res != null && res.getIdTagInfo() != null ) {
 			auth = new Authorization(idTag, res.getIdTagInfo());
 			saveAuthorization(auth);
@@ -122,22 +112,14 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 	}
 
 	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
-		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTextFieldSettingSpecifier("filterableCentralSystem.propertyFilters['UID']",
-				"OCPP Central System"));
-		return results;
-	}
-
-	private String getInfoMessage() {
+	protected String getInfoMessage(Locale locale) {
 		AuthorizationDao dao = (authorizationDao != null ? authorizationDao.service() : null);
 		if ( dao == null ) {
-			return messageSource.getMessage("status.noDao", null, Locale.getDefault());
+			return getMessageSource().getMessage("status.noDao", null, locale);
 		}
 		Map<AuthorizationStatus, Integer> statusCounts = dao.statusCounts();
 		if ( statusCounts.size() < 1 ) {
-			return messageSource.getMessage("status.none", null, Locale.getDefault());
+			return getMessageSource().getMessage("status.none", null, locale);
 		}
 		StringBuilder buf = new StringBuilder();
 		for ( Map.Entry<AuthorizationStatus, Integer> me : statusCounts.entrySet() ) {
@@ -146,28 +128,7 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 			}
 			buf.append(me.getKey()).append(": ").append(me.getValue());
 		}
-		return messageSource.getMessage("status.counts", new Object[] { buf.toString() },
-				Locale.getDefault());
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public CentralSystemServiceFactory getCentralSystem() {
-		return centralSystem;
-	}
-
-	public void setCentralSystem(CentralSystemServiceFactory centralSystem) {
-		this.centralSystem = centralSystem;
-		if ( centralSystem instanceof FilterableService ) {
-			setFilterableCentralSystem((FilterableService) centralSystem);
-		}
+		return getMessageSource().getMessage("status.counts", new Object[] { buf.toString() }, locale);
 	}
 
 	public OptionalService<AuthorizationDao> getAuthorizationDao() {
@@ -176,14 +137,6 @@ public class DefaultAuthorizationManager implements AuthorizationManager, Settin
 
 	public void setAuthorizationDao(OptionalService<AuthorizationDao> authorizationDao) {
 		this.authorizationDao = authorizationDao;
-	}
-
-	public FilterableService getFilterableCentralSystem() {
-		return filterableCentralSystem;
-	}
-
-	public void setFilterableCentralSystem(FilterableService filterableCentralSystem) {
-		this.filterableCentralSystem = filterableCentralSystem;
 	}
 
 }

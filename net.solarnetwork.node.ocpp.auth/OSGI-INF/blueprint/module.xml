@@ -17,7 +17,12 @@
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.ocpp.auth.DefaultAuthorizationManager"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.ocpp.support.CentralSystemServiceFactorySupport</value>
+				<value>net.solarnetwork.node.ocpp.auth.DefaultAuthorizationManager</value>
+			</list>
+		</property>
 	</bean>
 	
 	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
