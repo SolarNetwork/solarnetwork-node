@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
+import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.IdTagInfo;
 
 /**
@@ -61,6 +62,29 @@ public class Authorization extends IdTagInfo {
 			setParentIdTag(info.getParentIdTag());
 			setStatus(info.getStatus());
 		}
+	}
+
+	/**
+	 * Test if this authorization is expired. An authorization is expired if it
+	 * has an {@code expiryDate} and that {@code expiryDate} is not earlier than
+	 * the current time.
+	 * 
+	 * @return Expired flag.
+	 */
+	public boolean isExpired() {
+		return (expiryDate != null && expiryDate.toGregorianCalendar().getTimeInMillis() < System
+				.currentTimeMillis());
+	}
+
+	/**
+	 * Test if this authorization has an {@link AuthorizationStatus#ACCEPTED}
+	 * state and is not exipred.
+	 * 
+	 * @return If accepted and not expired then <em>true</em>, otherwise
+	 *         <em>false</em>.
+	 */
+	public boolean isAccepted() {
+		return (AuthorizationStatus.ACCEPTED.equals(getStatus()) && !isExpired());
 	}
 
 	public Date getCreated() {
