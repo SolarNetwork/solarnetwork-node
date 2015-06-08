@@ -140,4 +140,25 @@ public class JdbcAuthorizationDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertEquals("Updated expires", auth.getExpiryDate(), updated.getExpiryDate());
 	}
 
+	@Test
+	public void deleteExpired() throws Exception {
+		insertWithExpires();
+		int result = dao.deleteExpiredAuthorizations(null);
+		Assert.assertEquals("Deleted count", 1, result);
+		Assert.assertNull("No longer exists", dao.getAuthorization(lastAuth.getIdTag()));
+	}
+
+	@Test
+	public void deleteExpiredSpecificDate() throws Exception {
+		insertWithExpires();
+		int result = dao
+				.deleteExpiredAuthorizations(new Date(System.currentTimeMillis() - 10000000000L));
+		Assert.assertEquals("Deleted count", 0, result);
+		Assert.assertNotNull("Still exists", dao.getAuthorization(lastAuth.getIdTag()));
+
+		result = dao.deleteExpiredAuthorizations(new Date(System.currentTimeMillis() + 1000L));
+		Assert.assertEquals("Deleted count", 1, result);
+		Assert.assertNull("Still exists", dao.getAuthorization(lastAuth.getIdTag()));
+	}
+
 }

@@ -71,7 +71,7 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 	public static final String SQL_INSERT = "insert";
 	public static final String SQL_UPDATE = "update";
 	public static final String SQL_GET_BY_PK = "get-pk";
-	public static final String SQL_DELETE_EXPIRED = "auth-delete-expired";
+	public static final String SQL_DELETE_EXPIRED = "delete-expired";
 
 	private final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	private final DatatypeFactory datatypeFactory = getDatatypeFactory();
