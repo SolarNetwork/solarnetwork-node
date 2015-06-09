@@ -34,11 +34,7 @@ import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
-import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import ocpp.v15.AuthorizationStatus;
@@ -56,7 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @author matt
  * @version 1.0
  */
-public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> implements AuthorizationDao {
+public class JdbcAuthorizationDao extends AbstractOcppJdbcDao<Authorization> implements AuthorizationDao {
 
 	/** The default tables version. */
 	public static final int TABLES_VERSION = 1;
@@ -76,10 +72,6 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_DELETE_EXPIRED = "delete-expired";
 	public static final String SQL_FIND_STATUS_COUNTS = "statuscounts";
-
-	private final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-	private final DatatypeFactory datatypeFactory = getDatatypeFactory();
-	private final XMLGregorianCalendar timestampDefaults = getTimestampDefaults();
 
 	/**
 	 * Default constructor.
@@ -133,13 +125,6 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 		return null;
 	}
 
-	private Calendar calendarForXMLDate(XMLGregorianCalendar xmlDate) {
-		Calendar cal = xmlDate.toGregorianCalendar(null, null, timestampDefaults);
-		Calendar utcCal = (Calendar) utcCalendar.clone();
-		utcCal.setTimeInMillis(cal.getTimeInMillis());
-		return utcCal;
-	}
-
 	@Override
 	protected void setStoreStatementValues(Authorization auth, PreparedStatement ps) throws SQLException {
 		// Row order is: (created, idtag, parent_idtag, status, expires)
@@ -190,24 +175,6 @@ public class JdbcAuthorizationDao extends AbstractJdbcDao<Authorization> impleme
 
 		});
 		return result;
-	}
-
-	private DatatypeFactory getDatatypeFactory() {
-		try {
-			return DatatypeFactory.newInstance();
-		} catch ( DatatypeConfigurationException e ) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	private XMLGregorianCalendar getTimestampDefaults() {
-		try {
-			DatatypeFactory datatypeFactory = DatatypeFactory.newInstance();
-			return datatypeFactory.newXMLGregorianCalendarTime(0, 0, 0, 0);
-		} catch ( Exception e ) {
-			log.error("Exception greating default XMLGregorianCalendar instance", e);
-			return null;
-		}
 	}
 
 	private final class AuthorizationRowMapper implements RowMapper<Authorization> {
