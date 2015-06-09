@@ -146,14 +146,14 @@ public class JdbcAuthorizationDao extends AbstractOcppJdbcDao<Authorization> imp
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteExpiredAuthorizations(Date olderThanDate) {
-		final Timestamp ts = new Timestamp(olderThanDate != null ? olderThanDate.getTime()
-				: System.currentTimeMillis());
+		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
+		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		return getJdbcTemplate().update(getSqlResource(SQL_DELETE_EXPIRED),
 				new PreparedStatementSetter() {
 
 					@Override
 					public void setValues(PreparedStatement ps) throws SQLException {
-						ps.setTimestamp(1, ts);
+						ps.setTimestamp(1, ts, cal);
 					}
 
 				});
