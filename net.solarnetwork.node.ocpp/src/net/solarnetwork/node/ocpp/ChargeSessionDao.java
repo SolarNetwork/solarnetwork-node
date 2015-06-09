@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
+import java.util.List;
 import ocpp.v15.MeterValue;
 
 /**
@@ -62,7 +63,16 @@ public interface ChargeSessionDao {
 	 * @param readings
 	 *        The readings to store.
 	 */
-	void storeMeterReadings(String sessionId, Date date, Iterable<MeterValue.Value> readings);
+	void addMeterReadings(String sessionId, Date date, Iterable<MeterValue.Value> readings);
+
+	/**
+	 * Get all available readings for a given session.
+	 * 
+	 * @param sessionId
+	 *        The session ID to get the readings for.
+	 * @return The readings, or an empty list if none available.
+	 */
+	List<ChargeSessionMeterReading> findMeterReadingsForSession(String sessionId);
 
 	/**
 	 * Delete all completed charge sessions that completed on or before

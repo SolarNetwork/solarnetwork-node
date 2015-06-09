@@ -34,9 +34,17 @@ import java.util.List;
 import java.util.UUID;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionDao;
+import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
+import ocpp.v15.Location;
+import ocpp.v15.Measurand;
 import ocpp.v15.MeterValue.Value;
+import ocpp.v15.ReadingContext;
+import ocpp.v15.UnitOfMeasure;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +74,10 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	public static final String SQL_UPDATE = "update";
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_GET_BY_IDTAG = "get-idtag";
+	public static final String SQL_DELETE_COMPLETED = "delete-completed";
+	public static final String SQL_DELETE_INCOMPLETE = "delete-incomplete";
+	public static final String SQL_INSERT_READING = "insert-reading";
+	public static final String SQL_GET_READINGS_FOR_SESSION = "get-readings-sessionid";
 
 	/**
 	 * Constructor.
@@ -171,23 +183,74 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void storeMeterReadings(String sessionId, Date date, Iterable<Value> readings) {
-		// TODO Auto-generated method stub
+	public void addMeterReadings(final String sessionId, final Date date, final Iterable<Value> readings) {
+		if ( readings == null ) {
+			return;
+		}
+		final UUID pk = UUID.fromString(sessionId);
+		final Timestamp ts = new Timestamp(date != null ? date.getTime() : System.currentTimeMillis());
+		getJdbcTemplate().execute(getSqlResource(SQL_INSERT_READING),
+				new PreparedStatementCallback<Object>() {
 
+					@Override
+					public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
+							DataAccessException {
+						// cols: (created, sessid_hi, sessid_lo, measurand, reading, context, location, unit)
+						ps.setTimestamp(1, ts);
+						ps.setLong(2, pk.getMostSignificantBits());
+						ps.setLong(3, pk.getLeastSignificantBits());
+						for ( Value v : readings ) {
+							ps.setString(4, v.getMeasurand().toString());
+							ps.setString(5, v.getValue());
+							ps.setString(6, v.getContext() != null ? v.getContext().toString() : null);
+							ps.setString(7, v.getLocation() != null ? v.getLocation().toString() : null);
+							ps.setString(8, v.getUnit() != null ? v.getUnit().toString() : null);
+							ps.executeUpdate();
+						}
+						return null;
+					}
+				});
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteCompletedChargeSessions(Date olderThanDate) {
-		// TODO Auto-generated method stub
-		return 0;
+		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
+		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
+		return getJdbcTemplate().update(getSqlResource(SQL_DELETE_COMPLETED),
+				new PreparedStatementSetter() {
+
+					@Override
+					public void setValues(PreparedStatement ps) throws SQLException {
+						ps.setTimestamp(1, ts, cal);
+					}
+
+				});
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteIncompletedChargeSessions(Date olderThanDate) {
-		// TODO Auto-generated method stub
-		return 0;
+		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
+		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
+		return getJdbcTemplate().update(getSqlResource(SQL_DELETE_INCOMPLETE),
+				new PreparedStatementSetter() {
+
+					@Override
+					public void setValues(PreparedStatement ps) throws SQLException {
+						ps.setTimestamp(1, ts, cal);
+					}
+
+				});
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public List<ChargeSessionMeterReading> findMeterReadingsForSession(String sessionId) {
+		UUID pk = UUID.fromString(sessionId);
+		return getJdbcTemplate().query(getSqlResource(SQL_GET_READINGS_FOR_SESSION),
+				new Object[] { pk.getMostSignificantBits(), pk.getLeastSignificantBits() },
+				new ChargeSessionMeterReadingRowMapper(sessionId));
 	}
 
 	private final class ChargeSessionRowMapper implements RowMapper<ChargeSession> {
@@ -213,6 +276,45 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			if ( ts != null ) {
 				row.setEnded(new Date(ts.getTime()));
 			}
+			return row;
+		}
+	}
+
+	private final class ChargeSessionMeterReadingRowMapper implements
+			RowMapper<ChargeSessionMeterReading> {
+
+		private final String sessionId;
+
+		private ChargeSessionMeterReadingRowMapper(String sessionId) {
+			super();
+			this.sessionId = sessionId;
+		}
+
+		@Override
+		public ChargeSessionMeterReading mapRow(ResultSet rs, int rowNum) throws SQLException {
+			ChargeSessionMeterReading row = new ChargeSessionMeterReading();
+			row.setSessionId(sessionId);
+			// Row order is: created, measurand, reading, context, location, unit
+			Timestamp ts = rs.getTimestamp(1, utcCalendar);
+			row.setTs(new Date(ts.getTime()));
+			row.setMeasurand(Measurand.valueOf(rs.getString(2)));
+			row.setValue(rs.getString(3));
+
+			String s = rs.getString(4);
+			if ( s != null ) {
+				row.setContext(ReadingContext.valueOf(s));
+			}
+
+			s = rs.getString(5);
+			if ( s != null ) {
+				row.setLocation(Location.valueOf(s));
+			}
+
+			s = rs.getString(6);
+			if ( s != null ) {
+				row.setUnit(UnitOfMeasure.valueOf(s));
+			}
+
 			return row;
 		}
 	}

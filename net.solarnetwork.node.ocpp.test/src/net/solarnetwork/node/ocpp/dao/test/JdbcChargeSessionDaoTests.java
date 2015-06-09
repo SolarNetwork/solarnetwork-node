@@ -22,13 +22,25 @@
 
 package net.solarnetwork.node.ocpp.dao.test;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.ocpp.ChargeSession;
+import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
 import net.solarnetwork.node.ocpp.dao.JdbcChargeSessionDao;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import ocpp.v15.Measurand;
+import ocpp.v15.MeterValue.Value;
+import ocpp.v15.ReadingContext;
+import ocpp.v15.UnitOfMeasure;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -92,4 +104,99 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertEquals("Updated ended", session.getEnded(), updated.getEnded());
 	}
 
+	@Test
+	public void deleteCompletedNoneComplete() {
+		insert();
+		int result = dao.deleteCompletedChargeSessions(null);
+		Assert.assertEquals("Deleted count", 0, result);
+	}
+
+	@Test
+	public void deleteCompleted() {
+		insert();
+		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
+		session.setEnded(new Date());
+		dao.storeChargeSession(session);
+		int result = dao.deleteCompletedChargeSessions(null);
+		Assert.assertEquals("Deleted count", 1, result);
+		ChargeSession notThere = dao.getChargeSession(session.getSessionId());
+		Assert.assertNull("Session deleted", notThere);
+	}
+
+	@Test
+	public void deleteCompletedOlder() {
+		insert();
+		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, -1);
+		session.setEnded(cal.getTime());
+		dao.storeChargeSession(session);
+
+		// insert a 2nd, with ended date now
+		insert();
+		ChargeSession session2 = dao.getChargeSession(lastSession.getSessionId());
+		session2.setEnded(new Date());
+		dao.storeChargeSession(session2);
+
+		cal = Calendar.getInstance();
+		cal.add(Calendar.HOUR, -1);
+		int result = dao.deleteCompletedChargeSessions(cal.getTime());
+		Assert.assertEquals("Deleted count", 1, result);
+
+		ChargeSession notThere = dao.getChargeSession(session.getSessionId());
+		Assert.assertNull("Session deleted", notThere);
+
+		ChargeSession stillThere = dao.getChargeSession(session2.getSessionId());
+		Assert.assertNotNull("Session not deleted", stillThere);
+	}
+
+	@Test
+	public void insertReadingsNone() {
+		final String sessionId = UUID.randomUUID().toString();
+		dao.addMeterReadings(sessionId, new Date(), Collections.<Value> emptyList());
+	}
+
+	@Test
+	public void insertReadings() {
+		insert();
+		List<Value> readings = new ArrayList<Value>();
+		for ( int i = 0; i < Measurand.values().length; i++ ) {
+			Value v = new Value();
+			v.setMeasurand(Measurand.values()[i]);
+			v.setValue("Value " + i);
+			v.setUnit(UnitOfMeasure.W);
+			if ( i == 0 ) {
+				v.setContext(ReadingContext.TRANSACTION_BEGIN);
+			} else if ( i + 1 == Measurand.values().length ) {
+				v.setContext(ReadingContext.TRANSACTION_END);
+			} else {
+				v.setContext(ReadingContext.SAMPLE_PERIODIC);
+			}
+			readings.add(v);
+		}
+		dao.addMeterReadings(lastSession.getSessionId(), null, readings);
+	}
+
+	@Test
+	public void listReadings() {
+		insertReadings();
+		List<ChargeSessionMeterReading> results = dao.findMeterReadingsForSession(lastSession
+				.getSessionId());
+		Assert.assertNotNull("Readings", results);
+		Assert.assertEquals("Readings count", Measurand.values().length, results.size());
+		Set<Measurand> mSet = EnumSet.allOf(Measurand.class);
+		for ( ChargeSessionMeterReading r : results ) {
+			Assert.assertTrue("Non duplicate Measurand", mSet.remove(r.getMeasurand()));
+			Assert.assertEquals("Reading value", "Value " + r.getMeasurand().ordinal(), r.getValue());
+			Assert.assertNull("Reading format not stored", r.getFormat());
+			Assert.assertEquals("Reading unit", UnitOfMeasure.W, r.getUnit());
+			if ( r.getMeasurand().ordinal() == 0 ) {
+				Assert.assertEquals("Reading context", ReadingContext.TRANSACTION_BEGIN, r.getContext());
+			} else if ( r.getMeasurand().ordinal() + 1 == Measurand.values().length ) {
+				Assert.assertEquals("Reading context", ReadingContext.TRANSACTION_END, r.getContext());
+			} else {
+				Assert.assertEquals("Reading context", ReadingContext.SAMPLE_PERIODIC, r.getContext());
+			}
+		}
+	}
 }

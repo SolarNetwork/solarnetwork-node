@@ -13,10 +13,10 @@ CREATE TABLE solarnode.ocpp_meter_reading (
 	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
 	sessid_hi		BIGINT NOT NULL,
 	sessid_lo		BIGINT NOT NULL,
+	measurand		VARCHAR(40) NOT NULL,
 	reading 		VARCHAR(64) NOT NULL,
 	context 		VARCHAR(20),
 	location		VARCHAR(8),
-	measurand		VARCHAR(40),
 	unit 			VARCHAR(8),
 	CONSTRAINT ocpp_meter_reading_charge_fk FOREIGN KEY (sessid_hi, sessid_lo)
 		REFERENCES solarnode.ocpp_charge (sessid_hi, sessid_lo)
