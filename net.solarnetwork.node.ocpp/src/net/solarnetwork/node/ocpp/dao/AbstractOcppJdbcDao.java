@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp.dao;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -42,6 +43,12 @@ public abstract class AbstractOcppJdbcDao<T> extends AbstractJdbcDao<T> {
 	protected final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	protected final DatatypeFactory datatypeFactory = getDatatypeFactory();
 	protected final XMLGregorianCalendar timestampDefaults = getTimestampDefaults();
+
+	protected final Calendar calendarForDate(Date date) {
+		Calendar utcCal = (Calendar) utcCalendar.clone();
+		utcCal.setTime(date);
+		return utcCal;
+	}
 
 	protected final Calendar calendarForXMLDate(XMLGregorianCalendar xmlDate) {
 		Calendar cal = xmlDate.toGregorianCalendar(null, null, timestampDefaults);
