@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.ocpp;
 
+import net.solarnetwork.node.Identifiable;
+
 /**
  * API to handle OCPP authorization functionality, which may include local
  * caching and/or synchronization with the OCPP central system.
@@ -29,7 +31,7 @@ package net.solarnetwork.node.ocpp;
  * @author matt
  * @version 1.0
  */
-public interface AuthorizationManager {
+public interface AuthorizationManager extends Identifiable {
 
 	/**
 	 * Request authorization of a specific ID tag value.

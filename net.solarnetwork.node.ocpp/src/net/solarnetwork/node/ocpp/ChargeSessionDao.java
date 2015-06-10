@@ -39,8 +39,9 @@ public interface ChargeSessionDao {
 	 * 
 	 * @param session
 	 *        The session to store.
+	 * @return The {@code sessionId} value as stored.
 	 */
-	void storeChargeSession(ChargeSession session);
+	String storeChargeSession(ChargeSession session);
 
 	/**
 	 * Get an {@link ChargeSession} for a given session ID.
@@ -50,6 +51,17 @@ public interface ChargeSessionDao {
 	 * @return The associated charge session, or <em>null</em> if not available.
 	 */
 	ChargeSession getChargeSession(String sessionId);
+
+	/**
+	 * Get an <em>incomplete</em> charge session for a given socket. An
+	 * <em>incomplete</em> session is one that has no {@code ended} date.
+	 * 
+	 * @param socketId
+	 *        The socket ID to look for.
+	 * @return The first available incomplete charge session, or <em>null</em>
+	 *         if not found.
+	 */
+	ChargeSession getIncompleteChargeSessionForSocket(String socketId);
 
 	/**
 	 * Store one or more meter readings, associated with a charge session.

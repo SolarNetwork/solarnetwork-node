@@ -35,6 +35,7 @@ import java.util.UUID;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionDao;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
+import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.Location;
 import ocpp.v15.Measurand;
 import ocpp.v15.MeterValue.Value;
@@ -74,6 +75,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	public static final String SQL_UPDATE = "update";
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_GET_BY_IDTAG = "get-idtag";
+	public static final String SQL_GET_INCOMPLETE_BY_SOCKETID = "get-socket-incomplete";
 	public static final String SQL_DELETE_COMPLETED = "delete-completed";
 	public static final String SQL_DELETE_INCOMPLETE = "delete-incomplete";
 	public static final String SQL_INSERT_READING = "insert-reading";
@@ -93,7 +95,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void storeChargeSession(final ChargeSession session) {
+	public String storeChargeSession(final ChargeSession session) {
 		UUID pk = null;
 		if ( session.getSessionId() == null ) {
 			pk = UUID.randomUUID();
@@ -109,6 +111,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			}
 			insertDomainObject(session, getSqlResource(SQL_INSERT));
 		}
+		return session.getSessionId();
 	}
 
 	@Override
@@ -122,18 +125,19 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		ps.setLong(3, pk.getLeastSignificantBits());
 		ps.setString(4, session.getIdTag());
 		ps.setString(5, session.getSocketId());
+		ps.setString(6, session.getStatus() != null ? session.getStatus().toString() : null);
 		if ( session.getTransactionId() != null ) {
-			ps.setLong(6, session.getTransactionId().longValue());
+			ps.setLong(7, session.getTransactionId().longValue());
 		} else {
-			ps.setNull(6, Types.BIGINT);
+			ps.setNull(7, Types.BIGINT);
 		}
 		if ( session.getEnded() != null ) {
 			// store ts in UTC time zone
 			Calendar cal = calendarForDate(session.getEnded());
 			Timestamp ts = new Timestamp(cal.getTimeInMillis());
-			ps.setTimestamp(7, ts, cal);
+			ps.setTimestamp(8, ts, cal);
 		} else {
-			ps.setNull(7, Types.TIMESTAMP);
+			ps.setNull(8, Types.TIMESTAMP);
 		}
 	}
 
@@ -143,23 +147,24 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				PreparedStatement ps = con.prepareStatement(sql);
+				ps.setString(1, session.getStatus() != null ? session.getStatus().toString() : null);
 				if ( session.getTransactionId() == null ) {
-					ps.setNull(1, Types.BIGINT);
+					ps.setNull(2, Types.BIGINT);
 				} else {
-					ps.setLong(1, session.getTransactionId().longValue());
+					ps.setLong(2, session.getTransactionId().longValue());
 				}
 				if ( session.getEnded() != null ) {
 					// store ts in UTC time zone
 					Calendar cal = calendarForDate(session.getEnded());
 					Timestamp ts = new Timestamp(cal.getTimeInMillis());
-					ps.setTimestamp(2, ts, cal);
+					ps.setTimestamp(3, ts, cal);
 				} else {
-					ps.setNull(2, Types.TIMESTAMP);
+					ps.setNull(3, Types.TIMESTAMP);
 				}
 
 				UUID pk = UUID.fromString(session.getSessionId());
-				ps.setLong(3, pk.getMostSignificantBits());
-				ps.setLong(4, pk.getLeastSignificantBits());
+				ps.setLong(4, pk.getMostSignificantBits());
+				ps.setLong(5, pk.getLeastSignificantBits());
 				return ps;
 			}
 		});
@@ -175,6 +180,28 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	private ChargeSession getChargeSession(UUID pk) {
 		List<ChargeSession> results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK),
 				new ChargeSessionRowMapper(), pk.getMostSignificantBits(), pk.getLeastSignificantBits());
+		if ( results != null && results.size() > 0 ) {
+			return results.get(0);
+		}
+		return null;
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public ChargeSession getIncompleteChargeSessionForSocket(final String socketId) {
+		List<ChargeSession> results = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+
+				PreparedStatement stmt = con.prepareStatement(
+						getSqlResource(SQL_GET_INCOMPLETE_BY_SOCKETID), ResultSet.TYPE_FORWARD_ONLY,
+						ResultSet.CONCUR_READ_ONLY);
+				stmt.setMaxRows(1);
+				stmt.setString(1, socketId);
+				return stmt;
+			}
+		}, new ChargeSessionRowMapper());
 		if ( results != null && results.size() > 0 ) {
 			return results.get(0);
 		}
@@ -258,7 +285,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		@Override
 		public ChargeSession mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ChargeSession row = new ChargeSession();
-			// Row order is: created, sessid_hi, sessid_lo, idtag, socketid, xid, ended
+			// Row order is: created, sessid_hi, sessid_lo, idtag, socketid, auth_status, xid, ended
 			Timestamp ts = rs.getTimestamp(1, utcCalendar);
 			if ( ts != null ) {
 				row.setCreated(new Date(ts.getTime()));
@@ -267,12 +294,17 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			row.setIdTag(rs.getString(4));
 			row.setSocketId(rs.getString(5));
 
-			Number n = (Number) rs.getObject(6);
+			String s = rs.getString(6);
+			if ( s != null ) {
+				row.setStatus(AuthorizationStatus.valueOf(s));
+			}
+
+			Number n = (Number) rs.getObject(7);
 			if ( n != null ) {
 				row.setTransactionId(n.intValue());
 			}
 
-			ts = rs.getTimestamp(7, utcCalendar);
+			ts = rs.getTimestamp(8, utcCalendar);
 			if ( ts != null ) {
 				row.setEnded(new Date(ts.getTime()));
 			}

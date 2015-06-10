@@ -23,14 +23,22 @@
 package net.solarnetwork.node.ocpp.support;
 
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 /**
@@ -40,14 +48,75 @@ import org.springframework.context.MessageSource;
  * <p>
  * The {@link FilterableService} API can be used to allow dynamic runtime
  * resolution of which central service to use, if more than one are deployed.
+ * </p>
+ * 
+ * <p>
+ * This class also implements {@link Identifiable} and will delegate those
+ * methods to the configured {@link CentralSystemServiceFactory} if not
+ * explicitly defined on this class.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public abstract class CentralSystemServiceFactorySupport implements SettingSpecifierProvider {
+public abstract class CentralSystemServiceFactorySupport implements SettingSpecifierProvider,
+		Identifiable {
 
 	private CentralSystemServiceFactory centralSystem;
 	private MessageSource messageSource;
+	private String uid;
+	private String groupUID;
+
+	private final DatatypeFactory datatypeFactory;
+	private final GregorianCalendar utcCalendar;
+
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Default constructor.
+	 */
+	public CentralSystemServiceFactorySupport() {
+		super();
+		utcCalendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		try {
+			datatypeFactory = DatatypeFactory.newInstance();
+		} catch ( DatatypeConfigurationException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get a {@link DatatypeFactory} instance.
+	 * 
+	 * @return The factory.
+	 */
+	protected final DatatypeFactory getDatatypeFactory() {
+		return datatypeFactory;
+	}
+
+	/**
+	 * Get a {@link XMLGregorianCalendar} for the current time, set to the UTC
+	 * time zone.
+	 * 
+	 * @return A new calendar instance.
+	 */
+	protected final XMLGregorianCalendar newXmlCalendar() {
+		return newXmlCalendar(System.currentTimeMillis());
+	}
+
+	/**
+	 * Get a {@link XMLGregorianCalendar} for a specific time, set to the UTC
+	 * time zone.
+	 * 
+	 * @param date
+	 *        The date, in milliseconds since the epoch.
+	 * @return A new calendar instance.
+	 */
+	protected final XMLGregorianCalendar newXmlCalendar(long date) {
+		GregorianCalendar now = (GregorianCalendar) utcCalendar.clone();
+		now.setTimeInMillis(date);
+		return datatypeFactory.newXMLGregorianCalendar(now);
+	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -119,6 +188,58 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 	 */
 	public final void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	public final String getUid() {
+		return uid;
+	}
+
+	public final void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	/**
+	 * Returns the {@code uid} value if configured, or else falls back to
+	 * returning {@link CentralSystemServiceFactory#getUID()}.
+	 */
+	@Override
+	public final String getUID() {
+		String id = uid;
+		if ( id == null ) {
+			CentralSystemServiceFactory system = centralSystem;
+			if ( system != null ) {
+				try {
+					id = system.getUID();
+				} catch ( RuntimeException e ) {
+					log.debug("Error getting central system UID", e);
+				}
+			}
+		}
+		return id;
+	}
+
+	/**
+	 * Returns the {@code groupUID} value if configured, or else falls back to
+	 * returning {@link CentralSystemServiceFactory#getGroupUID()}.
+	 */
+	@Override
+	public final String getGroupUID() {
+		String id = groupUID;
+		if ( id == null ) {
+			CentralSystemServiceFactory system = centralSystem;
+			if ( system != null ) {
+				try {
+					id = system.getGroupUID();
+				} catch ( RuntimeException e ) {
+					log.debug("Error getting central system Group UID", e);
+				}
+			}
+		}
+		return id;
+	}
+
+	public final void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }

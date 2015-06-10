@@ -3,7 +3,8 @@ CREATE TABLE solarnode.ocpp_charge (
 	sessid_hi		BIGINT NOT NULL,
 	sessid_lo		BIGINT NOT NULL,
 	idtag 			VARCHAR(20) NOT NULL,
-	socketid		VARCHAR(64),
+	socketid		VARCHAR(64) NOT NULL,
+	auth_status		VARCHAR(12),
 	xid				BIGINT,
 	ended			TIMESTAMP,
 	CONSTRAINT ocpp_charge_pk PRIMARY KEY (sessid_hi, sessid_lo)

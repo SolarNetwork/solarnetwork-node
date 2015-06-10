@@ -37,6 +37,7 @@ import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
 import net.solarnetwork.node.ocpp.dao.JdbcChargeSessionDao;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.Measurand;
 import ocpp.v15.MeterValue.Value;
 import ocpp.v15.ReadingContext;
@@ -54,6 +55,7 @@ import org.junit.Test;
 public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 
 	private static final String TEST_ID_TAG = "test.tag";
+	private static final String TEST_SOCKET_ID = "test.socket";
 
 	@Resource(name = "dataSource")
 	private DataSource dataSource;
@@ -77,6 +79,7 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		ChargeSession session = new ChargeSession();
 		session.setCreated(new Date());
 		session.setIdTag(TEST_ID_TAG);
+		session.setSocketId(TEST_SOCKET_ID);
 		dao.storeChargeSession(session);
 		Assert.assertNotNull("Session ID created", session.getSessionId());
 		lastSession = session;
@@ -89,17 +92,21 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull("ChargeSession inserted", session);
 		Assert.assertEquals("Created", lastSession.getCreated(), session.getCreated());
 		Assert.assertEquals("IdTag", lastSession.getIdTag(), session.getIdTag());
+		Assert.assertEquals("SocketID", lastSession.getSocketId(), session.getSocketId());
 		Assert.assertNull("No expires", session.getExpiryDate());
+		Assert.assertNull("No status", session.getStatus());
 	}
 
 	@Test
 	public void update() {
 		insert();
 		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
+		session.setStatus(AuthorizationStatus.ACCEPTED);
 		session.setTransactionId(-1);
 		session.setEnded(new Date());
 		dao.storeChargeSession(session);
 		ChargeSession updated = dao.getChargeSession(lastSession.getSessionId());
+		Assert.assertEquals("Updated status", session.getStatus(), updated.getStatus());
 		Assert.assertEquals("Updated xid", session.getTransactionId(), updated.getTransactionId());
 		Assert.assertEquals("Updated ended", session.getEnded(), updated.getEnded());
 	}
@@ -198,5 +205,20 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 				Assert.assertEquals("Reading context", ReadingContext.SAMPLE_PERIODIC, r.getContext());
 			}
 		}
+	}
+
+	@Test
+	public void findIncompleteForSocketNone() {
+		ChargeSession result = dao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID);
+		Assert.assertNull("Not found", result);
+	}
+
+	@Test
+	public void findIncompleteForSocket() {
+		insert();
+		ChargeSession result = dao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID);
+		Assert.assertNotNull("Found", result);
+		Assert.assertEquals("Socket ID", TEST_SOCKET_ID, result.getSocketId());
+		Assert.assertEquals("Session ID", lastSession.getSessionId(), result.getSessionId());
 	}
 }
