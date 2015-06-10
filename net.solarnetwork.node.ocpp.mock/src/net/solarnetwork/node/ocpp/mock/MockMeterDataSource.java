@@ -66,6 +66,10 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 	private String uid = "MockMeter";
 	private String socketId = "/socket/mock";
 	private String groupUID;
+	private double watts = 5;
+	private double wattsRandomness = 0.2;
+	private double chargingWatts = 2400;
+	private double chargingWattsRandomness = 0.1;
 	private boolean charging;
 
 	private GeneralNodeACEnergyDatum sample;
@@ -157,7 +161,7 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 
 	@Override
 	public String getSettingUID() {
-		return getClass().getName();
+		return "net.solarnetwork.node.ocpp.mock.meter";
 	}
 
 	@Override
@@ -178,7 +182,16 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("socketId", defaults.socketId));
-		return null;
+
+		results.add(new BasicTextFieldSettingSpecifier("watts", String.valueOf(defaults.watts)));
+		results.add(new BasicTextFieldSettingSpecifier("wattsRandomness", String
+				.valueOf(defaults.wattsRandomness)));
+		results.add(new BasicTextFieldSettingSpecifier("chargingWatts", String
+				.valueOf(defaults.chargingWatts)));
+		results.add(new BasicTextFieldSettingSpecifier("chargingWattsRandomness", String
+				.valueOf(defaults.chargingWattsRandomness)));
+
+		return results;
 	}
 
 	@Override
@@ -298,6 +311,22 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 
 	public void setSocketId(String socketId) {
 		this.socketId = socketId;
+	}
+
+	public void setWatts(double watts) {
+		this.watts = watts;
+	}
+
+	public void setWattsRandomness(double wattRandomness) {
+		this.wattsRandomness = wattRandomness;
+	}
+
+	public void setChargingWatts(double chargingWatts) {
+		this.chargingWatts = chargingWatts;
+	}
+
+	public void setChargingWattsRandomness(double chargingWattRandomness) {
+		this.chargingWattsRandomness = chargingWattRandomness;
 	}
 
 }

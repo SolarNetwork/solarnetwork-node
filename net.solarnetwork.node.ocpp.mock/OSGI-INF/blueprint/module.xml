@@ -30,8 +30,7 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="OCPP Mock Power Meter"/>
 		<property name="factoryUID" value="net.solarnetwork.node.ocpp.mock.meter"/>
 		<property name="messageSource" ref="messageSource"/>
