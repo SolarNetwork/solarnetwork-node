@@ -37,6 +37,25 @@ import net.solarnetwork.node.Identifiable;
 public interface ChargeSessionManager extends Identifiable {
 
 	/**
+	 * The EventAdmin topic used to post events when a socket has been
+	 * activated, that is when a plug is plugged into a device to start
+	 * charging.
+	 */
+	String EVENT_TOPIC_SOCKET_ACTIVATED = "net/solarnetwork/node/ocpp/SOCKET_ACTIVATED";
+
+	/**
+	 * The EventAdmin topic used to post events when a socket has been
+	 * deactivated, that is when a plug is unplugged from a device when charging
+	 * ends.
+	 */
+	String EVENT_TOPIC_SOCKET_DEACTIVATED = "net/solarnetwork/node/ocpp/SOCKET_DEACTIVATED";
+
+	/**
+	 * The Event property used to convey a String socket ID.
+	 */
+	String EVENT_PROPERTY_SOCKET_ID = "socketId";
+
+	/**
 	 * Initiate a new charge session.
 	 * 
 	 * @param idTag
