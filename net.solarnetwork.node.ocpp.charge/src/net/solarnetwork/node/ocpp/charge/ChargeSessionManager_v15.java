@@ -72,7 +72,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private ChargeSessionDao chargeSessionDao;
 	private Map<String, Integer> socketConnectorMapping = Collections.emptyMap();
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
-	private OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> meterDataSource;
+	private OptionalServiceCollection<DatumDataSource<EnergyDatum>> meterDataSource;
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
@@ -165,11 +165,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	}
 
 	private EnergyDatum getMeterReading(String sourceId) {
-		OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> service = meterDataSource;
+		OptionalServiceCollection<DatumDataSource<EnergyDatum>> service = meterDataSource;
 		if ( service == null || sourceId == null ) {
 			return null;
 		}
-		Iterable<DatumDataSource<? extends EnergyDatum>> dataSources = service.services();
+		Iterable<DatumDataSource<EnergyDatum>> dataSources = service.services();
 		for ( DatumDataSource<? extends EnergyDatum> dataSource : dataSources ) {
 			if ( dataSource instanceof MultiDatumDataSource<?> ) {
 				@SuppressWarnings("unchecked")
@@ -396,12 +396,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		return StringUtils.delimitedStringFromMap(socketConnectorMapping);
 	}
 
-	public OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> getMeterDataSource() {
+	public OptionalServiceCollection<DatumDataSource<EnergyDatum>> getMeterDataSource() {
 		return meterDataSource;
 	}
 
 	public void setMeterDataSource(
-			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> meterDataSource) {
+			OptionalServiceCollection<DatumDataSource<EnergyDatum>> meterDataSource) {
 		this.meterDataSource = meterDataSource;
 	}
 
