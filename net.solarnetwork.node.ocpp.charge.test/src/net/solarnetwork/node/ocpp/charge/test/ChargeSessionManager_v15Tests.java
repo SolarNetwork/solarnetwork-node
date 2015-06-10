@@ -44,9 +44,12 @@ import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 import ocpp.v15.AuthorizationStatus;
 import ocpp.v15.CentralSystemService;
+import ocpp.v15.IdTagInfo;
 import ocpp.v15.Measurand;
 import ocpp.v15.MeterValue.Value;
 import ocpp.v15.ReadingContext;
+import ocpp.v15.StartTransactionRequest;
+import ocpp.v15.StartTransactionResponse;
 import ocpp.v15.UnitOfMeasure;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -64,8 +67,10 @@ import org.osgi.service.event.Event;
  */
 public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
+	private static final String TEST_CHARGE_BOX_IDENTITY = "test.ident";
 	private static final String TEST_METER_SOURCE_ID = "test.meter";
 	private static final String TEST_SOCKET_ID = "/socket/test";
+	private static final String TEST_ID_TAG = "test.tag";
 	private static final Integer TEST_CONNECTOR_ID = 11;
 	private static final Integer TEST_TRANSACTION_ID = 22;
 	private static final String TEST_SESSION_ID = UUID.randomUUID().toString();
@@ -86,8 +91,9 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 	@Before
 	public void setup() {
 		authManager = EasyMock.createMock(AuthorizationManager.class);
-		centralSystem = EasyMock.createMock(CentralSystemServiceFactory.class);
 		client = EasyMock.createMock(CentralSystemService.class);
+		centralSystem = new MockCentralSystemServiceFactory("OCPP Central System", null, client,
+				TEST_CHARGE_BOX_IDENTITY);
 		chargeSessionDao = EasyMock.createMock(ChargeSessionDao.class);
 
 		meterDataSource = newMeterDataSource();
@@ -105,11 +111,11 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 	@After
 	public void finish() {
-		EasyMock.verify(authManager, centralSystem, client, chargeSessionDao, meterDataSource);
+		EasyMock.verify(authManager, client, chargeSessionDao, meterDataSource);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(authManager, centralSystem, client, chargeSessionDao, meterDataSource);
+		EasyMock.replay(authManager, client, chargeSessionDao, meterDataSource);
 	}
 
 	@Test
@@ -188,6 +194,73 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		Assert.assertEquals("Measurand", Measurand.ENERGY_ACTIVE_IMPORT_REGISTER, v.getMeasurand());
 		Assert.assertEquals("Unit", UnitOfMeasure.WH, v.getUnit());
 		Assert.assertEquals("Value", String.valueOf(datum.getWattHourReading()), v.getValue());
-		Assert.assertFalse("No more insertions", itr.hasNext());
+
+		Assert.assertTrue("More readings", itr.hasNext());
+		v = itr.next();
+		Assert.assertNotNull("Inserted reading", v);
+		Assert.assertEquals("ReadingContext", ReadingContext.SAMPLE_PERIODIC, v.getContext());
+		Assert.assertEquals("Measurand", Measurand.POWER_ACTIVE_IMPORT, v.getMeasurand());
+		Assert.assertEquals("Unit", UnitOfMeasure.W, v.getUnit());
+		Assert.assertEquals("Value", String.valueOf(datum.getWatts()), v.getValue());
+
+		Assert.assertFalse("No more readings", itr.hasNext());
+	}
+
+	@Test
+	public void initiateChargeSession() {
+		// verify active session does not exist
+		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(null);
+
+		// request authorization for IdTag
+		expect(authManager.authorize(TEST_ID_TAG)).andReturn(true);
+
+		// get meter reading
+		final GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
+		datum.setWattHourReading(111L);
+		expect(meterDataSource.readCurrentDatum()).andReturn(datum);
+
+		// start transaction
+		Capture<StartTransactionRequest> startTransactionReqCapture = new Capture<StartTransactionRequest>();
+		final StartTransactionResponse startTransactionResp = new StartTransactionResponse();
+		startTransactionResp.setIdTagInfo(new IdTagInfo());
+		startTransactionResp.getIdTagInfo().setStatus(AuthorizationStatus.ACCEPTED);
+		startTransactionResp.setTransactionId(123);
+		expect(
+				client.startTransaction(capture(startTransactionReqCapture),
+						eq(TEST_CHARGE_BOX_IDENTITY))).andReturn(startTransactionResp);
+
+		// store the session
+		Capture<ChargeSession> sessionCapture = new Capture<ChargeSession>();
+		expect(chargeSessionDao.storeChargeSession(capture(sessionCapture))).andReturn(TEST_SESSION_ID);
+
+		replayAll();
+
+		String sessionId = manager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null);
+		Assert.assertEquals("Session ID", TEST_SESSION_ID, sessionId);
+
+		// verify StartTransactionRequest
+		StartTransactionRequest req = startTransactionReqCapture.getValue();
+		Assert.assertNotNull("Request", req);
+		Assert.assertEquals("StartTransactionRequest connectorId", TEST_CONNECTOR_ID.intValue(),
+				req.getConnectorId());
+		Assert.assertEquals("StartTransactionRequest idTag", TEST_ID_TAG, req.getIdTag());
+		Assert.assertEquals("StartTransactionRequest meterStart", datum.getWattHourReading().intValue(),
+				req.getMeterStart());
+		Assert.assertNull("StartTransactionRequest reservationId", req.getReservationId());
+		Assert.assertNotNull("StartTransactionRequest timestamp", req.getTimestamp());
+
+		// verify ChargeSession entity
+		ChargeSession session = sessionCapture.getValue();
+		Assert.assertNotNull("ChargeSession", session);
+		Assert.assertNotNull("ChargeSession created", session.getCreated());
+		Assert.assertNull("ChargeSession ended", session.getEnded());
+		Assert.assertNull("ChargeSession expiryDate", session.getExpiryDate());
+		Assert.assertEquals("ChargeSession idTag", TEST_ID_TAG, session.getIdTag());
+		Assert.assertNull("ChargeSession parentIdTag", session.getParentIdTag());
+		Assert.assertEquals("ChargeSession socketId", TEST_SOCKET_ID, session.getSocketId());
+		Assert.assertEquals("ChargeSession status", AuthorizationStatus.ACCEPTED, session.getStatus());
+		Assert.assertNotNull("ChargeSession transactionId", session.getTransactionId());
+		Assert.assertEquals("ChargeSession transactionId", startTransactionResp.getTransactionId(),
+				session.getTransactionId().intValue());
 	}
 }

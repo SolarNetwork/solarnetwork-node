@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.ocpp.charge;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -240,24 +241,37 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	private void handleDatumCapturedEvent(String socketId, String sourceId,
 			Map<String, Object> eventProperties) {
-		if ( !(eventProperties.get("wattHourReading") instanceof Number) ) {
+		ChargeSession active = activeChargeSession(socketId);
+		if ( active == null ) {
 			return;
 		}
-		Number whReading = (Number) eventProperties.get("wattHourReading");
-		long created = System.currentTimeMillis();
-		if ( eventProperties.get("created") instanceof Number ) {
-			created = ((Number) eventProperties.get("created")).longValue();
-		}
-		ChargeSession active = activeChargeSession(socketId);
-		if ( active != null ) {
+
+		final long created = (eventProperties.get("created") instanceof Number ? ((Number) eventProperties
+				.get("created")).longValue() : System.currentTimeMillis());
+
+		List<Value> readings = new ArrayList<Value>(4);
+
+		if ( eventProperties.get("wattHourReading") instanceof Number ) {
+			Number whReading = (Number) eventProperties.get("wattHourReading");
 			Value reading = new Value();
 			reading.setContext(ReadingContext.SAMPLE_PERIODIC);
 			reading.setMeasurand(Measurand.ENERGY_ACTIVE_IMPORT_REGISTER);
 			reading.setUnit(UnitOfMeasure.WH);
 			reading.setValue(whReading.toString());
-			chargeSessionDao.addMeterReadings(active.getSessionId(), new Date(created),
-					Collections.singletonList(reading));
+			readings.add(reading);
 		}
+
+		if ( eventProperties.get("watts") instanceof Number ) {
+			Number wReading = (Number) eventProperties.get("watts");
+			Value reading = new Value();
+			reading.setContext(ReadingContext.SAMPLE_PERIODIC);
+			reading.setMeasurand(Measurand.POWER_ACTIVE_IMPORT);
+			reading.setUnit(UnitOfMeasure.W);
+			reading.setValue(wReading.toString());
+			readings.add(reading);
+		}
+
+		chargeSessionDao.addMeterReadings(active.getSessionId(), new Date(created), readings);
 	}
 
 	// SettingSpecifierProvider
