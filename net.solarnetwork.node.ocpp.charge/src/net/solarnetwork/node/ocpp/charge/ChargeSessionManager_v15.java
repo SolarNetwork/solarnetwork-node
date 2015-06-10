@@ -252,7 +252,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		if ( active != null ) {
 			Value reading = new Value();
 			reading.setContext(ReadingContext.SAMPLE_PERIODIC);
-			reading.setMeasurand(Measurand.ENERGY_REACTIVE_IMPORT_REGISTER);
+			reading.setMeasurand(Measurand.ENERGY_ACTIVE_IMPORT_REGISTER);
 			reading.setUnit(UnitOfMeasure.WH);
 			reading.setValue(whReading.toString());
 			chargeSessionDao.addMeterReadings(active.getSessionId(), new Date(created),
