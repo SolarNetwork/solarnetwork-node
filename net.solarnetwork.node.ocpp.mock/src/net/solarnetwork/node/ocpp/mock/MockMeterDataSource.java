@@ -103,7 +103,8 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			if ( currSample == null ) {
 				newSample.setWattHourReading(mockMeter.get());
 			} else {
-				double diffHours = ((System.currentTimeMillis() - currSample.getCreated().getTime()) / (double) (1000 * 60 * 60));
+				double diffHours = ((newSample.getCreated().getTime() - currSample.getCreated()
+						.getTime()) / (double) (1000 * 60 * 60));
 				double watts;
 				if ( charging ) {
 					watts = 2400;
