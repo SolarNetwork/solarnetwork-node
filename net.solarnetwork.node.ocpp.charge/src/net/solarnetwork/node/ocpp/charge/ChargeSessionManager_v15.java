@@ -432,6 +432,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		ChargeSessionManager_v15 defaults = new ChargeSessionManager_v15();
 		results.add(new BasicTextFieldSettingSpecifier("filterableAuthManager.propertyFilters['UID']",
 				"OCPP Central System"));
+		results.add(new BasicTextFieldSettingSpecifier("meterDataSource.propertyFilters['UID']",
+				"OCPP Meter"));
 		results.add(new BasicTextFieldSettingSpecifier("socketMeterSourceMappingValue", defaults
 				.getSocketMeterSourceMappingValue()));
 		results.add(new BasicTextFieldSettingSpecifier("socketConnectorMappingValue", defaults

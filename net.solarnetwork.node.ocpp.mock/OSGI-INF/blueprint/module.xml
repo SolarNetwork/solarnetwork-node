@@ -88,10 +88,13 @@
 							<property name="interfaces">
 								<list>
 									<value>org.osgi.service.event.EventHandler</value>
+									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.MultiDatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.ACEnergyDatum"/>
 									<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 										<beans:array value-type="java.lang.String">
 											<beans:value>#{T(net.solarnetwork.node.ocpp.ChargeSessionManager).EVENT_TOPIC_SOCKET_ACTIVATED}</beans:value>

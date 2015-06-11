@@ -71,6 +71,18 @@
 					</property>
 				</bean>
 			</property>
+			<property name="meterDataSource">
+				<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
+					<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.ACEnergyDatum)"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="OCPP Meter"/>
+						</map>
+					</property>
+				</bean>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 	
