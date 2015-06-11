@@ -28,9 +28,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -439,7 +441,46 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	@Override
 	protected String getInfoMessage(Locale locale) {
-		return ""; // TODO
+		StringBuilder buf = new StringBuilder();
+		if ( chargeSessionDao != null ) {
+			List<ChargeSession> incomplete = chargeSessionDao.getIncompleteChargeSessions();
+			Set<String> active = new LinkedHashSet<String>(incomplete.size());
+			if ( incomplete.size() > 0 ) {
+				for ( ChargeSession s : incomplete ) {
+					active.add(s.getSessionId());
+				}
+				List<String> reversed = new ArrayList<String>(active);
+				Collections.reverse(reversed);
+				buf.append(getMessageSource().getMessage(
+						"status.active",
+						new Object[] { incomplete.size(),
+								StringUtils.commaDelimitedStringFromCollection(reversed) }, locale));
+			}
+			List<ChargeSession> needPosting = chargeSessionDao.getChargeSessionsNeedingPosting(100);
+			if ( needPosting.size() > 0 ) {
+				List<String> need = new ArrayList<String>(needPosting.size());
+				for ( ChargeSession s : needPosting ) {
+					if ( active.contains(s.getSessionId()) ) {
+						continue;
+					}
+					need.add(s.getSessionId());
+				}
+				if ( buf.length() > 0 ) {
+					buf.append("; ");
+				}
+				String needIds = StringUtils.commaDelimitedStringFromCollection((need.size() > 10 ? need
+						.subList(0, 10) : need));
+				buf.append(getMessageSource().getMessage("status.needPosting",
+						new Object[] { need.size(), needIds }, locale));
+				if ( need.size() > 10 ) {
+					buf.append("\u2026"); // ellipsis
+				}
+			}
+		}
+		if ( buf.length() < 1 ) {
+			buf.append(getMessageSource().getMessage("status.none", null, locale));
+		}
+		return buf.toString();
 	}
 
 	// Accessors
