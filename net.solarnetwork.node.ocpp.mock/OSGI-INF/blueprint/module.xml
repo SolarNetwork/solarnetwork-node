@@ -49,6 +49,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.ocpp.mock.meter"/>
@@ -80,7 +81,68 @@
 					</property>
 				</bean>
 			</property>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>org.osgi.service.event.EventHandler</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+										<beans:array value-type="java.lang.String">
+											<beans:value>#{T(net.solarnetwork.node.ocpp.ChargeSessionManager).EVENT_TOPIC_SOCKET_ACTIVATED}</beans:value>
+											<beans:value>#{T(net.solarnetwork.node.ocpp.ChargeSessionManager).EVENT_TOPIC_SOCKET_DEACTIVATED}</beans:value>
+										</beans:array>
+									</entry>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 	
+	<!-- RFID Watcher -->
+	
+	<bean id="rfidMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.ocpp.mock.MockIdTagScanner"/>
+	</bean>
+	
+	<bean id="rfidSettingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<property name="displayName" value="OCPP Mock RFID Scanner"/>
+		<property name="factoryUID" value="net.solarnetwork.node.ocpp.mock.rfid"/>
+		<property name="messageSource" ref="rfidMessageSource"/>
+	</bean>
+	
+	<service ref="rfidSettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.ocpp.mock.rfid" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.ocpp.mock.rfid"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.ocpp.mock.MockIdTagScanner">
+			<property name="eventAdmin" ref="eventAdmin"/>
+			<property name="messageSource" ref="rfidMessageSource"/>
+			<property name="chargeSessionManager">
+				<bean class="net.solarnetwork.util.DynamicServiceProxy">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClass" value="net.solarnetwork.node.ocpp.ChargeSessionManager"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="OCPP Central System"/>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>

@@ -41,11 +41,11 @@ import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -58,7 +58,7 @@ import org.springframework.context.MessageSource;
  * @version 1.0
  */
 public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider, EventHandler {
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private MessageSource messageSource;
@@ -111,10 +111,13 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 					// we expect very little draw (ideally 0, but let's allow for a little)
 					watts = 5;
 				}
+				watts += (watts
+						* (Math.random() * (charging ? chargingWattsRandomness : wattsRandomness)) * (Math
+						.random() < 0.5 ? -1 : 1));
 				long wh = (long) (watts * diffHours);
-				if ( mockMeter.compareAndSet(currSample.getWattHourReading(),
-						currSample.getWattHourReading() + wh) ) {
-					newSample.setWattHourReading(wh);
+				long newWh = currSample.getWattHourReading() + wh;
+				if ( mockMeter.compareAndSet(currSample.getWattHourReading(), newWh) ) {
+					newSample.setWattHourReading(newWh);
 					newSample.setWatts((int) watts);
 				} else {
 					newSample.setWattHourReading(currSample.getWattHourReading());
@@ -136,17 +139,6 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			return true;
 		}
 		return false;
-	}
-
-	private void handleChargingStatusChange(final boolean pluggedIn) {
-		EventAdmin ea = (eventAdmin != null ? eventAdmin.service() : null);
-		if ( ea == null ) {
-			return;
-		}
-		Map<String, Object> props = Collections.singletonMap(
-				ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, (Object) socketId);
-		ea.postEvent(new Event(pluggedIn ? ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED
-				: ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED, props));
 	}
 
 	@Override
@@ -178,7 +170,6 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockMeterDataSource defaults = new MockMeterDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
-		results.add(new BasicToggleSettingSpecifier("charging", defaults.charging));
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("socketId", defaults.socketId));
@@ -270,6 +261,21 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
+	@Override
+	public void handleEvent(Event event) {
+		final String topic = event.getTopic();
+		final String socketId = (String) event
+				.getProperty(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID);
+		if ( socketId == null || !socketId.equals(this.socketId) ) {
+			return;
+		}
+		if ( ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED.equals(topic) ) {
+			setCharging(true);
+		} else if ( ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED.equals(topic) ) {
+			setCharging(false);
+		}
+	}
+
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
@@ -295,10 +301,7 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 	}
 
 	public void setCharging(boolean charging) {
-		if ( charging != this.charging ) {
-			this.charging = charging;
-			handleChargingStatusChange(charging);
-		}
+		this.charging = charging;
 	}
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
