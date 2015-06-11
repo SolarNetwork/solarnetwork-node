@@ -12,6 +12,7 @@ Import-Package:
  net.solarnetwork.node.ocpp.support;version="0.1.0",
  net.solarnetwork.node.settings;version="1.6.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.util;version="1.6.0",
  net.solarnetwork.util;version="1.20.0",
  ocpp.v15;version="1.5.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
