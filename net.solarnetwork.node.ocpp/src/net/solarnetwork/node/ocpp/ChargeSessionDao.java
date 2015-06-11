@@ -64,6 +64,30 @@ public interface ChargeSessionDao {
 	ChargeSession getIncompleteChargeSessionForSocket(String socketId);
 
 	/**
+	 * Get all available <em>incomplete</em> charge sessions. An
+	 * <em>incomplete</em> session is one that has no {@code ended} date.
+	 * 
+	 * @return All incomplete charge sessions, or an empty list if none found.
+	 */
+	List<ChargeSession> getIncompleteChargeSessions();
+
+	/**
+	 * Get all available charge sessions that need to be posted to the central
+	 * system. A session needs to be posted if either it has no
+	 * {@code trasactionId} (and thus must be included in a
+	 * {@code StartTransaction} message) or it has an {@code ended} date but no
+	 * {@code posted} date (and thus needs to be included in a
+	 * {@code StopTransaction} message). The results are ordered oldest to
+	 * newest by creation date.
+	 * 
+	 * @param max
+	 *        The maximum number of rows to return.
+	 * @return All charge sessions needing posting to the central system, or an
+	 *         empty list if none found.
+	 */
+	List<ChargeSession> getChargeSessionsNeedingPosting(int max);
+
+	/**
 	 * Store one or more meter readings, associated with a charge session.
 	 * 
 	 * @param sessionId

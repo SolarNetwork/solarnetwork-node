@@ -221,4 +221,94 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertEquals("Socket ID", TEST_SOCKET_ID, result.getSocketId());
 		Assert.assertEquals("Session ID", lastSession.getSessionId(), result.getSessionId());
 	}
+
+	@Test
+	public void findIncompleteNone() {
+		List<ChargeSession> results = dao.getIncompleteChargeSessions();
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 0, results.size());
+	}
+
+	@Test
+	public void findIncomplete() {
+		ChargeSession session = new ChargeSession();
+		session.setCreated(new Date(System.currentTimeMillis() - 1000));
+		session.setIdTag(TEST_ID_TAG);
+		session.setSocketId("test.socket.2");
+		dao.storeChargeSession(session);
+
+		insert();
+
+		List<ChargeSession> results = dao.getIncompleteChargeSessions();
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 2, results.size());
+		Assert.assertEquals("Results ordered by date", TEST_SOCKET_ID, results.get(0).getSocketId());
+		Assert.assertEquals("Results ordered by date", session.getSocketId(), results.get(1)
+				.getSocketId());
+	}
+
+	@Test
+	public void findNeedsPostingNone() {
+		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 0, results.size());
+	}
+
+	@Test
+	public void findNeedsPostingAllPosted() {
+		ChargeSession session = new ChargeSession();
+		session.setCreated(new Date());
+		session.setIdTag(TEST_ID_TAG);
+		session.setSocketId("test.socket.2");
+		session.setTransactionId(1);
+		session.setEnded(new Date());
+		session.setPosted(new Date());
+		dao.storeChargeSession(session);
+
+		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 0, results.size());
+	}
+
+	@Test
+	public void findNeedsPostingNoTransactionId() {
+		insert();
+
+		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 1, results.size());
+		Assert.assertEquals("Results ordered by date", lastSession.getSessionId(), results.get(0)
+				.getSessionId());
+	}
+
+	@Test
+	public void findNeedsPostingNotPostedNotEnded() {
+		ChargeSession session = new ChargeSession();
+		session.setCreated(new Date());
+		session.setIdTag(TEST_ID_TAG);
+		session.setSocketId("test.socket.2");
+		session.setTransactionId(1);
+		dao.storeChargeSession(session);
+
+		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 0, results.size());
+	}
+
+	@Test
+	public void findNeedsPostingNotPosted() {
+		ChargeSession session = new ChargeSession();
+		session.setCreated(new Date());
+		session.setIdTag(TEST_ID_TAG);
+		session.setSocketId("test.socket.2");
+		session.setTransactionId(1);
+		session.setEnded(new Date());
+		dao.storeChargeSession(session);
+
+		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
+		Assert.assertNotNull("Results list", results);
+		Assert.assertEquals("Results count", 1, results.size());
+		Assert.assertEquals("Results ordered by date", session.getSessionId(), results.get(0)
+				.getSessionId());
+	}
 }

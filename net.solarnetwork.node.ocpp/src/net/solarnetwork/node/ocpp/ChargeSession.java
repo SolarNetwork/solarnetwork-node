@@ -35,6 +35,7 @@ public class ChargeSession extends IdTagInfo {
 
 	private Date created = null;
 	private Date ended = null;
+	private Date posted = null;
 	private String idTag;
 	private String sessionId;
 	private String socketId;
@@ -86,6 +87,14 @@ public class ChargeSession extends IdTagInfo {
 
 	public void setEnded(Date ended) {
 		this.ended = ended;
+	}
+
+	public Date getPosted() {
+		return posted;
+	}
+
+	public void setPosted(Date posted) {
+		this.posted = posted;
 	}
 
 }

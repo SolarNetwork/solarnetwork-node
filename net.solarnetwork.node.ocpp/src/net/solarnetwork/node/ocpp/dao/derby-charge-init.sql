@@ -7,6 +7,7 @@ CREATE TABLE solarnode.ocpp_charge (
 	auth_status		VARCHAR(12),
 	xid				BIGINT,
 	ended			TIMESTAMP,
+	posted			TIMESTAMP,
 	CONSTRAINT ocpp_charge_pk PRIMARY KEY (sessid_hi, sessid_lo)
 );
 

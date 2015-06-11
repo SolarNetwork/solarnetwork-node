@@ -76,6 +76,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_GET_BY_IDTAG = "get-idtag";
 	public static final String SQL_GET_INCOMPLETE_BY_SOCKETID = "get-socket-incomplete";
+	public static final String SQL_GET_INCOMPLETE_SESSIONS = "get-incomplete";
+	public static final String SQL_GET_NEEDING_POSTING = "get-needsposting";
 	public static final String SQL_DELETE_COMPLETED = "delete-completed";
 	public static final String SQL_DELETE_INCOMPLETE = "delete-incomplete";
 	public static final String SQL_INSERT_READING = "insert-reading";
@@ -117,7 +119,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	@Override
 	protected void setStoreStatementValues(ChargeSession session, PreparedStatement ps)
 			throws SQLException {
-		// Row order is: (created, sessid_hi, sessid_lo, idtag, socketid, xid, ended)
+		// Row order is: (created, sessid_hi, sessid_lo, idtag, socketid, xid, ended, posted)
 		ps.setTimestamp(1, new Timestamp(session.getCreated() != null ? session.getCreated().getTime()
 				: System.currentTimeMillis()), utcCalendar);
 		UUID pk = UUID.fromString(session.getSessionId());
@@ -139,6 +141,14 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		} else {
 			ps.setNull(8, Types.TIMESTAMP);
 		}
+		if ( session.getPosted() != null ) {
+			// store ts in UTC time zone
+			Calendar cal = calendarForDate(session.getPosted());
+			Timestamp ts = new Timestamp(cal.getTimeInMillis());
+			ps.setTimestamp(9, ts, cal);
+		} else {
+			ps.setNull(9, Types.TIMESTAMP);
+		}
 	}
 
 	private int updateDomainObject(final ChargeSession session, final String sql) {
@@ -146,6 +156,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				// cols: auth_status = ?, xid = ?, ended = ?, posted = ?
+				//       sessionid_hi, sessionid_lo
 				PreparedStatement ps = con.prepareStatement(sql);
 				ps.setString(1, session.getStatus() != null ? session.getStatus().toString() : null);
 				if ( session.getTransactionId() == null ) {
@@ -161,10 +173,18 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 				} else {
 					ps.setNull(3, Types.TIMESTAMP);
 				}
+				if ( session.getPosted() != null ) {
+					// store ts in UTC time zone
+					Calendar cal = calendarForDate(session.getPosted());
+					Timestamp ts = new Timestamp(cal.getTimeInMillis());
+					ps.setTimestamp(4, ts, cal);
+				} else {
+					ps.setNull(4, Types.TIMESTAMP);
+				}
 
 				UUID pk = UUID.fromString(session.getSessionId());
-				ps.setLong(4, pk.getMostSignificantBits());
-				ps.setLong(5, pk.getLeastSignificantBits());
+				ps.setLong(5, pk.getMostSignificantBits());
+				ps.setLong(6, pk.getLeastSignificantBits());
 				return ps;
 			}
 		});
@@ -206,6 +226,29 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			return results.get(0);
 		}
 		return null;
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public List<ChargeSession> getIncompleteChargeSessions() {
+		return getJdbcTemplate().query(getSqlResource(SQL_GET_INCOMPLETE_SESSIONS),
+				new ChargeSessionRowMapper());
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public List<ChargeSession> getChargeSessionsNeedingPosting(final int max) {
+		return getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+
+				PreparedStatement stmt = con.prepareStatement(getSqlResource(SQL_GET_NEEDING_POSTING),
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+				stmt.setMaxRows(max);
+				return stmt;
+			}
+		}, new ChargeSessionRowMapper());
 	}
 
 	@Override
@@ -285,7 +328,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		@Override
 		public ChargeSession mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ChargeSession row = new ChargeSession();
-			// Row order is: created, sessid_hi, sessid_lo, idtag, socketid, auth_status, xid, ended
+			// Row order is: created, sessid_hi, sessid_lo, idtag, socketid, auth_status, xid, ended, posted
 			Timestamp ts = rs.getTimestamp(1, utcCalendar);
 			if ( ts != null ) {
 				row.setCreated(new Date(ts.getTime()));
@@ -308,6 +351,12 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			if ( ts != null ) {
 				row.setEnded(new Date(ts.getTime()));
 			}
+
+			ts = rs.getTimestamp(9, utcCalendar);
+			if ( ts != null ) {
+				row.setPosted(new Date(ts.getTime()));
+			}
+
 			return row;
 		}
 	}
