@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.ocpp;
 
-import ocpp.v15.AuthorizationStatus;
+import ocpp.v15.cs.AuthorizationStatus;
 
 /**
  * Generic exception for OCPP specific conditions.

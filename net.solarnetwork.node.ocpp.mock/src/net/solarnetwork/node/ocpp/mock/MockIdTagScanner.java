@@ -42,7 +42,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import ocpp.v15.AuthorizationStatus;
+import ocpp.v15.cs.AuthorizationStatus;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;

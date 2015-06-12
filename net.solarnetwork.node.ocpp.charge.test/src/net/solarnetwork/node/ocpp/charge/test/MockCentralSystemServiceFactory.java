@@ -23,7 +23,7 @@
 package net.solarnetwork.node.ocpp.charge.test;
 
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
-import ocpp.v15.CentralSystemService;
+import ocpp.v15.cs.CentralSystemService;
 
 /**
  * Mock implementation of {@link CentralSystemServiceFactory} to help testing.

@@ -24,7 +24,7 @@ package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
 import java.util.List;
-import ocpp.v15.MeterValue;
+import ocpp.v15.cs.MeterValue;
 
 /**
  * DAO API for {@link ChargeSession} entities.

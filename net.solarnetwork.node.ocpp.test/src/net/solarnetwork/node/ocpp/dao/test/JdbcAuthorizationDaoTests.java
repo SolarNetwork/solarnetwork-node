@@ -34,7 +34,7 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.dao.JdbcAuthorizationDao;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import ocpp.v15.AuthorizationStatus;
+import ocpp.v15.cs.AuthorizationStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

@@ -23,7 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
-import ocpp.v15.IdTagInfo;
+import ocpp.v15.cs.IdTagInfo;
 
 /**
  * Representation of a charge session.

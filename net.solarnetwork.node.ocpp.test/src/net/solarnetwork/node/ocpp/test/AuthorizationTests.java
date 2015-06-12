@@ -28,8 +28,8 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.test.AbstractNodeTest;
-import ocpp.v15.AuthorizationStatus;
-import ocpp.v15.IdTagInfo;
+import ocpp.v15.cs.AuthorizationStatus;
+import ocpp.v15.cs.IdTagInfo;
 import org.junit.Assert;
 import org.junit.Test;
 

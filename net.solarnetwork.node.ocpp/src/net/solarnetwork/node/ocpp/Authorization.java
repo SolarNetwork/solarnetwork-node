@@ -23,8 +23,8 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
-import ocpp.v15.AuthorizationStatus;
-import ocpp.v15.IdTagInfo;
+import ocpp.v15.cs.AuthorizationStatus;
+import ocpp.v15.cs.IdTagInfo;
 
 /**
  * Extension of {@link IdTagInfo} to associate an ID tag value with the info

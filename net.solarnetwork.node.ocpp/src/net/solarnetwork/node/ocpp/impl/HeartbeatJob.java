@@ -24,9 +24,9 @@ package net.solarnetwork.node.ocpp.impl;
 
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
-import ocpp.v15.CentralSystemService;
-import ocpp.v15.HeartbeatRequest;
-import ocpp.v15.HeartbeatResponse;
+import ocpp.v15.cs.CentralSystemService;
+import ocpp.v15.cs.HeartbeatRequest;
+import ocpp.v15.cs.HeartbeatResponse;
 import org.quartz.JobExecutionContext;
 import org.quartz.StatefulJob;
 

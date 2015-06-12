@@ -29,9 +29,9 @@ import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.AuthorizationManager;
 import net.solarnetwork.node.ocpp.support.CentralSystemServiceFactorySupport;
 import net.solarnetwork.util.OptionalService;
-import ocpp.v15.AuthorizationStatus;
-import ocpp.v15.AuthorizeRequest;
-import ocpp.v15.AuthorizeResponse;
+import ocpp.v15.cs.AuthorizationStatus;
+import ocpp.v15.cs.AuthorizeRequest;
+import ocpp.v15.cs.AuthorizeResponse;
 
 /**
  * Default implementation of {@link AuthorizationManager}. This implementation

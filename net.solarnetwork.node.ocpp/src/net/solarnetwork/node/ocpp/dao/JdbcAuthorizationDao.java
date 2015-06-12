@@ -37,7 +37,7 @@ import java.util.Map;
 import javax.xml.datatype.XMLGregorianCalendar;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
-import ocpp.v15.AuthorizationStatus;
+import ocpp.v15.cs.AuthorizationStatus;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;

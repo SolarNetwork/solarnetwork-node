@@ -23,7 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import net.solarnetwork.node.Identifiable;
-import ocpp.v15.CentralSystemService;
+import ocpp.v15.cs.CentralSystemService;
 
 /**
  * A factory for {@link CentralSystemService} instances.

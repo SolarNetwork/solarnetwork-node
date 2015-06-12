@@ -23,7 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
-import ocpp.v15.MeterValue;
+import ocpp.v15.cs.MeterValue;
 
 /**
  * Representation of a meter reading value.

@@ -24,8 +24,8 @@ package net.solarnetwork.node.ocpp;
 
 import java.util.Date;
 import java.util.Map;
-import ocpp.v15.AuthorizationStatus;
-import ocpp.v15.IdTagInfo;
+import ocpp.v15.cs.AuthorizationStatus;
+import ocpp.v15.cs.IdTagInfo;
 
 /**
  * DAO for a local authorization list.
