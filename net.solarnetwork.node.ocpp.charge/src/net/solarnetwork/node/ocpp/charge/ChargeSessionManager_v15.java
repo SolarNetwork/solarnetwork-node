@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -85,6 +87,9 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
 
+	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
+			8);
+
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
 	public ChargeSession activeChargeSession(String socketId) {
@@ -93,7 +98,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public String initiateChargeSession(String idTag, String socketId, Integer reservationId) {
+	public String initiateChargeSession(final String idTag, final String socketId,
+			final Integer reservationId) {
 		final Integer connectorId = socketConnectorMapping.get(socketId);
 		if ( connectorId == null ) {
 			log.error("No connector ID configured for socket ID {}", socketId);
@@ -108,37 +114,43 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 
 		final long now = System.currentTimeMillis();
-		final String meterSourceId = socketMeterSourceMapping.get(socketId);
-		if ( meterSourceId == null ) {
-			log.warn(
-					"No meter source ID available for socket ID {}, starting meter value will not be available for charge session",
-					socketId);
+		final Object socketLock = ignoreReadingsForSocket(socketId);
+		synchronized ( socketLock ) {
+			try {
+				final String meterSourceId = socketMeterSourceMapping.get(socketId);
+				if ( meterSourceId == null ) {
+					log.warn(
+							"No meter source ID available for socket ID {}, starting meter value will not be available for charge session",
+							socketId);
+				}
+
+				final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
+
+				session = new ChargeSession();
+				session.setCreated(new Date(now));
+				session.setIdTag(idTag);
+				session.setSocketId(socketId);
+
+				final boolean authorized = authManager.authorize(idTag);
+				log.debug("{} authorized: {}", idTag, authorized);
+
+				// we ALLOW the session even if no client available and post the results up later
+				postStartTransaction(idTag, reservationId, connectorId, session, now, meterReading);
+
+				final String sessionId = chargeSessionDao.storeChargeSession(session);
+
+				// insert transaction begin readings
+				List<Value> readings = readingsForDatum(meterReading);
+				for ( Value v : readings ) {
+					v.setContext(ReadingContext.TRANSACTION_BEGIN);
+				}
+				chargeSessionDao.addMeterReadings(sessionId,
+						(meterReading != null ? meterReading.getCreated() : new Date(now)), readings);
+				return sessionId;
+			} finally {
+				resumeReadingsForSocket(socketId, socketLock);
+			}
 		}
-
-		final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
-
-		session = new ChargeSession();
-		session.setCreated(new Date(now));
-		session.setIdTag(idTag);
-		session.setSocketId(socketId);
-
-		final boolean authorized = authManager.authorize(idTag);
-		log.debug("{} authorized: {}", idTag, authorized);
-
-		// we ALLOW the session even if no client available and post the results up later
-		postStartTransaction(idTag, reservationId, connectorId, session, now, meterReading);
-
-		final String sessionId = chargeSessionDao.storeChargeSession(session);
-
-		// insert transaction begin readings
-		List<Value> readings = readingsForDatum(meterReading);
-		for ( Value v : readings ) {
-			v.setContext(ReadingContext.TRANSACTION_BEGIN);
-		}
-		chargeSessionDao.addMeterReadings(sessionId, (meterReading != null ? meterReading.getCreated()
-				: new Date(now)), readings);
-
-		return sessionId;
 	}
 
 	/**
@@ -207,30 +219,39 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 
 		final long now = System.currentTimeMillis();
+		final String socketId = session.getSocketId();
 
-		// get current meter reading
-		final String meterSourceId = socketMeterSourceMapping.get(session.getSocketId());
-		if ( meterSourceId == null ) {
-			log.warn(
-					"No meter source ID available for socket ID {}, final meter value will not be available for charge session",
-					session.getSocketId());
+		// mark this socket as "stopping" so the subsequent meter reading doesn't get added
+		final Object socketLock = ignoreReadingsForSocket(socketId);
+		synchronized ( socketLock ) {
+			try {
+				// get current meter reading
+				final String meterSourceId = socketMeterSourceMapping.get(socketId);
+				if ( meterSourceId == null ) {
+					log.warn(
+							"No meter source ID available for socket ID {}, final meter value will not be available for charge session",
+							session.getSocketId());
+				}
+				final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
+
+				// add end transaction readings
+				List<Value> readings = readingsForDatum(meterReading);
+				for ( Value v : readings ) {
+					v.setContext(ReadingContext.TRANSACTION_END);
+				}
+				chargeSessionDao.addMeterReadings(sessionId,
+						(meterReading != null ? meterReading.getCreated() : new Date(now)), readings);
+
+				// post the stop transaction, if we have a transaction ID
+				postStopTransaction(idTag, session, now, meterReading);
+
+				// persist changes to DB
+				session.setEnded(new Date(now));
+				chargeSessionDao.storeChargeSession(session);
+			} finally {
+				resumeReadingsForSocket(socketId, socketLock);
+			}
 		}
-		final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
-
-		// add end transaction readings
-		List<Value> readings = readingsForDatum(meterReading);
-		for ( Value v : readings ) {
-			v.setContext(ReadingContext.TRANSACTION_END);
-		}
-		chargeSessionDao.addMeterReadings(sessionId, (meterReading != null ? meterReading.getCreated()
-				: new Date(now)), readings);
-
-		// post the stop transaction, if we have a transaction ID
-		postStopTransaction(idTag, session, now, meterReading);
-
-		// persist changes to DB
-		session.setEnded(new Date(now));
-		chargeSessionDao.storeChargeSession(session);
 	}
 
 	/**
@@ -326,6 +347,51 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		return null;
 	}
 
+	/**
+	 * Mark a socket to ignore meter readings.
+	 * 
+	 * @param socketId
+	 *        The socket ID to ignore readings from, or to stop ignoring.
+	 * @return An object suitable for synchronizing on and that must be passed
+	 *         to {@link #resumeReadingsForSocket(String, Object)} to clear the
+	 *         ignore flag.
+	 * @see #shouldIgnoreReadingsForSocket(String)
+	 * @see #resumeReadingsForSocket(String, Object)
+	 */
+	private Object ignoreReadingsForSocket(final String socketId) {
+		Object lock = new Object();
+		Object existingLock = socketReadingsIgnoreMap.putIfAbsent(socketId, lock);
+		return (existingLock != null ? existingLock : lock);
+	}
+
+	/**
+	 * Clear the ignore flag previously set via
+	 * {@link #ignoreReadingsForSocket(String)}.
+	 * 
+	 * @param socketId
+	 *        The socket ID to resume listening to.
+	 * @param socketLock
+	 *        The lock previously returned from
+	 *        {@link #ignoreReadingsForSocket(String)}.
+	 */
+	private void resumeReadingsForSocket(final String socketId, final Object socketLock) {
+		if ( socketLock != null ) {
+			socketReadingsIgnoreMap.remove(socketId, socketLock);
+		}
+	}
+
+	/**
+	 * Test if a socket ID is marked as "stopping" from a previous call to
+	 * {@link #markSocketAsStopping(String)}.
+	 * 
+	 * @param socketId
+	 *        The socket ID to test.
+	 * @return <em>true</em> if the socket is considered in "stopping" mode.
+	 */
+	private boolean shouldIgnoreReadingsForSocket(String socketId) {
+		return socketReadingsIgnoreMap.containsKey(socketId);
+	}
+
 	// EventHandler
 
 	@Override
@@ -373,6 +439,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	private void handleDatumCapturedEvent(String socketId, String sourceId,
 			Map<String, Object> eventProperties) {
+		if ( shouldIgnoreReadingsForSocket(socketId) ) {
+			log.debug("Ignoring DATUM_CAPTURED event for socket {} that is stopping", socketId);
+			return;
+		}
 		ChargeSession active = activeChargeSession(socketId);
 		if ( active == null ) {
 			return;
