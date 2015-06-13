@@ -26,10 +26,12 @@ import java.net.URL;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
+import javax.xml.ws.handler.Handler;
 import javax.xml.ws.soap.AddressingFeature;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
@@ -37,12 +39,14 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.cs.BootNotificationRequest;
 import ocpp.v15.cs.BootNotificationResponse;
 import ocpp.v15.cs.CentralSystemService;
 import ocpp.v15.cs.CentralSystemService_Service;
 import ocpp.v15.cs.RegistrationStatus;
+import ocpp.v15.support.WSAddressingFromHandler;
 import org.osgi.framework.Version;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -84,6 +88,8 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	private Scheduler scheduler;
 
 	private CentralSystemService service;
+	private boolean useFromAddress;
+	private final WSAddressingFromHandler fromHandler = new WSAddressingFromHandler();
 	private BootNotificationResponse bootNotificationResponse;
 	private Throwable bootNotificationError;
 	private SimpleTrigger heartbeatTrigger;
@@ -137,9 +143,47 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			((BindingProvider) client).getRequestContext().put(
 					BindingProvider.ENDPOINT_ADDRESS_PROPERTY, this.url);
 			result = client;
+			setupFromHandler(client, useFromAddress);
 			service = client;
 		}
 		return service;
+	}
+
+	private void setupFromHandler(final CentralSystemService client, final boolean use) {
+		if ( client == null ) {
+			return;
+		}
+
+		BindingProvider bindingProvider = (BindingProvider) client;
+		boolean modified = false;
+		@SuppressWarnings("rawtypes")
+		List<Handler> chain = bindingProvider.getBinding().getHandlerChain();
+		if ( use ) {
+			boolean found = false;
+			for ( Handler<?> h : chain ) {
+				if ( h == fromHandler ) {
+					found = true;
+					break;
+				}
+			}
+			if ( !found ) {
+				chain.add(fromHandler);
+				modified = true;
+			}
+		} else {
+			for ( @SuppressWarnings("rawtypes")
+			Iterator<Handler> itr = chain.iterator(); itr.hasNext(); ) {
+				Handler<?> h = itr.next();
+				if ( h == fromHandler ) {
+					itr.remove();
+					modified = true;
+					break;
+				}
+			}
+		}
+		if ( modified ) {
+			bindingProvider.getBinding().setHandlerChain(chain);
+		}
 	}
 
 	/**
@@ -301,6 +345,17 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
 		results.add(new BasicTextFieldSettingSpecifier("chargePointModel", defaults.chargePointModel));
 		results.add(new BasicTextFieldSettingSpecifier("chargePointVendor", defaults.chargePointVendor));
+
+		results.add(new BasicToggleSettingSpecifier("useFromAddress", defaults.useFromAddress));
+		results.add(new BasicTextFieldSettingSpecifier("fromHandler.fromURL", defaults.fromHandler
+				.getFromURL()));
+		results.add(new BasicTextFieldSettingSpecifier("fromHandler.dynamicFromPath",
+				defaults.fromHandler.getDynamicFromPath()));
+		results.add(new BasicTextFieldSettingSpecifier("fromHandler.networkInterfaceName",
+				defaults.fromHandler.getNetworkInterfaceName()));
+		results.add(new BasicToggleSettingSpecifier("fromHandler.preferIPv4Address",
+				defaults.fromHandler.isPreferIPv4Address()));
+
 		return results;
 	}
 
@@ -458,6 +513,35 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	 */
 	public void setScheduler(Scheduler scheduler) {
 		this.scheduler = scheduler;
+	}
+
+	/**
+	 * Get the flag to add WS-Addressing {@code From} headers into outbound OCPP
+	 * messages.
+	 * 
+	 * @return Boolean
+	 */
+	public boolean isUseFromAddress() {
+		return useFromAddress;
+	}
+
+	/**
+	 * Set the flag to add WS-Addressing {@code From} headers into outbound OCPP
+	 * messages. If set to <em>true</em> then the {@code fromAddress} property
+	 * will be used as the address value. If that property is not configured, a
+	 * default HTTP URL will be constructed out of the system's local IP address
+	 * with a default path of {@code /ocpp} added.
+	 * 
+	 * @param useFromAddress
+	 *        Boolean
+	 */
+	public void setUseFromAddress(boolean useFromAddress) {
+		this.useFromAddress = useFromAddress;
+		setupFromHandler(getServiceInternal(), useFromAddress);
+	}
+
+	public WSAddressingFromHandler getFromHandler() {
+		return fromHandler;
 	}
 
 }
