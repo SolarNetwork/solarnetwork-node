@@ -120,14 +120,14 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	 */
 	public void startup() {
 		log.info("Starting up OCPP service {}", url);
-		service();
+		configureHeartbeat(30, 1);
 	}
 
 	/**
 	 * Shutdown the OCPP client, releasing any associated resources.
 	 */
 	public void shutdown() {
-		configureHeartbeat(0);
+		configureHeartbeat(0, 0);
 		bootNotificationResponse = null;
 		bootNotificationError = null;
 	}
@@ -209,7 +209,13 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		return nodePrincipal.getName();
 	}
 
-	private boolean postBootNotification() {
+	@Override
+	public boolean isBootNotificationPosted() {
+		return (bootNotificationResponse != null);
+	}
+
+	@Override
+	public boolean postBootNotification() {
 		IdentityService ident = (identityService != null ? identityService.service() : null);
 		if ( ident == null ) {
 			log.debug("IdentityService not available; cannot post BootNotification");
@@ -251,14 +257,14 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		log.info("OCPP BootNotification reply: {} @ {}; heartbeat {}s", response.getStatus(),
 				response.getCurrentTime(), response.getHeartbeatInterval());
 		if ( RegistrationStatus.ACCEPTED == response.getStatus()
-				&& configureHeartbeat(response.getHeartbeatInterval()) ) {
+				&& configureHeartbeat(response.getHeartbeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY) ) {
 			bootNotificationResponse = response;
 		} else {
 			bootNotificationResponse = response;
 		}
 	}
 
-	private boolean configureHeartbeat(int heartbeatInterval) {
+	private boolean configureHeartbeat(final int heartbeatInterval, final int repeatCount) {
 		Scheduler sched = scheduler;
 		if ( sched == null ) {
 			log.warn("No scheduler avaialable, cannot schedule heartbeat job");
@@ -268,7 +274,8 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		SimpleTrigger trigger = heartbeatTrigger;
 		if ( trigger != null ) {
 			// check if heartbeatInterval actually changed
-			if ( trigger.getRepeatInterval() == repeatInterval ) {
+			if ( trigger.getRepeatInterval() == repeatInterval
+					&& trigger.getRepeatCount() == repeatCount ) {
 				log.debug("Heartbeat interval unchanged at {}s", heartbeatInterval);
 				return true;
 			}
@@ -283,6 +290,14 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 				}
 			} else {
 				trigger.setRepeatInterval(repeatInterval);
+				trigger.setRepeatCount(repeatCount);
+				try {
+					sched.rescheduleJob(trigger.getName(), trigger.getGroup(), trigger);
+				} catch ( SchedulerException e ) {
+					log.error("Error rescheduling OCPP heartbeat job", e);
+				} finally {
+					heartbeatTrigger = null;
+				}
 			}
 			return true;
 		} else if ( heartbeatInterval < 1 ) {
@@ -305,7 +320,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 				SimpleTriggerFactoryBean t = new SimpleTriggerFactoryBean();
 				t.setName(this.url);
 				t.setGroup(SCHEDULER_GROUP);
-				t.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
+				t.setRepeatCount(repeatCount);
 				t.setRepeatInterval(repeatInterval);
 				t.setStartDelay(repeatInterval);
 				t.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);

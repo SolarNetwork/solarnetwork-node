@@ -70,4 +70,14 @@ public class MockCentralSystemServiceFactory implements CentralSystemServiceFact
 		return chargeBoxIdentity;
 	}
 
+	@Override
+	public boolean isBootNotificationPosted() {
+		return false;
+	}
+
+	@Override
+	public boolean postBootNotification() {
+		return false;
+	}
+
 }

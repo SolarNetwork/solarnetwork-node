@@ -41,6 +41,22 @@ public interface CentralSystemServiceFactory extends Identifiable {
 	CentralSystemService service();
 
 	/**
+	 * Return <em>true</em> if the {@code BootNotification} message has been
+	 * posted to the central system.
+	 * 
+	 * @return Boolean
+	 */
+	boolean isBootNotificationPosted();
+
+	/**
+	 * Post the {@code BootNotification} message to the central system.
+	 * 
+	 * @return Return <em>true</em> if the notification was sent and the
+	 *         response received without error.
+	 */
+	boolean postBootNotification();
+
+	/**
 	 * Get the ChargeBoxIdentity value to use.
 	 * 
 	 * @return The ChargeBoxIdentity value to use, or <em>null</em> if not

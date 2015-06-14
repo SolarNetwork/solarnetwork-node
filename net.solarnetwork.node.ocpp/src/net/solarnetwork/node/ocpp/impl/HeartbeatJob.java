@@ -47,6 +47,12 @@ public class HeartbeatJob extends AbstractJob implements StatefulJob {
 			log.warn("No CentralSystemServiceFactory available, cannot post heartbeat message.");
 			return;
 		}
+
+		if ( !service.isBootNotificationPosted() ) {
+			service.postBootNotification();
+			return;
+		}
+
 		CentralSystemService client = service.service();
 		if ( client == null ) {
 			log.warn("No CentralSystemService avaialble, cannot post heartbeat message.");
