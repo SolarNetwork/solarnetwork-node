@@ -62,7 +62,7 @@ import ocpp.v15.cp.UpdateFirmwareResponse;
  * @author matt
  * @version 1.0
  */
-@WebService(serviceName = "ChargePointService_v15")
+@WebService(serviceName = "ChargePointService", targetNamespace = "urn://Ocpp/Cp/2012/06/")
 public class ChargePointService_v15 implements ChargePointService {
 
 	@Override
