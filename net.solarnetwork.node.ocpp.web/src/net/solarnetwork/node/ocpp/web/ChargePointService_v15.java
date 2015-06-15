@@ -27,7 +27,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.jws.WebService;
+import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -53,6 +56,7 @@ import ocpp.v15.cp.GetDiagnosticsRequest;
 import ocpp.v15.cp.GetDiagnosticsResponse;
 import ocpp.v15.cp.GetLocalListVersionRequest;
 import ocpp.v15.cp.GetLocalListVersionResponse;
+import ocpp.v15.cp.RemoteStartStopStatus;
 import ocpp.v15.cp.RemoteStartTransactionRequest;
 import ocpp.v15.cp.RemoteStartTransactionResponse;
 import ocpp.v15.cp.RemoteStopTransactionRequest;
@@ -68,6 +72,8 @@ import ocpp.v15.cp.UnlockConnectorResponse;
 import ocpp.v15.cp.UnlockStatus;
 import ocpp.v15.cp.UpdateFirmwareRequest;
 import ocpp.v15.cp.UpdateFirmwareResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 
 /**
@@ -82,6 +88,9 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	private ChargeSessionManager chargeSessionManager;
 
 	private MessageSource messageSource;
+	private final ExecutorService executor = Executors.newCachedThreadPool();
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
 	public UnlockConnectorResponse unlockConnector(UnlockConnectorRequest parameters,
@@ -100,8 +109,7 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 
 	@Override
 	public ResetResponse reset(ResetRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -134,81 +142,117 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	@Override
 	public GetDiagnosticsResponse getDiagnostics(GetDiagnosticsRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ClearCacheResponse clearCache(ClearCacheRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public UpdateFirmwareResponse updateFirmware(UpdateFirmwareRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ChangeConfigurationResponse changeConfiguration(ChangeConfigurationRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public RemoteStartTransactionResponse remoteStartTransaction(
-			RemoteStartTransactionRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+			final RemoteStartTransactionRequest parameters, final String chargeBoxIdentity) {
+		final Integer connId = parameters.getConnectorId();
+		final String socketId;
+		final RemoteStartTransactionResponse resp = new RemoteStartTransactionResponse();
+		if ( connId != null ) {
+			socketId = chargeSessionManager.socketIdForConnectorId(connId);
+		} else {
+			Collection<String> socketIds = chargeSessionManager.availableSocketIds();
+			if ( socketIds.isEmpty() ) {
+				socketId = null;
+			} else {
+				socketId = socketIds.iterator().next();
+			}
+		}
+		if ( socketId == null ) {
+			resp.setStatus(RemoteStartStopStatus.REJECTED);
+		} else {
+			// kick off to another thread so as not to delay our response
+			executor.submit(new Runnable() {
+
+				@Override
+				public void run() {
+					String sessionId = chargeSessionManager.initiateChargeSession(parameters.getIdTag(),
+							socketId, null);
+					log.debug("Initiated remote charge session {} for IdTag {} on socket {}", sessionId,
+							parameters.getIdTag(), socketId);
+				}
+			});
+			resp.setStatus(RemoteStartStopStatus.ACCEPTED);
+		}
+		return resp;
 	}
 
 	@Override
 	public RemoteStopTransactionResponse remoteStopTransaction(RemoteStopTransactionRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		final int txId = parameters.getTransactionId();
+		final RemoteStopTransactionResponse resp = new RemoteStopTransactionResponse();
+		final ChargeSession session = chargeSessionManager.activeChargeSession(txId);
+		if ( session == null ) {
+			resp.setStatus(RemoteStartStopStatus.REJECTED);
+		} else {
+			// kick off to another thread so as not to delay our response
+			executor.submit(new Runnable() {
+
+				@Override
+				public void run() {
+					chargeSessionManager.completeChargeSession(session.getIdTag(),
+							session.getSessionId());
+					log.debug("Completed remote charge session {} for IdTag {} on socket {}",
+							session.getSessionId(), session.getIdTag(), session.getSocketId());
+				}
+			});
+			resp.setStatus(RemoteStartStopStatus.ACCEPTED);
+		}
+		return resp;
 	}
 
 	@Override
 	public CancelReservationResponse cancelReservation(CancelReservationRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public DataTransferResponse dataTransfer(DataTransferRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public GetConfigurationResponse getConfiguration(GetConfigurationRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public GetLocalListVersionResponse getLocalListVersion(GetLocalListVersionRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ReserveNowResponse reserveNow(ReserveNowRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public SendLocalListResponse sendLocalList(SendLocalListRequest parameters, String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -237,7 +281,12 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	}
 
 	private String getInfoMessage(Locale locale) {
-		return ""; // TODO
+		ChargeSessionManager mgr = chargeSessionManager;
+		String managerUID = (mgr != null ? mgr.getUID() : null);
+		if ( managerUID != null ) {
+			return messageSource.getMessage("status", new Object[] { managerUID }, locale);
+		}
+		return messageSource.getMessage("status.noManager", null, locale);
 	}
 
 	public ChargeSessionManager getChargeSessionManager() {

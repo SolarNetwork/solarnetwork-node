@@ -64,6 +64,17 @@ public interface ChargeSessionDao {
 	ChargeSession getIncompleteChargeSessionForSocket(String socketId);
 
 	/**
+	 * Get an <em>incomplete</em> charge session for a given transaction ID. An
+	 * <em>incomplete</em> session is one that has no {@code ended} date.
+	 * 
+	 * @param transactionId
+	 *        The transaction ID to look for.
+	 * @return The first available incomplete charge session, or <em>null</em>
+	 *         if not found.
+	 */
+	ChargeSession getIncompleteChargeSessionForTransaction(int transactionId);
+
+	/**
 	 * Get all available <em>incomplete</em> charge sessions. An
 	 * <em>incomplete</em> session is one that has no {@code ended} date.
 	 * 

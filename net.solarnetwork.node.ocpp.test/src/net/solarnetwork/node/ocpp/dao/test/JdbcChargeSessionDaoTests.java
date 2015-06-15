@@ -56,6 +56,7 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 
 	private static final String TEST_ID_TAG = "test.tag";
 	private static final String TEST_SOCKET_ID = "test.socket";
+	private static final int TEST_TRANSACTION_ID = 789;
 
 	@Resource(name = "dataSource")
 	private DataSource dataSource;
@@ -102,7 +103,7 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		insert();
 		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
 		session.setStatus(AuthorizationStatus.ACCEPTED);
-		session.setTransactionId(-1);
+		session.setTransactionId(TEST_TRANSACTION_ID);
 		session.setEnded(new Date());
 		dao.storeChargeSession(session);
 		ChargeSession updated = dao.getChargeSession(lastSession.getSessionId());
@@ -220,6 +221,26 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull("Found", result);
 		Assert.assertEquals("Socket ID", TEST_SOCKET_ID, result.getSocketId());
 		Assert.assertEquals("Session ID", lastSession.getSessionId(), result.getSessionId());
+	}
+
+	@Test
+	public void findIncompleteForTransactionNone() {
+		insert();
+		ChargeSession result = dao.getIncompleteChargeSessionForTransaction(TEST_TRANSACTION_ID);
+		Assert.assertNull("Not found", result);
+	}
+
+	@Test
+	public void findIncompleteForTransaction() {
+		insert();
+		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
+		session.setTransactionId(TEST_TRANSACTION_ID);
+		dao.storeChargeSession(session);
+		ChargeSession result = dao.getIncompleteChargeSessionForTransaction(TEST_TRANSACTION_ID);
+		Assert.assertNotNull("Found", result);
+		Assert.assertEquals("Socket ID", TEST_SOCKET_ID, result.getSocketId());
+		Assert.assertEquals("Session ID", lastSession.getSessionId(), result.getSessionId());
+		Assert.assertEquals("Transaction ID", session.getTransactionId(), result.getTransactionId());
 	}
 
 	@Test

@@ -81,11 +81,27 @@ public interface ChargeSessionManager extends Identifiable {
 	 * passing the same {@code idTag} and {@code socketId} values.
 	 * 
 	 * @param socketId
-	 *        The ID of the physical socket to enable
+	 *        The ID of the physical socket to get the session for.
 	 * @return The active charge session, or <em>null</em> if there is no active
-	 *         charge session for the given arguments.
+	 *         charge session for the given socket ID.
 	 */
 	ChargeSession activeChargeSession(String socketId);
+
+	/**
+	 * Get an <em>active</em> charge session for an OCPP transaction ID, if
+	 * available. A charge session is considered <em>active</em> if one exists
+	 * from a previous call to
+	 * {@link #initiateChargeSession(String, String, Integer)} without any
+	 * corresponding call to {@link #completeChargeSession(String, String)}.
+	 * This method will only work if the charge session has successfully
+	 * obtained a transaction ID from the central system.
+	 * 
+	 * @param transactionId
+	 *        The ID of the transaction to get the session for.
+	 * @return The active charge session, or <em>null</em> if there is no active
+	 *         charge session for the given transaction ID.
+	 */
+	ChargeSession activeChargeSession(Number transactionId);
 
 	/**
 	 * Complete a charge session. This method must be called at some point after

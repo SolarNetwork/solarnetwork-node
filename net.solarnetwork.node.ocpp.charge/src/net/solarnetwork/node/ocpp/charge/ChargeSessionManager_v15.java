@@ -102,6 +102,13 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public ChargeSession activeChargeSession(Number transactionId) {
+		int xid = transactionId.intValue();
+		return chargeSessionDao.getIncompleteChargeSessionForTransaction(xid);
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
 	public Collection<String> availableSocketIds() {
 		return new HashSet<String>(socketConnectorMapping.keySet());
 	}

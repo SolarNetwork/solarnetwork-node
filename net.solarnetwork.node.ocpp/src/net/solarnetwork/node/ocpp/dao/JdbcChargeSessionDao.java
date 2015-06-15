@@ -76,6 +76,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 	public static final String SQL_GET_BY_PK = "get-pk";
 	public static final String SQL_GET_BY_IDTAG = "get-idtag";
 	public static final String SQL_GET_INCOMPLETE_BY_SOCKETID = "get-socket-incomplete";
+	public static final String SQL_GET_INCOMPLETE_BY_TRANSACTIONID = "get-tx-incomplete";
 	public static final String SQL_GET_INCOMPLETE_SESSIONS = "get-incomplete";
 	public static final String SQL_GET_NEEDING_POSTING = "get-needsposting";
 	public static final String SQL_DELETE_COMPLETED = "delete-completed";
@@ -213,6 +214,28 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 						ResultSet.CONCUR_READ_ONLY);
 				stmt.setMaxRows(1);
 				stmt.setString(1, socketId);
+				return stmt;
+			}
+		}, new ChargeSessionRowMapper());
+		if ( results != null && results.size() > 0 ) {
+			return results.get(0);
+		}
+		return null;
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public ChargeSession getIncompleteChargeSessionForTransaction(final int transactionId) {
+		List<ChargeSession> results = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+
+				PreparedStatement stmt = con.prepareStatement(
+						getSqlResource(SQL_GET_INCOMPLETE_BY_TRANSACTIONID),
+						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+				stmt.setMaxRows(1);
+				stmt.setInt(1, transactionId);
 				return stmt;
 			}
 		}, new ChargeSessionRowMapper());
