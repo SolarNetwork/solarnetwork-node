@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.ocpp.dao;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -39,7 +38,6 @@ import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import ocpp.v15.cs.AuthorizationStatus;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
@@ -90,25 +88,7 @@ public class JdbcAuthorizationDao extends AbstractOcppJdbcDao<Authorization> imp
 	public void storeAuthorization(final Authorization auth) {
 		Authorization existing = getAuthorization(auth.getIdTag());
 		if ( existing != null ) {
-			getJdbcTemplate().update(new PreparedStatementCreator() {
-
-				@Override
-				public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-					PreparedStatement ps = con.prepareStatement(getSqlResource(SQL_UPDATE));
-					ps.setString(1, auth.getParentIdTag());
-					ps.setString(2, auth.getStatus().toString());
-					if ( auth.getExpiryDate() != null ) {
-						// store ts in UTC time zone
-						Calendar cal = calendarForXMLDate(auth.getExpiryDate());
-						Timestamp ts = new Timestamp(cal.getTimeInMillis());
-						ps.setTimestamp(3, ts, cal);
-					} else {
-						ps.setNull(3, Types.TIMESTAMP);
-					}
-					ps.setString(4, auth.getIdTag());
-					return ps;
-				}
-			});
+			updateDomainObject(auth, getSqlResource(SQL_UPDATE));
 		} else {
 			insertDomainObject(auth, getSqlResource(SQL_INSERT));
 		}
@@ -141,6 +121,22 @@ public class JdbcAuthorizationDao extends AbstractOcppJdbcDao<Authorization> imp
 		} else {
 			ps.setNull(5, Types.TIMESTAMP);
 		}
+	}
+
+	@Override
+	protected void setUpdateStatementValues(Authorization auth, PreparedStatement ps)
+			throws SQLException {
+		ps.setString(1, auth.getParentIdTag());
+		ps.setString(2, auth.getStatus().toString());
+		if ( auth.getExpiryDate() != null ) {
+			// store ts in UTC time zone
+			Calendar cal = calendarForXMLDate(auth.getExpiryDate());
+			Timestamp ts = new Timestamp(cal.getTimeInMillis());
+			ps.setTimestamp(3, ts, cal);
+		} else {
+			ps.setNull(3, Types.TIMESTAMP);
+		}
+		ps.setString(4, auth.getIdTag());
 	}
 
 	@Override

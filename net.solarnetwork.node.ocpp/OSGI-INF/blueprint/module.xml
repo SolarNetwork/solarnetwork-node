@@ -57,11 +57,17 @@
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 
+	<bean id="socketDao" class="net.solarnetwork.node.ocpp.dao.JdbcSocketDao" init-method="init">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service ref="authDao" interface="net.solarnetwork.node.ocpp.AuthorizationDao"/>
 
 	<service ref="chargeSessionDao" interface="net.solarnetwork.node.ocpp.ChargeSessionDao"/>
+
+	<service ref="socketDao" interface="net.solarnetwork.node.ocpp.SocketDao"/>
 
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	

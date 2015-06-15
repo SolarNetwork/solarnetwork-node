@@ -151,43 +151,37 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		}
 	}
 
-	private int updateDomainObject(final ChargeSession session, final String sql) {
-		return getJdbcTemplate().update(new PreparedStatementCreator() {
+	@Override
+	protected void setUpdateStatementValues(ChargeSession session, PreparedStatement ps)
+			throws SQLException {
+		// cols: auth_status = ?, xid = ?, ended = ?, posted = ?
+		//       sessionid_hi, sessionid_lo
+		ps.setString(1, session.getStatus() != null ? session.getStatus().toString() : null);
+		if ( session.getTransactionId() == null ) {
+			ps.setNull(2, Types.BIGINT);
+		} else {
+			ps.setLong(2, session.getTransactionId().longValue());
+		}
+		if ( session.getEnded() != null ) {
+			// store ts in UTC time zone
+			Calendar cal = calendarForDate(session.getEnded());
+			Timestamp ts = new Timestamp(cal.getTimeInMillis());
+			ps.setTimestamp(3, ts, cal);
+		} else {
+			ps.setNull(3, Types.TIMESTAMP);
+		}
+		if ( session.getPosted() != null ) {
+			// store ts in UTC time zone
+			Calendar cal = calendarForDate(session.getPosted());
+			Timestamp ts = new Timestamp(cal.getTimeInMillis());
+			ps.setTimestamp(4, ts, cal);
+		} else {
+			ps.setNull(4, Types.TIMESTAMP);
+		}
 
-			@Override
-			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				// cols: auth_status = ?, xid = ?, ended = ?, posted = ?
-				//       sessionid_hi, sessionid_lo
-				PreparedStatement ps = con.prepareStatement(sql);
-				ps.setString(1, session.getStatus() != null ? session.getStatus().toString() : null);
-				if ( session.getTransactionId() == null ) {
-					ps.setNull(2, Types.BIGINT);
-				} else {
-					ps.setLong(2, session.getTransactionId().longValue());
-				}
-				if ( session.getEnded() != null ) {
-					// store ts in UTC time zone
-					Calendar cal = calendarForDate(session.getEnded());
-					Timestamp ts = new Timestamp(cal.getTimeInMillis());
-					ps.setTimestamp(3, ts, cal);
-				} else {
-					ps.setNull(3, Types.TIMESTAMP);
-				}
-				if ( session.getPosted() != null ) {
-					// store ts in UTC time zone
-					Calendar cal = calendarForDate(session.getPosted());
-					Timestamp ts = new Timestamp(cal.getTimeInMillis());
-					ps.setTimestamp(4, ts, cal);
-				} else {
-					ps.setNull(4, Types.TIMESTAMP);
-				}
-
-				UUID pk = UUID.fromString(session.getSessionId());
-				ps.setLong(5, pk.getMostSignificantBits());
-				ps.setLong(6, pk.getLeastSignificantBits());
-				return ps;
-			}
-		});
+		UUID pk = UUID.fromString(session.getSessionId());
+		ps.setLong(5, pk.getMostSignificantBits());
+		ps.setLong(6, pk.getLeastSignificantBits());
 	}
 
 	@Override
@@ -399,4 +393,5 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			return row;
 		}
 	}
+
 }
