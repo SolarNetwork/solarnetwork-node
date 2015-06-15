@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.ocpp;
 
+import java.util.Collection;
 import net.solarnetwork.node.Identifiable;
 
 /**
@@ -98,5 +99,31 @@ public interface ChargeSessionManager extends Identifiable {
 	 *        {@link #initiateChargeSession(String, String, Integer)}.
 	 */
 	void completeChargeSession(String idTag, String sessionId);
+
+	/**
+	 * Get a socket ID for a specific OCPP connector ID.
+	 * 
+	 * @param connectorId
+	 *        The connector ID to get the equivalent socket ID for.
+	 * @return The socket ID, or <em>null</em> if not known.
+	 */
+	String socketIdForConnectorId(Number connectorId);
+
+	/**
+	 * Get a collection of all available socket IDs.
+	 * 
+	 * @return A collection of socket IDs, never <em>null</em>.
+	 */
+	Collection<String> availableSocketIds();
+
+	/**
+	 * Configure the enabled state of one or more sockets.
+	 * 
+	 * @param socketIds
+	 *        A collection of socket IDs to update the state of.
+	 * @param enabled
+	 *        The enabled state to set.
+	 */
+	void configureSocketEnabledState(Collection<String> socketIds, boolean enabled);
 
 }

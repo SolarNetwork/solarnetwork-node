@@ -9,9 +9,6 @@
          http://cxf.apache.org/jaxws
          http://cxf.apache.org/schemas/jaxws.xsd">
  
- 	<bean id="chargePointService" class="net.solarnetwork.node.ocpp.web.ChargePointService_v15">
- 	</bean>
- 
 	<jaxws:endpoint id="chargePointEndpoint" implementor="#chargePointService" address="/v15"
 		endpointName="ocpp:ChargePointServiceSoap12"
 		serviceName="ocpp:ChargePointService"

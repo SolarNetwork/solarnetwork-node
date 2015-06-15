@@ -22,7 +22,20 @@
 
 package net.solarnetwork.node.ocpp.web;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 import javax.jws.WebService;
+import net.solarnetwork.node.ocpp.ChargeSessionManager;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.FilterableService;
+import ocpp.v15.cp.AvailabilityStatus;
+import ocpp.v15.cp.AvailabilityType;
 import ocpp.v15.cp.CancelReservationRequest;
 import ocpp.v15.cp.CancelReservationResponse;
 import ocpp.v15.cp.ChangeAvailabilityRequest;
@@ -55,6 +68,7 @@ import ocpp.v15.cp.UnlockConnectorResponse;
 import ocpp.v15.cp.UnlockStatus;
 import ocpp.v15.cp.UpdateFirmwareRequest;
 import ocpp.v15.cp.UpdateFirmwareResponse;
+import org.springframework.context.MessageSource;
 
 /**
  * SolarNode implementation of {@link ChargePointService}
@@ -63,14 +77,24 @@ import ocpp.v15.cp.UpdateFirmwareResponse;
  * @version 1.0
  */
 @WebService(serviceName = "ChargePointService", targetNamespace = "urn://Ocpp/Cp/2012/06/")
-public class ChargePointService_v15 implements ChargePointService {
+public class ChargePointService_v15 implements ChargePointService, SettingSpecifierProvider {
+
+	private ChargeSessionManager chargeSessionManager;
+
+	private MessageSource messageSource;
 
 	@Override
 	public UnlockConnectorResponse unlockConnector(UnlockConnectorRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		UnlockConnectorResponse resp = new UnlockConnectorResponse();
-		resp.setStatus(UnlockStatus.ACCEPTED);
+		final Integer connId = parameters.getConnectorId();
+		final String socketId = chargeSessionManager.socketIdForConnectorId(connId);
+		final UnlockConnectorResponse resp = new UnlockConnectorResponse();
+		if ( socketId == null ) {
+			resp.setStatus(UnlockStatus.REJECTED);
+		} else {
+			chargeSessionManager.configureSocketEnabledState(Collections.singleton(socketId), true);
+			resp.setStatus(UnlockStatus.ACCEPTED);
+		}
 		return resp;
 	}
 
@@ -83,8 +107,28 @@ public class ChargePointService_v15 implements ChargePointService {
 	@Override
 	public ChangeAvailabilityResponse changeAvailability(ChangeAvailabilityRequest parameters,
 			String chargeBoxIdentity) {
-		// TODO Auto-generated method stub
-		return null;
+		final Integer connId = parameters.getConnectorId();
+		final Collection<String> socketIds;
+		final ChangeAvailabilityResponse resp = new ChangeAvailabilityResponse();
+		if ( Integer.valueOf(0).equals(connId) ) {
+			// this means ALL connectors
+			socketIds = chargeSessionManager.availableSocketIds();
+		} else {
+			String socketId = chargeSessionManager.socketIdForConnectorId(connId);
+			if ( socketId == null ) {
+				socketIds = Collections.emptySet();
+			} else {
+				socketIds = Collections.singleton(socketId);
+			}
+		}
+		if ( socketIds.isEmpty() ) {
+			resp.setStatus(AvailabilityStatus.REJECTED);
+		} else {
+			chargeSessionManager.configureSocketEnabledState(socketIds,
+					AvailabilityType.OPERATIVE.equals(parameters.getType()));
+			resp.setStatus(AvailabilityStatus.ACCEPTED);
+		}
+		return resp;
 	}
 
 	@Override
@@ -165,6 +209,55 @@ public class ChargePointService_v15 implements ChargePointService {
 	public SendLocalListResponse sendLocalList(SendLocalListRequest parameters, String chargeBoxIdentity) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.ocpp.web.chargepoint";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return getClass().getSimpleName();
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		//ChargePointService_v15 defaults = new ChargePointService_v15();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(Locale.getDefault()), true));
+		results.add(new BasicTextFieldSettingSpecifier(
+				"filterableChargeSessionManager.propertyFilters['UID']", "OCPP Central System"));
+		return results;
+	}
+
+	private String getInfoMessage(Locale locale) {
+		return ""; // TODO
+	}
+
+	public ChargeSessionManager getChargeSessionManager() {
+		return chargeSessionManager;
+	}
+
+	public void setChargeSessionManager(ChargeSessionManager chargeSessionManager) {
+		this.chargeSessionManager = chargeSessionManager;
+	}
+
+	public FilterableService getFilterableChargeSessionManager() {
+		ChargeSessionManager mgr = chargeSessionManager;
+		if ( mgr instanceof FilterableService ) {
+			return (FilterableService) mgr;
+		}
+		return null;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

@@ -29,4 +29,35 @@
 	
 	<osgi:reference id="identityService" interface="net.solarnetwork.node.IdentityService"/>
 	
+	<!-- Services -->
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.ocpp.web.ChargePointService_v15</value>
+			</list>
+		</property>
+	</bean>
+
+	<osgi:service ref="chargePointService" interface="net.solarnetwork.node.settings.SettingSpecifierProvider">
+		<osgi:service-properties>
+			<entry key="servicePid" value="net.solarnetwork.node.ocpp.web.chargepoint"/>
+		</osgi:service-properties>
+	</osgi:service>
+
+ 	<bean id="chargePointService" class="net.solarnetwork.node.ocpp.web.ChargePointService_v15">
+		<property name="messageSource" ref="messageSource"/>
+		<property name="chargeSessionManager">
+			<bean class="net.solarnetwork.util.DynamicServiceProxy">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClass" value="net.solarnetwork.node.ocpp.ChargeSessionManager"/>
+				<property name="propertyFilters">
+					<map>
+						<entry key="UID" value="OCPP Central System"/>
+					</map>
+				</property>
+			</bean>
+		</property>
+ 	</bean>
+	
 </beans>

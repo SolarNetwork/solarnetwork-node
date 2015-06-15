@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -47,6 +48,8 @@ import net.solarnetwork.node.ocpp.ChargeSessionDao;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
 import net.solarnetwork.node.ocpp.OCPPException;
+import net.solarnetwork.node.ocpp.Socket;
+import net.solarnetwork.node.ocpp.SocketDao;
 import net.solarnetwork.node.ocpp.support.CentralSystemServiceFactorySupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -83,6 +86,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	private AuthorizationManager authManager;
 	private ChargeSessionDao chargeSessionDao;
+	private SocketDao socketDao;
 	private Map<String, Integer> socketConnectorMapping = Collections.emptyMap();
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
@@ -97,6 +101,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	}
 
 	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public Collection<String> availableSocketIds() {
+		return new HashSet<String>(socketConnectorMapping.keySet());
+	}
+
+	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public String initiateChargeSession(final String idTag, final String socketId,
 			final Integer reservationId) {
@@ -104,6 +114,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		if ( connectorId == null ) {
 			log.error("No connector ID configured for socket ID {}", socketId);
 			throw new OCPPException("No connector ID available for " + socketId);
+		}
+
+		// is the socket enabled?
+		if ( socketDao.isEnabled(socketId) == false ) {
+			log.info("Socket {} is disabled, not initiating charge session for {}", socketId, idTag);
+			throw new OCPPException("Socket disabled", null, AuthorizationStatus.BLOCKED);
 		}
 
 		// is there an active session already? if so, DENY
@@ -314,6 +330,36 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			}
 		}
 		return res;
+	}
+
+	@Override
+	public String socketIdForConnectorId(Number connectorId) {
+		Integer connId = (connectorId != null ? connectorId.intValue() : null);
+		if ( connId == null ) {
+			return null;
+		}
+		Map<String, Integer> map = getSocketConnectorMapping();
+		if ( map == null ) {
+			return null;
+		}
+		for ( Map.Entry<String, Integer> me : map.entrySet() ) {
+			if ( connId.equals(me.getValue()) ) {
+				return me.getKey();
+			}
+		}
+		return null;
+	}
+
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void configureSocketEnabledState(final Collection<String> socketIds, final boolean enabled) {
+		for ( String socketId : socketIds ) {
+			boolean existing = socketDao.isEnabled(socketId);
+			if ( existing == enabled ) {
+				continue;
+			}
+			socketDao.storeSocket(new Socket(socketId, enabled));
+		}
 	}
 
 	// Datum support
@@ -739,4 +785,13 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public final String getSocketMeterSourceMappingValue() {
 		return StringUtils.delimitedStringFromMap(socketMeterSourceMapping);
 	}
+
+	public SocketDao getSocketDao() {
+		return socketDao;
+	}
+
+	public void setSocketDao(SocketDao socketDao) {
+		this.socketDao = socketDao;
+	}
+
 }

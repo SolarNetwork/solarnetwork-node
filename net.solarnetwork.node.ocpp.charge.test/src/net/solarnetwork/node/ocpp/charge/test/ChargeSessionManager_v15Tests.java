@@ -44,6 +44,7 @@ import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionDao;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
 import net.solarnetwork.node.ocpp.OCPPException;
+import net.solarnetwork.node.ocpp.SocketDao;
 import net.solarnetwork.node.ocpp.charge.ChargeSessionManager_v15;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.util.ClassUtils;
@@ -89,6 +90,7 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 	private CentralSystemServiceFactory centralSystem;
 	private CentralSystemService client;
 	private ChargeSessionDao chargeSessionDao;
+	private SocketDao socketDao;
 	private DatumDataSource<ACEnergyDatum> meterDataSource;
 
 	private ChargeSessionManager_v15 manager;
@@ -105,6 +107,7 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		centralSystem = new MockCentralSystemServiceFactory("OCPP Central System", null, client,
 				TEST_CHARGE_BOX_IDENTITY);
 		chargeSessionDao = EasyMock.createMock(ChargeSessionDao.class);
+		socketDao = EasyMock.createMock(SocketDao.class);
 
 		meterDataSource = newMeterDataSource();
 
@@ -112,6 +115,7 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		manager.setAuthManager(authManager);
 		manager.setCentralSystem(centralSystem);
 		manager.setChargeSessionDao(chargeSessionDao);
+		manager.setSocketDao(socketDao);
 		manager.setMeterDataSource(new StaticOptionalServiceCollection<DatumDataSource<ACEnergyDatum>>(
 				Collections.singletonList(meterDataSource)));
 		manager.setSocketConnectorMapping(Collections.singletonMap(TEST_SOCKET_ID, TEST_CONNECTOR_ID));
@@ -121,11 +125,11 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 	@After
 	public void finish() {
-		EasyMock.verify(authManager, client, chargeSessionDao, meterDataSource);
+		EasyMock.verify(authManager, client, chargeSessionDao, socketDao, meterDataSource);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(authManager, client, chargeSessionDao, meterDataSource);
+		EasyMock.replay(authManager, client, chargeSessionDao, socketDao, meterDataSource);
 	}
 
 	@Test
@@ -220,6 +224,9 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 	@Test
 	public void initiateChargeSession() {
+		// verify socket not disabled
+		expect(socketDao.isEnabled(TEST_SOCKET_ID)).andReturn(true);
+
 		// verify active session does not exist
 		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(null);
 
@@ -308,6 +315,9 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 	@Test
 	public void initiateChargeSessionAlreadyActive() {
+		// verify socket not disabled
+		expect(socketDao.isEnabled(TEST_SOCKET_ID)).andReturn(true);
+
 		// verify active session does not exist (but it does)
 		final ChargeSession existingSession = new ChargeSession();
 		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(
@@ -320,6 +330,21 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 			Assert.fail("OCPPException should have been thrown");
 		} catch ( OCPPException e ) {
 			Assert.assertEquals("Status", AuthorizationStatus.CONCURRENT_TX, e.getStatus());
+		}
+	}
+
+	@Test
+	public void initiateChargeSessionSocketDisabled() {
+		// verify socket not disabled
+		expect(socketDao.isEnabled(TEST_SOCKET_ID)).andReturn(false);
+
+		replayAll();
+
+		try {
+			manager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null);
+			Assert.fail("OCPPException should have been thrown");
+		} catch ( OCPPException e ) {
+			Assert.assertEquals("Status", AuthorizationStatus.BLOCKED, e.getStatus());
 		}
 	}
 
