@@ -413,7 +413,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public int postCompleteOfflineSessions(final int max) {
 		List<ChargeSession> toPost = chargeSessionDao.getChargeSessionsNeedingPosting(max);
 		for ( ChargeSession session : toPost ) {
-			Integer connectorId = getSocketConnectorMapping().get(session.getSessionId());
+			Integer connectorId = getSocketConnectorMapping().get(session.getSocketId());
 			List<ChargeSessionMeterReading> readings = chargeSessionDao
 					.findMeterReadingsForSession(session.getSessionId());
 			Long startWh = null;
