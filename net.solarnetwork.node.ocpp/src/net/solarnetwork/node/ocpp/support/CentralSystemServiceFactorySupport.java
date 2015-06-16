@@ -190,11 +190,11 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 		this.messageSource = messageSource;
 	}
 
-	public final String getUid() {
+	public String getUid() {
 		return uid;
 	}
 
-	public final void setUid(String uid) {
+	public void setUid(String uid) {
 		this.uid = uid;
 	}
 
@@ -204,7 +204,7 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 	 */
 	@Override
 	public final String getUID() {
-		String id = uid;
+		String id = getUid();
 		if ( id == null ) {
 			CentralSystemServiceFactory system = centralSystem;
 			if ( system != null ) {
@@ -238,7 +238,7 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 		return id;
 	}
 
-	public final void setGroupUID(String groupUID) {
+	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
 	}
 
