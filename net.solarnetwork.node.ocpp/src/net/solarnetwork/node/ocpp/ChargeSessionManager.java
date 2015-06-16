@@ -142,4 +142,14 @@ public interface ChargeSessionManager extends Identifiable {
 	 */
 	void configureSocketEnabledState(Collection<String> socketIds, boolean enabled);
 
+	/**
+	 * Attempt to post any completed charge sessions that have not be posted to
+	 * the OCPP central system.
+	 * 
+	 * @param max
+	 *        The maximum number of offline sessions to post.
+	 * @return The number of sessions posted.
+	 */
+	int postCompleteOfflineSessions(int max);
+
 }

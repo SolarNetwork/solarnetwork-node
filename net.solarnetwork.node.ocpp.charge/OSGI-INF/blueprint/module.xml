@@ -16,6 +16,8 @@
 	
 	<tx:annotation-driven transaction-manager="txManager"/>
 	
+	<reference id="scheduler" interface="org.quartz.Scheduler"/>
+
 	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>
 
@@ -56,9 +58,10 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.ocpp.charge.ChargeSessionManager_v15">
+		<bean class="net.solarnetwork.node.ocpp.charge.ChargeSessionManager_v15" init-method="startup" destroy-method="shutdown">
 			<property name="chargeSessionDao" ref="chargeSessionDao"/>
 			<property name="socketDao" ref="socketDao"/>
+			<property name="scheduler" ref="scheduler"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="centralSystem">
 				<bean class="net.solarnetwork.util.DynamicServiceProxy">
