@@ -12,6 +12,10 @@
 	<jaxws:endpoint id="chargePointEndpoint" implementor="#chargePointService" address="/v15"
 		endpointName="ocpp:ChargePointServiceSoap12"
 		serviceName="ocpp:ChargePointService"
-		wsdlLocation="classpath:/ocpp/v15/cp/ocpp_chargepointservice_1.5_final.wsdl"/>
+		wsdlLocation="classpath:/ocpp/v15/cp/ocpp_chargepointservice_1.5_final.wsdl">
+		<jaxws:handlers>
+			<bean class="ocpp.v15.support.HMACHandler"/>
+		</jaxws:handlers>
+	</jaxws:endpoint>
  
 </beans>

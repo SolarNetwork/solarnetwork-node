@@ -46,6 +46,7 @@ import ocpp.v15.cs.BootNotificationResponse;
 import ocpp.v15.cs.CentralSystemService;
 import ocpp.v15.cs.CentralSystemService_Service;
 import ocpp.v15.cs.RegistrationStatus;
+import ocpp.v15.support.HMACHandler;
 import ocpp.v15.support.WSAddressingFromHandler;
 import org.osgi.framework.Version;
 import org.quartz.JobDetail;
@@ -90,6 +91,7 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	private CentralSystemService service;
 	private boolean useFromAddress;
 	private final WSAddressingFromHandler fromHandler = new WSAddressingFromHandler();
+	private final HMACHandler hmacHandler = new HMACHandler();
 	private BootNotificationResponse bootNotificationResponse;
 	private Throwable bootNotificationError;
 	private SimpleTrigger heartbeatTrigger;
@@ -159,22 +161,28 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		@SuppressWarnings("rawtypes")
 		List<Handler> chain = bindingProvider.getBinding().getHandlerChain();
 		if ( use ) {
-			boolean found = false;
+			boolean foundFrom = false;
+			boolean foundHmac = false;
 			for ( Handler<?> h : chain ) {
 				if ( h == fromHandler ) {
-					found = true;
-					break;
+					foundFrom = true;
+				} else if ( h == hmacHandler ) {
+					foundHmac = true;
 				}
 			}
-			if ( !found ) {
+			if ( !foundFrom ) {
 				chain.add(fromHandler);
+				modified = true;
+			}
+			if ( !foundHmac ) {
+				chain.add(hmacHandler);
 				modified = true;
 			}
 		} else {
 			for ( @SuppressWarnings("rawtypes")
 			Iterator<Handler> itr = chain.iterator(); itr.hasNext(); ) {
 				Handler<?> h = itr.next();
-				if ( h == fromHandler ) {
+				if ( h == fromHandler || h == hmacHandler ) {
 					itr.remove();
 					modified = true;
 					break;
@@ -371,6 +379,10 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		results.add(new BasicToggleSettingSpecifier("fromHandler.preferIPv4Address",
 				defaults.fromHandler.isPreferIPv4Address()));
 
+		results.add(new BasicTextFieldSettingSpecifier("hmacHandler.secret", HMACHandler.DEFAULT_SECRET));
+		results.add(new BasicTextFieldSettingSpecifier("hmacHandler.maximumTimeSkew", String
+				.valueOf(hmacHandler.getMaximumTimeSkew())));
+
 		return results;
 	}
 
@@ -557,6 +569,10 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 	public WSAddressingFromHandler getFromHandler() {
 		return fromHandler;
+	}
+
+	public HMACHandler getHmacHandler() {
+		return hmacHandler;
 	}
 
 }
