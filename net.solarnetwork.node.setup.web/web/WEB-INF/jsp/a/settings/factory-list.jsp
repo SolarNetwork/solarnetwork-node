@@ -39,11 +39,20 @@
 							${instance.key}
 						</legend>
 						
-						<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-							<c:set var="setting" value="${setting}" scope="request"/>
-							<c:set var="settingId" value="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}" scope="request"/>
-							<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
-						</c:forEach>
+						<c:catch var="providerException">		
+							<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+								<c:set var="setting" value="${setting}" scope="request"/>
+								<c:set var="settingId" value="m${instanceStatus.index}s${providerStatus.index}i${settingStatus.index}" scope="request"/>
+								<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+							</c:forEach>
+						</c:catch>
+						<c:if test="${not empty providerException}">
+							<div class="alert alert-warning">
+								<fmt:message key="settings.error.provider.exception">
+									<fmt:param value="${providerException.cause.message}"/>
+								</fmt:message>
+							</div>
+						</c:if>
 						<div class="control-group">
 							<div class="controls">
 								<button type="button" class="btn btn-danger" id="del${instance.key}">
