@@ -86,7 +86,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @version 1.0
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport implements
-		ChargeSessionManager, EventHandler {
+		ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
 
 	/** The name used to schedule the {@link PostOfflineChargeSessionsJob} as. */
 	public static final String POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME = "OCPP_PostOfflineChargeSessions";
@@ -763,6 +763,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		return authManager;
 	}
 
+	@Override
 	public FilterableService getFilterableAuthManager() {
 		AuthorizationManager mgr = authManager;
 		if ( mgr instanceof FilterableService ) {
@@ -826,6 +827,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * @see #getSocketConnectorMappingValue()
 	 * @see #setSocketConnectorMapping(Map)
 	 */
+	@Override
 	public final void setSocketConnectorMappingValue(String mapping) {
 		Map<String, String> map = StringUtils.delimitedStringToMap(mapping, ",", "=");
 		if ( map == null || map.size() < 0 ) {
@@ -863,6 +865,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		return StringUtils.delimitedStringFromMap(socketConnectorMapping);
 	}
 
+	@Override
 	public OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> getMeterDataSource() {
 		return meterDataSource;
 	}
@@ -915,6 +918,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * @see #getSocketMeterSourceMappingValue()
 	 * @see #setSocketMeterSourceMapping(Map)
 	 */
+	@Override
 	public final void setSocketMeterSourceMappingValue(String mapping) {
 		Map<String, String> map = StringUtils.delimitedStringToMap(mapping, ",", "=");
 		if ( map == null || map.size() < 0 ) {
