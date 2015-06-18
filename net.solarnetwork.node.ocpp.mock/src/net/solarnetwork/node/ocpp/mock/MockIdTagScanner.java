@@ -120,7 +120,7 @@ public class MockIdTagScanner implements SettingSpecifierProvider {
 					try {
 						chargeSessionManager.completeChargeSession(idTag, sessionId);
 					} catch ( RuntimeException e ) {
-						log.error("Error initiating a charge session on socket {}", socketId, e);
+						log.error("Error completing a charge session on socket {}", socketId, e);
 					}
 				}
 			});
