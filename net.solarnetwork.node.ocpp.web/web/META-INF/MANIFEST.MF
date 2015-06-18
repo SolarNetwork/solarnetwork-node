@@ -9,6 +9,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Web-ContextPath: /ocpp
 Import-Package: 
  javax.annotation;version="[1.0,2.0)",
+ javax.crypto,
  javax.el,
  javax.jws.soap,
  javax.servlet,
