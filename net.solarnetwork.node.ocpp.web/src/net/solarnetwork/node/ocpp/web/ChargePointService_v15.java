@@ -282,7 +282,12 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 
 	private String getInfoMessage(Locale locale) {
 		ChargeSessionManager mgr = chargeSessionManager;
-		String managerUID = (mgr != null ? mgr.getUID() : null);
+		String managerUID = null;
+		try {
+			managerUID = (mgr != null ? mgr.getUID() : null);
+		} catch ( RuntimeException e ) {
+			log.warn("ChargeSessionManager UID unavailable: {}", e.getMessage());
+		}
 		if ( managerUID != null ) {
 			return messageSource.getMessage("status", new Object[] { managerUID }, locale);
 		}
