@@ -4,7 +4,7 @@ CREATE TABLE solarnode.ocpp_charge (
 	sessid_lo		BIGINT NOT NULL,
 	idtag 			VARCHAR(20) NOT NULL,
 	socketid		VARCHAR(64) NOT NULL,
-	auth_status		VARCHAR(12),
+	auth_status		VARCHAR(13),
 	xid				BIGINT,
 	ended			TIMESTAMP,
 	posted			TIMESTAMP,
