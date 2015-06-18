@@ -432,7 +432,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			if ( session.getTransactionId() == null ) {
 				StartTransactionResponse resp = postStartTransaction(session.getIdTag(), null,
 						connectorId, session, System.currentTimeMillis(), startWh);
-				if ( resp != null ) {
+				if ( resp != null && resp.getIdTagInfo() != null
+						&& AuthorizationStatus.ACCEPTED.equals(resp.getIdTagInfo().getStatus()) ) {
 					session.setTransactionId(resp.getTransactionId());
 					chargeSessionDao.storeChargeSession(session);
 				}
