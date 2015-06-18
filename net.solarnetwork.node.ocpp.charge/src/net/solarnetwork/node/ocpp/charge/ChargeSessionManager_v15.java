@@ -120,6 +120,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * Initialize the OCPP client. Call this once after all properties
 	 * configured.
 	 */
+	@Override
 	public void startup() {
 		log.info("Starting up OCPP ChargeSessionManager {}", getUID());
 		configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
@@ -128,6 +129,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	/**
 	 * Shutdown the OCPP client, releasing any associated resources.
 	 */
+	@Override
 	public void shutdown() {
 		configurePostOfflineChargeSessionsJob(0);
 	}
