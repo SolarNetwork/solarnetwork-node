@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 /**
- * Example program to read from the {@code net.solarnetwork.hw.rfid-reader}
- * program and print the output to STDOUT.
+ * Example program to read from the {@code rfid-reader} C program and print the
+ * output to STDOUT.
  * 
  * @author matt
  * @version 1.0
