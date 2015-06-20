@@ -5,4 +5,4 @@ Bundle-SymbolicName: net.solarnetwork.node.hw.rfid
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Main-Class: net.solarnetwork.hw.rfid.RfidKeyboardReader
+Main-Class: net.solarnetwork.hw.rfid.RfidSocketReader
