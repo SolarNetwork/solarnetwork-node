@@ -38,6 +38,9 @@ import javax.net.SocketFactory;
  */
 public class RfidSocketReader {
 
+	/** The "heartbeat" message sent by the server after read timeouts. */
+	public static final String HEARTBEAT_MSG = "ping";
+
 	private int port = 9090;
 	private String host = "localhost";
 
@@ -52,6 +55,7 @@ public class RfidSocketReader {
 		Socket s = null;
 		try {
 			s = SocketFactory.getDefault().createSocket(host, port);
+			s.setKeepAlive(true);
 			in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			boolean readSomething = false;
 			String line;
@@ -61,7 +65,7 @@ public class RfidSocketReader {
 					break;
 				}
 				// the first line read is a status line...
-				if ( readSomething ) {
+				if ( readSomething && !HEARTBEAT_MSG.equalsIgnoreCase(line) ) {
 					System.out.println("Got RFID line: " + line);
 				} else {
 					System.err.println(line);
