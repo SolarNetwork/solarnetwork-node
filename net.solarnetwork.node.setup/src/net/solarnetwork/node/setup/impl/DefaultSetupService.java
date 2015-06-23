@@ -32,6 +32,8 @@ import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_PORT;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -98,7 +100,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -195,6 +197,19 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			return null;
 		}
 		return Long.valueOf(nodeId);
+	}
+
+	@Override
+	public Principal getNodePrincipal() {
+		if ( pkiService == null ) {
+			return null;
+		}
+		X509Certificate nodeCert = pkiService.getNodeCertificate();
+		if ( nodeCert == null ) {
+			log.debug("No node certificate available, cannot get node principal");
+			return null;
+		}
+		return nodeCert.getSubjectX500Principal();
 	}
 
 	@Override

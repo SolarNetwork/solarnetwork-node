@@ -36,12 +36,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.beans.PropertyBatchUpdateException;
 
 /**
  * Utility methods for dealing with classes at runtime.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public final class ClassUtils {
 
@@ -119,6 +122,35 @@ public final class ClassUtils {
 	public static void setBeanProperties(Object o, Map<String, ?> values) {
 		BeanWrapper bean = new BeanWrapperImpl(o);
 		bean.setPropertyValues(values);
+	}
+
+	/**
+	 * Set bean property values on an object from a Map.
+	 * 
+	 * @param o
+	 *        The bean to set JavaBean properties on.
+	 * @param values
+	 *        A Map of JavaBean property names and their corresponding values to
+	 *        set.
+	 * @param ignoreUnknown
+	 *        Flag to ignore unknown properties.
+	 * @param ignoreInvalid
+	 *        Flag to ignore invalid properties.
+	 * @since 1.2
+	 */
+	public static void setBeanProperties(Object o, Map<String, ?> values, boolean ignoreErrors) {
+		if ( o == null || values == null ) {
+			return;
+		}
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(o);
+		MutablePropertyValues pvs = new MutablePropertyValues(values);
+		try {
+			bean.setPropertyValues(pvs, ignoreErrors, ignoreErrors);
+		} catch ( PropertyBatchUpdateException e ) {
+			if ( ignoreErrors == false ) {
+				throw e;
+			}
+		}
 	}
 
 	/**
