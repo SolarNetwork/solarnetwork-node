@@ -1,9 +1,18 @@
+(function() {
+'use strict';
+
 SolarNode.Settings = {
 		
 };
 
 SolarNode.Settings.runtime = {};
 SolarNode.Settings.updates = {};
+
+function delayedReload() {
+	setTimeout(function() {
+		window.location.reload(true);
+	}, 500);
+}
 
 SolarNode.Settings.reset = function() {
 	SolarNode.Settings.updates = {};
@@ -217,18 +226,33 @@ SolarNode.Settings.addLocationFinder = function(params) {
 };
 
 SolarNode.Settings.addGroupedSetting = function(params) {
-	var groupCount = $('#'+params.key);
+	var groupCount = $('#'+params.key),
+		count = Number(groupCount.val()),
+		container = groupCount.parent(),
+		url = $(groupCount.get(0).form).attr('action');
 	
 	// wire up the Add button to add dynamic elements
-	groupCount.parent().find('button.add').click(function() {
-		var newCount = Number(groupCount.val()) + 1;
+	container.find('button.group-item-add').click(function() {
+		var newCount = count + 1;
+		container.find('button').attr('disabled', 'disabled');
 		SolarNode.Settings.updateSetting(params, newCount);
-		SolarNode.Settings.saveUpdates($(groupCount.get(0).form).attr('action'), undefined, function() {
-			setTimeout(function() {
-				window.location.reload(true);
-			}, 500);
-		});
+		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
 	});
+	// dynamic grouped items remove support
+	container.find('.group-item-remove').click(function() {
+		if ( count < 1 ) {
+			return;
+		}
+		var newCount = count - 1;
+		container.find('button').attr('disabled', 'disabled');
+		SolarNode.Settings.updateSetting(params, newCount);
+		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
+	}).each(function() {
+		if ( count < 1 ) {
+			$(this).attr('disabled', 'disabled');
+		}
+	});
+
 };
 
 /**
@@ -304,11 +328,7 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 
 SolarNode.Settings.addFactoryConfiguration = function(params) {
 	$(params.button).attr('disabled', 'disabled');
-	$.post(params.url, {uid: params.factoryUID}, function(data, textStatus) {
-		setTimeout(function() {
-			window.location.reload(true);
-		}, 500);
-	});
+	$.post(params.url, {uid: params.factoryUID}, delayedReload);
 };
 
 /**
@@ -324,11 +344,7 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	var reallyDeleteButton = alert.find('button.submit');
 	reallyDeleteButton.click(function() {
 		$(this).attr('disabled', 'disabled');
-		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, function(data, textStatus) {
-			setTimeout(function() {
-				window.location.reload(true);
-			}, 500);
-		});
+		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, delayedReload);
 	});
 	alert.bind('close', function(e) {
 		origButton.removeAttr('disabled');
@@ -390,5 +406,6 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
-
 });
+
+}());

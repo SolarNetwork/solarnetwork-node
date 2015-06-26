@@ -54,6 +54,18 @@ legend {
 	margin: 20px 0;
 }
 
+form fieldset fieldset {
+	border-bottom: 1px dotted #e5e5e5;
+	margin-bottom: 20px;
+}
+
+form fieldset fieldset legend {
+	font-size: 17px;
+	line-height: 17px;
+	margin-bottom: 0;
+	border-bottom-style: dotted;
+}
+
 .cert {
 	font-size: 11px;
 	line-height: 13px;
