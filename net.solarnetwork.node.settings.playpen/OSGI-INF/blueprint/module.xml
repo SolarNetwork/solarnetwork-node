@@ -11,15 +11,19 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.settings.playpen.SettingsPlaypen</value>
+			</list>
+		</property>
+	</bean>
+
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="Settings Playpen"/>
 		<property name="factoryUID" value="net.solarnetwork.node.settings.playpen"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
-			</bean>
-		</property>
+		<property name="messageSource" ref="messageSource"/>
 	</bean>
 	
 	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
@@ -43,6 +47,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.settings.playpen.SettingsPlaypen">
 			<property name="locationService" ref="locationService"/>
+			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

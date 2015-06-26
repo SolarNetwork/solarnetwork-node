@@ -18,15 +18,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.support;
 
 import java.util.Collections;
 import java.util.List;
-
 import net.solarnetwork.node.settings.GroupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
@@ -34,13 +31,62 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link GroupSettingSpecifier}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements
-		GroupSettingSpecifier {
+public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements GroupSettingSpecifier {
 
-	private String footerText;
-	private List<SettingSpecifier> groupSettings;
+	private final String key;
+	private final String footerText;
+	private final List<SettingSpecifier> groupSettings;
+	private final boolean dynamic;
+
+	/**
+	 * Construct with the group settings. The {@code dynamic} property will be
+	 * set to <em>false</em>.
+	 * 
+	 * @param groupKey
+	 *        The key for the entire group.
+	 * @param settings
+	 *        The group settings.
+	 */
+	public BasicGroupSettingSpecifier(String groupKey, List<SettingSpecifier> settings) {
+		this(groupKey, settings, false, null);
+	}
+
+	/**
+	 * Construct with settings and dynamic flag.
+	 * 
+	 * @param groupKey
+	 *        The key for the entire group.
+	 * @param settings
+	 *        The group settings.
+	 * @param dynamic
+	 *        The dynamic flag.
+	 */
+	public BasicGroupSettingSpecifier(String groupKey, List<SettingSpecifier> settings, boolean dynamic) {
+		this(groupKey, settings, dynamic, null);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param groupKey
+	 *        The key for the entire group.
+	 * @param settings
+	 *        The group settings.
+	 * @param dynamic
+	 *        The dynamic flag.
+	 * @param footerText
+	 *        The footer text.
+	 */
+	public BasicGroupSettingSpecifier(String groupKey, List<SettingSpecifier> settings, boolean dynamic,
+			String footerText) {
+		super();
+		this.key = groupKey;
+		this.groupSettings = Collections.unmodifiableList(settings);
+		this.dynamic = dynamic;
+		this.footerText = footerText;
+	}
 
 	@Override
 	public String getFooterText() {
@@ -52,12 +98,14 @@ public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements
 		return this.groupSettings;
 	}
 
-	public void setFooterText(String footerText) {
-		this.footerText = footerText;
+	@Override
+	public boolean isDynamic() {
+		return dynamic;
 	}
 
-	public void setGroupSettings(List<SettingSpecifier> groupSettings) {
-		this.groupSettings = Collections.unmodifiableList(groupSettings);
+	@Override
+	public String getKey() {
+		return key;
 	}
 
 }

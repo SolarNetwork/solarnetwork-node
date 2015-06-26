@@ -23,6 +23,8 @@
 package net.solarnetwork.node.settings.playpen;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,16 +35,17 @@ import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.OptionalServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * A test bed experiment for the settings framework.
@@ -51,8 +54,6 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * @version 1.2
  */
 public class SettingsPlaypen implements SettingSpecifierProvider {
-
-	private static MessageSource MESSAGE_SOURCE;
 
 	private static final String DEFAULT_STRING = "simple";
 	private static final Integer DEFAULT_INTEGER = 42;
@@ -65,6 +66,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Double slide = DEFAULT_SLIDE;
 	private String radio = DEFAULT_RADIO[0];
 
+	// group support
+	private List<String> listString = new ArrayList<String>(4);
+
 	private OptionalServiceTracker<LocationService> locationService;
 	private Long locationId;
 	private String sourceId;
@@ -73,6 +77,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Long weatherLocationId;
 	private String weatherSourceId;
 	private Location weatherLocation;
+
+	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -88,18 +94,12 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(SettingsPlaypen.class.getClassLoader());
-			source.setBasename(SettingsPlaypen.class.getName());
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		SettingsPlaypen defaults = new SettingsPlaypen();
 
@@ -119,6 +119,21 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// basic dynamic list of strings
+		Collection<String> listStrings = getListString();
+		BasicGroupSettingSpecifier listStringGroup = SettingsUtil.dynamicListSettingSpecifier(
+				"listString", listStrings, new SettingsUtil.KeyedListCallback<String>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
+							String key) {
+						return Collections
+								.<SettingSpecifier> singletonList(new BasicTextFieldSettingSpecifier(
+										key, ""));
+					}
+				});
+		results.add(listStringGroup);
 
 		return results;
 	}
@@ -165,6 +180,10 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		}
 		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", Location.WEATHER_TYPE,
 				weatherLocation);
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	/**
@@ -302,6 +321,47 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 			this.weatherLocation = null;
 		}
 		this.weatherSourceId = weatherSourceId;
+	}
+
+	public List<String> getListString() {
+		return listString;
+	}
+
+	public void setListString(List<String> listString) {
+		this.listString = listString;
+	}
+
+	/**
+	 * Get the number of configured {@code listString} elements.
+	 * 
+	 * @return The number of {@code listString} elements.
+	 */
+	public int getListStringCount() {
+		List<String> l = getListString();
+		return (l == null ? 0 : l.size());
+	}
+
+	/**
+	 * Adjust the number of configured {@code listString} elements. Any newly
+	 * added element values will be empty strings.
+	 * 
+	 * @param count
+	 *        The desired number of {@code listString} elements.
+	 */
+	public void setListStringCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		List<String> l = getListString();
+		int lCount = (l == null ? 0 : l.size());
+		while ( lCount > count ) {
+			l.remove(l.remove(l.size() - 1));
+			lCount--;
+		}
+		while ( lCount < count ) {
+			l.add("");
+			lCount++;
+		}
 	}
 
 }

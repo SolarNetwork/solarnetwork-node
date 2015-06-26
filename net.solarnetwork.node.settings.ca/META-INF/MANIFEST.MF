@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Settings Support
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca
 Bundle-Description: Provides persistent storage of user-customized SolarNode settings.
-Bundle-Version: 1.5.0
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -11,7 +11,7 @@ Import-Package:
  net.solarnetwork.node.backup;version="1.0.0",
  net.solarnetwork.node.dao;version="1.4.0",
  net.solarnetwork.node.job;version="1.5.0",
- net.solarnetwork.node.settings;version="1.6.0",
+ net.solarnetwork.node.settings;version="1.7.0",
  net.solarnetwork.node.settings.support;version="1.0.1",
  net.solarnetwork.node.support;version="1.4.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",

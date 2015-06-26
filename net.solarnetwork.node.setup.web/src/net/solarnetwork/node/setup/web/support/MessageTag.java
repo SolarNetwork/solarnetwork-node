@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.web.support;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
 import org.springframework.context.MessageSource;
@@ -52,7 +53,7 @@ import org.springframework.context.NoSuchMessageException;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MessageTag extends TagSupport {
 
@@ -61,6 +62,9 @@ public class MessageTag extends TagSupport {
 	private MessageSource messageSource;
 	private String key;
 	private String text;
+	private Integer index;
+
+	private static final Pattern IndexKeysPattern = Pattern.compile("\\[\\d+\\]");
 
 	@Override
 	public int doEndTag() throws JspException {
@@ -70,7 +74,19 @@ public class MessageTag extends TagSupport {
 			try {
 				msg = this.messageSource.getMessage(this.key, null, locale);
 			} catch ( NoSuchMessageException e ) {
-				// ignore
+				// try with index subscripts removed
+				String keyNoIndcies = IndexKeysPattern.matcher(this.key).replaceAll("Item");
+				if ( !keyNoIndcies.equals(this.key) ) {
+					try {
+						Object[] params = null;
+						if ( index != null ) {
+							params = new Object[] { index };
+						}
+						msg = this.messageSource.getMessage(keyNoIndcies, params, locale);
+					} catch ( NoSuchMessageException e2 ) {
+						// give up
+					}
+				}
 			}
 		}
 		if ( msg == null ) {
@@ -100,6 +116,10 @@ public class MessageTag extends TagSupport {
 
 	public void setText(String text) {
 		this.text = text;
+	}
+
+	public void setIndex(Integer index) {
+		this.index = index;
 	}
 
 }

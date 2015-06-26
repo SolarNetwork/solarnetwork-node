@@ -216,6 +216,21 @@ SolarNode.Settings.addLocationFinder = function(params) {
 	});
 };
 
+SolarNode.Settings.addGroupedSetting = function(params) {
+	var groupCount = $('#'+params.key);
+	
+	// wire up the Add button to add dynamic elements
+	groupCount.parent().find('button.add').click(function() {
+		var newCount = Number(groupCount.val()) + 1;
+		SolarNode.Settings.updateSetting(params, newCount);
+		SolarNode.Settings.saveUpdates($(groupCount.get(0).form).attr('action'), undefined, function() {
+			setTimeout(function() {
+				window.location.reload(true);
+			}, 500);
+		});
+	});
+};
+
 /**
  * Post any setting changes back to the node.
  * 
@@ -223,8 +238,9 @@ SolarNode.Settings.addLocationFinder = function(params) {
  * @param msg.title {String} the result dialog title
  * @param msg.success {String} the message to display for a successful post
  * @param msg.error {String} the message to display for an error post
+ * @param resultCallback {Function} optional callback to invoke after updates saved, passed error as parameter
  */
-SolarNode.Settings.saveUpdates = function(url, msg) {
+SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 	var updates = SolarNode.Settings.updates;
 	var formData = '';
 	var i = 0;
@@ -245,9 +261,11 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 		}
 	}
 	var buttons = {};
-	buttons[msg.button] = function() {
-		$(this).dialog('close');
-	};
+	if ( msg && msg.button ) {
+		buttons[msg.button] = function() {
+			$(this).dialog('close');
+		};
+	}
 	if ( formData.length > 0 ) {
 		$.ajax({
 			type: 'post',
@@ -255,7 +273,9 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 			data: formData,
 			success: function(data, textStatus, xhr) {
 				var providerKey = undefined, key = undefined, domID = undefined;
-				if ( data.success === true && msg !== undefined && msg.success !== undefined ) {
+				if ( resultCallback ) {
+					resultCallback();
+				} else if ( data.success === true && msg !== undefined && msg.success !== undefined ) {
 					// update DOM with updated values
 					for ( providerKey in updates ) {
 						for ( key in updates[providerKey] ) {
@@ -269,7 +289,9 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				if ( msg !== undefined && msg.error !== undefined ) {
+				if ( resultCallback ) {
+					resultCallback(textStatus);
+				} else if ( msg !== undefined && msg.error !== undefined ) {
 					$('<div class="alert alert-error fade in"><button class="close" data-dismiss="alert" type="button">×</button>'
 							+'<strong>'+msg.title+':</strong> ' +msg.error +'</div>').insertBefore('#settings form div.actions');
 				}

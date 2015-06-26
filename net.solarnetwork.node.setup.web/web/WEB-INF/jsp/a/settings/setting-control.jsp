@@ -6,6 +6,7 @@
 	setting - the current setting
 	settingId - the ID to use for the setting input
 	instanceId - the instance ID to use
+	groupIndex - an optional group index
 --%>
 <c:set var="settingValue" scope="page">
 	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'/>
@@ -14,7 +15,7 @@
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">
 			<label class="control-label" for="${settingId}">
-				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
+				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
 			<div class="controls">
 				<c:choose>
@@ -183,5 +184,41 @@
 				</span></span>
 			</div>
 		</div>
+	</c:when>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
+		<fieldset id="g${settingId}">
+			<legend>
+				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
+			</legend>
+			<c:if test="${not empty setting.groupSettings}">
+				<c:set var="origSetting" value="${setting}"/>
+				<c:set var="origSettingId" value="${settingId}"/>
+				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
+					<c:set var="setting" value="${groupedSetting}" scope="request"/>
+					<c:set var="settingId" value="${origSettingId}g${groupedSettingStatus.index}" scope="request"/>
+					<c:set var="groupIndex" value="${groupedSettingStatus.count}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+				</c:forEach>
+				<c:remove var="groupIndex" scope="request"/>
+				<c:set var="setting" value="${origSetting}" scope="request"/>
+				<c:set var="settingId" value="${origSettingId}" scope="request"/>
+			</c:if>
+			<c:if test="${setting.dynamic}">
+				<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
+				<button type="button" class="btn btn-primary add">
+					<i class="icon-plus icon-white"></i>
+				</button>
+				<script>
+				$(function() {
+					SolarNode.Settings.addGroupedSetting({
+						key: '${settingId}',
+						provider: '${provider.settingUID}',
+						setting: '${setup:js(setting.key)}Count',
+						instance: '${instanceId}'
+					});
+				});
+				</script>
+			</c:if>
+		</fieldset>
 	</c:when>
 </c:choose>
