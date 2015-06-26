@@ -355,7 +355,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		List<String> l = getListString();
 		int lCount = (l == null ? 0 : l.size());
 		while ( lCount > count ) {
-			l.remove(l.remove(l.size() - 1));
+			l.remove(l.size() - 1);
 			lCount--;
 		}
 		while ( lCount < count ) {
