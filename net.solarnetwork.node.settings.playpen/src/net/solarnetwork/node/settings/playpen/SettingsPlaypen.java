@@ -68,6 +68,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	// group support
 	private List<String> listString = new ArrayList<String>(4);
+	private List<ComplexListItem> listComplex = new ArrayList<ComplexListItem>(4);
 
 	private OptionalServiceTracker<LocationService> locationService;
 	private Long locationId;
@@ -134,6 +135,21 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 					}
 				});
 		results.add(listStringGroup);
+
+		// dynamic list of objects
+		Collection<ComplexListItem> listComplexes = getListComplex();
+		BasicGroupSettingSpecifier listComplexGroup = SettingsUtil.dynamicListSettingSpecifier(
+				"listComplex", listComplexes, new SettingsUtil.KeyedListCallback<ComplexListItem>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(ComplexListItem value,
+							int index, String key) {
+						BasicGroupSettingSpecifier personGroup = new BasicGroupSettingSpecifier(value
+								.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(personGroup);
+					}
+				});
+		results.add(listComplexGroup);
 
 		return results;
 	}
@@ -360,6 +376,47 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		}
 		while ( lCount < count ) {
 			l.add("");
+			lCount++;
+		}
+	}
+
+	public List<ComplexListItem> getListComplex() {
+		return listComplex;
+	}
+
+	public void setListComplex(List<ComplexListItem> listComplex) {
+		this.listComplex = listComplex;
+	}
+
+	/**
+	 * Get the number of configured {@code listComplex} elements.
+	 * 
+	 * @return The number of {@code listComplex} elements.
+	 */
+	public int getListComplexCount() {
+		List<ComplexListItem> l = getListComplex();
+		return (l == null ? 0 : l.size());
+	}
+
+	/**
+	 * Adjust the number of configured {@code listComplex} elements. Any newly
+	 * added element values will be empty strings.
+	 * 
+	 * @param count
+	 *        The desired number of {@code listComplex} elements.
+	 */
+	public void setListComplexCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		List<ComplexListItem> l = getListComplex();
+		int lCount = (l == null ? 0 : l.size());
+		while ( lCount > count ) {
+			l.remove(l.size() - 1);
+			lCount--;
+		}
+		while ( lCount < count ) {
+			l.add(new ComplexListItem());
 			lCount++;
 		}
 	}

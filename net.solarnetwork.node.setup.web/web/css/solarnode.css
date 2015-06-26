@@ -54,16 +54,26 @@ legend {
 	margin: 20px 0;
 }
 
-form fieldset fieldset {
-	border-bottom: 1px dotted #e5e5e5;
-	margin-bottom: 20px;
+.control-group.grouped {
+	border-top: 1px dotted #e5e5e5;
+	padding-top: 20px;
 }
 
-form fieldset fieldset legend {
+.control-group.grouped label {
 	font-size: 17px;
 	line-height: 17px;
+	font-weight: 400;
+}
+
+form fieldset fieldset fieldset {
+	border-bottom: none;
 	margin-bottom: 0;
-	border-bottom-style: dotted;
+	margin-top: 0;
+	padding-top: 20px;
+}
+
+form fieldset fieldset fieldset:nth-child(even) {
+    background-color: #fafafa;
 }
 
 .cert {

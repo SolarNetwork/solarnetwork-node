@@ -187,11 +187,36 @@
 			</div>
 		</div>
 	</c:when>
-	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
-		<fieldset id="g${settingId}">
-			<legend>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier') and not empty setting.key}">
+		<div class="control-group grouped">
+			<label class="control-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
-			</legend>
+			</label>
+			<div class="controls">
+				<c:if test="${setting.dynamic}">
+					<div class="btn-group btn-group-sm" role="group">
+						<button type="button" class="btn btn-small btn-default group-item-remove">
+							<i class="icon-minus"></i>
+						</button>
+						<button type="button" class="btn btn-small btn-default group-item-add">
+							<i class="icon-plus"></i>
+						</button>
+					</div>
+					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
+					<script>
+					$(function() {
+						SolarNode.Settings.addGroupedSetting({
+							key: '${settingId}',
+							provider: '${provider.settingUID}',
+							setting: '${setup:js(setting.key)}Count',
+							instance: '${instanceId}'
+						});
+					});
+					</script>
+				</c:if>
+			</div>
+		</div>
+		<fieldset id="${settingId}g">
 			<c:if test="${not empty setting.groupSettings}">
 				<c:set var="origSetting" value="${setting}"/>
 				<c:set var="origSettingId" value="${settingId}"/>
@@ -209,29 +234,17 @@
 				<c:set var="setting" value="${origSetting}" scope="request"/>
 				<c:set var="settingId" value="${origSettingId}" scope="request"/>
 			</c:if>
-			<c:if test="${setting.dynamic}">
-				<div class="control-group">
-					<div class="controls">
-						<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
-						<button type="button" class="btn btn-default group-item-remove">
-							<i class="icon-minus"></i>
-						</button>
-						<button type="button" class="btn btn-default group-item-add">
-							<i class="icon-plus"></i>
-						</button>
-					</div>
-				</div>
-				<script>
-				$(function() {
-					SolarNode.Settings.addGroupedSetting({
-						key: '${settingId}',
-						provider: '${provider.settingUID}',
-						setting: '${setup:js(setting.key)}Count',
-						instance: '${instanceId}'
-					});
-				});
-				</script>
-			</c:if>
 		</fieldset>
+	</c:when>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
+		<c:if test="${not empty setting.groupSettings}">
+			<fieldset>
+				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
+					<c:set var="setting" value="${groupedSetting}" scope="request"/>
+					<c:set var="settingId" value="${origSettingId}g${groupedSettingStatus.index}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+				</c:forEach>
+			</fieldset>
+		</c:if>
 	</c:when>
 </c:choose>
