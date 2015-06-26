@@ -41,6 +41,17 @@ public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements 
 	private final boolean dynamic;
 
 	/**
+	 * Construct without a key. The {@code dynamic} property will be set to
+	 * <em>false</em>.
+	 * 
+	 * @param settings
+	 *        The group settings.
+	 */
+	public BasicGroupSettingSpecifier(List<SettingSpecifier> settings) {
+		this(null, settings, false, null);
+	}
+
+	/**
 	 * Construct with the group settings. The {@code dynamic} property will be
 	 * set to <em>false</em>.
 	 * 
