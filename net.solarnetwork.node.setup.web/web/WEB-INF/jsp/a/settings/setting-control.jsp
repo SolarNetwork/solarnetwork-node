@@ -239,11 +239,15 @@
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
 		<c:if test="${not empty setting.groupSettings}">
 			<fieldset>
+				<c:set var="origSetting" value="${setting}"/>
+				<c:set var="origSettingId" value="${settingId}"/>
 				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
 					<c:set var="setting" value="${groupedSetting}" scope="request"/>
 					<c:set var="settingId" value="${origSettingId}g${groupedSettingStatus.index}" scope="request"/>
 					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
 				</c:forEach>
+				<c:set var="setting" value="${origSetting}" scope="request"/>
+				<c:set var="settingId" value="${origSettingId}" scope="request"/>
 			</fieldset>
 		</c:if>
 	</c:when>
