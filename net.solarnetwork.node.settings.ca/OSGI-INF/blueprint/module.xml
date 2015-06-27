@@ -69,7 +69,7 @@
 		</property>
 	</bean>
 	
-	<reference id="scheduler" interface="org.quartz.Scheduler"/>
+	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
 
 	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
 	

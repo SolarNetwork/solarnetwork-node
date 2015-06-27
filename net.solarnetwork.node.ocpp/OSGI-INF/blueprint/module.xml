@@ -35,7 +35,7 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
 	</bean>
 
-	<reference id="scheduler" interface="org.quartz.Scheduler"/>
+	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.ocpp.impl.ConfigurableCentralSystemServiceFactory"/>
