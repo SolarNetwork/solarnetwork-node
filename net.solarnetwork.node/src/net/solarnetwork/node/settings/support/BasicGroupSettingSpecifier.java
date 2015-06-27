@@ -119,4 +119,15 @@ public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements 
 		return key;
 	}
 
+	@Override
+	public SettingSpecifier mappedWithPlaceholer(String template) {
+		return new BasicGroupSettingSpecifier(String.format(template, getKey()), getGroupSettings(),
+				isDynamic(), getFooterText());
+	}
+
+	@Override
+	public SettingSpecifier mappedTo(String prefix) {
+		return mappedWithPlaceholer(prefix + "%s");
+	}
+
 }

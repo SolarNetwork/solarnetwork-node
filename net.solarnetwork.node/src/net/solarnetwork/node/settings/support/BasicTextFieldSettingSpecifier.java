@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
 
@@ -29,7 +30,7 @@ import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
  * Basic implementation of {@link TextFieldSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier implements
 		TextFieldSettingSpecifier {
@@ -55,9 +56,15 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier i
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(
 			net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(
 				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());

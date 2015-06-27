@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SliderSettingSpecifier;
 
@@ -29,7 +30,7 @@ import net.solarnetwork.node.settings.SliderSettingSpecifier;
  * Basic implementation of {@link SliderSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Double> implements
 		SliderSettingSpecifier {
@@ -83,8 +84,14 @@ public class BasicSliderSettingSpecifier extends BaseKeyedSettingSpecifier<Doubl
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicSliderSettingSpecifier spec = new BasicSliderSettingSpecifier(mapper.mapKey(getKey()),
 				getDefaultValue(), minimumValue, maximumValue, step);
 		spec.setTitle(getTitle());

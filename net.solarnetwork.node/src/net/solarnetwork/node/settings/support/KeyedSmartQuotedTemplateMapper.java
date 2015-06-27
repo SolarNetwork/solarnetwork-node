@@ -48,6 +48,7 @@ import net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper;
  * @author matt
  * @version 1.0
  */
+@SuppressWarnings("deprecation")
 public class KeyedSmartQuotedTemplateMapper implements Mapper {
 
 	private static final Pattern PROPERTY_PATTERN = Pattern.compile("([a-zA-Z0-9_]+)(.*)");

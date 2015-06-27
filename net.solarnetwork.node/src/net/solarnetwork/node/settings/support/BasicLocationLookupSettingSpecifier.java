@@ -24,13 +24,14 @@ package net.solarnetwork.node.settings.support;
 
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
 /**
  * Basic implementation of {@link LocationLookupSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long> implements
 		LocationLookupSettingSpecifier {
@@ -62,8 +63,14 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicLocationLookupSettingSpecifier spec = new BasicLocationLookupSettingSpecifier(
 				mapper.mapKey(getKey()), locationType, location);
 		spec.setTitle(getTitle());

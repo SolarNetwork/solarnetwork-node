@@ -53,8 +53,12 @@
 	
 	<!-- Published Services -->
 
-	<service ref="scheduler" interface="org.quartz.Scheduler"/>
-
+	<service ref="scheduler" interface="org.quartz.Scheduler">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
 	<service ref="delegatingReactorSerialization" ranking="5"
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService">
 		<service-properties>
