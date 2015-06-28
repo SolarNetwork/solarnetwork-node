@@ -32,6 +32,14 @@
 			<value>net.solarnetwork.node.NodeControlProvider</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SetControlParameter</value>
+					<value>ShedLoad</value>
+				</list>
+			</entry>
+		</service-properties>
 	</service>
 	
 	<!-- Supporting Services -->

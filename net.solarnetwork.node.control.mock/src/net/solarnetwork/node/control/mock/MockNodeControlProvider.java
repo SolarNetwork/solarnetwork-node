@@ -39,16 +39,19 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * Mock implementation of {@link NodeControlProvider} combined with
  * {@link InstructionHandler}.
  * 
- * <p>
  * This mock service implements both {@link NodeControlProvider} and
  * {@link InstructionHandler} to demonstrate a common pattern of control
  * providers implementing mutable controls. The control values can be changed
  * via a {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} instruction sent
  * to the node.
- * </p>
+ * 
+ * The {@link InstructionHandler#TOPIC_SHED_LOAD} instruction is also handled:
+ * if the parameter value (representing watts of power to shed) is greater than
+ * <code>0</code> then the control value is set to <b>TRUE</b> and otherwise
+ * <b>FALSE</b>.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler {
 
@@ -78,7 +81,7 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 
 	@Override
 	public String getUID() {
-		return "Mock";
+		return "Mock Switch";
 	}
 
 	@Override
@@ -120,7 +123,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic);
+		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic) || InstructionHandler.TOPIC_SHED_LOAD
+				.equals(topic));
 	}
 
 	@Override
@@ -132,6 +136,19 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 				NodeControlInfoDatum info = getNodeControlInfoDatum(controlId);
 				if ( info != null ) {
 					String newValue = instruction.getParameterValue(controlId);
+					if ( TOPIC_SHED_LOAD.equals(instruction.getTopic()) ) {
+						// treat value as number, with < 1 as FALSE
+						try {
+							int watts = Integer.parseInt(newValue);
+							if ( watts < 1 ) {
+								newValue = Boolean.FALSE.toString();
+							} else {
+								newValue = Boolean.TRUE.toString();
+							}
+						} catch ( NumberFormatException e ) {
+							return InstructionState.Declined;
+						}
+					}
 					if ( updateNodeControlInfoDatumValue(info, newValue) ) {
 						result = InstructionState.Completed;
 					} else {
@@ -148,7 +165,7 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 			if ( value != null ) {
 				value = value.toLowerCase();
 			}
-			if ( "false".equals(value) || "0".equals(value) ) {
+			if ( "false".equalsIgnoreCase(value) || "0".equals(value) || "no".equalsIgnoreCase(value) ) {
 				datum.setValue(Boolean.FALSE.toString());
 			} else {
 				datum.setValue(Boolean.TRUE.toString());
