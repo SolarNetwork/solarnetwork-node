@@ -63,6 +63,7 @@ import org.springframework.context.MessageSource;
 public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	private int shedThresholdWatts = 9500;
+	private int powerAverageSampleSeconds = 10;
 	private int limitExecutionMonitorSeconds = 60;
 	private Collection<NodeControlProvider> switches;
 	private OptionalService<DatumDataSource<EnergyDatum>> consumptionDataSource;
@@ -160,7 +161,8 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			// verify switch not switched so recently we can't switch again
 			SwitchInfo info = switchInfos.get(controlId);
 			if ( switchSwitchedTooRecently(info) ) {
-				log.debug("Switch {} switched too recently to switch now: {}", info.getSwitchedDate());
+				log.debug("Switch {} switched too recently to switch now: {}", controlId,
+						info.getSwitchedDate());
 				continue;
 			}
 
@@ -174,7 +176,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 				log.debug("Switch {} already limiting power, cannot use to shed {}W", controlId,
 						desiredShedAmount);
 			} else {
-				log.debug("Found switch {} available for executing load shed of {}W", controlId,
+				log.info("Found switch {} available for executing load shed of {}W", controlId,
 						desiredShedAmount);
 				return controlId;
 			}
@@ -191,7 +193,8 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			// verify switch not switched so recently we can't switch again
 			SwitchInfo info = switchInfos.get(controlId);
 			if ( switchSwitchedTooRecently(info) ) {
-				log.debug("Switch {} switched too recently to switch now: {}", info.getSwitchedDate());
+				log.debug("Switch {} switched too recently to switch now: {}", controlId,
+						info.getSwitchedDate());
 				continue;
 			}
 
@@ -202,7 +205,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			}
 			NodeControlInfo controlInfo = switchControl.getCurrentControlInfo(controlId);
 			if ( switchIsLimitingPower(controlInfo) ) {
-				log.debug("Found switch {} available for removing load shed limit", controlId);
+				log.info("Found switch {} available for removing load shed limit", controlId);
 				return controlId;
 			} else {
 				log.debug("Switch {} already not limiting power, cannot use to remove limit", controlId);
@@ -213,7 +216,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	private boolean switchSwitchedTooRecently(SwitchInfo info) {
 		if ( info != null
-				&& info.getSwitchedDate().getTime() + limitExecutionMonitorSeconds > System
+				&& info.getSwitchedDate().getTime() + limitExecutionMonitorSeconds * 1000L > System
 						.currentTimeMillis() ) {
 			return true;
 		}
@@ -272,7 +275,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	}
 
 	private Integer effectivePowerValue(final long date) {
-		final long oldestDate = date - (limitExecutionMonitorSeconds * 1000L);
+		final long oldestDate = date - (powerAverageSampleSeconds * 1000L);
 		double totalPower = 0;
 		double totalSeconds = 0;
 		EnergyDatum prevDatum = null;
@@ -385,6 +388,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 				"Main"));
 		results.add(new BasicTextFieldSettingSpecifier("shedThresholdWatts", String
 				.valueOf(defaults.shedThresholdWatts)));
+		results.add(new BasicTextFieldSettingSpecifier("powerAverageSampleSeconds", String
+				.valueOf(defaults.powerAverageSampleSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("limitExecutionMonitorSeconds", String
+				.valueOf(defaults.limitExecutionMonitorSeconds)));
 
 		// dynamic list of configs
 		Collection<SwitchConfig> configList = getConfigs();
@@ -481,6 +488,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	public void setSwitches(Collection<NodeControlProvider> switches) {
 		this.switches = switches;
+	}
+
+	public void setPowerAverageSampleSeconds(int powerAverageSampleSeconds) {
+		this.powerAverageSampleSeconds = powerAverageSampleSeconds;
 	}
 
 }
