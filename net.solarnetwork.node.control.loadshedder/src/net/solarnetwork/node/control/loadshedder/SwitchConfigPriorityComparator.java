@@ -44,10 +44,10 @@ public class SwitchConfigPriorityComparator implements Comparator<SwitchConfig> 
 		if ( o1.getPriority() != null && o2.getPriority() != null ) {
 			return o1.getPriority().compareTo(o2.getPriority());
 		}
-		if ( o2.getPriority() == null ) {
+		if ( o2.getPriority() == null && o1.getPriority() != null ) {
 			return -1;
 		}
-		if ( o1.getPriority() == null ) {
+		if ( o1.getPriority() == null && o2.getPriority() != null ) {
 			return 1;
 		}
 		if ( o1.getControlId() != null && o2.getControlId() != null ) {
