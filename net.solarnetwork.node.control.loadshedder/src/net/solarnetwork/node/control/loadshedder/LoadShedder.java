@@ -130,6 +130,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 				} else {
 					result = shedLoad(controlId, desiredShedAmount);
 					if ( InstructionState.Completed == result ) {
+						log.info("Switch {} limit executed for {}W", controlId, desiredShedAmount);
 						updateSwitchInfo(controlId, powerNow);
 					}
 				}
@@ -137,6 +138,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		} else {
 			// find if there is a switch we can stop limiting power on
 			final int desiredReleaseAmount = (powerNow - shedThresholdWatts);
+
+			// reverse the order of the rules, we want to release in reverse order of limit
+			Collections.reverse(rules);
+
 			do {
 				String controlId = controlIdToRemoveLimit(rules);
 				if ( controlId == null ) {
@@ -144,6 +149,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 				} else {
 					result = removeLoadLimit(controlId, desiredReleaseAmount);
 					if ( InstructionState.Completed == result ) {
+						log.info("Switch {} limit released for {}W", controlId, desiredReleaseAmount);
 						updateSwitchInfo(controlId, powerNow);
 					}
 				}
@@ -155,17 +161,20 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	private String controlIdToExecuteLimit(List<SwitchConfig> rules, int desiredShedAmount) {
 		// we assume rules already sorted by priority here, and filtered to just the applicable ones,
 		// so find first rule for a switch that hasn't been switched within limitExecutionMonitorSeconds
+
+		// we don't want to execute a change if ANY switch has been changed within the configured cool down period
 		for ( SwitchConfig rule : rules ) {
 			String controlId = rule.getControlId();
-
-			// verify switch not switched so recently we can't switch again
 			SwitchInfo info = switchInfos.get(controlId);
 			if ( switchSwitchedTooRecently(info) ) {
-				log.debug("Switch {} switched too recently to switch now: {}", controlId,
+				log.debug("Switch {} switched too recently to enforce limit now: {}", controlId,
 						info.getSwitchedDate());
-				continue;
+				return null;
 			}
+		}
 
+		for ( SwitchConfig rule : rules ) {
+			String controlId = rule.getControlId();
 			NodeControlProvider switchControl = switchControlForId(controlId);
 			if ( switchControl == null ) {
 				log.warn("Switch {} not available, cannot use to limit power.", controlId);
@@ -187,17 +196,20 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	private String controlIdToRemoveLimit(List<SwitchConfig> rules) {
 		// we assume rules already sorted by priority here, and filtered to just the applicable ones,
 		// so find first rule for a switch that hasn't been switched within limitExecutionMonitorSeconds
+
+		// we don't want to execute a change if ANY switch has been changed within the configured cool down period
 		for ( SwitchConfig rule : rules ) {
 			String controlId = rule.getControlId();
-
-			// verify switch not switched so recently we can't switch again
 			SwitchInfo info = switchInfos.get(controlId);
 			if ( switchSwitchedTooRecently(info) ) {
-				log.debug("Switch {} switched too recently to switch now: {}", controlId,
+				log.debug("Switch {} switched too recently to release any limit now: {}", controlId,
 						info.getSwitchedDate());
-				continue;
+				return null;
 			}
+		}
 
+		for ( SwitchConfig rule : rules ) {
+			String controlId = rule.getControlId();
 			NodeControlProvider switchControl = switchControlForId(controlId);
 			if ( switchControl == null ) {
 				log.warn("Switch {} not available, cannot use to limit power.", controlId);
