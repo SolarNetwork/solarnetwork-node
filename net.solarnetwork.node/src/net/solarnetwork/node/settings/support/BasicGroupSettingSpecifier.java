@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.settings.support;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import net.solarnetwork.node.settings.GroupSettingSpecifier;
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
 /**
@@ -120,14 +122,64 @@ public class BasicGroupSettingSpecifier extends BaseSettingSpecifier implements 
 	}
 
 	@Override
-	public SettingSpecifier mappedWithPlaceholer(String template) {
-		return new BasicGroupSettingSpecifier(String.format(template, getKey()), getGroupSettings(),
+	public SettingSpecifier mappedWithPlaceholer(final String template) {
+		List<SettingSpecifier> gSettings = getGroupSettings();
+		List<SettingSpecifier> mappedGroupSettings = null;
+		if ( gSettings != null ) {
+			mappedGroupSettings = new ArrayList<SettingSpecifier>(gSettings.size());
+			for ( SettingSpecifier s : gSettings ) {
+				if ( s instanceof MappableSpecifier ) {
+					MappableSpecifier ms = (MappableSpecifier) s;
+					mappedGroupSettings.add(ms.mappedWithPlaceholer(template));
+				} else {
+					mappedGroupSettings.add(s);
+				}
+			}
+		}
+		final String key = getKey();
+		final String mappedKey = (key == null ? null : String.format(template, key));
+		BasicGroupSettingSpecifier spec = new BasicGroupSettingSpecifier(mappedKey, mappedGroupSettings,
 				isDynamic(), getFooterText());
+		spec.setTitle(getTitle());
+		return spec;
 	}
 
 	@Override
-	public SettingSpecifier mappedTo(String prefix) {
+	public SettingSpecifier mappedTo(final String prefix) {
 		return mappedWithPlaceholer(prefix + "%s");
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(final Mapper mapper) {
+		List<SettingSpecifier> gSettings = getGroupSettings();
+		List<SettingSpecifier> mappedGroupSettings = null;
+		if ( gSettings != null ) {
+			mappedGroupSettings = new ArrayList<SettingSpecifier>(gSettings.size());
+			for ( SettingSpecifier s : gSettings ) {
+				if ( s instanceof MappableSpecifier ) {
+					MappableSpecifier ms = (MappableSpecifier) s;
+					mappedGroupSettings.add(ms.mappedWithMapper(mapper));
+				} else {
+					mappedGroupSettings.add(s);
+				}
+			}
+		}
+		final String key = getKey();
+		final String mappedKey = (key == null ? null : mapper.mapKey(key));
+		BasicGroupSettingSpecifier spec = new BasicGroupSettingSpecifier(mappedKey, mappedGroupSettings,
+				isDynamic(), getFooterText());
+		spec.setTitle(getTitle());
+		return spec;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
+		builder.append("{key=").append(key);
+		builder.append(",dynamic=").append(dynamic);
+		builder.append(",count=").append(groupSettings == null ? 0 : groupSettings.size());
+		builder.append("}");
+		return builder.toString();
 	}
 
 }

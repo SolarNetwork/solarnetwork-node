@@ -30,7 +30,7 @@ import java.util.List;
  * @author matt
  * @version 1.1
  */
-public interface GroupSettingSpecifier extends SettingSpecifier {
+public interface GroupSettingSpecifier extends SettingSpecifier, MappableSpecifier {
 
 	/**
 	 * Get the key for this setting.
@@ -62,26 +62,5 @@ public interface GroupSettingSpecifier extends SettingSpecifier {
 	 * @since 1.1
 	 */
 	boolean isDynamic();
-
-	/**
-	 * Return a setting specifier mapped to a new path. This is to allow
-	 * delegating setting specifiers to re-map the key.
-	 * 
-	 * @param prefix
-	 *        the new prefix to add to the key
-	 * @return the new instance
-	 * @since 1.1
-	 */
-	SettingSpecifier mappedTo(String prefix);
-
-	/**
-	 * Return a setting specifier mapped to a new path, using a format template.
-	 * 
-	 * @param template
-	 *        the format template
-	 * @return the new instance
-	 * @since 1.1
-	 */
-	SettingSpecifier mappedWithPlaceholer(String template);
 
 }
