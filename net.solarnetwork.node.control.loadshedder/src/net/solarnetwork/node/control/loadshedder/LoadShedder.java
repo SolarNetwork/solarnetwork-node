@@ -26,16 +26,22 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -56,9 +62,9 @@ import org.springframework.context.MessageSource;
  */
 public class LoadShedder implements SettingSpecifierProvider, JobService {
 
-	private int powerCeilingWatts = 10000;
 	private int shedThresholdWatts = 9500;
 	private int limitExecutionMonitorSeconds = 60;
+	private Collection<NodeControlProvider> switches;
 	private OptionalService<DatumDataSource<EnergyDatum>> consumptionDataSource;
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private List<SwitchConfig> configs = new ArrayList<SwitchConfig>(4);
@@ -82,10 +88,22 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			log.info("No power reading available.");
 			return null;
 		}
+		log.debug("Current effective load: {}W", powerNow);
 		final List<SwitchConfig> rules = getConfigs();
 		InstructionStatus.InstructionState result = evaulateRules(rules, powerNow.intValue());
-		log.debug("Current demand: {}W", powerNow);
 		return result;
+	}
+
+	private SwitchInfo updateSwitchInfo(String controlId, int watts) {
+		SwitchInfo info = switchInfos.get(controlId);
+		if ( info == null ) {
+			info = new SwitchInfo();
+			info.setControlId(controlId);
+			switchInfos.put(controlId, info);
+		}
+		info.setSwitchedDate(new Date());
+		info.setWattsBeforeSwitch(watts);
+		return info;
 	}
 
 	private InstructionState evaulateRules(List<SwitchConfig> rules, final int powerNow) {
@@ -100,13 +118,157 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		}
 		InstructionState result = null;
 		if ( powerNow > shedThresholdWatts ) {
+			// find a switch we can actively limit power on
 			log.info("Power limit required: current power {}W > threshold {}W", powerNow,
 					shedThresholdWatts);
-			// TODO: issue ShedLoad instruction
+			final int desiredShedAmount = (powerNow - shedThresholdWatts);
+			do {
+				String controlId = controlIdToExecuteLimit(rules, desiredShedAmount);
+				if ( controlId == null ) {
+					log.warn("No switch avaialble to shed {}W", desiredShedAmount);
+				} else {
+					result = shedLoad(controlId, desiredShedAmount);
+					if ( InstructionState.Completed == result ) {
+						updateSwitchInfo(controlId, powerNow);
+					}
+				}
+			} while ( result == InstructionState.Declined );
 		} else {
-			// TODO: find if there any switches we can turn back on
+			// find if there is a switch we can stop limiting power on
+			final int desiredReleaseAmount = (powerNow - shedThresholdWatts);
+			do {
+				String controlId = controlIdToRemoveLimit(rules);
+				if ( controlId == null ) {
+					log.trace("No switches need limit lifted.");
+				} else {
+					result = removeLoadLimit(controlId, desiredReleaseAmount);
+					if ( InstructionState.Completed == result ) {
+						updateSwitchInfo(controlId, powerNow);
+					}
+				}
+			} while ( result == InstructionState.Declined );
 		}
 		return result;
+	}
+
+	private String controlIdToExecuteLimit(List<SwitchConfig> rules, int desiredShedAmount) {
+		// we assume rules already sorted by priority here, and filtered to just the applicable ones,
+		// so find first rule for a switch that hasn't been switched within limitExecutionMonitorSeconds
+		for ( SwitchConfig rule : rules ) {
+			String controlId = rule.getControlId();
+
+			// verify switch not switched so recently we can't switch again
+			SwitchInfo info = switchInfos.get(controlId);
+			if ( switchSwitchedTooRecently(info) ) {
+				log.debug("Switch {} switched too recently to switch now: {}", info.getSwitchedDate());
+				continue;
+			}
+
+			NodeControlProvider switchControl = switchControlForId(controlId);
+			if ( switchControl == null ) {
+				log.warn("Switch {} not available, cannot use to limit power.", controlId);
+				continue;
+			}
+			NodeControlInfo controlInfo = switchControl.getCurrentControlInfo(controlId);
+			if ( switchIsLimitingPower(controlInfo) ) {
+				log.debug("Switch {} already limiting power, cannot use to shed {}W", controlId,
+						desiredShedAmount);
+			} else {
+				log.debug("Found switch {} available for executing load shed of {}W", controlId,
+						desiredShedAmount);
+				return controlId;
+			}
+		}
+		return null;
+	}
+
+	private String controlIdToRemoveLimit(List<SwitchConfig> rules) {
+		// we assume rules already sorted by priority here, and filtered to just the applicable ones,
+		// so find first rule for a switch that hasn't been switched within limitExecutionMonitorSeconds
+		for ( SwitchConfig rule : rules ) {
+			String controlId = rule.getControlId();
+
+			// verify switch not switched so recently we can't switch again
+			SwitchInfo info = switchInfos.get(controlId);
+			if ( switchSwitchedTooRecently(info) ) {
+				log.debug("Switch {} switched too recently to switch now: {}", info.getSwitchedDate());
+				continue;
+			}
+
+			NodeControlProvider switchControl = switchControlForId(controlId);
+			if ( switchControl == null ) {
+				log.warn("Switch {} not available, cannot use to limit power.", controlId);
+				continue;
+			}
+			NodeControlInfo controlInfo = switchControl.getCurrentControlInfo(controlId);
+			if ( switchIsLimitingPower(controlInfo) ) {
+				log.debug("Found switch {} available for removing load shed limit", controlId);
+				return controlId;
+			} else {
+				log.debug("Switch {} already not limiting power, cannot use to remove limit", controlId);
+			}
+		}
+		return null;
+	}
+
+	private boolean switchSwitchedTooRecently(SwitchInfo info) {
+		if ( info != null
+				&& info.getSwitchedDate().getTime() + limitExecutionMonitorSeconds > System
+						.currentTimeMillis() ) {
+			return true;
+		}
+		return false;
+	}
+
+	private boolean switchIsLimitingPower(NodeControlInfo controlInfo) {
+		final String value = controlInfo.getValue();
+		switch (controlInfo.getType()) {
+			case Boolean:
+				// TRUE means actively limiting, FALSE means NOT limiting
+				if ( value != null
+						&& (value.equals("1") || value.equalsIgnoreCase("yes") || value
+								.equalsIgnoreCase("true")) ) {
+					return true;
+				}
+				break;
+
+			default:
+				// for now, other types are not supported
+				log.warn("Switch {} data type {} not supported, cannot use to limit power",
+						controlInfo.getControlId(), controlInfo.getType());
+				break;
+		}
+		return false;
+	}
+
+	private NodeControlProvider switchControlForId(final String controlId) {
+		Collection<NodeControlProvider> providers = switches;
+		if ( providers == null ) {
+			return null;
+		}
+		for ( NodeControlProvider p : providers ) {
+			List<String> ids = p.getAvailableControlIds();
+			if ( ids != null && ids.contains(controlId) ) {
+				return p;
+			}
+		}
+		return null;
+	}
+
+	private InstructionStatus.InstructionState removeLoadLimit(final String controlId,
+			final int desiredAmountInWatts) {
+		assert desiredAmountInWatts < 1;
+		return shedLoad(controlId, desiredAmountInWatts);
+	}
+
+	private InstructionStatus.InstructionState shedLoad(final String controlId,
+			final int desiredAmountInWatts) {
+		final BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD,
+				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(controlId, String.valueOf(desiredAmountInWatts));
+		final InstructionStatus.InstructionState result = InstructionUtils.handleInstruction(
+				instructionHandlers, instr);
+		return (result == null ? InstructionStatus.InstructionState.Declined : result);
 	}
 
 	private Integer effectivePowerValue(final long date) {
@@ -120,9 +282,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			}
 			if ( prevDatum != null ) {
 				Integer power = getPowerValue(d);
-				if ( power != null ) {
-					double ds = (d.getCreated().getTime() - prevDatum.getCreated().getTime()) / 1000.0;
-					totalPower += (power.doubleValue() * ds);
+				Integer prevPower = getPowerValue(prevDatum);
+				if ( power != null && prevPower != null ) {
+					double ds = (prevDatum.getCreated().getTime() - d.getCreated().getTime()) / 1000.0;
+					totalPower += (power.doubleValue() + prevPower.doubleValue()) * 0.5 * ds;
 					totalSeconds += ds;
 				}
 			}
@@ -150,23 +313,15 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		List<SwitchConfig> applicable = new ArrayList<SwitchConfig>(rules.size());
 		final long now = System.currentTimeMillis();
 		for ( SwitchConfig rule : rules ) {
+			if ( rule.getActive() != null && rule.getActive().booleanValue() == false ) {
+				continue;
+			}
 			if ( rule.fallsWithinTimeWindow(now) ) {
 				applicable.add(rule);
 			}
 		}
 		Collections.sort(applicable, SwitchConfigPriorityComparator.COMPARATOR);
 		return applicable;
-	}
-
-	private SwitchInfo mostRecentSwitch() {
-		SwitchInfo result = null;
-		for ( SwitchInfo info : switchInfos.values() ) {
-			if ( result == null || info.getSwitchedDate() != null
-					&& info.getSwitchedDate().before(result.getSwitchedDate()) ) {
-				result = info;
-			}
-		}
-		return result;
 	}
 
 	@Override
@@ -228,8 +383,6 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['UID']",
 				"Main"));
-		results.add(new BasicTextFieldSettingSpecifier("powerCeilingWatts", String
-				.valueOf(defaults.powerCeilingWatts)));
 		results.add(new BasicTextFieldSettingSpecifier("shedThresholdWatts", String
 				.valueOf(defaults.shedThresholdWatts)));
 
@@ -253,6 +406,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	// Accessors
 
+	public OptionalService<DatumDataSource<EnergyDatum>> getConsumptionDataSource() {
+		return consumptionDataSource;
+	}
+
 	public void setConsumptionDataSource(
 			OptionalService<DatumDataSource<EnergyDatum>> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
@@ -264,10 +421,6 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
-	}
-
-	public void setPowerCeilingWatts(int powerCeilingWatts) {
-		this.powerCeilingWatts = powerCeilingWatts;
 	}
 
 	public void setShedThresholdWatts(int shedThresholdWatts) {
@@ -324,6 +477,10 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	public void setConsumptionSampleLimit(int consumptionSampleLimit) {
 		this.consumptionSampleLimit = consumptionSampleLimit;
+	}
+
+	public void setSwitches(Collection<NodeControlProvider> switches) {
+		this.switches = switches;
 	}
 
 }

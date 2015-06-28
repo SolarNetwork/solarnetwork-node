@@ -19,7 +19,11 @@
 	<!-- Service references -->
 
 	<reference-list id="instructionHandlers" availability="optional"
+		filter="(instruction=ShedLoad)"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+		
+	<reference-list id="nodeControlProviders" availability="optional"
+		interface="net.solarnetwork.node.NodeControlProvider"/>
 		
 	<!-- Supporting Services -->
 	
@@ -66,7 +70,7 @@
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
 					<property name="name" value="loadShedderTrigger"/>
 					<property name="jobName" value="loadShedderJob"/>
-					<property name="cronExpression" value="0 * * * * ?"/>
+					<property name="cronExpression" value="0/10 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
 				</bean>
@@ -79,8 +83,9 @@
 						<map>
 							<entry key="service">
 								<bean class="net.solarnetwork.node.control.loadshedder.LoadShedder">
-									<property name="messageSource" ref="messageSource"/>
+									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="instructionHandlers" ref="instructionHandlers"/>
+									<property name="switches" ref="nodeControlProviders"/>
 									<property name="consumptionDataSource">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
@@ -96,15 +101,6 @@
 								</bean>
 							</entry>
 						</map>
-					</property>
-				</bean>
-			</property>
-			<property name="settingSpecifierProvider">
-				<bean class="net.solarnetwork.node.job.SimpleServiceJob">
-					<property name="service">
-						<bean class="net.solarnetwork.node.control.loadshedder.LoadShedder">
-							<property name="messageSource" ref="jobMessageSource"/>
-						</bean>
 					</property>
 				</bean>
 			</property>

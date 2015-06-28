@@ -71,9 +71,40 @@ public class SwitchConfig {
 		results.add(new BasicToggleSettingSpecifier(prefix + "active", defaults.active));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowStart",
 				defaults.timeWindowStart));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowStart",
-				defaults.timeWindowEnd));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowEnd", defaults.timeWindowEnd));
 		return results;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SwitchConfig{");
+		if ( controlId != null ) {
+			builder.append("controlId=");
+			builder.append(controlId);
+			builder.append(", ");
+		}
+		if ( priority != null ) {
+			builder.append("priority=");
+			builder.append(priority);
+			builder.append(", ");
+		}
+		if ( active != null ) {
+			builder.append("active=");
+			builder.append(active);
+			builder.append(", ");
+		}
+		if ( timeWindowStart != null ) {
+			builder.append("timeWindowStart=");
+			builder.append(timeWindowStart);
+			builder.append(", ");
+		}
+		if ( timeWindowEnd != null ) {
+			builder.append("timeWindowEnd=");
+			builder.append(timeWindowEnd);
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**
