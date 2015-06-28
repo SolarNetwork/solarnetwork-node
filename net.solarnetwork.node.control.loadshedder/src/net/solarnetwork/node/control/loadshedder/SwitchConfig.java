@@ -55,6 +55,38 @@ public class SwitchConfig {
 	private String timeWindowEnd;
 
 	/**
+	 * Default constructor.
+	 */
+	public SwitchConfig() {
+		super();
+	}
+
+	/**
+	 * Construct with a control ID.
+	 * 
+	 * @param controlId
+	 *        The control ID.
+	 */
+	public SwitchConfig(String controlId) {
+		super();
+		setControlId(controlId);
+	}
+
+	/**
+	 * Construct with a control ID and priority.
+	 * 
+	 * @param controlId
+	 *        The control ID.
+	 * @param priority
+	 *        The priority.
+	 */
+	public SwitchConfig(String controlId, Integer priority) {
+		super();
+		setControlId(controlId);
+		setPriority(priority);
+	}
+
+	/**
 	 * Get a list of settings for configuring this object.
 	 * 
 	 * @param prefix
