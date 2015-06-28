@@ -1,5 +1,5 @@
 /* ==================================================================
- * SwitchConfigPriorityComparator.java - 27/06/2015 5:06:21 pm
+ * LoadShedControlConfigPriorityComparator.java - 27/06/2015 5:06:21 pm
  * 
  * Copyright 2007-2015 SolarNetwork.net Dev Team
  * 
@@ -25,22 +25,22 @@ package net.solarnetwork.node.control.loadshedder;
 import java.util.Comparator;
 
 /**
- * Comparator for {@link SwitchConfig} to order by priority from lowest to
+ * Comparator for {@link LoadShedControlConfig} to order by priority from lowest to
  * highest, with <em>null<em> sorted last.
  * A secondary sort on <b>controlId</b> is used if both priority values are null.
  * 
  * @author matt
  * @version 1.0
  */
-public class SwitchConfigPriorityComparator implements Comparator<SwitchConfig> {
+public class LoadShedControlConfigPriorityComparator implements Comparator<LoadShedControlConfig> {
 
 	/**
 	 * A static instance of the comparator.
 	 */
-	public static final SwitchConfigPriorityComparator COMPARATOR = new SwitchConfigPriorityComparator();
+	public static final LoadShedControlConfigPriorityComparator COMPARATOR = new LoadShedControlConfigPriorityComparator();
 
 	@Override
-	public int compare(SwitchConfig o1, SwitchConfig o2) {
+	public int compare(LoadShedControlConfig o1, LoadShedControlConfig o2) {
 		if ( o1.getPriority() != null && o2.getPriority() != null ) {
 			return o1.getPriority().compareTo(o2.getPriority());
 		}

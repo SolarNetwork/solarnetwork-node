@@ -25,7 +25,7 @@
 	<reference-list id="nodeControlProviders" availability="optional"
 		interface="net.solarnetwork.node.NodeControlProvider"/>
 		
-	<!-- Supporting Services -->
+	<!-- Supporting Services -->	
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -50,6 +50,19 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
+	<bean id="defaultLoadShedderStrategy" class="net.solarnetwork.node.control.loadshedder.DefaultLoadShedderStrategy">
+		<property name="controls" ref="nodeControlProviders"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.control.loadshedder.DefaultLoadShedderStrategy</value>
+					</list>
+				</property>
+			</bean>
+		</property>
 	</bean>
 	
 	<!-- Published Services -->
@@ -85,7 +98,6 @@
 								<bean class="net.solarnetwork.node.control.loadshedder.LoadShedder">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="instructionHandlers" ref="instructionHandlers"/>
-									<property name="switches" ref="nodeControlProviders"/>
 									<property name="consumptionDataSource">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
@@ -97,7 +109,19 @@
 											</property>
 										</bean>	
 									</property>
-									<!--property name="eventAdmin" ref="eventAdmin"/-->
+									<property name="shedStrategy">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName"  
+												value="net.solarnetwork.node.control.loadshedder.LoadShedderStrategy"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value="Default"/>
+												</map>
+											</property>
+											<property name="fallbackService" ref="defaultLoadShedderStrategy"/>
+										</bean>	
+									</property>
 								</bean>
 							</entry>
 						</map>

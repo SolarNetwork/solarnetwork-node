@@ -23,13 +23,13 @@
 package net.solarnetwork.node.control.loadshedder.test;
 
 import java.util.Calendar;
-import net.solarnetwork.node.control.loadshedder.SwitchConfig;
+import net.solarnetwork.node.control.loadshedder.LoadShedControlConfig;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test cases for the {@link SwitchConfig} calss.
+ * Test cases for the {@link LoadShedControlConfig} calss.
  * 
  * @author matt
  * @version 1.0
@@ -38,7 +38,7 @@ public class SwitchConfigTests extends AbstractNodeTest {
 
 	@Test
 	public void timeWindowBetweenNone() {
-		SwitchConfig conf = new SwitchConfig();
+		LoadShedControlConfig conf = new LoadShedControlConfig();
 		Assert.assertTrue("Any time", conf.fallsWithinTimeWindow(System.currentTimeMillis()));
 	}
 
@@ -46,7 +46,7 @@ public class SwitchConfigTests extends AbstractNodeTest {
 	public void timeWindowBetween() {
 		Calendar c = Calendar.getInstance();
 		c.set(2010, 1, 1, 12, 0);
-		SwitchConfig conf = new SwitchConfig();
+		LoadShedControlConfig conf = new LoadShedControlConfig();
 		conf.setTimeWindowStart("8:00");
 		conf.setTimeWindowEnd("20:00");
 		Assert.assertTrue("Around noon", conf.fallsWithinTimeWindow(c.getTimeInMillis()));
@@ -62,7 +62,7 @@ public class SwitchConfigTests extends AbstractNodeTest {
 	public void timeWindowBefore() {
 		Calendar c = Calendar.getInstance();
 		c.set(2010, 1, 1, 12, 0);
-		SwitchConfig conf = new SwitchConfig();
+		LoadShedControlConfig conf = new LoadShedControlConfig();
 		conf.setTimeWindowEnd("20:00");
 
 		c.set(Calendar.HOUR_OF_DAY, 7);
@@ -76,7 +76,7 @@ public class SwitchConfigTests extends AbstractNodeTest {
 	public void timeWindowAfter() {
 		Calendar c = Calendar.getInstance();
 		c.set(2010, 1, 1, 12, 0);
-		SwitchConfig conf = new SwitchConfig();
+		LoadShedControlConfig conf = new LoadShedControlConfig();
 		conf.setTimeWindowStart("8:00");
 
 		c.set(Calendar.HOUR_OF_DAY, 7);

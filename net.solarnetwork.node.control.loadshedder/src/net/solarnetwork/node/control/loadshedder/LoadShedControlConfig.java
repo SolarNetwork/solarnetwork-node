@@ -1,5 +1,5 @@
 /* ==================================================================
- * SwitchConfig.java - 27/06/2015 11:26:03 am
+ * LoadShedControlConfig.java - 27/06/2015 11:26:03 am
  * 
  * Copyright 2007-2015 SolarNetwork.net Dev Team
  * 
@@ -40,9 +40,9 @@ import org.slf4j.LoggerFactory;
  * @author matt
  * @version 1.0
  */
-public class SwitchConfig {
+public class LoadShedControlConfig {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SwitchConfig.class);
+	private static final Logger LOG = LoggerFactory.getLogger(LoadShedControlConfig.class);
 
 	/** The supported time window syntax ({@code H:mm}). */
 	public static final String TIME_WINDOW_PATTERN = "H:mm";
@@ -53,11 +53,12 @@ public class SwitchConfig {
 	private Boolean active = Boolean.TRUE;
 	private String timeWindowStart;
 	private String timeWindowEnd;
+	private Integer minimumLimitMinutes;
 
 	/**
 	 * Default constructor.
 	 */
-	public SwitchConfig() {
+	public LoadShedControlConfig() {
 		super();
 	}
 
@@ -67,7 +68,7 @@ public class SwitchConfig {
 	 * @param controlId
 	 *        The control ID.
 	 */
-	public SwitchConfig(String controlId) {
+	public LoadShedControlConfig(String controlId) {
 		super();
 		setControlId(controlId);
 	}
@@ -80,7 +81,7 @@ public class SwitchConfig {
 	 * @param priority
 	 *        The priority.
 	 */
-	public SwitchConfig(String controlId, Integer priority) {
+	public LoadShedControlConfig(String controlId, Integer priority) {
 		super();
 		setControlId(controlId);
 		setPriority(priority);
@@ -94,12 +95,14 @@ public class SwitchConfig {
 	 * @return A list of settings.
 	 */
 	public List<SettingSpecifier> settings(String prefix) {
-		SwitchConfig defaults = new SwitchConfig();
+		LoadShedControlConfig defaults = new LoadShedControlConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", defaults.name));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", defaults.controlId));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "priority",
 				(defaults.priority == null ? "" : defaults.priority.toString())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "minimumLimitMinutes",
+				(defaults.minimumLimitMinutes == null ? "" : defaults.minimumLimitMinutes.toString())));
 		results.add(new BasicToggleSettingSpecifier(prefix + "active", defaults.active));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowStart",
 				defaults.timeWindowStart));
@@ -110,29 +113,27 @@ public class SwitchConfig {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("SwitchConfig{");
-		if ( controlId != null ) {
-			builder.append("controlId=");
-			builder.append(controlId);
-			builder.append(", ");
-		}
+		builder.append("LoadShedControlConfig{");
+		builder.append("controlId=");
+		builder.append(controlId);
 		if ( priority != null ) {
-			builder.append("priority=");
+			builder.append(", priority=");
 			builder.append(priority);
-			builder.append(", ");
 		}
 		if ( active != null ) {
-			builder.append("active=");
+			builder.append(", active=");
 			builder.append(active);
-			builder.append(", ");
+		}
+		if ( minimumLimitMinutes != null ) {
+			builder.append(", minimumLimitMinutes=");
+			builder.append(minimumLimitMinutes);
 		}
 		if ( timeWindowStart != null ) {
-			builder.append("timeWindowStart=");
+			builder.append(", timeWindowStart=");
 			builder.append(timeWindowStart);
-			builder.append(", ");
 		}
 		if ( timeWindowEnd != null ) {
-			builder.append("timeWindowEnd=");
+			builder.append(", timeWindowEnd=");
 			builder.append(timeWindowEnd);
 		}
 		builder.append("}");
@@ -242,6 +243,14 @@ public class SwitchConfig {
 
 	public void setTimeWindowEnd(String timeWindowEnd) {
 		this.timeWindowEnd = timeWindowEnd;
+	}
+
+	public Integer getMinimumLimitMinutes() {
+		return minimumLimitMinutes;
+	}
+
+	public void setMinimumLimitMinutes(Integer minimumLimitMinutes) {
+		this.minimumLimitMinutes = minimumLimitMinutes;
 	}
 
 }

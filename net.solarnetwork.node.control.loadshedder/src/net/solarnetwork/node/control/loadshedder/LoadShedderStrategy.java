@@ -1,5 +1,5 @@
 /* ==================================================================
- * SwitchInfo.java - 27/06/2015 5:03:52 pm
+ * LoadShedderStrategy.java - 29/06/2015 7:02:05 am
  * 
  * Copyright 2007-2015 SolarNetwork.net Dev Team
  * 
@@ -22,42 +22,35 @@
 
 package net.solarnetwork.node.control.loadshedder;
 
-import java.util.Date;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.node.domain.EnergyDatum;
 
 /**
- * Status information related to a specific switch.
+ * API for a load shedding strategy.
  * 
  * @author matt
  * @version 1.0
  */
-public class SwitchInfo {
+public interface LoadShedderStrategy extends Identifiable {
 
-	private String controlId;
-	private Integer wattsBeforeSwitch;
-	private Date switchedDate;
-
-	public String getControlId() {
-		return controlId;
-	}
-
-	public void setControlId(String controlId) {
-		this.controlId = controlId;
-	}
-
-	public Date getSwitchedDate() {
-		return switchedDate;
-	}
-
-	public void setSwitchedDate(Date switchedDate) {
-		this.switchedDate = switchedDate;
-	}
-
-	public Integer getWattsBeforeSwitch() {
-		return wattsBeforeSwitch;
-	}
-
-	public void setWattsBeforeSwitch(Integer wattsBeforeSwitch) {
-		this.wattsBeforeSwitch = wattsBeforeSwitch;
-	}
+	/**
+	 * Evaluate a set of rules for a specific date and power conditions.
+	 * 
+	 * @param rules
+	 *        The rules to evaluate.
+	 * @param limitStatuses
+	 *        A map of control IDs to associated status objects.
+	 * @param date
+	 *        The date with which to evaluate the rules at. Generally this will
+	 *        be the current date.
+	 * @param powerSamples
+	 *        A set of power samples, ordered from most recent to oldest.
+	 * @return The action to execute, or <em>null</em> if no action is needed.
+	 */
+	public Collection<LoadShedAction> evaulateRules(List<LoadShedControlConfig> rules,
+			Map<String, LoadShedControlInfo> limitStatuses, long date, Collection<EnergyDatum> powerSamples);
 
 }
