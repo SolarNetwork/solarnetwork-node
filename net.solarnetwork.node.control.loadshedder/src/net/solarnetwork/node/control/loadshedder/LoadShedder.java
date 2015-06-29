@@ -28,9 +28,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.job.JobService;
@@ -44,6 +45,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.OptionalService;
@@ -70,8 +72,9 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	private int consumptionSampleLimit = 10;
 	private final Deque<EnergyDatum> consumptionSamples = new ArrayDeque<EnergyDatum>(10);
-	private final Map<String, LoadShedControlInfo> switchInfos = new HashMap<String, LoadShedControlInfo>(
+	private final ConcurrentMap<String, LoadShedControlInfo> switchInfos = new ConcurrentHashMap<String, LoadShedControlInfo>(
 			4);
+	private Date lastEvaluationDate;
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -82,11 +85,13 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	 */
 	public synchronized InstructionStatus.InstructionState evaluatePowerLoad() {
 		final long now = System.currentTimeMillis();
-		addPowerSample(consumptionDataSource, consumptionSamples); // adds to sample buffer
 		LoadShedderStrategy strategy = getStrategy();
 		if ( strategy == null ) {
 			log.warn("No LoadShedderStrategy service avaialble");
+			return null;
 		}
+		lastEvaluationDate = new Date(now);
+		addPowerSample(consumptionDataSource, consumptionSamples); // adds to sample buffer
 		Deque<EnergyDatum> samples = consumptionSamples;
 		Collection<LoadShedAction> actions = strategy.evaulateRules(getConfigs(), switchInfos, now,
 				samples);
@@ -202,6 +207,21 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+
+		final Locale locale = Locale.getDefault();
+		final LoadShedderStrategy strat = getStrategy();
+
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(locale), true));
+
+		for ( LoadShedControlInfo info : switchInfos.values() ) {
+			String infoMessage = getInfoMessage(info, locale);
+			String stratMessage = (strat != null ? strat.getStatusMessage(info, locale) : null);
+			if ( stratMessage != null && stratMessage.length() > 0 ) {
+				infoMessage += " " + stratMessage;
+			}
+			results.add(new BasicTitleSettingSpecifier("info.control", infoMessage, true));
+		}
+
 		results.add(new BasicTextFieldSettingSpecifier("shedStrategy.propertyFilters['UID']", "Default"));
 		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['UID']",
 				"Main"));
@@ -237,6 +257,64 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		results.add(listComplexGroup);
 
 		return results;
+	}
+
+	private String getInfoMessage(final Locale locale) {
+		if ( lastEvaluationDate == null ) {
+			return messageSource.getMessage("info.noEvaluations", null, locale);
+		}
+		StringBuilder buf = new StringBuilder();
+		buf.append(messageSource.getMessage("info.basic", new Object[] { lastEvaluationDate }, locale));
+		EnergyDatum latest = consumptionSamples.peek();
+		if ( latest != null ) {
+			buf.append(" ").append(
+					messageSource.getMessage("info.reading",
+							new Object[] { latest.getWatts(), latest.getCreated() }, locale));
+		}
+		return buf.toString();
+	}
+
+	private String getInfoMessage(final LoadShedControlInfo info, final Locale locale) {
+		assert info != null;
+		final String mode = messageSource.getMessage(
+				(info.getAction() != null && info.getAction().getShedWatts() != null
+						&& info.getAction().getShedWatts() > 0 ? "info.control.shedding"
+						: "info.control.notshedding"), null, locale);
+		StringBuilder buf = new StringBuilder();
+		buf.append(messageSource.getMessage("info.control.basic", new Object[] { info.getControlId(),
+				mode }, locale));
+		if ( info.getActionDate() != null ) {
+			buf.append(" ").append(
+					messageSource.getMessage("info.control.action", new Object[] { info.getActionDate(),
+							info.getWattsBeforeAction() }, locale));
+			LoadShedControlConfig rule = configForControlId(info.getControlId());
+			if ( info.getAction() != null && info.getAction().getShedWatts() != null
+					&& info.getAction().getShedWatts() > 0 && rule != null
+					&& rule.getMinimumLimitMinutes() != null ) {
+				long nextActionAllowed = info.getActionDate().getTime()
+						+ rule.getMinimumLimitMinutes().longValue() * 60000L;
+				if ( nextActionAllowed > System.currentTimeMillis() ) {
+					buf.append(" ").append(
+							messageSource.getMessage("info.control.action.lock",
+									new Object[] { rule.getMinimumLimitMinutes(),
+											new Date(nextActionAllowed) }, locale));
+				}
+			}
+		}
+		return buf.toString();
+	}
+
+	private LoadShedControlConfig configForControlId(String controlId) {
+		List<LoadShedControlConfig> list = configs;
+		if ( list == null ) {
+			return null;
+		}
+		for ( LoadShedControlConfig c : list ) {
+			if ( controlId.equals(c.getControlId()) ) {
+				return c;
+			}
+		}
+		return null;
 	}
 
 	// Accessors

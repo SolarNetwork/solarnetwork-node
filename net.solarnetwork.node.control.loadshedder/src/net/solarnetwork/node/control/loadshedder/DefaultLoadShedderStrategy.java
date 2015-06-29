@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
@@ -99,6 +100,11 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 			}
 		}
 		return (result == null ? null : Collections.singletonList(result));
+	}
+
+	@Override
+	public String getStatusMessage(LoadShedControlInfo info, Locale locale) {
+		return null;
 	}
 
 	private String controlIdToExecuteLimit(final long date, List<LoadShedControlConfig> rules,

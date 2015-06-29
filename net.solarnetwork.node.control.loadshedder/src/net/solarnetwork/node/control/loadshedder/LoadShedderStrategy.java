@@ -24,6 +24,7 @@ package net.solarnetwork.node.control.loadshedder;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.domain.EnergyDatum;
@@ -50,7 +51,19 @@ public interface LoadShedderStrategy extends Identifiable {
 	 *        A set of power samples, ordered from most recent to oldest.
 	 * @return The action to execute, or <em>null</em> if no action is needed.
 	 */
-	public Collection<LoadShedAction> evaulateRules(List<LoadShedControlConfig> rules,
-			Map<String, LoadShedControlInfo> limitStatuses, long date, Collection<EnergyDatum> powerSamples);
+	Collection<LoadShedAction> evaulateRules(List<LoadShedControlConfig> rules,
+			Map<String, LoadShedControlInfo> limitStatuses, long date,
+			Collection<EnergyDatum> powerSamples);
+
+	/**
+	 * Get a status message for a specific control.
+	 * 
+	 * @param info
+	 *        The control info to get a status message for.
+	 * @param locale
+	 *        The locale of the message.
+	 * @return The message, or <em>null</em> if nothing to report.
+	 */
+	String getStatusMessage(LoadShedControlInfo info, Locale locale);
 
 }
