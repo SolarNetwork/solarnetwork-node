@@ -24,7 +24,14 @@
 			/power/switch/grid
 		</beans:prop>
 	</osgix:cm-properties>
+	
+	<!-- Services -->
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<!-- Published Services -->
 
 	<service ref="mockProvider" ranking="-1">
@@ -48,6 +55,7 @@
 	
 	<bean id="mockProvider" class="net.solarnetwork.node.control.mock.MockNodeControlProvider">
 		<property name="booleanControlIds" value="${MockNodeControlProvider.booleanControlIds}"/>
+		<property name="eventAdmin" ref="eventAdmin"/>
 	</bean>
 	
 </blueprint>
