@@ -27,23 +27,31 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
+import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -56,7 +64,7 @@ import org.springframework.context.MessageSource;
  * @version 1.0
  */
 public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider, EventHandler {
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private MessageSource messageSource;
@@ -65,10 +73,13 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 	private String groupUID;
 	private double watts = 5;
 	private double wattsRandomness = 0.2;
+	private Map<String, Integer> loadShedControlPowerMapping;
 
 	private GeneralNodeACEnergyDatum sample;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	private final ConcurrentMap<String, Integer> shedMap = new ConcurrentHashMap<String, Integer>(4);
 
 	private final AtomicLong mockMeter = new AtomicLong(meterStartValue());
 
@@ -100,8 +111,14 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 				double diffHours = ((newSample.getCreated().getTime() - currSample.getCreated()
 						.getTime()) / (double) (1000 * 60 * 60));
 				double currWatts = this.watts;
+				for ( Integer shedWatts : shedMap.values() ) {
+					currWatts -= shedWatts.intValue();
+				}
 				currWatts += (currWatts * (Math.random() * wattsRandomness) * (Math.random() < 0.5 ? -1
 						: 1));
+				if ( currWatts < 0.0 ) {
+					currWatts = 0;
+				}
 				long wh = (long) (currWatts * diffHours);
 				long newWh = currSample.getWattHourReading() + wh;
 				if ( mockMeter.compareAndSet(currSample.getWattHourReading(), newWh) ) {
@@ -127,6 +144,30 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void handleEvent(Event event) {
+		Map<String, Integer> mapping = getLoadShedControlPowerMapping();
+		if ( mapping == null ) {
+			return;
+		}
+		final String topic = event.getTopic();
+		if ( topic.equals(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED)
+				|| topic.equals(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED) ) {
+			String controlId = (String) event.getProperty("controlId");
+			String controlValue = (String) event.getProperty("value");
+			Integer shedValue = mapping.get(controlId);
+			if ( shedValue != null ) {
+				if ( controlValue.equals(Boolean.TRUE.toString()) ) {
+					// we are shedding load
+					shedMap.putIfAbsent(controlId, shedValue);
+				} else {
+					// not shedding load
+					shedMap.remove(controlId, shedValue);
+				}
+			}
+		}
 	}
 
 	@Override
@@ -158,13 +199,36 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockMeterDataSource defaults = new MockMeterDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 
 		results.add(new BasicTextFieldSettingSpecifier("watts", String.valueOf(defaults.watts)));
 		results.add(new BasicTextFieldSettingSpecifier("wattsRandomness", String
 				.valueOf(defaults.wattsRandomness)));
+		results.add(new BasicTextFieldSettingSpecifier("loadShedControlPowerMappingValue", defaults
+				.getLoadShedControlPowerMappingValue()));
+
 		return results;
+	}
+
+	private String getInfoMessage() {
+		StringBuilder buf = new StringBuilder();
+		EnergyDatum latest = sample;
+		if ( latest != null ) {
+			buf.append("Latest reading: ").append(latest.getWatts()).append("W @ ")
+					.append(latest.getCreated());
+		}
+		int shedTotal = 0;
+		for ( Integer shedWatts : shedMap.values() ) {
+			shedTotal += shedWatts;
+		}
+		if ( shedTotal > 0 ) {
+			buf.append("; shedding ").append(shedTotal).append("W");
+		}
+		return buf.toString();
 	}
 
 	@Override
@@ -273,6 +337,72 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 
 	public void setWattsRandomness(double wattRandomness) {
 		this.wattsRandomness = wattRandomness;
+	}
+
+	public Map<String, Integer> getLoadShedControlPowerMapping() {
+		return loadShedControlPowerMapping;
+	}
+
+	public void setLoadShedControlPowerMapping(Map<String, Integer> loadShedControlPowerMapping) {
+		this.loadShedControlPowerMapping = loadShedControlPowerMapping;
+	}
+
+	/**
+	 * Set a {@code socketConnectorMapping} Map via an encoded String value.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * <p>
+	 * Whitespace is permitted around all delimiters, and will be stripped from
+	 * the keys and values.
+	 * </p>
+	 * 
+	 * @param mapping
+	 *        The encoding mapping to set.
+	 * @see #getLoadShedControlPowerMappingValue()
+	 * @see #setLoadShedControlPowerMapping(Map)
+	 */
+	public final void setLoadShedControlPowerMappingValue(String mapping) {
+		Map<String, String> map = StringUtils.delimitedStringToMap(mapping, ",", "=");
+		if ( map == null || map.size() < 0 ) {
+			map = Collections.emptyMap();
+		}
+		Map<String, Integer> resultMap = new LinkedHashMap<String, Integer>(map.size());
+		for ( Map.Entry<String, String> me : map.entrySet() ) {
+			try {
+				Integer value = Integer.valueOf(me.getValue());
+				resultMap.put(me.getKey(), value);
+			} catch ( NumberFormatException e ) {
+				log.debug("Ignoring invalid load shed power value {}, mapped from control ID {}",
+						me.getValue(), me.getKey());
+			}
+		}
+		setLoadShedControlPowerMapping(resultMap);
+	}
+
+	/**
+	 * Get a delimited string representation of the
+	 * {@link #getLoadShedControlPowerMapping()} map.
+	 * 
+	 * <p>
+	 * The format of the {@code mapping} String should be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * key=val[,key=val,...]
+	 * </pre>
+	 * 
+	 * @return the encoded mapping
+	 * @see #getLoadShedControlPowerMapping()
+	 */
+	public final String getLoadShedControlPowerMappingValue() {
+		return StringUtils.delimitedStringFromMap(getLoadShedControlPowerMapping());
 	}
 
 }

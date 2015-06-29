@@ -1,12 +1,12 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Mock Load Shed Control Support
+Bundle-Name: Mock Power Meter
 Bundle-SymbolicName: net.solarnetwork.node.power.meter.mock
 Bundle-Version: 0.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.node;version="1.17.0",
+ net.solarnetwork.node;version="1.18.0",
  net.solarnetwork.node.domain;version="1.4.0",
  net.solarnetwork.node.job;version="1.12.0",
  net.solarnetwork.node.settings;version="1.6.0",
