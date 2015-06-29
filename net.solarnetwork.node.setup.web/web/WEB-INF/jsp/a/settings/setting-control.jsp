@@ -19,7 +19,7 @@
 			<label class="control-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="controls">
+			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider span5"></div>

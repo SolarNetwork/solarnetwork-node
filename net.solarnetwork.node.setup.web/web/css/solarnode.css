@@ -82,6 +82,10 @@ form fieldset fieldset fieldset:nth-child(even) {
     background-color: #fafafa;
 }
 
+.form-horizontal .controls.static {
+    padding-top: 3px;
+}
+
 .cert {
 	font-size: 11px;
 	line-height: 13px;
