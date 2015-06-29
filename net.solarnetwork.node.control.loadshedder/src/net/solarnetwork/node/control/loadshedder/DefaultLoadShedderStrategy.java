@@ -130,6 +130,7 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 				log.warn("Switch {} not available, cannot use to limit power.", controlId);
 				continue;
 			}
+
 			NodeControlInfo controlInfo = switchControl.getCurrentControlInfo(controlId);
 			if ( switchIsLimitingPower(controlInfo) ) {
 				log.debug("Switch {} already limiting power, cannot use to shed {}W", controlId,
@@ -153,7 +154,7 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 			String controlId = rule.getControlId();
 			LoadShedControlInfo info = (limitStatuses != null ? limitStatuses.get(controlId) : null);
 			if ( switchSwitchedTooRecently(date, info, rule) ) {
-				log.debug("Switch {} switched too recently to release any limit now: {}", controlId,
+				log.trace("Switch {} switched too recently to release any limit now: {}", controlId,
 						info.getActionDate());
 				return null;
 			}
@@ -166,12 +167,20 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 				log.warn("Switch {} not available, cannot use to limit power.", controlId);
 				continue;
 			}
+
+			LoadShedControlInfo info = (limitStatuses != null ? limitStatuses.get(controlId) : null);
+			if ( switchWithinLimitHoldPeriod(date, info, rule) ) {
+				log.debug("Switch {} within limit hold period, cannot  release limit now: {}",
+						controlId, info.getActionDate());
+				continue;
+			}
+
 			NodeControlInfo controlInfo = switchControl.getCurrentControlInfo(controlId);
 			if ( switchIsLimitingPower(controlInfo) ) {
 				log.info("Found switch {} available for removing load shed limit", controlId);
 				return controlId;
 			} else {
-				log.debug("Switch {} already not limiting power, cannot use to remove limit", controlId);
+				log.trace("Switch {} already not limiting power, cannot use to remove limit", controlId);
 			}
 		}
 		return null;
@@ -189,7 +198,15 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 			return true;
 		}
 
-		// don't switch again if we switched OFF within the rule's configured minimumLimitMinutes
+		return false;
+	}
+
+	private boolean switchWithinLimitHoldPeriod(final long date, LoadShedControlInfo info,
+			LoadShedControlConfig config) {
+		if ( info == null || info.getActionDate() == null ) {
+			return false;
+		}
+		final long switchedDate = info.getActionDate().getTime();
 		if ( info.getAction() != null && info.getAction().getShedWatts() != null && config != null
 				&& config.getMinimumLimitMinutes() != null && info.getAction().getShedWatts() > 0
 				&& switchedDate + config.getMinimumLimitMinutes().longValue() * 60000L > date ) {
