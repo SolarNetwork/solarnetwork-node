@@ -105,20 +105,22 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			newSample.setCreated(new Date());
 			newSample.setSourceId(uid);
 			newSample.setPhase(ACPhase.Total);
+
+			double currWatts = this.watts;
+			for ( Integer shedWatts : shedMap.values() ) {
+				currWatts -= shedWatts.intValue();
+			}
+			currWatts += (currWatts * (Math.random() * wattsRandomness) * (Math.random() < 0.5 ? -1 : 1));
+			if ( currWatts < 0.0 ) {
+				currWatts = 0;
+			}
+
 			if ( currSample == null ) {
 				newSample.setWattHourReading(mockMeter.get());
+				newSample.setWatts((int) currWatts);
 			} else {
 				double diffHours = ((newSample.getCreated().getTime() - currSample.getCreated()
 						.getTime()) / (double) (1000 * 60 * 60));
-				double currWatts = this.watts;
-				for ( Integer shedWatts : shedMap.values() ) {
-					currWatts -= shedWatts.intValue();
-				}
-				currWatts += (currWatts * (Math.random() * wattsRandomness) * (Math.random() < 0.5 ? -1
-						: 1));
-				if ( currWatts < 0.0 ) {
-					currWatts = 0;
-				}
 				long wh = (long) (currWatts * diffHours);
 				long newWh = currSample.getWattHourReading() + wh;
 				if ( mockMeter.compareAndSet(currSample.getWattHourReading(), newWh) ) {
