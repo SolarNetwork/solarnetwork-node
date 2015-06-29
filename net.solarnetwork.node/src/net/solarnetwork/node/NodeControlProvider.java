@@ -28,14 +28,12 @@ import net.solarnetwork.domain.NodeControlInfo;
 /**
  * API for control providers to implement.
  * 
- * <p>
  * For many control providers that implement a single control, the
  * {@link Identifiable#getUID()} will return the <em>control ID</em> of that
  * control.
- * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface NodeControlProvider extends Identifiable {
 
@@ -44,11 +42,23 @@ public interface NodeControlProvider extends Identifiable {
 	 * {@link NodeControlInfo} has been read, sampled, or in some way captured
 	 * by a {@link NodeControlProvider}. The properties of the event shall be
 	 * any of the JavaBean properties of the NodeControlInfo supported by events
-	 * (i.e. any simple Java property such as numbers and strings).
+	 * (i.e. any simple Java property such as numbers and strings) with enums
+	 * provided as strings.
 	 * 
 	 * @since 1.2
 	 */
-	public static final String EVENT_TOPIC_CONTROL_INFO_CAPTURED = "net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CAPTURED";
+	String EVENT_TOPIC_CONTROL_INFO_CAPTURED = "net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CAPTURED";
+
+	/**
+	 * An {@code org.osgi.service.event.Event} topic for when a
+	 * {@code NodeControlInfo} has in some way been changed. The properties of
+	 * the event shall be any of the JavaBean properties of the NodeControlInfo
+	 * supported by events (i.e. any simple Java property such as numbers and
+	 * strings) with enums provided as strings.
+	 * 
+	 * @since 1.3
+	 */
+	String EVENT_TOPIC_CONTROL_INFO_CHANGED = "net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CHANGED";
 
 	/**
 	 * Get a list of available controls this provider supports.

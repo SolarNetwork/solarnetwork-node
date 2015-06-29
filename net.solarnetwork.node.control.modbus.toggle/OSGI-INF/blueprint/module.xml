@@ -30,6 +30,11 @@
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" 
@@ -43,9 +48,16 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.modbus.toggle"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+					<beans:value>ShedLoad</beans:value>
+				</beans:list>
+			</beans:entry>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.modbus.toggle.ModbusToggler">
 			<property name="messageSource" ref="messageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="modbusNetwork">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>

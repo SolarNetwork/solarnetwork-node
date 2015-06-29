@@ -28,9 +28,9 @@ package net.solarnetwork.node.settings;
  * @param <T>
  *        the type of value stored by this setting
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
+public interface KeyedSettingSpecifier<T> extends SettingSpecifier, MappableSpecifier {
 
 	/**
 	 * Get the key for this setting.
@@ -47,34 +47,16 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 	T getDefaultValue();
 
 	/**
-	 * Return a setting specifier mapped to a new path.
-	 * 
-	 * <p>
-	 * This is to allow delegating setting specifiers to re-map the key.
-	 * </p>
-	 * 
-	 * @param prefix
-	 *        the new prefix to add to the key
-	 * @return the new instance
-	 */
-	SettingSpecifier mappedTo(String prefix);
-
-	/**
-	 * Return a setting specifier mapped to a new path, using a format template.
-	 * 
-	 * @param template
-	 *        the format template
-	 * @return the new instance
-	 */
-	SettingSpecifier mappedWithPlaceholer(String template);
-
-	/**
 	 * Return a setting specifier mapped to a new path, using a {@link Mapper}.
 	 * 
 	 * @param mapper
 	 *        the mapper
 	 * @return the new instance
+	 * @deprecated Use
+	 *             {@link MappableSpecifier#mappedWithMapper(net.solarnetwork.node.settings.MappableSpecifier.Mapper)}
+	 *             directly.
 	 */
+	@Deprecated
 	SettingSpecifier mappedWithMapper(Mapper mapper);
 
 	/**
@@ -91,17 +73,11 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier {
 
 	/**
 	 * API to dynamically map a key to a new key.
+	 * 
+	 * @deprecated Use {@link MappableSpecifier.Mapper} directly.
 	 */
-	interface Mapper {
-
-		/**
-		 * Map an input key to an output key.
-		 * 
-		 * @param key
-		 *        the key to map
-		 * @return the mapped key
-		 */
-		String mapKey(String key);
-
+	@Deprecated
+	interface Mapper extends MappableSpecifier.Mapper {
+		// nothing added
 	}
 }

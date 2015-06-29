@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
@@ -28,7 +26,7 @@ package net.solarnetwork.node.settings;
  * An individual setting value.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class SettingValueBean {
 
@@ -37,6 +35,28 @@ public class SettingValueBean {
 	private String key;
 	private String value;
 	private boolean trans;
+	private boolean remove;
+
+	/**
+	 * Get the remove flag. If <em>true</em> this setting should be deleted.
+	 * 
+	 * @return The remove flag.
+	 * @since 1.1
+	 */
+	public boolean isRemove() {
+		return remove;
+	}
+
+	/**
+	 * Set the remove flag.
+	 * 
+	 * @param remove
+	 *        The flag to set.
+	 * @since 1.2
+	 */
+	public void setRemove(boolean delete) {
+		this.remove = delete;
+	}
 
 	public boolean isTransient() {
 		return trans;

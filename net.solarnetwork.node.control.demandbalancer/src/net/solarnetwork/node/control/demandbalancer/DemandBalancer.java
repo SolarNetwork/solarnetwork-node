@@ -492,7 +492,6 @@ public class DemandBalancer implements SettingSpecifierProvider {
 				for ( SettingSpecifier spec : strategySpecifiers ) {
 					if ( spec instanceof KeyedSettingSpecifier<?> ) {
 						KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-						keyedSpec.mappedTo("strategy.");
 						results.add(keyedSpec.mappedTo("strategy."));
 					} else {
 						results.add(spec);

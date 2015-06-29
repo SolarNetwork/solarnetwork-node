@@ -6,6 +6,9 @@
 	setting - the current setting
 	settingId - the ID to use for the setting input
 	instanceId - the instance ID to use
+	groupSetting - an optional group setting
+	groupSettingId - an optional group setting ID
+	groupIndex - an optional group index
 --%>
 <c:set var="settingValue" scope="page">
 	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'/>
@@ -14,9 +17,9 @@
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">
 			<label class="control-label" for="${settingId}">
-				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
+				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="controls">
+			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider span5"></div>
@@ -183,5 +186,69 @@
 				</span></span>
 			</div>
 		</div>
+	</c:when>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier') and not empty setting.key}">
+		<div class="control-group grouped">
+			<label class="control-label">
+				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
+			</label>
+			<div class="controls">
+				<c:if test="${setting.dynamic}">
+					<div class="btn-group btn-group-sm" role="group">
+						<button type="button" class="btn btn-small btn-default group-item-remove">
+							<i class="icon-minus"></i>
+						</button>
+						<button type="button" class="btn btn-small btn-default group-item-add">
+							<i class="icon-plus"></i>
+						</button>
+					</div>
+					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
+					<script>
+					$(function() {
+						SolarNode.Settings.addGroupedSetting({
+							key: '${settingId}',
+							provider: '${provider.settingUID}',
+							setting: '${setup:js(setting.key)}Count',
+							instance: '${instanceId}'
+						});
+					});
+					</script>
+				</c:if>
+			</div>
+		</div>
+		<fieldset id="${settingId}g">
+			<c:if test="${not empty setting.groupSettings}">
+				<c:set var="origSetting" value="${setting}"/>
+				<c:set var="origSettingId" value="${settingId}"/>
+				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
+					<c:set var="setting" value="${groupedSetting}" scope="request"/>
+					<c:set var="settingId" value="${origSettingId}g${groupedSettingStatus.index}" scope="request"/>
+					<c:set var="groupSettingId" value="${origSettingId}" scope="request"/>
+					<c:set var="groupSetting" value="${origSetting}" scope="request"/>
+					<c:set var="groupIndex" value="${groupedSettingStatus.count}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+				</c:forEach>
+				<c:remove var="groupSettingId" scope="request"/>
+				<c:remove var="groupSetting" scope="request"/>
+				<c:remove var="groupIndex" scope="request"/>
+				<c:set var="setting" value="${origSetting}" scope="request"/>
+				<c:set var="settingId" value="${origSettingId}" scope="request"/>
+			</c:if>
+		</fieldset>
+	</c:when>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
+		<c:if test="${not empty setting.groupSettings}">
+			<fieldset>
+				<c:set var="origSetting" value="${setting}"/>
+				<c:set var="origSettingId" value="${settingId}"/>
+				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
+					<c:set var="setting" value="${groupedSetting}" scope="request"/>
+					<c:set var="settingId" value="${origSettingId}g${groupedSettingStatus.index}" scope="request"/>
+					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+				</c:forEach>
+				<c:set var="setting" value="${origSetting}" scope="request"/>
+				<c:set var="settingId" value="${origSettingId}" scope="request"/>
+			</fieldset>
+		</c:if>
 	</c:when>
 </c:choose>

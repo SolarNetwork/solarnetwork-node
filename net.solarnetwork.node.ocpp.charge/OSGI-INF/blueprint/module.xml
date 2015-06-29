@@ -16,7 +16,7 @@
 	
 	<tx:annotation-driven transaction-manager="txManager"/>
 	
-	<reference id="scheduler" interface="org.quartz.Scheduler"/>
+	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
 
 	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>

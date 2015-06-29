@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -160,8 +160,8 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 					.getCronExpression()));
 		}
 		for ( SettingSpecifier spec : getSettingSpecifierProvider().getSettingSpecifiers() ) {
-			if ( spec instanceof KeyedSettingSpecifier<?> ) {
-				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
+			if ( spec instanceof MappableSpecifier ) {
+				MappableSpecifier keyedSpec = (MappableSpecifier) spec;
 				if ( simplePrefix != null ) {
 					result.add(keyedSpec.mappedTo(simplePrefix));
 				} else {

@@ -418,10 +418,18 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				if ( instanceKey != null ) {
 					settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
 				}
-				props.put(bean.getKey(), bean.getValue());
+				if ( bean.isRemove() ) {
+					props.remove(bean.getKey());
+				} else {
+					props.put(bean.getKey(), bean.getValue());
+				}
 
 				if ( !bean.isTransient() ) {
-					settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
+					if ( bean.isRemove() ) {
+						settingDao.deleteSetting(settingKey, bean.getKey());
+					} else {
+						settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
+					}
 				}
 			}
 			if ( conf != null && props != null ) {
