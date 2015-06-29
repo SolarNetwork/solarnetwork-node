@@ -44,6 +44,10 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 
 /**
@@ -65,7 +69,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler {
@@ -74,6 +78,7 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 
 	private String controlId = "/switch/1";
 	private MessageSource messageSource;
+	private OptionalService<EventAdmin> eventAdmin;
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
@@ -136,6 +141,9 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 		} catch ( Exception e ) {
 			log.error("Error reading {} status: {}", controlId, e.getMessage());
 		}
+		if ( result != null ) {
+			postControlEvent(result, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
+		}
 		return result;
 	}
 
@@ -147,6 +155,15 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 		info.setReadonly(false);
 		info.setValue(status.toString());
 		return info;
+	}
+
+	private void postControlEvent(NodeControlInfo info, String topic) {
+		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		if ( admin == null ) {
+			return;
+		}
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+		admin.postEvent(new Event(topic, props));
 	}
 
 	// InstructionHandler
@@ -175,6 +192,8 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 							controlId, e.getMessage());
 				}
 				if ( modbusResult != null && modbusResult.booleanValue() ) {
+					postControlEvent(newNodeControlInfoDatum(controlId, desiredValue),
+							NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 					result = InstructionState.Completed;
 				} else {
 					result = InstructionState.Declined;
@@ -244,6 +263,14 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
