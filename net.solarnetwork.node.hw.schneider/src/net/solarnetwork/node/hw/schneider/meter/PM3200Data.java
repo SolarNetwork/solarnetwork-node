@@ -32,7 +32,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PM3200Data {
 
@@ -79,12 +79,39 @@ public class PM3200Data {
 	public static final int ADDR_DATA_TEMP = 3131;
 
 	// total energy (Int64)
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 3203;
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = 3207;
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = 3219;
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = 3223;
-	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = 3235;
-	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = 3239;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL = 3203;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL = 3207;
+	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL = 3219;
+	public static final int ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL = 3223;
+	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_TOTAL = 3235;
+	public static final int ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL = 3239;
+
+	// total energy (Int64) - deprecated
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL;
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL;
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL;
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL;
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = ADDR_DATA_APPARENT_ENERGY_IMPORT_TOTAL;
+	@Deprecated
+	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL;
+
+	// total phase energy import (Int64)
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1 = 3517;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P2 = 3521;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P3 = 3525;
+
+	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P1 = 3529;
+	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P2 = 3533;
+	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P3 = 3537;
+
+	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P1 = 3541;
+	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P2 = 3545;
+	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P3 = 3549;
 
 	private final TIntIntMap dataRegisters;
 	private long dataTimestamp = 0;
@@ -119,10 +146,10 @@ public class PM3200Data {
 				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
 				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
 				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT) + ",varh-I="
-				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT) + ",Wh-E="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT) + ",varh-E="
-				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT) + "}";
+				+ getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL) + ",varh-I="
+				+ getEnergy(ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL) + ",Wh-E="
+				+ getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL) + ",varh-E="
+				+ getEnergy(ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL) + "}";
 	}
 
 	/**
@@ -189,9 +216,12 @@ public class PM3200Data {
 		// tangent phi, frequency, temp (Float32)
 		readIntData(conn, ADDR_DATA_REACTIVE_FACTOR_TOTAL, ADDR_DATA_TEMP + 1);
 
-		// total energy
-		readIntData(conn, ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
-				ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT + 1);
+		// total energy (Int64)
+		readIntData(conn, ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL,
+				ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL + 3);
+
+		// total phase energy import (Int64)
+		readIntData(conn, ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1, ADDR_DATA_APPARENT_ENERGY_IMPORT_P3 + 3);
 
 		dataTimestamp = System.currentTimeMillis();
 	}
