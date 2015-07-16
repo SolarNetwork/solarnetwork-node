@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
 
@@ -142,6 +142,30 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 
 	public void setPowerFactor(Float powerFactor) {
 		putInstantaneousSampleValue(POWER_FACTOR_KEY, powerFactor);
+	}
+
+	/**
+	 * Get an export energy value.
+	 * 
+	 * @return An energy value, in watts, or <em>null</em> if none available.
+	 * @since 1.1
+	 */
+	@JsonIgnore
+	@SerializeIgnore
+	public Long getReverseWattHourReading() {
+		return getAccumulatingSampleLong(WATT_HOUR_READING_KEY + REVERSE_ACCUMULATING_SUFFIX_KEY);
+	}
+
+	/**
+	 * Set an export energy value.
+	 * 
+	 * @param wattHourReading
+	 *        An energy value, in watts, or <em>null</em> if none available.
+	 * @since 1.1
+	 */
+	public void setReverseWattHourReading(Long wattHourReading) {
+		putAccumulatingSampleValue(WATT_HOUR_READING_KEY + REVERSE_ACCUMULATING_SUFFIX_KEY,
+				wattHourReading);
 	}
 
 }
