@@ -436,20 +436,22 @@ public class EM5600Data {
 	public String dataDebugString() {
 		final StringBuilder buf = new StringBuilder("EM5600Data{\n");
 		EM5600Data snapshot = new EM5600Data(this);
-		int[] keys = snapshot.inputRegisters;
-		Arrays.sort(keys);
+		int[] data = snapshot.inputRegisters;
 		boolean odd = true;
-		for ( int k : keys ) {
+		for ( int i = 0; i < data.length; i++ ) {
 			if ( odd ) {
-				buf.append("\t").append(String.format("%5d", k + 1)).append(": ");
+				buf.append("\t").append(String.format("%5d", ADDR_INPUT_REG_START + i + 1)).append(": ");
 			}
-			buf.append(String.format("0x%04X", snapshot.inputRegisters[k]));
+			buf.append(String.format("0x%04X", data[i]));
 			if ( odd ) {
 				buf.append(", ");
 			} else {
 				buf.append("\n");
 			}
 			odd = !odd;
+		}
+		if ( !odd ) {
+			buf.append("\n");
 		}
 		buf.append("}");
 		return buf.toString();
