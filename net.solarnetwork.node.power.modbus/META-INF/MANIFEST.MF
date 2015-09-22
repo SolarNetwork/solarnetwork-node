@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Morningstar TS-45 Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.modbus
 Bundle-Description: Collect generation data from Morningstar TS-45 charge controllers.
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
