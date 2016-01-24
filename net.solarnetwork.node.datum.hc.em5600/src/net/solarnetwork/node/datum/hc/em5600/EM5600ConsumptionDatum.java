@@ -88,6 +88,7 @@ public class EM5600ConsumptionDatum extends GeneralNodeACEnergyDatum {
 		setEffectivePowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
 		setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
 		setWattHourReading(sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+		setReverseWattHourReading(sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT));
 
 		setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
 		setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
