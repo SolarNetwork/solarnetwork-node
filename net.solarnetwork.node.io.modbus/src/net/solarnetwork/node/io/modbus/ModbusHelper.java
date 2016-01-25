@@ -90,7 +90,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * Get the values of a set of "coil" type registers, as a BitSet. This uses
+	 * a Modbus function code {@code 1} request.
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -130,7 +131,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Set the value of a set of "coil" type registers.
+	 * Set the value of a set of "coil" type registers. This uses a Modbus
+	 * function code {@code 5} request.
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -166,7 +168,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * Get the values of a set of "coil" type registers, as a BitSet.This uses a
+	 * Modbus function code {@code 1} request.
 	 * 
 	 * @param connectionFactory
 	 *        the connection factory to obtain a connection with
@@ -194,7 +197,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of specific "input" type registers.
+	 * Get the values of specific "input" type registers. This uses a Modbus
+	 * function code {@code 4} request.
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -238,7 +242,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of specific "input" type registers.
+	 * Get the values of specific "input" type registers. This uses a Modbus
+	 * function code {@code 4} request.
 	 * 
 	 * @param connectionFactory
 	 *        the connection factory to obtain a connection with
@@ -480,7 +485,8 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Read a set of "input" type registers and interpret as a string.
+	 * Read a set of "input" type registers and interpret as a string. This uses
+	 * a Modbus function code {@code 3} request.
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use

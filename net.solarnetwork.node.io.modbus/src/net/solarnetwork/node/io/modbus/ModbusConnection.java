@@ -69,7 +69,8 @@ public interface ModbusConnection {
 	void close();
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * Get the values of a set of "coil" type registers, as a BitSet. This uses
+	 * a Modbus function code {@code 1} request.
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
@@ -81,7 +82,8 @@ public interface ModbusConnection {
 	BitSet readDiscreetValues(final Integer[] addresses, final int count);
 
 	/**
-	 * Set the value of a set of "coil" type registers.
+	 * Set the value of a set of "coil" type registers. This uses a Modbus
+	 * function code {@code 5} request.
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
@@ -94,7 +96,8 @@ public interface ModbusConnection {
 	Boolean writeDiscreetValues(final Integer[] addresses, final BitSet bits);
 
 	/**
-	 * Get the values of specific "input" type registers.
+	 * Get the values of specific "input" type registers. This uses a Modbus
+	 * function code {@code 4} request.
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
@@ -119,7 +122,8 @@ public interface ModbusConnection {
 	byte[] readBytes(final Integer address, final int count);
 
 	/**
-	 * Read a set of "input" type registers and interpret as a string.
+	 * Read a set of "input" type registers and interpret as a string. This uses
+	 * a Modbus function code {@code 3} request.
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
