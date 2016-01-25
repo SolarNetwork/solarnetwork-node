@@ -22,7 +22,10 @@
 
 package net.solarnetwork.node.hw.deson.meter;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 
 /**
  * Encapsulates raw Modbus register data from SDM 120 meters.
@@ -91,8 +94,30 @@ public class SDM120Data extends BaseSDMData {
 	}
 
 	@Override
+	public Map<String, Object> getDeviceInfo() {
+		Map<String, Object> result = new LinkedHashMap<String, Object>(4);
+		result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "SDM-120");
+		return result;
+	}
+
+	@Override
+	public String getOperationStatusMessage() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("W = ").append(getPower(ADDR_DATA_ACTIVE_POWER));
+		buf.append(", VA = ").append(getPower(ADDR_DATA_APPARENT_POWER));
+		buf.append(", Wh = ").append(getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
+		buf.append(", PF = ").append(getPowerFactor(ADDR_DATA_POWER_FACTOR));
+		return buf.toString();
+	}
+
+	@Override
 	public boolean readMeterDataInternal(final ModbusConnection conn) {
-		readIntData(conn, ADDR_DATA_V_NEUTRAL, ADDR_DATA_V_NEUTRAL + 80);
+		readInputData(conn, ADDR_DATA_V_NEUTRAL, ADDR_DATA_V_NEUTRAL + 79);
+		return true;
+	}
+
+	@Override
+	protected boolean readControlDataInternal(ModbusConnection conn) {
 		return true;
 	}
 

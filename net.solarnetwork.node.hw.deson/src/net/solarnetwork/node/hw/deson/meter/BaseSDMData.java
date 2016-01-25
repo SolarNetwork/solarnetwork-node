@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.deson.meter;
 
 import gnu.trove.map.hash.TIntIntHashMap;
 import java.util.Arrays;
+import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 
@@ -32,15 +33,19 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * 
  * The normal use for extending classes is to implement
  * {@link SDMData#readMeterData(ModbusConnection)} by calling
- * {@link #saveDataArray(int[], int)} for ranges of Modbus register data.
+ * {@link #readInputData(ModbusConnection, int, int)} and
+ * {@link #readHoldingData(ModbusConnection, int, int)} for ranges of Modbus
+ * register data.
  * 
  * @author matt
  * @version 1.0
  */
-public abstract class BaseSDMData implements SDMData, Cloneable {
+public abstract class BaseSDMData implements SDMData {
 
 	private final TIntIntHashMap dataRegisters;
-	private long dataTimestamp = 0;
+	private final TIntIntHashMap controlRegisters;
+	private long meterDataTimestamp = 0;
+	private long controlDataTimestamp = 0;
 
 	/**
 	 * Default constructor.
@@ -48,6 +53,7 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 	public BaseSDMData() {
 		super();
 		this.dataRegisters = new TIntIntHashMap(64);
+		this.controlRegisters = new TIntIntHashMap(8);
 	}
 
 	/**
@@ -59,13 +65,15 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 	public BaseSDMData(BaseSDMData other) {
 		super();
 		this.dataRegisters = new TIntIntHashMap(other.dataRegisters);
-		this.dataTimestamp = other.dataTimestamp;
+		this.controlRegisters = new TIntIntHashMap(other.controlRegisters);
+		this.meterDataTimestamp = other.meterDataTimestamp;
+		this.controlDataTimestamp = other.controlDataTimestamp;
 	}
 
 	@Override
 	public final synchronized void readMeterData(ModbusConnection conn) {
 		if ( readMeterDataInternal(conn) ) {
-			this.dataTimestamp = System.currentTimeMillis();
+			this.meterDataTimestamp = System.currentTimeMillis();
 		}
 	}
 
@@ -79,12 +87,33 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 	protected abstract boolean readMeterDataInternal(ModbusConnection conn);
 
 	@Override
-	public long getDataTimestamp() {
-		return dataTimestamp;
+	public long getMeterDataTimestamp() {
+		return meterDataTimestamp;
+	}
+
+	@Override
+	public final long getControlDataTimestamp() {
+		return controlDataTimestamp;
+	}
+
+	@Override
+	public final synchronized void readControlData(ModbusConnection conn) {
+		if ( readControlDataInternal(conn) ) {
+			this.controlDataTimestamp = System.currentTimeMillis();
+		}
 	}
 
 	/**
-	 * Read Modbus integer registers in an address range.
+	 * Called by {@link #readControlData(ModbusConnection)}.
+	 * 
+	 * @param conn
+	 *        The Modbus connection to use.
+	 * @return <em>true</em> if the data has been read successfully
+	 */
+	protected abstract boolean readControlDataInternal(ModbusConnection conn);
+
+	/**
+	 * Read Modbus input registers in an address range.
 	 * 
 	 * @param conn
 	 *        The Modbus connection.
@@ -93,9 +122,25 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 	 * @param endAddr
 	 *        The ending Modbus register address.
 	 */
-	protected void readIntData(final ModbusConnection conn, final int startAddr, final int endAddr) {
+	protected void readInputData(final ModbusConnection conn, final int startAddr, final int endAddr) {
+		Map<Integer, Integer> data = conn.readInputValues(new Integer[] { startAddr }, (endAddr
+				- startAddr + 1));
+		dataRegisters.putAll(data);
+	}
+
+	/**
+	 * Read Modbus holding registers in an address range.
+	 * 
+	 * @param conn
+	 *        The Modbus connection.
+	 * @param startAddr
+	 *        The starting Modbus register address.
+	 * @param endAddr
+	 *        The ending Modbus register address.
+	 */
+	protected void readHoldingData(final ModbusConnection conn, final int startAddr, final int endAddr) {
 		int[] data = conn.readInts(startAddr, (endAddr - startAddr + 1));
-		saveDataArray(data, startAddr);
+		saveControlArray(data, startAddr);
 	}
 
 	/**
@@ -113,6 +158,25 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 		}
 		for ( int v : data ) {
 			dataRegisters.put(addr, v);
+			addr++;
+		}
+	}
+
+	/**
+	 * Internally store an array of 16-bit integer register control values,
+	 * starting at a given address.
+	 * 
+	 * @param data
+	 *        the control data array to save
+	 * @param addr
+	 *        the starting address of the data
+	 */
+	protected void saveControlArray(final int[] data, int addr) {
+		if ( data == null || data.length < 1 ) {
+			return;
+		}
+		for ( int v : data ) {
+			controlRegisters.put(addr, v);
 			addr++;
 		}
 	}
@@ -167,6 +231,19 @@ public abstract class BaseSDMData implements SDMData, Cloneable {
 	 */
 	protected final Float getFloat32(final int addr) {
 		return ModbusHelper.parseFloat32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
+	}
+
+	/**
+	 * Construct a Float from a saved control register address. This method can
+	 * only be called after data register data has been passed to
+	 * {@link #saveControlArray(int[], int)}.
+	 * 
+	 * @param addr
+	 *        The address of the saved control register to read.
+	 * @return The parsed value, or <em>null</em> if not available.
+	 */
+	protected final Float getControlFloat32(final int addr) {
+		return ModbusHelper.parseFloat32(controlRegisters.get(addr), controlRegisters.get(addr + 1));
 	}
 
 	@Override

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.deson.meter;
 
+import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
@@ -33,22 +34,40 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 public interface SDMData {
 
 	/**
-	 * Get the system time this data was read from the actual device. If never
+	 * Get the system time meter data was read from the actual device. If never
 	 * read, then return {@code 0}.
 	 * 
 	 * @return the data timestamp
 	 */
-	long getDataTimestamp();
+	long getMeterDataTimestamp();
+
+	/**
+	 * Get the system time control data was read from the actual device. If
+	 * never read, then return {@code 0}.
+	 * 
+	 * @return the control data timestamp
+	 */
+	long getControlDataTimestamp();
 
 	/**
 	 * Read data from the meter and store it internally. If data is populated
-	 * successfully, the {@link #getDataTimestamp()} will be updated to reflect
+	 * successfully, {@link #getMeterDataTimestamp()} will be updated to reflect
 	 * the current system time.
 	 * 
 	 * @param conn
 	 *        the Modbus connection
 	 */
 	void readMeterData(final ModbusConnection conn);
+
+	/**
+	 * Read control (holding) data from the meter and store it internally. If
+	 * data is populated successfully, {@link #getControlDataTimestamp()} will
+	 * be updated to reflect the current system time.
+	 * 
+	 * @param conn
+	 *        the Modbuss connection
+	 */
+	void readControlData(final ModbusConnection conn);
 
 	/**
 	 * Get a string representation of the meter data, for debugging purposes.
@@ -69,6 +88,22 @@ public interface SDMData {
 	 * @return A debug string.
 	 */
 	String dataDebugString();
+
+	/**
+	 * Get information about the meter, such as the model number, manufacture
+	 * date, etc.
+	 * 
+	 * @return Meter information, or <em>null</em> if none available.
+	 */
+	Map<String, Object> getDeviceInfo();
+
+	/**
+	 * Get a brief information message about the operational status of the
+	 * meter, such as the overall power being used, etc.
+	 * 
+	 * @return A brief status message, or <em>null</em> if none available.
+	 */
+	String getOperationStatusMessage();
 
 	/**
 	 * Get an effective voltage value in V. Only valid after
