@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.deson.meter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 
@@ -42,12 +44,17 @@ public class SDM360Data extends BaseSDMData {
 	public static final int ADDR_DATA_V_L2_NEUTRAL = 2;
 	public static final int ADDR_DATA_V_L3_NEUTRAL = 4;
 	public static final int ADDR_DATA_V_NEUTRAL_AVERAGE = 42;
+	public static final int ADDR_DATA_V_L1_L2 = 200;
+	public static final int ADDR_DATA_V_L2_L3 = 202;
+	public static final int ADDR_DATA_V_L3_L1 = 204;
+	public static final int ADDR_DATA_V_L_L_AVERAGE = 206;
 
 	// current (Float32)
 	public static final int ADDR_DATA_I1 = 6;
 	public static final int ADDR_DATA_I2 = 8;
 	public static final int ADDR_DATA_I3 = 10;
 	public static final int ADDR_DATA_I_AVERAGE = 46;
+	public static final int ADDR_DATA_I_NEUTRAL = 224;
 
 	// power (Float32)
 	public static final int ADDR_DATA_ACTIVE_POWER_P1 = 12;
@@ -114,6 +121,11 @@ public class SDM360Data extends BaseSDMData {
 	}
 
 	@Override
+	public SDMData getSnapshot() {
+		return new SDM360Data(this);
+	}
+
+	@Override
 	public String dataDebugString() {
 		final SDM360Data snapshot = new SDM360Data(this);
 		return dataDebugString(snapshot);
@@ -167,6 +179,7 @@ public class SDM360Data extends BaseSDMData {
 	@Override
 	protected boolean readMeterDataInternal(ModbusConnection conn) {
 		readInputData(conn, ADDR_DATA_V_L1_NEUTRAL, ADDR_DATA_V_L1_NEUTRAL + 79);
+		readInputData(conn, ADDR_DATA_V_L1_L2, 25);
 		return true;
 	}
 
@@ -174,6 +187,76 @@ public class SDM360Data extends BaseSDMData {
 	protected boolean readControlDataInternal(ModbusConnection conn) {
 		readHoldingData(conn, ADDR_SYSTEM_WIRING_TYPE, ADDR_SYSTEM_SERIAL_NUMBER + 1);
 		return true;
+	}
+
+	@Override
+	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
+		SDM360Data sample = new SDM360Data(this);
+		switch (phase) {
+			case Total:
+				populateTotalMeasurements(sample, datum);
+				break;
+
+			case PhaseA:
+				populatePhaseAMeasurements(sample, datum);
+				break;
+
+			case PhaseB:
+				populatePhaseBMeasurements(sample, datum);
+				break;
+
+			case PhaseC:
+				populatePhaseCMeasurements(sample, datum);
+				break;
+		}
+	}
+
+	private void populateTotalMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
+		datum.setWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
+		datum.setReverseWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
+
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L_L_AVERAGE));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_TOTAL));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE));
+		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
+	}
+
+	private void populatePhaseAMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P1));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I1));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L1_L2));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P1));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P1));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
+		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
+	}
+
+	private void populatePhaseBMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P2));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I2));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L2_L3));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P2));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P2));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L2_NEUTRAL));
+		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
+	}
+
+	private void populatePhaseCMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P3));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I3));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L3_L1));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P3));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P3));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L3_NEUTRAL));
+		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
 	}
 
 }

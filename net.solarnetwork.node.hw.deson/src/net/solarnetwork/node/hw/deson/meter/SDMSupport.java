@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.deson.meter;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
@@ -32,6 +33,7 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
@@ -48,7 +50,7 @@ import org.osgi.service.event.EventAdmin;
  * @author matt
  * @version 1.0
  */
-public abstract class SDMSupport<T extends SDMData> extends ModbusDeviceSupport {
+public class SDMSupport extends ModbusDeviceSupport {
 
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
@@ -59,18 +61,14 @@ public abstract class SDMSupport<T extends SDMData> extends ModbusDeviceSupport 
 	// an optional EventAdmin service
 	private OptionalService<EventAdmin> eventAdmin;
 
+	// the type of device to use
+	private SDMDeviceType deviceType = SDMDeviceType.SDM120;
+
 	/**
 	 * An instance of {@link SDMData} to support keeping the last-read values of
 	 * data in memory.
 	 */
-	protected final T sample = createSampleInstance();
-
-	/**
-	 * Create a new concrete instance of SDMData.
-	 * 
-	 * @return
-	 */
-	protected abstract T createSampleInstance();
+	protected SDMData sample = new SDM120Data();
 
 	/**
 	 * Get a default {@code sourceMapping} value. This maps only the
@@ -180,13 +178,7 @@ public abstract class SDMSupport<T extends SDMData> extends ModbusDeviceSupport 
 	}
 
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		SDMSupport<?> defaults = new SDMSupport<SDMData>() {
-
-			@Override
-			protected SDMData createSampleInstance() {
-				return null;
-			}
-		};
+		SDMSupport defaults = new SDMSupport();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
@@ -195,8 +187,18 @@ public abstract class SDMSupport<T extends SDMData> extends ModbusDeviceSupport 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
-				"Serial Port"));
+				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
+
+		BasicRadioGroupSettingSpecifier deviceTypeSpec = new BasicRadioGroupSettingSpecifier(
+				"deviceTypeValue", defaults.getDeviceTypeValue());
+		Map<String, String> deviceTypeValues = new LinkedHashMap<String, String>(3);
+		for ( SDMDeviceType model : SDMDeviceType.values() ) {
+			deviceTypeValues.put(model.toString(), model.toString());
+		}
+		deviceTypeSpec.setValueTitles(deviceTypeValues);
+		results.add(deviceTypeSpec);
+
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
 				.getSourceMappingValue()));
 
@@ -331,4 +333,58 @@ public abstract class SDMSupport<T extends SDMData> extends ModbusDeviceSupport 
 		this.eventAdmin = eventAdmin;
 	}
 
+	public SDMDeviceType getDeviceType() {
+		return deviceType;
+	}
+
+	/**
+	 * Set the type of device to use. If this value changes, any cached sample
+	 * data will be cleared.
+	 * 
+	 * @param deviceType
+	 *        The type of device to use.
+	 */
+	public void setDeviceType(final SDMDeviceType deviceType) {
+		if ( deviceType == null ) {
+			throw new IllegalArgumentException("The deviceType cannot be null.");
+		}
+		if ( this.deviceType.equals(deviceType) ) {
+			// no change
+			return;
+		}
+		this.deviceType = deviceType;
+		switch (deviceType) {
+			case SDM360:
+				sample = new SDM360Data();
+				break;
+
+			default:
+				sample = new SDM120Data();
+				break;
+		}
+	}
+
+	/**
+	 * Get the device type, as a string.
+	 * 
+	 * @return The device type, as a string.
+	 */
+	public String getDeviceTypeValue() {
+		final SDMDeviceType type = getDeviceType();
+		return (type == null ? "" : type.toString());
+	}
+
+	/**
+	 * Set the device type, as a string.
+	 * 
+	 * @param type
+	 *        The {@link SDMDeviceType} string value to set.
+	 */
+	public void setDeviceTypeValue(String type) {
+		try {
+			setDeviceType(SDMDeviceType.valueOf(type));
+		} catch ( IllegalArgumentException e ) {
+			// not supported type
+		}
+	}
 }

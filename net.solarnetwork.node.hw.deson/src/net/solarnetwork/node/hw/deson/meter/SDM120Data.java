@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.deson.meter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 
@@ -88,6 +90,11 @@ public class SDM120Data extends BaseSDMData {
 	}
 
 	@Override
+	public SDMData getSnapshot() {
+		return new SDM120Data(this);
+	}
+
+	@Override
 	public String dataDebugString() {
 		final SDM120Data snapshot = new SDM120Data(this);
 		return dataDebugString(snapshot);
@@ -119,6 +126,29 @@ public class SDM120Data extends BaseSDMData {
 	@Override
 	protected boolean readControlDataInternal(ModbusConnection conn) {
 		return true;
+	}
+
+	@Override
+	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
+		if ( !ACPhase.Total.equals(phase) ) {
+			return;
+		}
+		SDM120Data sample = new SDM120Data(this);
+		populateTotalMeasurements(sample, datum);
+	}
+
+	private void populateTotalMeasurements(SDMData sample, GeneralNodeACEnergyDatum datum) {
+		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
+		datum.setWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
+		datum.setReverseWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
+
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL));
+		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER));
 	}
 
 }

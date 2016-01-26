@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.deson.meter;
 
 import java.util.Map;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
@@ -70,6 +72,13 @@ public interface SDMData {
 	void readControlData(final ModbusConnection conn);
 
 	/**
+	 * Get a copy of the data.
+	 * 
+	 * @return Get a new instance with a copy of the data.
+	 */
+	SDMData getSnapshot();
+
+	/**
 	 * Get a string representation of the meter data, for debugging purposes.
 	 * 
 	 * The generated string will contain prefix and suffix lines, with any
@@ -104,6 +113,16 @@ public interface SDMData {
 	 * @return A brief status message, or <em>null</em> if none available.
 	 */
 	String getOperationStatusMessage();
+
+	/**
+	 * Populate an {@code ACEnergyDatum} from sample data for a specific phase.
+	 * 
+	 * @param phase
+	 *        The phase to populate data for.
+	 * @param datum
+	 *        The datum to populate data into.
+	 */
+	void populateMeasurements(ACPhase phase, GeneralNodeACEnergyDatum datum);
 
 	/**
 	 * Get an effective voltage value in V. Only valid after
