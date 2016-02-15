@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
@@ -75,6 +76,9 @@ public class SettingsController {
 	@Autowired
 	@Qualifier("backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
+
+	@Autowired
+	private IdentityService identityService;
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
@@ -203,10 +207,13 @@ public class SettingsController {
 			return;
 		}
 
+		final Long nodeId = (identityService != null ? identityService.getNodeId() : null);
+
 		// create the zip archive for the backup files
 		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=node-backup"
-				+ (backupKey == null ? "" : "_" + backupKey) + ".zip");
+		response.setHeader("Content-Disposition", "attachment; filename=node-"
+				+ (nodeId != null ? nodeId.toString() : "UNKNOWN") + "-backup"
+				+ (backupKey == null ? "" : "-" + backupKey) + ".zip");
 		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 
