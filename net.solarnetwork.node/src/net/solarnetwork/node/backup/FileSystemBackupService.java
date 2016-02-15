@@ -51,11 +51,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import net.solarnetwork.node.Constants;
+import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -93,15 +95,17 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	 * A format for turning a {@link Backup#getKey()} value into a zip file
 	 * name.
 	 */
-	public static final String ARCHIVE_KEY_NAME_FORMAT = "node-backup-%s.zip";
+	public static final String ARCHIVE_KEY_NAME_FORMAT = "node-%2$d-backup-%1$s.zip";
 
 	private static final MessageSource MESSAGE_SOURCE = getMessageSourceInstance();
-	private static final String ARCHIVE_NAME_FORMAT = "node-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
-	private static final Pattern ARCHIVE_NAME_PAT = Pattern.compile("node-backup-(\\d{8}T\\d{6})\\.zip");
+	private static final String ARCHIVE_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
+	private static final Pattern ARCHIVE_NAME_PAT = Pattern
+			.compile("node-\\d+-backup-(\\d{8}T\\d{6})\\.zip");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private File backupDir = defaultBackuprDir();
+	private OptionalService<IdentityService> identityService;
 	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
 
@@ -172,7 +176,8 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	@Override
 	public Backup backupForKey(String key) {
-		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT, key));
+		final Long nodeId = nodeIdForArchiveFileName();
+		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT, key, nodeId));
 		if ( !archiveFile.canRead() ) {
 			return null;
 		}
@@ -191,11 +196,16 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		}
 		BackupStatus status = setStatusIf(RunningBackup, Configured);
 		if ( status != RunningBackup ) {
-			return null;
+			// try to reset from error
+			status = setStatusIf(RunningBackup, Error);
+			if ( status != RunningBackup ) {
+				return null;
+			}
 		}
 		final Calendar now = new GregorianCalendar();
 		now.set(Calendar.MILLISECOND, 0);
-		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now);
+		final Long nodeId = nodeIdForArchiveFileName();
+		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now, nodeId);
 		final File archiveFile = new File(backupDir, archiveName);
 		final String archiveKey = getArchiveKey(archiveName);
 		log.info("Starting backup to archive {}", archiveName);
@@ -258,10 +268,17 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		return backup;
 	}
 
+	private final Long nodeIdForArchiveFileName() {
+		IdentityService service = (identityService != null ? identityService.service() : null);
+		final Long nodeId = (service != null ? service.getNodeId() : null);
+		return (nodeId != null ? nodeId : 0L);
+	}
+
 	@Override
 	public BackupResourceIterable getBackupResources(Backup backup) {
+		final Long nodeId = nodeIdForArchiveFileName();
 		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT,
-				backup.getKey()));
+				backup.getKey(), nodeId));
 		if ( !(archiveFile.isFile() && archiveFile.canRead()) ) {
 			log.warn("No backup archive exists for key [{}]", backup.getKey());
 			Collection<BackupResource> col = Collections.emptyList();
@@ -420,6 +437,14 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	public void setAdditionalBackupCount(int additionalBackupCount) {
 		this.additionalBackupCount = additionalBackupCount;
+	}
+
+	public OptionalService<IdentityService> getIdentityService() {
+		return identityService;
+	}
+
+	public void setIdentityService(OptionalService<IdentityService> identityService) {
+		this.identityService = identityService;
 	}
 
 }

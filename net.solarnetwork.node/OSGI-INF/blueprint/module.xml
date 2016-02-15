@@ -121,6 +121,12 @@
 		<osgix:managed-properties 
 			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService" 
 			autowire-on-update="true"/>
+		<property name="identityService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
+			</bean>	
+		</property>
 	</bean>
 
 	<!-- Jobs -->
