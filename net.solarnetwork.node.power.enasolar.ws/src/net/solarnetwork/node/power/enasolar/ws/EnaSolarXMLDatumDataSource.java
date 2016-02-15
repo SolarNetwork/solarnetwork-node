@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -144,6 +145,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 	private long sampleCacheMs = 5000;
 
 	private EnaSolarPowerDatum sample;
+	private Throwable sampleException;
 	private final Map<String, Long> validationCache = new HashMap<String, Long>(4);
 
 	private EnaSolarPowerDatum getCurrentSample() {
@@ -152,8 +154,29 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 			datum = new EnaSolarPowerDatum();
 			datum.setCreated(new Date());
 			datum.setSourceId(sourceId);
+			sampleException = null;
 			for ( String url : urls ) {
-				webFormGetForBean(null, datum, url, null, xpathMapping);
+				try {
+					webFormGetForBean(null, datum, url, null, xpathMapping);
+				} catch ( RuntimeException e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					sampleException = root;
+					if ( root instanceof IOException ) {
+						// turn this into a WARN only
+						log.warn("Error communicating with EnaSolar inverter at {}: {}", url,
+								e.getMessage());
+
+						// with a stacktrace in DEBUG
+						log.debug("IOException communicating with EnaSolar inverter at {}", url, e);
+
+						return null;
+					} else {
+						throw e;
+					}
+				}
 			}
 			datum = validateDatum(datum);
 			if ( datum != null ) {
@@ -386,22 +409,32 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		return results;
 	}
 
-	private String getInfoMessage() {
-		String msg = null;
+	/**
+	 * Get an informational status message.
+	 * 
+	 * @return A status message.
+	 */
+	public String getInfoMessage() {
 		EnaSolarPowerDatum snap = null;
 		try {
 			snap = getCurrentSample();
 		} catch ( Exception e ) {
 			// we must ignore exceptions here
 		}
+		StringBuilder buf = new StringBuilder();
+		Throwable t = sampleException;
+		if ( t != null ) {
+			buf.append("Error communicating with EnaSolar inverter: ").append(t.getMessage());
+		}
 		if ( snap != null ) {
-			StringBuilder buf = new StringBuilder();
+			if ( buf.length() > 0 ) {
+				buf.append("; ");
+			}
 			buf.append(snap.getWatts()).append(" W; ");
 			buf.append(snap.getWattHourReading()).append(" Wh; sample created ");
 			buf.append(String.format("%tc", snap.getCreated()));
-			msg = buf.toString();
 		}
-		return (msg == null ? "N/A" : msg);
+		return (buf.length() < 1 ? "N/A" : buf.toString());
 	}
 
 	@Override

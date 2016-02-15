@@ -25,6 +25,7 @@ package net.solarnetwork.node.power.enasolar.ws.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -171,6 +172,17 @@ public class EnaSolarXMLDatumDataSourceTest extends AbstractNodeTest {
 		assertEquals(237.2F, datum.getVoltage().floatValue(), 0.01);
 		assertNotNull(datum.getDCVoltage());
 		assertEquals(419.3F, datum.getDCVoltage().floatValue(), 0.01);
+	}
+
+	@Test
+	public void noRouteToHostException() {
+		EnaSolarXMLDatumDataSource dataSource = new EnaSolarXMLDatumDataSource();
+		dataSource
+				.setUrls(new String[] { "http://192.168.9.1/data.xml", "http://192.168.9.1/meters.xml" });
+		dataSource.init();
+		String s = dataSource.getInfoMessage();
+		assertNotNull(s);
+		assertTrue(s.startsWith("Error communicating with EnaSolar inverter:"));
 	}
 
 }

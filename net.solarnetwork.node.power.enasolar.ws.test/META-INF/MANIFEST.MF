@@ -4,7 +4,7 @@ Bundle-Name: SolarNode EnaSolar Power Web Service Test
 Bundle-SymbolicName: net.solarnetwork.node.power.enasolar.ws.test
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.power.enasolar.ws;bundle-version="1.9"
+Fragment-Host: net.solarnetwork.node.power.enasolar.ws;bundle-version="2.1.1"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  javax.sql,
