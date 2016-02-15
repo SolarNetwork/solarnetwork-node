@@ -180,7 +180,7 @@ public class DefaultBackupManager implements BackupManager {
 		}
 		final BackupServiceInfo info = service.getInfo();
 		final BackupStatus status = info.getStatus();
-		if ( status != BackupStatus.Configured ) {
+		if ( !(status == BackupStatus.Configured || status == BackupStatus.Error) ) {
 			log.info("BackupService {} is in the {} state; cannot perform backup", service.getKey(),
 					status);
 			return null;
