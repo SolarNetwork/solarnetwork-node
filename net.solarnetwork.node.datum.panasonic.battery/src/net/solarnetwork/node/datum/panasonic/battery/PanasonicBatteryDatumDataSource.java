@@ -63,9 +63,13 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport implement
 	private String sourceId = "Battery";
 
 	private BatteryData getCurrentSample() {
+		String e = getEmail();
+		if ( e == null || e.length() < 1 ) {
+			return null;
+		}
 		BatteryData currSample;
 		if ( isCachedSampleExpired() ) {
-			currSample = getClient().getCurrentBatteryDataForEmail(email);
+			currSample = getClient().getCurrentBatteryDataForEmail(e);
 			log.debug("Read BatteryData sample: {}", currSample);
 		} else {
 			currSample = sample;
