@@ -46,6 +46,14 @@
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
 	
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="deserializers">
+			<list>
+				<bean class="net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer"/>
+			</list>
+		</property>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
@@ -98,6 +106,11 @@
 								<bean class="net.solarnetwork.node.datum.panasonic.battery.PanasonicBatteryDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="client">
+										<bean class="net.solarnetwork.node.hw.panasonic.battery.SimpleBatteryAPIClient">
+											<property name="objectMapper" ref="objectMapper"/>
+										</bean>
+									</property>
 								</bean>
 							</entry>
 						</map>
