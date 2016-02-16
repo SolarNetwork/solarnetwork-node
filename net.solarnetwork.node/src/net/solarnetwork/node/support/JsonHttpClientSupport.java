@@ -158,9 +158,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 					return null;
 				}
 			}
-			throw new RemoteServiceException(
-					"Server response not successful: " + root.get("message") == null ? "(no message)"
-							: root.get("message").asText());
+			throw new RemoteServiceException("Server response not successful: "
+					+ (root.get("message") == null ? "(no message)" : root.get("message").asText()));
 		} finally {
 			if ( in != null ) {
 				in.close();
