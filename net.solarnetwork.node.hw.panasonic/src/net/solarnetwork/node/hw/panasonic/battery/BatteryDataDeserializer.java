@@ -98,7 +98,8 @@ public class BatteryDataDeserializer extends StdScalarDeserializer<BatteryData> 
 		Integer availableCapacity = getInteger(node, "CurrentCapacity");
 		Integer totalCapacity = getInteger(node, "TotalCapacity");
 
-		return new BatteryData(deviceId, date, status, availableCapacity, totalCapacity);
+		return new BatteryData(deviceId, (date != null ? date : new DateTime()), status,
+				availableCapacity, totalCapacity);
 	}
 
 }
