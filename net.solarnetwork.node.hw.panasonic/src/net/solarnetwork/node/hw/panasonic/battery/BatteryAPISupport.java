@@ -54,6 +54,7 @@ public class BatteryAPISupport {
 
 	private String uid;
 	private String groupUID;
+	private String errorMessage;
 
 	/** A class-level logger to use. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -77,6 +78,11 @@ public class BatteryAPISupport {
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		BatteryAPISupport defaults = new BatteryAPISupport();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
+
+		String msg = getErrorMessage();
+		if ( msg != null ) {
+			results.add(new BasicTitleSettingSpecifier("info", msg, true));
+		}
 
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
 
@@ -213,6 +219,25 @@ public class BatteryAPISupport {
 
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
+	}
+
+	/**
+	 * An error message to use in status messages.
+	 * 
+	 * @return An error message (or <em>null</em>).
+	 */
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	/**
+	 * Set an error message to show in status messages.
+	 * 
+	 * @param errorMessage
+	 *        The error message.
+	 */
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
 	}
 
 }
