@@ -114,4 +114,31 @@ public class SimpleBatteryAPIClientTests {
 		}
 	}
 
+	@Test
+	public void getBatteryDataForDeviceID() {
+		final String deviceID = "12345";
+		final String fileURL = getClass().getResource("battery-data-01.json").toString();
+		SimpleBatteryAPIClient client = new SimpleBatteryAPIClient() {
+
+			@Override
+			protected URLConnection getURLConnection(String url, String httpMethod, String accept)
+					throws IOException {
+				final String expectedURL = TEST_BASE_URL + "/BatteryByID?BatteryID=" + deviceID;
+				Assert.assertEquals(expectedURL, url);
+				return super.getURLConnection(fileURL, httpMethod, accept);
+			}
+
+		};
+		client.setBaseURL(TEST_BASE_URL);
+		client.setObjectMapper(getObjectMapper());
+
+		BatteryData bd = client.getCurrentBatteryDataForDevice(deviceID);
+		Assert.assertNotNull(bd);
+		Assert.assertEquals("1666729", bd.getDeviceID());
+		Assert.assertEquals(new DateTime(2016, 2, 9, 14, 16, 41, DateTimeZone.UTC), bd.getDate());
+		Assert.assertEquals("A", bd.getStatus());
+		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
+		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());
+	}
+
 }
