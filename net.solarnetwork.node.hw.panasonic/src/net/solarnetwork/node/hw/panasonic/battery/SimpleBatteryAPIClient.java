@@ -40,13 +40,10 @@ public class SimpleBatteryAPIClient extends JsonHttpClientSupport implements Bat
 	/** The returned code for a successful response. */
 	public static final int CODE_OK = 200;
 
-	@Override
-	public BatteryData getCurrentBatteryDataForEmail(String email) throws BatteryAPIException {
-		final StringBuilder buf = new StringBuilder();
-		appendXWWWFormURLEncodedValue(buf, "EmailID", email);
-		buf.insert(0, "?").insert(0, "/BatteryByEmail").insert(0, baseURL);
-		final String url = buf.toString();
+	/** The returned code for a device or email not found. */
+	public static final int CODE_NOT_FOUND = 404;
 
+	private BatteryData getBatteryData(final String url) {
 		try {
 			InputStream in = jsonGET(url);
 			JsonNode json = getObjectMapper().readTree(in);
@@ -59,6 +56,24 @@ public class SimpleBatteryAPIClient extends JsonHttpClientSupport implements Bat
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public BatteryData getCurrentBatteryDataForEmail(final String email) throws BatteryAPIException {
+		final StringBuilder buf = new StringBuilder();
+		appendXWWWFormURLEncodedValue(buf, "EmailID", email);
+		buf.insert(0, "?").insert(0, "/BatteryByEmail").insert(0, baseURL);
+		final String url = buf.toString();
+		return getBatteryData(url);
+	}
+
+	@Override
+	public BatteryData getCurrentBatteryDataForDevice(final String deviceID) throws BatteryAPIException {
+		final StringBuilder buf = new StringBuilder();
+		appendXWWWFormURLEncodedValue(buf, "BatteryID", deviceID);
+		buf.insert(0, "?").insert(0, "/BatteryByID").insert(0, baseURL);
+		final String url = buf.toString();
+		return getBatteryData(url);
 	}
 
 	/**

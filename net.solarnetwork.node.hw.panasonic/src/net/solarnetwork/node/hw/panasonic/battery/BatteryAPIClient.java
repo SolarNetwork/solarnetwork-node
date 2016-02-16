@@ -39,10 +39,22 @@ public interface BatteryAPIClient {
 	 * 
 	 * @param email
 	 *        The battery owner's email address.
-	 * @return The most recently available battery data
+	 * @return The most recently available battery data.
 	 * @throws BatteryAPIException
 	 *         If the response indicates an error.
 	 */
 	BatteryData getCurrentBatteryDataForEmail(String email) throws BatteryAPIException;
+
+	/**
+	 * Get the most recently available battery data for a specific registered
+	 * email address.
+	 * 
+	 * @param deviceID
+	 *        The battery device's ID.
+	 * @return The most recently available battery data.
+	 * @throws BatteryAPIException
+	 *         If the response indicates an error.
+	 */
+	BatteryData getCurrentBatteryDataForDevice(String deviceID) throws BatteryAPIException;
 
 }
