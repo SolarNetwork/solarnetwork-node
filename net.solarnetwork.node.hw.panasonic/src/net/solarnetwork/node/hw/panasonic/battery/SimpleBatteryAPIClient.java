@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.panasonic.battery;
 import java.io.IOException;
 import java.io.InputStream;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * Implementation of {@link BatteryAPIClient}.
@@ -36,6 +37,9 @@ public class SimpleBatteryAPIClient extends JsonHttpClientSupport implements Bat
 
 	private String baseURL = "https://api.panasonic.com/batteryapi";
 
+	/** The returned code for a successful response. */
+	public static final int CODE_OK = 200;
+
 	@Override
 	public BatteryData getCurrentBatteryDataForEmail(String email) throws BatteryAPIException {
 		final StringBuilder buf = new StringBuilder();
@@ -45,9 +49,15 @@ public class SimpleBatteryAPIClient extends JsonHttpClientSupport implements Bat
 
 		try {
 			InputStream in = jsonGET(url);
-			return getObjectMapper().readValue(in, BatteryData.class);
+			JsonNode json = getObjectMapper().readTree(in);
+			JsonNode codeNode = json.get("Code");
+			int code = (codeNode != null ? codeNode.intValue() : 0);
+			if ( code != CODE_OK ) {
+				throw new BatteryAPIException(code, "Server returned error code " + code);
+			}
+			return getObjectMapper().treeToValue(json, BatteryData.class);
 		} catch ( IOException e ) {
-			throw new BatteryAPIException(e);
+			throw new RuntimeException(e);
 		}
 	}
 

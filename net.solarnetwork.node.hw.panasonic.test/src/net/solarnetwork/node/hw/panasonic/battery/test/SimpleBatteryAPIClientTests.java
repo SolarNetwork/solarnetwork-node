@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
 import net.solarnetwork.node.hw.panasonic.battery.SimpleBatteryAPIClient;
@@ -84,6 +85,33 @@ public class SimpleBatteryAPIClientTests {
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());
+	}
+
+	@Test
+	public void getBatteryDataForEmailErrorCode500() {
+		final String email = "test@localhost";
+		final String fileURL = getClass().getResource("battery-data-03.json").toString();
+		SimpleBatteryAPIClient client = new SimpleBatteryAPIClient() {
+
+			@Override
+			protected URLConnection getURLConnection(String url, String httpMethod, String accept)
+					throws IOException {
+				final String expectedURL = TEST_BASE_URL + "/BatteryByEmail?EmailID="
+						+ URLEncoder.encode(email, "UTF-8");
+				Assert.assertEquals(expectedURL, url);
+				return super.getURLConnection(fileURL, httpMethod, accept);
+			}
+
+		};
+		client.setBaseURL(TEST_BASE_URL);
+		client.setObjectMapper(getObjectMapper());
+
+		try {
+			client.getCurrentBatteryDataForEmail(email);
+			Assert.fail("BatteryAPIException with error code 500 should have been thrown.");
+		} catch ( BatteryAPIException e ) {
+			Assert.assertEquals(500, e.getCode());
+		}
 	}
 
 }

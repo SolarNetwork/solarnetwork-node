@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.panasonic.battery;
 
+import net.solarnetwork.node.domain.EnergyStorageDatum;
+import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
 import org.joda.time.DateTime;
 
 /**
@@ -46,6 +48,45 @@ public class BatteryData {
 		this.status = status;
 		this.availableCapacity = availableCapacity;
 		this.totalCapacity = totalCapacity;
+	}
+
+	/**
+	 * Populate {@link EnergyStorageDatum} properties onto a datum.
+	 * 
+	 * @param datum
+	 *        The datum to populate with values from this instance.
+	 */
+	public void populateMeasurements(final GeneralNodeEnergyStorageDatum datum) {
+		if ( availableCapacity != null ) {
+			datum.setAvailableEnergy(availableCapacity.longValue());
+			if ( totalCapacity != null && totalCapacity.intValue() > 0 ) {
+				float percent = (float) (availableCapacity.doubleValue() / totalCapacity.doubleValue());
+				datum.setAvailableEnergyPercentage(percent);
+			}
+		}
+	}
+
+	/**
+	 * Get a brief information message about the operational status of the
+	 * sample, such as the overall power being used, etc.
+	 * 
+	 * @return A brief status message, or <em>null</em> if none available.
+	 */
+	public String getOperationStatusMessage() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("Device = ").append(deviceID != null ? deviceID : "N/A");
+		buf.append(", Status = ").append(status != null ? status : "N/A");
+		if ( availableCapacity != null && totalCapacity != null && totalCapacity.intValue() > 0 ) {
+			buf.append(String.format(", Capacity = %d Wh (%.0f%%)", availableCapacity,
+					(availableCapacity.doubleValue() / totalCapacity.doubleValue())));
+		}
+		return buf.toString();
+	}
+
+	@Override
+	public String toString() {
+		return "BatteryData{date=" + date + ", deviceID=" + deviceID + ", status=" + status + ", avail="
+				+ availableCapacity + ", capacity=" + totalCapacity + "}";
 	}
 
 	/**
