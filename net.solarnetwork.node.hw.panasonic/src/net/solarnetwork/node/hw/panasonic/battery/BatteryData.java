@@ -77,8 +77,9 @@ public class BatteryData {
 		buf.append("Device = ").append(deviceID != null ? deviceID : "N/A");
 		buf.append(", Status = ").append(status != null ? status : "N/A");
 		if ( availableCapacity != null && totalCapacity != null && totalCapacity.intValue() > 0 ) {
-			buf.append(String.format(", Capacity = %d Wh (%d%%)", availableCapacity, (int) Math
-					.round(100.0 * (availableCapacity.doubleValue() / totalCapacity.doubleValue()))));
+			buf.append(String.format(", Available capacity = %d Wh (%d%%)", availableCapacity,
+					(int) Math.round(100.0 * (availableCapacity.doubleValue() / totalCapacity
+							.doubleValue()))));
 		}
 		return buf.toString();
 	}
