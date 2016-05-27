@@ -24,15 +24,25 @@ package net.solarnetwork.node.weather.nz.metservice;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.support.UnicodeReader;
 import net.solarnetwork.node.support.XmlServiceSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.prefs.CsvPreference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -210,6 +220,61 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 			}
 		}
 		return num;
+	}
+
+	private static final Logger LOG = LoggerFactory.getLogger(MetserviceSupport.class);
+
+	/** The default weather location data column mappings to parse. */
+	public static final String[] DEFAULT_LOCATION_CSV_HEADERS = new String[] { "island", "name", "key" };
+
+	public static List<NewZealandWeatherLocation> availableWeatherLocations() {
+		InputStream in = MetserviceSupport.class.getResourceAsStream("metservice-locations.csv");
+		if ( in == null ) {
+			LOG.warn("Metservice location CSV data not available.");
+			return Collections.emptyList();
+		}
+		Reader reader = null;
+		try {
+			reader = new InputStreamReader(in, "UTF-8");
+			return parseCSVWeatherLocations(reader, DEFAULT_LOCATION_CSV_HEADERS);
+		} catch ( IOException e ) {
+			LOG.error("Unable to import weather CSV data: {}", e.getMessage());
+		} finally {
+			if ( reader != null ) {
+				try {
+					reader.close();
+				} catch ( IOException e ) {
+					// ignore
+				}
+			}
+		}
+		return Collections.emptyList();
+	}
+
+	public static List<NewZealandWeatherLocation> parseCSVWeatherLocations(Reader in, String[] headers) {
+		final List<NewZealandWeatherLocation> result = new ArrayList<NewZealandWeatherLocation>();
+		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
+		try {
+			NewZealandWeatherLocation loc = null;
+			while ( (loc = reader.read(NewZealandWeatherLocation.class, headers)) != null ) {
+				if ( loc.getKey() == null ) {
+					continue;
+				}
+				result.add(loc);
+			}
+			Collections.sort(result);
+		} catch ( IOException e ) {
+			LOG.error("Unable to import weather CSV data: {}", e.getMessage());
+		} finally {
+			try {
+				if ( reader != null ) {
+					reader.close();
+				}
+			} catch ( IOException e ) {
+				// ingore
+			}
+		}
+		return result;
 	}
 
 	/**
