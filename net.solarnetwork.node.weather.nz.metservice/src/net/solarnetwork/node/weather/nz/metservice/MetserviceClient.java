@@ -38,11 +38,11 @@ public interface MetserviceClient {
 	/**
 	 * Read the current "rise set" data for a location.
 	 * 
-	 * @param locationKey
-	 *        The location key.
+	 * @param locationIdentifier
+	 *        The location identifier.
 	 * @return The day data.
 	 */
-	GeneralDayDatum readCurrentRiseSet(String locationKey);
+	GeneralDayDatum readCurrentRiseSet(String locationIdentifier);
 
 	/**
 	 * Read the current "local observations" data for a location. This includes

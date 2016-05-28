@@ -29,11 +29,13 @@ import java.io.Reader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,15 +55,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public abstract class MetserviceSupport<T extends Datum> {
 
-	/** The default value for the {@code locationKey} property. */
-	public static final String DEFAULT_LOCATION_KEY = "wellington-city";
+	/** The default value for the {@code locationIdentifier} property. */
+	public static final String DEFAULT_LOCATION_IDENTIFIER = "wellington-city";
 
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
 
 	private String uid;
 	private String groupUID;
-	private String locationKey;
+	private String locationIdentifier;
 	private MetserviceClient client;
 	private MessageSource messageSource;
 
@@ -72,7 +74,7 @@ public abstract class MetserviceSupport<T extends Datum> {
 
 	public MetserviceSupport() {
 		datumCache = new ConcurrentHashMap<String, T>(2);
-		locationKey = DEFAULT_LOCATION_KEY;
+		locationIdentifier = DEFAULT_LOCATION_IDENTIFIER;
 		client = new BasicMetserviceClient();
 	}
 
@@ -86,7 +88,24 @@ public abstract class MetserviceSupport<T extends Datum> {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
 		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		result.add(new BasicTextFieldSettingSpecifier("locationKey", defaults.getLocationKey()));
+
+		List<NewZealandWeatherLocation> locs = availableWeatherLocations();
+		if ( locs != null ) {
+			// drop-down menu for all possible location keys
+			BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier(
+					"locationIdentifier", defaults.getLocationIdentifier());
+			Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+			for ( NewZealandWeatherLocation loc : locs ) {
+				menuValues.put(loc.getKey(), loc.getName());
+			}
+			menuSpec.setValueTitles(menuValues);
+			result.add(menuSpec);
+		} else {
+			// fall back to manual value
+			result.add(new BasicTextFieldSettingSpecifier("locationIdentifier", defaults
+					.getLocationIdentifier()));
+		}
+
 		return result;
 	}
 
@@ -189,12 +208,12 @@ public abstract class MetserviceSupport<T extends Datum> {
 		}
 	}
 
-	private void setLocationKeyFromSuffix(final String prefix, final String value) {
+	private void setLocationIdentifierFromSuffix(final String prefix, final String value) {
 		if ( prefix == null || value == null ) {
 			return;
 		}
 		if ( value.startsWith(prefix) && value.length() > prefix.length() ) {
-			setLocationKey(value.substring(prefix.length()));
+			setLocationIdentifier(value.substring(prefix.length()));
 		}
 	}
 
@@ -203,11 +222,11 @@ public abstract class MetserviceSupport<T extends Datum> {
 	 * 
 	 * @param localObs
 	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationKey(String)} instead.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
 	 */
 	@Deprecated
 	public void setLocalObs(String localObs) {
-		setLocationKeyFromSuffix("localObs_", localObs);
+		setLocationIdentifierFromSuffix("localObs_", localObs);
 	}
 
 	/**
@@ -215,11 +234,11 @@ public abstract class MetserviceSupport<T extends Datum> {
 	 * 
 	 * @param localForecast
 	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationKey(String)} instead.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
 	 */
 	@Deprecated
 	public void setLocalForecastTemplate(String localForecast) {
-		setLocationKeyFromSuffix("localForecast", localForecast);
+		setLocationIdentifierFromSuffix("localForecast", localForecast);
 	}
 
 	/**
@@ -227,11 +246,11 @@ public abstract class MetserviceSupport<T extends Datum> {
 	 * 
 	 * @param riseSet
 	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationKey(String)} instead.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
 	 */
 	@Deprecated
 	public void setRiseSetTemplate(String riseSet) {
-		setLocationKeyFromSuffix("riseSet_", riseSet);
+		setLocationIdentifierFromSuffix("riseSet_", riseSet);
 	}
 
 	/**
@@ -312,20 +331,20 @@ public abstract class MetserviceSupport<T extends Datum> {
 		this.groupUID = groupUID;
 	}
 
-	public String getLocationKey() {
-		return locationKey;
+	public String getLocationIdentifier() {
+		return locationIdentifier;
 	}
 
 	/**
-	 * Set the Metservice weather location key to use, which determines the URL
-	 * to use for loading weather data files. This should be one of the keys
-	 * returned by {@link MetserviceSupport#availableWeatherLocations()}.
+	 * Set the Metservice weather location identifer to use, which determines
+	 * the URL to use for loading weather data files. This should be one of the
+	 * keys returned by {@link MetserviceSupport#availableWeatherLocations()}.
 	 * 
-	 * @param locationKey
-	 *        The location key to use.
+	 * @param locationIdentifier
+	 *        The location identifier to use.
 	 */
-	public void setLocationKey(String locationKey) {
-		this.locationKey = locationKey;
+	public void setLocationIdentifier(String locationIdentifier) {
+		this.locationIdentifier = locationIdentifier;
 	}
 
 	/**

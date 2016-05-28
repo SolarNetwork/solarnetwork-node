@@ -67,7 +67,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 			getDatumCache().remove(LAST_DATUM_CACHE_KEY);
 		}
 
-		result = getClient().readCurrentRiseSet(getLocationKey());
+		result = getClient().readCurrentRiseSet(getLocationIdentifier());
 		getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
 
 		return result;

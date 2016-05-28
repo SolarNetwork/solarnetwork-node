@@ -53,7 +53,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 	@Override
 	public GeneralLocationDatum readCurrentDatum() {
 		Collection<GeneralLocationDatum> results = getClient().readCurrentLocalObservations(
-				getLocationKey());
+				getLocationIdentifier());
 		GeneralAtmosphericDatum result = null;
 		if ( results != null ) {
 			for ( GeneralLocationDatum datum : results ) {
@@ -65,7 +65,7 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 		}
 
 		if ( result != null && result.getSkyConditions() == null ) {
-			Collection<GeneralDayDatum> forecast = getClient().readLocalForecast(getLocationKey());
+			Collection<GeneralDayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
 			if ( forecast != null ) {
 				LocalDate resultDate = new LocalDate(result.getCreated());
 				for ( GeneralDayDatum day : forecast ) {
