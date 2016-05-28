@@ -59,4 +59,57 @@ public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 		putStatusSampleValue(SUNSET_KEY, DateUtils.format(value));
 	}
 
+	@Override
+	public LocalTime getMoonrise() {
+		String time = getStatusSampleString(MOONRISE_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setMoonrise(LocalTime value) {
+		putStatusSampleValue(MOONRISE_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public LocalTime getMoonset() {
+		String time = getStatusSampleString(MOONSET_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setMoonset(LocalTime value) {
+		putStatusSampleValue(MOONSET_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public String getSkyConditions() {
+		return getStatusSampleString(SKY_CONDITIONS_KEY);
+	}
+
+	public void setSkyConditions(String value) {
+		putStatusSampleValue(SKY_CONDITIONS_KEY, value);
+	}
+
+	@Override
+	public Float getTemperatureMinimum() {
+		return getInstantaneousSampleFloat(TEMPERATURE_MINIMUM_KEY);
+	}
+
+	public void setTemperatureMinimum(Float value) {
+		putInstantaneousSampleValue(TEMPERATURE_MINIMUM_KEY, value);
+	}
+
+	@Override
+	public Float getTemperatureMaximum() {
+		return getInstantaneousSampleFloat(TEMPERATURE_MAXIMUM_KEY);
+	}
+
+	public void setTemperatureMaximum(Float value) {
+		putInstantaneousSampleValue(TEMPERATURE_MAXIMUM_KEY, value);
+	}
+
 }
