@@ -22,22 +22,11 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
-import java.io.IOException;
-import java.net.URLConnection;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.joda.time.LocalTime;
-import org.springframework.context.MessageSource;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * MetService implementation of a {@link GeneralDayDatum}
@@ -48,54 +37,11 @@ import com.fasterxml.jackson.databind.JsonNode;
  * collect day information (sunrise, sunset, etc.).
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>dayDateFormat</dt>
- * <dd>The {@link SimpleDateFormat} date format to use to parse the day date.
- * Defaluts to {@link #DEFAULT_DAY_DATE_FORMAT}.</dd>
- * 
- * <dt>timeDateFormat</dt>
- * The {@link SimpleDateFormat} time format to use to parse sunrise/sunset
- * times. Defaults to {@link #DEFAULT_TIME_DATE_FORMAT}.</dd>
- * 
- * <dt>riseSet</dt>
- * <dd>The name of the "riseSet" file to parse. This file is expected to contain
- * a single JSON object declaration with the sunrise, sunset, and date
- * attributes. Defaults to {@link #DEFAULT_RISE_SET}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDatum> implements
 		DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
-
-	/** The default value for the {@code riseSet} property. */
-	public static final String DEFAULT_RISE_SET = "riseSet_wellington-city";
-
-	/** The default value for the {@code dayDateFormat} property. */
-	public static final String DEFAULT_DAY_DATE_FORMAT = "d MMMM yyyy";
-
-	/** The default value for the {@code timeDateFormat} property. */
-	public static final String DEFAULT_TIME_DATE_FORMAT = "h:mma";
-
-	private MessageSource messageSource;
-	private String riseSet;
-	private String dayDateFormat;
-	private String timeDateFormat;
-
-	/**
-	 * Default constructor.
-	 */
-	public MetserviceDayDatumDataSource() {
-		super();
-		riseSet = DEFAULT_RISE_SET;
-		dayDateFormat = DEFAULT_DAY_DATE_FORMAT;
-		timeDateFormat = DEFAULT_TIME_DATE_FORMAT;
-	}
 
 	@Override
 	public Class<? extends GeneralLocationDatum> getDatumType() {
@@ -121,30 +67,9 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 			getDatumCache().remove(LAST_DATUM_CACHE_KEY);
 		}
 
-		final String url = getBaseUrl() + '/' + riseSet;
-		final SimpleDateFormat timeFormat = new SimpleDateFormat(getTimeDateFormat());
-		final SimpleDateFormat dayFormat = new SimpleDateFormat(getDayDateFormat());
-		try {
-			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
-			JsonNode data = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
+		result = getClient().readCurrentRiseSet(getLocationKey());
+		getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
 
-			Date day = parseDateAttribute("day", data, dayFormat);
-			Date sunrise = parseDateAttribute("sunRise", data, timeFormat);
-			Date sunset = parseDateAttribute("sunSet", data, timeFormat);
-
-			if ( day != null && sunrise != null && sunset != null ) {
-				result = new GeneralDayDatum();
-				result.setCreated(day);
-				result.setSunrise(new LocalTime(sunrise));
-				result.setSunset(new LocalTime(sunset));
-
-				log.debug("Obtained new DayDatum: {}", result);
-				getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
-			}
-
-		} catch ( IOException e ) {
-			log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
-		}
 		return result;
 	}
 
@@ -156,52 +81,6 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 	@Override
 	public String getDisplayName() {
 		return "New Zealand Metservice day information";
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		MetserviceDayDatumDataSource defaults = new MetserviceDayDatumDataSource();
-		return Arrays.asList(
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("baseUrl", defaults.getBaseUrl()),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("riseSet", defaults.getRiseSet()),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dayDateFormat", defaults
-						.getDayDateFormat()), (SettingSpecifier) new BasicTextFieldSettingSpecifier(
-						"timeDayFormat", defaults.getTimeDateFormat()));
-	}
-
-	public String getRiseSet() {
-		return riseSet;
-	}
-
-	public void setRiseSet(String riseSet) {
-		this.riseSet = riseSet;
-	}
-
-	public String getDayDateFormat() {
-		return dayDateFormat;
-	}
-
-	public void setDayDateFormat(String dayDateFormat) {
-		this.dayDateFormat = dayDateFormat;
-	}
-
-	public String getTimeDateFormat() {
-		return timeDateFormat;
-	}
-
-	public void setTimeDateFormat(String timeDateFormat) {
-		this.timeDateFormat = timeDateFormat;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 }
