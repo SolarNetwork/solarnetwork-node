@@ -22,8 +22,12 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -41,7 +45,8 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * @version 2.0
  */
 public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDatum> implements
-		DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
+		DatumDataSource<GeneralLocationDatum>, MultiDatumDataSource<GeneralLocationDatum>,
+		SettingSpecifierProvider {
 
 	@Override
 	public Class<? extends GeneralLocationDatum> getDatumType() {
@@ -70,6 +75,34 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 		result = getClient().readCurrentRiseSet(getLocationIdentifier());
 		getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
 
+		return result;
+	}
+
+	@Override
+	public Class<? extends GeneralLocationDatum> getMultiDatumType() {
+		return GeneralDayDatum.class;
+	}
+
+	@Override
+	public Collection<GeneralLocationDatum> readMultipleDatum() {
+		List<GeneralLocationDatum> result = new ArrayList<GeneralLocationDatum>(10);
+		GeneralDayDatum today = (GeneralDayDatum) readCurrentDatum();
+		if ( today != null ) {
+			result.add(today);
+		}
+		Collection<GeneralDayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
+		if ( forecast != null ) {
+			for ( GeneralDayDatum day : forecast ) {
+				if ( day.getCreated().equals(today.getCreated()) ) {
+					if ( today.getSkyConditions() == null ) {
+						// copy from forecast
+						today.setSkyConditions(day.getSkyConditions());
+					}
+					continue;
+				}
+				result.add(day);
+			}
+		}
 		return result;
 	}
 
