@@ -35,8 +35,8 @@
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
-		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 4 ? * *</beans:prop>
-		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 4 ? * *</beans:prop>
+		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 0/2 ? * *</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
