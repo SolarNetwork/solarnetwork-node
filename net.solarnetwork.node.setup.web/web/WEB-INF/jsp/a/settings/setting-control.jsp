@@ -101,6 +101,28 @@
 						});
 						</script>
 					</c:when>
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.MultiValueSettingSpecifier')}">
+						<select name="${settingId}" id="${settingId}">
+							<c:forEach items="${setting.valueTitles}" var="entry">
+								<option value="${entry.key}"
+										<c:if test='${settingValue eq  entry.key}'>selected="selected"</c:if>
+								>
+									${entry.value}
+								</option>
+							</c:forEach>
+						</select>
+						<script>
+						$(function() {
+							SolarNode.Settings.addSelect({
+								key: '${settingId}',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
+							});
+						});
+						</script>
+					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
 							value="${settingValue}" />

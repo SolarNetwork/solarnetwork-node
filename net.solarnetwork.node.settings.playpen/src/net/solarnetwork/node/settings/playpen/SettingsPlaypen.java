@@ -37,6 +37,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -59,12 +60,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private static final Integer DEFAULT_INTEGER = 42;
 	private static final Double DEFAULT_SLIDE = 5.0;
 	private static final String[] DEFAULT_RADIO = new String[] { "One", "Two", "Three" };
+	private static final String[] DEFAULT_MENU = new String[] { "Option 1", "Option 2", "Option 3" };
 
 	private String string = DEFAULT_STRING;
 	private Integer integer = DEFAULT_INTEGER;
 	private Boolean toggle = Boolean.FALSE;
 	private Double slide = DEFAULT_SLIDE;
 	private String radio = DEFAULT_RADIO[0];
+	private String menu = DEFAULT_MENU[0];
 
 	// group support
 	private List<String> listString = new ArrayList<String>(4);
@@ -117,6 +120,16 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		}
 		radioSpec.setValueTitles(radioValues);
 		results.add(radioSpec);
+
+		// drop-down menu
+		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("menu",
+				defaults.getMenu());
+		Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+		for ( String s : DEFAULT_MENU ) {
+			menuValues.put(s, s);
+		}
+		menuSpec.setValueTitles(menuValues);
+		results.add(menuSpec);
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
@@ -419,6 +432,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 			l.add(new ComplexListItem());
 			lCount++;
 		}
+	}
+
+	public String getMenu() {
+		return menu;
+	}
+
+	public void setMenu(String menu) {
+		this.menu = menu;
 	}
 
 }

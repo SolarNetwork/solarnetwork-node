@@ -109,7 +109,7 @@ SolarNode.Settings.addToggle = function(params) {
  * 
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the radio buttons
  */
 SolarNode.Settings.addRadio = function(params) {
 	var radios = $('input:radio[name='+params.key+']');
@@ -121,11 +121,26 @@ SolarNode.Settings.addRadio = function(params) {
 };
 
 /**
+ * Setup a new select menu.
+ * 
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the select element
+ */
+SolarNode.Settings.addSelect = function(params) {
+	var select = $('select[name='+params.key+']');
+	select.change(function() {
+			var value = select.val();
+			SolarNode.Settings.updateSetting(params, value);
+		});
+};
+
+/**
  * Setup a new text field.
  * 
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the text field
  * @param params.value {String} the initial value
  */
 SolarNode.Settings.addTextField = function(params) {
