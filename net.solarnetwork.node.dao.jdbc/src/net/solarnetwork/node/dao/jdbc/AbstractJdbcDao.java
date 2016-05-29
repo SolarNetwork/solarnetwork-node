@@ -125,20 +125,20 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	}
 
 	/**
-	 * Insert a new domain object.
+	 * Update a domain object.
 	 * 
 	 * @param obj
-	 *        the domain object to insert
-	 * @param sqlInsert
+	 *        the domain object to update
+	 * @param sqlUpdate
 	 *        the SQL to persist the object with
 	 * @since 1.2
 	 */
-	protected int updateDomainObject(final T obj, final String sqlInsert) {
+	protected int updateDomainObject(final T obj, final String sqlUpdate) {
 		return getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement ps = con.prepareStatement(sqlInsert);
+				PreparedStatement ps = con.prepareStatement(sqlUpdate);
 				setUpdateStatementValues(obj, ps);
 				return ps;
 			}
