@@ -29,11 +29,26 @@ import net.solarnetwork.domain.GeneralDatumSamples;
  * Base Datum implementation with {@link GeneralDatumSamples} support.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cloneable {
 
 	private GeneralDatumSamples samples;
+
+	/**
+	 * Create a new {@link GeneralDatumSamples} instance.
+	 * 
+	 * <p>
+	 * This method is called when a new samples instance is needed, so extending
+	 * classes can return a custom class if needed.
+	 * </p>
+	 * 
+	 * @return New instance.
+	 * @since 1.1
+	 */
+	protected GeneralDatumSamples newSamplesInstance() {
+		return new GeneralDatumSamples();
+	}
 
 	/**
 	 * Put a value into the {@link GeneralDatumSamples#getInstantaneous()} map,
@@ -47,7 +62,7 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	public void putInstantaneousSampleValue(String key, Number n) {
 		GeneralDatumSamples s = samples;
 		if ( s == null ) {
-			s = new GeneralDatumSamples();
+			s = newSamplesInstance();
 			samples = s;
 		}
 		s.putInstantaneousSampleValue(key, n);
@@ -65,7 +80,7 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	public void putAccumulatingSampleValue(String key, Number n) {
 		GeneralDatumSamples s = samples;
 		if ( s == null ) {
-			s = new GeneralDatumSamples();
+			s = newSamplesInstance();
 			samples = s;
 		}
 		s.putAccumulatingSampleValue(key, n);
@@ -83,7 +98,7 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	public void putStatusSampleValue(String key, Object value) {
 		GeneralDatumSamples s = samples;
 		if ( s == null ) {
-			s = new GeneralDatumSamples();
+			s = newSamplesInstance();
 			samples = s;
 		}
 		s.putStatusSampleValue(key, value);
@@ -310,7 +325,7 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 		}
 		GeneralDatumSamples s = samples;
 		if ( s == null ) {
-			s = new GeneralDatumSamples();
+			s = newSamplesInstance();
 			samples = s;
 		}
 		s.addTag(tag);

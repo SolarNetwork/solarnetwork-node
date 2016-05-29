@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralLocationDatumSamples;
+
 /**
  * General location datum.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralLocationDatum extends GeneralNodeDatum {
 
@@ -38,6 +41,11 @@ public class GeneralLocationDatum extends GeneralNodeDatum {
 	public GeneralLocationDatum() {
 		super();
 		setSourceId(null);
+	}
+
+	@Override
+	protected GeneralDatumSamples newSamplesInstance() {
+		return new GeneralLocationDatumSamples();
 	}
 
 	public Long getLocationId() {
