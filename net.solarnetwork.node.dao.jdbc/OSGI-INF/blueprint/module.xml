@@ -151,7 +151,13 @@
 		</property>
 	</bean>
 
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="featuresToEnable">
+			<list>
+				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}</value>
+			</list>
+		</property>
+	</bean>
 
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
