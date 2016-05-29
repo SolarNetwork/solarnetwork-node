@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import net.solarnetwork.node.util.DateUtils;
 import org.joda.time.LocalTime;
 
@@ -29,7 +30,7 @@ import org.joda.time.LocalTime;
  * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 
@@ -95,20 +96,20 @@ public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 	}
 
 	@Override
-	public Float getTemperatureMinimum() {
-		return getInstantaneousSampleFloat(TEMPERATURE_MINIMUM_KEY);
+	public BigDecimal getTemperatureMinimum() {
+		return getInstantaneousSampleBigDecimal(TEMPERATURE_MINIMUM_KEY);
 	}
 
-	public void setTemperatureMinimum(Float value) {
+	public void setTemperatureMinimum(BigDecimal value) {
 		putInstantaneousSampleValue(TEMPERATURE_MINIMUM_KEY, value);
 	}
 
 	@Override
-	public Float getTemperatureMaximum() {
-		return getInstantaneousSampleFloat(TEMPERATURE_MAXIMUM_KEY);
+	public BigDecimal getTemperatureMaximum() {
+		return getInstantaneousSampleBigDecimal(TEMPERATURE_MAXIMUM_KEY);
 	}
 
-	public void setTemperatureMaximum(Float value) {
+	public void setTemperatureMaximum(BigDecimal value) {
 		putInstantaneousSampleValue(TEMPERATURE_MAXIMUM_KEY, value);
 	}
 

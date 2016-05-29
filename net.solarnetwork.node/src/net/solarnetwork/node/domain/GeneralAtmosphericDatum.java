@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import net.solarnetwork.util.SerializeIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -29,26 +30,26 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * GeneralLocationDatum that also implements {@link AtmosphericDatum}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralAtmosphericDatum extends GeneralLocationDatum implements AtmosphericDatum {
 
 	@Override
 	@JsonIgnore
 	@SerializeIgnore
-	public Float getTemperature() {
-		return getInstantaneousSampleFloat(TEMPERATURE_KEY);
+	public BigDecimal getTemperature() {
+		return getInstantaneousSampleBigDecimal(TEMPERATURE_KEY);
 	}
 
-	public void setTemperature(Float value) {
+	public void setTemperature(BigDecimal value) {
 		putInstantaneousSampleValue(TEMPERATURE_KEY, value);
 	}
 
 	@Override
 	@JsonIgnore
 	@SerializeIgnore
-	public Float getDewPoint() {
-		return getInstantaneousSampleFloat(DEW_POINT_KEY);
+	public BigDecimal getDewPoint() {
+		return getInstantaneousSampleBigDecimal(DEW_POINT_KEY);
 	}
 
 	public void setDewPoint(Float value) {

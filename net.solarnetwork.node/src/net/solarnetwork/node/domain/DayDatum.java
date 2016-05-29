@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import org.joda.time.LocalTime;
 
 /**
@@ -118,7 +119,7 @@ public interface DayDatum {
 	 * @return The minimum temperature.
 	 * @since 1.1
 	 */
-	Float getTemperatureMinimum();
+	BigDecimal getTemperatureMinimum();
 
 	/**
 	 * Get the maximum temperature for the day.
@@ -126,7 +127,7 @@ public interface DayDatum {
 	 * @return The maximum temperature.
 	 * @since 1.1
 	 */
-	Float getTemperatureMaximum();
+	BigDecimal getTemperatureMaximum();
 
 	/**
 	 * Get a textual description of the sky conditions, e.g. "clear", "cloudy",
