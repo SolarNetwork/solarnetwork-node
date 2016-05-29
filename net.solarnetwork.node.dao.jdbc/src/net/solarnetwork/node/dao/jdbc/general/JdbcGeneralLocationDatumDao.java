@@ -27,12 +27,15 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralLocationDatumSamples;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
@@ -44,7 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * {@link GeneralLocationDatum} domain objects.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLocationDatum> {
 
@@ -82,9 +85,34 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 	}
 
 	@Override
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, noRollbackFor = DuplicateKeyException.class)
 	public void storeDatum(GeneralLocationDatum datum) {
-		storeDomainObject(datum);
+		try {
+			storeDomainObject(datum);
+		} catch ( DuplicateKeyException e ) {
+			List<GeneralLocationDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
+					preparedStatementSetterForPrimaryKey(datum.getCreated(), datum.getSourceId()),
+					rowMapper());
+			if ( existing.size() > 0 ) {
+				// only update if the samples have changed
+				GeneralDatumSamples existingSamples = existing.get(0).getSamples();
+				GeneralDatumSamples newSamples = datum.getSamples();
+				if ( !newSamples.equals(existingSamples) ) {
+					updateDomainObject(datum, getSqlResource(SQL_RESOURCE_UPDATE_DATA));
+				} else {
+					log.debug("Datum unchanged; not persisted: {}", datum);
+				}
+			}
+		}
+	}
+
+	@Override
+	protected void setUpdateStatementValues(GeneralLocationDatum datum, PreparedStatement ps)
+			throws SQLException {
+		int col = 1;
+		ps.setString(col++, jsonForSamples(datum));
+		ps.setTimestamp(col++, new Timestamp(datum.getCreated().getTime()));
+		ps.setString(col++, datum.getSourceId());
 	}
 
 	@Override
@@ -114,10 +142,8 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 		return deleteUploadedDataOlderThanHours(hours);
 	}
 
-	@Override
-	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-	public List<GeneralLocationDatum> getDatumNotUploaded(String destination) {
-		return findDatumNotUploaded(new RowMapper<GeneralLocationDatum>() {
+	private RowMapper<GeneralLocationDatum> rowMapper() {
+		return new RowMapper<GeneralLocationDatum>() {
 
 			@Override
 			public GeneralLocationDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -143,7 +169,24 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 				}
 				return datum;
 			}
-		});
+		};
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	public List<GeneralLocationDatum> getDatumNotUploaded(String destination) {
+		return findDatumNotUploaded(rowMapper());
+	}
+
+	private String jsonForSamples(GeneralLocationDatum datum) {
+		String json;
+		try {
+			json = objectMapper.writeValueAsString(datum.getSamples());
+		} catch ( IOException e ) {
+			log.error("Error serializing GeneralDatumSamples into JSON: {}", e.getMessage());
+			json = "{}";
+		}
+		return json;
 	}
 
 	@Override
@@ -156,13 +199,7 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 		ps.setLong(++col, datum.getLocationId());
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
 
-		String json;
-		try {
-			json = objectMapper.writeValueAsString(datum.getSamples());
-		} catch ( IOException e ) {
-			log.error("Error serializing GeneralDatumSamples into JSON: {}", e.getMessage());
-			json = "{}";
-		}
+		String json = jsonForSamples(datum);
 		ps.setString(++col, json);
 	}
 

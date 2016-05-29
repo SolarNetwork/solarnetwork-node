@@ -30,11 +30,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import net.solarnetwork.node.Mock;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 
 /**
@@ -69,7 +71,7 @@ import org.springframework.jdbc.core.RowMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -82,7 +84,9 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	public static final String SQL_RESOURCE_INSERT = "insert";
 	public static final String SQL_RESOURCE_DELETE_OLD = "delete-old";
 	public static final String SQL_RESOURCE_FIND_FOR_UPLOAD = "find-upload";
+	public static final String SQL_RESOURCE_FIND_FOR_PRIMARY_KEY = "find-pk";
 	public static final String SQL_RESOURCE_UPDATE_UPLOADED = "update-upload";
+	public static final String SQL_RESOURCE_UPDATE_DATA = "update-data";
 
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
@@ -165,6 +169,65 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 			log.debug("Found " + result.size() + " datum entities not uploaded");
 		}
 		return result;
+	}
+
+	/**
+	 * Find datum entities.
+	 * 
+	 * @param sqlResource
+	 *        The name of the SQL resource to use. See
+	 *        {@link #getSqlResource(String)}
+	 * @param setter
+	 *        A prepared statement setter
+	 * @param rowMapper
+	 *        a {@link RowMapper} implementation to instantiate entities from
+	 *        found rows
+	 * @return the matching rows, never <em>null</em>
+	 * @since 1.2
+	 */
+	protected List<T> findDatum(final String sqlResource, final PreparedStatementSetter setter,
+			final RowMapper<T> rowMapper) {
+		List<T> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				String sql = getSqlResource(sqlResource);
+				if ( log.isTraceEnabled() ) {
+					log.trace("Preparing SQL [{}] to find datum", sql);
+				}
+				PreparedStatement ps = con.prepareStatement(sql);
+				ps.setFetchDirection(ResultSet.FETCH_FORWARD);
+				ps.setFetchSize(1);
+				ps.setMaxRows(1);
+				setter.setValues(ps);
+				return ps;
+			}
+		}, rowMapper);
+		return result;
+	}
+
+	/**
+	 * Create a {@link PreparedStatementSetter} that sets the primary key values
+	 * on a statement.
+	 * 
+	 * @param created
+	 *        The created date of the datum.
+	 * @param sourceId
+	 *        The source ID of the datum.
+	 * @return The setter instance.
+	 * @see #findDatum(String, PreparedStatementSetter, RowMapper)
+	 * @since 1.2
+	 */
+	protected PreparedStatementSetter preparedStatementSetterForPrimaryKey(final Date created,
+			final String sourceId) {
+		return new PreparedStatementSetter() {
+
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				ps.setTimestamp(1, new Timestamp(created.getTime()));
+				ps.setString(2, sourceId);
+			}
+		};
 	}
 
 	/**
