@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -168,9 +169,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
 		final int numUploaded = 3;
-		final Date uploadDate = new Date(System.currentTimeMillis() + 1000L);
 		for ( int i = 0; i < numUploaded; i++ ) {
 			GeneralNodeDatum datum = results.get(i);
+			Date uploadDate = new Date(datum.getCreated().getTime() + 1000L);
 			dao.setDatumUploaded(datum, uploadDate, "test", String.valueOf(i + 10));
 		}
 
@@ -187,6 +188,62 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			Assert.assertEquals(samples, datum.getSamples());
 			Assert.assertNull(datum.getUploaded());
 		}
+	}
+
+	@Test
+	public void update() {
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		datum.setSourceId("Test");
+		datum.setSamples(samplesInstance());
+
+		// insert
+		dao.storeDatum(datum);
+
+		// mark as uploaded
+		dao.setDatumUploaded(datum, new Date(), "test", "test_id");
+
+		// now change data and update
+		datum.getSamples().addTag("foo");
+		dao.storeDatum(datum);
+
+		String jdata = jdbcTemplate.queryForObject(
+				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
+				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
+				String.class);
+		Assert.assertEquals("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123},\"t\":[\"foo\"]}", jdata);
+
+		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		Assert.assertNotNull(local);
+		Assert.assertEquals(1, local.size());
+		Assert.assertEquals(datum, local.get(0));
+	}
+
+	@Test
+	public void updateUnchangedSamples() {
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		datum.setSourceId("Test");
+		datum.setSamples(samplesInstance());
+
+		// insert
+		dao.storeDatum(datum);
+
+		// mark as uploaded
+		dao.setDatumUploaded(datum, new Date(), "test", "test_id");
+
+		// now update
+		dao.storeDatum(datum);
+
+		String jdata = jdbcTemplate.queryForObject(
+				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
+				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
+				String.class);
+		Assert.assertEquals("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123}}", jdata);
+
+		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		Assert.assertNotNull(local);
+		Assert.assertEquals(0, local.size());
 	}
 
 }
