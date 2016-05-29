@@ -24,6 +24,7 @@ package net.solarnetwork.node.weather.nz.metservice;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -175,7 +176,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 			log.warn("Local observation container key 'threeHour' not found in {}", url);
 		} else {
 			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
-			Float temp = parseFloatAttribute("temp", data);
+			BigDecimal temp = parseBigDecimalAttribute("temp", data);
 
 			if ( infoDate == null || temp == null ) {
 				log.debug("Date and/or temperature missing from key 'threeHour' in {}", url);
@@ -186,9 +187,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 
 				weather.setHumidity(parseIntegerAttribute("humidity", data));
 
-				Double millibar = parseDoubleAttribute("pressure", data);
+				BigDecimal millibar = parseBigDecimalAttribute("pressure", data);
 				if ( millibar != null ) {
-					int pascals = (int) (millibar.doubleValue() * 100);
+					int pascals = (millibar.multiply(new BigDecimal(100))).intValue();
 					weather.setAtmosphericPressure(pascals);
 				}
 				// TODO: rainfall?
@@ -201,8 +202,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 			log.warn("Local observation container key 'twentyFourHour' not found in {}", url);
 		} else {
 			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
-			Float maxTemp = parseFloatAttribute("maxTemp", data);
-			Float minTemp = parseFloatAttribute("minTemp", data);
+			BigDecimal maxTemp = parseBigDecimalAttribute("maxTemp", data);
+			BigDecimal minTemp = parseBigDecimalAttribute("minTemp", data);
 			if ( infoDate == null || minTemp == null || maxTemp == null ) {
 				log.debug("Date and/or temperature extremes missing from key 'twentyFourHour' in {}",
 						url);
@@ -242,8 +243,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 				GeneralDayDatum day = parseRiseSet(dayNode.get("riseSet"), dayFormat, timeFormat);
 				if ( day != null ) {
 					day.setSkyConditions(parseStringAttribute("forecastWord", dayNode));
-					day.setTemperatureMinimum(parseFloatAttribute("min", dayNode));
-					day.setTemperatureMaximum(parseFloatAttribute("max", dayNode));
+					day.setTemperatureMinimum(parseBigDecimalAttribute("min", dayNode));
+					day.setTemperatureMaximum(parseBigDecimalAttribute("max", dayNode));
 					result.add(day);
 				}
 			}
@@ -310,58 +311,32 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	}
 
 	/**
-	 * Parse a Double from an attribute value.
+	 * Parse a BigDecimal from an attribute value.
 	 * 
 	 * <p>
-	 * If the Double cannot be parsed, <em>null</em> will be returned.
+	 * If the BigDecimal cannot be parsed, <em>null</em> will be returned.
 	 * </p>
 	 * 
 	 * @param key
 	 *        the attribute key to obtain from the {@code data} Map
 	 * @param data
 	 *        the attributes
-	 * @return the parsed {@link Double}, or <em>null</em> if an error occurs or
-	 *         the specified attribute {@code key} is not available
+	 * @return the parsed {@link BigDecimal}, or <em>null</em> if an error
+	 *         occurs or the specified attribute {@code key} is not available
 	 */
-	protected Double parseDoubleAttribute(String key, JsonNode data) {
-		Double num = null;
+	protected BigDecimal parseBigDecimalAttribute(String key, JsonNode data) {
+		BigDecimal num = null;
 		if ( data != null ) {
 			JsonNode node = data.get(key);
 			if ( node != null ) {
-				try {
-					num = Double.valueOf(node.asText());
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing double attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
+				String txt = node.asText();
+				if ( txt.indexOf('.') < 0 ) {
+					txt += ".0"; // force to decimal notation, so round-trip into samples doesn't result in int
 				}
-			}
-		}
-		return num;
-	}
-
-	/**
-	 * Parse a FLoat from an attribute value.
-	 * 
-	 * <p>
-	 * If the Float cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} node
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link Float}, or <em>null</em> if an error occurs or
-	 *         the specified attribute {@code key} is not available
-	 */
-	protected Float parseFloatAttribute(String key, JsonNode data) {
-		Float num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
 				try {
-					num = Float.valueOf(node.asText());
+					num = new BigDecimal(txt);
 				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing float attribute [{}] value [{}]: {}", new Object[] { key,
+					log.debug("Error parsing decimal attribute [{}] value [{}]: {}", new Object[] { key,
 							data.get(key), e.getMessage() });
 				}
 			}
