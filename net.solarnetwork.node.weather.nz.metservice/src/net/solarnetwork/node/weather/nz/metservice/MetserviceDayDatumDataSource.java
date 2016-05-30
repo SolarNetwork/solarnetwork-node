@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
+import net.solarnetwork.node.domain.DayDatum;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -73,6 +74,16 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 		}
 
 		result = getClient().readCurrentRiseSet(getLocationIdentifier());
+
+		Collection<GeneralLocationDatum> observations = getClient().readCurrentLocalObservations(
+				getLocationIdentifier());
+		for ( GeneralLocationDatum observation : observations ) {
+			if ( observation instanceof DayDatum ) {
+				DayDatum day = (DayDatum) observation;
+				result.setTemperatureMinimum(day.getTemperatureMinimum());
+				result.setTemperatureMaximum(day.getTemperatureMaximum());
+			}
+		}
 		getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
 
 		return result;

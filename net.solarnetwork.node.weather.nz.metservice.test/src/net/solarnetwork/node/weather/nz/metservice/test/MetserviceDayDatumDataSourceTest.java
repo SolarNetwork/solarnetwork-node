@@ -25,6 +25,7 @@ package net.solarnetwork.node.weather.nz.metservice.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.File;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import net.solarnetwork.node.domain.GeneralDayDatum;
@@ -86,6 +87,9 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 		assertNotNull(datum.getSunset());
 		assertEquals("5:56pm", timeFormat.format(datum.getSunset().toDateTimeToday().toDate())
 				.toLowerCase());
+
+		assertEquals(new BigDecimal("5.0"), datum.getTemperatureMinimum());
+		assertEquals(new BigDecimal("15.0"), datum.getTemperatureMaximum());
 	}
 
 }
