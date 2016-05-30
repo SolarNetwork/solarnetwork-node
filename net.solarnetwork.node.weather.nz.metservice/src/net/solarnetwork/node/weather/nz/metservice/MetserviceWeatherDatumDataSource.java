@@ -98,13 +98,13 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 		GeneralAtmosphericDatum now = (GeneralAtmosphericDatum) readCurrentDatum();
 		if ( now != null ) {
 			result.add(now);
-		}
-		Collection<GeneralAtmosphericDatum> forecast = getClient().readHourlyForecast(
-				getLocationIdentifier());
-		if ( forecast != null ) {
-			for ( GeneralAtmosphericDatum hour : forecast ) {
-				if ( hour.getCreated().after(now.getCreated()) ) {
-					result.add(hour);
+			Collection<GeneralAtmosphericDatum> forecast = getClient().readHourlyForecast(
+					getLocationIdentifier());
+			if ( forecast != null ) {
+				for ( GeneralAtmosphericDatum hour : forecast ) {
+					if ( hour.getCreated().after(now.getCreated()) ) {
+						result.add(hour);
+					}
 				}
 			}
 		}
