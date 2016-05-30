@@ -180,6 +180,49 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 	}
 
 	@Test
+	public void parseLocalObservationsNoon() throws Exception {
+		BasicMetserviceClient client = createClientInstance();
+		Collection<GeneralLocationDatum> results = client
+				.readCurrentLocalObservations("wellington-city-2");
+
+		final SimpleDateFormat tsFormat = new SimpleDateFormat(client.getTimestampDateFormat());
+		tsFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
+
+		assertNotNull(results);
+		assertEquals(2, results.size());
+		Iterator<GeneralLocationDatum> itr = results.iterator();
+
+		GeneralLocationDatum loc = itr.next();
+		assertTrue(loc instanceof GeneralAtmosphericDatum);
+		GeneralAtmosphericDatum weather = (GeneralAtmosphericDatum) loc;
+
+		assertNotNull(weather.getCreated());
+		assertEquals("8:00am sunday 29 may 2016", tsFormat.format(weather.getCreated()).toLowerCase());
+
+		assertNotNull(weather.getTemperature());
+		assertEquals(11.0, weather.getTemperature().doubleValue(), 0.001);
+
+		assertNotNull(weather.getHumidity());
+		assertEquals(90.0, weather.getHumidity().doubleValue(), 0.001);
+
+		assertNotNull(weather.getAtmosphericPressure());
+		assertEquals(99300, weather.getAtmosphericPressure().intValue());
+
+		loc = itr.next();
+		assertTrue(loc instanceof GeneralDayDatum);
+		GeneralDayDatum day = (GeneralDayDatum) loc;
+
+		assertNotNull(day.getCreated());
+		assertEquals("12:00pm saturday 28 may 2016", tsFormat.format(day.getCreated()).toLowerCase());
+
+		assertNotNull(day.getTemperatureMinimum());
+		assertEquals(11.0, day.getTemperatureMinimum().doubleValue(), 0.001);
+
+		assertNotNull(day.getTemperatureMaximum());
+		assertEquals(15.0, day.getTemperatureMaximum().doubleValue(), 0.001);
+	}
+
+	@Test
 	public void parseLocalForecast() throws Exception {
 		final BasicMetserviceClient client = createClientInstance();
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(client.getDayDateFormat());

@@ -366,8 +366,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 				try {
 					String dateString = node.asText();
 
-					// replace "midnight" with 00:00am
+					// replace "midnight" with 12:00am
 					dateString = dateString.replaceAll("(?i)midnight", "12:00am");
+
+					// replace "noon" with 12:00pm
+					dateString = dateString.replaceAll("(?i)noon", "12:00pm");
 
 					result = dateFormat.parse(dateString);
 				} catch ( ParseException e ) {

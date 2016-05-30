@@ -1,0 +1,34 @@
+{
+"id":"loc1001978",
+"location":"Kelburn AWS",
+"locationId":"93437",
+"threeHour":{
+  "clothingLayers":"3",
+  "dateTime":"8:00am Sunday 29 May 2016",
+  "humidity":"90",
+  "pressure":993,
+  "rainfall":"0.0",
+  "rawTime":1464465600000,
+  "temp":"11",
+  "windChill":"10",
+  "windDirection":"N",
+  "windProofLayers":"0",
+  "windSpeed":"11"
+  },
+"twentyFourHour":{
+  "dateTime":"Noon Saturday 28 May 2016",
+  "maxTemp":15,
+  "minTemp":11,
+  "rainfall":"26.6"
+  },
+"twoDays":{
+  "dateTime2d":["Sat 28 May"
+    ],
+  "maxTemp2d":[15
+    ],
+  "minTemp2d":[11
+    ],
+  "rainfall2d":["26.6"
+    ]
+  }
+}
