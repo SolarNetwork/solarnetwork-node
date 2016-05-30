@@ -48,21 +48,32 @@ public interface MetserviceClient {
 	 * Read the current "local observations" data for a location. This includes
 	 * both day-level observations and current weather observations.
 	 * 
-	 * @param locationKey
-	 *        The location key.
+	 * @param locationIdentifier
+	 *        The location identifier.
 	 * @return A collection of {@link GeneralDayDatum} and
 	 *         {@link GeneralAtmosphericDatum}.
 	 */
-	Collection<GeneralLocationDatum> readCurrentLocalObservations(String locationKey);
+	Collection<GeneralLocationDatum> readCurrentLocalObservations(String locationIdentifier);
 
 	/**
 	 * Read the "local forecast" data for a location.
 	 * 
-	 * @param locationKey
-	 *        The location key.
+	 * @param locationIdentifier
+	 *        The location identifier.
 	 * @return A collection of {@link GeneralDayDatum}, which can be for dates
 	 *         in the future.
 	 */
-	Collection<GeneralDayDatum> readLocalForecast(String locationKey);
+	Collection<GeneralDayDatum> readLocalForecast(String locationIdentifier);
+
+	/**
+	 * Read the "hourly observations and forecast" data for a location,
+	 * returning the forecast data as datum.
+	 * 
+	 * @param locationIdentifier
+	 *        The location identifier.
+	 * @return A collection of {@link GeneralAtmosphericDatum}, which can be for
+	 *         dates in the future.
+	 */
+	Collection<GeneralAtmosphericDatum> readHourlyForecast(String locationIdentifier);
 
 }

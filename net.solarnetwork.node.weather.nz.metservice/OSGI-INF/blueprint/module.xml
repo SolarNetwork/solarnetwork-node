@@ -166,7 +166,7 @@
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
-							<entry key="datumDataSource">
+							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 									<property name="messageSource" ref="weatherJobMessageSource"/>
 									<property name="delegate">

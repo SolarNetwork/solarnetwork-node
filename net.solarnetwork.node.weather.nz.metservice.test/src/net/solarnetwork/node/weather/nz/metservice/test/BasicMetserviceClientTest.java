@@ -26,10 +26,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.TimeZone;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
@@ -61,6 +63,7 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 		client.setLocalObsTemplate("localObs_%s.json");
 		client.setLocalForecastTemplate("localForecast%s.json");
 		client.setOneMinuteObsTemplate("oneMinuteObs_%s.json");
+		client.setHourlyObsAndForecastTemplate("hourlyObsAndForecast_%s.json");
 		client.setObjectMapper(new ObjectMapper());
 		return client;
 	}
@@ -97,6 +100,7 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 		Collection<GeneralLocationDatum> results = client.readCurrentLocalObservations(LOCATION_KEY);
 
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(client.getTimestampDateFormat());
+		tsFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
 
 		assertNotNull(results);
 		assertEquals(2, results.size());
@@ -139,6 +143,7 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 				.readCurrentLocalObservations("wellington-city-1");
 
 		final SimpleDateFormat tsFormat = new SimpleDateFormat(client.getTimestampDateFormat());
+		tsFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
 
 		assertNotNull(results);
 		assertEquals(2, results.size());
@@ -178,6 +183,7 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 	public void parseLocalForecast() throws Exception {
 		final BasicMetserviceClient client = createClientInstance();
 		final SimpleDateFormat dayFormat = new SimpleDateFormat(client.getDayDateFormat());
+		dayFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
 		final SimpleDateFormat timeFormat = new SimpleDateFormat(client.getTimeDateFormat());
 
 		Collection<GeneralDayDatum> results = client.readLocalForecast(LOCATION_KEY);
@@ -221,6 +227,26 @@ public class BasicMetserviceClientTest extends AbstractNodeTest {
 		assertNotNull(day.getMoonset());
 		assertEquals("12:21am", timeFormat.format(day.getMoonset().toDateTimeToday().toDate())
 				.toLowerCase());
+	}
+
+	@Test
+	public void parseHourlyObsAndForecast() throws Exception {
+		final BasicMetserviceClient client = createClientInstance();
+		final SimpleDateFormat timestampHourFormat = new SimpleDateFormat(
+				client.getTimestampHourDateFormat());
+		timestampHourFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
+
+		Collection<GeneralAtmosphericDatum> results = client.readHourlyForecast(LOCATION_KEY);
+		assertNotNull(results);
+		assertEquals(24, results.size());
+
+		Iterator<GeneralAtmosphericDatum> itr = results.iterator();
+
+		GeneralAtmosphericDatum hour = itr.next();
+		assertNotNull(hour.getCreated());
+		assertEquals("10:00 sun 29 may 2016", timestampHourFormat.format(hour.getCreated())
+				.toLowerCase());
+		assertEquals(new BigDecimal("11.0"), hour.getTemperature());
 	}
 
 }

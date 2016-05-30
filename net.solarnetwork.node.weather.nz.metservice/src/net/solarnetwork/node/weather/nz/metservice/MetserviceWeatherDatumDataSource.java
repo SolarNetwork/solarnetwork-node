@@ -22,8 +22,11 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
@@ -43,7 +46,8 @@ import org.joda.time.LocalDate;
  * @version 2.0
  */
 public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralAtmosphericDatum>
-		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
+		implements DatumDataSource<GeneralLocationDatum>, MultiDatumDataSource<GeneralAtmosphericDatum>,
+		SettingSpecifierProvider {
 
 	@Override
 	public Class<? extends GeneralLocationDatum> getDatumType() {
@@ -65,7 +69,8 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 		}
 
 		if ( result != null && result.getSkyConditions() == null ) {
-			Collection<GeneralDayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
+			Collection<GeneralDayDatum> forecast = getClient()
+					.readLocalForecast(getLocationIdentifier());
 			if ( forecast != null ) {
 				LocalDate resultDate = new LocalDate(result.getCreated());
 				for ( GeneralDayDatum day : forecast ) {
@@ -79,6 +84,30 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 			}
 		}
 
+		return result;
+	}
+
+	@Override
+	public Class<? extends GeneralAtmosphericDatum> getMultiDatumType() {
+		return GeneralAtmosphericDatum.class;
+	}
+
+	@Override
+	public Collection<GeneralAtmosphericDatum> readMultipleDatum() {
+		List<GeneralAtmosphericDatum> result = new ArrayList<GeneralAtmosphericDatum>(10);
+		GeneralAtmosphericDatum now = (GeneralAtmosphericDatum) readCurrentDatum();
+		if ( now != null ) {
+			result.add(now);
+		}
+		Collection<GeneralAtmosphericDatum> forecast = getClient().readHourlyForecast(
+				getLocationIdentifier());
+		if ( forecast != null ) {
+			for ( GeneralAtmosphericDatum hour : forecast ) {
+				if ( hour.getCreated().after(now.getCreated()) ) {
+					result.add(hour);
+				}
+			}
+		}
 		return result;
 	}
 
