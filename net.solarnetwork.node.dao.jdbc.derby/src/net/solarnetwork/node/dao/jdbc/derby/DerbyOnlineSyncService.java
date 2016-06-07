@@ -35,8 +35,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.SetupService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -108,23 +114,51 @@ public class DerbyOnlineSyncService implements EventHandler {
 	private JdbcOperations jdbcOperations;
 	private List<String> syncCommand = DEFAULT_SYNC_COMMAND;
 	private String destinationPath = DEFAULT_DESTINATION_PATH;
+	private long syncSoonSeconds = 10;
+
+	private ScheduledExecutorService scheduler;
+	private ScheduledFuture<Boolean> syncSoonFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Listen for events to automatically trigger a database sync.
+	 * 
+	 * The {@link SetupService#TOPIC_NETWORK_ASSOCIATION_ACCEPTED} and
+	 * {@link SettingDao#EVENT_TOPIC_SETTING_CHANGED} event topics are handled,
+	 * and will cause a sync to be scheduled in the "near future".
+	 */
 	@Override
 	public void handleEvent(Event event) {
 		if ( SetupService.TOPIC_NETWORK_ASSOCIATION_ACCEPTED.equals(event.getTopic()) ) {
 			// immediately sync database!
-			log.info("Performing database backup sync after network association acceptance event.");
-			new Thread() {
-
-				@Override
-				public void run() {
-					sync();
-				}
-
-			}.start();
+			log.info("Scheduling database backup sync after network association acceptance event.");
+			syncSoon();
+		} else if ( SettingDao.EVENT_TOPIC_SETTING_CHANGED.equals(event.getTopic()) ) {
+			log.info("Scheduling database backup sync after setting change event.");
+			syncSoon();
 		}
+	}
+
+	private synchronized void syncSoon() {
+		if ( scheduler == null ) {
+			scheduler = Executors.newSingleThreadScheduledExecutor();
+		}
+		if ( syncSoonFuture != null ) {
+			if ( !syncSoonFuture.isDone() && !syncSoonFuture.cancel(false) ) {
+				return;
+			}
+		}
+		syncSoonFuture = scheduler.schedule(new Callable<Boolean>() {
+
+			@Override
+			public Boolean call() throws Exception {
+				log.info("Performing database backup sync.");
+				sync();
+				return true;
+			}
+
+		}, syncSoonSeconds, TimeUnit.SECONDS);
 	}
 
 	/**
@@ -283,6 +317,24 @@ public class DerbyOnlineSyncService implements EventHandler {
 
 	public void setDestinationPath(String destinationPath) {
 		this.destinationPath = destinationPath;
+	}
+
+	public long getSyncSoonSeconds() {
+		return syncSoonSeconds;
+	}
+
+	/**
+	 * Set the number of seconds to delay the syncing of the database due to
+	 * events in {@link #handleEvent(Event)}. This delay is implemented so that
+	 * when many events are triggered closely in time (say, from multiple
+	 * setting changes close together) we only try to sync once for the complete
+	 * set of changes.
+	 * 
+	 * @param syncSoonSeconds
+	 *        The number of seconds to treat as the "near future".
+	 */
+	public void setSyncSoonSeconds(long syncSoonSeconds) {
+		this.syncSoonSeconds = syncSoonSeconds;
 	}
 
 }

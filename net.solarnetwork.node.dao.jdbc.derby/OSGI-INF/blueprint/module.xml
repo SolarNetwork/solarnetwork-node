@@ -62,6 +62,7 @@
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<array value-type="java.lang.String">
 					<value>#{T(net.solarnetwork.node.setup.SetupService).TOPIC_NETWORK_ASSOCIATION_ACCEPTED}</value>
+					<value>#{T(net.solarnetwork.node.dao.SettingDao).EVENT_TOPIC_SETTING_CHANGED}</value>
 				</array>
 			</entry>
 		</service-properties>
