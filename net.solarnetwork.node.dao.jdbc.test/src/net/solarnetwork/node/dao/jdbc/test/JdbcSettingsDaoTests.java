@@ -87,21 +87,6 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 	private static final String TEST_VALUE = "_test_value_";
 
 	@Test
-	public void insertVolatile() {
-		replay(eventAdminMock);
-
-		Setting s = new Setting();
-		s.setKey(TEST_KEY);
-		s.setType(TEST_TYPE);
-		s.setValue(TEST_VALUE);
-		s.setFlags(EnumSet.of(SettingFlag.Volatile));
-
-		settingDao.storeSetting(s);
-
-		verify(eventAdminMock);
-	}
-
-	@Test
 	public void insertWithChangeEvent() {
 		Capture<Event> eventCapture = new Capture<Event>();
 		eventAdminMock.postEvent(EasyMock.capture(eventCapture));
@@ -118,6 +103,61 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertEquals(TEST_KEY, event.getProperty(SettingDao.SETTING_KEY));
 		Assert.assertEquals(TEST_TYPE, event.getProperty(SettingDao.SETTING_TYPE));
 		Assert.assertEquals(TEST_VALUE, event.getProperty(SettingDao.SETTING_VALUE));
+	}
+
+	@Test
+	public void insertVolatile() {
+		replay(eventAdminMock);
+
+		Setting s = new Setting();
+		s.setKey(TEST_KEY);
+		s.setType(TEST_TYPE);
+		s.setValue(TEST_VALUE);
+		s.setFlags(EnumSet.of(SettingFlag.Volatile));
+
+		settingDao.storeSetting(s);
+
+		verify(eventAdminMock);
+	}
+
+	@Test
+	public void updateWithChangeEvent() {
+		insertWithChangeEvent();
+		EasyMock.reset(eventAdminMock);
+
+		Capture<Event> eventCapture = new Capture<Event>();
+		eventAdminMock.postEvent(EasyMock.capture(eventCapture));
+
+		replay(eventAdminMock);
+
+		settingDao.storeSetting(TEST_KEY, TEST_TYPE, "foo");
+
+		verify(eventAdminMock);
+
+		Event event = eventCapture.getValue();
+		Assert.assertNotNull(event);
+		Assert.assertEquals(SettingDao.EVENT_TOPIC_SETTING_CHANGED, event.getTopic());
+		Assert.assertEquals(TEST_KEY, event.getProperty(SettingDao.SETTING_KEY));
+		Assert.assertEquals(TEST_TYPE, event.getProperty(SettingDao.SETTING_TYPE));
+		Assert.assertEquals("foo", event.getProperty(SettingDao.SETTING_VALUE));
+	}
+
+	@Test
+	public void updateVolatile() {
+		insertVolatile();
+		EasyMock.reset(eventAdminMock);
+
+		replay(eventAdminMock);
+
+		Setting s = new Setting();
+		s.setKey(TEST_KEY);
+		s.setType(TEST_TYPE);
+		s.setValue("foo");
+		s.setFlags(EnumSet.of(SettingFlag.Volatile));
+
+		settingDao.storeSetting(s);
+
+		verify(eventAdminMock);
 	}
 
 	@Test
@@ -156,6 +196,11 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		verify(eventAdminMock);
 
 		Assert.assertTrue(result);
+	}
+
+	@Test
+	public void readBatch() {
+
 	}
 
 }

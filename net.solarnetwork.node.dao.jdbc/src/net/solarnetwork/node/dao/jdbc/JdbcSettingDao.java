@@ -80,9 +80,6 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
 
-	private static final String DEFAULT_SQL_DELETE = "DELETE FROM " + SCHEMA_NAME + '.' + TABLE_SETTINGS
-			+ " WHERE skey = ? AND tkey = ?";
-
 	private static final String DEFAULT_BATCH_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " ORDER BY skey,tkey";
 
@@ -94,7 +91,6 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			+ " WHERE SOLARNODE.BITWISE_AND(flags, ?) <> ? ORDER BY modified DESC";
 
 	private final String sqlGet = DEFAULT_SQL_GET;
-	private final String sqlDelete = DEFAULT_SQL_DELETE;
 	private final String sqlFind = DEFAULT_SQL_FIND;
 	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
@@ -133,27 +129,36 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		}
 	}
 
-	private boolean deleteSettingInternal(String key, String type) {
+	private boolean deleteSettingInternal(final String key, final String type) {
 		// check if will delete, to emit change event
-		Setting setting = getJdbcTemplate().query(this.sqlGet, new ResultSetExtractor<Setting>() {
+		Setting setting = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				PreparedStatement queryStmt = con.prepareStatement(sqlGet,
+						ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE,
+						ResultSet.CLOSE_CURSORS_AT_COMMIT);
+				queryStmt.setString(1, key);
+				queryStmt.setString(2, type);
+				return queryStmt;
+			}
+		}, new ResultSetExtractor<Setting>() {
 
 			@Override
 			public Setting extractData(ResultSet rs) throws SQLException, DataAccessException {
 				Setting s = null;
-				if ( rs.next() ) {
+				while ( rs.next() ) {
 					s = getBatchRowEntity(null, rs, 1);
+					rs.deleteRow();
 				}
 				return s;
 			}
-		}, key, type);
-		boolean result = false;
-		if ( setting != null ) {
-			int res = getJdbcTemplate().update(this.sqlDelete, key, type);
-			result = (res > 0);
-			if ( result && setting.getFlags() != null
-					&& !setting.getFlags().contains(SettingFlag.Volatile) ) {
-				postSettingUpdatedEvent(key, type, setting.getValue());
-			}
+		});
+
+		boolean result = (setting != null);
+		if ( setting != null && setting.getFlags() != null
+				&& !setting.getFlags().contains(SettingFlag.Volatile) ) {
+			postSettingUpdatedEvent(key, type, setting.getValue());
 		}
 		return result;
 	}
@@ -245,12 +250,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 			@Override
 			public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+				boolean updated = false;
 				if ( rs.next() ) {
 					String oldValue = rs.getString(1);
 					if ( !value.equals(oldValue) ) {
 						rs.updateString(1, value);
 						rs.updateTimestamp(2, now);
 						rs.updateRow();
+						updated = true;
 					}
 				} else {
 					rs.moveToInsertRow();
@@ -260,10 +267,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 					rs.updateString(4, type);
 					rs.updateInt(5, flags);
 					rs.insertRow();
+					updated = true;
+				}
 
-					if ( !SettingFlag.setForMask(flags).contains(SettingFlag.Volatile) ) {
-						postSettingUpdatedEvent(key, type, value);
-					}
+				if ( updated && !SettingFlag.setForMask(flags).contains(SettingFlag.Volatile) ) {
+					postSettingUpdatedEvent(key, type, value);
 				}
 				return null;
 			}
