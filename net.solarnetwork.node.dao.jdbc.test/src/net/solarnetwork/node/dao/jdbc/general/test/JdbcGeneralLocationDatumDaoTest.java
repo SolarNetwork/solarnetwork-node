@@ -1,5 +1,5 @@
 /* ==================================================================
- * JdbcGeneralNodeDatumDaoTest.java - Aug 26, 2014 9:09:51 AM
+ * JdbcGeneralLocationDatumDaoTest.java - Oct 20, 2014 12:22:20 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.dao.jdbc.test;
+package net.solarnetwork.node.dao.jdbc.general.test;
 
 import java.sql.Timestamp;
 import java.util.Date;
@@ -29,10 +29,10 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
+import net.solarnetwork.domain.GeneralLocationDatumSamples;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
-import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,17 +41,17 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Test cases for the {@link JdbcGeneralNodeDatumDao} class.
+ * Test cases for the {@link JdbcGeneralLocationDatumDao} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
+public class JdbcGeneralLocationDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Resource(name = "dataSource")
 	private DataSource dataSource;
 
-	private JdbcGeneralNodeDatumDao dao;
+	private JdbcGeneralLocationDatumDao dao;
 
 	@Before
 	public void setup() {
@@ -62,14 +62,14 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		ObjectMapper mapper = new ObjectMapper();
 		mapper.setSerializationInclusion(Include.NON_NULL);
 
-		dao = new JdbcGeneralNodeDatumDao();
+		dao = new JdbcGeneralLocationDatumDao();
 		dao.setDataSource(dataSource);
 		dao.setObjectMapper(mapper);
 		dao.init();
 	}
 
-	private GeneralNodeDatumSamples samplesInstance() {
-		GeneralNodeDatumSamples samples = new GeneralNodeDatumSamples();
+	private GeneralLocationDatumSamples samplesInstance() {
+		GeneralLocationDatumSamples samples = new GeneralLocationDatumSamples();
 
 		// some sample data
 		Map<String, Number> instants = new HashMap<String, Number>(2);
@@ -85,8 +85,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void insert() {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
+		GeneralLocationDatum datum = new GeneralLocationDatum();
 		datum.setCreated(new Date());
+		datum.setLocationId(TEST_LOC_ID);
 		datum.setSourceId("Test");
 		datum.setSamples(samplesInstance());
 		dao.storeDatum(datum);
@@ -96,19 +97,20 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	public void findForUpload() {
 		final int numDatum = 5;
 		final long now = System.currentTimeMillis();
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final GeneralLocationDatumSamples samples = samplesInstance();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
+			GeneralLocationDatum datum = new GeneralLocationDatum();
 			datum.setCreated(new Date(now));
+			datum.setLocationId(TEST_LOC_ID);
 			datum.setSourceId(String.valueOf(i));
 			datum.setSamples(samples);
 			dao.storeDatum(datum);
 		}
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
+		List<GeneralLocationDatum> results = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			GeneralLocationDatum datum = results.get(i);
 			Assert.assertEquals(now, datum.getCreated().getTime());
 			Assert.assertEquals(String.valueOf(i), datum.getSourceId());
 			Assert.assertEquals(samples, datum.getSamples());
@@ -120,21 +122,22 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	public void markUploaded() {
 		final int numDatum = 5;
 		final long now = System.currentTimeMillis();
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final GeneralLocationDatumSamples samples = samplesInstance();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
+			GeneralLocationDatum datum = new GeneralLocationDatum();
 			datum.setCreated(new Date(now));
+			datum.setLocationId(TEST_LOC_ID);
 			datum.setSourceId(String.valueOf(i));
 			datum.setSamples(samples);
 			dao.storeDatum(datum);
 		}
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
+		List<GeneralLocationDatum> results = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
 		final int numUploaded = 3;
 		final Date uploadDate = new Date(System.currentTimeMillis() + 1000L);
 		for ( int i = 0; i < numUploaded; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			GeneralLocationDatum datum = results.get(i);
 			dao.setDatumUploaded(datum, uploadDate, "test", String.valueOf(i + 10));
 		}
 
@@ -143,7 +146,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum - numUploaded, results.size());
 		for ( int i = 0; i < (numDatum - numUploaded); i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			GeneralLocationDatum datum = results.get(i);
 			Assert.assertEquals(now, datum.getCreated().getTime());
 			Assert.assertEquals(String.valueOf(i + numUploaded), datum.getSourceId());
 			Assert.assertEquals(samples, datum.getSamples());
@@ -155,22 +158,23 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	public void deleteOld() {
 		final int numDatum = 5;
 		final long start = System.currentTimeMillis() - (1000 * 60 * 60 * numDatum);
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final GeneralLocationDatumSamples samples = samplesInstance();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
+			GeneralLocationDatum datum = new GeneralLocationDatum();
 			datum.setCreated(new Date(start + (1000 * 60 * 60 * i)));
+			datum.setLocationId(TEST_LOC_ID);
 			datum.setSourceId(String.valueOf(i));
 			datum.setSamples(samples);
 			dao.storeDatum(datum);
 		}
 
 		// mark 3 uploaded
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
+		List<GeneralLocationDatum> results = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
 		final int numUploaded = 3;
 		for ( int i = 0; i < numUploaded; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			GeneralLocationDatum datum = results.get(i);
 			Date uploadDate = new Date(datum.getCreated().getTime() + 1000L);
 			dao.setDatumUploaded(datum, uploadDate, "test", String.valueOf(i + 10));
 		}
@@ -183,7 +187,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum - numUploaded, results.size());
 		for ( int i = 0; i < (numDatum - numUploaded); i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			GeneralLocationDatum datum = results.get(i);
 			Assert.assertEquals(String.valueOf(i + numUploaded), datum.getSourceId());
 			Assert.assertEquals(samples, datum.getSamples());
 			Assert.assertNull(datum.getUploaded());
@@ -192,8 +196,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void update() {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
+		GeneralLocationDatum datum = new GeneralLocationDatum();
 		datum.setCreated(new Date());
+		datum.setLocationId(TEST_LOC_ID);
 		datum.setSourceId("Test");
 		datum.setSamples(samplesInstance());
 
@@ -208,12 +213,12 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		dao.storeDatum(datum);
 
 		String jdata = jdbcTemplate.queryForObject(
-				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
+				"select jdata from solarnode.sn_general_loc_datum where created = ? and source_id = ?",
 				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
 				String.class);
 		Assert.assertEquals("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123},\"t\":[\"foo\"]}", jdata);
 
-		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		List<GeneralLocationDatum> local = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(local);
 		Assert.assertEquals(1, local.size());
 		Assert.assertEquals(datum, local.get(0));
@@ -221,8 +226,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void updateUnchangedSamples() {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
+		GeneralLocationDatum datum = new GeneralLocationDatum();
 		datum.setCreated(new Date());
+		datum.setLocationId(TEST_LOC_ID);
 		datum.setSourceId("Test");
 		datum.setSamples(samplesInstance());
 
@@ -236,12 +242,13 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		dao.storeDatum(datum);
 
 		String jdata = jdbcTemplate.queryForObject(
-				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
+				"select jdata from solarnode.sn_general_loc_datum where created = ? and source_id = ?",
 				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
 				String.class);
 		Assert.assertEquals("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123}}", jdata);
 
-		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		// the datum should still be marked as "uploaded"
+		List<GeneralLocationDatum> local = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(local);
 		Assert.assertEquals(0, local.size());
 	}

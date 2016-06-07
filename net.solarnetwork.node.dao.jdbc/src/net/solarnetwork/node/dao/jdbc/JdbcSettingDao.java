@@ -33,16 +33,22 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.KeyValuePair;
+import net.solarnetwork.util.OptionalService;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -77,7 +83,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private static final String DEFAULT_SQL_DELETE = "DELETE FROM " + SCHEMA_NAME + '.' + TABLE_SETTINGS
 			+ " WHERE skey = ? AND tkey = ?";
 
-	private static final String DEFAULT_BATCH_SQL_GET = "SELECT skey,tkey,svalue,modified,flags FROM "
+	private static final String DEFAULT_BATCH_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " ORDER BY skey,tkey";
 
 	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " + SCHEMA_NAME + '.'
@@ -93,6 +99,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
 	private final String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
+
+	private OptionalService<EventAdmin> eventAdmin;
 
 	@Override
 	public boolean deleteSetting(String key) {
@@ -110,9 +118,44 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	@Override
-	public boolean deleteSetting(String key, String type) {
-		int res = getJdbcTemplate().update(this.sqlDelete, key, type);
-		return res > 0;
+	public boolean deleteSetting(final String key, final String type) {
+		TransactionTemplate tt = getTransactionTemplate();
+		if ( tt != null ) {
+			return tt.execute(new TransactionCallback<Boolean>() {
+
+				@Override
+				public Boolean doInTransaction(TransactionStatus status) {
+					return deleteSettingInternal(key, type);
+				}
+			});
+		} else {
+			return deleteSettingInternal(key, type);
+		}
+	}
+
+	private boolean deleteSettingInternal(String key, String type) {
+		// check if will delete, to emit change event
+		Setting setting = getJdbcTemplate().query(this.sqlGet, new ResultSetExtractor<Setting>() {
+
+			@Override
+			public Setting extractData(ResultSet rs) throws SQLException, DataAccessException {
+				Setting s = null;
+				if ( rs.next() ) {
+					s = getBatchRowEntity(null, rs, 1);
+				}
+				return s;
+			}
+		}, key, type);
+		boolean result = false;
+		if ( setting != null ) {
+			int res = getJdbcTemplate().update(this.sqlDelete, key, type);
+			result = (res > 0);
+			if ( result && setting.getFlags() != null
+					&& !setting.getFlags().contains(SettingFlag.Volatile) ) {
+				postSettingUpdatedEvent(key, type, setting.getValue());
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -217,6 +260,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 					rs.updateString(4, type);
 					rs.updateInt(5, flags);
 					rs.insertRow();
+
+					if ( !SettingFlag.setForMask(flags).contains(SettingFlag.Volatile) ) {
+						postSettingUpdatedEvent(key, type, value);
+					}
 				}
 				return null;
 			}
@@ -283,10 +330,10 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	protected Setting getBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount)
 			throws SQLException {
 		Setting s = new Setting();
-		s.setKey(resultSet.getString(1));
-		s.setType(resultSet.getString(2));
-		s.setValue(resultSet.getString(3));
-		s.setModified(resultSet.getTimestamp(4));
+		s.setValue(resultSet.getString(1));
+		s.setModified(resultSet.getTimestamp(2));
+		s.setKey(resultSet.getString(3));
+		s.setType(resultSet.getString(4));
 		s.setFlags(SettingFlag.setForMask(resultSet.getInt(5)));
 		return s;
 	}
@@ -298,6 +345,39 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		resultSet.updateString(2, entity.getType());
 		resultSet.updateString(3, entity.getValue());
 		resultSet.updateInt(5, SettingFlag.maskForSet(entity.getFlags()));
+	}
+
+	private final void postSettingUpdatedEvent(final String key, final String type, final String value) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null ) {
+			return;
+		}
+		Map<String, Object> props = new HashMap<String, Object>();
+		if ( key != null ) {
+			props.put(SETTING_KEY, key);
+		}
+		if ( type != null ) {
+			props.put(SETTING_TYPE, type);
+		}
+		if ( value != null ) {
+			props.put(SETTING_VALUE, value);
+		}
+		Event event = new Event(SettingDao.EVENT_TOPIC_SETTING_CHANGED, props);
+		ea.postEvent(event);
+	}
+
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * An optional {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        The event admin service to use.
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
