@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
  * Encapsulates raw Modbus register data from SDM 360 meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SDM360Data extends BaseSDMData {
 
@@ -179,7 +179,7 @@ public class SDM360Data extends BaseSDMData {
 	@Override
 	protected boolean readMeterDataInternal(ModbusConnection conn) {
 		readInputData(conn, ADDR_DATA_V_L1_NEUTRAL, ADDR_DATA_V_L1_NEUTRAL + 79);
-		readInputData(conn, ADDR_DATA_V_L1_L2, 25);
+		readInputData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_V_L1_L2 + 25);
 		return true;
 	}
 
