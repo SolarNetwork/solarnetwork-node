@@ -31,12 +31,10 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.power.PowerDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
 import org.springframework.beans.PropertyAccessException;
 import org.springframework.beans.PropertyAccessor;
@@ -69,16 +67,11 @@ import org.springframework.context.MessageSource;
  * <dt>unitId</dt>
  * <dd>The Modbus unit ID to use.</dd>
  * 
- * <dt>modbusNetwork</dt>
- * <dd>The {@link ModbusNetwork} to use.</dd>
- * 
  * @author matt.magoffin
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
 		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
-
-	private DynamicServiceTracker<ModbusNetwork> modbusNetwork;
 
 	private Integer[] addresses = new Integer[] { 0x8, 0x10 };
 	private Integer count = 5;
@@ -464,15 +457,6 @@ public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
 
 	public void setHiLoRegisterMapping(Map<Integer, String> hiLoRegisterMapping) {
 		this.hiLoRegisterMapping = hiLoRegisterMapping;
-	}
-
-	@Override
-	public DynamicServiceTracker<ModbusNetwork> getModbusNetwork() {
-		return modbusNetwork;
-	}
-
-	public void setModbusNetwork(DynamicServiceTracker<ModbusNetwork> modbusNetwork) {
-		this.modbusNetwork = modbusNetwork;
 	}
 
 	public void setMessageSource(MessageSource messageSource) {

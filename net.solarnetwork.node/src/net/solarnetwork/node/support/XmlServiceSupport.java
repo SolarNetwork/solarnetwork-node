@@ -113,7 +113,7 @@ import org.xml.sax.SAXException;
  * </dl>
  * 
  * @author matt.magoffin
- * @version 1.3
+ * @version 1.4
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
 
@@ -891,12 +891,17 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 			// work around Oracle JDK issues loading XPathFactory, see
 			// https://java.net/projects/glassfish/lists/users/archive/2012-02/message/371
 			final ClassLoader origClassLoader = Thread.currentThread().getContextClassLoader();
-			Thread.currentThread().setContextClassLoader(XPathFactory.class.getClassLoader());
+			final ClassLoader newClassLoader = XPathFactory.class.getClassLoader();
+			if ( newClassLoader != null ) {
+				Thread.currentThread().setContextClassLoader(newClassLoader);
+			}
 			try {
 				f = XPathFactory.newInstance();
 				xpathFactory = f;
 			} finally {
-				Thread.currentThread().setContextClassLoader(origClassLoader);
+				if ( newClassLoader != null ) {
+					Thread.currentThread().setContextClassLoader(origClassLoader);
+				}
 			}
 		}
 		return f;

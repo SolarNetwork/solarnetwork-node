@@ -36,46 +36,47 @@ import org.quartz.StatefulJob;
  * Job to query a {@link DatumDao} for data to upload via an
  * {@link UploadService}.
  * 
- * <p>This job will call {@link DatumDao#deleteUploadedDataOlderThan(int)} and
- * emit a log line if this returns a positive value.</p>
+ * <p>
+ * This job will call {@link DatumDao#deleteUploadedDataOlderThan(int)} and emit
+ * a log line if this returns a positive value.
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>datumDao</dt>
- *   <dd>The {@link DatumDao} to use to query for {@link Datum} to upload.</dd>
- *   
- *   <dt>hours</dt>
- *   <dd>The minimum age of data that has been uploaded to delete. Defaults to
- *   {@link #DEFAULT_HOURS}</dd>
+ * <dt>datumDao</dt>
+ * <dd>The {@link DatumDao} to use to query for {@link Datum} to upload.</dd>
+ * 
+ * <dt>hours</dt>
+ * <dd>The minimum age of data that has been uploaded to delete. Defaults to
+ * {@link #DEFAULT_HOURS}</dd>
  * </dl>
  *
- * @param <T> the Datum type for this job
+ * @param <T>
+ *        the Datum type for this job
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
-public class DatumDaoCleanerJob<T extends Datum> extends AbstractJob
-implements StatefulJob {
+public class DatumDaoCleanerJob<T extends Datum> extends AbstractJob implements StatefulJob {
 
 	/** The default value for the {@code hours} property. */
-	public static final int DEFAULT_HOURS = 72;
-	
+	public static final int DEFAULT_HOURS = 4;
+
 	private int hours = DEFAULT_HOURS;
 	private DatumDao<T> datumDao = null;
-	
+
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext)
-			throws Exception {
+	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Deleting [" +datumDao.getDatumType().getSimpleName() 
-					+"] data older than [" +hours 
-					+"] hours");
+			log.debug("Deleting [" + datumDao.getDatumType().getSimpleName() + "] data older than ["
+					+ hours + "] hours");
 		}
 		int result = datumDao.deleteUploadedDataOlderThan(hours);
 		if ( log.isInfoEnabled() && result > 0 ) {
-			log.info("Deleted " +result +" [" 
-					+datumDao.getDatumType().getSimpleName() 
-					+"] entities older than " +hours +" hours");
+			log.info("Deleted " + result + " [" + datumDao.getDatumType().getSimpleName()
+					+ "] entities older than " + hours + " hours");
 		}
 	}
 
@@ -87,7 +88,8 @@ implements StatefulJob {
 	}
 
 	/**
-	 * @param hours the hours to set
+	 * @param hours
+	 *        the hours to set
 	 */
 	public void setHours(int hours) {
 		this.hours = hours;
@@ -101,7 +103,8 @@ implements StatefulJob {
 	}
 
 	/**
-	 * @param datumDao the datumDao to set
+	 * @param datumDao
+	 *        the datumDao to set
 	 */
 	public void setDatumDao(DatumDao<T> datumDao) {
 		this.datumDao = datumDao;

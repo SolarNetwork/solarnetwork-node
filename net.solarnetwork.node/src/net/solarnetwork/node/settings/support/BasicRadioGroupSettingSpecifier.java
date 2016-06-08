@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.RadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
@@ -62,8 +63,14 @@ public class BasicRadioGroupSettingSpecifier extends BasicTextFieldSettingSpecif
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicRadioGroupSettingSpecifier spec = new BasicRadioGroupSettingSpecifier(
 				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());

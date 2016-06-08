@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.MultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
@@ -29,7 +30,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link MultiValueSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecifier implements
 		MultiValueSettingSpecifier {
@@ -55,14 +56,19 @@ public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecif
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(
 			net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(
 				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;
 	}
-
 }

@@ -30,12 +30,12 @@ import java.math.BigDecimal;
  * to no precision is lost.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum UnitFactor {
 
 	/** Unit factors for EM5610. */
-	EM5610("1", "1", "1", "5610"),
+	EM5610("0.01", "0.0006", "1.2", "5610"),
 
 	/** Unit factors for EM5630 in 5A (CT) mode. */
 	EM5630_5A("0.01", "0.0001", "0.2", "5630 (5A CT mode)"),

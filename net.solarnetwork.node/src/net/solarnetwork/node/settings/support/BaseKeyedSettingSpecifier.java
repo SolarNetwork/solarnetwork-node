@@ -91,6 +91,15 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 		return mappedWithPlaceholer(prefix + "%s");
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
+		builder.append("{key=");
+		builder.append(key);
+		builder.append("}");
+		return builder.toString();
+	}
+
 	public void setTransient(boolean value) {
 		this.trans = value;
 	}

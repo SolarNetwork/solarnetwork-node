@@ -37,6 +37,11 @@
 		<reference-listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service ref="setupService">
@@ -69,6 +74,7 @@
 		<property name="settingDao" ref="settingDao"/>
 		<property name="pkiService" ref="pkiService"/>
 		<property name="backupManager" ref="backupManager"/>
+		<property name="eventAdmin" ref="eventAdmin"/>
 	</bean>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService">

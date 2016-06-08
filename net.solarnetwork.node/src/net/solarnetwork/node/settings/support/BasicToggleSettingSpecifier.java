@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.ToggleSettingSpecifier;
 
@@ -29,7 +30,7 @@ import net.solarnetwork.node.settings.ToggleSettingSpecifier;
  * Basic implementation of {@link ToggleSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Object> implements
 		ToggleSettingSpecifier {
@@ -83,8 +84,14 @@ public class BasicToggleSettingSpecifier extends BaseKeyedSettingSpecifier<Objec
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicToggleSettingSpecifier spec = new BasicToggleSettingSpecifier(mapper.mapKey(getKey()),
 				getDefaultValue());
 		spec.setTitle(getTitle());

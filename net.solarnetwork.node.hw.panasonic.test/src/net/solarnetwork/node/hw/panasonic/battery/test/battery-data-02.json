@@ -1,0 +1,9 @@
+{
+	"Code":200,
+	"DeviceID":"1666729", 
+	"CustomerEmail":"test@localhost",
+	"ReportDate":"2016-02-09 14:16:41", 
+	"Status":"A",
+	"TotalCapacity":8400, 
+	"CurrentCapacity":7000
+}

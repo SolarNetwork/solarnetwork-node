@@ -86,8 +86,14 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 	// 3203
 	private final int[] TEST_DATA_SET_5 = new int[] { (int) ((2323L >> 48) & 0xFFFF),
 			(int) ((2323L >> 32) & 0xFFFF), (int) ((2323L >> 16) & 0xFFFF),
-			(int) ((2323L >> 0) & 0xFFFF), 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-			21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38 };
+			(int) ((2323L >> 0) & 0xFFFF), (int) ((1212L >> 48) & 0xFFFF),
+			(int) ((1212L >> 32) & 0xFFFF), (int) ((1212L >> 16) & 0xFFFF),
+			(int) ((1212L >> 0) & 0xFFFF), 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+			24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 };
+
+	// 3517
+	private final int[] TEST_DATA_SET_6 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+			16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 };
 
 	@Test
 	public void testReadConsumptionDatumMain() throws IOException {
@@ -106,7 +112,8 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 		expect(conn.readInts(3019, 18)).andReturn(TEST_DATA_SET_2);
 		expect(conn.readInts(3053, 32)).andReturn(TEST_DATA_SET_3);
 		expect(conn.readInts(3107, 26)).andReturn(TEST_DATA_SET_4);
-		expect(conn.readInts(3203, 38)).andReturn(TEST_DATA_SET_5);
+		expect(conn.readInts(3203, 40)).andReturn(TEST_DATA_SET_5);
+		expect(conn.readInts(3517, 36)).andReturn(TEST_DATA_SET_6);
 
 		replay(modbus, conn);
 
@@ -120,5 +127,7 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 				result.getSourceId());
 		Assert.assertEquals("Watts", Integer.valueOf(120), result.getWatts());
 		Assert.assertEquals("Total energy", Long.valueOf(2323), result.getWattHourReading());
+		Assert.assertEquals("Total energy export", Long.valueOf(1212),
+				result.getReverseWattHourReading());
 	}
 }

@@ -44,9 +44,25 @@ import net.solarnetwork.node.support.KeyValuePair;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface SettingDao extends BatchableDao<Setting> {
+
+	/**
+	 * Event topic for when a non-volatile setting has been changed, by either
+	 * adding new, updating an existing, or deleting. The various
+	 * {@code SETTING_*} properties will be provided as event properties.
+	 */
+	String EVENT_TOPIC_SETTING_CHANGED = "net/solarnetwork/node/dao/SETTING_CHANGED";
+
+	/** Event property key for the setting key. */
+	String SETTING_KEY = "Key";
+
+	/** Event property key for the setting type. */
+	String SETTING_TYPE = "Type";
+
+	/** Event property key for the setting value. */
+	String SETTING_VALUE = "Value";
 
 	/**
 	 * Persist a new key/value pair, or update an existing key.

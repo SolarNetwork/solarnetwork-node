@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Id$
- * ===================================================================
  */
 
 package net.solarnetwork.node.job;
@@ -37,7 +35,7 @@ import org.springframework.util.ClassUtils;
  * Abstract Quartz job to handle exceptions in consistent fashion.
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.1
  */
 public abstract class AbstractJob implements Job {
 
@@ -68,8 +66,8 @@ public abstract class AbstractJob implements Job {
 			root = root.getCause();
 		}
 		final Object[] logParams;
-		if ( log.isDebugEnabled() ) {
-			// include stack trace with log message in Debug
+		if ( log.isInfoEnabled() ) {
+			// include stack trace with log message in Info
 			logParams = new Object[] { root.getClass().getSimpleName(), name, e.toString(), e };
 		} else {
 			logParams = new Object[] { root.getClass().getSimpleName(), name, e.getMessage() };

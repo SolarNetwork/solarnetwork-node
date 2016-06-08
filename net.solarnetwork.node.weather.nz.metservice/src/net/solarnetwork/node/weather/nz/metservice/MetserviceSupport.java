@@ -24,192 +24,151 @@ package net.solarnetwork.node.weather.nz.metservice;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.support.UnicodeReader;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import org.springframework.util.FileCopyUtils;
-import com.fasterxml.jackson.databind.JsonNode;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.prefs.CsvPreference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Base class to support MetService Day and Weather data sources.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>baseUrl</dt>
- * <dd>The base URL for queries to MetService. Defaults to
- * {@link #DEFAULT_BASE_URL}.</dd>
- * 
- * <dt>objectMapper</dt>
- * <dd>The {@link ObjectMapper} to use for parsing JSON.</dd>
- * </dl>
- * 
  * @param T
  *        the datum type
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
-public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSupport {
+public abstract class MetserviceSupport<T extends Datum> {
 
-	/** The default value for the {@code baseUrl} property. */
-	public static final String DEFAULT_BASE_URL = "http://www.metservice.com/publicData";
+	/** The default value for the {@code locationIdentifier} property. */
+	public static final String DEFAULT_LOCATION_IDENTIFIER = "wellington-city";
 
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
 
+	private String uid;
+	private String groupUID;
+	private String locationIdentifier;
+	private MetserviceClient client;
+	private MessageSource messageSource;
+
 	private final Map<String, T> datumCache;
-	private String baseUrl;
-	private ObjectMapper objectMapper;
+
+	/** A class-level logger. */
+	protected Logger log = LoggerFactory.getLogger(getClass());
 
 	public MetserviceSupport() {
 		datumCache = new ConcurrentHashMap<String, T>(2);
-		baseUrl = DEFAULT_BASE_URL;
+		locationIdentifier = DEFAULT_LOCATION_IDENTIFIER;
+		client = new BasicMetserviceClient();
 	}
 
 	/**
-	 * an InputStream as Unicode text and return as a String.
+	 * Get a list of setting specifiers suitable for configuring this class.
 	 * 
-	 * @param in
-	 *        the InputStream to read
-	 * @return the text
-	 * @throws IOException
-	 *         if an IO error occurs
+	 * @return List of setting specifiers.
 	 */
-	protected String readUnicodeInputStream(InputStream in) throws IOException {
-		UnicodeReader reader = new UnicodeReader(in, null);
-		String data = FileCopyUtils.copyToString(reader);
-		reader.close();
-		return data;
-	}
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		MetserviceDayDatumDataSource defaults = new MetserviceDayDatumDataSource();
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
+		result.add(new BasicTextFieldSettingSpecifier("uid", null));
+		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 
-	/**
-	 * Parse a Date from an attribute value.
-	 * 
-	 * <p>
-	 * If the date cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} Map
-	 * @param data
-	 *        the attributes
-	 * @param dateFormat
-	 *        the date format to use to parse the date string
-	 * @return the parsed {@link Date} instance, or <em>null</em> if an error
-	 *         occurs or the specified attribute {@code key} is not available
-	 */
-	protected Date parseDateAttribute(String key, JsonNode data, SimpleDateFormat dateFormat) {
-		Date result = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					result = dateFormat.parse(node.asText());
-				} catch ( ParseException e ) {
-					log.debug("Error parsing date attribute [{}] value [{}] using pattern {}: {}",
-							new Object[] { key, data.get(key), dateFormat.toPattern(), e.getMessage() });
-				}
+		List<NewZealandWeatherLocation> locs = availableWeatherLocations();
+		if ( locs != null ) {
+			// drop-down menu for all possible location keys
+			BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier(
+					"locationIdentifier", defaults.getLocationIdentifier());
+			Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+			for ( NewZealandWeatherLocation loc : locs ) {
+				menuValues.put(loc.getKey(), loc.getName());
 			}
+			menuSpec.setValueTitles(menuValues);
+			result.add(menuSpec);
+		} else {
+			// fall back to manual value
+			result.add(new BasicTextFieldSettingSpecifier("locationIdentifier", defaults
+					.getLocationIdentifier()));
 		}
+
 		return result;
 	}
 
-	/**
-	 * Parse a Double from an attribute value.
-	 * 
-	 * <p>
-	 * If the Double cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} Map
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link Double}, or <em>null</em> if an error occurs or
-	 *         the specified attribute {@code key} is not available
-	 */
-	protected Double parseDoubleAttribute(String key, JsonNode data) {
-		Double num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					num = Double.valueOf(node.asText());
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing double attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
-				}
-			}
-		}
-		return num;
-	}
+	private static final Logger LOG = LoggerFactory.getLogger(MetserviceSupport.class);
+
+	/** The default weather location data column mappings to parse. */
+	public static final String[] DEFAULT_LOCATION_CSV_HEADERS = new String[] { "island", "name", "key" };
 
 	/**
-	 * Parse a FLoat from an attribute value.
+	 * Get an ordered list of known weather locations. The
+	 * {@link NewZealandWeatherLocation#getKey()} value can then be passed to
+	 * other methods requiring a location key.
 	 * 
-	 * <p>
-	 * If the Float cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} node
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link Float}, or <em>null</em> if an error occurs or
-	 *         the specified attribute {@code key} is not available
+	 * @return The list of known weather locations.
 	 */
-	protected Float parseFloatAttribute(String key, JsonNode data) {
-		Float num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
+	public static List<NewZealandWeatherLocation> availableWeatherLocations() {
+		InputStream in = MetserviceSupport.class.getResourceAsStream("metservice-locations.csv");
+		if ( in == null ) {
+			LOG.warn("Metservice location CSV data not available.");
+			return Collections.emptyList();
+		}
+		Reader reader = null;
+		try {
+			reader = new InputStreamReader(in, "UTF-8");
+			return parseCSVWeatherLocations(reader, DEFAULT_LOCATION_CSV_HEADERS);
+		} catch ( IOException e ) {
+			LOG.error("Unable to import weather CSV data: {}", e.getMessage());
+		} finally {
+			if ( reader != null ) {
 				try {
-					num = Float.valueOf(node.asText());
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing float attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
+					reader.close();
+				} catch ( IOException e ) {
+					// ignore
 				}
 			}
 		}
-		return num;
+		return Collections.emptyList();
 	}
 
-	/**
-	 * Parse a Integer from an attribute value.
-	 * 
-	 * <p>
-	 * If the Integer cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} node
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link Integer}, or <em>null</em> if an error occurs
-	 *         or the specified attribute {@code key} is not available
-	 */
-	protected Integer parseIntegerAttribute(String key, JsonNode data) {
-		Integer num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					num = Integer.valueOf(node.asText());
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing integer attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
+	public static List<NewZealandWeatherLocation> parseCSVWeatherLocations(Reader in, String[] headers) {
+		final List<NewZealandWeatherLocation> result = new ArrayList<NewZealandWeatherLocation>();
+		final ICsvBeanReader reader = new CsvBeanReader(in, CsvPreference.STANDARD_PREFERENCE);
+		try {
+			NewZealandWeatherLocation loc = null;
+			while ( (loc = reader.read(NewZealandWeatherLocation.class, headers)) != null ) {
+				if ( loc.getKey() == null ) {
+					continue;
 				}
+				result.add(loc);
+			}
+			Collections.sort(result);
+		} catch ( IOException e ) {
+			LOG.error("Unable to import weather CSV data: {}", e.getMessage());
+		} finally {
+			try {
+				if ( reader != null ) {
+					reader.close();
+				}
+			} catch ( IOException e ) {
+				// ingore
 			}
 		}
-		return num;
+		return result;
 	}
 
 	/**
@@ -221,20 +180,190 @@ public abstract class MetserviceSupport<T extends Datum> extends XmlServiceSuppo
 		return datumCache;
 	}
 
-	public String getBaseUrl() {
-		return baseUrl;
-	}
-
+	/**
+	 * The base URL for queries to MetService.
+	 * 
+	 * @param baseUrl
+	 *        The base URL to use.
+	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
+	 */
+	@Deprecated
 	public void setBaseUrl(String baseUrl) {
-		this.baseUrl = baseUrl;
+		if ( client instanceof BasicMetserviceClient ) {
+			((BasicMetserviceClient) client).setBaseUrl(baseUrl);
+		}
 	}
 
-	public ObjectMapper getObjectMapper() {
-		return objectMapper;
-	}
-
+	/**
+	 * Set the {@link ObjectMapper} to use for parsing JSON.
+	 * 
+	 * @param objectMapper
+	 *        The object mapper.
+	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
+	 */
+	@Deprecated
 	public void setObjectMapper(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
+		if ( client instanceof BasicMetserviceClient ) {
+			((BasicMetserviceClient) client).setObjectMapper(objectMapper);
+		}
+	}
+
+	private void setLocationIdentifierFromSuffix(final String prefix, final String value) {
+		if ( prefix == null || value == null ) {
+			return;
+		}
+		if ( value.startsWith(prefix) && value.length() > prefix.length() ) {
+			setLocationIdentifier(value.substring(prefix.length()));
+		}
+	}
+
+	/**
+	 * The name of the "localObs" file to parse.
+	 * 
+	 * @param localObs
+	 *        The file name to use.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
+	 */
+	@Deprecated
+	public void setLocalObs(String localObs) {
+		setLocationIdentifierFromSuffix("localObs_", localObs);
+	}
+
+	/**
+	 * The name of the "localForecast" file to parse.
+	 * 
+	 * @param localForecast
+	 *        The file name to use.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
+	 */
+	@Deprecated
+	public void setLocalForecastTemplate(String localForecast) {
+		setLocationIdentifierFromSuffix("localForecast", localForecast);
+	}
+
+	/**
+	 * The name of the "riseSet" file to parse.
+	 * 
+	 * @param riseSet
+	 *        The file name to use.
+	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
+	 */
+	@Deprecated
+	public void setRiseSetTemplate(String riseSet) {
+		setLocationIdentifierFromSuffix("riseSet_", riseSet);
+	}
+
+	/**
+	 * The {@link SimpleDateFormat} date format to use to parse the day date.
+	 * 
+	 * @param dayDateFormat
+	 *        The date format to use.
+	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
+	 */
+	@Deprecated
+	public void setDayDateFormat(String dayDateFormat) {
+		if ( client instanceof BasicMetserviceClient ) {
+			((BasicMetserviceClient) client).setDayDateFormat(dayDateFormat);
+		}
+	}
+
+	/**
+	 * Set a {@link SimpleDateFormat} time format to use to parse sunrise/sunset
+	 * times.
+	 * 
+	 * @param timeDateFormat
+	 *        The date format to use.
+	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
+	 */
+	@Deprecated
+	public void setTimeDateFormat(String timeDateFormat) {
+		if ( client instanceof BasicMetserviceClient ) {
+			((BasicMetserviceClient) client).setTimeDateFormat(timeDateFormat);
+		}
+	}
+
+	/**
+	 * Set a {@link SimpleDateFormat} date and time pattern for parsing the
+	 * information date from the {@code oneMinObs} file.
+	 * 
+	 * @param timestampDateFormat
+	 *        The date format to use.
+	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
+	 */
+	@Deprecated
+	public void setTimestampDateFormat(String timestampDateFormat) {
+		if ( client instanceof BasicMetserviceClient ) {
+			((BasicMetserviceClient) client).setTimestampDateFormat(timestampDateFormat);
+		}
+	}
+
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set a message source to use for resolving messages.
+	 * 
+	 * @param messageSource
+	 *        The message source to use.
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	public String getUID() {
+		return getUid();
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
+	}
+
+	public String getLocationIdentifier() {
+		return locationIdentifier;
+	}
+
+	/**
+	 * Set the Metservice weather location identifer to use, which determines
+	 * the URL to use for loading weather data files. This should be one of the
+	 * keys returned by {@link MetserviceSupport#availableWeatherLocations()}.
+	 * 
+	 * @param locationIdentifier
+	 *        The location identifier to use.
+	 */
+	public void setLocationIdentifier(String locationIdentifier) {
+		this.locationIdentifier = locationIdentifier;
+	}
+
+	/**
+	 * Get the Metservice client.
+	 * 
+	 * @return The Metservice client.
+	 */
+	public MetserviceClient getClient() {
+		return client;
+	}
+
+	/**
+	 * Set the Metservice client.
+	 * 
+	 * @param client
+	 *        The client to use.
+	 */
+	public void setClient(MetserviceClient client) {
+		this.client = client;
 	}
 
 }

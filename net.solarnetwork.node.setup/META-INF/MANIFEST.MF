@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
 Bundle-Description: Provides core SolarNode setup infrastructure support.
-Bundle-Version: 1.6.1
+Bundle-Version: 1.9.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -12,7 +12,7 @@ Import-Package:
  javax.security.auth,
  javax.xml.xpath,
  net.solarnetwork.domain;version="1.2.0",
- net.solarnetwork.node;version="1.7.0",
+ net.solarnetwork.node;version="1.17.0",
  net.solarnetwork.node.backup;version="1.1.0",
  net.solarnetwork.node.dao;version="1.0.0",
  net.solarnetwork.node.setup;version="1.5.0",
@@ -25,6 +25,7 @@ Import-Package:
  org.joda.time;version="[1.6,3.0)",
  org.joda.time.base;version="[1.6,3.0)",
  org.joda.time.format;version="[1.6,3.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
  org.springframework.aop;version="[3.1,4.0)",
  org.springframework.aop.framework;version="[3.1,4.0)",

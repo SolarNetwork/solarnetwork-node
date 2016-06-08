@@ -25,10 +25,12 @@ package net.solarnetwork.node.weather.nz.metservice.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.File;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
 import org.junit.Test;
 import org.springframework.util.ResourceUtils;
@@ -44,31 +46,39 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 
 	private static final String RISE_SET_RESOURCE_NAME = "riseSet_wellington-city.json";
 
-	private MetserviceDayDatumDataSource createDataSourceInstance() throws Exception {
-
+	private BasicMetserviceClient createClientInstance() throws Exception {
 		URL url = getClass().getResource(RISE_SET_RESOURCE_NAME);
 		File f = ResourceUtils.getFile(url);
 		String baseDirectory = f.getParent();
 
+		BasicMetserviceClient client = new BasicMetserviceClient();
+		client.setBaseUrl("file://" + baseDirectory);
+		client.setRiseSetTemplate("riseSet_%s.json");
+		client.setLocalObsTemplate("localObs_%s.json");
+		client.setLocalForecastTemplate("localForecast%s.json");
+		client.setOneMinuteObsTemplate("oneMinuteObs_%s.json");
+		client.setObjectMapper(new ObjectMapper());
+		return client;
+	}
+
+	private MetserviceDayDatumDataSource createDataSourceInstance() throws Exception {
 		MetserviceDayDatumDataSource ds = new MetserviceDayDatumDataSource();
-		ds.setBaseUrl("file://" + baseDirectory);
-		ds.setRiseSet(RISE_SET_RESOURCE_NAME);
-		ds.setObjectMapper(new ObjectMapper());
+		ds.setClient(createClientInstance());
 		return ds;
 	}
 
 	@Test
-	public void parseRiseSet() throws Exception {
-		MetserviceDayDatumDataSource ds = createDataSourceInstance();
+	public void readCurrentDatum() throws Exception {
+		final MetserviceDayDatumDataSource ds = createDataSourceInstance();
+		final BasicMetserviceClient client = (BasicMetserviceClient) ds.getClient();
+		final SimpleDateFormat dayFormat = new SimpleDateFormat(client.getDayDateFormat());
+		final SimpleDateFormat timeFormat = new SimpleDateFormat(client.getTimeDateFormat());
+
 		GeneralDayDatum datum = (GeneralDayDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
 
-		final SimpleDateFormat dayFormat = new SimpleDateFormat(ds.getDayDateFormat());
-
 		assertNotNull(datum.getCreated());
 		assertEquals("1 September 2014", dayFormat.format(datum.getCreated()));
-
-		final SimpleDateFormat timeFormat = new SimpleDateFormat(ds.getTimeDateFormat());
 
 		assertNotNull(datum.getSunrise());
 		assertEquals("6:47am", timeFormat.format(datum.getSunrise().toDateTimeToday().toDate())
@@ -77,6 +87,9 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 		assertNotNull(datum.getSunset());
 		assertEquals("5:56pm", timeFormat.format(datum.getSunset().toDateTimeToday().toDate())
 				.toLowerCase());
+
+		assertEquals(new BigDecimal("5.0"), datum.getTemperatureMinimum());
+		assertEquals(new BigDecimal("15.0"), datum.getTemperatureMaximum());
 	}
 
 }

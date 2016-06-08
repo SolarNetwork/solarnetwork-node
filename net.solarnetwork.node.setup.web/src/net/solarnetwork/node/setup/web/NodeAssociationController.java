@@ -25,6 +25,9 @@
 package net.solarnetwork.node.setup.web;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
@@ -36,7 +39,6 @@ import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.util.OptionalService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
@@ -55,7 +57,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @version 1.0
  */
 @Controller
-@SessionAttributes(NodeAssociationController.KEY_DETAILS)
+@SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
@@ -65,12 +67,20 @@ public class NodeAssociationController extends BaseSetupController {
 	/** The model attribute for the network association details. */
 	public static final String KEY_DETAILS = "details";
 
+	/** The model attribute for the network identity details. */
+	public static final String KEY_IDENTITY = "association";
+
+	/** The model attribute for the network identity details. */
+	public static final String KEY_NETWORK_URL_MAP = "networkLinks";
+
 	@Autowired
 	private PKIService pkiService;
 
-	@Autowired
-	@Qualifier("backupManager")
+	@Resource(name = "backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
+
+	@Resource(name = "networkLinks")
+	private Map<String, String> networkURLs = new HashMap<String, String>(4);
 
 	/**
 	 * Node association entry point.
@@ -82,6 +92,7 @@ public class NodeAssociationController extends BaseSetupController {
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String setupForm(Model model) {
 		model.addAttribute("command", new AssociateNodeCommand());
+		model.addAttribute(KEY_NETWORK_URL_MAP, networkURLs);
 		return PAGE_ENTER_CODE;
 	}
 
@@ -142,7 +153,7 @@ public class NodeAssociationController extends BaseSetupController {
 		try {
 			// Retrieve the identity from the server
 			NetworkAssociation na = getSetupBiz().retrieveNetworkAssociation(details);
-			model.addAttribute("association", na);
+			model.addAttribute(KEY_IDENTITY, na);
 		} catch ( SetupException e ) {
 			errors.reject("node.setup.identity.error", new Object[] { details.getHost() }, null);
 			return setupForm(model);
@@ -187,8 +198,6 @@ public class NodeAssociationController extends BaseSetupController {
 				details.setNetworkCertificateStatus(cert.getNetworkCertificateStatus());
 				details.setNetworkCertificateSubjectDN(cert.getNetworkCertificateSubjectDN());
 				details.setNetworkCertificate(cert.getNetworkCertificate());
-				pkiService.savePKCS12Keystore(cert.getNetworkCertificate(),
-						command.getKeystorePassword());
 			} else {
 				// generate certificate request
 				model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());
@@ -233,6 +242,14 @@ public class NodeAssociationController extends BaseSetupController {
 
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
+	}
+
+	public void setBackupManagerTracker(OptionalService<BackupManager> backupManagerTracker) {
+		this.backupManagerTracker = backupManagerTracker;
+	}
+
+	public void setNetworkURLs(Map<String, String> networkURLs) {
+		this.networkURLs = networkURLs;
 	}
 
 }

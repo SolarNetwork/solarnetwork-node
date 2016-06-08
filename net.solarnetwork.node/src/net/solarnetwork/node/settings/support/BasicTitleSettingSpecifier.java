@@ -24,6 +24,7 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.Collections;
 import java.util.Map;
+import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.TitleSettingSpecifier;
 
@@ -31,7 +32,7 @@ import net.solarnetwork.node.settings.TitleSettingSpecifier;
  * Basic implemtation of {@link TitleSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String> implements
 		TitleSettingSpecifier {
@@ -78,8 +79,14 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 		return spec;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public SettingSpecifier mappedWithMapper(Mapper mapper) {
+		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
+	}
+
+	@Override
+	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(mapper.mapKey(getKey()),
 				getDefaultValue());
 		spec.setTitle(getTitle());

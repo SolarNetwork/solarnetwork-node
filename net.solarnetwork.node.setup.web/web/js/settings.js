@@ -1,9 +1,18 @@
+(function() {
+'use strict';
+
 SolarNode.Settings = {
 		
 };
 
 SolarNode.Settings.runtime = {};
 SolarNode.Settings.updates = {};
+
+function delayedReload() {
+	setTimeout(function() {
+		window.location.reload(true);
+	}, 500);
+}
 
 SolarNode.Settings.reset = function() {
 	SolarNode.Settings.updates = {};
@@ -100,7 +109,7 @@ SolarNode.Settings.addToggle = function(params) {
  * 
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the radio buttons
  */
 SolarNode.Settings.addRadio = function(params) {
 	var radios = $('input:radio[name='+params.key+']');
@@ -112,11 +121,26 @@ SolarNode.Settings.addRadio = function(params) {
 };
 
 /**
+ * Setup a new select menu.
+ * 
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the select element
+ */
+SolarNode.Settings.addSelect = function(params) {
+	var select = $('select[name='+params.key+']');
+	select.change(function() {
+			var value = select.val();
+			SolarNode.Settings.updateSetting(params, value);
+		});
+};
+
+/**
  * Setup a new text field.
  * 
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the text field
  * @param params.value {String} the initial value
  */
 SolarNode.Settings.addTextField = function(params) {
@@ -216,6 +240,36 @@ SolarNode.Settings.addLocationFinder = function(params) {
 	});
 };
 
+SolarNode.Settings.addGroupedSetting = function(params) {
+	var groupCount = $('#'+params.key),
+		count = Number(groupCount.val()),
+		container = groupCount.parent(),
+		url = $(groupCount.get(0).form).attr('action');
+	
+	// wire up the Add button to add dynamic elements
+	container.find('button.group-item-add').click(function() {
+		var newCount = count + 1;
+		container.find('button').attr('disabled', 'disabled');
+		SolarNode.Settings.updateSetting(params, newCount);
+		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
+	});
+	// dynamic grouped items remove support
+	container.find('.group-item-remove').click(function() {
+		if ( count < 1 ) {
+			return;
+		}
+		var newCount = count - 1;
+		container.find('button').attr('disabled', 'disabled');
+		SolarNode.Settings.updateSetting(params, newCount);
+		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
+	}).each(function() {
+		if ( count < 1 ) {
+			$(this).attr('disabled', 'disabled');
+		}
+	});
+
+};
+
 /**
  * Post any setting changes back to the node.
  * 
@@ -223,8 +277,9 @@ SolarNode.Settings.addLocationFinder = function(params) {
  * @param msg.title {String} the result dialog title
  * @param msg.success {String} the message to display for a successful post
  * @param msg.error {String} the message to display for an error post
+ * @param resultCallback {Function} optional callback to invoke after updates saved, passed error as parameter
  */
-SolarNode.Settings.saveUpdates = function(url, msg) {
+SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 	var updates = SolarNode.Settings.updates;
 	var formData = '';
 	var i = 0;
@@ -245,9 +300,11 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 		}
 	}
 	var buttons = {};
-	buttons[msg.button] = function() {
-		$(this).dialog('close');
-	};
+	if ( msg && msg.button ) {
+		buttons[msg.button] = function() {
+			$(this).dialog('close');
+		};
+	}
 	if ( formData.length > 0 ) {
 		$.ajax({
 			type: 'post',
@@ -255,7 +312,9 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 			data: formData,
 			success: function(data, textStatus, xhr) {
 				var providerKey = undefined, key = undefined, domID = undefined;
-				if ( data.success === true && msg !== undefined && msg.success !== undefined ) {
+				if ( resultCallback ) {
+					resultCallback();
+				} else if ( data.success === true && msg !== undefined && msg.success !== undefined ) {
 					// update DOM with updated values
 					for ( providerKey in updates ) {
 						for ( key in updates[providerKey] ) {
@@ -269,7 +328,9 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 				}
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
-				if ( msg !== undefined && msg.error !== undefined ) {
+				if ( resultCallback ) {
+					resultCallback(textStatus);
+				} else if ( msg !== undefined && msg.error !== undefined ) {
 					$('<div class="alert alert-error fade in"><button class="close" data-dismiss="alert" type="button">×</button>'
 							+'<strong>'+msg.title+':</strong> ' +msg.error +'</div>').insertBefore('#settings form div.actions');
 				}
@@ -282,11 +343,7 @@ SolarNode.Settings.saveUpdates = function(url, msg) {
 
 SolarNode.Settings.addFactoryConfiguration = function(params) {
 	$(params.button).attr('disabled', 'disabled');
-	$.post(params.url, {uid: params.factoryUID}, function(data, textStatus) {
-		setTimeout(function() {
-			window.location.reload(true);
-		}, 500);
-	});
+	$.post(params.url, {uid: params.factoryUID}, delayedReload);
 };
 
 /**
@@ -302,11 +359,7 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	var reallyDeleteButton = alert.find('button.submit');
 	reallyDeleteButton.click(function() {
 		$(this).attr('disabled', 'disabled');
-		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, function(data, textStatus) {
-			setTimeout(function() {
-				window.location.reload(true);
-			}, 500);
-		});
+		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, delayedReload);
 	});
 	alert.bind('close', function(e) {
 		origButton.removeAttr('disabled');
@@ -368,5 +421,6 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
-
 });
+
+}());

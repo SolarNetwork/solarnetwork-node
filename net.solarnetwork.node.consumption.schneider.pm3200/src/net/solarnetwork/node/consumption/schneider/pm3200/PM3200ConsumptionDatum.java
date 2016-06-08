@@ -32,7 +32,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
  * supported by the PM3200 series meters.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PM3200ConsumptionDatum extends GeneralNodeACEnergyDatum {
 
@@ -86,7 +86,8 @@ public class PM3200ConsumptionDatum extends GeneralNodeACEnergyDatum {
 	private void extractTotalMeasurements() {
 		setEffectivePowerFactor(sample.getEffectiveTotalPowerFactor());
 		setFrequency(sample.getFrequency(PM3200Data.ADDR_DATA_FREQUENCY));
-		setWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
+		setWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
+		setReverseWattHourReading(sample.getEnergy(PM3200Data.ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
 
 		setApparentPower(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
 		setCurrent(sample.getCurrent(PM3200Data.ADDR_DATA_I_AVERAGE));

@@ -3,14 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: New Zealand MetService Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.nz.metservice
 Bundle-Description: Collect weather data from the New Zealand MetService.
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ net.solarnetwork.domain;version="1.9.0",
  net.solarnetwork.node;version="1.16.0",
- net.solarnetwork.node.domain;version="1.4.0",
+ net.solarnetwork.node.domain;version="1.7.0",
  net.solarnetwork.node.job;version="1.10.0",
  net.solarnetwork.node.settings;version="1.5.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
@@ -29,4 +30,6 @@ Import-Package:
  org.springframework.context;version="[3.1,4.0)",
  org.springframework.context.support;version="[3.1,4.0)",
  org.springframework.scheduling.quartz;version="[3.1,4.0)",
- org.springframework.util;version="[3.1,4.0)"
+ org.springframework.util;version="[3.1,4.0)",
+ org.supercsv.io;version="2.1.0",
+ org.supercsv.prefs;version="2.1.0"

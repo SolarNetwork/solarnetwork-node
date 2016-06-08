@@ -15,7 +15,12 @@
 		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
 	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceSupport</value>
+				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource</value>
+			</list>
+		</property>
 	</bean>
 
 	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
@@ -41,7 +46,12 @@
 	</bean>
 	
 	<bean id="weatherMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceSupport</value>
+				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource</value>
+			</list>
+		</property>
 	</bean>
 
 	<bean id="weatherJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
@@ -109,7 +119,7 @@
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
-							<entry key="datumDataSource">
+							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 									<property name="messageSource" ref="dayJobMessageSource"/>
 									<property name="delegate">
@@ -156,7 +166,7 @@
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
-							<entry key="datumDataSource">
+							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 									<property name="messageSource" ref="weatherJobMessageSource"/>
 									<property name="delegate">

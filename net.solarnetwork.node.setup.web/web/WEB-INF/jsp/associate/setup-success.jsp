@@ -6,7 +6,7 @@
 	<tr><th><fmt:message key="node.setup.identity.nodeId"/></th><td>${details.networkId}</td></tr>
 </table>
 
-<c:set var="myNodesURL" value="http${details.forceTLS or details.port == 443 ? 's' : ''}://${details.host}:${details.port}/solaruser/u/sec/my-nodes"/>
+<c:set var="myNodesURL" value="${association.solarUserServiceURL}/u/sec/my-nodes"/>
 <c:choose>
 	<c:when test="${empty details.networkCertificateStatus}">
 		<p>

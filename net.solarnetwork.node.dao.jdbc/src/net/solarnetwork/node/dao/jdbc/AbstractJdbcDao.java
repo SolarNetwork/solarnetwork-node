@@ -62,7 +62,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -122,6 +122,53 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 				return ps;
 			}
 		});
+	}
+
+	/**
+	 * Update a domain object.
+	 * 
+	 * @param obj
+	 *        the domain object to update
+	 * @param sqlUpdate
+	 *        the SQL to persist the object with
+	 * @since 1.2
+	 */
+	protected int updateDomainObject(final T obj, final String sqlUpdate) {
+		return getJdbcTemplate().update(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				PreparedStatement ps = con.prepareStatement(sqlUpdate);
+				setUpdateStatementValues(obj, ps);
+				return ps;
+			}
+		});
+	}
+
+	/**
+	 * Set {@link PreparedStatement} values for updating a domain object.
+	 * 
+	 * <p>
+	 * Called from {@link #updateDomainObject(T, String)} to persist changed
+	 * values of a domain object.
+	 * </p>
+	 * 
+	 * <p>
+	 * This implementation does not do anything. Extending classes should
+	 * override this and set values on the {@code PreparedStatement} object as
+	 * needed to persist the domain object.
+	 * </p>
+	 * 
+	 * @param obj
+	 *        the domain object to persist
+	 * @param ps
+	 *        the PreparedStatement to persist with
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.2
+	 */
+	protected void setUpdateStatementValues(T obj, PreparedStatement ps) throws SQLException {
+		// this is a no-op method, override to do something useful
 	}
 
 	/**

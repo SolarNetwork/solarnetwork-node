@@ -1,0 +1,9 @@
+<project basedir=".">
+
+	<property name="dir.resources" value="web"/>
+	<property name="dir.jar.classes.dest" value="WEB-INF/classes"/>
+
+	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
+	<import file="${dir.osgi.base}/lib-build.xml"/>
+	
+</project>

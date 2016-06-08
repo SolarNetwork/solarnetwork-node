@@ -32,6 +32,8 @@ import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_PORT;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -54,6 +56,8 @@ import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -96,7 +100,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.4
  */
 public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
 
@@ -123,15 +127,26 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 	private static final String VERIFICATION_CODE_NODE_CERT_DN_KEY = "networkCertificateSubjectDN";
 	private static final String VERIFICATION_CODE_USER_NAME_KEY = "username";
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
+	private static final String VERIFICATION_URL_SOLARUSER = "solarUserServiceURL";
+	private static final String VERIFICATION_URL_SOLARQUERY = "solarQueryServiceURL";
 
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 
 	private OptionalService<BackupManager> backupManager;
+	private OptionalService<EventAdmin> eventAdmin;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
+
+	/**
+	 * Default constructor.
+	 */
+	public DefaultSetupService() {
+		super();
+		setConnectionTimeout(60000);
+	}
 
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
 		Map<String, String> xpathMap = new HashMap<String, String>();
@@ -152,6 +167,10 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		identityXpathMap.put(VERIFICATION_CODE_IDENTITY_KEY, "/*/@identityKey");
 		identityXpathMap.put(VERIFICATION_CODE_TERMS_OF_SERVICE, "/*/@termsOfService");
 		identityXpathMap.put(VERIFICATION_CODE_SECURITY_PHRASE, "/*/@securityPhrase");
+		identityXpathMap.put(VERIFICATION_URL_SOLARUSER,
+				"/*/networkServiceURLs/entry[@key='solaruser']/value/@value");
+		identityXpathMap.put(VERIFICATION_URL_SOLARQUERY,
+				"/*/networkServiceURLs/entry[@key='solarquery']/value/@value");
 		return getXPathExpressionMap(identityXpathMap);
 	}
 
@@ -178,6 +197,19 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			return null;
 		}
 		return Long.valueOf(nodeId);
+	}
+
+	@Override
+	public Principal getNodePrincipal() {
+		if ( pkiService == null ) {
+			return null;
+		}
+		X509Certificate nodeCert = pkiService.getNodeCertificate();
+		if ( nodeCert == null ) {
+			log.debug("No node certificate available, cannot get node principal");
+			return null;
+		}
+		return nodeCert.getSubjectX500Principal();
 	}
 
 	@Override
@@ -342,9 +374,21 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 				// create the node's CSR based on the given subjectDN
 				log.debug("Creating node CSR for subject {}", result.getNetworkCertificateSubjectDN());
 				pkiService.generateNodeSelfSignedCertificate(result.getNetworkCertificateSubjectDN());
+			} else if ( details.getKeystorePassword() != null ) {
+				log.debug("Saving node certificate for subject {}",
+						result.getNetworkCertificateSubjectDN());
+				pkiService.savePKCS12Keystore(result.getNetworkCertificate(),
+						details.getKeystorePassword());
 			}
 
 			makeBackup();
+
+			// post NETWORK_ASSOCIATION_ACCEPTED event
+			Map<String, Object> props = new HashMap<String, Object>(2);
+			if ( result.getNetworkId() != null ) {
+				props.put(KEY_NODE_ID, result.getNetworkId());
+			}
+			postEvent(new Event(SetupService.TOPIC_NETWORK_ASSOCIATION_ACCEPTED, props));
 
 			return result;
 		} catch ( Exception e ) {
@@ -352,6 +396,14 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
+	}
+
+	private void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
 	}
 
 	private void makeBackup() {
@@ -392,6 +444,16 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
+	}
+
+	@Override
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	@Override
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

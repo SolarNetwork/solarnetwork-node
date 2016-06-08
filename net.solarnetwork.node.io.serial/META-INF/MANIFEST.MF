@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Serial Communication Support
 Bundle-SymbolicName: net.solarnetwork.node.io.serial
 Bundle-Description: Communication support for serial networks.
-Bundle-Version: 1.1.1
+Bundle-Version: 1.1.2
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Eclipse-ExtensibleAPI: true

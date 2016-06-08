@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Hsiang Cheng Electric Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.hc
-Bundle-Version: 2.1.0
+Bundle-Version: 2.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.solarnetwork.node.hw.hc;version="2.1.0"
+Export-Package: net.solarnetwork.node.hw.hc;version="2.1.1"
 Import-Package: 
  net.solarnetwork.domain;version="1.6.1",
  net.solarnetwork.node;version="1.16.0",

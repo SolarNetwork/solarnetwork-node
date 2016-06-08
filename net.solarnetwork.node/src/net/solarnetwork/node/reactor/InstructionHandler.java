@@ -28,7 +28,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface InstructionHandler {
 
@@ -45,8 +45,22 @@ public interface InstructionHandler {
 	 * the control that should respond to the balancing request and whose value
 	 * is an integer percentage (0 - 100) of the maximum desired power
 	 * generation capacity.
+	 * 
+	 * @since 1.1
 	 */
 	String TOPIC_DEMAND_BALANCE = "DemandBalanceGeneration";
+
+	/**
+	 * The instruction topic for a request to reduce power demand. By convention
+	 * the instruction should have a parameter whose key is the ID of the
+	 * control that should respond to the shed request and whose value is an
+	 * integer representing the amount of power, in watts, requested to be shed.
+	 * If the requested power is <code>0</code> then any restriction on power
+	 * should be removed, so that no limit is placed.
+	 * 
+	 * @since 1.2
+	 */
+	String TOPIC_SHED_LOAD = "ShedLoad";
 
 	/**
 	 * Test if a topic is handled by this handler.

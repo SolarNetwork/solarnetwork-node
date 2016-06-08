@@ -28,11 +28,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
+import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceIterable;
@@ -42,6 +44,7 @@ import net.solarnetwork.node.backup.BackupStatus;
 import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.util.StaticOptionalService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +59,8 @@ import org.springframework.util.FileCopyUtils;
  */
 public class FileSystemBackupServiceTest {
 
+	private static final Long TEST_NODE_ID = 12345L;
+
 	private FileSystemBackupService service;
 
 	@Before
@@ -64,6 +69,40 @@ public class FileSystemBackupServiceTest {
 		service.setBackupDir(new File(System.getProperty("java.io.tmpdir")));
 		service.setAdditionalBackupCount(0);
 		service.removeAllBackups();
+
+		service.setIdentityService(new StaticOptionalService<IdentityService>(new IdentityService() {
+
+			@Override
+			public Long getNodeId() {
+				return TEST_NODE_ID;
+			}
+
+			@Override
+			public Principal getNodePrincipal() {
+				return null;
+			}
+
+			@Override
+			public String getSolarNetHostName() {
+				return null;
+			}
+
+			@Override
+			public Integer getSolarNetHostPort() {
+				return null;
+			}
+
+			@Override
+			public String getSolarNetSolarInUrlPrefix() {
+				return null;
+			}
+
+			@Override
+			public String getSolarInBaseUrl() {
+				return null;
+			}
+
+		}));
 	}
 
 	@Test

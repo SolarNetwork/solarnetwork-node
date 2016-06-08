@@ -30,9 +30,19 @@ import java.util.Date;
  * Basic persistable domain object API.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface Datum {
+
+	/**
+	 * A suffix to append to to data property keys that represent a logical
+	 * reverse of the same key without this suffix. For example a
+	 * <code>wattHoursReverse</code> key might represent energy exported, rather
+	 * than imported, through a power meter.
+	 * 
+	 * @since 1.2
+	 */
+	String REVERSE_ACCUMULATING_SUFFIX_KEY = "Reverse";
 
 	/**
 	 * Get the date this object was created, which is often equal to either the
@@ -41,7 +51,7 @@ public interface Datum {
 	 * 
 	 * @return the created date
 	 */
-	public Date getCreated();
+	Date getCreated();
 
 	/**
 	 * Get a unique source ID for this datum.
@@ -52,13 +62,13 @@ public interface Datum {
 	 * 
 	 * @return the source ID
 	 */
-	public String getSourceId();
+	String getSourceId();
 
 	/**
 	 * Get the date this object was uploaded to SolarNet.
 	 * 
 	 * @return the upload date
 	 */
-	public Date getUploaded();
+	Date getUploaded();
 
 }

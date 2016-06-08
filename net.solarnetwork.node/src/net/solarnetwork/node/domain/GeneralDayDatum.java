@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import net.solarnetwork.node.util.DateUtils;
 import org.joda.time.LocalTime;
 
@@ -29,7 +30,7 @@ import org.joda.time.LocalTime;
  * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 
@@ -57,6 +58,59 @@ public class GeneralDayDatum extends GeneralLocationDatum implements DayDatum {
 
 	public void setSunset(LocalTime value) {
 		putStatusSampleValue(SUNSET_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public LocalTime getMoonrise() {
+		String time = getStatusSampleString(MOONRISE_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setMoonrise(LocalTime value) {
+		putStatusSampleValue(MOONRISE_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public LocalTime getMoonset() {
+		String time = getStatusSampleString(MOONSET_KEY);
+		if ( time == null ) {
+			return null;
+		}
+		return DateUtils.parseLocalTime(time);
+	}
+
+	public void setMoonset(LocalTime value) {
+		putStatusSampleValue(MOONSET_KEY, DateUtils.format(value));
+	}
+
+	@Override
+	public String getSkyConditions() {
+		return getStatusSampleString(SKY_CONDITIONS_KEY);
+	}
+
+	public void setSkyConditions(String value) {
+		putStatusSampleValue(SKY_CONDITIONS_KEY, value);
+	}
+
+	@Override
+	public BigDecimal getTemperatureMinimum() {
+		return getInstantaneousSampleBigDecimal(TEMPERATURE_MINIMUM_KEY);
+	}
+
+	public void setTemperatureMinimum(BigDecimal value) {
+		putInstantaneousSampleValue(TEMPERATURE_MINIMUM_KEY, value);
+	}
+
+	@Override
+	public BigDecimal getTemperatureMaximum() {
+		return getInstantaneousSampleBigDecimal(TEMPERATURE_MAXIMUM_KEY);
+	}
+
+	public void setTemperatureMaximum(BigDecimal value) {
+		putInstantaneousSampleValue(TEMPERATURE_MAXIMUM_KEY, value);
 	}
 
 }

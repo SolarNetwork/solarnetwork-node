@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
+
 /**
  * Standardized API for atmospheric related datum to implement.
  * 
@@ -77,14 +79,14 @@ public interface AtmosphericDatum {
 	 * 
 	 * @return the temperature, in degrees Celsius
 	 */
-	Float getTemperature();
+	BigDecimal getTemperature();
 
 	/**
 	 * Get the instantaneous dew point, in degrees Celsius.
 	 * 
 	 * @return the dew point, in degrees celsius
 	 */
-	Float getDewPoint();
+	BigDecimal getDewPoint();
 
 	/**
 	 * Get the instantaneous humidity, as an integer percentage (where 100

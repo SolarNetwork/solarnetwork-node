@@ -38,11 +38,20 @@
 			<c:set var="provider" value="${provider}" scope="request"/>
 			<fieldset>
 				<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
-				<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-					<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}" scope="request"/>
-					<c:set var="setting" value="${setting}" scope="request"/>
-					<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
-				</c:forEach>
+				<c:catch var="providerException">
+					<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+						<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}" scope="request"/>
+						<c:set var="setting" value="${setting}" scope="request"/>
+						<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+					</c:forEach>
+				</c:catch>
+				<c:if test="${not empty providerException}">
+					<div class="alert alert-warning">
+						<fmt:message key="settings.error.provider.exception">
+							<fmt:param value="${providerException.cause.message}"/>
+						</fmt:message>
+					</div>
+				</c:if>
 			</fieldset>
 		</c:forEach>
 			<div class="form-actions">

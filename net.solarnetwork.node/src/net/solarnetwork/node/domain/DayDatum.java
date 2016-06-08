@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import org.joda.time.LocalTime;
 
 /**
  * Solar day related datum.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface DayDatum {
 
@@ -45,6 +46,44 @@ public interface DayDatum {
 	static final String SUNSET_KEY = "sunset";
 
 	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getSunrise()} values.
+	 * 
+	 * @since 1.1
+	 */
+	static final String MOONRISE_KEY = "moonrise";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getSunset()} values.
+	 * 
+	 * @since 1.1
+	 */
+	static final String MOONSET_KEY = "moonset";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getTemperatureMaximum()} values.
+	 * 
+	 * @since 1.1
+	 */
+	static final String TEMPERATURE_MAXIMUM_KEY = "tempMax";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
+	 * sample key for {@link DayDatum#getTemperatureMinimum()} values.
+	 * 
+	 * @since 1.1
+	 */
+	static final String TEMPERATURE_MINIMUM_KEY = "tempMin";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link DayDatum#getSkyConditions()} values.
+	 */
+	static final String SKY_CONDITIONS_KEY = "sky";
+
+	/**
 	 * Get the sunrise time.
 	 * 
 	 * @return the sunrise
@@ -58,4 +97,44 @@ public interface DayDatum {
 	 */
 	LocalTime getSunset();
 
+	/**
+	 * Get the sunrise time.
+	 * 
+	 * @return the moonrise
+	 * @since 1.1
+	 */
+	LocalTime getMoonrise();
+
+	/**
+	 * Get the moonset time.
+	 * 
+	 * @return the moonset
+	 * @since 1.1
+	 */
+	LocalTime getMoonset();
+
+	/**
+	 * Get the minimum temperature for the day.
+	 * 
+	 * @return The minimum temperature.
+	 * @since 1.1
+	 */
+	BigDecimal getTemperatureMinimum();
+
+	/**
+	 * Get the maximum temperature for the day.
+	 * 
+	 * @return The maximum temperature.
+	 * @since 1.1
+	 */
+	BigDecimal getTemperatureMaximum();
+
+	/**
+	 * Get a textual description of the sky conditions, e.g. "clear", "cloudy",
+	 * etc.
+	 * 
+	 * @return general sky conditions
+	 * @since 1.1
+	 */
+	String getSkyConditions();
 }

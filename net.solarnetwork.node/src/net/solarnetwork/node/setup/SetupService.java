@@ -33,9 +33,12 @@ import net.solarnetwork.domain.NetworkIdentity;
  * API for node setup support.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface SetupService {
+
+	/** Topic for when a network association has been accepted. */
+	public static final String TOPIC_NETWORK_ASSOCIATION_ACCEPTED = "net/solarnetwork/node/setup/NETWORK_ASSOCIATION_ACCEPTED";
 
 	/**
 	 * Decode a SolarNet verification code to determine the service that the
