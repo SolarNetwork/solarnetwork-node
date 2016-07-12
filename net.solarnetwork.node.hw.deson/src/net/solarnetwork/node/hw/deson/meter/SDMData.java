@@ -31,9 +31,21 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  * Common API for SDM meter data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface SDMData {
+
+	/**
+	 * Test if a particular phase is supported by the device. The SDM-120, for
+	 * example, only supports a single phase. Also the SDM-360 might be
+	 * configured in a single phase (two wire) configuration.
+	 * 
+	 * @param phase
+	 *        The phase to test.
+	 * @return <em>true</em> if the given {@code phase} is supported
+	 * @since 1.1
+	 */
+	boolean supportsPhase(ACPhase phase);
 
 	/**
 	 * Get the system time meter data was read from the actual device. If never

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -38,7 +39,6 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.springframework.context.MessageSource;
 
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
@@ -50,7 +50,8 @@ import org.springframework.context.MessageSource;
  * 
  * <dl class="class-properties">
  * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
+ * <dd>The {@link MessageSource} to use with
+ * {@link SettingSpecifierProvider}.</dd>
  * 
  * <dt>sampleCacheMs</dt>
  * <dd>The maximum number of milliseconds to cache data read from the meter,
@@ -58,7 +59,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -74,6 +75,10 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 
 					@Override
 					public SDMData doWithConnection(ModbusConnection conn) throws IOException {
+						if ( sample.getControlDataTimestamp() < 0 ) {
+							// we need to know what kind of meter we are dealing with
+							sample.readControlData(conn);
+						}
 						sample.readMeterData(conn);
 						return sample.getSnapshot();
 					}
@@ -84,8 +89,8 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				}
 				log.debug("Read PM3200 data: {}", currSample);
 			} catch ( IOException e ) {
-				throw new RuntimeException("Communication problem reading from Modbus device "
-						+ modbusNetwork(), e);
+				throw new RuntimeException(
+						"Communication problem reading from Modbus device " + modbusNetwork(), e);
 			}
 		} else {
 			currSample = sample.getSnapshot();
@@ -144,7 +149,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				results.add(d);
 			}
 		}
-		if ( isCapturePhaseA() || postCapturedEvent ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseA);
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 			if ( postCapturedEvent ) {
@@ -155,7 +160,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				results.add(d);
 			}
 		}
-		if ( isCapturePhaseB() || postCapturedEvent ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseB);
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 			if ( postCapturedEvent ) {
@@ -166,7 +171,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				results.add(d);
 			}
 		}
-		if ( isCapturePhaseC() || postCapturedEvent ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseC);
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 			if ( postCapturedEvent ) {
@@ -205,8 +210,8 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		SDMDatumDataSource defaults = new SDMDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
-				.getSampleCacheMs())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.getSampleCacheMs())));
 		return results;
 	}
 
