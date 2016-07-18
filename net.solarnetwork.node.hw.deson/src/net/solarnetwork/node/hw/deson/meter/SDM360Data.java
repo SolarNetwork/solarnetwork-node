@@ -245,7 +245,6 @@ public class SDM360Data extends BaseSDMData {
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
 		if ( wiringMode == SDMWiringMode.OnePhaseTwoWire ) {
 			datum.setCurrent(sample.getCurrent(ADDR_DATA_I1));
-			datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L1_L2));
 			datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
 		} else {
 			datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
