@@ -75,7 +75,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 
 					@Override
 					public SDMData doWithConnection(ModbusConnection conn) throws IOException {
-						if ( sample.getControlDataTimestamp() < 0 ) {
+						if ( sample.getControlDataTimestamp() <= 0 ) {
 							// we need to know what kind of meter we are dealing with
 							sample.readControlData(conn);
 						}
