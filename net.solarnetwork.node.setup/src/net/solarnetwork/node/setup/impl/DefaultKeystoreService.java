@@ -537,8 +537,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					+ " does not match expected " + nodeCert.getSubjectDN().getName());
 		}
 
-		log.info("Installing node certificate reply {} issued by {}", chain[0].getSubjectDN().getName(),
-				chain[0].getIssuerDN().getName());
+		log.info("Installing node certificate {} reply {} issued by {}", chain[0].getSerialNumber(),
+				chain[0].getSubjectDN().getName(), chain[0].getIssuerDN().getName());
 		try {
 			keyStore.setKeyEntry(nodeAlias, key, getKeyStorePassword().toCharArray(), chain);
 		} catch ( KeyStoreException e ) {
