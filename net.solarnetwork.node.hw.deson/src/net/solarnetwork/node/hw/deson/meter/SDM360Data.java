@@ -203,7 +203,7 @@ public class SDM360Data extends BaseSDMData {
 	@Override
 	protected boolean readMeterDataInternal(ModbusConnection conn) {
 		readInputData(conn, ADDR_DATA_V_L1_NEUTRAL, ADDR_DATA_V_L1_NEUTRAL + 79);
-		readInputData(conn, ADDR_DATA_V_L1_L2, 25);
+		readInputData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_V_L1_L2 + 25);
 		return true;
 	}
 

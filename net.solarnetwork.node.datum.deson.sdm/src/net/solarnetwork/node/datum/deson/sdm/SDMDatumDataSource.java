@@ -87,7 +87,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				if ( log.isTraceEnabled() ) {
 					log.trace(currSample.dataDebugString());
 				}
-				log.debug("Read PM3200 data: {}", currSample);
+				log.debug("Read SDM data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Communication problem reading from Modbus device " + modbusNetwork(), e);
