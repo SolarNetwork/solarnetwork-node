@@ -38,20 +38,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.domain.NetworkAssociation;
-import net.solarnetwork.domain.NetworkAssociationDetails;
-import net.solarnetwork.domain.NetworkCertificate;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SetupSettings;
-import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.setup.InvalidVerificationCodeException;
-import net.solarnetwork.node.setup.PKIService;
-import net.solarnetwork.node.setup.SetupException;
-import net.solarnetwork.node.setup.SetupService;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import net.solarnetwork.util.JavaBeanXmlSerializer;
-import net.solarnetwork.util.OptionalService;
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -63,6 +49,24 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.domain.NetworkAssociation;
+import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkCertificate;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.SetupSettings;
+import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.setup.InvalidVerificationCodeException;
+import net.solarnetwork.node.setup.PKIService;
+import net.solarnetwork.node.setup.SetupException;
+import net.solarnetwork.node.setup.SetupService;
+import net.solarnetwork.node.support.XmlServiceSupport;
+import net.solarnetwork.support.CertificateException;
+import net.solarnetwork.util.JavaBeanXmlSerializer;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Implementation of {@link SetupService}.
@@ -83,12 +87,14 @@ import org.springframework.transaction.support.TransactionTemplate;
  * <dt>hostName</dt>
  * <dd>The host name to use for the SolarNet remote service. Defaults to
  * {@link #DEFAULT_HOST_NAME}. This will be overridden by the application
- * setting value for the key {@link SetupSettings#KEY_SOLARNETWORK_HOST_NAME}.</dd>
+ * setting value for the key
+ * {@link SetupSettings#KEY_SOLARNETWORK_HOST_NAME}.</dd>
  * 
  * <dt>hostPort</dt>
  * <dd>The host port to use for the SolarNet remote service. Defaults to
  * {@link #DEFAULT_HOST_PORT}. This will be overridden by the application
- * setting value for the key {@link SetupSettings#KEY_SOLARNETWORK_HOST_PORT}.</dd>
+ * setting value for the key
+ * {@link SetupSettings#KEY_SOLARNETWORK_HOST_PORT}.</dd>
  * 
  * <dt>forceTLS</dt>
  * <dd>If <em>true</em> then use TLS (SSL) even on a port other than {@code 443}
@@ -100,9 +106,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
-public class DefaultSetupService extends XmlServiceSupport implements SetupService, IdentityService {
+public class DefaultSetupService extends XmlServiceSupport
+		implements SetupService, IdentityService, InstructionHandler {
 
 	/** The default value for the {@code hostName} property. */
 	public static final String DEFAULT_HOST_NAME = "in.solarnetwork.net";
@@ -112,6 +119,22 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 	/** The default value for the {@code solarInUrlPrefix} property. */
 	public static final String DEFAULT_SOLARIN_URL_PREFIX = "/solarin";
+
+	/**
+	 * Instruction topic for sending a renewed certificate to a node.
+	 * 
+	 * @since 1.5
+	 */
+	public static final String INSTRUCTION_TOPIC_RENEW_CERTIFICATE = "RenewCertificate";
+
+	/**
+	 * Instruction parameter for certificate data. Since instruction parameters
+	 * are limited in length, there can be more than one parameter of the same
+	 * key, with the full data being the concatenation of all parameter values.
+	 * 
+	 * @since 1.5
+	 */
+	public static final String INSTRUCTION_PARAM_CERTIFICATE = "Certificate";
 
 	// The keys used in the verification code xml
 	private static final String VERIFICATION_CODE_HOST_NAME = "host";
@@ -252,8 +275,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 
 		try {
 			JavaBeanXmlSerializer helper = new JavaBeanXmlSerializer();
-			InputStream in = new GZIPInputStream(new Base64InputStream(new ByteArrayInputStream(
-					verificationCode.getBytes())));
+			InputStream in = new GZIPInputStream(
+					new Base64InputStream(new ByteArrayInputStream(verificationCode.getBytes())));
 			Map<String, Object> result = helper.parseXml(in);
 
 			// Get the host server
@@ -321,8 +344,8 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 			throw e;
 		} catch ( Exception e ) {
 			// Runtime/IO errors can come from webFormGetForBean
-			throw new InvalidVerificationCodeException("Error while trying to decode verfication code: "
-					+ verificationCode, e);
+			throw new InvalidVerificationCodeException(
+					"Error while trying to decode verfication code: " + verificationCode, e);
 		}
 	}
 
@@ -413,6 +436,41 @@ public class DefaultSetupService extends XmlServiceSupport implements SetupServi
 		}
 		log.info("Requesting background backup.");
 		mgr.createAsynchronousBackup();
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(topic);
+	}
+
+	@Override
+	public InstructionState processInstruction(Instruction instruction) {
+		if ( !INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(instruction.getTopic()) ) {
+			return null;
+		}
+		PKIService pki = pkiService;
+		if ( pki == null ) {
+			return null;
+		}
+		String[] certParts = instruction.getAllParameterValues(INSTRUCTION_PARAM_CERTIFICATE);
+		if ( certParts == null ) {
+			log.warn("Certificate not provided with renew instruction");
+			return InstructionState.Declined;
+		}
+		String cert = org.springframework.util.StringUtils.arrayToDelimitedString(certParts, "");
+		log.debug("Got certificate renewal instruction with certificate data: {}", cert);
+		try {
+			pki.saveNodeSignedCertificate(cert);
+			if ( log.isInfoEnabled() ) {
+				X509Certificate nodeCert = pki.getNodeCertificate();
+				log.info("Installed node certificate {}, valid to {}", nodeCert.getSerialNumber(),
+						nodeCert.getNotAfter());
+			}
+			return InstructionState.Completed;
+		} catch ( CertificateException e ) {
+			log.error("Failed to install renewed certificate", e);
+		}
+		return null;
 	}
 
 	private String getSetting(String key) {

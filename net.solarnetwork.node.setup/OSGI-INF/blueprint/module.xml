@@ -47,6 +47,7 @@
 	<service ref="setupService">
 		<interfaces>
 			<value>net.solarnetwork.node.IdentityService</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.setup.SetupService</value>
 		</interfaces>
 	</service>
