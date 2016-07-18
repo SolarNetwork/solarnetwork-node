@@ -109,10 +109,10 @@ public class SDM360Data extends BaseSDMData {
 	@Override
 	public String toString() {
 		return "SDM360Data{V=" + getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE) + ",A="
-				+ getCurrent(ADDR_DATA_I_AVERAGE) + ",PF="
-				+ getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL) + ",Hz="
-				+ getFrequency(ADDR_DATA_FREQUENCY) + ",W=" + getPower(ADDR_DATA_ACTIVE_POWER_TOTAL)
-				+ ",var=" + getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
+				+ getCurrent(ADDR_DATA_I_AVERAGE) + ",PF=" + getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL)
+				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
+				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
+				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
 				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
 				+ getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL) + ",varh-I="
 				+ getEnergy(ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL) + ",Wh-E="
@@ -131,24 +131,32 @@ public class SDM360Data extends BaseSDMData {
 		return dataDebugString(snapshot);
 	}
 
-	public String getWiringType() {
+	public SDMWiringMode getWiringMode() {
 		final Float wiringType = getControlFloat32(ADDR_SYSTEM_WIRING_TYPE);
 		if ( wiringType == null ) {
+			return null;
+		}
+		final int type = wiringType.intValue();
+		return SDMWiringMode.valueOf(type);
+	}
+
+	public String getWiringType() {
+		SDMWiringMode mode = getWiringMode();
+		if ( mode == null ) {
 			return "N/A";
 		}
-		final int type = (wiringType == null ? -1 : wiringType.intValue());
-		switch (type) {
-			case 1:
+		switch (mode) {
+			case OnePhaseTwoWire:
 				return "1 phase, 2 wire";
 
-			case 2:
+			case ThreePhaseThreeWire:
 				return "3 phase, 3 wire";
 
-			case 3:
+			case ThreePhaseFourWire:
 				return "3 phase, 4 wire";
 
 			default:
-				return "N/A";
+				return "Unknown";
 		}
 	}
 
@@ -164,6 +172,22 @@ public class SDM360Data extends BaseSDMData {
 		result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, getSerialNumber());
 		result.put(INFO_KEY_DEVICE_WIRING_TYPE, getWiringType());
 		return result;
+	}
+
+	@Override
+	public boolean supportsPhase(ACPhase phase) {
+		if ( phase == ACPhase.Total ) {
+			return true;
+		}
+		SDMWiringMode wiringMode = getWiringMode();
+		if ( wiringMode == null ) {
+			return false;
+		}
+		if ( wiringMode == SDMWiringMode.OnePhaseTwoWire ) {
+			// only the Total phase is supported for 1P2
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -216,13 +240,21 @@ public class SDM360Data extends BaseSDMData {
 		datum.setWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
 		datum.setReverseWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
 
+		final SDMWiringMode wiringMode = getWiringMode();
+
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
-		datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
-		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L_L_AVERAGE));
+		if ( wiringMode == SDMWiringMode.OnePhaseTwoWire ) {
+			datum.setCurrent(sample.getCurrent(ADDR_DATA_I1));
+			datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L1_L2));
+			datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
+		} else {
+			datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
+			datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L_L_AVERAGE));
+			datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE));
+		}
 		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_TOTAL));
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
-		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE));
 		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
 	}
 
