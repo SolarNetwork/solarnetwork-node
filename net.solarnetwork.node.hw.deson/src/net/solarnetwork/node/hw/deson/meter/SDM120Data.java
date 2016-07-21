@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
  * Encapsulates raw Modbus register data from SDM 120 meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SDM120Data extends BaseSDMData {
 
@@ -98,6 +98,11 @@ public class SDM120Data extends BaseSDMData {
 	public String dataDebugString() {
 		final SDM120Data snapshot = new SDM120Data(this);
 		return dataDebugString(snapshot);
+	}
+
+	@Override
+	public boolean supportsPhase(ACPhase phase) {
+		return (phase == ACPhase.Total);
 	}
 
 	@Override

@@ -18,22 +18,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
 
 import java.util.List;
-
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-
 
 /**
  * DAO API for Instructor entities.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public interface InstructionDao {
 
@@ -44,11 +40,12 @@ public interface InstructionDao {
 	 * @return the local primary key
 	 */
 	Long storeInstruction(Instruction instruction);
-	
+
 	/**
 	 * Get an Instruction instance by ID.
 	 * 
-	 * @param instructionId the instruction ID
+	 * @param instructionId
+	 *        the instruction ID
 	 * @return the Instruction, or <em>null</em> if not found
 	 */
 	Instruction getInstruction(Long instructionId);
@@ -56,45 +53,53 @@ public interface InstructionDao {
 	/**
 	 * Get an Instruction instance by the remote ID.
 	 * 
-	 * @param remoteInstructionId the remote instruction ID
-	 * @param instructorId the instructor ID
+	 * @param remoteInstructionId
+	 *        the remote instruction ID
+	 * @param instructorId
+	 *        the instructor ID
 	 * @return the Instruction, or <em>null</em> if not found
 	 */
 	Instruction getInstruction(String remoteInstructionId, String instructorId);
-	
+
 	/**
 	 * Update an instruction status.
 	 * 
-	 * @param instruction ID the ID of the instruction to update the status for
-	 * @param status the status
+	 * @param instruction
+	 *        ID the ID of the instruction to update the status for
+	 * @param status
+	 *        the status
 	 */
 	void storeInstructionStatus(Long instructionId, InstructionStatus status);
-	
+
 	/**
 	 * Find all instructions in a given state.
 	 * 
-	 * @param state the instruction state
+	 * @param state
+	 *        the instruction state
 	 * @return the found instructions, or empty list if none available
 	 */
 	List<Instruction> findInstructionsForState(InstructionState state);
-	
+
 	/**
-	 * Find all instructions needing acknowedgement.
+	 * Find all instructions needing acknowledgement.
 	 * 
 	 * @return the found instructions, or empty list if none available
 	 */
 	List<Instruction> findInstructionsForAcknowledgement();
-	
+
 	/**
 	 * Delete Instruction entities that are not in the Received or Executing
 	 * state and are older than a specified number of hours.
 	 * 
-	 * <p>This is designed to free up space from local database storage
-	 * for devices with limited storage capacity.</p>
+	 * <p>
+	 * This is designed to free up space from local database storage for devices
+	 * with limited storage capacity.
+	 * </p>
 	 * 
-	 * @param hours the minimum number of hours old the data must be to delete
+	 * @param hours
+	 *        the minimum number of hours old the data must be to delete
 	 * @return the number of Instruction entities deleted
 	 */
 	int deleteHandledInstructionsOlderThan(int hours);
-	
+
 }

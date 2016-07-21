@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.developer;
 
+import java.security.Principal;
 import net.solarnetwork.node.IdentityService;
 
 /**
@@ -47,7 +48,7 @@ import net.solarnetwork.node.IdentityService;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DeveloperIdentityService implements IdentityService {
 
@@ -59,6 +60,11 @@ public class DeveloperIdentityService implements IdentityService {
 	@Override
 	public Long getNodeId() {
 		return nodeId;
+	}
+
+	@Override
+	public Principal getNodePrincipal() {
+		return null;
 	}
 
 	@Override

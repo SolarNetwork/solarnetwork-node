@@ -61,6 +61,11 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
+import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -69,11 +74,6 @@ import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
-import org.apache.commons.codec.binary.Base64;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.util.FileCopyUtils;
 
 /**
  * Service for managing a {@link KeyStore}.
@@ -204,8 +204,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			x509.checkValidity();
 			X500Principal issuer = new X500Principal(issuerDN);
 			if ( !x509.getIssuerX500Principal().equals(issuer) ) {
-				log.debug("Certificate issuer {} not same as expected {}", x509.getIssuerX500Principal()
-						.getName(), issuer.getName());
+				log.debug("Certificate issuer {} not same as expected {}",
+						x509.getIssuerX500Principal().getName(), issuer.getName());
 				return false;
 			}
 			return true;
@@ -234,7 +234,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 				// so delete the existing key store and re-create
 				File ksFile = new File(keyStorePath);
 				if ( ksFile.isFile() ) {
-					log.info("Deleting existing certificate store due to invalid password, will create new store");
+					log.info(
+							"Deleting existing certificate store due to invalid password, will create new store");
 					if ( ksFile.delete() ) {
 						// clear out old key store password, so we generate a new one
 						deleteSetting(KEY_PASSWORD);
@@ -498,14 +499,13 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 				} else {
 					// verify CA is the same... maybe we shouldn't do this?
 					if ( !chain[caIdx].getSubjectDN().equals(caCert.getSubjectDN()) ) {
-						throw new CertificateException("Chain CA "
-								+ chain[caIdx].getSubjectDN().getName() + " does not match expected "
-								+ caCert.getSubjectDN().getName());
+						throw new CertificateException(
+								"Chain CA " + chain[caIdx].getSubjectDN().getName()
+										+ " does not match expected " + caCert.getSubjectDN().getName());
 					}
 					if ( !chain[caIdx].getIssuerDN().equals(caCert.getIssuerDN()) ) {
-						throw new CertificateException("Chain CA "
-								+ chain[caIdx].getIssuerDN().getName() + " does not match expected "
-								+ caCert.getIssuerDN().getName());
+						throw new CertificateException("Chain CA " + chain[caIdx].getIssuerDN().getName()
+								+ " does not match expected " + caCert.getIssuerDN().getName());
 					}
 				}
 				// install intermediate certs...
@@ -537,8 +537,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					+ " does not match expected " + nodeCert.getSubjectDN().getName());
 		}
 
-		log.info("Installing node certificate reply {} issued by {}", chain[0].getSubjectDN().getName(),
-				chain[0].getIssuerDN().getName());
+		log.info("Installing node certificate {} reply {} issued by {}", chain[0].getSerialNumber(),
+				chain[0].getSubjectDN().getName(), chain[0].getIssuerDN().getName());
 		try {
 			keyStore.setKeyEntry(nodeAlias, key, getKeyStorePassword().toCharArray(), chain);
 		} catch ( KeyStoreException e ) {
@@ -575,8 +575,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					throw new CertificateException("No X509 TrustManager available");
 				}
 
-				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory
-						.getDefaultAlgorithm());
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory
+						.getInstance(KeyManagerFactory.getDefaultAlgorithm());
 				keyManagerFactory.init(keyStore, getKeyStorePassword().toCharArray());
 
 				X509KeyManager x509KeyManager = null;
@@ -638,7 +638,8 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					out.flush();
 					out.close();
 				} catch ( IOException e ) {
-					throw new CertificateException("Error closing KeyStore file: " + ksFile.getPath(), e);
+					throw new CertificateException("Error closing KeyStore file: " + ksFile.getPath(),
+							e);
 				}
 			}
 		}
