@@ -2,13 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Setup Test
 Bundle-SymbolicName: net.solarnetwork.node.setup.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.setup
+Fragment-Host: net.solarnetwork.node.setup;bundle-version="1.10"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
+ net.solarnetwork.node.reactor.support;version="1.2.0",
  net.solarnetwork.node.test;version="1.0",
  net.solarnetwork.pki.bc;version="1.0",
+ org.apache.commons.codec.binary;version="[1.4,2.0)",
+ org.apache.commons.logging;version="[1.1,1.2)",
  org.bouncycastle.asn1,
  org.bouncycastle.asn1.x500,
  org.bouncycastle.asn1.x509,
@@ -20,11 +23,9 @@ Import-Package:
  org.bouncycastle.pkcs,
  org.bouncycastle.pkcs.jcajce,
  org.bouncycastle.util.io.pem,
+ org.easymock;version="[3.0,4.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.apache.commons.codec.binary;version="[1.4,2.0)",
- org.apache.commons.logging;version="[1.1,1.2)",
- org.easymock;version="[3.0,4.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
  org.springframework.test.annotation;version="[3.0,4.0)",
  org.springframework.test.context;version="[3.0,4.0)",
