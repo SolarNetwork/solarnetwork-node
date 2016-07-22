@@ -26,12 +26,14 @@ import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyManagementException;
@@ -62,6 +64,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Base64OutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -88,7 +91,7 @@ import net.solarnetwork.support.CertificateService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultKeystoreService implements PKIService, SSLService, BackupResourceProvider {
 
@@ -403,6 +406,19 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		deleteSetting(KEY_PASSWORD);
 		final String newPassword = getKeyStorePassword();
 		KeyStore newKeyStore = loadKeyStore(KeyStore.getDefaultType(), null, newPassword);
+
+		// change the password to our local random one
+		copyNodeChain(keyStore, password, newKeyStore, newPassword);
+
+		File ksFile = new File(keyStorePath);
+		if ( ksFile.isFile() ) {
+			ksFile.delete();
+		}
+		saveKeyStore(newKeyStore);
+	}
+
+	private void copyNodeChain(KeyStore keyStore, String password, KeyStore newKeyStore,
+			String newPassword) {
 		try {
 			// change the password to our local random one
 			Key key = keyStore.getKey(nodeAlias, password.toCharArray());
@@ -411,16 +427,26 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			for ( int i = 0; i < chain.length; i += 1 ) {
 				x509Chain[i] = (X509Certificate) chain[i];
 			}
-			newKeyStore.setKeyEntry(nodeAlias, key, newPassword.toCharArray(), chain);
-			saveNodeCertificateChain(newKeyStore, key, x509Chain[0], x509Chain);
+			saveNodeCertificateChain(newKeyStore, key, newPassword, x509Chain[0], x509Chain);
 		} catch ( GeneralSecurityException e ) {
 			throw new CertificateException(e);
 		}
-		File ksFile = new File(keyStorePath);
-		if ( ksFile.isFile() ) {
-			ksFile.delete();
+	}
+
+	@Override
+	public String generatePKCS12KeystoreString(String password) throws CertificateException {
+		KeyStore keyStore = loadKeyStore();
+		KeyStore newKeyStore = loadKeyStore(PKCS12_KEYSTORE_TYPE, null, password);
+		copyNodeChain(keyStore, getKeyStorePassword(), newKeyStore, password);
+
+		ByteArrayOutputStream byos = new ByteArrayOutputStream();
+		saveKeyStore(newKeyStore, password, new Base64OutputStream(byos));
+		try {
+			return byos.toString("US-ASCII");
+		} catch ( UnsupportedEncodingException e ) {
+			// should never get here
+			throw new RuntimeException(e);
 		}
-		saveKeyStore(newKeyStore);
 	}
 
 	private KeyStore loadKeyStore(String type, InputStream in, String password) {
@@ -474,13 +500,16 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 		X509Certificate[] chain = certificateService.parsePKCS7CertificateChainString(pem);
 
-		saveNodeCertificateChain(keyStore, key, nodeCert, chain);
+		saveNodeCertificateChain(keyStore, key, getKeyStorePassword(), nodeCert, chain);
 
 		saveKeyStore(keyStore);
 	}
 
-	private void saveNodeCertificateChain(KeyStore keyStore, Key key, X509Certificate nodeCert,
-			X509Certificate[] chain) {
+	private void saveNodeCertificateChain(KeyStore keyStore, Key key, String keyPassword,
+			X509Certificate nodeCert, X509Certificate[] chain) {
+		if ( keyPassword == null ) {
+			keyPassword = "";
+		}
 		X509Certificate caCert = getCACertificate(keyStore);
 
 		if ( chain.length < 1 ) {
@@ -540,7 +569,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		log.info("Installing node certificate {} reply {} issued by {}", chain[0].getSerialNumber(),
 				chain[0].getSubjectDN().getName(), chain[0].getIssuerDN().getName());
 		try {
-			keyStore.setKeyEntry(nodeAlias, key, getKeyStorePassword().toCharArray(), chain);
+			keyStore.setKeyEntry(nodeAlias, key, keyPassword.toCharArray(), chain);
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error opening node certificate", e);
 		}
@@ -618,11 +647,22 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		if ( !ksDir.isDirectory() && !ksDir.mkdirs() ) {
 			throw new RuntimeException("Unable to create KeyStore directory: " + ksFile.getParent());
 		}
-		OutputStream out = null;
+
+		String passwd = getKeyStorePassword();
 		try {
-			String passwd = getKeyStorePassword();
-			out = new BufferedOutputStream(new FileOutputStream(ksFile));
-			keyStore.store(out, passwd.toCharArray());
+			saveKeyStore(keyStore, passwd, new BufferedOutputStream(new FileOutputStream(ksFile)));
+		} catch ( IOException e ) {
+			throw new CertificateException("Error saving certificate key store to " + ksFile.getPath(),
+					e);
+		}
+	}
+
+	private void saveKeyStore(KeyStore keyStore, String password, OutputStream out) {
+		if ( password == null ) {
+			password = "";
+		}
+		try {
+			keyStore.store(out, password.toCharArray());
 			resetFromKeyStoreChange();
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error saving certificate key store", e);
@@ -638,11 +678,11 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					out.flush();
 					out.close();
 				} catch ( IOException e ) {
-					throw new CertificateException("Error closing KeyStore file: " + ksFile.getPath(),
-							e);
+					throw new CertificateException("Error closing KeyStore stream", e);
 				}
 			}
 		}
+
 	}
 
 	private synchronized KeyStore loadKeyStore() {

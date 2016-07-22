@@ -76,6 +76,11 @@
 		<property name="pkiService" ref="pkiService"/>
 		<property name="backupManager" ref="backupManager"/>
 		<property name="eventAdmin" ref="eventAdmin"/>
+		<property name="sslService">
+			<bean class="net.solarnetwork.util.StaticOptionalService">
+				<argument ref="pkiService"/>
+			</bean>
+		</property>
 	</bean>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService">
