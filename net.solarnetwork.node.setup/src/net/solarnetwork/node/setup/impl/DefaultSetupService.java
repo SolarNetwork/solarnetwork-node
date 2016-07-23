@@ -266,7 +266,7 @@ public class DefaultSetupService extends XmlServiceSupport
 			throw new SetupException(
 					"SolarNet host not configured. Perhaps this node is not yet set up?");
 		}
-		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + getSolarNetHostName()
+		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + host
 				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
 	}
 
