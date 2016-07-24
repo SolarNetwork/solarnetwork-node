@@ -30,9 +30,11 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
@@ -43,17 +45,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.UnionIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
+import net.solarnetwork.util.UnionIterator;
 
 /**
  * Default implementation of {@link BackupManager}.
@@ -72,7 +75,7 @@ import org.springframework.util.FileCopyUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -92,8 +95,51 @@ public class DefaultBackupManager implements BackupManager {
 
 	private static ExecutorService defaultExecutorService() {
 		// we want at most one backup happening at a time by default
-		return new ThreadPoolExecutor(0, 1, 5, TimeUnit.MINUTES, new ArrayBlockingQueue<Runnable>(3,
-				true));
+		return new ThreadPoolExecutor(0, 1, 5, TimeUnit.MINUTES,
+				new ArrayBlockingQueue<Runnable>(3, true));
+	}
+
+	/**
+	 * Initialize after all properties set.
+	 */
+	public void init() {
+		// look for marked backup to restore
+		scheduleRestore();
+	}
+
+	private void scheduleRestore() {
+		Thread t = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					// sleep for just a bit here
+					Thread.sleep(10 * 1000L);
+				} catch ( InterruptedException e ) {
+					return;
+				}
+				BackupService backupService = (backupServiceTracker != null
+						? backupServiceTracker.service() : null);
+				if ( backupService != null ) {
+					Map<String, String> props = new HashMap<String, String>();
+					Backup backup = backupService.markedBackupForRestore(props);
+					if ( backup != null ) {
+						restoreBackup(backup, props);
+
+						// clear marked backup
+						if ( backupService.markBackupForRestore(null, null) ) {
+							finishRestore(backup);
+						}
+					}
+				}
+			}
+		});
+		t.setDaemon(true);
+		t.start();
+	}
+
+	private void finishRestore(Backup backup) {
+		log.info("Restore from backup {} complete", backup.getKey());
 	}
 
 	@Override
@@ -128,8 +174,8 @@ public class DefaultBackupManager implements BackupManager {
 				"backupServiceTracker.propertyFilters['key']", FileSystemBackupService.KEY);
 		Map<String, String> serviceSpecValues = new TreeMap<String, String>();
 		for ( BackupService service : backupServices ) {
-			serviceSpecValues.put(service.getKey(), service.getSettingSpecifierProvider()
-					.getDisplayName());
+			serviceSpecValues.put(service.getKey(),
+					service.getSettingSpecifierProvider().getDisplayName());
 		}
 		serviceSpec.setValueTitles(serviceSpecValues);
 		results.add(serviceSpec);
@@ -173,6 +219,11 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public Backup createBackup() {
+		return createBackup(null);
+	}
+
+	@Override
+	public Backup createBackup(final Map<String, String> props) {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.debug("No active backup service available, cannot perform backup");
@@ -189,20 +240,25 @@ public class DefaultBackupManager implements BackupManager {
 		log.info("Initiating backup to service {}", service.getKey());
 		final Backup backup = service.performBackup(resourcesForBackup());
 		if ( backup != null ) {
-			log.info("Backup {} {} with service {}", backup.getKey(), (backup.isComplete() ? "completed"
-					: "initiated"), service.getKey());
+			log.info("Backup {} {} with service {}", backup.getKey(),
+					(backup.isComplete() ? "completed" : "initiated"), service.getKey());
 		}
 		return backup;
 	}
 
 	@Override
 	public Future<Backup> createAsynchronousBackup() {
+		return createAsynchronousBackup(null);
+	}
+
+	@Override
+	public Future<Backup> createAsynchronousBackup(final Map<String, String> props) {
 		assert executorService != null;
 		return executorService.submit(new Callable<Backup>() {
 
 			@Override
 			public Backup call() throws Exception {
-				return createBackup();
+				return createBackup(props);
 			}
 
 		});
@@ -210,6 +266,12 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public void exportBackupArchive(String backupKey, OutputStream out) throws IOException {
+		exportBackupArchive(backupKey, out, null);
+	}
+
+	@Override
+	public void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
+			throws IOException {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			return;
@@ -245,19 +307,32 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public void importBackupArchive(InputStream archive) throws IOException {
+		importBackupArchive(archive, null);
+	}
+
+	@Override
+	public void importBackupArchive(InputStream archive, Map<String, String> props) throws IOException {
 		final ZipInputStream zin = new ZipInputStream(archive);
+		final Set<String> providerKeySet = StringUtils
+				.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER));
 		while ( true ) {
 			final ZipEntry entry = zin.getNextEntry();
 			if ( entry == null ) {
 				break;
 			}
 			final String path = entry.getName();
-			log.debug("Restoring backup resource {}", path);
+			log.debug("Inspecting backup resource {}", path);
 			final int providerIndex = path.indexOf('/');
 			if ( providerIndex != -1 ) {
 				final String providerKey = path.substring(0, providerIndex);
+				if ( providerKeySet != null && !providerKeySet.isEmpty()
+						&& !providerKeySet.contains(providerKey) ) {
+					log.debug("Skipping resource {} (provider filtered)", path);
+					continue;
+				}
 				for ( BackupResourceProvider provider : resourceProviders ) {
 					if ( providerKey.equals(provider.getKey()) ) {
+						log.debug("Restoring backup resource {}", path);
 						provider.restoreBackupResource(new BackupResource() {
 
 							@Override
@@ -292,21 +367,35 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public void restoreBackup(Backup backup) {
+		restoreBackup(backup, null);
+	}
+
+	@Override
+	public void restoreBackup(Backup backup, Map<String, String> props) {
 		BackupService service = backupServiceTracker.service();
 		if ( service == null ) {
 			return;
 		}
+		final Set<String> providerKeySet = StringUtils
+				.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER));
 		BackupResourceIterable resources = service.getBackupResources(backup);
 		try {
 			for ( final BackupResource r : resources ) {
 				// top-level dir is the  key of the provider
 				final String path = r.getBackupPath();
-				log.debug("Restoring backup {} resource {}", backup.getKey(), path);
+				log.debug("Inspecting backup {} resource {}", backup.getKey(), path);
 				final int providerIndex = path.indexOf('/');
 				if ( providerIndex != -1 ) {
 					final String providerKey = path.substring(0, providerIndex);
+					if ( providerKeySet != null && !providerKeySet.isEmpty()
+							&& !providerKeySet.contains(providerKey) ) {
+						log.debug("Skipping backup {} resource {} (provider filtered)", backup.getKey(),
+								path);
+						continue;
+					}
 					for ( BackupResourceProvider provider : resourceProviders ) {
 						if ( providerKey.equals(provider.getKey()) ) {
+							log.debug("Restoring backup {} resource {}", backup.getKey(), path);
 							provider.restoreBackupResource(new BackupResource() {
 
 								@Override

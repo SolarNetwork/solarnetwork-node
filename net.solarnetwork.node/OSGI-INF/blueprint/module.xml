@@ -106,7 +106,7 @@
 		<property name="serializers" ref="serializers"/>
 	</bean>
 	
-	<bean id="backupManager" class="net.solarnetwork.node.backup.DefaultBackupManager">
+	<bean id="backupManager" class="net.solarnetwork.node.backup.DefaultBackupManager" init-method="init">
 		<property name="backupServices" ref="backupServices"/>
 		<property name="backupServiceTracker">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
