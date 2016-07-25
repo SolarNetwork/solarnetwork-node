@@ -25,6 +25,7 @@
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
 		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
+		<beans:prop key="restoreFromBackup.sqlStateRegex">XS.*</beans:prop>
 		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
 		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
@@ -111,6 +112,7 @@
 				<property name="jmxEnabled" value="true"/>
 				<property name="testWhileIdle" value="false"/>
 				<property name="testOnBorrow" value="true"/>
+				<property name="testOnConnect" value="true"/>
 				<property name="validationQuery" value="${jdbc.pool.validationQuery}"/>
 				<property name="testOnReturn" value="false"/>
 				<property name="validationInterval" value="30000"/>
@@ -153,6 +155,7 @@
 			<argument value="${restoreFromBackup.exceptionThreshold}"/>
 			<property name="restoreDelaySeconds" value="${restoreFromBackup.secondsDelay}"/>
 			<property name="backupResourceProviderFilter" value="${restoreFromBackup.resourceProviderFilter}"/>
+			<property name="sqlStateRegex" value="${restoreFromBackup.sqlStateRegex}"/>
 		</bean>
 	</service>
 	
