@@ -161,7 +161,6 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
 
 	private OptionalService<BackupManager> backupManager;
-	private OptionalService<EventAdmin> eventAdmin;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
@@ -426,6 +425,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	}
 
 	private void postEvent(Event event) {
+		OptionalService<EventAdmin> eventAdmin = getEventAdmin();
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
 			return;
@@ -532,16 +532,6 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
-	}
-
-	@Override
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	@Override
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 }
