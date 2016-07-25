@@ -31,8 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,7 +56,6 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 
 	private final int minimumExceptionCount;
 	private final BundleContext bundleContext;
-	private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 	private int restoreDelaySeconds = 15;
 	private String backupResourceProviderFilter;
 	private List<Pattern> sqlStatePatterns;
@@ -145,12 +142,20 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 	}
 
 	private void scheduleRestoreFromBackup(final int count) {
+		if ( restoreScheduled.get() ) {
+			return;
+		}
 		log.warn("Scheduling restore from backup in {} seconds due to database connection exception",
 				restoreDelaySeconds);
-		scheduler.schedule(new Runnable() {
+		Thread t = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
+				try {
+					Thread.sleep(TimeUnit.SECONDS.toMillis(restoreDelaySeconds));
+				} catch ( InterruptedException e ) {
+					// ignore and continue
+				}
 				BackupService backupService = getBackupService();
 				if ( backupService != null ) {
 					Backup backup = getBackupToRestore(backupService);
@@ -167,7 +172,9 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 				}
 			}
 
-		}, restoreDelaySeconds, TimeUnit.SECONDS);
+		});
+		t.setContextClassLoader(Thread.currentThread().getContextClassLoader());
+		t.start();
 	}
 
 	private BackupService getBackupService() {
