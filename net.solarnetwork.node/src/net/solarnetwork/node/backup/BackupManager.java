@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.Future;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
@@ -33,9 +34,18 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * Manager API for node-level backups.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface BackupManager extends SettingSpecifierProvider {
+
+	/**
+	 * A property key for a comma-delimited list of
+	 * {@link BackupResourceProvider#getKey()} values to limit the backup
+	 * operation to. If not specified, all providers are included.
+	 * 
+	 * @since 1.1
+	 */
+	String RESOURCE_PROVIDER_FILTER = "ResourceProviderFilter";
 
 	/**
 	 * Get the active {@link BackupService}.
@@ -59,6 +69,16 @@ public interface BackupManager extends SettingSpecifierProvider {
 	Backup createBackup();
 
 	/**
+	 * Create a new Backup, using the active backup service.
+	 * 
+	 * @param props
+	 *        An optional set of properties to customize the backup with.
+	 * @return the backup, or <em>null</em> if none could be created
+	 * @since 1.1
+	 */
+	Backup createBackup(Map<String, String> props);
+
+	/**
 	 * Create a new Backup, using the active backup service, in the background.
 	 * This method will immediately return a Future where you can track the
 	 * status of the background backup, if desired.
@@ -68,12 +88,35 @@ public interface BackupManager extends SettingSpecifierProvider {
 	Future<Backup> createAsynchronousBackup();
 
 	/**
+	 * Create a new Backup, using the active backup service, in the background.
+	 * This method will immediately return a Future where you can track the
+	 * status of the background backup, if desired.
+	 * 
+	 * @param props
+	 *        An optional set of properties to customize the backup with.
+	 * @return the backup, or <em>null</em> if none could be created
+	 * @since 1.1
+	 */
+	Future<Backup> createAsynchronousBackup(Map<String, String> props);
+
+	/**
 	 * Restore all resources from a given backup.
 	 * 
 	 * @param backup
 	 *        the backup to restore
 	 */
 	void restoreBackup(Backup backup);
+
+	/**
+	 * Restore all resources from a given backup.
+	 * 
+	 * @param backup
+	 *        the backup to restore
+	 * @param props
+	 *        An optional set of properties to customize the backup with.
+	 * @since 1.1
+	 */
+	void restoreBackup(Backup backup, Map<String, String> props);
 
 	/**
 	 * Export a backup zip archive.
@@ -86,6 +129,22 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 */
 	public void exportBackupArchive(String backupKey, OutputStream out) throws IOException;
+
+	/**
+	 * Export a backup zip archive.
+	 * 
+	 * @param backupKey
+	 *        the backup to export
+	 * @param out
+	 *        the output stream to export to
+	 * @param props
+	 *        An optional set of properties to customize the backup with.
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.1
+	 */
+	public void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
+			throws IOException;
 
 	/**
 	 * Import a backup zip archive.
@@ -101,4 +160,22 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 */
 	public void importBackupArchive(InputStream archive) throws IOException;
+
+	/**
+	 * Import a backup zip archive.
+	 * 
+	 * <p>
+	 * This method can import an archive exported via
+	 * {@link #exportBackupArchive(String, OutputStream)}.
+	 * </p>
+	 * 
+	 * @param archive
+	 *        the archive input stream to import
+	 * @param props
+	 *        An optional set of properties to customize the backup with.
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.1
+	 */
+	public void importBackupArchive(InputStream archive, Map<String, String> props) throws IOException;
 }

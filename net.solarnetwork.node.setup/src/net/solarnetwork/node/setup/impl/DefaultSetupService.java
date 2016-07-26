@@ -31,11 +31,14 @@ import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_NAME;
 import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_PORT;
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import javax.xml.xpath.XPathExpression;
 import org.apache.commons.codec.binary.Base64InputStream;
@@ -106,7 +109,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -155,9 +158,9 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
+	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
 
 	private OptionalService<BackupManager> backupManager;
-	private OptionalService<EventAdmin> eventAdmin;
 	private PKIService pkiService;
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
@@ -262,7 +265,7 @@ public class DefaultSetupService extends XmlServiceSupport
 			throw new SetupException(
 					"SolarNet host not configured. Perhaps this node is not yet set up?");
 		}
-		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + getSolarNetHostName()
+		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + host
 				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
 	}
 
@@ -422,6 +425,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	}
 
 	private void postEvent(Event event) {
+		OptionalService<EventAdmin> eventAdmin = getEventAdmin();
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
 			return;
@@ -473,6 +477,32 @@ public class DefaultSetupService extends XmlServiceSupport
 		return null;
 	}
 
+	@Override
+	public void renewNetworkCertificate(String password) throws SetupException {
+		final String keystore = pkiService.generatePKCS12KeystoreString(password);
+		final String url = getSolarInBaseUrl() + SOLAR_IN_RENEW_CERT_URL;
+		Map<String, String> data = new HashMap<String, String>(2);
+		data.put("keystore", keystore);
+		data.put("password", password);
+		try {
+			String result = postXWWWFormURLEncodedDataForString(url, data);
+			if ( result == null || !result.matches(".*(?i)\"success\"\\s*:\\s*true.*") ) {
+				String message = "Unknown error.";
+				if ( result != null ) {
+					Pattern pat = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]+)\"",
+							Pattern.CASE_INSENSITIVE);
+					Matcher m = pat.matcher(message);
+					if ( m.find() ) {
+						message = m.group(1);
+					}
+				}
+				throw new SetupException(message);
+			}
+		} catch ( IOException e ) {
+			throw new SetupException("Error communicating with SolarNet: " + e.getMessage());
+		}
+	}
+
 	private String getSetting(String key) {
 		return (settingDao == null ? null : settingDao.getSetting(key, SETUP_TYPE_KEY));
 	}
@@ -502,16 +532,6 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
-	}
-
-	@Override
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	@Override
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 }

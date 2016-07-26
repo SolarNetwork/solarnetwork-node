@@ -43,13 +43,22 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.util.FileCopyUtils;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -58,11 +67,6 @@ import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.util.FileCopyUtils;
 
 /**
  * {@link BackupService} implementation that copies files to another location in
@@ -82,7 +86,7 @@ import org.springframework.util.FileCopyUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FileSystemBackupService implements BackupService, SettingSpecifierProvider {
 
@@ -149,10 +153,10 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		FileSystemBackupService defaults = new FileSystemBackupService();
 		results.add(new BasicTitleSettingSpecifier("status", getStatus().toString(), true));
-		results.add(new BasicTextFieldSettingSpecifier("backupDir", defaults.getBackupDir()
-				.getAbsolutePath()));
-		results.add(new BasicSliderSettingSpecifier("additionalBackupCount", (double) defaults
-				.getAdditionalBackupCount(), 0.0, 10.0, 1.0));
+		results.add(new BasicTextFieldSettingSpecifier("backupDir",
+				defaults.getBackupDir().getAbsolutePath()));
+		results.add(new BasicSliderSettingSpecifier("additionalBackupCount",
+				(double) defaults.getAdditionalBackupCount(), 0.0, 10.0, 1.0));
 		return results;
 	}
 
@@ -176,8 +180,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	@Override
 	public Backup backupForKey(String key) {
-		final Long nodeId = nodeIdForArchiveFileName();
-		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT, key, nodeId));
+		final File archiveFile = getArchiveFileForBackup(key);
 		if ( !archiveFile.canRead() ) {
 			return null;
 		}
@@ -274,11 +277,31 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		return (nodeId != null ? nodeId : 0L);
 	}
 
+	private File getArchiveFileForBackup(final String backupKey) {
+		final Long nodeId = nodeIdForArchiveFileName();
+		if ( nodeId.intValue() == 0 ) {
+			// hmm, might be restoring from corrupted db; look for file with matching key only
+			File[] matches = backupDir.listFiles(new FilenameFilter() {
+
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.contains(backupKey);
+				}
+			});
+			if ( matches != null && matches.length > 0 ) {
+				// take first available
+				return matches[0];
+			}
+			// not found
+			return null;
+		} else {
+			return new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT, backupKey, nodeId));
+		}
+	}
+
 	@Override
 	public BackupResourceIterable getBackupResources(Backup backup) {
-		final Long nodeId = nodeIdForArchiveFileName();
-		final File archiveFile = new File(backupDir, String.format(ARCHIVE_KEY_NAME_FORMAT,
-				backup.getKey(), nodeId));
+		final File archiveFile = getArchiveFileForBackup(backup.getKey());
 		if ( !(archiveFile.isFile() && archiveFile.canRead()) ) {
 			log.warn("No backup archive exists for key [{}]", backup.getKey());
 			Collection<BackupResource> col = Collections.emptyList();
@@ -372,6 +395,73 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			}
 		}
 		return result;
+	}
+
+	private File markedBackupForRestoreFile() {
+		// use default backup dir always, as configuration properties might not be available
+		return new File(defaultBackuprDir(), "RESTORE_ON_BOOT");
+	}
+
+	private ObjectMapper objectMapper() {
+		ObjectMapper mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		return mapper;
+	}
+
+	private static final String MARKED_BACKUP_PROP_KEY = "key";
+	private static final String MARKED_BACKUP_PROP_PROPS = "props";
+
+	@Override
+	public synchronized boolean markBackupForRestore(Backup backup, Map<String, String> props) {
+		File markFile = markedBackupForRestoreFile();
+		if ( backup == null ) {
+			if ( markFile.exists() ) {
+				log.info("Clearing marked backup.");
+				return markFile.delete();
+			}
+			return true;
+		} else if ( markFile.exists() ) {
+			log.warn("Marked backup exists, will not mark again");
+			return false;
+		} else {
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put(MARKED_BACKUP_PROP_KEY, backup.getKey());
+			if ( props != null && !props.isEmpty() ) {
+				data.put(MARKED_BACKUP_PROP_PROPS, props);
+			}
+			try {
+				objectMapper().writeValue(markFile, data);
+				return true;
+			} catch ( IOException e ) {
+				log.warn("Failed to create restore mark file {}", markFile, e);
+			}
+			return false;
+		}
+	}
+
+	@Override
+	public synchronized Backup markedBackupForRestore(Map<String, String> props) {
+		File markFile = markedBackupForRestoreFile();
+		if ( markFile.exists() ) {
+			try {
+				@SuppressWarnings("unchecked")
+				Map<String, Object> data = objectMapper().readValue(markFile, Map.class);
+				if ( data == null || !data.containsKey(MARKED_BACKUP_PROP_KEY) ) {
+					return null;
+				}
+				String key = (String) data.get(MARKED_BACKUP_PROP_KEY);
+				if ( props != null && data.get(MARKED_BACKUP_PROP_PROPS) instanceof Map ) {
+					@SuppressWarnings("unchecked")
+					Map<String, String> dataProps = (Map<String, String>) data
+							.get(MARKED_BACKUP_PROP_PROPS);
+					props.putAll(dataProps);
+				}
+				return backupForKey(key);
+			} catch ( IOException e ) {
+				log.warn("Failed to read restore mark file {}", markFile, e);
+			}
+		}
+		return null;
 	}
 
 	@Override

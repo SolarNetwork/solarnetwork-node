@@ -33,7 +33,7 @@ import net.solarnetwork.domain.NetworkIdentity;
  * API for node setup support.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface SetupService {
 
@@ -77,5 +77,18 @@ public interface SetupService {
 	 *         association
 	 */
 	NetworkCertificate acceptNetworkAssociation(NetworkAssociationDetails details) throws SetupException;
+
+	/**
+	 * Renew the node's active certificate. The node must already be associated
+	 * before this method will work. The renewal will be processed in the
+	 * future.
+	 * 
+	 * @param password
+	 *        A password to encrypt the keystore with when passing to SolarNet.
+	 * @throws SetupException
+	 *         if an error is encountered renewing the certificate
+	 * @since 1.2
+	 */
+	void renewNetworkCertificate(String password) throws SetupException;
 
 }

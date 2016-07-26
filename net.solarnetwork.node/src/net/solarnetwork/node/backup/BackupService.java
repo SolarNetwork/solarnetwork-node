@@ -23,13 +23,14 @@
 package net.solarnetwork.node.backup;
 
 import java.util.Collection;
+import java.util.Map;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
  * API for node backup.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface BackupService {
 
@@ -100,5 +101,32 @@ public interface BackupService {
 	 * @return provider, or <em>null</em> if not supported
 	 */
 	SettingSpecifierProvider getSettingSpecifierProvider();
+
+	/**
+	 * Mark a specific backup to be restored in the future call to
+	 * {@link #markedBackupForRestore()}.
+	 * 
+	 * @param backup
+	 *        The backup to mark for restoration later, or <em>null</em> to
+	 *        clear a previous marked backup.
+	 * @param props
+	 *        An optional map of properties to save with the mark.
+	 * @return <em>true</em> on success
+	 * @since 1.1
+	 */
+	boolean markBackupForRestore(Backup backup, Map<String, String> props);
+
+	/**
+	 * Get a backup previously set via
+	 * {@link BackupService#markBackupForRestore(Backup)}.
+	 * 
+	 * @param props
+	 *        An optional map in which any properties passed to
+	 *        {@link #markBackupForRestore(Backup, Map)} should be populated
+	 *        into
+	 * @return The marked backup, or <em>null</em> if none exists.
+	 * @since 1.1
+	 */
+	Backup markedBackupForRestore(Map<String, String> props);
 
 }
