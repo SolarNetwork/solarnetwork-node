@@ -28,16 +28,21 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.StringReader;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import javax.security.auth.x500.X500Principal;
+import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -57,7 +62,7 @@ import net.solarnetwork.pki.bc.BCCertificateService;
  * Test cases for the {@link DefaultKeystoreService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultKeystoreServiceTest {
 
@@ -158,7 +163,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void validateNodeSelfSignedCertificate() {
 		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(5);
+				.andReturn(TEST_CONF_VALUE).atLeastOnce();
 		replay(settingDao);
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		final boolean valid = service.isNodeCertificateValid(TEST_DN);
@@ -172,7 +177,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void saveTrustedCert() throws Exception {
 		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(2);
+				.andReturn(TEST_CONF_VALUE).atLeastOnce();
 		log.debug("Saving CA Cert: {}", CA_CERT);
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
@@ -195,7 +200,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void saveCASignedCert() throws Exception {
 		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(11);
+				.andReturn(TEST_CONF_VALUE).atLeastOnce();
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
@@ -221,7 +226,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void saveCASubSignedCert() throws Exception {
 		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(11);
+				.andReturn(TEST_CONF_VALUE).atLeastOnce();
 		replay(settingDao);
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
@@ -244,6 +249,35 @@ public class DefaultKeystoreServiceTest {
 		} finally {
 			pemReader.close();
 		}
+	}
+
+	@Test
+	public void generatePKCS12Keystore() throws Exception {
+		saveCASignedCert();
+
+		EasyMock.reset(settingDao);
+
+		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
+				.andReturn(TEST_CONF_VALUE).atLeastOnce();
+
+		replay(settingDao);
+
+		String keystoreData = service.generatePKCS12KeystoreString("foobar");
+
+		verify(settingDao);
+
+		assertNotNull(keystoreData);
+
+		byte[] data = Base64.decodeBase64(keystoreData);
+
+		KeyStore keyStore = KeyStore.getInstance("pkcs12");
+		keyStore.load(new ByteArrayInputStream(data), "foobar".toCharArray());
+		Certificate cert = keyStore.getCertificate("node");
+		assertNotNull(cert);
+		assertTrue(cert instanceof X509Certificate);
+		X509Certificate nodeCert = (X509Certificate) cert;
+		assertEquals(new X500Principal(TEST_DN), nodeCert.getSubjectX500Principal());
+		assertEquals(CA_CERT.getSubjectX500Principal(), nodeCert.getIssuerX500Principal());
 	}
 
 }

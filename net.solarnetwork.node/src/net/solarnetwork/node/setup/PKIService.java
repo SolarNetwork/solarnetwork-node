@@ -29,7 +29,7 @@ import net.solarnetwork.support.CertificateException;
  * API for managing the node's certificate infrastructure.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface PKIService {
 
@@ -156,5 +156,18 @@ public interface PKIService {
 	 *         if any certificate related error occurs
 	 */
 	void savePKCS12Keystore(String keystore, String password) throws CertificateException;
+
+	/**
+	 * Generate a PKCS#12 keystore from the node's keystore, encrpyted with the
+	 * given password.
+	 * 
+	 * @param password
+	 *        The password to encrypt the keystore with.
+	 * @return The generated keystore.
+	 * @throws CertificateException
+	 *         if any certificate related error occurs
+	 * @since 1.1
+	 */
+	String generatePKCS12KeystoreString(String password) throws CertificateException;
 
 }

@@ -42,8 +42,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.setup.SetupService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
@@ -53,6 +51,8 @@ import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.setup.SetupService;
 
 /**
  * Job to backup the Derby database using the
@@ -104,9 +104,9 @@ public class DerbyOnlineSyncService implements EventHandler {
 	public static final String DEFAULT_DESTINATION_PATH = "/var/tmp";
 
 	/** The default value of the {@code syncCommand} property. */
-	public static final List<String> DEFAULT_SYNC_COMMAND = Collections.unmodifiableList(Arrays.asList(
-			"rsync", "-am", "--delete", "--exclude", "*.lck", "--stats", SOURCE_DIRECTORY_PLACEHOLDER,
-			DESTINATION_DIRECTORY_PLACEHOLDER));
+	public static final List<String> DEFAULT_SYNC_COMMAND = Collections
+			.unmodifiableList(Arrays.asList("rsync", "-am", "--delete", "--exclude", "*.lck", "--stats",
+					SOURCE_DIRECTORY_PLACEHOLDER, DESTINATION_DIRECTORY_PLACEHOLDER));
 
 	private static final String FREEZE_CALL = "{CALL SYSCS_UTIL.SYSCS_FREEZE_DATABASE()}";
 	private static final String UNFREEZE_CALL = "{CALL SYSCS_UTIL.SYSCS_UNFREEZE_DATABASE()}";
@@ -120,6 +120,16 @@ public class DerbyOnlineSyncService implements EventHandler {
 	private ScheduledFuture<Boolean> syncSoonFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Call to destroy this service, cleaning up any resources.
+	 */
+	public void destroy() {
+		ScheduledExecutorService s = scheduler;
+		if ( s != null ) {
+			s.shutdown();
+		}
+	}
 
 	/**
 	 * Listen for events to automatically trigger a database sync.
@@ -254,8 +264,8 @@ public class DerbyOnlineSyncService implements EventHandler {
 				while ( (line = in.readLine()) != null ) {
 					buf.append(line).append('\n');
 				}
-				log.error("Sync command returned non-zero exit code {}: {}", pr.exitValue(), buf
-						.toString().trim());
+				log.error("Sync command returned non-zero exit code {}: {}", pr.exitValue(),
+						buf.toString().trim());
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
@@ -287,8 +297,8 @@ public class DerbyOnlineSyncService implements EventHandler {
 		}, new CallableStatementCallback<Object>() {
 
 			@Override
-			public Object doInCallableStatement(CallableStatement cs) throws SQLException,
-					DataAccessException {
+			public Object doInCallableStatement(CallableStatement cs)
+					throws SQLException, DataAccessException {
 				cs.execute();
 				return null;
 			}

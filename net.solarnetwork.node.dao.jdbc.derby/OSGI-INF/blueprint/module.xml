@@ -81,7 +81,8 @@
 		<property name="randomSecond" value="true"/>
 	</bean>
 	
-	<bean id="syncBackupService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncService">
+	<bean id="syncBackupService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncService"
+		destroy-method="destroy">
 		<property name="jdbcOperations" ref="jdbcOps"/>
 		<property name="destinationPath" value="${job.syncBackup.destinationPath}"/>
 	</bean>

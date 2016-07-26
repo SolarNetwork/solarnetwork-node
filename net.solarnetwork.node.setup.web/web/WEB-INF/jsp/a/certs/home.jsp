@@ -6,6 +6,7 @@
 		<tr>
 			<th><fmt:message key='certs.status.label'/></th>
 			<th><fmt:message key='certs.subject.label'/></th>
+			<th><fmt:message key='certs.serialNumber.label'/></th>
 			<th><fmt:message key='certs.expiration.label'/></th>
 		</tr>
 	</thead>
@@ -34,6 +35,9 @@
 				</c:if>
 			</td>
 			<td>
+				${nodeCertSerialNumber}
+			</td>
+			<td>
 				<c:if test="${nodeCertValid}">
 					<fmt:formatDate value="${nodeCert.notAfter}" pattern="dd MMM yyyy HH:mm" timeZone="GMT"/> GMT
 				</c:if>
@@ -43,13 +47,18 @@
 </table>
 
 <div class="row">
-	<div class="span8">
+	<div class="span12">
 		<a class="btn" id="btn-view-node-csr" href="<c:url value='/certs/nodeCSR'/>">
 			<fmt:message key='certs.action.csr'/>
 		</a>
 		<a class="btn${nodeCertValid ? '' : ' btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-toggle="modal">
 			<fmt:message key='certs.action.import'/>
 		</a>
+		<c:if test="${not empty nodeCert}">
+			<a class="btn" id="btn-renew-node-cert" href="<c:url value='/certs/renew'/>">
+				<fmt:message key='certs.action.renew'/>
+			</a>
+		</c:if>
 		<a class="btn${nodeCertValid ? ' btn-primary' : ''}" id="btn-export-node-cert" href="<c:url value='/certs/nodeCert'/>">
 			<fmt:message key='certs.action.view'/>
 		</a>
@@ -118,3 +127,30 @@
 	</div>
 </form>
 
+<form id="renew-cert-modal" class="modal dynamic hide fade" action="<c:url value='/certs/renew'/>" method="post">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3><fmt:message key='certs.renew.title'/></h3>
+	</div>
+	<div class="modal-body start">
+		<p><fmt:message key='certs.renew.intro'/></p>
+
+		<label class="control-label" for="renew-cert-password">
+			<fmt:message key='certs.renew.password.label'/>
+		</label>
+		<input class="span3" id="renew-cert-password" type="password" name="password" required="required"/>
+
+		<label class="control-label" for="renew-cert-password-again">
+			<fmt:message key='certs.renew.password-again.label'/>
+		</label>
+		<input class="span3" id="renew-cert-password-again" type="password" name="passwordAgain" required="required"/>
+		<div class="alert alert-error" id="renew-cert-error-password-again" style="display: none;"><fmt:message key='certs.renew.password.mismatch'/></div>
+	</div>
+	<div class="modal-body success" style="display: none;">
+		<p><fmt:message key='certs.renew.success'/></p>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
+	</div>
+</form>

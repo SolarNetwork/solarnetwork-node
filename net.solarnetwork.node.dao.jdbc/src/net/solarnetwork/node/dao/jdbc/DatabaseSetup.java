@@ -25,10 +25,12 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import javax.sql.DataSource;
-import net.solarnetwork.node.domain.Datum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * Class to initialize a database for first-time use by a Solar Node.
@@ -58,7 +60,9 @@ import org.springframework.core.io.Resource;
  */
 public class DatabaseSetup {
 
-	/** The default classpath resource for the {@code initSqlResource} property. */
+	/**
+	 * The default classpath resource for the {@code initSqlResource} property.
+	 */
 	public static final String DEFAULT_INIT_SQL_RESOURCE = "derby-init.sql";
 
 	/** The default value for the {@code sqlGetTablesVersion} property. */
@@ -72,13 +76,19 @@ public class DatabaseSetup {
 	private Resource initSqlResource = new ClassPathResource(DEFAULT_INIT_SQL_RESOURCE,
 			DatabaseSetup.class);
 
+	private final Logger log = LoggerFactory.getLogger(getClass());
+
 	/**
 	 * Check for the existence of the database, and if not found create and
 	 * initialize it.
 	 */
 	public void init() {
 		JdbcDao dao = new JdbcDao();
-		dao.init();
+		try {
+			dao.init();
+		} catch ( RuntimeException e ) {
+			log.error("Error initializing database", e);
+		}
 	}
 
 	/**
