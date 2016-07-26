@@ -48,24 +48,24 @@
 
 <div class="row">
 	<div class="span12">
-		<a class="btn" id="btn-view-node-csr" href="<c:url value='/certs/nodeCSR'/>">
+		<a class="btn" id="btn-view-node-csr" href="<c:url value='/a/certs/nodeCSR'/>">
 			<fmt:message key='certs.action.csr'/>
 		</a>
 		<a class="btn${nodeCertValid ? '' : ' btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-toggle="modal">
 			<fmt:message key='certs.action.import'/>
 		</a>
 		<c:if test="${not empty nodeCert}">
-			<a class="btn" id="btn-renew-node-cert" href="<c:url value='/certs/renew'/>">
+			<a class="btn" id="btn-renew-node-cert" href="<c:url value='/a/certs/renew'/>">
 				<fmt:message key='certs.action.renew'/>
 			</a>
 		</c:if>
-		<a class="btn${nodeCertValid ? ' btn-primary' : ''}" id="btn-export-node-cert" href="<c:url value='/certs/nodeCert'/>">
+		<a class="btn${nodeCertValid ? ' btn-primary' : ''}" id="btn-export-node-cert" href="<c:url value='/a/certs/nodeCert'/>">
 			<fmt:message key='certs.action.view'/>
 		</a>
 	</div>
 </div>
 
-<form id="import-cert-modal" class="modal hide fade" action="<c:url value='/certs/import'/>" method="post" enctype="multipart/form-data">
+<form id="import-cert-modal" class="modal hide fade" action="<c:url value='/a/certs/import'/>" method="post" enctype="multipart/form-data">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='certs.import.title'/></h3>
@@ -127,7 +127,7 @@
 	</div>
 </form>
 
-<form id="renew-cert-modal" class="modal dynamic hide fade" action="<c:url value='/certs/renew'/>" method="post">
+<form id="renew-cert-modal" class="modal dynamic hide fade" action="<c:url value='/a/certs/renew'/>" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='certs.renew.title'/></h3>

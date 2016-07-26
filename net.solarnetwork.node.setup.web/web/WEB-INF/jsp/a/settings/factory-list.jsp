@@ -10,7 +10,7 @@
 		</fmt:message>
 	</p>
 	<p>
-		<a href="<c:url value='/settings.do'/>" class="btn">
+		<a href="<c:url value='/a/settings'/>" class="btn">
 			<i class="icon-arrow-left"></i>
 			<fmt:message key="back.label"/>
 		</a>
@@ -24,7 +24,7 @@
 </section>
 
 <section id="settings">
-	<form class="form-horizontal" action="<c:url value='/settings/save.do'/>" method="post">
+	<form class="form-horizontal" action="<c:url value='/a/settings/save'/>" method="post">
 		<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
 			<c:set var="instance" value="${instance}" scope="request"/>
 			<c:forEach items="${instance.value}" var="provider" varStatus="providerStatus">
@@ -65,7 +65,7 @@
 								$('#del${instance.key}').click(function() {
 									SolarNode.Settings.deleteFactoryConfiguration({
 										button: this,
-										url: '<c:url value="/settings/manage/delete.do"/>',
+										url: '<c:url value="/a/settings/manage/delete"/>',
 										factoryUID: '${factory.factoryUID}',
 										instanceUID: '${instance.key}'
 									});
@@ -94,7 +94,7 @@ $(function() {
 	$('#add').click(function() {
 		SolarNode.Settings.addFactoryConfiguration({
 			button: this,
-			url: '<c:url value="/settings/manage/add.do"/>',
+			url: '<c:url value="/a/settings/manage/add"/>',
 			factoryUID: '${factory.factoryUID}'
 		});
 	});

@@ -30,11 +30,6 @@ import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -42,6 +37,11 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
 
 /**
  * Controller to act as a local Instructor to the local node.
@@ -50,7 +50,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * @version 1.0
  */
 @Controller
-@RequestMapping("/controls")
+@RequestMapping("/a/controls")
 public class InstructorController {
 
 	private static final String KEY_CONTROL_ID = "controlId";
@@ -132,7 +132,7 @@ public class InstructorController {
 		HttpSession session = request.getSession();
 		session.setAttribute(keyPrefix + "MessageKey", "controls.manage.SetControlParameter.result");
 		session.setAttribute(keyPrefix + "MessageParam0", result);
-		return "redirect:/controls/manage?id=" + instruction.getControlId();
+		return "redirect:/a/controls/manage?id=" + instruction.getControlId();
 	}
 
 	public void setProviders(Collection<NodeControlProvider> providers) {

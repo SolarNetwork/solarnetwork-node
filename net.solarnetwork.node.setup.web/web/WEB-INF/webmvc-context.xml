@@ -50,8 +50,20 @@
 
 	<!-- Dispatch requests mapped to POJO @Controllers implementations -->
 	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
-		p:alwaysUseFullPath="true"/>
+		p:alwaysUseFullPath="true" p:order="1"/>
 
+	<!-- Dispatch view-only requests, e.g. login -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="order" value="2" />
+        <property name="mappings">
+            <props>
+                <prop key="/**/*.do">urlViewController</prop>
+            </props>
+        </property>
+	</bean>
+
+    <bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
+	
 	<!-- Resolves logical view names returned by Controllers to Tiles; 
 		a view name to resolve is treated as the name of a tiles definition -->
 	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">

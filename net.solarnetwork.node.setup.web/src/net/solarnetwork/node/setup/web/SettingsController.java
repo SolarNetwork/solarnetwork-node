@@ -30,14 +30,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.backup.Backup;
-import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.backup.BackupService;
-import net.solarnetwork.node.settings.SettingsBackup;
-import net.solarnetwork.node.settings.SettingsCommand;
-import net.solarnetwork.node.settings.SettingsService;
-import net.solarnetwork.util.OptionalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
@@ -49,6 +41,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.settings.SettingsBackup;
+import net.solarnetwork.node.settings.SettingsCommand;
+import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Web controller for the settings UI.
@@ -57,7 +57,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @version 1.1
  */
 @Controller
-@RequestMapping("/settings")
+@RequestMapping("/a/settings")
 public class SettingsController {
 
 	private static final String KEY_PROVIDERS = "providers";
@@ -182,7 +182,7 @@ public class SettingsController {
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
 			service.importSettingsCSV(reader);
 		}
-		return "redirect:/settings.do";
+		return "redirect:/a/settings";
 	}
 
 	@RequestMapping(value = "/backupNow", method = RequestMethod.POST)
@@ -211,9 +211,9 @@ public class SettingsController {
 
 		// create the zip archive for the backup files
 		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition", "attachment; filename=node-"
-				+ (nodeId != null ? nodeId.toString() : "UNKNOWN") + "-backup"
-				+ (backupKey == null ? "" : "-" + backupKey) + ".zip");
+		response.setHeader("Content-Disposition",
+				"attachment; filename=node-" + (nodeId != null ? nodeId.toString() : "UNKNOWN")
+						+ "-backup" + (backupKey == null ? "" : "-" + backupKey) + ".zip");
 		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 
@@ -221,10 +221,10 @@ public class SettingsController {
 	public String importBackup(@RequestParam("file") MultipartFile file) throws IOException {
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			return "redirect:/settings.do";
+			return "redirect:/a/settings";
 		}
 		manager.importBackupArchive(file.getInputStream());
-		return "redirect:/settings.do";
+		return "redirect:/a/settings";
 	}
 
 }

@@ -12,7 +12,7 @@
 		<p>
 			<fmt:message key="node.setup.success.visit">
 				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><c:url value='/certs'/></fmt:param>
+				<fmt:param><c:url value='/a/certs'/></fmt:param>
 			</fmt:message>
 		</p>
 	</c:when>
@@ -27,7 +27,7 @@
 		<p>
 			<fmt:message key="node.setup.success.requested">
 				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><c:url value='/certs'/></fmt:param>
+				<fmt:param><c:url value='/a/certs'/></fmt:param>
 			</fmt:message>
 		</p>
 	</c:when>

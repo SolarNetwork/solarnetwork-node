@@ -103,6 +103,8 @@ Import-Package:
  org.springframework.security.core.context;version="[3.1,4.0)",
  org.springframework.security.core.userdetails;version="[3.1,4.0)",
  org.springframework.security.core.userdetails.memory;version="[3.1,4.0)",
+ org.springframework.security.crypto.bcrypt;version="[3.1,4.0)",
+ org.springframework.security.crypto.password;version="[3.1,4.0)",
  org.springframework.security.provisioning;version="[3.1,4.0)",
  org.springframework.security.taglibs.authz;version="[3.1,4.0)",
  org.springframework.security.web;version="[3.1,4.0)",
