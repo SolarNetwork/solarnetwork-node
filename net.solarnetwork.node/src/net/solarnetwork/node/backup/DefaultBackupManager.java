@@ -85,6 +85,7 @@ public class DefaultBackupManager implements BackupManager {
 	private OptionalService<BackupService> backupServiceTracker;
 	private Collection<BackupResourceProvider> resourceProviders;
 	private ExecutorService executorService = defaultExecutorService();
+	private int backupRestoreDelaySeconds = 15;
 
 	private static HierarchicalMessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
@@ -112,25 +113,36 @@ public class DefaultBackupManager implements BackupManager {
 
 			@Override
 			public void run() {
+				boolean retry = true;
 				try {
 					// sleep for just a bit here
-					Thread.sleep(10 * 1000L);
+					Thread.sleep(backupRestoreDelaySeconds * 1000L);
 				} catch ( InterruptedException e ) {
 					return;
 				}
+				log.debug("Looking for marked backup to restore");
 				BackupService backupService = (backupServiceTracker != null
 						? backupServiceTracker.service() : null);
 				if ( backupService != null ) {
 					Map<String, String> props = new HashMap<String, String>();
 					Backup backup = backupService.markedBackupForRestore(props);
 					if ( backup != null ) {
-						restoreBackup(backup, props);
-
-						// clear marked backup
-						if ( backupService.markBackupForRestore(null, null) ) {
-							finishRestore(backup);
+						if ( restoreBackupInternal(backup, props) ) {
+							// clear marked backup
+							if ( backupService.markBackupForRestore(null, null) ) {
+								retry = false;
+								finishRestore(backup);
+							}
 						}
+					} else {
+						// no marked backup to restore
+						retry = false;
 					}
+				}
+				if ( retry ) {
+					log.debug("Will retry looking for marked backup to store in {} seconds",
+							backupRestoreDelaySeconds);
+					scheduleRestore();
 				}
 			}
 		});
@@ -372,13 +384,19 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public void restoreBackup(Backup backup, Map<String, String> props) {
+		restoreBackupInternal(backup, props);
+	}
+
+	public boolean restoreBackupInternal(Backup backup, Map<String, String> props) {
 		BackupService service = backupServiceTracker.service();
 		if ( service == null ) {
-			return;
+			log.warn("No BackupService available to restore backup with");
+			return false;
 		}
 		final Set<String> providerKeySet = StringUtils
 				.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER));
 		BackupResourceIterable resources = service.getBackupResources(backup);
+		boolean result = true;
 		try {
 			for ( final BackupResource r : resources ) {
 				// top-level dir is the  key of the provider
@@ -393,10 +411,11 @@ public class DefaultBackupManager implements BackupManager {
 								path);
 						continue;
 					}
+					boolean resourceHandled = false;
 					for ( BackupResourceProvider provider : resourceProviders ) {
 						if ( providerKey.equals(provider.getKey()) ) {
 							log.debug("Restoring backup {} resource {}", backup.getKey(), path);
-							provider.restoreBackupResource(new BackupResource() {
+							resourceHandled = provider.restoreBackupResource(new BackupResource() {
 
 								@Override
 								public String getBackupPath() {
@@ -417,8 +436,16 @@ public class DefaultBackupManager implements BackupManager {
 							break;
 						}
 					}
+					if ( !resourceHandled ) {
+						result = false;
+						log.warn(
+								"Backup {} resource {} could not be restored because no resource provider handled the resource.",
+								backup.getKey(), path);
+					}
 				}
 			}
+		} catch ( RuntimeException e ) {
+			log.error("Error restoring backup {}", backup.getKey(), e);
 		} finally {
 			try {
 				resources.close();
@@ -426,6 +453,7 @@ public class DefaultBackupManager implements BackupManager {
 				// ignore
 			}
 		}
+		return result;
 	}
 
 	private static class PrefixedBackupResourceIterator implements Iterator<BackupResource> {
@@ -487,6 +515,20 @@ public class DefaultBackupManager implements BackupManager {
 
 	public void setExecutorService(ExecutorService executorService) {
 		this.executorService = executorService;
+	}
+
+	/**
+	 * Set a number of seconds to delay the attempt of restoring a backup, when
+	 * a backup has been previously marked for restoration. This delay gives the
+	 * platform time to boot up and register the backup resource providers and
+	 * other services required to perform the restore.
+	 * 
+	 * @param backupRestoreDelaySeconds
+	 *        The number of seconds to delay attempting to restore from backup.
+	 * @since 1.1
+	 */
+	public void setBackupRestoreDelaySeconds(int backupRestoreDelaySeconds) {
+		this.backupRestoreDelaySeconds = backupRestoreDelaySeconds;
 	}
 
 }
