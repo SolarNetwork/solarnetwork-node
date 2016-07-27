@@ -11,7 +11,9 @@
 				<p class="text-error"><code>${user.password}</code></p>
 				<div class="alert">
 					<fmt:message key='node.setup.success.user.intro'>
-						<fmt:param><c:url value="/a/user/change-password"/></fmt:param>
+						<fmt:param><c:url value="/a/user/change-password">
+							<c:param name="old" value="${user.password}"/>
+						</c:url></fmt:param>
 					</fmt:message>
 				</div>
 			</td>

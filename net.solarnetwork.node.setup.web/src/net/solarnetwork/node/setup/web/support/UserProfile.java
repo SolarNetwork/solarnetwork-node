@@ -31,6 +31,7 @@ package net.solarnetwork.node.setup.web.support;
 public class UserProfile {
 
 	private String username;
+	private String oldPassword;
 	private String password;
 	private String passwordAgain;
 
@@ -40,6 +41,14 @@ public class UserProfile {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getOldPassword() {
+		return oldPassword;
+	}
+
+	public void setOldPassword(String oldPassword) {
+		this.oldPassword = oldPassword;
 	}
 
 	public String getPassword() {

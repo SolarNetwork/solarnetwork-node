@@ -24,11 +24,13 @@ package net.solarnetwork.node.setup.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.node.setup.web.support.SettingsUserService;
+import net.solarnetwork.node.setup.web.support.UserProfile;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -44,8 +46,23 @@ public class UserController extends BaseSetupWebServiceController {
 	@Autowired
 	private SettingsUserService userService;
 
+	/**
+	 * Render the change password form.
+	 * 
+	 * @param oldPassword
+	 *        An optional old password to pre-populate in the form.
+	 * @param model
+	 *        The model object.
+	 * @return The view name to render.
+	 */
 	@RequestMapping(value = "/change-password", method = RequestMethod.GET)
-	public String changePasswordForm() {
+	public String changePasswordForm(@RequestParam(value = "old", required = false) String oldPassword,
+			Model model) {
+		UserProfile user = new UserProfile();
+		if ( oldPassword != null ) {
+			user.setOldPassword(oldPassword);
+		}
+		model.addAttribute("user", user);
 		return "user/change-password";
 	}
 
@@ -62,10 +79,9 @@ public class UserController extends BaseSetupWebServiceController {
 	 */
 	@RequestMapping(value = "/change-password", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> changePassword(@RequestParam("old") String existingPassword,
-			@RequestParam("password") String newPassword,
-			@RequestParam("passwordAgain") String newPasswordAgain) {
-		userService.changePassword(existingPassword, newPassword, newPasswordAgain);
+	public Response<Object> changePassword(UserProfile userProfile) {
+		userService.changePassword(userProfile.getOldPassword(), userProfile.getPassword(),
+				userProfile.getPasswordAgain());
 		return Response.response(null);
 	}
 

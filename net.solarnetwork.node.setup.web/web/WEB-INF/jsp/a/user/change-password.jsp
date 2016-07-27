@@ -8,18 +8,18 @@
 	</p>
 </section>
 
-<form class="form-horizontal" id="change-password-form" action="<c:url value='/a/user/change-password'/>" method="post">
+<form:form commandName="user" cssClass="form-horizontal" id="change-password-form" action="/a/user/change-password" method="post" >
 	<fieldset>
 		<div class="control-group">
 			<label class="control-label" for="old-password"><fmt:message key="user.oldPassword.label"/></label>
 			<div class="controls">
-				<input type="password" name="old" id="old-password" maxlength="255" required="required" />
+				<form:password path="oldPassword" showPassword="true" id="old-password" maxlength="255" required="required" />
 			</div>
 		</div>
 		<div class="control-group">
-			<label class="control-label" for="login-password-again"><fmt:message key="user.newPassword.label"/></label>
+			<label class="control-label" for="login-password"><fmt:message key="user.newPassword.label"/></label>
 			<div class="controls">
-				<input type="password" name="password" id="login-password-again" maxlength="255" required="required"/>
+				<input type="password" name="password" id="login-password" maxlength="255" required="required"/>
 			</div>
 		</div>
 		<div class="control-group">
@@ -34,4 +34,4 @@
 			<button type="submit" class="btn btn-primary"><fmt:message key='user.action.changePassword'/></button>
 		</div>
 	</div>
-</form>
+</form:form>
