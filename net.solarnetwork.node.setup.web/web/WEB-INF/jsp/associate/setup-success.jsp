@@ -2,8 +2,21 @@
 
 <table class="table">
 	<tr><th><fmt:message key="node.setup.identity.service"/></th><td>${details.host}</td></tr>
-	<tr><th><fmt:message key="node.setup.identity.username"/></th><td>${details.username}</td></tr>
 	<tr><th><fmt:message key="node.setup.identity.nodeId"/></th><td>${details.networkId}</td></tr>
+	<tr><th><fmt:message key="node.setup.identity.username"/></th><td>${details.username}</td></tr>
+	<c:if test="${not empty user}">
+		<tr>
+			<th><fmt:message key="node.setup.success.user.password"/></th>
+			<td>
+				<p class="text-error"><code>${user.password}</code></p>
+				<div class="alert">
+					<fmt:message key='node.setup.success.user.intro'>
+						<fmt:param><c:url value="/a/user/change-password"/></fmt:param>
+					</fmt:message>
+				</div>
+			</td>
+		</tr>
+	</c:if>
 </table>
 
 <c:set var="myNodesURL" value="${association.solarUserServiceURL}/u/sec/my-nodes"/>

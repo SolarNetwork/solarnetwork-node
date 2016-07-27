@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.web.support;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
@@ -36,6 +37,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.dao.BasicBatchOptions;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 
 /**
@@ -99,6 +104,27 @@ public class SettingsUserService implements UserDetailsService {
 	}
 
 	/**
+	 * Test if any user exists in settings.
+	 * 
+	 * @return <em>true</em> if some user exists
+	 */
+	public boolean someUserExists() {
+		final AtomicBoolean result = new AtomicBoolean(false);
+		settingDao.batchProcess(new BatchCallback<Setting>() {
+
+			@Override
+			public BatchCallbackResult handle(Setting domainObject) {
+				if ( domainObject.getType().equals(SETTING_TYPE_USER) ) {
+					result.set(true);
+					return BatchCallbackResult.STOP;
+				}
+				return BatchCallbackResult.CONTINUE;
+			}
+		}, new BasicBatchOptions("FindUser"));
+		return result.get();
+	}
+
+	/**
 	 * Update the active user's password.
 	 * 
 	 * @param existingPassword
@@ -148,6 +174,33 @@ public class SettingsUserService implements UserDetailsService {
 		}
 		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_USER, password);
 		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
+	}
+
+	/**
+	 * Store a user profile into settings.
+	 * 
+	 * @param profile
+	 *        The profile to store.
+	 * @throws IllegalArgumentException
+	 *         if {@code username} is <em>null</em>, or if the {@code password}
+	 *         and {@code passwordAgain} values do not match or are
+	 *         <em>null</em>
+	 */
+	public void storeUserProfile(UserProfile profile) {
+		if ( profile.getUsername() == null || profile.getPassword() == null
+				|| !profile.getPassword().equals(profile.getPasswordAgain()) ) {
+			throw new IllegalArgumentException(
+					"Username, password, and repeated password must be provided.");
+		}
+
+		String password;
+		if ( passwordEncoder != null ) {
+			password = passwordEncoder.encode(profile.getPassword());
+		} else {
+			password = profile.getPassword();
+		}
+		settingDao.storeSetting(profile.getUsername(), SETTING_TYPE_USER, password);
+		settingDao.storeSetting(profile.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
 	}
 
 	/**

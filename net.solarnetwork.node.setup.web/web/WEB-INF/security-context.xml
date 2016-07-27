@@ -22,7 +22,7 @@
 	
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
 
-	<authentication-manager>
+	<authentication-manager alias="authenticationManager">
 		<authentication-provider user-service-ref="settingsUserService">			
 			<password-encoder ref="passwordEncoder"/>
 		</authentication-provider>

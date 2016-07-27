@@ -29,16 +29,12 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import net.solarnetwork.domain.NetworkAssociation;
-import net.solarnetwork.domain.NetworkAssociationDetails;
-import net.solarnetwork.domain.NetworkCertificate;
-import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.setup.InvalidVerificationCodeException;
-import net.solarnetwork.node.setup.PKIService;
-import net.solarnetwork.node.setup.SetupException;
-import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
-import net.solarnetwork.util.OptionalService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
@@ -49,12 +45,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
+import net.solarnetwork.domain.NetworkAssociation;
+import net.solarnetwork.domain.NetworkAssociationDetails;
+import net.solarnetwork.domain.NetworkCertificate;
+import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.setup.InvalidVerificationCodeException;
+import net.solarnetwork.node.setup.PKIService;
+import net.solarnetwork.node.setup.SetupException;
+import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
+import net.solarnetwork.node.setup.web.support.SettingsUserService;
+import net.solarnetwork.node.setup.web.support.UserProfile;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Controller used to associate a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -73,8 +80,21 @@ public class NodeAssociationController extends BaseSetupController {
 	/** The model attribute for the network identity details. */
 	public static final String KEY_NETWORK_URL_MAP = "networkLinks";
 
+	/**
+	 * The model attribute for a {@link UserProfile} instance.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String KEY_USER = "user";
+
 	@Autowired
 	private PKIService pkiService;
+
+	@Autowired
+	private SettingsUserService userService;
+
+	@Resource(name = "authenticationManager")
+	private AuthenticationManager authenticationManager;
 
 	@Resource(name = "backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
@@ -117,8 +137,8 @@ public class NodeAssociationController extends BaseSetupController {
 		}
 
 		try {
-			NetworkAssociationDetails details = getSetupBiz().decodeVerificationCode(
-					command.getVerificationCode());
+			NetworkAssociationDetails details = getSetupBiz()
+					.decodeVerificationCode(command.getVerificationCode());
 			model.addAttribute(KEY_DETAILS, details);
 		} catch ( InvalidVerificationCodeException e ) {
 			errors.rejectValue("verificationCode", "verificationCode.invalid", null, null);
@@ -183,8 +203,8 @@ public class NodeAssociationController extends BaseSetupController {
 	 * @return the view name
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
-	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command,
-			Errors errors, @ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
+	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
+			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
@@ -202,7 +222,24 @@ public class NodeAssociationController extends BaseSetupController {
 				// generate certificate request
 				model.addAttribute("csr", pkiService.generateNodePKCS10CertificateRequestString());
 			}
+			if ( !userService.someUserExists() ) {
+				// create a new user now, using the username from SolarNet and a random password
+				UserProfile user = new UserProfile();
+				user.setUsername(details.getUsername());
+				user.setPassword(KeyGenerators.string().generateKey());
+				user.setPasswordAgain(user.getPassword());
+				log.debug("Creating initial user {} with password {}", user.getUsername(),
+						user.getPassword());
+				userService.storeUserProfile(user);
 
+				model.addAttribute(KEY_USER, user);
+
+				// and automatically log in as the new user
+				UsernamePasswordAuthenticationToken loginReq = new UsernamePasswordAuthenticationToken(
+						user.getUsername(), user.getPassword());
+				Authentication auth = authenticationManager.authenticate(loginReq);
+				SecurityContextHolder.getContext().setAuthentication(auth);
+			}
 			return "associate/setup-success";
 		} catch ( Exception e ) {
 			errors.reject("node.setup.success.error", new Object[] { details.getHost() }, null);
