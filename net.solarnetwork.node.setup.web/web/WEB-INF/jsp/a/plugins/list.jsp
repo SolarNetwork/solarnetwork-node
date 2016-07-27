@@ -2,7 +2,7 @@
 	<p><fmt:message key="plugins.intro"/></p>
 	<fmt:message key="plugins.loading.message" var="msgLoading"/>
 	<fmt:message key="plugins.refresh.button" var="msgRefresh"/>
-	<c:url value="/plugins/refresh" var="urlPluginRefresh"/>
+	<c:url value="/a/plugins/refresh" var="urlPluginRefresh"/>
 	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right pull-right" href="${urlPluginRefresh}"
 		data-loading-text="${msgLoading}">
 		${msgRefresh}
@@ -28,7 +28,7 @@
 	<div class="list-content"></div>
 </section>
 
-<c:url value="/plugins/install" var="urlPluginInstall"/>
+<c:url value="/a/plugins/install" var="urlPluginInstall"/>
 <form id="plugin-preview-install-modal" class="modal dynamic hide fade" action="${urlPluginInstall}" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -55,7 +55,7 @@
 	</div>
 </form>
 
-<c:url value="/plugins/remove" var="urlPluginRemove"/>
+<c:url value="/a/plugins/remove" var="urlPluginRemove"/>
 <form id="plugin-preview-remove-modal" class="modal dynamic hide fade" action="${urlPluginRemove}" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>

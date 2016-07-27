@@ -28,12 +28,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import javax.annotation.Resource;
-import net.solarnetwork.node.setup.Plugin;
-import net.solarnetwork.node.setup.PluginProvisionStatus;
-import net.solarnetwork.node.setup.PluginService;
-import net.solarnetwork.node.setup.SimplePluginQuery;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.web.domain.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +38,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import net.solarnetwork.node.setup.Plugin;
+import net.solarnetwork.node.setup.PluginProvisionStatus;
+import net.solarnetwork.node.setup.PluginService;
+import net.solarnetwork.node.setup.SimplePluginQuery;
+import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller to manage the installed bundles via an OBR.
@@ -52,7 +52,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @version 1.0
  */
 @Controller
-@RequestMapping("/plugins")
+@RequestMapping("/a/plugins")
 public class PluginController {
 
 	public static class PluginDetails {
@@ -97,8 +97,8 @@ public class PluginController {
 	@ExceptionHandler(IllegalArgumentException.class)
 	@ResponseBody
 	public Response<Object> unknownProvisionID(IllegalArgumentException e, Locale locale) {
-		return new Response<Object>(Boolean.FALSE, ERROR_UNKNOWN_PROVISION_ID, messageSource.getMessage(
-				"plugins.error.unknown-provisionID", null, locale), null);
+		return new Response<Object>(Boolean.FALSE, ERROR_UNKNOWN_PROVISION_ID,
+				messageSource.getMessage("plugins.error.unknown-provisionID", null, locale), null);
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
@@ -109,7 +109,8 @@ public class PluginController {
 	@RequestMapping(value = "/provisionStatus", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginProvisionStatus> status(@RequestParam(value = "id") final String provisionID,
-			@RequestParam(value = "p", required = false) final Integer knownProgress, final Locale locale) {
+			@RequestParam(value = "p", required = false) final Integer knownProgress,
+			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
 			throw new UnsupportedOperationException("PluginService not available");

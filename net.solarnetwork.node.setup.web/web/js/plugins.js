@@ -43,7 +43,7 @@ SolarNode.Plugins.versionLabel = function(plugin) {
 };
 
 SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, installedSection) {
-	var url = SolarNode.context.path('/plugins/list');
+	var url = SolarNode.context.path('/a/plugins/list');
 	var availableContainer = availableSection.children('.list-content');
 	var upgradeContainer = upgradeSection.children('.list-content');
 	var installedContainer = installedSection.children('.list-content');
@@ -368,7 +368,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 			}
 			// TODO: support message? var message = json.data.statusMessage;
 			var progress = Math.round(json.data.overallProgress * 100);
-			var pollURL = SolarNode.context.path('/plugins/provisionStatus') +'?id=' 
+			var pollURL = SolarNode.context.path('/a/plugins/provisionStatus') +'?id=' 
 					+encodeURIComponent(json.data.provisionID) +'&p=';
 			(function poll() {
 			    $.ajax({ 

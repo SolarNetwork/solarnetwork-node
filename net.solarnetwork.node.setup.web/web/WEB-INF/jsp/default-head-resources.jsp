@@ -16,6 +16,7 @@
 	/js-lib/jquery.form.js
 	/js/global.js
 	/js/certs.js
+	/js/login.js
 	/js/settings.js
 	/js/new-node.js
 	/js/plugins.js
