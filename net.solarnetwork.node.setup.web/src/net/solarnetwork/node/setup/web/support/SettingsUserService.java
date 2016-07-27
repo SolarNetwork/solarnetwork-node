@@ -24,8 +24,12 @@ package net.solarnetwork.node.setup.web.support;
 
 import java.util.Collection;
 import java.util.Collections;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -44,6 +48,7 @@ public class SettingsUserService implements UserDetailsService {
 
 	public static final String SETTING_TYPE_USER = "solarnode.user";
 	public static final String SETTING_TYPE_ROLE = "solarnode.role";
+	public static final String GRANTED_AUTH_USER = "ROLE_USER";
 
 	private final SettingDao settingDao;
 	private final IdentityService identityService;
@@ -76,7 +81,7 @@ public class SettingsUserService implements UserDetailsService {
 			Long nodeId = identityService.getNodeId();
 			if ( nodeId != null && nodeId.toString().equalsIgnoreCase(username) ) {
 				password = passwordEncoder.encode("solar");
-				GrantedAuthority auth = new SimpleGrantedAuthority("ROLE_USER");
+				GrantedAuthority auth = new SimpleGrantedAuthority(GRANTED_AUTH_USER);
 				result = new User(username, password, Collections.singleton(auth));
 			}
 		} else if ( password != null ) {
@@ -91,6 +96,76 @@ public class SettingsUserService implements UserDetailsService {
 			result = new User(username, password, auths);
 		}
 		return result;
+	}
+
+	/**
+	 * Update the active user's password.
+	 * 
+	 * @param existingPassword
+	 *        The existing password.
+	 * @param newPassword
+	 *        The new password to set.
+	 * @param newPasswordAgain
+	 *        The new password, repeated.
+	 * @throws InsufficientAuthenticationException
+	 *         If an active user is not available.
+	 * @throws UsernameNotFoundException
+	 *         If the active user cannot be found in settings.
+	 * @throws BadCredentialsException
+	 *         If {@code existingPassword} does not match the password in
+	 *         settings.
+	 * @throws IllegalArgumentException
+	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
+	 *         not match, or are <em>null</em>
+	 */
+	public void changePassword(final String existingPassword, final String newPassword,
+			final String newPasswordAgain) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
+		if ( activeUser == null ) {
+			throw new InsufficientAuthenticationException("Active user not found.");
+		}
+		UserDetails dbUser = loadUserByUsername(activeUser.getUsername());
+		if ( dbUser == null ) {
+			throw new UsernameNotFoundException("User not found");
+		}
+		if ( passwordEncoder != null ) {
+			if ( !passwordEncoder.matches(existingPassword, dbUser.getPassword()) ) {
+				throw new BadCredentialsException("Existing password does not match.");
+			}
+		} else if ( !existingPassword.equals(dbUser.getPassword()) ) {
+			throw new BadCredentialsException("Existing password does not match.");
+		}
+		if ( newPassword == null || newPasswordAgain == null || !newPassword.equals(newPasswordAgain) ) {
+			throw new IllegalArgumentException(
+					"New password not provided or does not match repeated password.");
+		}
+		String password;
+		if ( passwordEncoder != null ) {
+			password = passwordEncoder.encode(newPassword);
+		} else {
+			password = newPassword;
+		}
+		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_USER, password);
+		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
+	}
+
+	/**
+	 * Get the configured {@link SettingDao}.
+	 * 
+	 * @return The DAO.
+	 */
+	public SettingDao getSettingDao() {
+		return settingDao;
+	}
+
+	/**
+	 * Get the configured password encoder.
+	 * 
+	 * @return The password encoder.
+	 */
+	public PasswordEncoder getPasswordEncoder() {
+		return passwordEncoder;
 	}
 
 }
