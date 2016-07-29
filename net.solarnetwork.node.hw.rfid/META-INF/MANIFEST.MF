@@ -8,6 +8,7 @@ Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Main-Class: net.solarnetwork.hw.rfid.RfidSocketReader
 Import-Package: 
+ javax.net,
  net.solarnetwork.node.settings;version="1.6.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
  net.solarnetwork.node.support;version="1.13.0",
