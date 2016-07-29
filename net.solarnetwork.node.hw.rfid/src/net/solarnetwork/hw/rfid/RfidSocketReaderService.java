@@ -165,11 +165,13 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		BufferedReader in = null;
 		Socket s = null;
 		boolean tryAgain = false;
+		log.info("Connecting to RFID server {}:{}", host, port);
 		try {
 			s = SocketFactory.getDefault().createSocket(host, port);
 			s.setKeepAlive(true);
 			in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 			boolean readSomething = false;
+			log.info("Connected to RFID server {}:{}", host, port);
 			String line;
 			while ( true ) {
 				line = in.readLine();
@@ -189,9 +191,12 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 				readSomething = true;
 			}
 		} catch ( IOException e ) {
-			log.error("RFID server communication error: " + e.getMessage());
+			log.error("RFID server communication error: {}", e.getMessage());
 			tryAgain = true;
+		} catch ( Throwable t ) {
+			log.error("RFID server error: {}", t.getMessage(), t);
 		} finally {
+			log.info("Disconnected from RFID server {}:{}", host, port);
 			if ( in != null ) {
 				try {
 					in.close();
