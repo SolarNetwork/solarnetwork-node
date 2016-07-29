@@ -184,6 +184,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 					messageCount += 1;
 					postRfidMessageReceivedEvent(line);
 				} else {
+					lastHeartbeatDate = System.currentTimeMillis();
 					log.debug("RFID status message: {}", line);
 				}
 				readSomething = true;
