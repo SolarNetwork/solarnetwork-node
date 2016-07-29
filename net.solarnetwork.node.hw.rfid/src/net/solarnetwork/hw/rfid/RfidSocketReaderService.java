@@ -43,7 +43,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -254,7 +253,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		RfidSocketReaderService defaults = new RfidSocketReaderService();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(Locale.getDefault()), true));
-		results.add(new BasicToggleSettingSpecifier("uid", defaults.uid));
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
