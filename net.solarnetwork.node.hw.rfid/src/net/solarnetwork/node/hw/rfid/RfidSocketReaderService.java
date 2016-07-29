@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.hw.rfid;
+package net.solarnetwork.node.hw.rfid;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	/** The "heartbeat" message sent by the server after read timeouts. */
 	public static final String HEARTBEAT_MSG = "ping";
 
-	/** Topic for when a network association has been accepted. */
+	/** Topic for when a RFID message has been received. */
 	public static final String TOPIC_RFID_MESSAGE_RECEIVED = "net/solarnetwork/node/hw/rfid/MESSAGE_RECEIVED";
 
 	/** Event parameter for the RFID message value. */

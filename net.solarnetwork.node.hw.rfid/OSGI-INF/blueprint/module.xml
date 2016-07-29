@@ -27,19 +27,19 @@
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="RFID Scanner"/>
-			<property name="factoryUID" value="net.solarnetwork.hw.rfid.client"/>
+			<property name="factoryUID" value="net.solarnetwork.node.hw.rfid.client"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.hw.rfid.client" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.hw.rfid.client" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.hw.rfid.client"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.hw.rfid.client"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.hw.rfid.RfidSocketReaderService" init-method="init">
+		<bean class="net.solarnetwork.node.hw.rfid.RfidSocketReaderService" init-method="init">
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
@@ -48,7 +48,7 @@
 	<!-- Supporting service -->
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.hw.rfid.RfidSocketReaderService"/>
+		<property name="basenames" value="net.solarnetwork.node.hw.rfid.RfidSocketReaderService"/>
 	</bean>
 
 </blueprint>

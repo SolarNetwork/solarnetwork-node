@@ -40,7 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import net.solarnetwork.hw.rfid.RfidSocketReaderService;
+import net.solarnetwork.node.hw.rfid.RfidSocketReaderService;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.util.StaticOptionalService;
 
