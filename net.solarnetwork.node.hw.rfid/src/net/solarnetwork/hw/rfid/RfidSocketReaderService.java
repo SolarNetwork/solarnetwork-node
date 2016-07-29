@@ -61,6 +61,9 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	/** Topic for when a network association has been accepted. */
 	public static final String TOPIC_RFID_MESSAGE_RECEIVED = "net/solarnetwork/node/hw/rfid/MESSAGE_RECEIVED";
 
+	/** Event parameter for the RFID message value. */
+	public static final String EVENT_PARAM_MESSAGE = "message";
+
 	/** Event parameter for the configured {@code uid}. */
 	public static final String EVENT_PARAM_UID = "uid";
 
@@ -80,6 +83,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	private Thread tryLaterThread;
 
 	// stats
+	private boolean initialized = false;
 	private Date lastHeartbeatDate;
 	private Date lastMessageDate;
 	private final long messageCount = 0;
@@ -90,6 +94,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	 * Initialize after all properties are configured.
 	 */
 	public void init() {
+		initialized = true;
 		tryStartReaderLater();
 	}
 
@@ -110,24 +115,23 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	}
 
 	private synchronized void stopReader(boolean tryAgain) {
-		if ( readerThread == null ) {
-			return;
-		}
-		if ( readerThread.isAlive() && Thread.currentThread() != readerThread ) {
-			try {
-				readerThread.interrupt();
-			} catch ( Exception e ) {
-				log.debug("Exception interrupting RfidSocketReader thread", e);
+		if ( readerThread != null ) {
+			if ( readerThread.isAlive() && Thread.currentThread() != readerThread ) {
+				try {
+					readerThread.interrupt();
+				} catch ( Exception e ) {
+					log.debug("Exception interrupting RfidSocketReader thread", e);
+				}
 			}
+			readerThread = null;
 		}
-		readerThread = null;
 		if ( tryAgain ) {
 			tryStartReaderLater();
 		}
 	}
 
 	private synchronized void tryStartReaderLater() {
-		if ( tryLaterThread != null ) {
+		if ( !(initialized && tryLaterThread == null) ) {
 			return;
 		}
 		log.info("Will try to connect to RFID server in {} minutes", connectRetryMinutes);
@@ -162,6 +166,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 			while ( true ) {
 				line = in.readLine();
 				if ( line == null ) {
+					tryAgain = true;
 					break;
 				}
 				// the first line read is a status line...
@@ -203,7 +208,11 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		if ( ea == null ) {
 			return;
 		}
-		Map<String, Object> props = new HashMap<String, Object>(2);
+		log.debug("RFID client posting message received event: {}", msg);
+		Map<String, Object> props = new HashMap<String, Object>(3);
+		if ( msg != null ) {
+			props.put(EVENT_PARAM_MESSAGE, msg);
+		}
 		if ( uid != null ) {
 			props.put(EVENT_PARAM_UID, uid);
 		}
@@ -326,7 +335,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	 *        The number of minutes to set.
 	 */
 	public void setConnectRetryMinutes(int connectRetryMinutes) {
-		if ( connectRetryMinutes < 1 ) {
+		if ( connectRetryMinutes < 0 ) {
 			return;
 		}
 		this.connectRetryMinutes = connectRetryMinutes;
