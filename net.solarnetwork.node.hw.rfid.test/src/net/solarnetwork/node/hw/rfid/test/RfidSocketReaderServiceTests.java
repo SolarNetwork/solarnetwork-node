@@ -141,6 +141,9 @@ public class RfidSocketReaderServiceTests extends AbstractNodeTest {
 		Assert.assertEquals(TEST_UID, event.getProperty(RfidSocketReaderService.EVENT_PARAM_UID));
 		Assert.assertEquals(TEST_GROUP_UID,
 				event.getProperty(RfidSocketReaderService.EVENT_PARAM_GROUP_UID));
+		Assert.assertEquals(Long.valueOf(1),
+				event.getProperty(RfidSocketReaderService.EVENT_PARAM_COUNT));
+		Assert.assertNotNull(event.getProperty(RfidSocketReaderService.EVENT_PARAM_DATE));
 	}
 
 	@Test
@@ -167,5 +170,8 @@ public class RfidSocketReaderServiceTests extends AbstractNodeTest {
 		Assert.assertEquals(TEST_UID, event.getProperty(RfidSocketReaderService.EVENT_PARAM_UID));
 		Assert.assertEquals(TEST_GROUP_UID,
 				event.getProperty(RfidSocketReaderService.EVENT_PARAM_GROUP_UID));
+		Assert.assertEquals(Long.valueOf(2),
+				event.getProperty(RfidSocketReaderService.EVENT_PARAM_COUNT));
+		Assert.assertNotNull(event.getProperty(RfidSocketReaderService.EVENT_PARAM_DATE));
 	}
 }

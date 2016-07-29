@@ -64,6 +64,15 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	/** Event parameter for the RFID message value. */
 	public static final String EVENT_PARAM_MESSAGE = "message";
 
+	/**
+	 * Event parameter for the RFID message date, as milliseconds since the
+	 * epoch.
+	 */
+	public static final String EVENT_PARAM_DATE = "date";
+
+	/** Event parameter for the RFID message counter value. */
+	public static final String EVENT_PARAM_COUNT = "count";
+
 	/** Event parameter for the configured {@code uid}. */
 	public static final String EVENT_PARAM_UID = "uid";
 
@@ -84,9 +93,9 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 
 	// stats
 	private boolean initialized = false;
-	private Date lastHeartbeatDate;
-	private Date lastMessageDate;
-	private final long messageCount = 0;
+	private long lastHeartbeatDate;
+	private long lastMessageDate;
+	private long messageCount = 0;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -171,6 +180,8 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 				}
 				// the first line read is a status line...
 				if ( readSomething && !HEARTBEAT_MSG.equalsIgnoreCase(line) ) {
+					lastMessageDate = System.currentTimeMillis();
+					messageCount += 1;
 					postRfidMessageReceivedEvent(line);
 				} else {
 					log.debug("RFID status message: {}", line);
@@ -209,7 +220,9 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 			return;
 		}
 		log.debug("RFID client posting message received event: {}", msg);
-		Map<String, Object> props = new HashMap<String, Object>(3);
+		Map<String, Object> props = new HashMap<String, Object>(5);
+		props.put(EVENT_PARAM_COUNT, messageCount);
+		props.put(EVENT_PARAM_DATE, System.currentTimeMillis());
 		if ( msg != null ) {
 			props.put(EVENT_PARAM_MESSAGE, msg);
 		}
@@ -258,14 +271,14 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 			long count = messageCount;
 			if ( count > 0 ) {
 				buf.append(count).append(" messages received.");
-				Date mDate = lastMessageDate;
-				if ( mDate != null ) {
-					buf.append(" Last message received at ").append(mDate).append(".");
+				long mDate = lastMessageDate;
+				if ( mDate > 0 ) {
+					buf.append(" Last message received at ").append(new Date(mDate)).append(".");
 				}
 			}
-			Date hDate = lastHeartbeatDate;
-			if ( hDate != null ) {
-				buf.append(" Last heartbeat received at ").append(hDate).append(".");
+			long hDate = lastHeartbeatDate;
+			if ( hDate > 0 ) {
+				buf.append(" Last heartbeat received at ").append(new Date(hDate)).append(".");
 			}
 		}
 		return buf.toString();
