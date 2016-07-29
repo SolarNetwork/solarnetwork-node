@@ -189,9 +189,6 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 				}
 				readSomething = true;
 			}
-			if ( !readSomething ) {
-				return;
-			}
 		} catch ( IOException e ) {
 			log.error("RFID server communication error: " + e.getMessage());
 			tryAgain = true;
