@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.ocpp.charge.rfid;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -47,6 +48,8 @@ import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -331,8 +334,13 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		// TODO Auto-generated method stub
-		return null;
+		RfidChargeSessionManager defaults = new RfidChargeSessionManager();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
+		results.add(new BasicTextFieldSettingSpecifier(
+				"filterableChargeSessionManager.propertyFilters['UID']", "OCPP Central System"));
+		results.add(new BasicTextFieldSettingSpecifier("chargeSessionExpirationMinutes",
+				String.valueOf(defaults.chargeSessionExpirationMinutes)));
+		return results;
 	}
 
 	private void postEvent(String topic, Map<String, Object> props) {
@@ -378,6 +386,20 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 			chargeSessionExpirationMinutes = 0;
 		}
 		this.chargeSessionExpirationMinutes = chargeSessionExpirationMinutes;
+	}
+
+	/**
+	 * Get the {@link ChargeSessionManager} as a {@link FilterableService}.
+	 * 
+	 * @return The filterable {@link ChargeSessionManager}, or <em>null</em> if
+	 *         it is not filterable.
+	 */
+	public FilterableService getFilterableChargeSessionManager() {
+		ChargeSessionManager mgr = chargeSessionManager;
+		if ( mgr instanceof FilterableService ) {
+			return (FilterableService) mgr;
+		}
+		return null;
 	}
 
 	/**
