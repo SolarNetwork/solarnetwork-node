@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OCPP RFID Charge Session Manager
+Bundle-Description: Manage OCPP charge sessions via RFID card scans.
+Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge.rfid
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: 
+ net.solarnetwork.node.ocpp;version="0.1.0",
+ net.solarnetwork.node.reactor;version="1.2.0",
+ net.solarnetwork.node.reactor.support;version="1.2.0",
+ net.solarnetwork.node.settings;version="1.6.0",
+ net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.support;version="1.13.0",
+ net.solarnetwork.util;version="1.18.0",
+ ocpp.v15.cs;version="1.5.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.5.0,2.0.0)",
+ org.springframework.context;version="[3.1,4.0)",
+ org.springframework.context.support;version="[3.1,4.0)"
