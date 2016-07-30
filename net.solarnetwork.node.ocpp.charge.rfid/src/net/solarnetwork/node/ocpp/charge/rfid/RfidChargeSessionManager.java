@@ -98,7 +98,7 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	private MessageSource messageSource;
 	private int chargeSessionExpirationMinutes = 6 * 60;
 
-	private final ExecutorService executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
+	private ExecutorService executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
@@ -114,6 +114,10 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 					verifyAllSockets();
 				} catch ( Throwable t ) {
 					log.error("Error enabling sockets for active sessions", t);
+					if ( t instanceof RuntimeException ) {
+						throw (RuntimeException) t;
+					}
+					throw new RuntimeException(t);
 				}
 			}
 		});
@@ -187,12 +191,9 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 		if ( !TOPIC_RFID_MESSAGE_RECEIVED.equals(event.getTopic()) ) {
 			return;
 		}
-		// treat the UID as the socket ID we want to instruct
-		final Object rfidUID = event.getProperty(EVENT_PARAM_UID);
 		final Object rfidMessage = event.getProperty(EVENT_PARAM_MESSAGE);
 		if ( rfidMessage == null ) {
-			log.warn("Ignoring MESSAGE_RECEIVED event missing required parameters (uid = {}, msg = {})",
-					rfidUID, rfidMessage);
+			log.warn("Ignoring MESSAGE_RECEIVED event missing required message value");
 			return;
 		}
 
@@ -204,7 +205,11 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 				try {
 					handleRfidScan(rfidMessage.toString());
 				} catch ( Throwable t ) {
-					log.error("Error handling charge session on socket {}", rfidUID, t);
+					log.error("Error handling RFID message {}", rfidMessage, t);
+					if ( t instanceof RuntimeException ) {
+						throw (RuntimeException) t;
+					}
+					throw new RuntimeException(t);
 				}
 			}
 		});
@@ -375,6 +380,25 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 		this.chargeSessionExpirationMinutes = chargeSessionExpirationMinutes;
 	}
 
+	/**
+	 * Set an {@link ExecutorService} to run tasks with.
+	 * 
+	 * @param executor
+	 *        The executor service to use. If <em>null</em> a default
+	 *        implementation will be configured.
+	 */
+	public void setExecutor(ExecutorService executor) {
+		if ( executor == null ) {
+			executor = Executors.newSingleThreadExecutor();
+		}
+		this.executor = executor;
+	}
+
+	/**
+	 * Get the configured {@link ExecutorService} for running tasks with.
+	 * 
+	 * @return The configured service.
+	 */
 	public ExecutorService getExecutor() {
 		return executor;
 	}
