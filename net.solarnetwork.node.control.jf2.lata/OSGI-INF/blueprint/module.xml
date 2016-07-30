@@ -23,16 +23,15 @@
 		</property>
 	</bean>
 	
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="LATA control switch"/>
-		<property name="factoryUID" value="net.solarnetwork.node.control.jf2.lata"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="LATA control switch"/>
+			<property name="factoryUID" value="net.solarnetwork.node.control.jf2.lata"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.jf2.lata" autowire-on-update="true">
 		<osgix:interfaces>
@@ -42,6 +41,7 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.jf2.lata"/>
+			<beans:entry key="instruction" value="SetControlParameter"/>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.jf2.lata.LATAController">
 			<property name="messageSource" ref="messageSource"/>
