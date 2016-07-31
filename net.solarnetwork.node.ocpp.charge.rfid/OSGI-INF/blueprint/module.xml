@@ -14,15 +14,6 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-
-	<reference-list id="controls"
-		interface="net.solarnetwork.node.reactor.InstructionHandler" availability="optional"
-		filter="(instruction=SetControlParameter)"/>
-
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager"/>
 	</bean>
@@ -46,12 +37,21 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager">
 			<property name="messageSource" ref="messageSource"/>
-			<property name="eventAdmin" ref="eventAdmin"/>
-			<property name="instructionHandlers" ref="controls"/>
 			<property name="chargeSessionManager">
 				<bean class="net.solarnetwork.util.DynamicServiceProxy">
 					<property name="bundleContext" ref="bundleContext"/>
 					<property name="serviceClass" value="net.solarnetwork.node.ocpp.ChargeSessionManager"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="OCPP Central System"/>
+						</map>
+					</property>
+				</bean>
+			</property>
+			<property name="socketManager">
+				<bean class="net.solarnetwork.util.DynamicServiceProxy">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClass" value="net.solarnetwork.node.ocpp.SocketManager"/>
 					<property name="propertyFilters">
 						<map>
 							<entry key="UID" value="OCPP Central System"/>

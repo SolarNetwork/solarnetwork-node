@@ -24,16 +24,12 @@ package net.solarnetwork.node.ocpp.charge.rfid;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,16 +37,11 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.OCPPException;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
+import net.solarnetwork.node.ocpp.SocketManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Listen for RFID "message received" events and initiate/conclude OCPP charge
@@ -96,10 +87,8 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	public static final String EVENT_PARAM_GROUP_UID = "groupUID";
 
 	private ChargeSessionManager chargeSessionManager;
-	private OptionalService<EventAdmin> eventAdmin;
-	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
+	private SocketManager socketManager;
 	private MessageSource messageSource;
-	private int chargeSessionExpirationMinutes = 6 * 60;
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -108,22 +97,7 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	 * Initialize after all properties configured.
 	 */
 	public void startup() {
-		// look for active change sessions, and enable those sockets
-		executor.submit(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					verifyAllSockets();
-				} catch ( Throwable t ) {
-					log.error("Error enabling sockets for active sessions", t);
-					if ( t instanceof RuntimeException ) {
-						throw (RuntimeException) t;
-					}
-					throw new RuntimeException(t);
-				}
-			}
-		});
+		// anything to do here?
 	}
 
 	/**
@@ -131,62 +105,6 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	 */
 	public void shutdown() {
 		executor.shutdown();
-	}
-
-	/**
-	 * Find all active charge sessions and make sure the sockets associated with
-	 * those sessions are enabled. This should be called when the service is
-	 * first initialized, to make sure the socket state is synchronized with
-	 * charge session state.
-	 */
-	private void verifyAllSockets() {
-		Collection<String> availableSockets = chargeSessionManager.availableSocketIds();
-		for ( String socketId : availableSockets ) {
-			ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
-			boolean expired = chargeSessionExpired(session);
-			if ( expired ) {
-				log.info("OCPP charge session {} for IdTag {} has expired", session.getSessionId(),
-						session.getIdTag());
-				try {
-					chargeSessionManager.completeChargeSession(session.getIdTag(),
-							session.getSessionId());
-				} catch ( OCPPException e ) {
-					log.warn("Error completing expired OCPP session: {}", e.getMessage());
-				}
-			}
-			adjustSocketEnabledState(socketId, (session != null && !expired));
-		}
-	}
-
-	/**
-	 * Test if a session has expired.
-	 * 
-	 * @param session
-	 *        The session, or <em>null</em>.
-	 * @return <em>true</em> if {@code session} is non-null and the current time
-	 *         is greater than {@link ChargeSession#getExpiryDate()} or the
-	 *         {@link ChargeSession#getCreated()} plus
-	 *         {@code chargeSessionExpirationMinutes}.
-	 */
-	private boolean chargeSessionExpired(ChargeSession session) {
-		if ( session == null ) {
-			return false;
-		}
-		final long now = System.currentTimeMillis();
-		if ( session.getExpiryDate() != null ) {
-			long expireTime = session.getExpiryDate().toGregorianCalendar().getTimeInMillis();
-			if ( expireTime < now ) {
-				return true;
-			}
-		}
-		if ( session.getCreated() != null ) {
-			long expireTime = session.getCreated().getTime()
-					+ (chargeSessionExpirationMinutes * 60 * 1000L);
-			if ( expireTime < now ) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override
@@ -261,9 +179,7 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 				String sessionId = chargeSessionManager.initiateChargeSession(idTag, socketId, null);
 				log.info("OCPP charge session {} for IdTag {} initiated on socket {}", sessionId, idTag,
 						socketId);
-				InstructionStatus.InstructionState socketEnabledState = adjustSocketEnabledState(
-						socketId, true);
-				if ( socketEnabledState == InstructionStatus.InstructionState.Declined ) {
+				if ( !socketManager.adjustSocketEnabledState(socketId, true) ) {
 					log.error("Unable to enable socket {} for charge session {}", socketId, sessionId);
 					chargeSessionManager.completeChargeSession(idTag, sessionId);
 				}
@@ -274,11 +190,9 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 		} else if ( session.getIdTag().equals(idTag) ) {
 			// end existing session
 			try {
-				chargeSessionManager.completeChargeSession(idTag, socketId);
+				chargeSessionManager.completeChargeSession(idTag, session.getSessionId());
 			} finally {
-				InstructionStatus.InstructionState socketEnabledState = adjustSocketEnabledState(
-						socketId, false);
-				if ( socketEnabledState == InstructionStatus.InstructionState.Declined ) {
+				if ( !socketManager.adjustSocketEnabledState(socketId, false) ) {
 					log.error("Unable to disable socket {} for charge session {}", socketId,
 							session.getSessionId());
 				}
@@ -291,30 +205,6 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 					"Cannot start new charge session on socket {} for IdTag {} because session already active for IdTag {}",
 					socketId, idTag, session.getIdTag());
 		}
-	}
-
-	private InstructionStatus.InstructionState adjustSocketEnabledState(String socketId,
-			boolean enabled) {
-		final BasicInstruction instr = new BasicInstruction(
-				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, new Date(),
-				Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(socketId, String.valueOf(enabled));
-		log.debug("Requesting socket {} to be {}", socketId, enabled ? "enabled" : "disabled");
-		InstructionStatus.InstructionState result = InstructionUtils
-				.handleInstruction(instructionHandlers, instr);
-		log.debug("Request for socket {} to be {} resulted in {}", socketId,
-				enabled ? "enabled" : "disabled", result);
-		if ( result == null ) {
-			result = InstructionStatus.InstructionState.Declined;
-		}
-		if ( result == InstructionStatus.InstructionState.Completed ) {
-			String eventTopic = (enabled ? ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED
-					: ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED);
-			Map<String, Object> eventProps = Collections
-					.singletonMap(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, (Object) socketId);
-			postEvent(eventTopic, eventProps);
-		}
-		return result;
 	}
 
 	@Override
@@ -334,58 +224,20 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		RfidChargeSessionManager defaults = new RfidChargeSessionManager();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 		results.add(new BasicTextFieldSettingSpecifier(
 				"filterableChargeSessionManager.propertyFilters['UID']", "OCPP Central System"));
-		results.add(new BasicTextFieldSettingSpecifier("chargeSessionExpirationMinutes",
-				String.valueOf(defaults.chargeSessionExpirationMinutes)));
+		results.add(new BasicTextFieldSettingSpecifier("filterableSocketManager.propertyFilters['UID']",
+				"OCPP Central System"));
 		return results;
-	}
-
-	private void postEvent(String topic, Map<String, Object> props) {
-		OptionalService<EventAdmin> eaService = eventAdmin;
-		EventAdmin ea = (eaService == null ? null : eaService.service());
-		if ( ea == null ) {
-			return;
-		}
-		log.debug("Posting message {}: {}", topic, props);
-		Event event = new Event(topic, props);
-		ea.postEvent(event);
-	}
-
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
-	public void setInstructionHandlers(Collection<InstructionHandler> instructionHandlers) {
-		if ( instructionHandlers == null ) {
-			instructionHandlers = Collections.emptyList();
-		}
-		this.instructionHandlers = instructionHandlers;
-	}
-
 	public void setChargeSessionManager(ChargeSessionManager chargeSessionManager) {
 		this.chargeSessionManager = chargeSessionManager;
-	}
-
-	/**
-	 * Set the minimum number of minutes a charge session is allowed to go
-	 * before expiring.
-	 * 
-	 * @param chargeSessionExpirationMinutes
-	 *        The minimum number of minutes before a charge session is
-	 *        considered expired. Defaults to {@code 360} (6 hours).
-	 */
-	public void setChargeSessionExpirationMinutes(int chargeSessionExpirationMinutes) {
-		if ( chargeSessionExpirationMinutes < 0 ) {
-			chargeSessionExpirationMinutes = 0;
-		}
-		this.chargeSessionExpirationMinutes = chargeSessionExpirationMinutes;
 	}
 
 	/**
@@ -423,6 +275,24 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	 */
 	public ExecutorService getExecutor() {
 		return executor;
+	}
+
+	public void setSocketManager(SocketManager socketManager) {
+		this.socketManager = socketManager;
+	}
+
+	/**
+	 * Get the {@link SocketManager} as a {@link FilterableService}.
+	 * 
+	 * @return The filterable {@link SocketManager}, or <em>null</em> if it is
+	 *         not filterable.
+	 */
+	public FilterableService getFilterableSocketManager() {
+		SocketManager mgr = socketManager;
+		if ( mgr instanceof FilterableService ) {
+			return (FilterableService) mgr;
+		}
+		return null;
 	}
 
 }

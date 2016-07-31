@@ -33,6 +33,7 @@ import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.OCPPException;
@@ -53,6 +54,9 @@ import net.solarnetwork.util.OptionalService;
  * Implementation of {@link SocketManager} that uses the
  * {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} instruction to turn
  * sockets on/off.
+ * 
+ * The {@link Identifiable} properties of this class are delegated to the
+ * configured {@link ChargeSessionManager}.
  * 
  * @author matt
  * @version 1.0
@@ -90,6 +94,16 @@ public class SimpleSocketManager implements SocketManager, SettingSpecifierProvi
 			postEvent(eventTopic, eventProps);
 		}
 		return (result != null && result != InstructionState.Declined);
+	}
+
+	@Override
+	public String getUID() {
+		return (chargeSessionManager != null ? chargeSessionManager.getUID() : null);
+	}
+
+	@Override
+	public String getGroupUID() {
+		return (chargeSessionManager != null ? chargeSessionManager.getGroupUID() : null);
 	}
 
 	private void postEvent(String topic, Map<String, Object> props) {

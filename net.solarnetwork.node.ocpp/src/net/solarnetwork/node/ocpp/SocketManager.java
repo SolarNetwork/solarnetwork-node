@@ -22,13 +22,15 @@
 
 package net.solarnetwork.node.ocpp;
 
+import net.solarnetwork.node.Identifiable;
+
 /**
  * API for something that manages the on/off state of OCPP sockets.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SocketManager {
+public interface SocketManager extends Identifiable {
 
 	/**
 	 * Set the socket enabled state for a given socket ID.

@@ -22,13 +22,10 @@
 
 package net.solarnetwork.node.ocpp.charge.rfid.test;
 
-import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,23 +33,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.easymock.Capture;
-import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
+import net.solarnetwork.node.ocpp.SocketManager;
 import net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.test.CapturingExecutorService;
-import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link RfidChargeSessionManager} class.
@@ -64,26 +55,24 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 
 	private static final String TEST_RFID_UID = "Test RFID Scanner";
 	private static final String TEST_ID_TAG = "TestIdTag";
-	private static final String TEST_SOCKET_ID = "/socket/test";
+	private static final String TEST_SOCKET_ID = "/socket/test/1";
+	private static final String TEST_SOCKET_ID2 = "/socket/test/2";
 	private static final String TEST_SESSION_ID = "test-session-id";
 
 	private ChargeSessionManager chargeSessionManager;
-	private InstructionHandler instructionHandler;
-	private EventAdmin eventAdmin;
+	private SocketManager socketManager;
 
 	private RfidChargeSessionManager manager;
 
 	@Before
 	public void setup() {
 		chargeSessionManager = EasyMock.createMock(ChargeSessionManager.class);
-		eventAdmin = EasyMock.createMock(EventAdmin.class);
-		instructionHandler = EasyMock.createMock(InstructionHandler.class);
+		socketManager = EasyMock.createMock(SocketManager.class);
 
 		manager = new RfidChargeSessionManager();
 		manager.setExecutor(new CapturingExecutorService(Executors.newSingleThreadExecutor()));
 		manager.setChargeSessionManager(chargeSessionManager);
-		manager.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
-		manager.setInstructionHandlers(Collections.singleton(instructionHandler));
+		manager.setSocketManager(socketManager);
 	}
 
 	@After
@@ -92,14 +81,7 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 	}
 
 	private void replayAll() {
-		replay(chargeSessionManager, eventAdmin, instructionHandler);
-	}
-
-	private void resetAll() {
-		EasyMock.reset(chargeSessionManager, eventAdmin, instructionHandler);
-		if ( manager.getExecutor().isShutdown() ) {
-			manager.setExecutor(new CapturingExecutorService(Executors.newSingleThreadExecutor()));
-		}
+		replay(chargeSessionManager, socketManager);
 	}
 
 	private List<Future<?>> verifyAll(boolean waitForTasks) {
@@ -116,7 +98,7 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 				futures = ((CapturingExecutorService) manager.getExecutor()).getCapturedFutures();
 			}
 		}
-		verify(chargeSessionManager, eventAdmin, instructionHandler);
+		verify(chargeSessionManager, socketManager);
 
 		if ( futures != null ) {
 			for ( Future<?> future : futures ) {
@@ -136,92 +118,6 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 		return futures;
 	}
 
-	@Test
-	public void startupServiceNoActiveSessions() {
-		List<String> socketIds = Arrays.asList("/socket/test/1", "/socket/test/2");
-		expect(chargeSessionManager.availableSocketIds()).andReturn(socketIds);
-
-		Capture<Instruction> instructionCapt = new Capture<Instruction>(CaptureType.ALL);
-		Capture<Event> eventCapt = new Capture<Event>(CaptureType.ALL);
-
-		for ( String socketId : socketIds ) {
-			expect(chargeSessionManager.activeChargeSession(socketId)).andReturn(null);
-			expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
-					.andReturn(true);
-			expect(instructionHandler.processInstruction(capture(instructionCapt)))
-					.andReturn(InstructionState.Completed);
-			eventAdmin.postEvent(capture(eventCapt));
-		}
-
-		replayAll();
-
-		manager.startup();
-
-		verifyAll(true);
-
-		// for each socket, verify instructions / events
-		List<Instruction> instructions = instructionCapt.getValues();
-		assertEquals(2, instructions.size());
-
-		List<Event> events = eventCapt.getValues();
-		assertEquals(2, events.size());
-
-		for ( int i = 0; i < socketIds.size(); i++ ) {
-			String socketId = socketIds.get(i);
-			assertEquals(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, instructions.get(i).getTopic());
-			assertEquals(Boolean.FALSE.toString(), instructions.get(i).getParameterValue(socketId));
-			assertEquals(ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED, events.get(i).getTopic());
-			assertEquals(socketId,
-					events.get(i).getProperty(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID));
-		}
-	}
-
-	@Test
-	public void startupServiceActiveSession() throws InterruptedException {
-		List<String> socketIds = Arrays.asList("/socket/test/1", "/socket/test/2");
-		ChargeSession activeSession = new ChargeSession();
-		expect(chargeSessionManager.availableSocketIds()).andReturn(socketIds);
-
-		Capture<Instruction> instructionCapt = new Capture<Instruction>(CaptureType.ALL);
-		Capture<Event> eventCapt = new Capture<Event>(CaptureType.ALL);
-
-		for ( String socketId : socketIds ) {
-			expect(chargeSessionManager.activeChargeSession(socketId))
-					.andReturn(socketId.endsWith("1") ? activeSession : null);
-			expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
-					.andReturn(true);
-			expect(instructionHandler.processInstruction(capture(instructionCapt)))
-					.andReturn(InstructionState.Completed);
-			eventAdmin.postEvent(capture(eventCapt));
-		}
-
-		replayAll();
-
-		manager.startup();
-
-		verifyAll(true);
-
-		// for each socket, verify instructions / events
-		List<Instruction> instructions = instructionCapt.getValues();
-		assertEquals(2, instructions.size());
-
-		List<Event> events = eventCapt.getValues();
-		assertEquals(2, events.size());
-
-		for ( int i = 0; i < socketIds.size(); i++ ) {
-			String socketId = socketIds.get(i);
-			assertEquals(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, instructions.get(i).getTopic());
-			assertEquals(i == 0 ? Boolean.TRUE.toString() : Boolean.FALSE.toString(),
-					instructions.get(i).getParameterValue(socketId));
-			assertEquals(
-					i == 0 ? ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED
-							: ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED,
-					events.get(i).getTopic());
-			assertEquals(socketId,
-					events.get(i).getProperty(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID));
-		}
-	}
-
 	private Event createRfidEvent(final String msg) {
 		Map<String, Object> eventProps = new HashMap<String, Object>(5);
 		eventProps.put(RfidChargeSessionManager.EVENT_PARAM_UID, TEST_RFID_UID);
@@ -230,11 +126,7 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 	}
 
 	@Test
-	public void startChargeSessionNoActiveSessions() throws Exception {
-		startupServiceNoActiveSessions();
-
-		resetAll();
-
+	public void startChargeSessionNoActiveSessions() {
 		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
 
 		// get available sockets
@@ -248,29 +140,89 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 				.andReturn(TEST_SESSION_ID);
 
 		// and because session started, enable the socket
-		Capture<Instruction> instructionCapt = new Capture<Instruction>();
-		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
-				.andReturn(true);
-		expect(instructionHandler.processInstruction(capture(instructionCapt)))
-				.andReturn(InstructionState.Completed);
-
-		// and then post socket active event
-		Capture<Event> eventCapt = new Capture<Event>();
-		eventAdmin.postEvent(capture(eventCapt));
-
-		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID, true)).andReturn(true);
 
 		replayAll();
 
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void startChargeSessionActiveSessionsNoSocketAvailable() {
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// for each socket, look for active session
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setIdTag("some.other.id");
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession);
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void startChargeSessionActiveSessionsSecondSocketAvailable() {
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID, TEST_SOCKET_ID2);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// for each socket, look for active session
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setIdTag("some.other.id");
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession);
+
+		// first socket has session, so test 2nd socket
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID2)).andReturn(null).anyTimes();
+
+		// start session on the 2nd socket
+		expect(chargeSessionManager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID2, null))
+				.andReturn(TEST_SESSION_ID);
+
+		// and because session started, enable the socket
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID2, true)).andReturn(true);
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void endChargeSession() {
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active session on socket
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setSessionId(TEST_SESSION_ID);
+		activeSession.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession)
+				.anyTimes();
+
+		// found session, so end it
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		// and because session ended, disable the socket
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID, false)).andReturn(true);
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
+
 		verifyAll(true);
 
-		Instruction enableSocketInstr = instructionCapt.getValue();
-		assertEquals(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, enableSocketInstr.getTopic());
-		assertEquals(Boolean.TRUE.toString(), enableSocketInstr.getParameterValue(TEST_SOCKET_ID));
-		Event enabledSocketEvent = eventCapt.getValue();
-		assertEquals(ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED, enabledSocketEvent.getTopic());
-		assertEquals(TEST_SOCKET_ID,
-				enabledSocketEvent.getProperty(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID));
 	}
 
 }
