@@ -31,9 +31,15 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.ocpp.charge.rfid" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.ocpp.charge.rfid"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager).TOPIC_RFID_MESSAGE_RECEIVED}</beans:value>
+				</beans:array>
+			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager">
 			<property name="messageSource" ref="messageSource"/>
