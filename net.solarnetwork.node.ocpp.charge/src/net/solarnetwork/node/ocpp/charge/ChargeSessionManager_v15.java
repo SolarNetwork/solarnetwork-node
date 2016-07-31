@@ -36,6 +36,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventHandler;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
+import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -69,15 +78,6 @@ import ocpp.v15.cs.StopTransactionRequest;
 import ocpp.v15.cs.StopTransactionResponse;
 import ocpp.v15.cs.TransactionData;
 import ocpp.v15.cs.UnitOfMeasure;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventHandler;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Default implementation of {@link ChargeSessionManager}.
@@ -85,10 +85,12 @@ import org.springframework.transaction.annotation.Transactional;
  * @author matt
  * @version 1.0
  */
-public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport implements
-		ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
+public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
+		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
 
-	/** The name used to schedule the {@link PostOfflineChargeSessionsJob} as. */
+	/**
+	 * The name used to schedule the {@link PostOfflineChargeSessionsJob} as.
+	 */
 	public static final String POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME = "OCPP_PostOfflineChargeSessions";
 
 	/**
@@ -172,14 +174,21 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		// is there an active session already? if so, DENY
 		ChargeSession session = activeChargeSession(socketId);
 		if ( session != null ) {
-			throw new OCPPException("An active charge session exists already on "
-					+ session.getSocketId(), null, AuthorizationStatus.CONCURRENT_TX);
+			throw new OCPPException(
+					"An active charge session exists already on " + session.getSocketId(), null,
+					AuthorizationStatus.CONCURRENT_TX);
 		}
 
 		final long now = System.currentTimeMillis();
 		final Object socketLock = ignoreReadingsForSocket(socketId);
 		synchronized ( socketLock ) {
 			try {
+				final AuthorizationStatus authorized = authManager.authorize(idTag);
+				log.debug("{} authorized: {}", idTag, authorized);
+				if ( authorized != AuthorizationStatus.ACCEPTED ) {
+					throw new OCPPException("Unauthorized", null, authorized);
+				}
+
 				final String meterSourceId = socketMeterSourceMapping.get(socketId);
 				if ( meterSourceId == null ) {
 					log.warn(
@@ -194,23 +203,26 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				session.setIdTag(idTag);
 				session.setSocketId(socketId);
 
-				final boolean authorized = authManager.authorize(idTag);
-				log.debug("{} authorized: {}", idTag, authorized);
+				StartTransactionResponse res = postStartTransaction(idTag, reservationId, connectorId,
+						session, now, (meterReading != null ? meterReading.getWattHourReading() : null));
+				if ( res != null && res.getIdTagInfo() != null
+						&& res.getIdTagInfo().getStatus() == AuthorizationStatus.ACCEPTED ) {
+					final String sessionId = chargeSessionDao.storeChargeSession(session);
 
-				// we ALLOW the session even if no client available and post the results up later
-				postStartTransaction(idTag, reservationId, connectorId, session, now,
-						(meterReading != null ? meterReading.getWattHourReading() : null));
-
-				final String sessionId = chargeSessionDao.storeChargeSession(session);
-
-				// insert transaction begin readings
-				List<Value> readings = readingsForDatum(meterReading);
-				for ( Value v : readings ) {
-					v.setContext(ReadingContext.TRANSACTION_BEGIN);
+					// insert transaction begin readings
+					List<Value> readings = readingsForDatum(meterReading);
+					for ( Value v : readings ) {
+						v.setContext(ReadingContext.TRANSACTION_BEGIN);
+					}
+					chargeSessionDao.addMeterReadings(sessionId,
+							(meterReading != null ? meterReading.getCreated() : new Date(now)),
+							readings);
+					return sessionId;
 				}
-				chargeSessionDao.addMeterReadings(sessionId,
-						(meterReading != null ? meterReading.getCreated() : new Date(now)), readings);
-				return sessionId;
+
+				throw new OCPPException("StartTransaction failed for IdTag " + idTag, null,
+						res != null && res.getIdTagInfo() != null ? res.getIdTagInfo().getStatus()
+								: null);
 			} finally {
 				resumeReadingsForSocket(socketId, socketLock);
 			}
@@ -235,7 +247,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * @return The response, or <em>null</em> if no central system is available.
 	 */
 	private StartTransactionResponse postStartTransaction(String idTag, Integer reservationId,
-			final Integer connectorId, ChargeSession session, final long now, final Number meterReading) {
+			final Integer connectorId, ChargeSession session, final long now,
+			final Number meterReading) {
 		final CentralSystemServiceFactory system = getCentralSystem();
 		final CentralSystemService client = (system != null ? system.service() : null);
 		StartTransactionResponse res = null;
@@ -375,6 +388,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				if ( info.getStatus() != null ) {
 					session.setStatus(info.getStatus());
 				}
+				session.setPosted(new Date(now));
 			}
 		}
 		return res;
@@ -443,8 +457,6 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				StopTransactionResponse resp = postStopTransaction(session.getIdTag(), session,
 						postDate.getTime(), endWh);
 				if ( resp != null ) {
-					session.setPosted(postDate);
-					session.setStatus(resp.getIdTagInfo().getStatus());
 					chargeSessionDao.storeChargeSession(session);
 				}
 			}
@@ -506,7 +518,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				t.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
 				t.setRepeatInterval(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
 				t.setStartDelay(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
-				t.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
+				t.setMisfireInstruction(
+						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
 				t.setJobDataAsMap(Collections.singletonMap("service", this));
 				t.setJobDetail(jobDetail);
 				t.afterPropertiesSet();
@@ -653,8 +666,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			return;
 		}
 
-		final long created = (eventProperties.get("created") instanceof Number ? ((Number) eventProperties
-				.get("created")).longValue() : System.currentTimeMillis());
+		final long created = (eventProperties.get("created") instanceof Number
+				? ((Number) eventProperties.get("created")).longValue() : System.currentTimeMillis());
 
 		// reconstruct Datum from event properties
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
@@ -709,10 +722,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				"OCPP Central System"));
 		results.add(new BasicTextFieldSettingSpecifier("meterDataSource.propertyFilters['UID']",
 				"OCPP Meter"));
-		results.add(new BasicTextFieldSettingSpecifier("socketMeterSourceMappingValue", defaults
-				.getSocketMeterSourceMappingValue()));
-		results.add(new BasicTextFieldSettingSpecifier("socketConnectorMappingValue", defaults
-				.getSocketConnectorMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("socketMeterSourceMappingValue",
+				defaults.getSocketMeterSourceMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("socketConnectorMappingValue",
+				defaults.getSocketConnectorMappingValue()));
 		return results;
 	}
 
@@ -728,10 +741,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				}
 				List<String> reversed = new ArrayList<String>(active);
 				Collections.reverse(reversed);
-				buf.append(getMessageSource().getMessage(
-						"status.active",
-						new Object[] { incomplete.size(),
-								StringUtils.commaDelimitedStringFromCollection(reversed) }, locale));
+				buf.append(
+						getMessageSource().getMessage("status.active",
+								new Object[] { incomplete.size(),
+										StringUtils.commaDelimitedStringFromCollection(reversed) },
+								locale));
 			}
 			List<ChargeSession> needPosting = chargeSessionDao.getChargeSessionsNeedingPosting(100);
 			if ( needPosting.size() > 0 ) {
@@ -745,8 +759,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				if ( buf.length() > 0 ) {
 					buf.append("; ");
 				}
-				String needIds = StringUtils.commaDelimitedStringFromCollection((need.size() > 10 ? need
-						.subList(0, 10) : need));
+				String needIds = StringUtils.commaDelimitedStringFromCollection(
+						(need.size() > 10 ? need.subList(0, 10) : need));
 				buf.append(getMessageSource().getMessage("status.needPosting",
 						new Object[] { need.size(), needIds }, locale));
 				if ( need.size() > 10 ) {
