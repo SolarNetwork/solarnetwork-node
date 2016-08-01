@@ -251,7 +251,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * @param info
 	 *        An optional info message.
 	 * @param errorCode
-	 *        An optional error code.
+	 *        An optional error code. If not provided,
+	 *        {@link ChargePointErrorCode#NO_ERROR} will be used.
 	 * @param internalErrorCode
 	 *        An optional internal error code.
 	 * @param now
@@ -269,7 +270,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			req.setConnectorId(connectorId.intValue());
 			req.setInfo(info);
 			req.setStatus(status);
-			req.setErrorCode(errorCode);
+			req.setErrorCode(errorCode != null ? errorCode : ChargePointErrorCode.NO_ERROR);
 			req.setVendorErrorCode(internalErrorCode);
 			req.setTimestamp(newXmlCalendar(now));
 			try {
