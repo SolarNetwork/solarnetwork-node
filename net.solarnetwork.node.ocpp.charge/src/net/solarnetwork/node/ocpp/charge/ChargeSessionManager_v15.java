@@ -67,6 +67,8 @@ import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 import ocpp.v15.cs.AuthorizationStatus;
 import ocpp.v15.cs.CentralSystemService;
+import ocpp.v15.cs.ChargePointErrorCode;
+import ocpp.v15.cs.ChargePointStatus;
 import ocpp.v15.cs.IdTagInfo;
 import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.MeterValue;
@@ -74,6 +76,8 @@ import ocpp.v15.cs.MeterValue.Value;
 import ocpp.v15.cs.ReadingContext;
 import ocpp.v15.cs.StartTransactionRequest;
 import ocpp.v15.cs.StartTransactionResponse;
+import ocpp.v15.cs.StatusNotificationRequest;
+import ocpp.v15.cs.StatusNotificationResponse;
 import ocpp.v15.cs.StopTransactionRequest;
 import ocpp.v15.cs.StopTransactionResponse;
 import ocpp.v15.cs.TransactionData;
@@ -196,6 +200,9 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 							socketId);
 				}
 
+				// send status message
+				postStatusNotification(ChargePointStatus.OCCUPIED, connectorId, now);
+
 				final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
 
 				session = new ChargeSession();
@@ -227,6 +234,53 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				resumeReadingsForSocket(socketId, socketLock);
 			}
 		}
+	}
+
+	private StatusNotificationResponse postStatusNotification(final ChargePointStatus status,
+			final Integer connectorId, final long now) {
+		return postStatusNotification(status, connectorId, null, null, null, now);
+	}
+
+	/**
+	 * Post a status notification update to the central system.
+	 * 
+	 * @param status
+	 *        The status to post.
+	 * @param connectorId
+	 *        The ID of the associated connector.
+	 * @param info
+	 *        An optional info message.
+	 * @param errorCode
+	 *        An optional error code.
+	 * @param internalErrorCode
+	 *        An optional internal error code.
+	 * @param now
+	 *        A timestamp to use.
+	 * @return The response, or <em>null</em> if not able to post the status.
+	 */
+	private StatusNotificationResponse postStatusNotification(final ChargePointStatus status,
+			final Integer connectorId, final String info, final ChargePointErrorCode errorCode,
+			final String internalErrorCode, final long now) {
+		final CentralSystemServiceFactory system = getCentralSystem();
+		final CentralSystemService client = (system != null ? system.service() : null);
+		StatusNotificationResponse res = null;
+		if ( client != null ) {
+			StatusNotificationRequest req = new StatusNotificationRequest();
+			req.setConnectorId(connectorId.intValue());
+			req.setInfo(info);
+			req.setStatus(status);
+			req.setErrorCode(errorCode);
+			req.setVendorErrorCode(internalErrorCode);
+			req.setTimestamp(newXmlCalendar(now));
+			try {
+				res = client.statusNotification(req, system.chargeBoxIdentity());
+				log.info("OCPP central system status updated to {}", status);
+			} catch ( RuntimeException e ) {
+				// log the error, but we don't stop the session from starting
+				log.error("Error communicating with OCPP central system for StatusNotification", e);
+			}
+		}
+		return res;
 	}
 
 	/**
@@ -297,6 +351,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		final long now = System.currentTimeMillis();
 		final String socketId = session.getSocketId();
 
+		final Integer connectorId = socketConnectorMapping.get(socketId);
+		if ( connectorId == null ) {
+			log.error("No connector ID configured for socket ID {}", socketId);
+			throw new OCPPException("No connector ID available for " + socketId);
+		}
+
 		// mark this socket as "stopping" so the subsequent meter reading doesn't get added
 		final Object socketLock = ignoreReadingsForSocket(socketId);
 		synchronized ( socketLock ) {
@@ -326,6 +386,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				session.setEnded(new Date(now));
 				chargeSessionDao.storeChargeSession(session);
 			} finally {
+				postStatusNotification(ChargePointStatus.AVAILABLE, connectorId, now);
 				resumeReadingsForSocket(socketId, socketLock);
 			}
 		}
