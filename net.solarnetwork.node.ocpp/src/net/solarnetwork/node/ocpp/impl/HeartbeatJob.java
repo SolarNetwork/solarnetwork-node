@@ -22,20 +22,21 @@
 
 package net.solarnetwork.node.ocpp.impl;
 
+import javax.xml.ws.WebServiceException;
+import org.quartz.JobExecutionContext;
+import org.quartz.StatefulJob;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import ocpp.v15.cs.CentralSystemService;
 import ocpp.v15.cs.HeartbeatRequest;
 import ocpp.v15.cs.HeartbeatResponse;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to post the {@link HeartbeatRequest} to let the OCPP system know the node
  * is alive and has network connectivity.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class HeartbeatJob extends AbstractJob implements StatefulJob {
 
@@ -47,20 +48,23 @@ public class HeartbeatJob extends AbstractJob implements StatefulJob {
 			log.warn("No CentralSystemServiceFactory available, cannot post heartbeat message.");
 			return;
 		}
+		try {
+			if ( !service.isBootNotificationPosted() ) {
+				service.postBootNotification();
+				return;
+			}
 
-		if ( !service.isBootNotificationPosted() ) {
-			service.postBootNotification();
-			return;
+			CentralSystemService client = service.service();
+			if ( client == null ) {
+				log.warn("No CentralSystemService avaialble, cannot post heartbeat message.");
+				return;
+			}
+			HeartbeatRequest req = new HeartbeatRequest();
+			HeartbeatResponse res = client.heartbeat(req, service.chargeBoxIdentity());
+			log.info("OCPP heartbeat response: {}", res == null ? null : res.getCurrentTime());
+		} catch ( WebServiceException e ) {
+			log.warn("Error communicating with OCPP central system: {}", e.getMessage());
 		}
-
-		CentralSystemService client = service.service();
-		if ( client == null ) {
-			log.warn("No CentralSystemService avaialble, cannot post heartbeat message.");
-			return;
-		}
-		HeartbeatRequest req = new HeartbeatRequest();
-		HeartbeatResponse res = client.heartbeat(req, service.chargeBoxIdentity());
-		log.info("OCPP heartbeat response: {}", res == null ? null : res.getCurrentTime());
 	}
 
 	/**

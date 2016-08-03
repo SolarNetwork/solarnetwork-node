@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.hw.rfid;
+package net.solarnetwork.node.hw.rfid;
 
 import java.io.BufferedReader;
 import java.io.IOException;

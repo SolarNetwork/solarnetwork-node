@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Node Unit Test Support
 Bundle-SymbolicName: net.solarnetwork.node.test
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.test;version="1.1.0"
+ net.solarnetwork.node.test;version="1.2.0"
 Import-Package: 
  net.solarnetwork.node;version="1.18",
  net.solarnetwork.node.backup;version="1.0",

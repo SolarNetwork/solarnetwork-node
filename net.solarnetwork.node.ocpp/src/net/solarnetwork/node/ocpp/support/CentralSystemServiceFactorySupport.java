@@ -30,6 +30,9 @@ import java.util.TimeZone;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -37,9 +40,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * A base helper class for services that require use of
@@ -59,8 +59,8 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.0
  */
-public abstract class CentralSystemServiceFactorySupport implements SettingSpecifierProvider,
-		Identifiable {
+public abstract class CentralSystemServiceFactorySupport
+		implements SettingSpecifierProvider, Identifiable {
 
 	private CentralSystemServiceFactory centralSystem;
 	private MessageSource messageSource;
@@ -211,7 +211,7 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 				try {
 					id = system.getUID();
 				} catch ( RuntimeException e ) {
-					log.debug("Error getting central system UID", e);
+					log.debug("Error getting central system UID: {}", e.getMessage());
 				}
 			}
 		}
@@ -231,7 +231,7 @@ public abstract class CentralSystemServiceFactorySupport implements SettingSpeci
 				try {
 					id = system.getGroupUID();
 				} catch ( RuntimeException e ) {
-					log.debug("Error getting central system Group UID", e);
+					log.debug("Error getting central system Group UID: {}", e.getMessage());
 				}
 			}
 		}

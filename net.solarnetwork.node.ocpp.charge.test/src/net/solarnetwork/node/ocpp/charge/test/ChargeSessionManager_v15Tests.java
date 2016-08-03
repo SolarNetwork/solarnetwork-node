@@ -34,6 +34,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.osgi.service.event.Event;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.EnergyDatum;
@@ -62,13 +69,6 @@ import ocpp.v15.cs.StopTransactionRequest;
 import ocpp.v15.cs.StopTransactionResponse;
 import ocpp.v15.cs.TransactionData;
 import ocpp.v15.cs.UnitOfMeasure;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.osgi.service.event.Event;
 
 /**
  * Test cases for the {@link ChargeSessionManager_v15} class.
@@ -119,8 +119,8 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		manager.setMeterDataSource(new StaticOptionalServiceCollection<DatumDataSource<ACEnergyDatum>>(
 				Collections.singletonList(meterDataSource)));
 		manager.setSocketConnectorMapping(Collections.singletonMap(TEST_SOCKET_ID, TEST_CONNECTOR_ID));
-		manager.setSocketMeterSourceMapping(Collections.singletonMap(TEST_SOCKET_ID,
-				TEST_METER_SOURCE_ID));
+		manager.setSocketMeterSourceMapping(
+				Collections.singletonMap(TEST_SOCKET_ID, TEST_METER_SOURCE_ID));
 	}
 
 	@After
@@ -231,7 +231,7 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(null);
 
 		// request authorization for IdTag
-		expect(authManager.authorize(TEST_ID_TAG)).andReturn(true);
+		expect(authManager.authorize(TEST_ID_TAG)).andReturn(AuthorizationStatus.ACCEPTED);
 
 		// get meter reading
 		final GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
@@ -246,9 +246,8 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		startTransactionResp.setIdTagInfo(new IdTagInfo());
 		startTransactionResp.getIdTagInfo().setStatus(AuthorizationStatus.ACCEPTED);
 		startTransactionResp.setTransactionId(123);
-		expect(
-				client.startTransaction(capture(startTransactionReqCapture),
-						eq(TEST_CHARGE_BOX_IDENTITY))).andReturn(startTransactionResp);
+		expect(client.startTransaction(capture(startTransactionReqCapture),
+				eq(TEST_CHARGE_BOX_IDENTITY))).andReturn(startTransactionResp);
 
 		// store the session
 		Capture<ChargeSession> sessionCapture = new Capture<ChargeSession>();
@@ -320,8 +319,8 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 		// verify active session does not exist (but it does)
 		final ChargeSession existingSession = new ChargeSession();
-		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(
-				existingSession);
+		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID))
+				.andReturn(existingSession);
 
 		replayAll();
 
@@ -345,6 +344,27 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 			Assert.fail("OCPPException should have been thrown");
 		} catch ( OCPPException e ) {
 			Assert.assertEquals("Status", AuthorizationStatus.BLOCKED, e.getStatus());
+		}
+	}
+
+	@Test
+	public void initiateChargeSessionNotAuthorized() {
+		// verify socket not disabled
+		expect(socketDao.isEnabled(TEST_SOCKET_ID)).andReturn(true);
+
+		// verify active session does not exist
+		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID)).andReturn(null);
+
+		// request authorization for IdTag
+		expect(authManager.authorize(TEST_ID_TAG)).andReturn(AuthorizationStatus.INVALID);
+
+		replayAll();
+
+		try {
+			manager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null);
+			Assert.fail("Should have thrown OCPPException on authorization failure");
+		} catch ( OCPPException e ) {
+			Assert.assertEquals(AuthorizationStatus.INVALID, e.getStatus());
 		}
 	}
 
@@ -424,16 +444,16 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		Assert.assertNotNull("StopTransactionRequest timestamp", req.getTimestamp());
 
 		// verify StopTransactionRequest TransactionData
-		Assert.assertEquals("StopTransactionRequest transactionData count", 1, req.getTransactionData()
-				.size());
+		Assert.assertEquals("StopTransactionRequest transactionData count", 1,
+				req.getTransactionData().size());
 		TransactionData data = req.getTransactionData().get(0);
 		Assert.assertEquals("TransactionData transactionData values", 3, data.getValues().size());
 		cal.add(Calendar.MINUTE, -3);
 		for ( int i = 0; i < 3; i++ ) {
 			MeterValue meterValue = data.getValues().get(i);
 			Assert.assertNotNull("MeterValue timestamp", meterValue.getTimestamp());
-			Assert.assertEquals("MeterValue timestamp", cal.getTime(), meterValue.getTimestamp()
-					.toGregorianCalendar().getTime());
+			Assert.assertEquals("MeterValue timestamp", cal.getTime(),
+					meterValue.getTimestamp().toGregorianCalendar().getTime());
 			cal.add(Calendar.MINUTE, 1);
 		}
 

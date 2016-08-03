@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.ocpp.auth;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.AuthorizationManager;
 import net.solarnetwork.node.ocpp.support.CentralSystemServiceFactorySupport;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.cs.AuthorizationStatus;
 import ocpp.v15.cs.AuthorizeRequest;
@@ -40,30 +43,39 @@ import ocpp.v15.cs.AuthorizeResponse;
  * @author matt
  * @version 1.0
  */
-public class DefaultAuthorizationManager extends CentralSystemServiceFactorySupport implements
-		AuthorizationManager {
+public class DefaultAuthorizationManager extends CentralSystemServiceFactorySupport
+		implements AuthorizationManager {
 
 	private OptionalService<AuthorizationDao> authorizationDao;
+	private boolean authorizeOnFailedCommunication = true;
 
 	@Override
-	public boolean authorize(String idTag) {
+	public AuthorizationStatus authorize(String idTag) {
 		Authorization auth = authorizationForTag(idTag);
 		if ( isAuthorized(auth) ) {
-			return true;
+			return auth.getStatus();
 		} else if ( isCachedAuthorizationValid(auth) ) {
 			// no need to validate with central system
-			return false;
+			return auth.getStatus();
 		}
 		AuthorizeRequest req = new AuthorizeRequest();
 		req.setIdTag(idTag);
-		AuthorizeResponse res = getCentralSystem().service().authorize(req,
-				getCentralSystem().chargeBoxIdentity());
+		AuthorizeResponse res = null;
+		try {
+			res = getCentralSystem().service().authorize(req, getCentralSystem().chargeBoxIdentity());
+		} catch ( RuntimeException e ) {
+			log.warn("Exception authorizing {} with central system: {}", idTag, e.getMessage());
+			if ( authorizeOnFailedCommunication ) {
+				return AuthorizationStatus.ACCEPTED;
+			}
+			throw e;
+		}
 		if ( res != null && res.getIdTagInfo() != null ) {
 			auth = new Authorization(idTag, res.getIdTagInfo());
 			saveAuthorization(auth);
-			return auth.isAccepted();
+			return auth.getStatus();
 		}
-		return false;
+		return AuthorizationStatus.INVALID;
 	}
 
 	/**
@@ -112,6 +124,15 @@ public class DefaultAuthorizationManager extends CentralSystemServiceFactorySupp
 	}
 
 	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		DefaultAuthorizationManager defaults = new DefaultAuthorizationManager();
+		results.add(new BasicToggleSettingSpecifier("authorizeOnFailedCommunication",
+				defaults.authorizeOnFailedCommunication));
+		return results;
+	}
+
+	@Override
 	protected String getInfoMessage(Locale locale) {
 		AuthorizationDao dao = (authorizationDao != null ? authorizationDao.service() : null);
 		if ( dao == null ) {
@@ -137,6 +158,27 @@ public class DefaultAuthorizationManager extends CentralSystemServiceFactorySupp
 
 	public void setAuthorizationDao(OptionalService<AuthorizationDao> authorizationDao) {
 		this.authorizationDao = authorizationDao;
+	}
+
+	/**
+	 * Get the authorize on communication failure setting.
+	 * 
+	 * @return The setting value. Defaults to <em>true</em>.
+	 */
+	public boolean isAuthorizeOnFailedCommunication() {
+		return authorizeOnFailedCommunication;
+	}
+
+	/**
+	 * Setting to allow authorization if there is a problem communicating with
+	 * the central system.
+	 * 
+	 * @param authorizeOnFailedCommunication
+	 *        <em>true</em> to authorize on communication failures,
+	 *        <em>false</em> to reject
+	 */
+	public void setAuthorizeOnFailedCommunication(boolean authorizeOnFailedCommunication) {
+		this.authorizeOnFailedCommunication = authorizeOnFailedCommunication;
 	}
 
 }
