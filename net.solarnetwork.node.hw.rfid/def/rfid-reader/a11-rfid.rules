@@ -1,0 +1,2 @@
+# Map a specific RFID scanner to /dev/rfid
+SUBSYSTEM=="input", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="1503", SYMLINK+="rfid", TAG+="systemd"
