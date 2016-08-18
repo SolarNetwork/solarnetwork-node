@@ -29,12 +29,13 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.quartz.JobExecutionContext;
+import org.quartz.StatefulJob;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import net.solarnetwork.node.setup.SetupException;
 
 /**
  * Job to query a collection of {@link DatumDao} instances for data to upload
@@ -64,7 +65,7 @@ import org.quartz.StatefulJob;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 
@@ -80,8 +81,8 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 
 		for ( DatumDao<Datum> datumDao : daos ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Collecting [{}] data to bulk upload to [{}]", datumDao.getDatumType()
-						.getSimpleName(), uploadService.getKey());
+				log.debug("Collecting [{}] data to bulk upload to [{}]",
+						datumDao.getDatumType().getSimpleName(), uploadService.getKey());
 			}
 
 			daoMapping.put(datumDao.getDatumType(), datumDao);
@@ -106,15 +107,17 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 			for ( BulkUploadResult result : results ) {
 				String tid = result.getId();
 				if ( log.isTraceEnabled() ) {
-					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]", new Object[] {
-							result.getDatum().getClass().getSimpleName(),
-							(result.getDatum().getCreated() == null ? null : result.getDatum()
-									.getCreated().getTime()), result.getDatum().getSourceId(), tid });
+					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]",
+							new Object[] { result.getDatum().getClass().getSimpleName(),
+									(result.getDatum().getCreated() == null ? null
+											: result.getDatum().getCreated().getTime()),
+									result.getDatum().getSourceId(), tid });
 				}
 
 				if ( tid != null ) {
 					DatumDao<Datum> datumDao = daoMapping.get(result.getDatum().getClass());
-					datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(), tid);
+					datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(),
+							tid);
 					count++;
 				}
 			}
@@ -131,6 +134,8 @@ public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
 					log.warn("Network problem posting data ({}): {}", root.getClass().getSimpleName(),
 							root.getMessage());
 				}
+			} else if ( root instanceof SetupException ) {
+				log.warn("Unable to post data: {}", root.getMessage());
 			} else {
 				if ( log.isErrorEnabled() ) {
 					log.error("Exception posting data", root);
