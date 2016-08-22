@@ -13,7 +13,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
     	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.29,2.0)"/>
     	<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.ocpp.client" rev="[1.5,1.6)"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.33,2.0)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.40,2.0)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.ocpp" rev="[0.1,2.0)"/>
     	<dependency org="org.eclipse.gemini" name="org.eclipse.gemini.blueprint.core" rev="1.0.2.RELEASE" conf="runtime"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>

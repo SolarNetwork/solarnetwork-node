@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Current Cost Power Meter
 Bundle-SymbolicName: net.solarnetwork.node.datum.currentcost
 Bundle-Description: Collect consumption and temperature data from CurrentCost (and compatible) meter devices.
-Bundle-Version: 2.1.0
+Bundle-Version: 2.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -13,8 +13,8 @@ Import-Package:
  net.solarnetwork.node.hw.currentcost;version="2.1.0",
  net.solarnetwork.node.io.serial;version="1.0.0",
  net.solarnetwork.node.job;version="1.9.0",
- net.solarnetwork.node.settings;version="1.0.0",
- net.solarnetwork.node.settings.support;version="1.0.0",
+ net.solarnetwork.node.settings;version="1.8.0",
+ net.solarnetwork.node.settings.support;version="1.6.0",
  net.solarnetwork.node.support;version="1.9.0",
  net.solarnetwork.node.util;version="1.0.1",
  net.solarnetwork.util;version="1.10.0",

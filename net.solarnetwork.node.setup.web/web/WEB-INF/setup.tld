@@ -6,7 +6,7 @@
 	version="2.1">
 
 	<description>SolarNetwork Setup Taglib</description>
-	<tlib-version>1.1</tlib-version>
+	<tlib-version>1.2</tlib-version>
 	<short-name>setup</short-name>
 	<uri>http://solarnetwork.net/taglib/setup</uri>
 
@@ -44,6 +44,14 @@
 				A numbered index.
 			</description>
 			<name>index</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				An optional array of message arguments to use when formatting.
+			</description>
+			<name>arguments</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>

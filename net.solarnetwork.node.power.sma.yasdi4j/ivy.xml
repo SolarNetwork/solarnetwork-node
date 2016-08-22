@@ -12,6 +12,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
      	<dependency org="commons-codec" name="commons-codec" rev="1.7"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.40,2.0)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.sma" rev="[1.6,2.0)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.yasdi4j" rev="[1.2,2.0)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>

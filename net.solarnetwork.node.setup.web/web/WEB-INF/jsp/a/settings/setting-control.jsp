@@ -175,7 +175,7 @@
 				</c:choose>
 				
 				<c:set var="help">
-					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
+					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
 				</c:set>
 
 				<c:if test="${fn:length(help) > 0}">

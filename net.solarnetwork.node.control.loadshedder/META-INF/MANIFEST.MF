@@ -4,7 +4,7 @@ Bundle-Name: Load Shed Control
 Bundle-SymbolicName: net.solarnetwork.node.control.loadshedder
 Bundle-Description: Service to monitor demand conditions (consumption) and make adjustments \
  to another switch-based control to limit demand to a maximum level.
-Bundle-Version: 0.1.0
+Bundle-Version: 0.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -14,8 +14,8 @@ Import-Package:
  net.solarnetwork.node.job;version="1.13.0",
  net.solarnetwork.node.reactor;version="1.2.0",
  net.solarnetwork.node.reactor.support;version="1.2.0",
- net.solarnetwork.node.settings;version="1.7.0",
- net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.settings;version="1.8.0",
+ net.solarnetwork.node.settings.support;version="1.6.0",
  net.solarnetwork.node.util;version="1.6.0",
  net.solarnetwork.util;version="1.20.0",
  org.osgi.service.event;version="[1.2,2.0)",

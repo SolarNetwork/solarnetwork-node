@@ -28,7 +28,7 @@ package net.solarnetwork.node.settings;
  * @param <T>
  *        the type of value stored by this setting
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface KeyedSettingSpecifier<T> extends SettingSpecifier, MappableSpecifier {
 
@@ -80,4 +80,13 @@ public interface KeyedSettingSpecifier<T> extends SettingSpecifier, MappableSpec
 	interface Mapper extends MappableSpecifier.Mapper {
 		// nothing added
 	}
+
+	/**
+	 * Get an optional list of message arguments to use when rendering a
+	 * description of this specifier.
+	 * 
+	 * @return An optional list of message arguments.
+	 * @since 1.3
+	 */
+	Object[] getDescriptionArguments();
 }

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP Mock
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.mock
-Bundle-Version: 0.1.0
+Bundle-Version: 0.1.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -11,8 +11,8 @@ Import-Package:
  net.solarnetwork.node.job;version="1.12.0",
  net.solarnetwork.node.ocpp;version="0.1.0",
  net.solarnetwork.node.ocpp.support;version="0.1.0",
- net.solarnetwork.node.settings;version="1.6.0",
- net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.settings;version="1.8.0",
+ net.solarnetwork.node.settings.support;version="1.6.0",
  net.solarnetwork.node.util;version="1.5.0",
  net.solarnetwork.util;version="1.20.0",
  ocpp.v15.cs;version="1.5.0",

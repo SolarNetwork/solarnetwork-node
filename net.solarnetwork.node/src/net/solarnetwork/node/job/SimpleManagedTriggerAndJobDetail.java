@@ -27,17 +27,17 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.node.util.TemplatedMessageSource;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.settings.MappableSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
+import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.node.util.TemplatedMessageSource;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a
@@ -92,7 +92,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider {
 
@@ -156,8 +156,8 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		if ( trigger instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trigger;
-			result.add(new BasicTextFieldSettingSpecifier("trigger.cronExpression", ct
-					.getCronExpression()));
+			result.add(new BasicCronExpressionSettingSpecifier("trigger.cronExpression",
+					ct.getCronExpression()));
 		}
 		for ( SettingSpecifier spec : getSettingSpecifierProvider().getSettingSpecifiers() ) {
 			if ( spec instanceof MappableSpecifier ) {
