@@ -15,8 +15,8 @@ Import-Package:
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.util;version="1.18.0",
  ocpp.v15.cs;version="1.5.0",
- org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.context;version="[3.1,4.0)",
- org.springframework.context.support;version="[3.1,4.0)"
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)"

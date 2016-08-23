@@ -25,9 +25,9 @@ Import-Package:
  org.joda.time;version="[2.1.0,3.0.0)",
  org.joda.time.format;version="[2.1.0,3.0.0)",
  org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.beans;version="[3.0,4.0)",
- org.springframework.beans.factory;version="[3.0,4.0)",
- org.springframework.context;version="[3.0,4.0)",
- org.springframework.context.support;version="[3.0,4.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.beans.factory;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
  org.w3c.dom,
  org.xml.sax

@@ -38,11 +38,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.DatumDataSource;
@@ -87,7 +92,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Default implementation of {@link ChargeSessionManager}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
@@ -542,16 +547,20 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			// trigger has changed!
 			if ( interval == 0 ) {
 				try {
-					sched.unscheduleJob(trigger.getName(), trigger.getGroup());
+					sched.unscheduleJob(trigger.getKey());
 				} catch ( SchedulerException e ) {
 					log.error("Error unscheduling OCPP post offline charge sessions job", e);
 				} finally {
 					postOfflineChargeSessionsTrigger = null;
 				}
 			} else {
-				trigger.setRepeatInterval(interval);
+				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey())
+						.forJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP)
+						.withSchedule(
+								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L))))
+						.build();
 				try {
-					sched.rescheduleJob(trigger.getName(), trigger.getGroup(), trigger);
+					sched.rescheduleJob(trigger.getKey(), trigger);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP post offline charge sessions job", e);
 				} finally {
@@ -563,29 +572,22 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 		synchronized ( sched ) {
 			try {
-				JobDetail jobDetail = sched.getJobDetail(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME,
-						SCHEDULER_GROUP);
+				final JobKey jobKey = new JobKey(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP);
+				JobDetail jobDetail = sched.getJobDetail(jobKey);
 				if ( jobDetail == null ) {
-					JobDetail jd = new JobDetail();
-					jd.setJobClass(PostOfflineChargeSessionsJob.class);
-					jd.setName(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME);
-					jd.setGroup(SCHEDULER_GROUP);
-					jd.setDurability(true);
-					sched.addJob(jd, true);
-					jobDetail = jd;
+					jobDetail = JobBuilder.newJob(PostOfflineChargeSessionsJob.class)
+							.withIdentity(jobKey).storeDurably().build();
+					sched.addJob(jobDetail, true);
 				}
-				SimpleTriggerFactoryBean t = new SimpleTriggerFactoryBean();
-				t.setName(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME + getUID());
-				t.setGroup(SCHEDULER_GROUP);
-				t.setRepeatCount(SimpleTrigger.REPEAT_INDEFINITELY);
-				t.setRepeatInterval(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
-				t.setStartDelay(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
-				t.setMisfireInstruction(
-						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
-				t.setJobDataAsMap(Collections.singletonMap("service", this));
-				t.setJobDetail(jobDetail);
-				t.afterPropertiesSet();
-				trigger = t.getObject();
+				final TriggerKey triggerKey = new TriggerKey(
+						POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME + getUID(), SCHEDULER_GROUP);
+				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
+						.startAt(new Date(System.currentTimeMillis() + interval))
+						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
+						.withSchedule(
+								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L)))
+										.withMisfireHandlingInstructionNextWithExistingCount())
+						.build();
 				sched.scheduleJob(trigger);
 				postOfflineChargeSessionsTrigger = trigger;
 				return true;

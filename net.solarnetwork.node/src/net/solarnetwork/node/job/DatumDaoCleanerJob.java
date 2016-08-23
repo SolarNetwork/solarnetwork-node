@@ -26,11 +26,12 @@
 
 package net.solarnetwork.node.job;
 
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to query a {@link DatumDao} for data to upload via an
@@ -57,9 +58,11 @@ import org.quartz.StatefulJob;
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class DatumDaoCleanerJob<T extends Datum> extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDaoCleanerJob<T extends Datum> extends AbstractJob {
 
 	/** The default value for the {@code hours} property. */
 	public static final int DEFAULT_HOURS = 4;

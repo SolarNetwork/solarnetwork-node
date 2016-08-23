@@ -24,13 +24,14 @@ package net.solarnetwork.node.control.demandbalancer;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.context.MessageSource;
 
 /**
  * Job to execute the {@link DemandBalancer} on a schedule.
@@ -53,9 +54,11 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class DemandBalancerJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DemandBalancerJob extends AbstractJob implements SettingSpecifierProvider {
 
 	private DemandBalancer demandBalancer;
 

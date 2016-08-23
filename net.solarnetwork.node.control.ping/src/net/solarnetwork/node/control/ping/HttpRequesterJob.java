@@ -33,8 +33,9 @@ import java.util.List;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.node.SSLService;
@@ -110,9 +111,11 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class HttpRequesterJob extends AbstractJob implements SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 

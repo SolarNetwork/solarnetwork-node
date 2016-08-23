@@ -13,6 +13,6 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.4.3" />
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.28,2.0)"/>
-    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.2"/>
+    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 	</dependencies>
 </ivy-module>

@@ -18,6 +18,6 @@ Import-Package:
  org.osgi.framework.wiring;version="[1.1.0,2.0.0)",
  org.osgi.service.obr;version="[1.0,2.0)",
  org.slf4j;version="[1.7.0,2.0.0)",
- org.springframework.context;version="[3.1.0,4.0.0)",
- org.springframework.context.support;version="[3.1.0,4.0.0)",
- org.springframework.util;version="[3.1.0,4.0.0)"
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"

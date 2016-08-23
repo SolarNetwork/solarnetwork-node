@@ -23,8 +23,9 @@
 package net.solarnetwork.node.ocpp.impl;
 
 import javax.xml.ws.WebServiceException;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import ocpp.v15.cs.CentralSystemService;
@@ -36,9 +37,11 @@ import ocpp.v15.cs.HeartbeatResponse;
  * is alive and has network connectivity.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class HeartbeatJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class HeartbeatJob extends AbstractJob {
 
 	private CentralSystemServiceFactory service;
 

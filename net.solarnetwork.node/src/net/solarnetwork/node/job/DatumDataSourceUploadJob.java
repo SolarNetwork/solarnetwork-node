@@ -24,11 +24,12 @@
 
 package net.solarnetwork.node.job;
 
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.Datum;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job that obtains a {@link Datum} from a {@link DatumDataSource} and then
@@ -51,15 +52,18 @@ import org.quartz.StatefulJob;
  * currently available data.</dd>
  * 
  * <dt>uploadService</dt>
- * <dd>The {@link UploadService} implementation to use to upload the datum to.</dd>
+ * <dd>The {@link UploadService} implementation to use to upload the datum
+ * to.</dd>
  * </dl>
  * 
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class DatumDataSourceUploadJob<T extends Datum> extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDataSourceUploadJob<T extends Datum> extends AbstractJob {
 
 	private DatumDataSource<T> datumDataSource = null;
 	private UploadService uploadService;

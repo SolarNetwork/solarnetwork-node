@@ -13,9 +13,9 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<!-- Configuration -->
 	
@@ -74,7 +74,7 @@
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
-	<bean id="syncBackupTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+	<bean id="syncBackupTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 		<property name="jobDetail" ref="syncBackupJob"/>
 		<property name="cronExpression" value="${job.syncBackup.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
@@ -87,7 +87,7 @@
 		<property name="destinationPath" value="${job.syncBackup.destinationPath}"/>
 	</bean>
 	
-	<bean id="syncBackupJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+	<bean id="syncBackupJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.DerbyOnlineSyncJob"/>
 		<property name="jobDataAsMap">
 			<map>

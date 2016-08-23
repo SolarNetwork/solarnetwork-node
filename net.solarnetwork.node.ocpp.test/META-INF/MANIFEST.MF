@@ -14,9 +14,9 @@ Import-Package:
  org.junit.runners;version="[4.5,5.0)",
  org.apache.commons.logging;version="[1.1,1.2)",
  org.easymock;version="[3.0,4.0)",
- org.springframework.test.annotation;version="[3.1,4.0)",
- org.springframework.test.context;version="[3.1,4.0)",
- org.springframework.test.context.junit4;version="[3.1,4.0)",
- org.springframework.test.context.support;version="[3.1,4.0)",
- org.springframework.test.context.transaction;version="[3.1,4.0)",
- org.springframework.util;version="[3.1,4.0)"
+ org.springframework.test.annotation;version="[4.2,5.0)",
+ org.springframework.test.context;version="[4.2,5.0)",
+ org.springframework.test.context.junit4;version="[4.2,5.0)",
+ org.springframework.test.context.support;version="[4.2,5.0)",
+ org.springframework.test.context.transaction;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"
