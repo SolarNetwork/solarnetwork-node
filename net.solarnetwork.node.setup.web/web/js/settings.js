@@ -310,6 +310,9 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 			type: 'post',
 			url: url,
 			data: formData,
+	    	beforeSend: function(xhr) {
+	    		SolarNode.csrf(xhr);
+	    	},
 			success: function(data, textStatus, xhr) {
 				var providerKey = undefined, key = undefined, domID = undefined;
 				if ( resultCallback ) {
@@ -343,7 +346,15 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 
 SolarNode.Settings.addFactoryConfiguration = function(params) {
 	$(params.button).attr('disabled', 'disabled');
-	$.post(params.url, {uid: params.factoryUID}, delayedReload);
+	$.ajax({
+		type : 'POST',
+		url : params.url,
+		data : {uid:params.factoryUID},
+		beforeSend: function(xhr) {
+			SolarNode.csrf(xhr);
+        },
+		success: delayedReload
+	});
 };
 
 /**
@@ -359,7 +370,15 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	var reallyDeleteButton = alert.find('button.submit');
 	reallyDeleteButton.click(function() {
 		$(this).attr('disabled', 'disabled');
-		$.post(params.url, {uid: params.factoryUID, instance: params.instanceUID}, delayedReload);
+		$.ajax({
+			type : 'POST',
+			url : params.url,
+			data : {uid: params.factoryUID, instance: params.instanceUID},
+			beforeSend: function(xhr) {
+				SolarNode.csrf(xhr);
+	        },
+			success: delayedReload
+		});
 	});
 	alert.bind('close', function(e) {
 		origButton.removeAttr('disabled');
@@ -375,11 +394,20 @@ $(document).ready(function() {
 	
 	$('#backup-now-btn').click(function(event) {
 		event.preventDefault();
-		var l = Ladda.create(this);
-		var url = $(this.form).attr('action');
+		var l = Ladda.create(this),
+			form = $(this.form),
+			url = form.attr('action'),
+			csrf = form.get(0).elements['_csrf'].value;
 		l.start();
-		$.post(url, function(data) {
-			l.stop();
+		$.ajax({
+			type : 'POST',
+			url : url,
+			beforeSend: function(xhr) {
+				SolarNode.csrf(xhr);
+	        },
+			success: function() {
+				l.stop();
+			}
 		});
 	});
 	
