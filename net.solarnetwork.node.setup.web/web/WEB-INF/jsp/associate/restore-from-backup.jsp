@@ -15,4 +15,5 @@
 	<div class="form-actions">
 		<button type="submit" class="btn btn-primary"><fmt:message key='node.setup.restore.upload'/></button>
 	</div>
+	<sec:csrfInput/>
 </form:form>

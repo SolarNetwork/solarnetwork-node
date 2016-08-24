@@ -89,6 +89,7 @@
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.import"/></button>
 	</div>
+	<sec:csrfInput/>
 </form>
 
 <div id="view-csr-modal" class="modal dynamic hide fade">
@@ -125,6 +126,7 @@
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.export"/></button>
 	</div>
+	<sec:csrfInput/>
 </form>
 
 <form id="renew-cert-modal" class="modal dynamic hide fade" action="<c:url value='/a/certs/renew'/>" method="post">
@@ -153,4 +155,5 @@
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
 	</div>
+	<sec:csrfInput/>
 </form>

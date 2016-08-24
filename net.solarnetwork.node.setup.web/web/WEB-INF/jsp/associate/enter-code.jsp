@@ -28,4 +28,5 @@
 	<div class="form-actions">
 		<button type="submit" class="btn btn-primary"><fmt:message key='node.setup.code.verify'/></button>
 	</div>
+	<sec:csrfInput/>
 </form:form>

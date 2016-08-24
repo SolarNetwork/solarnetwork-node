@@ -57,6 +57,7 @@
 			<div class="form-actions">
 				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
 			</div>
+			<sec:csrfInput/>
 		</form>
 	</section>
 	<script>
@@ -118,6 +119,7 @@
 								data-html="true">
 							<i class="icon-question-sign"></i>
 						</button>
+						<sec:csrfInput/>
 					</form>
 				</div>
 			</c:if>
@@ -133,6 +135,7 @@
 							data-html="true">
 						<i class="icon-question-sign"></i>
 					</button>
+					<sec:csrfInput/>
 				</form>
 			</div>
 		</fieldset>
@@ -140,6 +143,7 @@
 			<form class="form-inline" action="<c:url value='/a/settings/backupNow'/>" method="post">
  				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
  					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
+				<sec:csrfInput/>
 			</form>
 		</div>
 	</div>
@@ -168,6 +172,7 @@
 				<form class="controls form-inline" action="<c:url value='/a/settings/import'/>" method="post" enctype="multipart/form-data">
   					<input class="span3" id="import.field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="settings.io.import.button"/></button>
+					<sec:csrfInput/>
 				</form>
 			</div>
 			<c:if test="${fn:length(settingsBackups) > 0}">

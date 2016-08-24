@@ -317,4 +317,8 @@ $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');
 	});
+	$('a.logout').on('click', function(event) {
+		event.preventDefault();
+		$('#logout-form').get(0).submit();
+	});
 });

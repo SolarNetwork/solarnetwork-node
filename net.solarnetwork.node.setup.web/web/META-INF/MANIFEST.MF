@@ -104,6 +104,7 @@ Import-Package:
  org.springframework.security.crypto.password;version="[4.1,5.0)",
  org.springframework.security.provisioning;version="[4.1,5.0)",
  org.springframework.security.taglibs.authz;version="[4.1,5.0)",
+ org.springframework.security.taglibs.csrf;version="[4.1,5.0)",
  org.springframework.security.web;version="[4.1,5.0)",
  org.springframework.security.web.authentication;version="[4.1,5.0)",
  org.springframework.security.web.context;version="[4.1,5.0)",
