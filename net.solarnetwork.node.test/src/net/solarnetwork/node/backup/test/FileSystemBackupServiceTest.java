@@ -34,6 +34,12 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupResource;
@@ -45,11 +51,6 @@ import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.util.StaticOptionalService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.FileCopyUtils;
 
 /**
  * Test case for the {@link FileSystemBackupService}.
@@ -103,6 +104,12 @@ public class FileSystemBackupServiceTest {
 			}
 
 		}));
+	}
+
+	@After
+	public void pause() throws Exception {
+		// pause so backup file names differ
+		Thread.sleep(1000);
 	}
 
 	@Test

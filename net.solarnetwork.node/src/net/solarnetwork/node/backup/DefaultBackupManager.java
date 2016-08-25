@@ -75,7 +75,7 @@ import net.solarnetwork.util.UnionIterator;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -393,8 +393,8 @@ public class DefaultBackupManager implements BackupManager {
 			log.warn("No BackupService available to restore backup with");
 			return false;
 		}
-		final Set<String> providerKeySet = StringUtils
-				.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER));
+		final Set<String> providerKeySet = (props == null ? null
+				: StringUtils.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER)));
 		BackupResourceIterable resources = service.getBackupResources(backup);
 		boolean result = true;
 		try {
