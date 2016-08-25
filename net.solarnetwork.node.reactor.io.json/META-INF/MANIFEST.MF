@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Reactor JSON Support
 Bundle-SymbolicName: net.solarnetwork.node.reactor.io.json
 Bundle-Description: Communication support for SolarNet JSON based Reactor messages.
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",

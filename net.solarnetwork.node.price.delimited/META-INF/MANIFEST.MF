@@ -4,7 +4,7 @@ Bundle-Name: Delimited Price Datum DataSource
 Bundle-Description: Collect market price data from a URL-accessible text resource, 
  such as a CSV file published by a market authority.
 Bundle-SymbolicName: net.solarnetwork.node.price.delimited
-Bundle-Version: 2.0.1
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
