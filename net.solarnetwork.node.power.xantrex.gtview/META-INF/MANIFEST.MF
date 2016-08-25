@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Xantrex GT View Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.power.xantrex.gtview
 Bundle-Description: Collect generation data from Xantrex GT View data file output.
-Bundle-Version: 1.2.0
+Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

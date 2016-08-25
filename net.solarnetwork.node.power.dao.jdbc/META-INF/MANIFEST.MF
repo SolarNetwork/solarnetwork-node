@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Power Datum Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.power.dao.jdbc
 Bundle-Description: Database storage cache for electrical generation data.
-Bundle-Version: 1.10.0
+Bundle-Version: 1.11.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
