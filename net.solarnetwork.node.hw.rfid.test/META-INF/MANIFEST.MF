@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RFID Scanner Test
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfid.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Fragment-Host: net.solarnetwork.node.hw.rfid;bundle-version="1.0.0"
+Fragment-Host: net.solarnetwork.node.hw.rfid;bundle-version="1.1.0"
 Import-Package: 
  net.solarnetwork.node.test;version="[1.0.0,2.0.0]",
  org.easymock;version="[3.1,4.0)",

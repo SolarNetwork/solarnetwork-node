@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Cent-a-meter Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.centameter
 Bundle-Description: Hardware support for Cent-a-meter devices.
-Bundle-Version: 1.4.0
+Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.solarnetwork.node.centameter;version="1.4.0"
