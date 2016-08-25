@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: OCPP Socket Controller Test
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.socket.control.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.ocpp.socket.control
+Fragment-Host: net.solarnetwork.node.ocpp.socket.control;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node.test;version="[1.2,2.0)",

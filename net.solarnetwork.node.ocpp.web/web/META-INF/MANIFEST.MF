@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP ChargePoint Web Service
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.web
-Bundle-Version: 0.2.0
+Bundle-Version: 0.3.0
 Bundle-ClassPath: WEB-INF/classes/
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

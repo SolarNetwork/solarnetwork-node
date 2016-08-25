@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Test
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge.rfid.test
-Bundle-Version: 1.0.0
-Fragment-Host: net.solarnetwork.node.ocpp.charge.rfid;bundle-version="1.0.0"
+Bundle-Version: 1.1.0
+Fragment-Host: net.solarnetwork.node.ocpp.charge.rfid;bundle-version="1.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node.test;version="[1.2,2.0)",

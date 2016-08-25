@@ -4,7 +4,7 @@ Bundle-Name: SolarNet Location Service
 Bundle-SymbolicName: net.solarnetwork.node.location.ws
 Bundle-Description: Service to find location details, such as price or weather locations, 
  and associate the location to collected data.
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
