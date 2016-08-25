@@ -27,6 +27,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.util.OptionalService;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
@@ -40,14 +42,12 @@ import net.wimpi.modbus.msg.WriteCoilRequest;
 import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.procimg.InputRegister;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Helper methods for working with Modbus.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public final class ModbusHelper {
 
@@ -81,8 +81,8 @@ public final class ModbusHelper {
 	public static <T> T execute(OptionalService<ModbusSerialConnectionFactory> connectionFactory,
 			ModbusConnectionCallback<T> action) {
 		T result = null;
-		ModbusSerialConnectionFactory factory = (connectionFactory == null ? null : connectionFactory
-				.service());
+		ModbusSerialConnectionFactory factory = (connectionFactory == null ? null
+				: connectionFactory.service());
 		if ( factory != null ) {
 			result = factory.execute(action);
 		}
@@ -211,10 +211,10 @@ public final class ModbusHelper {
 	 * @return map of integer addresses to corresponding integer values, there
 	 *         should be {@code count} values for each {@code address} read
 	 */
-	public static Map<Integer, Integer> readInputValues(SerialConnection conn,
-			final Integer[] addresses, final int count, final int unitId) {
-		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>((addresses == null ? 0
-				: addresses.length) * count);
+	public static Map<Integer, Integer> readInputValues(SerialConnection conn, final Integer[] addresses,
+			final int count, final int unitId) {
+		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
+				(addresses == null ? 0 : addresses.length) * count);
 		for ( int i = 0; i < addresses.length; i++ ) {
 			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
 			ReadInputRegistersRequest req = new ReadInputRegistersRequest(addresses[i], count);
@@ -306,7 +306,8 @@ public final class ModbusHelper {
 			result[w] = res.getRegisterValue(w);
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+			LOG.debug("Read Modbus register {} count {} values: {}",
+					new Object[] { address, count, result });
 		}
 		return result;
 	}
@@ -347,7 +348,8 @@ public final class ModbusHelper {
 			result[w] = res.getRegisterValue(w);
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}", address, count, result);
+			LOG.debug("Read Modbus register {} count {} values: {}",
+					new Object[] { address, count, result });
 		}
 		return result;
 	}
@@ -367,8 +369,8 @@ public final class ModbusHelper {
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
 	 */
-	public static short[] readSignedShorts(SerialConnection conn, final Integer address,
-			final int count, final int unitId) {
+	public static short[] readSignedShorts(SerialConnection conn, final Integer address, final int count,
+			final int unitId) {
 		short[] result = new short[count];
 		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
 		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
@@ -388,7 +390,8 @@ public final class ModbusHelper {
 			result[w] = res.getRegister(w).toShort();
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} shorts: {}", address, count, result);
+			LOG.debug("Read Modbus register {} count {} shorts: {}",
+					new Object[] { address, count, result });
 		}
 		return result;
 	}
@@ -433,7 +436,8 @@ public final class ModbusHelper {
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} bytes: {}", address, count, result);
+			LOG.debug("Read Modbus register {} count {} bytes: {}",
+					new Object[] { address, count, result });
 		}
 		return result;
 	}
@@ -519,7 +523,8 @@ public final class ModbusHelper {
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input register {} count {} string: {}", address, count, result);
+			LOG.debug("Read Modbus input register {} count {} string: {}",
+					new Object[] { address, count, result });
 		}
 		return result;
 	}
@@ -588,8 +593,8 @@ public final class ModbusHelper {
 	public static Float parseFloat32(final Integer[] data) {
 		Float result = null;
 		if ( data != null && data.length == 2 ) {
-			result = Float.intBitsToFloat(((data[0].intValue() & 0xFFFF) << 16)
-					| (data[1].intValue() & 0xFFFF));
+			result = Float.intBitsToFloat(
+					((data[0].intValue() & 0xFFFF) << 16) | (data[1].intValue() & 0xFFFF));
 			if ( result.isNaN() ) {
 				LOG.trace("Data results in NaN: {}", (Object) data);
 				result = null;
