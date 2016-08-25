@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core URL Support
 Bundle-SymbolicName: net.solarnetwork.node.io.url
 Bundle-Description: Communication support for collecting data from network resources.
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.solarnetwork.node.io.url.socket; version="1.1.0"

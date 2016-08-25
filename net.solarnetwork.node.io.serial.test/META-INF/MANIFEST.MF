@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Serial IO Test
 Bundle-SymbolicName: net.solarnetwork.node.io.serial.test
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.serial;bundle-version="1.1.0"
+Fragment-Host: net.solarnetwork.node.io.serial;bundle-version="1.2.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.solarnetwork.node.io.serial.rxtx.test;version="1.0.0"
 Import-Package: 
