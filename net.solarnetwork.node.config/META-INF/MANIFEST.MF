@@ -8,4 +8,4 @@ Spring-Context: file:conf/solarnode.xml
 Import-Package: net.solarnetwork.node;version="1.0.0",
  net.solarnetwork.node.support;version="1.0.0",
  net.solarnetwork.node.util;version="1.0.0",
- org.slf4j;version="[1.5.0,2.0.0)"
+ org.slf4j;version="[1.7,2.0)"

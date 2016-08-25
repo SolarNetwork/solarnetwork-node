@@ -10,7 +10,7 @@ Import-Package:
  net.solarnetwork.node.test;version="[1.0.0,2.0.0]",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.slf4j;version="[1.5.0,2.0.0)",
+ org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.2,5.0)",
  org.springframework.beans.factory.annotation;version="[4.2,5.0)",
  org.springframework.context;version="[4.2,5.0)",

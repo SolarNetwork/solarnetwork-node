@@ -20,7 +20,7 @@ Import-Package:
  org.osgi.service.event;version="[1.2,2.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
- org.slf4j;version="[1.5.0,2.0.0)",
+ org.slf4j;version="[1.7,2.0)",
  org.springframework.context;version="[4.2,5.0)",
  org.springframework.context.support;version="[4.2,5.0)",
  org.springframework.scheduling.quartz;version="[4.2,5.0)"

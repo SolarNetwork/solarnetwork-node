@@ -21,7 +21,7 @@ Import-Package:
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
- org.slf4j;version="[1.5.0,2.0.0)",
+ org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.2,5.0)",
  org.springframework.beans.factory;version="[4.2,5.0)",
  org.springframework.beans.propertyeditors;version="[4.2,5.0)",
