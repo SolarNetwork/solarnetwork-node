@@ -47,7 +47,7 @@ import net.solarnetwork.node.dao.SettingDao;
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SettingsUserService implements UserDetailsService {
 
@@ -99,6 +99,9 @@ public class SettingsUserService implements UserDetailsService {
 				auths = Collections.emptySet();
 			}
 			result = new User(username, password, auths);
+		}
+		if ( result == null ) {
+			throw new UsernameNotFoundException(username);
 		}
 		return result;
 	}
