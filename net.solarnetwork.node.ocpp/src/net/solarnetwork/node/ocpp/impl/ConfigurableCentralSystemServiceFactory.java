@@ -26,6 +26,7 @@ import java.net.URL;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -34,14 +35,19 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.soap.AddressingFeature;
 import org.osgi.framework.Version;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -282,6 +288,7 @@ public class ConfigurableCentralSystemServiceFactory
 			log.warn("No scheduler avaialable, cannot schedule heartbeat job");
 			return false;
 		}
+		final JobKey jobKey = new JobKey(HEARTBEAT_JOB_NAME, SCHEDULER_GROUP);
 		final long repeatInterval = heartbeatInterval * 1000L;
 		SimpleTrigger trigger = heartbeatTrigger;
 		if ( trigger != null ) {
@@ -294,17 +301,19 @@ public class ConfigurableCentralSystemServiceFactory
 			// trigger has changed!
 			if ( heartbeatInterval == 0 ) {
 				try {
-					sched.unscheduleJob(trigger.getName(), trigger.getGroup());
+					sched.unscheduleJob(trigger.getKey());
 				} catch ( SchedulerException e ) {
 					log.error("Error unscheduling OCPP heartbeat job", e);
 				} finally {
 					heartbeatTrigger = null;
 				}
 			} else {
-				trigger.setRepeatInterval(repeatInterval);
-				trigger.setRepeatCount(repeatCount);
+				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
+						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
+								heartbeatInterval))
+						.build();
 				try {
-					sched.rescheduleJob(trigger.getName(), trigger.getGroup(), trigger);
+					sched.rescheduleJob(trigger.getKey(), trigger);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP heartbeat job", e);
 				} finally {
@@ -319,28 +328,20 @@ public class ConfigurableCentralSystemServiceFactory
 
 		synchronized ( sched ) {
 			try {
-				JobDetail jobDetail = sched.getJobDetail(HEARTBEAT_JOB_NAME, SCHEDULER_GROUP);
+				JobDetail jobDetail = sched.getJobDetail(jobKey);
 				if ( jobDetail == null ) {
-					JobDetail jd = new JobDetail();
-					jd.setJobClass(HeartbeatJob.class);
-					jd.setName(HEARTBEAT_JOB_NAME);
-					jd.setGroup(SCHEDULER_GROUP);
-					jd.setDurability(true);
-					sched.addJob(jd, true);
-					jobDetail = jd;
+					jobDetail = JobBuilder.newJob(HeartbeatJob.class).withIdentity(jobKey).storeDurably()
+							.build();
+					sched.addJob(jobDetail, true);
 				}
-				SimpleTriggerFactoryBean t = new SimpleTriggerFactoryBean();
-				t.setName(this.url);
-				t.setGroup(SCHEDULER_GROUP);
-				t.setRepeatCount(repeatCount);
-				t.setRepeatInterval(repeatInterval);
-				t.setStartDelay(repeatInterval);
-				t.setMisfireInstruction(
-						SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
-				t.setJobDataAsMap(Collections.singletonMap("service", this));
-				t.setJobDetail(jobDetail);
-				t.afterPropertiesSet();
-				trigger = t.getObject();
+				final TriggerKey triggerKey = new TriggerKey(this.url, SCHEDULER_GROUP);
+				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
+						.startAt(new Date(System.currentTimeMillis() + repeatInterval))
+						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
+						.withSchedule(SimpleScheduleBuilder
+								.repeatMinutelyForTotalCount(repeatCount, heartbeatInterval)
+								.withMisfireHandlingInstructionNextWithExistingCount())
+						.build();
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
 				return true;

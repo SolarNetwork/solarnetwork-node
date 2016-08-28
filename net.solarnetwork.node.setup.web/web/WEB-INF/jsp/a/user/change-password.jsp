@@ -34,4 +34,5 @@
 			<button type="submit" class="btn btn-primary"><fmt:message key='user.action.changePassword'/></button>
 		</div>
 	</div>
+	<sec:csrfInput/>
 </form:form>

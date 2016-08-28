@@ -24,8 +24,9 @@ package net.solarnetwork.node.ocpp.socket.control;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -36,10 +37,12 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * is valid.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
 public class SocketStateJob extends net.solarnetwork.node.job.AbstractJob
-		implements StatefulJob, SettingSpecifierProvider {
+		implements SettingSpecifierProvider {
 
 	private SimpleSocketManager socketManager;
 

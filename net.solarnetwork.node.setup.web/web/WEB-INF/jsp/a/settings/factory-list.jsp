@@ -79,6 +79,7 @@
 		<div class="form-actions">
 			<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
 		</div>
+		<sec:csrfInput/>
 	</form>
 </section>
 <script>

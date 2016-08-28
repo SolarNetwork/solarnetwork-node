@@ -57,7 +57,7 @@ import net.solarnetwork.node.setup.Plugin;
  * Task to install plugins.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
@@ -250,8 +250,8 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			try {
 				outputFileInputStream = new FileInputStream(outputFile);
 				tmpOutputFileInputStream = new FileInputStream(tmpOutputFile);
-				String outputFileHash = DigestUtils.shaHex(outputFileInputStream);
-				String tmpOutputFileHash = DigestUtils.shaHex(tmpOutputFileInputStream);
+				String outputFileHash = DigestUtils.sha1Hex(outputFileInputStream);
+				String tmpOutputFileHash = DigestUtils.sha1Hex(tmpOutputFileInputStream);
 				if ( tmpOutputFileHash.equals(outputFileHash) ) {
 					// file unchanged, so just delete tmp file
 					tmpOutputFile.delete();

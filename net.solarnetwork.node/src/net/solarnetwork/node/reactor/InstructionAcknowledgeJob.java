@@ -18,40 +18,37 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
 
 import java.util.List;
-
-import net.solarnetwork.node.job.AbstractJob;
-
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
+import net.solarnetwork.node.job.AbstractJob;
 
 /**
  * Job to look for instructions to update the acknowledgment status for.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
-public class InstructionAcknowledgeJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class InstructionAcknowledgeJob extends AbstractJob {
 
 	private InstructionDao instructionDao;
 	private InstructionAcknowledgementService instructionAcknowledgementService;
-	
+
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext)
-			throws Exception {
+	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		List<Instruction> instructions = instructionDao.findInstructionsForAcknowledgement();
 		if ( instructions.size() > 0 ) {
 			instructionAcknowledgementService.acknowledgeInstructions(instructions);
 			for ( Instruction instruction : instructions ) {
-					instructionDao.storeInstructionStatus(instruction.getId(), 
-							instruction.getStatus().newCopyWithAcknowledgedState(
-									instruction.getStatus().getInstructionState()));
+				instructionDao.storeInstructionStatus(instruction.getId(), instruction.getStatus()
+						.newCopyWithAcknowledgedState(instruction.getStatus().getInstructionState()));
 			}
 		}
 	}
@@ -59,12 +56,15 @@ public class InstructionAcknowledgeJob extends AbstractJob implements StatefulJo
 	public InstructionDao getInstructionDao() {
 		return instructionDao;
 	}
+
 	public void setInstructionDao(InstructionDao instructionDao) {
 		this.instructionDao = instructionDao;
 	}
+
 	public InstructionAcknowledgementService getInstructionAcknowledgementService() {
 		return instructionAcknowledgementService;
 	}
+
 	public void setInstructionAcknowledgementService(
 			InstructionAcknowledgementService instructionAcknowledgementService) {
 		this.instructionAcknowledgementService = instructionAcknowledgementService;

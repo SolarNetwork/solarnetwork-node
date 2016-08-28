@@ -24,28 +24,29 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.settings.SettingsService;
-
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to backup the settings database table to a CSV text file.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SettingsBackupJob extends AbstractJob implements StatefulJob {
-	
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class SettingsBackupJob extends AbstractJob {
+
 	private SettingsService settingsService;
-	
+
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext)
-			throws Exception {
+	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		settingsService.backupSettings();
 	}
-	
+
 	public void setSettingsService(SettingsService settingsService) {
 		this.settingsService = settingsService;
 	}

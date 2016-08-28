@@ -112,9 +112,29 @@ var SolarNode = {
 	 
 	 error : function(message, container) {
 		 SolarNode.alert(null, message, 'alert-error', container);
-	 }
-	
+	 },
+	 
+	 csrfData : (function() {
+		 var csrf = $("meta[name='csrf']").attr("content"),
+		 	header = $("meta[name='csrf_header']").attr("content");
+		 return {token:csrf,headerName:header};
+	 }()),
+	 
 };
+
+/**
+ * Get the CSRF token value or set the token as a request header on an XHR object.
+ * 
+ * @param {XMLHttpRequest} [xhr] The XHR object to set the CSR request header on.
+ * @return The CSRF value.
+ */
+SolarNode.csrf = function(xhr) {
+	 if ( xhr && typeof xhr.setRequestHeader === 'function' ) {
+		 xhr.setRequestHeader(SolarNode.csrfData.headerName, SolarNode.csrfData.token);
+	 }
+	 return SolarNode.csrfData.token;
+};
+
 
 SolarNode.touchEventNames = (function() {
 	return SolarNode.hasTouchSupport ? {
@@ -316,5 +336,9 @@ SolarNode.extractJSONPath = function(root, path) {
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');
+	});
+	$('a.logout').on('click', function(event) {
+		event.preventDefault();
+		$('#logout-form').get(0).submit();
 	});
 });

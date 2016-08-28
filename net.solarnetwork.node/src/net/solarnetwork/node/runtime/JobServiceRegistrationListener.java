@@ -33,10 +33,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.util.BaseServiceListener;
-import net.solarnetwork.node.util.RegisteredService;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
@@ -48,6 +44,10 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import net.solarnetwork.node.job.TriggerAndJobDetail;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.util.BaseServiceListener;
+import net.solarnetwork.node.util.RegisteredService;
 
 /**
  * An OSGi service registration listener for jobs, so they can be automatically
@@ -90,17 +90,18 @@ import org.quartz.Trigger;
  * <dl class="class-properties">
  * <dt>scheduler</dt>
  * <dd>The Quartz {@link Scheduler} for scheduling and un-scheduling jobs with
- * as {@link TriggerAndJobDetail} services are registered and un-registered.</dd>
+ * as {@link TriggerAndJobDetail} services are registered and
+ * un-registered.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @see ManagedJobServiceRegistrationListener for alternative using
  *      settings-based jobs
  */
-public class JobServiceRegistrationListener extends
-		BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>> implements
-		ConfigurationListener {
+public class JobServiceRegistrationListener
+		extends BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>>
+		implements ConfigurationListener {
 
 	private Scheduler scheduler;
 
@@ -142,8 +143,8 @@ public class JobServiceRegistrationListener extends
 				}
 
 				if ( configurationListenerRef == null ) {
-					configurationListenerRef = getBundleContext().registerService(
-							ConfigurationListener.class, this, null);
+					configurationListenerRef = getBundleContext()
+							.registerService(ConfigurationListener.class, this, null);
 				}
 
 				// check for ConfigurationAdmin cron setting for this trigger,
@@ -192,8 +193,8 @@ public class JobServiceRegistrationListener extends
 				scheduler.scheduleJob(job, trigger);
 			}
 		} catch ( SchedulerException e ) {
-			log.error("Error scheduling trigger {} for job {}", new Object[] { trigger.getName(),
-					trigger.getJobName(), e });
+			log.error("Error scheduling trigger {} for job {}",
+					new Object[] { trigger.getKey().getName(), trigger.getJobKey().getName(), e });
 		}
 	}
 
@@ -211,7 +212,7 @@ public class JobServiceRegistrationListener extends
 			return;
 		}
 		try {
-			scheduler.deleteJob(trigJob.getJobDetail().getName(), trigJob.getJobDetail().getGroup());
+			scheduler.deleteJob(trigJob.getJobDetail().getKey());
 		} catch ( SchedulerException e ) {
 			log.error("Unable to un-schedule job " + trigJob);
 			throw new RuntimeException(e);

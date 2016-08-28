@@ -29,8 +29,9 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.dao.DatumDao;
@@ -65,9 +66,11 @@ import net.solarnetwork.node.setup.SetupException;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class DatumDaoBulkUploadJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDaoBulkUploadJob extends AbstractJob {
 
 	private Collection<DatumDao<Datum>> daos;
 	private BulkUploadService uploadService;

@@ -24,20 +24,23 @@ package net.solarnetwork.node.job;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.context.MessageSource;
 
 /**
- * Simple {@link StatefulJob} to execute {@link JobService#executeJobService()}.
+ * Simple stateful job to execute {@link JobService#executeJobService()}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SimpleServiceJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class SimpleServiceJob extends AbstractJob implements SettingSpecifierProvider {
 
 	private JobService service;
 

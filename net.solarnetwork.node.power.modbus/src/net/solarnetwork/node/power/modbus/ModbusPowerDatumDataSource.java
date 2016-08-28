@@ -26,6 +26,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.beans.PropertyAccessException;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
@@ -36,10 +40,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
-import org.springframework.beans.PropertyAccessException;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * {@link GenerationDataSource} implementation using the Jamod modbus serial
@@ -68,10 +68,10 @@ import org.springframework.context.MessageSource;
  * <dd>The Modbus unit ID to use.</dd>
  * 
  * @author matt.magoffin
- * @version 2.1
+ * @version 2.2
  */
-public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
-		DatumDataSource<PowerDatum>, SettingSpecifierProvider {
+public class ModbusPowerDatumDataSource extends ModbusDeviceSupport
+		implements DatumDataSource<PowerDatum>, SettingSpecifierProvider {
 
 	private Integer[] addresses = new Integer[] { 0x8, 0x10 };
 	private Integer count = 5;
@@ -143,13 +143,14 @@ public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
 			if ( registerScaleFactor != null && registerScaleFactor.containsKey(addr) ) {
 				value = Double.valueOf(value.intValue() * registerScaleFactor.get(addr));
 			}
-			log.trace("Setting property {} for address 0x{} to [{}]", propertyName,
-					Integer.toHexString(addr), value);
+			log.trace("Setting property {} for address 0x{} to [{}]",
+					new Object[] { propertyName, Integer.toHexString(addr), value });
 			try {
 				bean.setPropertyValue(propertyName, value);
 			} catch ( PropertyAccessException e ) {
-				log.warn("Unable to set property {} to {} for address 0x{}: {}", propertyName, value,
-						Integer.toHexString(addr), e.getMostSpecificCause().getMessage());
+				log.warn("Unable to set property {} to {} for address 0x{}: {}",
+						new Object[] { propertyName, value, Integer.toHexString(addr),
+								e.getMostSpecificCause().getMessage() });
 			}
 		} else {
 			log.warn("Property {} not available; bad configuration", propertyName);
@@ -383,21 +384,21 @@ public class ModbusPowerDatumDataSource extends ModbusDeviceSupport implements
 		ModbusPowerDatumDataSource defaults = new ModbusPowerDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", (defaults.sourceId == null ? ""
-				: defaults.sourceId)));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId",
+				(defaults.sourceId == null ? "" : defaults.sourceId)));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("addressesValue", defaults.getAddressessValue()));
-		results.add(new BasicTextFieldSettingSpecifier("count", (defaults.getCount() == null ? ""
-				: defaults.getCount().toString())));
-		results.add(new BasicTextFieldSettingSpecifier("registerMappingValue", defaults
-				.getRegisterMappingValue()));
-		results.add(new BasicTextFieldSettingSpecifier("hiLoRegisterMappingValue", defaults
-				.getHiLoRegisterMappingValue()));
-		results.add(new BasicTextFieldSettingSpecifier("registerScaleFactorValue", defaults
-				.getRegisterScaleFactorValue()));
+		results.add(new BasicTextFieldSettingSpecifier("count",
+				(defaults.getCount() == null ? "" : defaults.getCount().toString())));
+		results.add(new BasicTextFieldSettingSpecifier("registerMappingValue",
+				defaults.getRegisterMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("hiLoRegisterMappingValue",
+				defaults.getHiLoRegisterMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("registerScaleFactorValue",
+				defaults.getRegisterScaleFactorValue()));
 		return results;
 	}
 

@@ -82,6 +82,7 @@
 			<button type="submit" class="btn btn-primary" id="submit"><fmt:message key='controls.manage.SetControlParameter.submit'/></button>
 		</div>
 		<input type="hidden" name="controlId" value="${controlId}"/>
+		<sec:csrfInput/>
 	</form>
 </section>
 </c:if><%-- !info.readonly --%>

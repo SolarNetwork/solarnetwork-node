@@ -13,9 +13,9 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
 	<!-- Configuration -->
 
@@ -61,13 +61,13 @@
 		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
-	<bean id="powerDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+	<bean id="powerDatumLoggerTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 		<property name="jobDetail" ref="powerDatumLoggerJob"/>
 		<property name="cronExpression" value="${job.powerDatumLogger.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
 
-	<bean id="powerDatumLoggerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+	<bean id="powerDatumLoggerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 		<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceLoggerJob"/>
 		<property name="jobDataAsMap">
 			<map>
@@ -85,13 +85,13 @@
 		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
-	<bean id="powerDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerBean">
+	<bean id="powerDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 		<property name="jobDetail" ref="powerDatumCleanerJob"/>
 		<property name="cronExpression" value="${job.powerDatumCleaner.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 	</bean>
 
-	<bean id="powerDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailBean">
+	<bean id="powerDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
 		<property name="jobDataAsMap">
 			<map>

@@ -89,6 +89,7 @@
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.import"/></button>
 	</div>
+	<sec:csrfInput/>
 </form>
 
 <div id="view-csr-modal" class="modal dynamic hide fade">
@@ -105,7 +106,7 @@
  	</div>
 </div>
 
-<form id="export-cert-modal" class="modal dynamic hide fade" action="<c:url value='/certs/nodeCert'/>" method="get">
+<form id="export-cert-modal" class="modal dynamic hide fade" action="<c:url value='/a/certs/nodeCert'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='certs.export.title'/></h3>
@@ -153,4 +154,5 @@
 		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
 	</div>
+	<sec:csrfInput/>
 </form>

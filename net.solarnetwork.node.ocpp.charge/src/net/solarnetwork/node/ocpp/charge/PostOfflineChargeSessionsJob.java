@@ -22,19 +22,22 @@
 
 package net.solarnetwork.node.ocpp.charge;
 
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to periodically look for offline charge sessions that need to be posted
  * to the central system.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PostOfflineChargeSessionsJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class PostOfflineChargeSessionsJob extends AbstractJob {
 
 	private ChargeSessionManager service;
 	private int maximum = 5;

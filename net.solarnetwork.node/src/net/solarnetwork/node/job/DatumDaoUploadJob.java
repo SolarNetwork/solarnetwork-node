@@ -30,11 +30,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to query a {@link DatumDao} for data to upload via an
@@ -56,15 +57,18 @@ import org.quartz.StatefulJob;
  * <dd>The {@link DatumDao} to use to query for {@link Datum} to upload.</dd>
  * 
  * <dt>uploadService</dt>
- * <dd>The {@link UploadService} implementation to use to upload the datum to.</dd>
+ * <dd>The {@link UploadService} implementation to use to upload the datum
+ * to.</dd>
  * </dl>
  * 
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class DatumDaoUploadJob<T extends Datum> extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDaoUploadJob<T extends Datum> extends AbstractJob {
 
 	private Collection<DatumDao<Datum>> daos;
 	private UploadService uploadService = null;
@@ -86,9 +90,8 @@ public class DatumDaoUploadJob<T extends Datum> extends AbstractJob implements S
 			int count = 0;
 
 			if ( log.isDebugEnabled() ) {
-				log.debug("Uploading " + toUpload.size() + " ["
-						+ datumDao.getDatumType().getSimpleName() + "] data to ["
-						+ uploadService.getKey() + ']');
+				log.debug("Uploading " + toUpload.size() + " [" + datumDao.getDatumType().getSimpleName()
+						+ "] data to [" + uploadService.getKey() + ']');
 			}
 			final Date uploadDate = new Date();
 			try {

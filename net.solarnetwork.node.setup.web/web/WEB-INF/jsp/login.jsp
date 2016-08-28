@@ -1,6 +1,3 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-
 <c:if test="${not empty param.login_error}">
 <div class="row">
 	<p class="global-error alert alert-error span9">
@@ -20,19 +17,19 @@
 	</p>
 </div>
 
-<form class="form-horizontal" name="f" action="<c:url value='/j_spring_security_check'/>" class="login-form" method="post">
+<form class="form-horizontal" name="f" action="<c:url value='/login'/>" class="login-form" method="post">
 	<fieldset>
 		<div class="control-group">
 			<label class="control-label" for="login-username"><fmt:message key="user.username.label"/></label>
 			<div class="controls">
-				<input class="form-control" type="text" name="j_username" id="login-username" maxlength="240" 
+				<input class="form-control" type="text" name="username" id="login-username" maxlength="240" 
 					value="<c:if test='${not empty param.login_error}'>${SPRING_SECURITY_LAST_USERNAME}</c:if>"/>
 			</div>
 		</div>
 		<div class="control-group">
 			<label class="control-label" for="login-password"><fmt:message key="user.password.label"/></label>
 			<div class="controls">
-				<input class="form-control" type="password" name="j_password" id="login-password" maxlength="255" />
+				<input class="form-control" type="password" name="password" id="login-password" maxlength="255" />
 			</div>
 		</div>
 	</fieldset>
@@ -41,4 +38,5 @@
 			<button type="submit" class="btn btn-primary"><fmt:message key='login.label'/></button>
 		</div>
 	</div>
+	<sec:csrfInput/>
 </form>

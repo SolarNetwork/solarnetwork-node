@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Power Datum Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.power.dao.jdbc
 Bundle-Description: Database storage cache for electrical generation data.
-Bundle-Version: 1.10.0
+Bundle-Version: 1.11.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -16,15 +16,15 @@ Import-Package:
  net.solarnetwork.node.support;version="1.8.0",
  org.aopalliance.aop;version="1.0.0",
  org.osgi.framework;version="[1.7,2.0)",
- org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.aop;version="[3.0,4.0)",
- org.springframework.aop.framework;version="[3.1,4.0)",
- org.springframework.beans.factory;version="[3.1,4.0)",
- org.springframework.core.io;version="[3.1,4.0)",
- org.springframework.context;version="[3.1,4.0)",
- org.springframework.dao.support;version="[3.1,4.0)",
- org.springframework.jdbc.core;version="[3.1,4.0)",
- org.springframework.jdbc.core.simple;version="[3.1,4.0)",
- org.springframework.jdbc.support;version="[3.1,4.0)",
- org.springframework.transaction;version="[3.1,4.0)",
- org.springframework.transaction.annotation;version="[3.1,4.0)"
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.aop;version="[4.2,5.0)",
+ org.springframework.aop.framework;version="[4.2,5.0)",
+ org.springframework.beans.factory;version="[4.2,5.0)",
+ org.springframework.core.io;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.dao.support;version="[4.2,5.0)",
+ org.springframework.jdbc.core;version="[4.2,5.0)",
+ org.springframework.jdbc.core.simple;version="[4.2,5.0)",
+ org.springframework.jdbc.support;version="[4.2,5.0)",
+ org.springframework.transaction;version="[4.2,5.0)",
+ org.springframework.transaction.annotation;version="[4.2,5.0)"

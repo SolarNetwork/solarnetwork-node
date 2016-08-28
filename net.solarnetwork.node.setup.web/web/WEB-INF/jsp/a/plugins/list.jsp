@@ -53,6 +53,7 @@
 			data-msg-success="${msgInstallSuccess}"
 			data-loading-text="${msgInstalling}">${msgInstall}</button>
 	</div>
+	<sec:csrfInput/>
 </form>
 
 <c:url value="/a/plugins/remove" var="urlPluginRemove"/>
@@ -80,4 +81,5 @@
 			data-msg-success="${msgRemoveSuccess}"
 			data-loading-text="${msgRemoving}">${msgRemove}</button>
 	</div>
+	<sec:csrfInput/>
 </form>

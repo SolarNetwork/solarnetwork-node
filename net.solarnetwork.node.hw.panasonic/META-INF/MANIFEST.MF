@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Panasonic Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.panasonic
-Bundle-Version: 0.1.0
+Bundle-Version: 0.2.0
 Bundle-Vendor: SoalrNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
@@ -20,8 +20,8 @@ Import-Package:
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.node.util;version="1.5.0",
  net.solarnetwork.util;version="1.14.0",
- org.joda.time;version="[1.6,3.0)",
- org.joda.time.base;version="[1.6,3.0)",
- org.joda.time.format;version="[1.6,3.0)",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.base;version="[2.4,3.0)",
+ org.joda.time.format;version="[2.4,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
- org.slf4j;version="[1.5.0,2.0.0)"
+ org.slf4j;version="[1.7,2.0)"

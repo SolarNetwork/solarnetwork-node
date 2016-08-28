@@ -30,17 +30,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.quartz.CronTrigger;
 import org.quartz.Trigger;
 import org.springframework.context.MessageSource;
 import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.AbstractMessageSource;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.node.job.TriggerAndJobDetail;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * {@link SettingSpecifierProvider} for Quartz job triggers.
@@ -61,7 +61,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 
@@ -148,7 +148,8 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	private static String titleValue(String settingUID) {
 		if ( settingUID.startsWith(SN_NODE_PREFIX) && settingUID.length() > SN_NODE_PREFIX.length() ) {
 			String subPackage = settingUID.substring(SN_NODE_PREFIX.length());
-			if ( subPackage.endsWith(JOBS_PID_SUFFIX) && subPackage.length() > JOBS_PID_SUFFIX.length() ) {
+			if ( subPackage.endsWith(JOBS_PID_SUFFIX)
+					&& subPackage.length() > JOBS_PID_SUFFIX.length() ) {
 				subPackage = subPackage.substring(0, subPackage.length() - JOBS_PID_SUFFIX.length());
 			}
 			if ( subPackage.indexOf('.') < 0 ) {
@@ -181,25 +182,21 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 			final String key = JobUtils.triggerKey(ct);
 			BasicTextFieldSettingSpecifier tf = new BasicTextFieldSettingSpecifier(key,
 					ct.getCronExpression());
-			tf.setTitle(ct.getName());
+			tf.setTitle(ct.getKey().getName());
 			final String labelKey = key + ".key";
 			final String descKey = key + ".desc";
 			if ( !hasMessage(this.messageSource, labelKey) ) {
 				if ( hasMessage(trigJob.getMessageSource(), labelKey) ) {
-					messages.put(
-							labelKey,
-							new MessageFormat(trigJob.getMessageSource().getMessage(labelKey, null,
-									Locale.getDefault())));
+					messages.put(labelKey, new MessageFormat(
+							trigJob.getMessageSource().getMessage(labelKey, null, Locale.getDefault())));
 				} else {
-					messages.put(labelKey, new MessageFormat(ct.getName()));
+					messages.put(labelKey, new MessageFormat(ct.getKey().getName()));
 				}
 			}
 			if ( !hasMessage(this.messageSource, descKey) ) {
 				if ( hasMessage(trigJob.getMessageSource(), labelKey) ) {
-					messages.put(
-							descKey,
-							new MessageFormat(trigJob.getMessageSource().getMessage(descKey, null,
-									Locale.getDefault())));
+					messages.put(descKey, new MessageFormat(
+							trigJob.getMessageSource().getMessage(descKey, null, Locale.getDefault())));
 				} else {
 					messages.put(descKey, new MessageFormat(
 							StringUtils.hasText(ct.getDescription()) ? ct.getDescription() : ""));

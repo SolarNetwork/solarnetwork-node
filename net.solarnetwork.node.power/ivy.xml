@@ -11,7 +11,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="com.opensymphony.quartz" name="com.springsource.org.quartz" rev="1.6.2" conf="runtime"/>
+		<dependency org="org.quartz-scheduler" name="quartz" rev="2.2.3" conf="runtime"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.19,2.0)"/>
 	</dependencies>
 </ivy-module>

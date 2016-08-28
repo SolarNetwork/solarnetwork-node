@@ -35,6 +35,12 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -43,18 +49,12 @@ import net.solarnetwork.node.backup.DefaultBackupManager;
 import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.util.StaticOptionalService;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.util.FileCopyUtils;
 
 /**
  * Test case for the {@link DefaultBackupManager} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultBackupManagerTest {
 
@@ -94,8 +94,8 @@ public class DefaultBackupManagerTest {
 		final Backup backup = manager.createBackup();
 		assertNotNull(backup);
 
-		final File archiveFile = new File(service.getBackupDir(), String.format(
-				FileSystemBackupService.ARCHIVE_KEY_NAME_FORMAT, backup.getKey()));
+		final File archiveFile = new File(service.getBackupDir(),
+				String.format(FileSystemBackupService.ARCHIVE_KEY_NAME_FORMAT, backup.getKey(), 0L));
 		assertTrue(archiveFile.canRead());
 		ZipFile zipFile = new ZipFile(archiveFile);
 		try {
@@ -120,8 +120,9 @@ public class DefaultBackupManagerTest {
 		final File restoredFile = new File(RESTORE_DIR, TEST_FILE_TXT);
 		assertTrue("Restored file should exist", restoredFile.canRead());
 		final byte[] restoredData = FileCopyUtils.copyToByteArray(restoredFile);
-		assertArrayEquals(FileCopyUtils.copyToByteArray(new ClassPathResource(TEST_FILE_TXT,
-				DefaultBackupManagerTest.class).getInputStream()), restoredData);
+		assertArrayEquals(FileCopyUtils.copyToByteArray(
+				new ClassPathResource(TEST_FILE_TXT, DefaultBackupManagerTest.class).getInputStream()),
+				restoredData);
 	}
 
 	private static class StaticBackupResourceProvider implements BackupResourceProvider {

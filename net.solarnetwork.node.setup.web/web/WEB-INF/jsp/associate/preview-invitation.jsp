@@ -27,4 +27,5 @@
 			<button type="submit" class="btn btn-primary"><fmt:message key='continue.label'/></button>
 		</div>
 	</fieldset>
+	<sec:csrfInput/>
 </form:form>
