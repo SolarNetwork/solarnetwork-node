@@ -15,7 +15,7 @@
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.38,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[1.9,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc.derby.ext" rev="[1.1,2.0)"/>
-		<dependency org="org.apache.derby" name="derby" rev="10.8.3.0" conf="runtime"/>
+		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.enterprise" rev="4.2.0"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>

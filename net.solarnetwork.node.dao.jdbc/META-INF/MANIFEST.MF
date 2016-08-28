@@ -23,7 +23,7 @@ Import-Package:
  net.solarnetwork.node.support;version="1.10.0",
  net.solarnetwork.util;version="1.17.0",
  org.aopalliance.aop;version="1.0.0",
- org.apache.derby.jdbc;resolution:=optional,
+ org.apache.derby.jdbc;version="10.12";resolution:=optional,
  org.apache.tomcat.jdbc.pool;version="1.0.9.3",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.osgi.framework;version="1.7.0",

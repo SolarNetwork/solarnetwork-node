@@ -5,6 +5,6 @@ Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby.ext
 Bundle-Description: Provides SolarNode extensions to the Apache Derby database engine.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: derby;bundle-version="10.8.0"
+Fragment-Host: org.apache.servicemix.bundles.derby;bundle-version="10.12"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.solarnetwork.node.dao.jdbc.derby.ext;version="1.0.0"

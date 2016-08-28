@@ -27,7 +27,7 @@
 		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS.*</beans:prop>
 		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
-		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true</beans:prop>
+		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
 		<beans:prop key="jdbc.pass">solarnode</beans:prop>
 		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
