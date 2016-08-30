@@ -18,14 +18,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.util;
 
 import java.util.Locale;
-
 import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
@@ -33,8 +30,7 @@ import org.springframework.context.NoSuchMessageException;
 
 /**
  * Delegating {@link MessageSource} that dynamically removes a pre-configured
- * prefix
- * from all message codes.
+ * prefix from all message codes.
  * 
  * <p>
  * The inspiration for this class was to support messages for objects that might
@@ -52,7 +48,8 @@ import org.springframework.context.NoSuchMessageException;
  * 
  * <dl class="class-properties">
  * <dt>prefix</dt>
- * <dd>The message code prefix to dynamically remove from all message codes.</dd>
+ * <dd>The message code prefix to dynamically remove from all message
+ * codes.</dd>
  * 
  * <dt>delegate</dt>
  * <dd>The {@link MessageSource} to delegate to. If that object implements
@@ -61,7 +58,7 @@ import org.springframework.context.NoSuchMessageException;
  * </dl>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class PrefixedMessageSource implements MessageSource, HierarchicalMessageSource {
 
@@ -83,12 +80,14 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 		if ( delegate instanceof HierarchicalMessageSource ) {
 			return ((HierarchicalMessageSource) delegate).getParentMessageSource();
 		}
-		throw new UnsupportedOperationException(
-				"Delegate does not implement HierarchicalMessageSource");
+		throw new UnsupportedOperationException("Delegate does not implement HierarchicalMessageSource");
 	}
 
 	@Override
 	public String getMessage(String code, Object[] args, String defaultMessage, Locale locale) {
+		if ( delegate == null ) {
+			return null;
+		}
 		if ( prefix != null && prefix.length() > 0 && code.startsWith(prefix) ) {
 			// remove prefix
 			code = code.substring(prefix.length());
@@ -97,8 +96,10 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 	}
 
 	@Override
-	public String getMessage(String code, Object[] args, Locale locale)
-			throws NoSuchMessageException {
+	public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException {
+		if ( delegate == null ) {
+			return null;
+		}
 		if ( prefix != null && prefix.length() > 0 && code.startsWith(prefix) ) {
 			// remove prefix
 			code = code.substring(prefix.length());
@@ -109,6 +110,9 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 	@Override
 	public String getMessage(final MessageSourceResolvable resolvable, Locale locale)
 			throws NoSuchMessageException {
+		if ( delegate == null ) {
+			return null;
+		}
 		final String[] codes = resolvable.getCodes();
 		if ( prefix != null && prefix.length() > 0 ) {
 			for ( int i = 0; i < codes.length; i++ ) {
