@@ -722,7 +722,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private void handleDatumCapturedEvent(String socketId, String sourceId,
 			Map<String, Object> eventProperties) {
 		if ( shouldIgnoreReadingsForSocket(socketId) ) {
-			log.debug("Ignoring DATUM_CAPTURED event for socket {} that is stopping", socketId);
+			log.debug("Ignoring DATUM_CAPTURED event for socket {} that is transitioning state",
+					socketId);
 			return;
 		}
 		ChargeSession active = activeChargeSession(socketId);
