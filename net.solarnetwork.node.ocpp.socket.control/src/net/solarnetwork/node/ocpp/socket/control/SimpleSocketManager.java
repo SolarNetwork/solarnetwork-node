@@ -166,7 +166,7 @@ public class SimpleSocketManager implements SocketManager, SettingSpecifierProvi
 			}
 			boolean enabled = (session != null && !expired);
 			if ( !adjustSocketEnabledState(socketId, enabled) ) {
-				log.warn("Enable to adjust socket {} enabled state to {}", socketId,
+				log.warn("Unable to adjust socket {} enabled state to {}", socketId,
 						enabled ? "enabled" : "disabled");
 			}
 		}
