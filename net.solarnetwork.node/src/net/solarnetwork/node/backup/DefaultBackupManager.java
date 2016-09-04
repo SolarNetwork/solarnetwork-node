@@ -325,8 +325,8 @@ public class DefaultBackupManager implements BackupManager {
 	@Override
 	public void importBackupArchive(InputStream archive, Map<String, String> props) throws IOException {
 		final ZipInputStream zin = new ZipInputStream(archive);
-		final Set<String> providerKeySet = StringUtils
-				.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER));
+		final Set<String> providerKeySet = (props == null ? null
+				: StringUtils.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER)));
 		while ( true ) {
 			final ZipEntry entry = zin.getNextEntry();
 			if ( entry == null ) {
