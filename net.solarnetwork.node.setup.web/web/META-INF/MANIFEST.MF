@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.18.0
+Bundle-Version: 1.18.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
@@ -125,6 +125,7 @@ Import-Package:
  org.springframework.web.filter;version="[4.2,5.0)",
  org.springframework.web.multipart;version="[4.2,5.0)",
  org.springframework.web.multipart.commons;version="[4.2,5.0)",
+ org.springframework.web.multipart.support;version="[4.2,5.0)",
  org.springframework.web.servlet;version="[4.2,5.0)",
  org.springframework.web.servlet.handler;version="[4.2,5.0)",
  org.springframework.web.servlet.mvc;version="[4.2,5.0)",

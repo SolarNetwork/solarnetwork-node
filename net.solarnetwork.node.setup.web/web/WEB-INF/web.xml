@@ -37,6 +37,20 @@
 		</param-value>
 	</context-param>
 	
+	<!-- Multipart filter before security filter, to support CSRF on multipart/form-data -->
+	<filter>
+		<filter-name>MultipartFilter</filter-name>
+		<filter-class>org.springframework.web.multipart.support.MultipartFilter</filter-class>
+		<init-param>
+			<param-name>multipartResolverBeanName</param-name>
+			<param-value>multipartResolver</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>MultipartFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+	
 	<!-- Security Filter -->
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
