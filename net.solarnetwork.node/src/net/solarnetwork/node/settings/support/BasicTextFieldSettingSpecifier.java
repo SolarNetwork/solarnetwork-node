@@ -30,10 +30,12 @@ import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
  * Basic implementation of {@link TextFieldSettingSpecifier}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier implements
-		TextFieldSettingSpecifier {
+public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier
+		implements TextFieldSettingSpecifier {
+
+	private boolean secureTextEntry = false;
 
 	/**
 	 * Constructor.
@@ -47,10 +49,25 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier i
 		super(key, defaultValue);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *        the key
+	 * @param defaultValue
+	 *        the default value
+	 * @param secureTextEntry
+	 *        <em>true</em> if the text should be hidden when editing.
+	 */
+	public BasicTextFieldSettingSpecifier(String key, String defaultValue, boolean secureTextEntry) {
+		super(key, defaultValue);
+		this.secureTextEntry = secureTextEntry;
+	}
+
 	@Override
 	public SettingSpecifier mappedWithPlaceholer(String template) {
-		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(String.format(template,
-				getKey()), getDefaultValue());
+		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(
+				String.format(template, getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;
@@ -65,11 +82,16 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier i
 
 	@Override
 	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
-		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(
-				mapper.mapKey(getKey()), getDefaultValue());
+		BasicTextFieldSettingSpecifier spec = new BasicTextFieldSettingSpecifier(mapper.mapKey(getKey()),
+				getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
 		return spec;
+	}
+
+	@Override
+	public boolean isSecureTextEntry() {
+		return secureTextEntry;
 	}
 
 }
