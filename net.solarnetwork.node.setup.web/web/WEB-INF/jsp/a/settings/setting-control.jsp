@@ -124,8 +124,17 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
-						<input type="text" name="${settingId}" id="${settingId}" class="span5" maxLength="255"
-							value="${settingValue}" />
+						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
+							class="span5" maxLength="255"
+							<c:choose>
+								<c:when test='${setting.secureTextEntry == true}'>
+									placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
+								</c:when>
+								<c:otherwise>
+									value="${settingValue}"
+								</c:otherwise>
+							</c:choose>
+							/>
 						<script>
 						$(function() {
 							SolarNode.Settings.addTextField({
@@ -187,24 +196,31 @@
 				</c:if>
 				
 				<span class="help-inline active-value clean"><span class="text-info">
-					<fmt:message key="settings.current.value.label"/>:
-					<code class="value">
-						<c:choose>
-							<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
-						    	<c:choose>
-						    		<c:when test="${settingValue eq  setting.trueValue}">
-						    			<fmt:message key="settings.toggle.on"/>
-						    		</c:when>
-						    		<c:otherwise>
-						    			<fmt:message key="settings.toggle.off"/>
-						    		</c:otherwise>
-						    	</c:choose>
-							</c:when>
-							<c:otherwise>
-								${settingValue}
-							</c:otherwise>
-						</c:choose>
-					</code>
+					<c:choose>
+						<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true}">
+							<fmt:message key="settings.changed.value.label"/>
+						</c:when>
+						<c:otherwise>
+							<fmt:message key="settings.current.value.label"/>:
+							<code class="value">
+								<c:choose>
+									<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
+								    	<c:choose>
+								    		<c:when test="${settingValue eq  setting.trueValue}">
+								    			<fmt:message key="settings.toggle.on"/>
+								    		</c:when>
+								    		<c:otherwise>
+								    			<fmt:message key="settings.toggle.off"/>
+								    		</c:otherwise>
+								    	</c:choose>
+									</c:when>
+									<c:otherwise>
+										${settingValue}
+									</c:otherwise>
+								</c:choose>
+							</code>
+						</c:otherwise>
+					</c:choose>
 				</span></span>
 			</div>
 		</div>
