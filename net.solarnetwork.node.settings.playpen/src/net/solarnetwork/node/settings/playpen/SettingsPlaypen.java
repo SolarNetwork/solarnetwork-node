@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.domain.BasicGeneralLocation;
@@ -44,15 +47,12 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.OptionalServiceTracker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SettingsPlaypen implements SettingSpecifierProvider {
 
@@ -63,6 +63,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private static final String[] DEFAULT_MENU = new String[] { "Option 1", "Option 2", "Option 3" };
 
 	private String string = DEFAULT_STRING;
+	private String password = null;
 	private Integer integer = DEFAULT_INTEGER;
 	private Boolean toggle = Boolean.FALSE;
 	private Double slide = DEFAULT_SLIDE;
@@ -108,6 +109,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		SettingsPlaypen defaults = new SettingsPlaypen();
 
 		results.add(new BasicTextFieldSettingSpecifier("string", defaults.getString()));
+		results.add(new BasicTextFieldSettingSpecifier("password", defaults.getPassword(), true));
 		results.add(new BasicTextFieldSettingSpecifier("integer", defaults.getInteger().toString()));
 		results.add(new BasicToggleSettingSpecifier("toggle", defaults.getToggle()));
 		results.add(new BasicSliderSettingSpecifier("slide", defaults.getSlide(), 0.0, 10.0, 0.5));
@@ -142,9 +144,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
 							String key) {
-						return Collections
-								.<SettingSpecifier> singletonList(new BasicTextFieldSettingSpecifier(
-										key, ""));
+						return Collections.<SettingSpecifier> singletonList(
+								new BasicTextFieldSettingSpecifier(key, ""));
 					}
 				});
 		results.add(listStringGroup);
@@ -157,8 +158,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(ComplexListItem value,
 							int index, String key) {
-						BasicGroupSettingSpecifier personGroup = new BasicGroupSettingSpecifier(value
-								.settings(key + "."));
+						BasicGroupSettingSpecifier personGroup = new BasicGroupSettingSpecifier(
+								value.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(personGroup);
 					}
 				});
@@ -265,6 +266,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		this.string = string;
 	}
 
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
 	public Integer getInteger() {
 		return integer;
 	}
@@ -334,7 +343,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	}
 
 	public void setSourceId(String sourceId) {
-		if ( this.location != null && sourceId != null && !sourceId.equals(this.location.getSourceId()) ) {
+		if ( this.location != null && sourceId != null
+				&& !sourceId.equals(this.location.getSourceId()) ) {
 			this.location = null;
 		}
 		this.sourceId = sourceId;
