@@ -42,10 +42,12 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.util.OptionalServiceTracker;
 
 /**
@@ -86,6 +88,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	private SetupResourceProvider customSettingResourceProvider;
 
 	@Override
 	public String getSettingUID() {
@@ -135,6 +139,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// custom UI
+		results.add(new BasicSetupResourceSettingSpecifier(customSettingResourceProvider));
 
 		// basic dynamic list of strings
 		Collection<String> listStrings = getListString();
@@ -450,6 +457,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 	public void setMenu(String menu) {
 		this.menu = menu;
+	}
+
+	public SetupResourceProvider getCustomSettingResourceProvider() {
+		return customSettingResourceProvider;
+	}
+
+	public void setCustomSettingResourceProvider(SetupResourceProvider customSettingResourceProvider) {
+		this.customSettingResourceProvider = customSettingResourceProvider;
 	}
 
 }

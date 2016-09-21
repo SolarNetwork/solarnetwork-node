@@ -38,6 +38,45 @@
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
+	<service interface="net.solarnetwork.node.setup.SetupResourceProvider">
+		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
+			<property name="resources">
+				<list>
+					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
+						<argument value="playpen-js"/>
+						<argument value="playpen.js"/>
+						<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
+					</bean>
+					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
+						<argument value="playpen-auth-js"/>
+						<argument value="playpen-authenticated.js"/>
+						<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).USER_ROLES}"/>
+					</bean>
+				</list>
+			</property>
+		</bean>
+	</service>
+	
+	<bean id="customSettingResourceProvider" class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
+		<property name="resources">
+			<list>
+				<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
+					<argument value="playpen-setting-html"/>
+					<argument value="playpen-setting.html"/>
+					<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
+					<argument value="text/html"/>
+					<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+	
+	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.settings.playpen" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
@@ -48,6 +87,7 @@
 		<bean class="net.solarnetwork.node.settings.playpen.SettingsPlaypen">
 			<property name="locationService" ref="locationService"/>
 			<property name="messageSource" ref="messageSource"/>
+			<property name="customSettingResourceProvider" ref="customSettingResourceProvider"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
