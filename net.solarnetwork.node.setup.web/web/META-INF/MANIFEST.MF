@@ -34,7 +34,7 @@ Import-Package:
  net.solarnetwork.node.dao;version="1.6",
  net.solarnetwork.node.reactor;version="1.1",
  net.solarnetwork.node.reactor.support;version="1.2",
- net.solarnetwork.node.settings;version="1.9",
+ net.solarnetwork.node.settings;version="1.10",
  net.solarnetwork.node.setup;version="1.8",
  net.solarnetwork.node.support;version="1.13",
  net.solarnetwork.support;version="1.2",
