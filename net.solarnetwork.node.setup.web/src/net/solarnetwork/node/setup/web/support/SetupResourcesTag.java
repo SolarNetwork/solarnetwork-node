@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.setup.web.support;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.servlet.tags.form.AbstractFormTag;
 import org.springframework.web.servlet.tags.form.TagWriter;
 import org.springframework.web.util.UriUtils;
@@ -45,23 +48,26 @@ public class SetupResourcesTag extends AbstractFormTag {
 
 	private static final long serialVersionUID = -3795271055855930341L;
 
-	@Autowired
 	private SetupResourceService setupResourceService;
 
 	private String role;
 	private String type = SetupResource.JAVASCRIPT_CONTENT_TYPE;
+	private SetupResourceProvider provider;
+	private boolean inline = false;
 
 	@Override
 	protected int writeTagContent(TagWriter tagWriter) throws JspException {
-		if ( setupResourceService == null ) {
+		if ( setupResourceService == null && provider == null ) {
 			setupResourceService = getRequestContext().getWebApplicationContext()
 					.getBean(SetupResourceService.class);
 			if ( setupResourceService == null ) {
 				return SKIP_BODY;
 			}
 		}
-		List<SetupResource> resources = setupResourceService
-				.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE);
+		List<SetupResource> resources = (provider != null
+				? provider.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE)
+				: setupResourceService
+						.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE));
 		if ( resources == null || resources.isEmpty() ) {
 			return SKIP_BODY;
 		}
@@ -73,29 +79,56 @@ public class SetupResourcesTag extends AbstractFormTag {
 			if ( !hasRequiredyRole(rsrc) ) {
 				continue;
 			}
-			String url = "";
-			try {
-				url = getRequestContext().getContextUrl(
-						baseUrl + UriUtils.encodePathSegment(rsrc.getResourceUID(), "UTF-8"));
-			} catch ( UnsupportedEncodingException e ) {
-				// should not be here ever
-			}
-			if ( SetupResource.JAVASCRIPT_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
-				tagWriter.startTag("script");
-				tagWriter.writeAttribute("type", rsrc.getContentType());
-				tagWriter.writeAttribute("src", url);
-				tagWriter.endTag(true);
-			} else if ( SetupResource.CSS_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
-				tagWriter.startTag("link");
-				tagWriter.writeAttribute("rel", "stylesheet");
-				tagWriter.writeAttribute("type", "text/css");
-				tagWriter.writeAttribute("href", url);
-			} else if ( rsrc.getContentType().startsWith("image/") ) {
-				tagWriter.startTag("img");
-				tagWriter.writeAttribute("src", url);
+			if ( inline ) {
+				try {
+					writeInlineResource(rsrc);
+				} catch ( IOException e ) {
+					throw new JspException(e);
+				}
+			} else {
+				String url = "";
+				try {
+					url = getRequestContext().getContextUrl(
+							baseUrl + UriUtils.encodePathSegment(rsrc.getResourceUID(), "UTF-8"));
+				} catch ( UnsupportedEncodingException e ) {
+					// should not be here ever
+				}
+				if ( SetupResource.JAVASCRIPT_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
+					tagWriter.startTag("script");
+					tagWriter.writeAttribute("type", rsrc.getContentType());
+					tagWriter.writeAttribute("src", url);
+					tagWriter.endTag(true);
+				} else if ( SetupResource.CSS_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
+					tagWriter.startTag("link");
+					tagWriter.writeAttribute("rel", "stylesheet");
+					tagWriter.writeAttribute("type", "text/css");
+					tagWriter.writeAttribute("href", url);
+				} else if ( rsrc.getContentType().startsWith("image/") ) {
+					tagWriter.startTag("img");
+					tagWriter.writeAttribute("src", url);
+				}
 			}
 		}
 		return SKIP_BODY;
+	}
+
+	private void writeInlineResource(SetupResource rsrc) throws IOException {
+		Reader in = new InputStreamReader(rsrc.getInputStream(), "UTF-8");
+		Writer out = this.pageContext.getOut();
+		try {
+			char[] buffer = new char[4096];
+			int bytesRead = -1;
+			while ( (bytesRead = in.read(buffer)) != -1 ) {
+				out.write(buffer, 0, bytesRead);
+			}
+			out.flush();
+		} finally {
+			try {
+				in.close();
+			} catch ( IOException ex ) {
+				// ignore this
+			}
+		}
 	}
 
 	private boolean hasRequiredyRole(SetupResource rsrc) {
@@ -119,12 +152,16 @@ public class SetupResourcesTag extends AbstractFormTag {
 		this.role = role;
 	}
 
-	public String getType() {
-		return type;
-	}
-
 	public void setType(String type) {
 		this.type = type;
+	}
+
+	public void setProvider(SetupResourceProvider provider) {
+		this.provider = provider;
+	}
+
+	public void setInline(boolean inline) {
+		this.inline = inline;
 	}
 
 }

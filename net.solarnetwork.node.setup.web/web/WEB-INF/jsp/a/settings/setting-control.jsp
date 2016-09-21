@@ -14,6 +14,14 @@
 	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'/>
 </c:set>
 <c:choose>
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}">
+		<div class="control-group setup-resource-container" id="cg-${settingId}" 
+				data-setting-id="${settingId}" 
+				data-instance-id="${instanceId}" 
+				data-group-index="${groupIndex}">
+			<setup:resources role="USER" provider="${setting.setupResourceProvider}" type="text/html" inline="true"/>
+		</div>
+	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">
 			<label class="control-label" for="${settingId}">

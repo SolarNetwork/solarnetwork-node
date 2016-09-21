@@ -109,6 +109,24 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
+		<attribute>
+			<description>
+				A SetupResourceProvider to use specifically. If not configured then a registered SetupResourceService
+				will be used instead.
+			</description>
+			<name>provider</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				If true, the resource content should be rendered directly into the output body. Otherwise an 
+				appropriate HTML element that links to the resource will be rendered.
+			</description>
+			<name>inline</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
 	</tag>
 
 	<function>
