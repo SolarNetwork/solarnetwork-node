@@ -9,6 +9,12 @@
 	/css/ladda.css
 	/css/solarnode.css
 </pack:style>
+<sec:authorize access="!hasRole('ROLE_USER')">
+	<setup:resources type="text/css"/>
+</sec:authorize>
+<sec:authorize access="hasRole('ROLE_USER')">
+	<setup:resources type="text/css" role='USER'/>
+</sec:authorize>
 <pack:script> 
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
@@ -21,3 +27,9 @@
 	/js/new-node.js
 	/js/plugins.js
 </pack:script>
+<sec:authorize access="!hasRole('ROLE_USER')">
+	<setup:resources type="application/javascript"/>
+</sec:authorize>
+<sec:authorize access="hasRole('ROLE_USER')">
+	<setup:resources type="application/javascript" role='USER'/>
+</sec:authorize>

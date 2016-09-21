@@ -81,6 +81,14 @@
 		</bean>
 	</service>
 	
+	<service interface="net.solarnetwork.node.setup.SetupResourceService">
+		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceService">
+			<property name="setupResourceProviders">
+				<reference-list availability="optional" interface="net.solarnetwork.node.setup.SetupResourceProvider"/>
+			</property>
+		</bean>
+	</service>
+	
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>

@@ -57,4 +57,7 @@
 		<osgi:listener ref="pluginService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
 	
+	<osgi:reference id="setupResourceService" availability="optional"
+		interface="net.solarnetwork.node.setup.SetupResourceService"/>
+	
 </beans>

@@ -6,7 +6,7 @@
 	version="2.1">
 
 	<description>SolarNetwork Setup Taglib</description>
-	<tlib-version>1.2</tlib-version>
+	<tlib-version>1.3</tlib-version>
 	<short-name>setup</short-name>
 	<uri>http://solarnetwork.net/taglib/setup</uri>
 
@@ -83,6 +83,29 @@
 		<attribute>
 			<description>Escape XML or not.</description>
 			<name>escapeXml</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+
+	<tag>
+		<description>Render SetupResource values for web consumer</description>
+		<name>resources</name>
+		<tag-class>net.solarnetwork.node.setup.web.support.SetupResourcesTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<description>
+				A role to restrict the resources to.
+			</description>
+			<name>role</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				A role to restrict the resources to.
+			</description>
+			<name>type</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
