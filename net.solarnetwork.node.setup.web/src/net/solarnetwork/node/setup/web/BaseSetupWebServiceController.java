@@ -42,7 +42,7 @@ public class BaseSetupWebServiceController {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
-	 * Handle an {@link AuthorizationException}.
+	 * Handle an {@link AuthenticationException}.
 	 * 
 	 * @param e
 	 *        the exception
