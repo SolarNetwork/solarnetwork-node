@@ -18,9 +18,9 @@
 		http://www.springframework.org/schema/tx
 		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
-	<bean id="messageSource" 
-		class="org.springframework.context.support.ReloadableResourceBundleMessageSource"
-		p:cacheSeconds="-1" p:basename="WEB-INF/messages"/>
+	<!-- Combine all /WEB-INF/**/messages.properties into a single message source. -->
+	<bean id="messageSource" class="net.solarnetwork.web.support.PatternMatchingResourceBundleMessagesSource"
+		p:cacheSeconds="-1" p:basename="WEB-INF/**/messages"/>
 	
 	<ctx:annotation-config/>
 	<ctx:component-scan base-package="net.solarnetwork.node.setup.web"/>
