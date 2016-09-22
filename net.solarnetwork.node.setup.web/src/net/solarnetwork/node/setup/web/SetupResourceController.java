@@ -56,7 +56,7 @@ public class SetupResourceController extends BaseSetupWebServiceController {
 	@RequestMapping({ "/rsrc/{id}", "/a/rsrc/{id}" })
 	public void publicSetupResource(@PathVariable("id") String id, WebRequest req,
 			HttpServletResponse res) throws IOException {
-		final SetupResource rsrc = resourceService.getSetupResource(id);
+		final SetupResource rsrc = resourceService.getSetupResource(id, req.getLocale());
 		if ( rsrc == null ) {
 			res.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return;

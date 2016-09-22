@@ -92,7 +92,7 @@
 		<description>Render SetupResource values for web consumer</description>
 		<name>resources</name>
 		<tag-class>net.solarnetwork.node.setup.web.support.SetupResourcesTag</tag-class>
-		<body-content>empty</body-content>
+		<body-content>JSP</body-content>
 		<attribute>
 			<description>
 				A role to restrict the resources to.
@@ -120,10 +120,35 @@
 		</attribute>
 		<attribute>
 			<description>
+				A Map of additional properties to render as data attributes on a wrapper element, only if inline
+				is also set to true.
+			</description>
+			<name>properties</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
 				If true, the resource content should be rendered directly into the output body. Otherwise an 
 				appropriate HTML element that links to the resource will be rendered.
 			</description>
 			<name>inline</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				The wrapper element to use if properties are provided. Defaults to "div".
+			</description>
+			<name>wrapperElement</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				If a wrapper element is used, then a class attribute value to add.
+			</description>
+			<name>wrapperClass</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>

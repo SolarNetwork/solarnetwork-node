@@ -22,7 +22,8 @@
 
 package net.solarnetwork.node.setup;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Locale;
 
 /**
  * API for a centrally managed manager of {@link SetupResource} instances.
@@ -37,17 +38,21 @@ public interface SetupResourceService {
 	 * 
 	 * @param resourceUID
 	 *        The ID of the resource to get.
+	 * @param locale
+	 *        The desired locale.
 	 * @return The resource, or {@code null} if not available.
 	 */
-	SetupResource getSetupResource(String resourceUID);
+	SetupResource getSetupResource(String resourceUID, Locale locale);
 
 	/**
 	 * Get a set of resources for a specific consumer type.
 	 * 
 	 * @param consumerType
 	 *        The consumer type to get resources for.
+	 * @param locale
+	 *        The desired locale.
 	 * @return All matching resources, never <em>null</em>.
 	 */
-	List<SetupResource> getSetupResourcesForConsumer(String consumerType);
+	Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale);
 
 }

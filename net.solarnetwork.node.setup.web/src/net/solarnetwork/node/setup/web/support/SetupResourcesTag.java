@@ -27,11 +27,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
-import org.springframework.web.servlet.tags.form.AbstractFormTag;
+import org.springframework.web.servlet.tags.HtmlEscapingAwareTag;
 import org.springframework.web.servlet.tags.form.TagWriter;
 import org.springframework.web.util.UriUtils;
 import net.solarnetwork.node.setup.SetupResource;
@@ -41,12 +42,18 @@ import net.solarnetwork.node.setup.SetupResourceService;
 /**
  * Tag to generate HTML tags for supported {@link SetupResource} values.
  * 
+ * When rendering inline content, if any properties are provided via
+ * {@link #setProperties(Map)} then the content will be wrapped in a
+ * {@code &lt;div&gt;} element (or whatever is configured via
+ * {@link #setPropertiesWrapperElement(String)}) and all properties added as
+ * {@code data-} attributes.
+ * 
  * @author matt
  * @version 1.0
  */
-public class SetupResourcesTag extends AbstractFormTag {
+public class SetupResourcesTag extends HtmlEscapingAwareTag {
 
-	private static final long serialVersionUID = -3795271055855930341L;
+	private static final long serialVersionUID = 6291858407097698593L;
 
 	private SetupResourceService setupResourceService;
 
@@ -54,24 +61,44 @@ public class SetupResourcesTag extends AbstractFormTag {
 	private String type = SetupResource.JAVASCRIPT_CONTENT_TYPE;
 	private SetupResourceProvider provider;
 	private boolean inline = false;
+	private Map<String, ?> properties;
+	private String wrapperElement = "div";
+	private String wrapperClass;
 
 	@Override
-	protected int writeTagContent(TagWriter tagWriter) throws JspException {
+	protected int doStartTagInternal() throws Exception {
+		writeContent(new TagWriter(this.pageContext));
+		return SKIP_BODY;
+	}
+
+	private void writeContent(TagWriter tagWriter) throws JspException {
 		if ( setupResourceService == null && provider == null ) {
 			setupResourceService = getRequestContext().getWebApplicationContext()
 					.getBean(SetupResourceService.class);
 			if ( setupResourceService == null ) {
-				return SKIP_BODY;
+				return;
 			}
 		}
-		List<SetupResource> resources = (provider != null
-				? provider.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE)
-				: setupResourceService
-						.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE));
+		Collection<SetupResource> resources = (provider != null
+				? provider.getSetupResourcesForConsumer(SetupResourceProvider.WEB_CONSUMER_TYPE,
+						pageContext.getRequest().getLocale())
+				: setupResourceService.getSetupResourcesForConsumer(
+						SetupResourceProvider.WEB_CONSUMER_TYPE, pageContext.getRequest().getLocale()));
 		if ( resources == null || resources.isEmpty() ) {
-			return SKIP_BODY;
+			return;
 		}
 		String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
+		if ( inline && properties != null && wrapperElement != null ) {
+			tagWriter.startTag(wrapperElement);
+			if ( wrapperClass != null ) {
+				tagWriter.writeAttribute("class", htmlEscape(wrapperClass));
+			}
+			for ( Map.Entry<String, ?> me : properties.entrySet() ) {
+				String value = (me.getValue() == null ? "" : me.getValue().toString());
+				tagWriter.writeAttribute("data-" + htmlEscape(me.getKey()), htmlEscape(value));
+			}
+			tagWriter.forceBlock();
+		}
 		for ( SetupResource rsrc : resources ) {
 			if ( !type.equals(rsrc.getContentType()) ) {
 				continue;
@@ -109,7 +136,9 @@ public class SetupResourcesTag extends AbstractFormTag {
 				}
 			}
 		}
-		return SKIP_BODY;
+		if ( inline && properties != null && wrapperElement != null ) {
+			tagWriter.endTag(true);
+		}
 	}
 
 	private void writeInlineResource(SetupResource rsrc) throws IOException {
@@ -162,6 +191,18 @@ public class SetupResourcesTag extends AbstractFormTag {
 
 	public void setInline(boolean inline) {
 		this.inline = inline;
+	}
+
+	public void setProperties(Map<String, ?> properties) {
+		this.properties = properties;
+	}
+
+	public void setWrapperElement(String propertiesWrapperElement) {
+		this.wrapperElement = propertiesWrapperElement;
+	}
+
+	public void setWrapperClass(String wrapperClass) {
+		this.wrapperClass = wrapperClass;
 	}
 
 }

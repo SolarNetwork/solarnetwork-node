@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
+import java.util.Map;
 import net.solarnetwork.node.settings.SetupResourceSettingSpecifier;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 
@@ -35,21 +36,41 @@ public class BasicSetupResourceSettingSpecifier extends BaseSettingSpecifier
 		implements SetupResourceSettingSpecifier {
 
 	private final SetupResourceProvider provider;
+	private final Map<String, ?> props;
+
+	/**
+	 * Construct without properties.
+	 * 
+	 * @param provider
+	 *        The provider to use.
+	 */
+	public BasicSetupResourceSettingSpecifier(SetupResourceProvider provider) {
+		this(provider, null);
+	}
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param provider
 	 *        The provider to use.
+	 * @param properties
+	 *        The properties to use.
 	 */
-	public BasicSetupResourceSettingSpecifier(SetupResourceProvider provider) {
+	public BasicSetupResourceSettingSpecifier(SetupResourceProvider provider,
+			Map<String, ?> properties) {
 		super();
 		this.provider = provider;
+		this.props = properties;
 	}
 
 	@Override
 	public SetupResourceProvider getSetupResourceProvider() {
 		return provider;
+	}
+
+	@Override
+	public Map<String, ?> getSetupResourceProperties() {
+		return props;
 	}
 
 }

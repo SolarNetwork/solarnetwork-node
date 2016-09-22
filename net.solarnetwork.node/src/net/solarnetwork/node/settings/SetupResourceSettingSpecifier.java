@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings;
 
+import java.util.Map;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 
@@ -39,5 +40,13 @@ public interface SetupResourceSettingSpecifier extends SettingSpecifier {
 	 * @return The resource provider.
 	 */
 	SetupResourceProvider getSetupResourceProvider();
+
+	/**
+	 * Get a set of properties to associate with the resources managed by this
+	 * setting.
+	 * 
+	 * @return A set of properties.
+	 */
+	Map<String, ?> getSetupResourceProperties();
 
 }

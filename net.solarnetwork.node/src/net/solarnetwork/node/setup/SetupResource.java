@@ -25,6 +25,7 @@ package net.solarnetwork.node.setup;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -46,6 +47,9 @@ public interface SetupResource {
 
 	/** A {@code contentType} for JSON data. */
 	String JSON_CONTENT_TYPE = "application/json";
+
+	/** A {@code contentType} for HTML. */
+	String HTML_CONTENT_TYPE = "text/html";
 
 	/**
 	 * A value to return from {@link #getCacheMaximumSeconds()} if caching
@@ -96,6 +100,13 @@ public interface SetupResource {
 	 *         are supported.
 	 */
 	Set<String> getSupportedConsumerTypes();
+
+	/**
+	 * The locale of the resource, or {@code null} for non-localizable content.
+	 * 
+	 * @return The locale, or {@code null}.
+	 */
+	Locale getLocale();
 
 	/**
 	 * Get a maximum number of seconds this resource may be cached for, or

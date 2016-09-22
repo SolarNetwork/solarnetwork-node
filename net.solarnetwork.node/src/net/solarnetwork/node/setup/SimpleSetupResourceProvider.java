@@ -22,9 +22,13 @@
 
 package net.solarnetwork.node.setup;
 
-import java.util.ArrayList;
+import static net.solarnetwork.node.setup.SetupResourceUtils.localeScore;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,35 +40,52 @@ import java.util.Set;
  */
 public class SimpleSetupResourceProvider implements SetupResourceProvider {
 
+	private Locale defaultLocale = Locale.US;
 	private List<SetupResource> resources;
 
 	@Override
-	public SetupResource getSetupResource(String resourceUID) {
+	public SetupResource getSetupResource(String resourceUID, Locale locale) {
 		if ( resources == null ) {
 			return null;
 		}
+		int bestScore = -1;
+		SetupResource bestMatch = null;
 		for ( SetupResource rsrc : resources ) {
 			if ( resourceUID.equals(rsrc.getResourceUID()) ) {
-				return rsrc;
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public List<SetupResource> getSetupResourcesForConsumer(String consumerType) {
-		List<SetupResource> result;
-		if ( resources == null ) {
-			result = Collections.emptyList();
-		} else {
-			result = new ArrayList<SetupResource>(resources.size());
-			for ( SetupResource rsrc : resources ) {
-				Set<String> supported = rsrc.getSupportedConsumerTypes();
-				if ( supported == null || supported.contains(consumerType) ) {
-					result.add(rsrc);
+				int score = localeScore(rsrc, locale, defaultLocale);
+				if ( score == Integer.MAX_VALUE ) {
+					return rsrc;
+				}
+				if ( bestMatch == null || score > bestScore ) {
+					bestScore = score;
+					bestMatch = rsrc;
 				}
 			}
 		}
+		return bestMatch;
+	}
+
+	@Override
+	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale) {
+		Collection<SetupResource> result;
+		Map<String, SetupResource> bestMatches;
+		if ( resources == null ) {
+			result = Collections.emptyList();
+		} else {
+			bestMatches = new HashMap<String, SetupResource>();
+			for ( SetupResource rsrc : resources ) {
+				Set<String> supported = rsrc.getSupportedConsumerTypes();
+				if ( supported == null || supported.contains(consumerType) ) {
+					SetupResource currMatch = bestMatches.get(rsrc.getResourceUID());
+					if ( localeScore(currMatch, locale, defaultLocale) < localeScore(rsrc, locale,
+							defaultLocale) ) {
+						bestMatches.put(rsrc.getResourceUID(), rsrc);
+					}
+				}
+			}
+			result = bestMatches.values();
+		}
+
 		return result;
 	}
 
@@ -72,8 +93,25 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 		return resources;
 	}
 
+	/**
+	 * Set the list of resources to use.
+	 * 
+	 * @param resources
+	 *        The fixed set of resources managed by this service.
+	 */
 	public void setResources(List<SetupResource> resources) {
 		this.resources = resources;
+	}
+
+	/**
+	 * Set the locale to use for resources that have no locale specified in
+	 * their filename.
+	 * 
+	 * @param defaultLocale
+	 *        The default locale.
+	 */
+	public void setDefaultLocale(Locale defaultLocale) {
+		this.defaultLocale = defaultLocale;
 	}
 
 }

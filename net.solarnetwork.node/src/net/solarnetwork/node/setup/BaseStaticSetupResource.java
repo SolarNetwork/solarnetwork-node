@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Set;
 import org.springframework.core.io.Resource;
 
@@ -41,6 +42,25 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	private final Set<String> roles;
 	private final long contentLength;
 	private final long lastModified;
+	private final Locale locale;
+
+	/**
+	 * Construct with values. Caching will be disabled and the content length
+	 * and last modified timestamp will be set to {@code -1}.
+	 * 
+	 * @param uid
+	 *        the {@code resourceUID}
+	 * @param contentType
+	 *        the content type
+	 * @param consumerTypes
+	 *        the optional consumer types
+	 * @param roles
+	 *        the optional required roles
+	 */
+	public BaseStaticSetupResource(String uid, String contentType, Set<String> consumerTypes,
+			Set<String> roles) {
+		this(uid, contentType, null, CACHE_DISABLED, -1, -1, roles, consumerTypes);
+	}
 
 	/**
 	 * Construct with values.
@@ -60,11 +80,12 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 * @param roles
 	 *        the optional required roles
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, int cacheSeconds, long contentLength,
-			long lastModified, Set<String> consumerTypes, Set<String> roles) {
+	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
+			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles) {
 		super();
 		this.uid = uid;
 		this.contentType = contentType;
+		this.locale = locale;
 		this.cacheSeconds = cacheSeconds;
 		this.roles = roles;
 		this.contentLength = contentLength;
@@ -80,24 +101,8 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 *        the {@code resourceUID}
 	 * @param contentType
 	 *        the content type
-	 * @param consumerTypes
-	 *        the optional consumer types
-	 * @param roles
-	 *        the optional required roles
-	 */
-	public BaseStaticSetupResource(String uid, String contentType, Set<String> consumerTypes,
-			Set<String> roles) {
-		this(uid, contentType, CACHE_DISABLED, -1, -1, roles, consumerTypes);
-	}
-
-	/**
-	 * Construct with values. Caching will be disabled and the content length
-	 * and last modified timestamp will be set to {@code -1}.
-	 * 
-	 * @param uid
-	 *        the {@code resourceUID}
-	 * @param contentType
-	 *        the content type
+	 * @param locale
+	 *        the locale
 	 * @param cacheSeconds
 	 *        the maximum cache seconds
 	 * @param consumerTypes
@@ -110,10 +115,10 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 * @throws IOException
 	 *         if the {@link Resource} throws one when accessed
 	 */
-	public BaseStaticSetupResource(String uid, String contentType, int cacheSeconds, Set<String> roles,
-			Set<String> consumerTypes, Resource resource) throws IOException {
-		this(uid, contentType, cacheSeconds, resource.contentLength(), resource.lastModified(), roles,
-				consumerTypes);
+	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
+			Set<String> roles, Set<String> consumerTypes, Resource resource) throws IOException {
+		this(uid, contentType, locale, cacheSeconds, resource.contentLength(), resource.lastModified(),
+				roles, consumerTypes);
 	}
 
 	@Override
@@ -149,6 +154,11 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	@Override
 	public Set<String> getSupportedConsumerTypes() {
 		return consumerTypes;
+	}
+
+	@Override
+	public Locale getLocale() {
+		return locale;
 	}
 
 }

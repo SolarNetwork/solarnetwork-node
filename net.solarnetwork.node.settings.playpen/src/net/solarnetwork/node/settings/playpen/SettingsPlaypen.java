@@ -141,7 +141,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		results.add(getWeatherLocationSettingSpecifier());
 
 		// custom UI
-		results.add(new BasicSetupResourceSettingSpecifier(customSettingResourceProvider));
+		results.add(new BasicSetupResourceSettingSpecifier(customSettingResourceProvider,
+				Collections.singletonMap("foo", "bar")));
 
 		// basic dynamic list of strings
 		Collection<String> listStrings = getListString();

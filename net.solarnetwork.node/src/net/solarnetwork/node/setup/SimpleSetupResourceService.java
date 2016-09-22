@@ -25,6 +25,7 @@ package net.solarnetwork.node.setup;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Basic implementation of {@link SetupResourceService}.
@@ -37,9 +38,9 @@ public class SimpleSetupResourceService implements SetupResourceService {
 	private Collection<SetupResourceProvider> setupResourceProviders;
 
 	@Override
-	public SetupResource getSetupResource(String resourceUID) {
+	public SetupResource getSetupResource(String resourceUID, Locale locale) {
 		for ( SetupResourceProvider provider : getSetupResourceProviders() ) {
-			SetupResource r = provider.getSetupResource(resourceUID);
+			SetupResource r = provider.getSetupResource(resourceUID, locale);
 			if ( r != null ) {
 				return r;
 			}
@@ -48,10 +49,10 @@ public class SimpleSetupResourceService implements SetupResourceService {
 	}
 
 	@Override
-	public List<SetupResource> getSetupResourcesForConsumer(String consumerType) {
+	public Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale) {
 		List<SetupResource> result = new ArrayList<SetupResource>(8);
 		for ( SetupResourceProvider provider : getSetupResourceProviders() ) {
-			List<SetupResource> list = provider.getSetupResourcesForConsumer(consumerType);
+			Collection<SetupResource> list = provider.getSetupResourcesForConsumer(consumerType, locale);
 			if ( list != null ) {
 				result.addAll(list);
 			}

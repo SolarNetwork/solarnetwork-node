@@ -62,20 +62,13 @@
 		</bean>
 	</service>
 	
-	<bean id="customSettingResourceProvider" class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
-		<property name="resources">
+	<bean id="customSettingResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+		<property name="basenames">
 			<list>
-				<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
-					<argument value="playpen-setting-html"/>
-					<argument value="playpen-setting.html"/>
-					<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
-					<argument value="text/html"/>
-					<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
-				</bean>
+				<value>META-INF/settings/playpen-setting</value>
 			</list>
 		</property>
 	</bean>
-	
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.settings.playpen" autowire-on-update="true">
 		<osgix:interfaces>

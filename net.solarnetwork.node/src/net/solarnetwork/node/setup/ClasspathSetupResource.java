@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.setup;
 
+import static net.solarnetwork.node.setup.SetupResourceUtils.localeForPath;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Set;
 import org.springframework.core.io.ClassPathResource;
 
@@ -40,7 +42,7 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 
 	/**
 	 * Construct with values. Caching will be one day, and all consumer types
-	 * will be supported.
+	 * will be supported. The locale will be inferred from the path.
 	 * 
 	 * @param uid
 	 *        the {@code resourceUID} value
@@ -55,11 +57,12 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 */
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType)
 			throws IOException {
-		this(uid, path, clazz, contentType, 86400, null, null);
+		this(uid, path, clazz, contentType, localeForPath(path), 86400, null, null);
 	}
 
 	/**
-	 * Construct with values. Caching will be one day.
+	 * Construct with values. Caching will be one day. The locale will be
+	 * inferred from the path.
 	 * 
 	 * @param uid
 	 *        the {@code resourceUID} value
@@ -76,11 +79,12 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 */
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
 			Set<String> consumerTypes) throws IOException {
-		this(uid, path, clazz, contentType, 86400, consumerTypes, null);
+		this(uid, path, clazz, contentType, localeForPath(path), 86400, consumerTypes, null);
 	}
 
 	/**
-	 * Construct with values. Caching will be one day.
+	 * Construct with values. Caching will be one day. The locale will be
+	 * inferred from the path.
 	 * 
 	 * @param uid
 	 *        the {@code resourceUID} value
@@ -99,7 +103,7 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 */
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
 			Set<String> consumerTypes, Set<String> roles) throws IOException {
-		this(uid, path, clazz, contentType, 86400, consumerTypes, roles);
+		this(uid, path, clazz, contentType, localeForPath(path), 86400, consumerTypes, roles);
 	}
 
 	/**
@@ -112,15 +116,17 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 * @param clazz
 	 *        the class to load the resource relative to
 	 * @param contentType
-	 *        the content tpye
+	 *        the content type
+	 * @param locale
+	 *        the locale
 	 * @param cacheSeconds
 	 *        the maximum cache seconds
 	 * @throws IOException
 	 *         if an error occurs accessing the resource
 	 */
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
-			int cacheSeconds) throws IOException {
-		this(uid, path, clazz, contentType, cacheSeconds, null, null);
+			Locale locale, int cacheSeconds) throws IOException {
+		this(uid, path, clazz, contentType, locale, cacheSeconds, null, null);
 	}
 
 	/**
@@ -134,6 +140,8 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 *        the class to load the resource relative to
 	 * @param contentType
 	 *        the content type
+	 * @param locale
+	 *        the locale
 	 * @param cacheSeconds
 	 *        the maximum cache seconds
 	 * @param consumerTypes
@@ -144,8 +152,10 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	 *         if an error occurs accessing the resource
 	 */
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
-			int cacheSeconds, Set<String> consumerTypes, Set<String> roles) throws IOException {
-		super(uid, contentType, cacheSeconds, consumerTypes, roles, new ClassPathResource(path, clazz));
+			Locale locale, int cacheSeconds, Set<String> consumerTypes, Set<String> roles)
+			throws IOException {
+		super(uid, contentType, locale, cacheSeconds, consumerTypes, roles,
+				new ClassPathResource(path, clazz));
 		this.path = path;
 		this.clazz = clazz;
 	}

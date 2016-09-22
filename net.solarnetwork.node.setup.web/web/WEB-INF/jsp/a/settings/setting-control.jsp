@@ -19,7 +19,12 @@
 				data-setting-id="${settingId}" 
 				data-instance-id="${instanceId}" 
 				data-group-index="${groupIndex}">
-			<setup:resources role="USER" provider="${setting.setupResourceProvider}" type="text/html" inline="true"/>
+			<setup:resources role="USER" type="text/html" inline="true"
+				provider="${setting.setupResourceProvider}" 
+				properties="${setting.setupResourceProperties}"
+				wrapperElement="div"
+				wrapperClass="controls"
+				/>
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
