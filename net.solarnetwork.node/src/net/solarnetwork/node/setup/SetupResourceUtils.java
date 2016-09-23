@@ -168,7 +168,7 @@ public final class SetupResourceUtils {
 		} else if ( lMatch ) {
 			return 1;
 		}
-		return Integer.MIN_VALUE;
+		return -1;
 	}
 
 }
