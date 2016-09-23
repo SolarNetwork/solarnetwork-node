@@ -48,10 +48,6 @@
 	
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
-	<!-- Dispatch requests mapped to POJO @Controllers implementations -->
-	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
-		p:alwaysUseFullPath="true" p:order="1"/>
-
 	<!-- Dispatch view-only requests, e.g. login -->
 	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
 		<property name="order" value="2" />
