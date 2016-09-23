@@ -27,7 +27,7 @@ import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 
 /**
- * Setting that renders a custom UI via {@link SetupResource} instnaces.
+ * Setting that renders a custom UI via {@link SetupResource} instances.
  * 
  * @author matt
  * @version 1.0
