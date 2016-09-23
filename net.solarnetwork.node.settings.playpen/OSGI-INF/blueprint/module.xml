@@ -43,15 +43,8 @@
 			<property name="resources">
 				<list>
 					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
-						<argument value="playpen-js"/>
 						<argument value="playpen.js"/>
-						<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
-						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
-						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
-					</bean>
-					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
-						<argument value="playpen-auth-js"/>
-						<argument value="playpen-authenticated.js"/>
+						<argument value="playpen.js"/>
 						<argument value="net.solarnetwork.node.settings.playpen.SettingsPlaypen"/>
 						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
 						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
