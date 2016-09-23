@@ -53,9 +53,9 @@ public class SetupResourceController extends BaseSetupWebServiceController {
 	@Autowired
 	private SetupResourceService resourceService;
 
-	@RequestMapping({ "/rsrc/{id}", "/a/rsrc/{id}" })
-	public void publicSetupResource(@PathVariable("id") String id, WebRequest req,
-			HttpServletResponse res) throws IOException {
+	@RequestMapping({ "/rsrc/{id:.+}", "/a/rsrc/{id:.+}" })
+	public void setupResource(@PathVariable("id") String id, WebRequest req, HttpServletResponse res)
+			throws IOException {
 		final SetupResource rsrc = resourceService.getSetupResource(id, req.getLocale());
 		if ( rsrc == null ) {
 			res.setStatus(HttpServletResponse.SC_NOT_FOUND);
