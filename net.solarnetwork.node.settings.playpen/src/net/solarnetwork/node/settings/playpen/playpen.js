@@ -3,8 +3,8 @@ $(document).ready(function() {
 	
 	$('button.playpen-setting-custom-button').on('click', function(event) {
 		var btn = $(event.target),
-			container = btn.parents('.setup-resource-container');
-		alert("Why, hello there, setting " +container.data('setting-id') +"!");
+			foo = btn.parent().data('foo');
+		alert("Why, hello there! foo is " +foo +"!");
 	});
 
 });
