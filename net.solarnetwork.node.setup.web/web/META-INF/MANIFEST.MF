@@ -93,6 +93,7 @@ Import-Package:
  org.springframework.http.converter.json;version="[4.2,5.0)",
  org.springframework.jdbc.support;version="[4.2,5.0)",
  org.springframework.mail;version="[4.2,5.0)",
+ org.springframework.scheduling.concurrent;version="[4.1,5.0)",
  org.springframework.security.authentication;version="[4.1,5.0)",
  org.springframework.security.config;version="[4.1,5.0)",
  org.springframework.security.core;version="[4.1,5.0)",

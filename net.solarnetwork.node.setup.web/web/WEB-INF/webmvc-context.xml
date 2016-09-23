@@ -26,6 +26,7 @@
 	<ctx:component-scan base-package="net.solarnetwork.node.setup.web"/>
 
 	<mvc:annotation-driven>
+		<mvc:async-support default-timeout="30000" task-executor="taskExecutor"/>
 		<mvc:message-converters register-defaults="true">
 			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
 				<property name="prefixJson" value="false" />

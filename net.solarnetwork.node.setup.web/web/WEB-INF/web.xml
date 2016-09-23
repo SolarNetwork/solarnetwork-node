@@ -41,6 +41,7 @@
 	<filter>
 		<filter-name>MultipartFilter</filter-name>
 		<filter-class>org.springframework.web.multipart.support.MultipartFilter</filter-class>
+		<async-supported>true</async-supported>
 		<init-param>
 			<param-name>multipartResolverBeanName</param-name>
 			<param-value>multipartResolver</param-value>
@@ -55,6 +56,7 @@
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+		<async-supported>true</async-supported>
 	</filter>
 	
 	<filter-mapping>
@@ -71,6 +73,7 @@
 			<param-name>mimeTypes</param-name>
 			<param-value>application/javascript,application/json,application/xhtml+xml,image/svg+xml,text/css,text/html,text/javascript,text/plain,text/xml</param-value>
 		</init-param-->
+		<async-supported>true</async-supported>
 		<init-param>
 			<param-name>minGzipSize</param-name>
 			<param-value>1024</param-value>
@@ -86,6 +89,7 @@
 	<filter>
 		<filter-name>Set Character Encoding</filter-name>
 		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<async-supported>true</async-supported>
 		<init-param>
 			<param-name>encoding</param-name>
 			<param-value>UTF-8</param-value>
@@ -123,6 +127,7 @@
 			<param-value></param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
+		<async-supported>true</async-supported>
 	</servlet>
 	
 	<servlet-mapping>
