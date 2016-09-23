@@ -140,7 +140,7 @@ public final class SetupResourceUtils {
 	 * 
 	 * @param rsrc
 	 *        The resource to test
-	 * @param locale
+	 * @param desiredLocale
 	 *        The desired locale.
 	 * @param defaultLocale
 	 *        The default locale to use for resources where
@@ -148,26 +148,35 @@ public final class SetupResourceUtils {
 	 * @return A matching score. Higher values more closely match. If
 	 *         {@link Integer#MAX_VALUE} is returned then the match is exact.
 	 */
-	public static int localeScore(SetupResource rsrc, Locale locale, Locale defaultLocale) {
+	public static int localeScore(SetupResource rsrc, Locale desiredLocale, Locale defaultLocale) {
 		if ( rsrc == null ) {
 			return Integer.MIN_VALUE;
 		}
+
+		if ( defaultLocale == null ) {
+			defaultLocale = Locale.getDefault();
+		}
+		if ( desiredLocale == null ) {
+			desiredLocale = defaultLocale;
+		}
+
 		Locale rsrcLocale = rsrc.getLocale();
 		if ( rsrcLocale == null ) {
 			rsrcLocale = defaultLocale;
 		}
-		if ( locale != null && locale.equals(rsrcLocale) || (locale == null && rsrcLocale == null) ) {
+
+		if ( desiredLocale.equals(rsrcLocale) ) {
 			return Integer.MAX_VALUE;
-		} else if ( rsrcLocale == null || locale == null ) {
-			return 0;
 		}
-		boolean lMatch = locale.getLanguage().equals(rsrcLocale.getLanguage());
-		boolean cMatch = locale.getCountry().equals(rsrcLocale.getCountry());
+
+		boolean lMatch = desiredLocale.getLanguage().equals(rsrcLocale.getLanguage());
+		boolean cMatch = desiredLocale.getCountry().equals(rsrcLocale.getCountry());
 		if ( lMatch && cMatch ) {
 			return 2;
 		} else if ( lMatch ) {
 			return 1;
 		}
+
 		return -1;
 	}
 
