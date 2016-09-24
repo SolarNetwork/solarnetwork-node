@@ -53,6 +53,31 @@
 	
 	<!-- Published Services -->
 
+	<!-- Provide a centralized ObjectMapper for JSON processing. -->
+	<service interface="net.solarnetwork.util.ObjectMapperService">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+		<bean class="net.solarnetwork.util.SimpleObjectMapperService">
+			<property name="objectMapper" ref="objectMapper"/>
+		</bean>
+	</service>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
+		<property name="serializers">
+			<list>
+				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
+			</list>
+		</property>
+		<property name="featuresToDisable">
+			<list>
+				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).FAIL_ON_UNKNOWN_PROPERTIES}</value>
+			</list>
+		</property>
+	</bean>
+
 	<service ref="scheduler" interface="org.quartz.Scheduler">
 		<service-properties>
 			<entry key="function" value="node"/>
