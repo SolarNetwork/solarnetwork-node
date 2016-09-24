@@ -36,16 +36,8 @@
 		</mvc:message-converters>
 	</mvc:annotation-driven>
 	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-		<property name="serializers">
-			<list>
-				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
-			</list>
-		</property>
-	</bean>
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-bean="objectMapperService" factory-method="getObjectMapper"/>
 	
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 

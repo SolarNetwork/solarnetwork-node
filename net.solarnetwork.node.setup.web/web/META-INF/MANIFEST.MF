@@ -38,7 +38,7 @@ Import-Package:
  net.solarnetwork.node.setup;version="1.8",
  net.solarnetwork.node.support;version="1.13",
  net.solarnetwork.support;version="1.2",
- net.solarnetwork.util;version="1.18",
+ net.solarnetwork.util;version="1.22",
  net.solarnetwork.web.domain;version="1.0",
  net.solarnetwork.web.gemini;version="1.0.0",
  net.solarnetwork.web.support;version="1.8",

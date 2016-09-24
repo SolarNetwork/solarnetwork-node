@@ -20,6 +20,10 @@
 	
 	<!-- Service References -->
 	
+	<osgi:reference id="objectMapperService" 
+		interface="net.solarnetwork.util.ObjectMapperService"
+		 filter="(function=node)"/>
+	
 	<osgi:reference id="transactionManager"
 		interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>
