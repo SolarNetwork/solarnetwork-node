@@ -147,7 +147,10 @@ public class PatternMatchingSetupResourceProvider
 		} catch ( IOException e ) {
 			LOG.error("Error resolving basename [{}]: {}", e);
 		}
-		return (result == null ? Collections.emptyList() : result);
+		if ( result == null ) {
+			result = Collections.emptyList();
+		}
+		return result;
 	}
 
 	/**
