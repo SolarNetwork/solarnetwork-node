@@ -64,10 +64,10 @@
 	<osgi:reference id="setupResourceService" availability="optional"
 		interface="net.solarnetwork.node.setup.SetupResourceService"/>
 	
-	<!-- A SimpMessagingTemplate for the 'brokerChannel' configured for Loxone messages -->
+	<!-- A SimpMessagingTemplate for the 'broker' configured for Loxone messages -->
 	<osgi:service interface="org.springframework.messaging.simp.SimpMessageSendingOperations">
 		<osgi:service-properties>
-			<entry key="channel" value="brokerChannel"/>
+			<entry key="channel" value="broker"/>
 		</osgi:service-properties>
 		<!-- The websocket:message-broker element will expose a SimpMessageSendingTemplate
 		     for the broker channel automatically, but under a generated ID. As we want to 
