@@ -36,4 +36,8 @@
 		<beans:constructor-arg ref="passwordEncoder"/>
 	</beans:bean>
 
+	<websocket-message-broker>
+		<intercept-message pattern="/**" access="hasRole('USER')" />
+	</websocket-message-broker>
+
 </beans:beans>

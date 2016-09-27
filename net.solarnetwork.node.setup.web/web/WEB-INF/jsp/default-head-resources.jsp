@@ -20,6 +20,7 @@
 	/js-lib/bootstrap.js
 	/js-lib/ladda.js
 	/js-lib/jquery.form.js
+	/js-lib/stomp.js
 	/js/global.js
 	/js/certs.js
 	/js/login.js
