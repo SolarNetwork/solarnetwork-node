@@ -20,9 +20,13 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="dao.jdbc.derby.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.derby">
+		<beans:prop key="derby.maintenance.compress.cron">0 30 3 * * ?</beans:prop>
+		<beans:prop key="derby.maintenance.compress.timeout">300</beans:prop>
 		<beans:prop key="job.syncBackup.cron">3 0 1 ? * WED</beans:prop>
 		<beans:prop key="job.syncBackup.destinationPath">var/db-bak</beans:prop>
 	</osgix:cm-properties>
+	
+	<ctx:property-placeholder properties-ref="dao.jdbc.derby.cfg"/>
 	
 	<!-- Service References -->
 	
@@ -31,6 +35,7 @@
 
 	<!-- Published Services -->
 	
+	<service ref="compress" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	<service ref="syncBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
 	<!-- Supporting services -->
@@ -43,17 +48,34 @@
 		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.derby.JOBS"/>
 	</bean>
 
-	<reference-list id="jdbcDaos" availability="optional" interface="net.solarnetwork.node.dao.jdbc.JdbcDao">
-		<reference-listener bind-method="onBind" unbind-method="onUnbind">
-			<bean class="net.solarnetwork.node.dao.jdbc.derby.DerbyMaintenanceRegistrationListener">
-				<property name="jdbcOperations" ref="jdbcOps"/>
-				<property name="maintenanceProperties" ref="dao.jdbc.derby.cfg"/>
-				<property name="bundleContext" ref="bundleContext"/>
-			</bean>
-		</reference-listener>
-	</reference-list>
+	<!-- Table compression -->
+	
+	<bean id="compressService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyCompressTablesService">
+		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="maxSeconds" value="${derby.maintenance.compress.timeout}"/>
+	</bean>
 
-	<ctx:property-placeholder properties-ref="dao.jdbc.derby.cfg"/>
+	<bean id="compress" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="compressTrigger"/>
+		<property name="jobDetail" ref="compressJob"/>
+		<property name="messageSource" ref="messageSource"/>
+	</bean>
+
+	<bean id="compressTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+		<property name="jobDetail" ref="compressJob"/>
+		<property name="cronExpression" value="${derby.maintenance.compress.cron}"/>
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+		<property name="randomSecond" value="true"/>
+	</bean>
+
+	<bean id="compressJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.DerbyCompressTablesJob"/>
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="compressService" value-ref="compressService"/>
+			</map>
+		</property>
+	</bean>
 
 	<!-- Sync backup job -->
 
