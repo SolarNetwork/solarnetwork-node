@@ -240,7 +240,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.hw.rfid.client";
+		return "net.solarnetwork.node.hw.rfid.client";
 	}
 
 	@Override
