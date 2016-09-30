@@ -2,13 +2,14 @@
 
 [Unit]
 Description=RFID server.
+After=dev-rfid.device
+BindsTo=dev-rfid.device
+StopWhenUnneeded=yes
 
 [Service]
 Type=simple
 User=rfid
 Group=input
-Wants=dev-rfid.device
-After=dev-rfid.device
 ExecStart=/usr/local/bin/rfid-server /dev/rfid
 Restart=always
 RestartSec=1

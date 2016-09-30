@@ -22,7 +22,7 @@ to a known value, set up a **udev** rule that generates a consistent
 symlink to the device as well as adding the `systemd` tag so our unit
 configuration can refer to this device:
 
-	SUBSYSTEM=="input", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="1503", SYMLINK+="rfid", TAG+="systemd"
+	SUBSYSTEM=="input", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="1503", SYMLINK+="rfid", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfid-server.service"
 
 This configuration will map the device matching these criteria to `/dev/rfid`.
 
@@ -44,13 +44,14 @@ The unit file is `/etc/systemd/system/rfid-server.service` and contains:
 
 	[Unit]
 	Description=RFID server.
+	After=dev-rfid.device
+	BindsTo=dev-rfid.device
+	StopWhenUnneeded=yes
 
 	[Service]
 	Type=simple
 	User=rfid
 	Group=input
-	Wants=dev-rfid.device
-	After=dev-rfid.device
 	ExecStart=/usr/local/bin/rfid-server /dev/rfid
 	Restart=always
 	RestartSec=1
@@ -76,30 +77,34 @@ makes sense to make the udev rules more specific so they are mapped
 consistently, and in that case the `SYMLINK` could be hard-coded, for 
 example mapping to a specific USB bus:
 
-	SUBSYSTEM=="input", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="1503", ATTRS{busnum}=="4", SYMLINK+="rfid%n", TAG+="systemd"
+	SUBSYSTEM=="input", ATTRS{idVendor}=="04d9", ATTRS{idProduct}=="1503", ATTRS{busnum}=="4", SYMLINK+="rfid%n", TAG+="systemd", ENV{SYSTEMD_WANTS}="rfid-server@rfid%n.service"
 
 
 Then the `systemd` service unit file should change to 
 `/etc/systemd/system/rfid-server@.service` with content like this:
 
-	# rfid-server systemd instance service unit
-	#
-	# Designed so multiple RFID readers can be used, each server will
-	# run on a port starting on 9090 + the device number. For example
-	# if the device is /dev/rfid2 then port 9092 will be used.
+	# rfid-server systemd service unit 
 	
 	[Unit]
 	Description=RFID server.
+	After=dev-%i.device
+	BindsTo=dev-%i.device
+	StopWhenUnneeded=yes
 	
 	[Service]
 	Type=simple
 	User=rfid
 	Group=input
-	Wants=dev-%i.device
-	After=dev-%i.device
 	ExecStart=/usr/local/bin/rfid-server /dev/%I
 	Restart=always
 	RestartSec=1
 	
 	[Install]
 	WantedBy=multi-user.target
+
+We can also ask for specific services to be started by creating symlinks like
+
+	ln -s /lib/systemd/system/rfid-server\@.service 
+		/etc/systemd/system/multi-user.target.wants/rfid-server@rfid2.service
+
+which would make the system start up the server for `/dev/rfid2` on boot.
