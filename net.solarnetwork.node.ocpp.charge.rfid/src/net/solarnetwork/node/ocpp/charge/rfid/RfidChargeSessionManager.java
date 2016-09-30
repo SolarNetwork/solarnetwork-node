@@ -24,6 +24,7 @@ package net.solarnetwork.node.ocpp.charge.rfid;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +41,9 @@ import net.solarnetwork.node.ocpp.OCPPException;
 import net.solarnetwork.node.ocpp.SocketManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.FilterableService;
 
 /**
@@ -89,6 +92,7 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	private ChargeSessionManager chargeSessionManager;
 	private SocketManager socketManager;
 	private MessageSource messageSource;
+	private List<RfidSocketMapping> rfidSocketMappings = new ArrayList<RfidSocketMapping>(2);
 
 	private ExecutorService executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -118,13 +122,19 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 			return;
 		}
 
+		final Object rfidUid = event.getProperty(EVENT_PARAM_UID);
+		if ( rfidUid == null && rfidSocketMappings != null && !rfidSocketMappings.isEmpty() ) {
+			log.warn("Ignoring MESSAGE_RECEIVED event missing required UID value");
+			return;
+		}
+
 		// kick off to new thread so we don't block the event thread
 		executor.submit(new Runnable() {
 
 			@Override
 			public void run() {
 				try {
-					handleRfidScan(rfidMessage.toString());
+					handleRfidScan(rfidMessage.toString(), rfidUid.toString());
 				} catch ( Throwable t ) {
 					log.error("Error handling RFID message {}", rfidMessage, t);
 					if ( t instanceof RuntimeException ) {
@@ -143,8 +153,10 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 	 * 
 	 * @param idTag
 	 *        The RFID card ID value to treat as the OCPP IdTag.
+	 * @param rfidUid
+	 *        The RFID scanner UID value the scan originated from.
 	 */
-	private void handleRfidScan(String idTag) {
+	private void handleRfidScan(String idTag, String rfidUid) {
 		// see if there is any active charge session for that tag
 		Collection<String> availableSockets = chargeSessionManager.availableSocketIds();
 		Set<String> freeSockets = new LinkedHashSet<String>(availableSockets);
@@ -163,11 +175,36 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 			// all sockets in use
 			log.info("No free sockets to enable charge session for IdTag {}", idTag);
 		} else {
-			// use first available socket
-			String socketId = freeSockets.iterator().next();
-			log.info("Socket {} free for charge session with IdTag {}", socketId, idTag);
-			handleChargeSessionStateChange(socketId, idTag);
+			String socketId = socketToUse(freeSockets, rfidUid);
+			if ( socketId != null ) {
+				log.info("Socket {} free for charge session with IdTag {}", socketId, idTag);
+				handleChargeSessionStateChange(socketId, idTag);
+			}
 		}
+	}
+
+	private String socketToUse(Set<String> freeSockets, String rfidUid) {
+		if ( freeSockets == null ) {
+			return null;
+		}
+		List<RfidSocketMapping> mappings = rfidSocketMappings;
+		if ( rfidUid == null || mappings == null || mappings.isEmpty() ) {
+			log.debug("Choosing first available free socket for scan from RFID device {}", rfidUid);
+			return freeSockets.iterator().next();
+		}
+		for ( RfidSocketMapping mapping : mappings ) {
+			if ( rfidUid.equalsIgnoreCase(mapping.getRfidUid()) ) {
+				if ( freeSockets.contains(mapping.getSocketId()) ) {
+					log.debug("Choosing socket {}; configured for RFID device {}", mapping.getSocketId(),
+							rfidUid);
+					return mapping.getSocketId();
+				}
+				log.info("Socket {} configured for RFID device {} but that socket is not available",
+						mapping.getSocketId(), rfidUid);
+			}
+		}
+		log.warn("No socket configured for RFID device {}", rfidUid);
+		return null;
 	}
 
 	private void handleChargeSessionStateChange(final String socketId, final String idTag) {
@@ -229,6 +266,22 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 				"filterableChargeSessionManager.propertyFilters['UID']", "OCPP Central System"));
 		results.add(new BasicTextFieldSettingSpecifier("filterableSocketManager.propertyFilters['UID']",
 				"OCPP Central System"));
+
+		// dynamic list of RfidSocketMapping
+		List<RfidSocketMapping> mappings = getRfidSocketMappings();
+		BasicGroupSettingSpecifier mappingsGroup = SettingsUtil.dynamicListSettingSpecifier(
+				"rfidSocketMappings", mappings, new SettingsUtil.KeyedListCallback<RfidSocketMapping>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(RfidSocketMapping value,
+							int index, String key) {
+						BasicGroupSettingSpecifier mappingGroup = new BasicGroupSettingSpecifier(
+								RfidSocketMapping.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(mappingGroup);
+					}
+				});
+		results.add(mappingsGroup);
+
 		return results;
 	}
 
@@ -295,4 +348,66 @@ public class RfidChargeSessionManager implements EventHandler, SettingSpecifierP
 		return null;
 	}
 
+	/**
+	 * Get the configured RFID socket mappings.
+	 * 
+	 * @return The mappings, or {@code null}.
+	 */
+	public List<RfidSocketMapping> getRfidSocketMappings() {
+		return rfidSocketMappings;
+	}
+
+	/**
+	 * Set the list of RFID UID values with associated socket ID values.
+	 * 
+	 * If this list is not configured, then the first available socket will be
+	 * allocated when an RFID message is received. Otherwise this list will be
+	 * consulted and the first matching {@link RfidSocketMapping#getRfidUid()}
+	 * value will cause the associated {@link RfidSocketMapping#getSocketId()}
+	 * socket ID to use used.
+	 * 
+	 * Generally this list should be left unconfigured <b>or</b> have one value
+	 * for each supported RFID scanner UID value. The later case is useful when
+	 * more than one RFID scanner is used in combination with more than one
+	 * socket, and each RFID scanner should be associated with a specific
+	 * socket.
+	 * 
+	 * @param rfidSocketMappings
+	 *        The list of RFID to socket ID mappings.
+	 */
+	public void setRfidSocketMappings(List<RfidSocketMapping> rfidSocketMappings) {
+		this.rfidSocketMappings = rfidSocketMappings;
+	}
+
+	/**
+	 * Get the number of configured {@code listComplex} elements.
+	 * 
+	 * @return The number of {@code listComplex} elements.
+	 */
+	public int getRfidSocketMappingsCount() {
+		List<RfidSocketMapping> l = getRfidSocketMappings();
+		return (l == null ? 0 : l.size());
+	}
+
+	/**
+	 * Adjust the number of configured {@code rfidSocketMappings} elements
+	 * 
+	 * @param count
+	 *        The desired number of {@code rfidSocketMappings} elements.
+	 */
+	public void setRfidSocketMappingsCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		List<RfidSocketMapping> l = getRfidSocketMappings();
+		int lCount = (l == null ? 0 : l.size());
+		while ( lCount > count ) {
+			l.remove(l.size() - 1);
+			lCount--;
+		}
+		while ( lCount < count ) {
+			l.add(new RfidSocketMapping());
+			lCount++;
+		}
+	}
 }

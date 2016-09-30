@@ -25,6 +25,7 @@ package net.solarnetwork.node.ocpp.charge.rfid.test;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.SocketManager;
 import net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager;
+import net.solarnetwork.node.ocpp.charge.rfid.RfidSocketMapping;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.test.CapturingExecutorService;
 
@@ -54,6 +56,7 @@ import net.solarnetwork.node.test.CapturingExecutorService;
 public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 
 	private static final String TEST_RFID_UID = "Test RFID Scanner";
+	private static final String TEST_RFID_UID2 = "Test RFID Scanner 2";
 	private static final String TEST_ID_TAG = "TestIdTag";
 	private static final String TEST_SOCKET_ID = "/socket/test/1";
 	private static final String TEST_SOCKET_ID2 = "/socket/test/2";
@@ -119,8 +122,12 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 	}
 
 	private Event createRfidEvent(final String msg) {
+		return createRfidEvent(msg, TEST_RFID_UID);
+	}
+
+	private Event createRfidEvent(final String msg, final String uid) {
 		Map<String, Object> eventProps = new HashMap<String, Object>(5);
-		eventProps.put(RfidChargeSessionManager.EVENT_PARAM_UID, TEST_RFID_UID);
+		eventProps.put(RfidChargeSessionManager.EVENT_PARAM_UID, uid);
 		eventProps.put(RfidChargeSessionManager.EVENT_PARAM_MESSAGE, msg);
 		return new Event(RfidChargeSessionManager.TOPIC_RFID_MESSAGE_RECEIVED, eventProps);
 	}
@@ -197,6 +204,84 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 		verifyAll(true);
 	}
 
+	private void configureRfidMappings() {
+		List<RfidSocketMapping> mappings = new ArrayList<RfidSocketMapping>(2);
+		mappings.add(new RfidSocketMapping(TEST_RFID_UID, TEST_SOCKET_ID));
+		mappings.add(new RfidSocketMapping(TEST_RFID_UID2, TEST_SOCKET_ID2));
+		manager.setRfidSocketMappings(mappings);
+	}
+
+	@Test
+	public void startChargeSessionWithMappingNoMatchingRfidUID() {
+		configureRfidMappings();
+
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// for each socket, look for active session
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(null).anyTimes();
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG, "Rogue Scanner"));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void startChargeSessionWithMappingNoActiveSession() {
+		configureRfidMappings();
+
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// for each socket, look for active session
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(null).anyTimes();
+
+		// no active sessions, so start one for the available socket
+		expect(chargeSessionManager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null))
+				.andReturn(TEST_SESSION_ID);
+
+		// and because session started, enable the socket
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID, true)).andReturn(true);
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG, TEST_RFID_UID));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void startChargeSessionWithMappingActiveSessionsSecondSocketAvailable() {
+		configureRfidMappings();
+
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID, TEST_SOCKET_ID2);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// for each socket, look for active session
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setIdTag("some.other.id");
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession);
+
+		// first socket has session, so test 2nd socket
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID2)).andReturn(null).anyTimes();
+
+		// session not started though, because RFID UID maps only to socket 1
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG, TEST_RFID_UID));
+
+		verifyAll(true);
+	}
+
 	@Test
 	public void endChargeSession() {
 		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
@@ -222,7 +307,66 @@ public class RfidChargeSessionManagerTests extends AbstractNodeTest {
 		manager.handleEvent(createRfidEvent(TEST_ID_TAG));
 
 		verifyAll(true);
+	}
 
+	@Test
+	public void endChargeSessionWithMapping() {
+		configureRfidMappings();
+
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active session on socket
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setSessionId(TEST_SESSION_ID);
+		activeSession.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession)
+				.anyTimes();
+
+		// found session, so end it
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		// and because session ended, disable the socket
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID, false)).andReturn(true);
+
+		replayAll();
+
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG, TEST_RFID_UID));
+
+		verifyAll(true);
+	}
+
+	@Test
+	public void endChargeSessionWithMappingEvenThoughOtherRfidUID() {
+		configureRfidMappings();
+
+		List<String> availableSocketIds = Arrays.asList(TEST_SOCKET_ID);
+
+		// get available sockets
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active session on socket
+		ChargeSession activeSession = new ChargeSession();
+		activeSession.setSessionId(TEST_SESSION_ID);
+		activeSession.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(activeSession)
+				.anyTimes();
+
+		// found session, so end it
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		// and because session ended, disable the socket
+		expect(socketManager.adjustSocketEnabledState(TEST_SOCKET_ID, false)).andReturn(true);
+
+		replayAll();
+
+		// now send RFID scan from OTHER device; shouldn't matter because we find the session
+		// based on the tag value
+		manager.handleEvent(createRfidEvent(TEST_ID_TAG, TEST_RFID_UID2));
+
+		verifyAll(true);
 	}
 
 }
