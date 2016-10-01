@@ -8,6 +8,7 @@ Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
 Web-ContextPath: /
+Eclipse-ExtensibleAPI: true
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.core.type;version="[2.4,3.0)",
