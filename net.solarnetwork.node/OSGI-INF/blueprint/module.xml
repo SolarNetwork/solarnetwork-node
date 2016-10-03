@@ -84,6 +84,16 @@
 		</service-properties>
 	</service>
 	
+	<service ref="taskScheduler">
+		<interfaces>
+			<value>org.springframework.scheduling.TaskScheduler</value>
+			<value>org.springframework.scheduling.SchedulingTaskExecutor</value>
+		</interfaces>
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
 	<service ref="delegatingReactorSerialization" ranking="5"
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService">
 		<service-properties>
@@ -134,6 +144,11 @@
 		</property>
 	</bean>
 	
+	<!-- Task scheduler for simple repeating tasks -->
+	<bean id="taskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
+		<property name="poolSize" value="1"/>
+	</bean>
+		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
 		<property name="serializers" ref="serializers"/>
