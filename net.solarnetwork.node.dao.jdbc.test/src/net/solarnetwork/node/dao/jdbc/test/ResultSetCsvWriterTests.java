@@ -25,8 +25,15 @@ package net.solarnetwork.node.dao.jdbc.test;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import org.junit.Assert;
@@ -34,6 +41,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.util.FileCopyUtils;
@@ -66,9 +74,56 @@ public class ResultSetCsvWriterTests extends AbstractNodeTransactionalTest {
 		jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
+	private void populateTestData() {
+		final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		jdbcTemplate.batchUpdate(
+				"INSERT INTO solarnode.test_csv_io (pk, str, inum, dnum, ts) VALUES (?,?,?,?,?)",
+				new BatchPreparedStatementSetter() {
+
+					@Override
+					public void setValues(PreparedStatement ps, int i) throws SQLException {
+						int pos = i + 1;
+						ps.setLong(1, pos);
+						if ( pos == 2 ) {
+							ps.setNull(2, Types.VARCHAR);
+						} else {
+							ps.setString(2, "s0" + pos);
+						}
+						if ( pos == 3 ) {
+							ps.setNull(3, Types.INTEGER);
+						} else {
+							ps.setInt(3, pos);
+						}
+						if ( pos == 4 ) {
+							ps.setNull(4, Types.DOUBLE);
+						} else {
+							ps.setDouble(4, pos);
+						}
+						if ( pos == 5 ) {
+							ps.setNull(5, Types.TIMESTAMP);
+						} else {
+							try {
+								Date d = sdf.parse("2016-10-0" + pos + "T12:01:02.345Z");
+								ps.setTimestamp(5, new java.sql.Timestamp(d.getTime()), utcCalendar);
+							} catch ( ParseException e ) {
+								// should not get here
+							}
+						}
+					}
+
+					@Override
+					public int getBatchSize() {
+						return 5;
+					}
+				});
+	}
+
 	@Test
 	public void exportTable() throws Exception {
 		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
+		populateTestData();
 		String result = jdbcTemplate.query("select * from solarnode.test_csv_io order by pk",
 				new ResultSetExtractor<String>() {
 

@@ -27,18 +27,13 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.supercsv.cellprocessor.ConvertNullTo;
-import org.supercsv.cellprocessor.FmtDate;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.ParseBigDecimal;
 import org.supercsv.cellprocessor.ParseBool;
-import org.supercsv.cellprocessor.ParseDate;
 import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.cellprocessor.ift.DateCellProcessor;
-import org.supercsv.util.CsvContext;
 
 /**
  * Utilities to help with JDBC.
@@ -72,12 +67,16 @@ public abstract class JdbcUtils {
 			int sqlType = meta.getColumnType(i + 1);
 			switch (sqlType) {
 				case Types.DATE:
-					processor = new ConvertNullTo("", new FmtDate("yyyy-MM-ddZ"));
+					processor = new ConvertNullTo("", new JdbcFmtDate.Date());
+					break;
+
+				case Types.TIME:
+					processor = new ConvertNullTo("", new JdbcFmtDate.Time());
 					break;
 
 				case Types.TIMESTAMP:
 				case Types.TIMESTAMP_WITH_TIMEZONE:
-					processor = new ConvertNullTo("", new FmtDate("yyyy-MM-dd'T'HH:mm:ss.SSSZ"));
+					processor = new ConvertNullTo("", new JdbcFmtDate.Timestamp());
 					break;
 			}
 			cellProcessors[i] = processor;
@@ -139,30 +138,16 @@ public abstract class JdbcUtils {
 						break;
 
 					case Types.DATE:
-						processor = new ParseDate("yyyy-MM-ddZ", new DateCellProcessor() {
+						processor = new JdbcParseDate.Date();
+						break;
 
-							@Override
-							public Object execute(Object date, CsvContext context) {
-								if ( date instanceof Date ) {
-									return new java.sql.Date(((Date) date).getTime());
-								}
-								return null;
-							}
-						});
+					case Types.TIME:
+						processor = new JdbcParseDate.Time();
 						break;
 
 					case Types.TIMESTAMP:
 					case Types.TIMESTAMP_WITH_TIMEZONE:
-						processor = new ParseDate("yyyy-MM-dd'T'HH:mm:ss.SSSZ", new DateCellProcessor() {
-
-							@Override
-							public Object execute(Object date, CsvContext context) {
-								if ( date instanceof Date ) {
-									return new java.sql.Timestamp(((Date) date).getTime());
-								}
-								return null;
-							}
-						});
+						processor = new JdbcParseDate.Timestamp();
 						break;
 
 					case Types.BIGINT:

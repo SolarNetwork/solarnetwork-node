@@ -22,25 +22,35 @@
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import org.junit.Assert;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.dao.jdbc.ColumnCsvMetaData;
@@ -71,26 +81,18 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 		jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
-	@Test
-	public void importTable() {
-		final String tableName = "SOLARNODE.TEST_CSV_IO";
-		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-02.sql", false);
+	private void importData(final String tableName) {
 		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedHashMap<String, ColumnCsvMetaData>(
 				8);
-		jdbcTemplate.execute(new PreparedStatementCreator() {
+		jdbcTemplate.execute(new ConnectionCallback<Object>() {
 
 			@Override
-			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+			public Object doInConnection(Connection con) throws SQLException, DataAccessException {
 				columnMetaData.putAll(
 						JdbcUtils.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName));
 				String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
-				return con.prepareStatement(sql);
-			}
-		}, new PreparedStatementCallback<Object>() {
+				PreparedStatement ps = con.prepareStatement(sql);
 
-			@Override
-			public Object doInPreparedStatement(PreparedStatement ps)
-					throws SQLException, DataAccessException {
 				Reader in;
 				PreparedStatementCsvReader reader = null;
 				try {
@@ -102,7 +104,19 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 					CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
 							columnMetaData);
 					while ( reader.read(ps, csvColumns, cellProcessors, columnMetaData) ) {
-						ps.executeUpdate();
+						Savepoint sp = con.setSavepoint();
+						try {
+							ps.executeUpdate();
+						} catch ( SQLException e ) {
+
+							DataAccessException dae = jdbcTemplate.getExceptionTranslator()
+									.translate("Load CSV", sql, e);
+							if ( dae instanceof DataIntegrityViolationException ) {
+								con.rollback(sp);
+							} else {
+								throw e;
+							}
+						}
 					}
 				} catch ( IOException e ) {
 					throw new DataAccessResourceFailureException("CSV encoding error", e);
@@ -119,9 +133,70 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 			}
 
 		});
-		List<Map<String, Object>> results = jdbcTemplate
-				.queryForList("select * from solarnode.test_csv_io order by pk");
-		Assert.assertNotNull(results);
+	}
+
+	@Test
+	public void importTable() throws Exception {
+		final String tableName = "SOLARNODE.TEST_CSV_IO";
+		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
+		importData(tableName);
+		final MutableInt row = new MutableInt(0);
+		final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+		final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		jdbcTemplate.query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				// TODO Auto-generated method stub
+				return con.prepareStatement(
+						"select PK,STR,INUM,DNUM,TS from solarnode.test_csv_io order by pk");
+			}
+		}, new RowCallbackHandler() {
+
+			@Override
+			public void processRow(ResultSet rs) throws SQLException {
+				row.increment();
+				final int i = row.intValue();
+				assertEquals("PK " + i, i, rs.getLong(1));
+				if ( i == 2 ) {
+					assertNull("STR " + i, rs.getString(2));
+				} else {
+					assertEquals("STR " + i, "s0" + i, rs.getString(2));
+				}
+				if ( i == 3 ) {
+					assertNull("INUM " + i, rs.getObject(3));
+				} else {
+					assertEquals("INUM " + i, i, rs.getInt(3));
+				}
+				if ( i == 4 ) {
+					assertNull("DNUM " + i, rs.getObject(4));
+				} else {
+					assertEquals("DNUM " + i, i, rs.getDouble(4), 0.01);
+				}
+				if ( i == 5 ) {
+					assertNull("TS " + i, rs.getObject(5));
+				} else {
+					Timestamp ts = rs.getTimestamp(5, utcCalendar);
+					try {
+						assertEquals("TS " + i, sdf.parse("2016-10-0" + i + "T12:01:02.345Z"), ts);
+					} catch ( ParseException e ) {
+						// should not get here
+					}
+				}
+			}
+		});
+		assertEquals("Imported count", 5, row.intValue());
+	}
+
+	@Test
+	public void updateTable() throws Exception {
+		final String tableName = "SOLARNODE.TEST_CSV_IO";
+		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
+		importData(tableName);
+
+		// verify the savepoint logic works to ignore inserts on data that already exists
+		importData(tableName);
 	}
 
 }

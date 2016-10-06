@@ -27,8 +27,11 @@ import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.AbstractCsvWriter;
 import org.supercsv.prefs.CsvPreference;
@@ -86,11 +89,24 @@ public class ResultSetCsvWriter extends AbstractCsvWriter implements JdbcResultS
 		final List<Object> objects = new ArrayList<Object>(headers.length);
 		final List<Object> processed = (cellProcessors == null ? null
 				: new ArrayList<Object>(headers.length));
+		final ResultSetMetaData meta = resultSet.getMetaData();
+		final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		while ( resultSet.next() ) {
 			super.incrementRowAndLineNo();
 			objects.clear();
 			for ( int i = 1; i <= colCount; i++ ) {
-				objects.add(resultSet.getObject(i));
+				int sqlType = meta.getColumnType(i);
+				Object columnValue;
+				if ( sqlType == Types.DATE ) {
+					columnValue = resultSet.getDate(i, utcCalendar);
+				} else if ( sqlType == Types.TIME ) {
+					columnValue = resultSet.getTime(i, utcCalendar);
+				} else if ( sqlType == Types.TIMESTAMP ) {
+					columnValue = resultSet.getTimestamp(i, utcCalendar);
+				} else {
+					columnValue = resultSet.getObject(i);
+				}
+				objects.add(columnValue);
 			}
 			if ( cellProcessors != null ) {
 				Util.executeCellProcessors(processed, objects, cellProcessors, getLineNumber(),
