@@ -27,8 +27,8 @@ Import-Package:
  javax.servlet.jsp.jstl.tlv;version="1.2",
  javax.servlet.jsp.tagext;version="2.2.0",
  javax.servlet.resources;version="3.0",
- javax.websocket;version="1.1.0",
- javax.websocket.server;version="1.1.0",
+ javax.websocket,
+ javax.websocket.server,
  net.sf.packtag.servlet;version="3.8",
  net.sf.packtag.tag;version="3.8",
  net.solarnetwork.domain;version="1.7",
@@ -150,5 +150,5 @@ Import-Package:
  org.springframework.web.servlet.tags.form;version="[4.2,5.0)",
  org.springframework.web.servlet.view;version="[4.2,5.0)",
  org.springframework.web.servlet.view.tiles3;version="[4.2,5.0)",
- org.springframework.web.socket.server.standard;version="[4.1,5.0)",
+ org.springframework.web.socket.server.standard;version="[4.2,5.0)",
  org.springframework.web.util;version="[4.2,5.0)"
