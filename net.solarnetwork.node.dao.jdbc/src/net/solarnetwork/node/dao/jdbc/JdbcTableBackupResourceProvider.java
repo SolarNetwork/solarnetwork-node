@@ -34,9 +34,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -44,10 +44,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
@@ -64,6 +66,7 @@ import net.solarnetwork.node.backup.BackupResourceProvider;
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	private final JdbcTemplate jdbcTemplate;
+	private final TransactionTemplate transactionTemplate;
 	private final TaskExecutor taskExecutor;
 	private String[] tableNames;
 
@@ -74,12 +77,16 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 * 
 	 * @param jdbcTemplate
 	 *        The JDBC template to use.
+	 * @param transactionTemplate
+	 *        A transaction template to use, for supporting savepoints.
 	 * @param taskExecutor
 	 *        A task executor to use.
 	 */
-	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate, TaskExecutor taskExecutor) {
+	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate, TransactionTemplate txTemplate,
+			TaskExecutor taskExecutor) {
 		super();
 		this.jdbcTemplate = jdbcTemplate;
+		this.transactionTemplate = txTemplate;
 		this.taskExecutor = taskExecutor;
 	}
 
@@ -204,50 +211,79 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	}
 
 	@Override
-	public boolean restoreBackupResource(BackupResource resource) {
-		String tableName = StringUtils.stripFilenameExtension(resource.getBackupPath());
-		final Map<String, ColumnCsvMetaData> columnMetaData = new LinkedHashMap<String, ColumnCsvMetaData>(
-				8);
-		return jdbcTemplate.execute(new PreparedStatementCreator() {
+	public boolean restoreBackupResource(final BackupResource resource) {
+		if ( resource == null ) {
+			return false;
+		}
+		final String tableName = StringUtils.stripFilenameExtension(resource.getBackupPath());
+		if ( tableName == null || tableName.length() < 1 ) {
+			return false;
+		}
+		return transactionTemplate.execute(new TransactionCallback<Boolean>() {
 
 			@Override
-			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				columnMetaData.putAll(
-						JdbcUtils.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName));
-				String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
-				return con.prepareStatement(sql);
-			}
-		}, new PreparedStatementCallback<Boolean>() {
+			public Boolean doInTransaction(TransactionStatus status) {
+				return jdbcTemplate.execute(new ConnectionCallback<Boolean>() {
 
-			@Override
-			public Boolean doInPreparedStatement(PreparedStatement ps)
-					throws SQLException, DataAccessException {
-				Reader in;
-				PreparedStatementCsvReader reader = null;
-				try {
-					in = new InputStreamReader(resource.getInputStream());
-					reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
-					String[] header = reader.getHeader(true);
-					Map<String, Integer> csvColumns = JdbcUtils.csvColumnIndexMapping(header);
-					CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
-							columnMetaData);
-					while ( reader.read(ps, csvColumns, cellProcessors, columnMetaData) ) {
-						ps.executeUpdate();
+					@Override
+					public Boolean doInConnection(Connection con)
+							throws SQLException, DataAccessException {
+						return restoreWithConnection(resource, con, tableName);
 					}
-				} catch ( IOException e ) {
-					throw new DataAccessResourceFailureException("CSV encoding error", e);
-				} finally {
-					if ( reader != null ) {
-						try {
-							reader.close();
-						} catch ( IOException e ) {
-							// ignore
-						}
-					}
-				}
-				return true;
+				});
 			}
 		});
+	}
+
+	private boolean restoreWithConnection(final BackupResource resource, final Connection con,
+			final String tableName) throws SQLException {
+		final Map<String, ColumnCsvMetaData> columnMetaData = JdbcUtils
+				.columnCsvMetaDataForDatabaseMetaData(con.getMetaData(), tableName);
+		final String sql = JdbcUtils.insertSqlForColumnCsvMetaData(tableName, columnMetaData);
+		final PreparedStatement ps = con.prepareStatement(sql);
+		Reader in;
+		PreparedStatementCsvReader reader = null;
+		try {
+			in = new InputStreamReader(resource.getInputStream());
+			reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
+			String[] header = reader.getHeader(true);
+			Map<String, Integer> csvColumns = JdbcUtils.csvColumnIndexMapping(header);
+			CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
+					columnMetaData);
+			while ( reader.read(ps, csvColumns, cellProcessors, columnMetaData) ) {
+				Savepoint sp = con.setSavepoint();
+				try {
+					ps.executeUpdate();
+				} catch ( SQLException e ) {
+
+					DataAccessException dae = jdbcTemplate.getExceptionTranslator().translate("Load CSV",
+							sql, e);
+					if ( dae instanceof DataIntegrityViolationException ) {
+						log.debug("Ignoring {} CSV duplicate import row {}", tableName,
+								reader.getRowNumber());
+						con.rollback(sp);
+					} else {
+						throw e;
+					}
+				}
+			}
+		} catch ( IOException e ) {
+			throw new DataAccessResourceFailureException("CSV encoding error", e);
+		} finally {
+			if ( reader != null ) {
+				try {
+					reader.close();
+				} catch ( IOException e ) {
+					// ignore
+				}
+			}
+			try {
+				ps.close();
+			} catch ( SQLException e ) {
+				// ignore
+			}
+		}
+		return true;
 	}
 
 	/**
