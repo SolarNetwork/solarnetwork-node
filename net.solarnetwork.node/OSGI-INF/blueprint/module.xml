@@ -88,6 +88,8 @@
 		<interfaces>
 			<value>org.springframework.scheduling.TaskScheduler</value>
 			<value>org.springframework.scheduling.SchedulingTaskExecutor</value>
+			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
+			<value>org.springframework.core.task.TaskExecutor</value>
 		</interfaces>
 		<service-properties>
 			<entry key="function" value="node"/>

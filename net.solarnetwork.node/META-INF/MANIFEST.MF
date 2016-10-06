@@ -59,6 +59,7 @@ Import-Package:
  org.springframework.core;version="[4.2,5.0)",
  org.springframework.core.io;version="[4.2,5.0)",
  org.springframework.core.io.support;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
  org.springframework.dao;version="[4.2,5.0)",
  org.springframework.scheduling;version="[4.2,5.0)",
  org.springframework.scheduling.concurrent;version="[4.2,5.0)",
