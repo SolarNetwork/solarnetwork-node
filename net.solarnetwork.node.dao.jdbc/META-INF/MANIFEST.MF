@@ -41,6 +41,7 @@ Import-Package:
  org.springframework.context.support;version="[4.2,5.0)",
  org.springframework.core;version="[4.2,5.0)",
  org.springframework.core.io;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
  org.springframework.dao;version="[4.2,5.0)",
  org.springframework.dao.support;version="[4.2,5.0)",
  org.springframework.jdbc;version="[4.2,5.0)",
@@ -53,4 +54,9 @@ Import-Package:
  org.springframework.transaction;version="[4.2,5.0)",
  org.springframework.transaction.annotation;version="[4.2,5.0)",
  org.springframework.transaction.support;version="[4.2,5.0)",
- org.springframework.util;version="[4.2,5.0)"
+ org.springframework.util;version="[4.2,5.0)",
+ org.supercsv.cellprocessor;version="2.1.0",
+ org.supercsv.cellprocessor.ift;version="2.1.0",
+ org.supercsv.io;version="2.1.0",
+ org.supercsv.prefs;version="2.1.0",
+ org.supercsv.util;version="2.1.0"
