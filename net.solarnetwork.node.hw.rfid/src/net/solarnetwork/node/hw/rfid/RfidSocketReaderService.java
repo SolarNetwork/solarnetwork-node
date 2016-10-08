@@ -106,6 +106,13 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		tryStartReaderLater();
 	}
 
+	/**
+	 * Shut down the service.
+	 */
+	public void destroy() {
+		stopReader(false);
+	}
+
 	private synchronized void startReader() {
 		tryLaterThread = null;
 		if ( readerThread != null ) {
@@ -135,6 +142,8 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		}
 		if ( tryAgain ) {
 			tryStartReaderLater();
+		} else if ( tryLaterThread != null ) {
+			tryLaterThread.interrupt();
 		}
 	}
 

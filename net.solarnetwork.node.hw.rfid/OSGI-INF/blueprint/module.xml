@@ -39,7 +39,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.hw.rfid.client"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.hw.rfid.RfidSocketReaderService" init-method="init">
+		<bean class="net.solarnetwork.node.hw.rfid.RfidSocketReaderService" init-method="init" destroy-method="destroy">
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
