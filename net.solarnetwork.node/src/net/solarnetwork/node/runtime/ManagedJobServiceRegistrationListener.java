@@ -253,43 +253,51 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			synchronized ( pidMap ) {
 				trigJob = pidMap.get(pid);
 			}
-			if ( trigJob != null ) {
-				final CronTrigger ct = (CronTrigger) trigJob.getTrigger();
-
-				// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
-				// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
-				String newCronExpression = ct.getCronExpression();
-				JobDataMap newJobDataMap = (JobDataMap) ct.getJobDataMap().clone();
-				@SuppressWarnings("unchecked")
-				ServiceReference<ConfigurationAdmin> caRef = event.getReference();
-				ConfigurationAdmin ca = bundleContext.getService(caRef);
-				try {
-					Configuration config = ca.getConfiguration(pid, null);
-					@SuppressWarnings("unchecked")
-					Dictionary<String, ?> props = config.getProperties();
-					String propCronExpression = (String) props.get("trigger.cronExpression");
-					if ( propCronExpression != null ) {
-						newCronExpression = propCronExpression;
-					}
-
-					// get JobDataMap
-					Enumeration<String> keyEnum = props.keys();
-					Pattern pat = Pattern.compile("trigger\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\].*");
-					while ( keyEnum.hasMoreElements() ) {
-						String key = keyEnum.nextElement();
-						Matcher m = pat.matcher(key);
-						if ( m.matches() ) {
-							newJobDataMap.put(m.group(1), props.get(key));
-						}
-					}
-				} catch ( IOException e ) {
-					log.warn("Exception processing configuration update event", e);
-				}
-				if ( newCronExpression != null ) {
-					JobUtils.scheduleCronJob(scheduler, ct, trigJob.getJobDetail(), newCronExpression,
-							newJobDataMap);
-				}
+			if ( trigJob == null ) {
+				return;
 			}
+			final CronTrigger origTrigger = (CronTrigger) trigJob.getTrigger();
+			final JobDetail origJobDetail = trigJob.getJobDetail();
+
+			// rename job name and trigger name to account for instance
+			final CronTrigger instanceTrigger = origTrigger.getTriggerBuilder().withIdentity(pid)
+					.forJob(pid).build();
+			final JobDetail instanceJobDetail = origJobDetail.getJobBuilder().withIdentity(pid).build();
+
+			// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
+			// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
+			String newCronExpression = origTrigger.getCronExpression();
+			JobDataMap newJobDataMap = (JobDataMap) origJobDetail.getJobDataMap().clone();
+			@SuppressWarnings("unchecked")
+			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
+			ConfigurationAdmin ca = bundleContext.getService(caRef);
+			try {
+				Configuration config = ca.getConfiguration(pid, null);
+				@SuppressWarnings("unchecked")
+				Dictionary<String, ?> props = config.getProperties();
+				String propCronExpression = (String) props.get("trigger.cronExpression");
+				if ( propCronExpression != null ) {
+					newCronExpression = propCronExpression;
+				}
+
+				// get JobDataMap
+				Enumeration<String> keyEnum = props.keys();
+				Pattern pat = Pattern.compile("trigger\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\].*");
+				while ( keyEnum.hasMoreElements() ) {
+					String key = keyEnum.nextElement();
+					Matcher m = pat.matcher(key);
+					if ( m.matches() ) {
+						newJobDataMap.put(m.group(1), props.get(key));
+					}
+				}
+			} catch ( IOException e ) {
+				log.warn("Exception processing configuration update event", e);
+			}
+			if ( newCronExpression != null ) {
+				JobUtils.scheduleCronJob(scheduler, instanceTrigger, instanceJobDetail,
+						newCronExpression, newJobDataMap);
+			}
+
 		}
 	}
 
