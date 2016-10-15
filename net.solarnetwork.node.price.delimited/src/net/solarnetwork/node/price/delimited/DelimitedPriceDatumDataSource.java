@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -104,7 +105,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DelimitedPriceDatumDataSource
 		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
@@ -119,7 +120,7 @@ public class DelimitedPriceDatumDataSource
 	public static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy HH:mm";
 
 	/** The default value for the {@code url} property. */
-	public static final String DEFAULT_URL = "http://www.electricityinfo.co.nz/comitFta/five_min_prices.download?INchoice=HAY&INdate=%1$td/%1$tm/%1$tY&INgip=ABY0111&INperiodfrom=1&INperiodto=50&INtype=Price";
+	public static final String DEFAULT_URL = "https://www.electricityinfo.co.nz/comitFta/five_min_prices.download?INchoice=HAY&INdate=%1$td/%1$tm/%1$tY&INgip=ABY0111&INperiodfrom=1&INperiodto=50&INtype=Price";
 
 	/** The default value for the {@code priceColumn} property. */
 	public static final int DEFAULT_PRICE_COLUMN = 4;
@@ -163,6 +164,9 @@ public class DelimitedPriceDatumDataSource
 	public GeneralLocationDatum readCurrentDatum() {
 		URL theUrl = getFormattedUrl();
 		String dataRow = readDataRow(theUrl);
+		if ( dataRow == null ) {
+			return null;
+		}
 		String[] data = dataRow.split(this.delimiter);
 
 		// get price date, either from single column or combination of multiple
@@ -211,7 +215,7 @@ public class DelimitedPriceDatumDataSource
 	private String readDataRow(URL theUrl) {
 		BufferedReader resp = null;
 		if ( log.isDebugEnabled() ) {
-			log.debug("Requesting price data from [" + theUrl + ']');
+			log.debug("Requesting price data from [{}]", theUrl);
 		}
 		try {
 			URLConnection conn = theUrl.openConnection();
@@ -220,6 +224,16 @@ public class DelimitedPriceDatumDataSource
 			conn.setRequestProperty("Accept", "text/*");
 
 			resp = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+			if ( conn instanceof HttpURLConnection ) {
+				HttpURLConnection hconn = (HttpURLConnection) conn;
+				int status = hconn.getResponseCode();
+				if ( status < 200 || status > 299 ) {
+					log.warn("Non-200 response {} from [{}]; headers:\n", status, theUrl,
+							conn.getHeaderFields());
+					return null;
+				}
+			}
 
 			String str;
 			int skipCount = this.skipLines;
@@ -231,7 +245,7 @@ public class DelimitedPriceDatumDataSource
 				break;
 			}
 			if ( log.isTraceEnabled() ) {
-				log.trace("Found price data: " + str);
+				log.trace("Found price data: {}", str);
 			}
 			return str;
 		} catch ( IOException e ) {
