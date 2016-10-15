@@ -36,6 +36,9 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralPriceDatum;
@@ -43,9 +46,6 @@ import net.solarnetwork.node.domain.PriceDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * Implementation of {@link DatumDataSource} that parses a delimited text
@@ -106,8 +106,8 @@ import org.springframework.context.MessageSource;
  * @author matt
  * @version 1.1
  */
-public class DelimitedPriceDatumDataSource implements DatumDataSource<GeneralLocationDatum>,
-		SettingSpecifierProvider {
+public class DelimitedPriceDatumDataSource
+		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code delimiter} property. */
 	public static final String DEFAULT_DELIMITER = ",";
@@ -270,19 +270,16 @@ public class DelimitedPriceDatumDataSource implements DatumDataSource<GeneralLoc
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 
-		return Arrays
-				.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("url", DEFAULT_URL),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("delimiter",
-								DEFAULT_DELIMITER),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("priceColumn", String
-								.valueOf(DEFAULT_PRICE_COLUMN)),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateTimeColumns", "1,3"),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateFormat",
-								DEFAULT_DATE_FORMAT),
-						(SettingSpecifier) new BasicTextFieldSettingSpecifier("skipLines", String
-								.valueOf(DEFAULT_SKIP_LINES)));
+		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("url", DEFAULT_URL),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("delimiter", DEFAULT_DELIMITER),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("priceColumn",
+						String.valueOf(DEFAULT_PRICE_COLUMN)),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateTimeColumns", "1,3"),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateFormat", DEFAULT_DATE_FORMAT),
+				(SettingSpecifier) new BasicTextFieldSettingSpecifier("skipLines",
+						String.valueOf(DEFAULT_SKIP_LINES)));
 	}
 
 	public String getUrl() {
