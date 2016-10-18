@@ -113,7 +113,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
 	private String trustStorePath = DEFAULT_TRUST_STORE_PATH;
-	private String trustStorePassword = null;
+	private String trustStorePassword = "solarnode";
 	private String jreTrustStorePassword = "changeit";
 	private String nodeAlias = "node";
 	private String caAlias = "ca";
