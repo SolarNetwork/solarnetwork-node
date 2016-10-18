@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +53,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.net.ssl.KeyManager;
@@ -91,7 +93,7 @@ import net.solarnetwork.support.CertificateService;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultKeystoreService implements PKIService, SSLService, BackupResourceProvider {
 
@@ -100,6 +102,9 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
 
+	/** The default value for the {@code trustStorePath} property. */
+	public static final String DEFAULT_TRUST_STORE_PATH = "conf/tls/trust.jks";
+
 	/** The settings key for the key store password. */
 	public static final String KEY_PASSWORD = "solarnode.keystore.pw";
 
@@ -107,6 +112,9 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	private static final int PASSWORD_LENGTH = 20;
 
 	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
+	private String trustStorePath = DEFAULT_TRUST_STORE_PATH;
+	private String trustStorePassword = "solarnode";
+	private String jreTrustStorePassword = "changeit";
 	private String nodeAlias = "node";
 	private String caAlias = "ca";
 	private int keySize = 2048;
@@ -456,7 +464,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		KeyStore keyStore = null;
 		try {
 			keyStore = KeyStore.getInstance(type);
-			keyStore.load(in, password.toCharArray());
+			keyStore.load(in, (password != null ? password.toCharArray() : null));
 			return keyStore;
 		} catch ( GeneralSecurityException e ) {
 			throw new CertificateException("Error loading certificate key store", e);
@@ -579,18 +587,52 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		solarInSocketFactory = null;
 	}
 
+	private synchronized KeyStore loadTrustStore() {
+		// first load in JDK trust store
+		File jdkTrustStoreFile = new File(System.getProperty("java.home"), "lib/security/cacerts");
+		KeyStore ks = null;
+		InputStream in = null;
+		if ( jdkTrustStoreFile.canRead() ) {
+			try {
+				in = new BufferedInputStream(new FileInputStream(jdkTrustStoreFile));
+			} catch ( FileNotFoundException e ) {
+				// shouldn't really get here after canRead()
+			}
+		}
+		ks = loadKeyStore(KeyStore.getDefaultType(), in, jreTrustStorePassword);
+
+		// now custom trust store
+		File snTrustStoreFile = new File(trustStorePath);
+		if ( snTrustStoreFile.canRead() ) {
+			KeyStore snTrustStore = null;
+			try {
+				in = new BufferedInputStream(new FileInputStream(snTrustStoreFile));
+				snTrustStore = loadKeyStore(KeyStore.getDefaultType(), in, trustStorePassword);
+				Enumeration<String> aliases = snTrustStore.aliases();
+				while ( aliases.hasMoreElements() ) {
+					String alias = aliases.nextElement();
+					Certificate cert = snTrustStore.getCertificate(alias);
+					if ( cert != null ) {
+						ks.setCertificateEntry(alias, cert);
+					}
+				}
+			} catch ( FileNotFoundException e ) {
+				// shouldn't really get here after canRead()
+			} catch ( KeyStoreException e ) {
+				log.warn("Error processing trusted certs in {}: {}", snTrustStoreFile, e.getMessage());
+			}
+		}
+
+		return ks;
+	}
+
 	@Override
 	public synchronized SSLSocketFactory getSolarInSocketFactory() {
 		if ( solarInSocketFactory == null ) {
-			File ksFile = new File(keyStorePath);
-			if ( !ksFile.isFile() ) {
-				log.debug("Using default SSLSocketFactory as no keystore exists.");
-				return (SSLSocketFactory) SSLSocketFactory.getDefault();
-			}
 			try {
-				KeyStore keyStore = loadKeyStore();
+				KeyStore trustStore = loadTrustStore();
 				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
-				trustManagerFactory.init(keyStore);
+				trustManagerFactory.init(trustStore);
 
 				X509TrustManager x509TrustManager = null;
 				for ( TrustManager trustManager : trustManagerFactory.getTrustManagers() ) {
@@ -604,25 +646,23 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 					throw new CertificateException("No X509 TrustManager available");
 				}
 
-				KeyManagerFactory keyManagerFactory = KeyManagerFactory
-						.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-				keyManagerFactory.init(keyStore, getKeyStorePassword().toCharArray());
+				KeyManager[] keyManagers = null;
+				File ksFile = new File(keyStorePath);
+				if ( ksFile.isFile() ) {
+					KeyStore keyStore = loadKeyStore();
+					KeyManagerFactory keyManagerFactory = KeyManagerFactory
+							.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+					keyManagerFactory.init(keyStore, getKeyStorePassword().toCharArray());
 
-				X509KeyManager x509KeyManager = null;
-				for ( KeyManager keyManager : keyManagerFactory.getKeyManagers() ) {
-					if ( keyManager instanceof X509KeyManager ) {
-						x509KeyManager = (X509KeyManager) keyManager;
-						break;
+					for ( KeyManager keyManager : keyManagerFactory.getKeyManagers() ) {
+						if ( keyManager instanceof X509KeyManager ) {
+							keyManagers = new KeyManager[] { keyManager };
+						}
 					}
 				}
 
-				if ( x509KeyManager == null ) {
-					throw new CertificateException("No X509 KeyManager available");
-				}
-
 				SSLContext sslContext = SSLContext.getInstance("TLS");
-				sslContext.init(new KeyManager[] { x509KeyManager },
-						new TrustManager[] { x509TrustManager }, null);
+				sslContext.init(keyManagers, new TrustManager[] { x509TrustManager }, null);
 				solarInSocketFactory = sslContext.getSocketFactory();
 
 			} catch ( NoSuchAlgorithmException e ) {
@@ -737,6 +777,30 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	public void setManualKeyStorePassword(String manualKeyStorePassword) {
 		this.manualKeyStorePassword = manualKeyStorePassword;
+	}
+
+	public String getTrustStorePath() {
+		return trustStorePath;
+	}
+
+	public void setTrustStorePath(String trustStorePath) {
+		this.trustStorePath = trustStorePath;
+	}
+
+	public String getTrustStorePassword() {
+		return trustStorePassword;
+	}
+
+	public void setTrustStorePassword(String trustStorePassword) {
+		this.trustStorePassword = trustStorePassword;
+	}
+
+	public String getJreTrustStorePassword() {
+		return jreTrustStorePassword;
+	}
+
+	public void setJreTrustStorePassword(String jreTrustStorePassword) {
+		this.jreTrustStorePassword = jreTrustStorePassword;
 	}
 
 }
