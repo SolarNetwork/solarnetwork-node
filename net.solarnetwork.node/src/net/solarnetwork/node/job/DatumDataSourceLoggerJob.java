@@ -28,13 +28,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.dao.DuplicateKeyException;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.dao.DuplicateKeyException;
 
 /**
  * Job to collect data from a {@link DatumDataSource} and persist that via a
@@ -78,9 +79,11 @@ import org.springframework.dao.DuplicateKeyException;
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
 
 	private List<DatumDataSource<T>> datumDataSources = null;
 	private DatumDao<T> datumDao = null;
@@ -90,8 +93,8 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 		for ( DatumDataSource<T> datumDataSource : datumDataSources ) {
 			try {
 				if ( log.isDebugEnabled() ) {
-					log.debug("Collecting [{}] from [{}]", datumDataSource.getDatumType()
-							.getSimpleName(), datumDataSource);
+					log.debug("Collecting [{}] from [{}]",
+							datumDataSource.getDatumType().getSimpleName(), datumDataSource);
 				}
 
 				Collection<T> datumList = null;
@@ -113,8 +116,8 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob imple
 				}
 
 				if ( log.isInfoEnabled() ) {
-					log.info("Got Datum to persist: {}", (datumList.size() == 1 ? datumList.iterator()
-							.next().toString() : datumList.toString()));
+					log.info("Got Datum to persist: {}", (datumList.size() == 1
+							? datumList.iterator().next().toString() : datumList.toString()));
 				}
 				for ( T datum : datumList ) {
 					try {

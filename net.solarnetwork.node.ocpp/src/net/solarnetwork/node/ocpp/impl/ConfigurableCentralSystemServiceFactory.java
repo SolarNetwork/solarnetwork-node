@@ -26,6 +26,7 @@ import java.net.URL;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -33,6 +34,20 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.soap.AddressingFeature;
+import org.osgi.framework.Version;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -48,15 +63,6 @@ import ocpp.v15.cs.CentralSystemService_Service;
 import ocpp.v15.cs.RegistrationStatus;
 import ocpp.v15.support.HMACHandler;
 import ocpp.v15.support.WSAddressingFromHandler;
-import org.osgi.framework.Version;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 
 /**
  * Implementation of {@link CentralSystemServiceFactory} that allows configuring
@@ -65,8 +71,8 @@ import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
  * @author matt
  * @version 1.0
  */
-public class ConfigurableCentralSystemServiceFactory implements CentralSystemServiceFactory,
-		SettingSpecifierProvider {
+public class ConfigurableCentralSystemServiceFactory
+		implements CentralSystemServiceFactory, SettingSpecifierProvider {
 
 	/** The name used to schedule the {@link HeartbeatJob} as. */
 	public static final String HEARTBEAT_JOB_NAME = "OCPP_Heartbeat";
@@ -101,15 +107,18 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 	@Override
 	public CentralSystemService service() {
 		CentralSystemService client = getServiceInternal();
-		if ( bootNotificationResponse == null ) {
-			try {
-				postBootNotification();
-			} catch ( RuntimeException e ) {
-				bootNotificationError = e;
-				if ( log.isDebugEnabled() ) {
-					log.debug("Error posting BootNotification message to {}", url, e);
-				} else {
-					log.warn("Error posting BootNotification message to {}: {}", url, e.getMessage());
+		synchronized ( this ) {
+			if ( bootNotificationResponse == null ) {
+				try {
+					postBootNotification();
+				} catch ( RuntimeException e ) {
+					bootNotificationError = e;
+					if ( log.isDebugEnabled() ) {
+						log.debug("Error posting BootNotification message to {}", url, e);
+					} else {
+						log.warn("Error posting BootNotification message to {}: {}", url,
+								e.getMessage());
+					}
 				}
 			}
 		}
@@ -142,8 +151,8 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			QName name = new QName("urn://Ocpp/Cs/2012/06/", "CentralSystemService");
 			CentralSystemService client = new CentralSystemService_Service(wsdl, name)
 					.getCentralSystemServiceSoap12(new AddressingFeature());
-			((BindingProvider) client).getRequestContext().put(
-					BindingProvider.ENDPOINT_ADDRESS_PROPERTY, this.url);
+			((BindingProvider) client).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY,
+					this.url);
 			result = client;
 			setupFromHandler(client, useFromAddress);
 			service = client;
@@ -239,18 +248,19 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			log.debug("Node ID not available; cannot post BootNotification");
 			return false;
 		}
-
-		BootNotificationRequest req = new BootNotificationRequest();
-		req.setChargePointModel(this.chargePointModel);
-		req.setChargePointVendor(this.chargePointVendor);
-		req.setChargePointSerialNumber(nodeId.toString());
-		req.setFirmwareVersion(this.firmwareVersion);
-		BootNotificationResponse res = client.bootNotification(req, chargeBoxIdentity());
-		if ( res == null ) {
-			log.warn("No response from BootNotificationRequest");
-			return false;
+		synchronized ( this ) {
+			BootNotificationRequest req = new BootNotificationRequest();
+			req.setChargePointModel(this.chargePointModel);
+			req.setChargePointVendor(this.chargePointVendor);
+			req.setChargePointSerialNumber(nodeId.toString());
+			req.setFirmwareVersion(this.firmwareVersion);
+			BootNotificationResponse res = client.bootNotification(req, chargeBoxIdentity());
+			if ( res == null ) {
+				log.warn("No response from BootNotificationRequest");
+				return false;
+			}
+			setBootNotificationResponse(res);
 		}
-		setBootNotificationResponse(res);
 		return true;
 	}
 
@@ -264,20 +274,21 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		}
 		log.info("OCPP BootNotification reply: {} @ {}; heartbeat {}s", response.getStatus(),
 				response.getCurrentTime(), response.getHeartbeatInterval());
-		if ( RegistrationStatus.ACCEPTED == response.getStatus()
-				&& configureHeartbeat(response.getHeartbeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY) ) {
+		if ( RegistrationStatus.ACCEPTED == response.getStatus() && configureHeartbeat(
+				response.getHeartbeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY) ) {
 			bootNotificationResponse = response;
 		} else {
 			bootNotificationResponse = response;
 		}
 	}
 
-	private boolean configureHeartbeat(final int heartbeatInterval, final int repeatCount) {
+	private synchronized boolean configureHeartbeat(final int heartbeatInterval, final int repeatCount) {
 		Scheduler sched = scheduler;
 		if ( sched == null ) {
 			log.warn("No scheduler avaialable, cannot schedule heartbeat job");
 			return false;
 		}
+		final JobKey jobKey = new JobKey(HEARTBEAT_JOB_NAME, SCHEDULER_GROUP);
 		final long repeatInterval = heartbeatInterval * 1000L;
 		SimpleTrigger trigger = heartbeatTrigger;
 		if ( trigger != null ) {
@@ -290,17 +301,19 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 			// trigger has changed!
 			if ( heartbeatInterval == 0 ) {
 				try {
-					sched.unscheduleJob(trigger.getName(), trigger.getGroup());
+					sched.unscheduleJob(trigger.getKey());
 				} catch ( SchedulerException e ) {
 					log.error("Error unscheduling OCPP heartbeat job", e);
 				} finally {
 					heartbeatTrigger = null;
 				}
 			} else {
-				trigger.setRepeatInterval(repeatInterval);
-				trigger.setRepeatCount(repeatCount);
+				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
+						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
+								heartbeatInterval))
+						.build();
 				try {
-					sched.rescheduleJob(trigger.getName(), trigger.getGroup(), trigger);
+					sched.rescheduleJob(trigger.getKey(), trigger);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP heartbeat job", e);
 				} finally {
@@ -315,27 +328,20 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 
 		synchronized ( sched ) {
 			try {
-				JobDetail jobDetail = sched.getJobDetail(HEARTBEAT_JOB_NAME, SCHEDULER_GROUP);
+				JobDetail jobDetail = sched.getJobDetail(jobKey);
 				if ( jobDetail == null ) {
-					JobDetail jd = new JobDetail();
-					jd.setJobClass(HeartbeatJob.class);
-					jd.setName(HEARTBEAT_JOB_NAME);
-					jd.setGroup(SCHEDULER_GROUP);
-					jd.setDurability(true);
-					sched.addJob(jd, true);
-					jobDetail = jd;
+					jobDetail = JobBuilder.newJob(HeartbeatJob.class).withIdentity(jobKey).storeDurably()
+							.build();
+					sched.addJob(jobDetail, true);
 				}
-				SimpleTriggerFactoryBean t = new SimpleTriggerFactoryBean();
-				t.setName(this.url);
-				t.setGroup(SCHEDULER_GROUP);
-				t.setRepeatCount(repeatCount);
-				t.setRepeatInterval(repeatInterval);
-				t.setStartDelay(repeatInterval);
-				t.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_EXISTING_COUNT);
-				t.setJobDataAsMap(Collections.singletonMap("service", this));
-				t.setJobDetail(jobDetail);
-				t.afterPropertiesSet();
-				trigger = t.getObject();
+				final TriggerKey triggerKey = new TriggerKey(this.url, SCHEDULER_GROUP);
+				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
+						.startAt(new Date(System.currentTimeMillis() + repeatInterval))
+						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
+						.withSchedule(SimpleScheduleBuilder
+								.repeatMinutelyForTotalCount(repeatCount, heartbeatInterval)
+								.withMisfireHandlingInstructionNextWithExistingCount())
+						.build();
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
 				return true;
@@ -370,8 +376,8 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		results.add(new BasicTextFieldSettingSpecifier("chargePointVendor", defaults.chargePointVendor));
 
 		results.add(new BasicToggleSettingSpecifier("useFromAddress", defaults.useFromAddress));
-		results.add(new BasicTextFieldSettingSpecifier("fromHandler.fromURL", defaults.fromHandler
-				.getFromURL()));
+		results.add(new BasicTextFieldSettingSpecifier("fromHandler.fromURL",
+				defaults.fromHandler.getFromURL()));
 		results.add(new BasicTextFieldSettingSpecifier("fromHandler.dynamicFromPath",
 				defaults.fromHandler.getDynamicFromPath()));
 		results.add(new BasicTextFieldSettingSpecifier("fromHandler.networkInterfaceName",
@@ -379,9 +385,10 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		results.add(new BasicToggleSettingSpecifier("fromHandler.preferIPv4Address",
 				defaults.fromHandler.isPreferIPv4Address()));
 
-		results.add(new BasicTextFieldSettingSpecifier("hmacHandler.secret", HMACHandler.DEFAULT_SECRET));
-		results.add(new BasicTextFieldSettingSpecifier("hmacHandler.maximumTimeSkew", String
-				.valueOf(hmacHandler.getMaximumTimeSkew())));
+		results.add(
+				new BasicTextFieldSettingSpecifier("hmacHandler.secret", HMACHandler.DEFAULT_SECRET));
+		results.add(new BasicTextFieldSettingSpecifier("hmacHandler.maximumTimeSkew",
+				String.valueOf(hmacHandler.getMaximumTimeSkew())));
 
 		return results;
 	}
@@ -392,15 +399,16 @@ public class ConfigurableCentralSystemServiceFactory implements CentralSystemSer
 		Throwable bootError = bootNotificationError;
 		if ( bootResponse != null ) {
 			if ( bootResponse.getStatus() == RegistrationStatus.ACCEPTED ) {
-				buf.append(messageSource.getMessage(
-						"status.accepted",
+				buf.append(messageSource.getMessage("status.accepted",
 						new Object[] {
-								(bootResponse.getCurrentTime() != null ? bootResponse.getCurrentTime()
-										.toString() : "N/A"), bootResponse.getHeartbeatInterval() / 60 },
+								(bootResponse.getCurrentTime() != null
+										? bootResponse.getCurrentTime().toString() : "N/A"),
+								bootResponse.getHeartbeatInterval() / 60 },
 						Locale.getDefault()));
 			} else {
-				buf.append(messageSource.getMessage("status.rejected", new Object[] {
-						chargeBoxIdentity(), bootResponse.getCurrentTime() }, Locale.getDefault()));
+				buf.append(messageSource.getMessage("status.rejected",
+						new Object[] { chargeBoxIdentity(), bootResponse.getCurrentTime() },
+						Locale.getDefault()));
 			}
 		} else if ( bootError != null ) {
 			while ( bootError.getCause() != null ) {

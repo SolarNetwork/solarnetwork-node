@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager"/>
+	</bean>
+
+	<!-- Published Services -->
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="OCPP RFID Charge Sessions"/>
+			<property name="factoryUID" value="net.solarnetwork.node.ocpp.charge.rfid"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.ocpp.charge.rfid" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.ocpp.charge.rfid"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager).TOPIC_RFID_MESSAGE_RECEIVED}</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.ocpp.charge.rfid.RfidChargeSessionManager">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="chargeSessionManager">
+				<bean class="net.solarnetwork.util.DynamicServiceProxy">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClass" value="net.solarnetwork.node.ocpp.ChargeSessionManager"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="OCPP Central System"/>
+						</map>
+					</property>
+				</bean>
+			</property>
+			<property name="socketManager">
+				<bean class="net.solarnetwork.util.DynamicServiceProxy">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClass" value="net.solarnetwork.node.ocpp.SocketManager"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="OCPP Central System"/>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>

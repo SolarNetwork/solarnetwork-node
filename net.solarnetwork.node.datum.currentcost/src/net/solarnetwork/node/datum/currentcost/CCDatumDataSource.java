@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DataCollector;
@@ -46,6 +46,7 @@ import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
@@ -66,7 +67,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
 		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -101,8 +102,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 				}
 			});
 		} catch ( IOException e ) {
-			throw new RuntimeException("Communication problem reading from serial device "
-					+ serialNetwork(), e);
+			throw new RuntimeException(
+					"Communication problem reading from serial device " + serialNetwork(), e);
 		}
 		if ( sample == null ) {
 			log.warn("No serial data received for CurrentCost datum");
@@ -119,8 +120,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 
 	@Override
 	public Collection<GeneralNodeDatum> readMultipleDatum() {
-		final Set<String> sourceIdSet = (new HashSet<String>(getSourceIdFilter() == null ? 0
-				: getSourceIdFilter().size()));
+		final Set<String> sourceIdSet = (new HashSet<String>(
+				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()));
 		final List<GeneralNodeDatum> result = new ArrayList<GeneralNodeDatum>(4);
 		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
 		for ( CCDatum ccDatum : datumSet ) {
@@ -130,8 +131,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			return result;
 		}
 		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
-				&& getSourceIdFilter().size() > 1 ? System.currentTimeMillis()
-				+ (getCollectAllSourceIdsTimeout() * 1000) : 0);
+				&& getSourceIdFilter().size() > 1
+						? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000) : 0);
 
 		try {
 			performAction(new SerialConnectionAction<Object>() {
@@ -161,16 +162,16 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 				}
 			});
 		} catch ( IOException e ) {
-			throw new RuntimeException("Communication problem reading from serial device "
-					+ serialNetwork(), e);
+			throw new RuntimeException(
+					"Communication problem reading from serial device " + serialNetwork(), e);
 		}
 
 		return result;
 	}
 
 	private boolean needMoreSamplesForSources(Set<String> sourceIdSet) {
-		return (sourceIdSet.isEmpty() || sourceIdSet.size() < (getSourceIdFilter() == null ? 0
-				: getSourceIdFilter().size()));
+		return (sourceIdSet.isEmpty()
+				|| sourceIdSet.size() < (getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()));
 	}
 
 	private void processSample(List<GeneralNodeDatum> result, Set<String> sourceIdSet, CCDatum ccDatum) {
@@ -211,8 +212,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			return null;
 		}
 
-		Integer wattReading = (ampIndex == 2 ? datum.getChannel2Watts() : ampIndex == 3 ? datum
-				.getChannel3Watts() : datum.getChannel1Watts());
+		Integer wattReading = (ampIndex == 2 ? datum.getChannel2Watts()
+				: ampIndex == 3 ? datum.getChannel3Watts() : datum.getChannel1Watts());
 
 		GeneralNodeACEnergyDatum result = new GeneralNodeACEnergyDatum();
 		result.setCreated(new Date(datum.getCreated()));
@@ -273,8 +274,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		return "CurrentCost amp meter";
 	}
 
-	private final Set<String> SPECS_FILTER = new HashSet<String>(Arrays.asList("sourceIdFormat",
-			"voltage"));
+	private final Set<String> SPECS_FILTER = new HashSet<String>(
+			Arrays.asList("sourceIdFormat", "voltage"));
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -291,16 +292,35 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			specs.add(energyTag);
 			specs.add(atmosTag);
 		}
-		// remove some we don't want
-		for ( Iterator<SettingSpecifier> itr = specs.iterator(); itr.hasNext(); ) {
+
+		// remove some we don't want, insert addressSourceMappingValueExample
+		for ( ListIterator<SettingSpecifier> itr = specs.listIterator(); itr.hasNext(); ) {
 			SettingSpecifier spec = itr.next();
 			if ( spec instanceof KeyedSettingSpecifier<?> ) {
 				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
 				if ( SPECS_FILTER.contains(keyedSpec.getKey()) ) {
 					itr.remove();
+				} else if ( "addressSourceMappingValue".equals(keyedSpec.getKey()) ) {
+					StringBuilder buf = new StringBuilder();
+					for ( CCDatum sample : getKnownAddresses() ) {
+						if ( buf.length() > 0 ) {
+							buf.append("<br>\n");
+						}
+						String format = getSourceIdFormat();
+						for ( int sensor = 1; sensor <= 3; sensor += 1 ) {
+							buf.append(String.format(format, sample.getDeviceAddress(), sensor));
+							buf.append(" = Phase").append(sensor).append(", ");
+						}
+						buf.append(sample.getDeviceAddress() + ".T = Temperature");
+					}
+					if ( buf.length() > 0 ) {
+						itr.add(new BasicTitleSettingSpecifier("addressSourceMappingValueExample",
+								buf.toString(), true));
+					}
 				}
 			}
 		}
+
 		return specs;
 	}
 

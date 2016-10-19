@@ -9,7 +9,7 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd">
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -56,16 +56,15 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 					<property name="name" value="mockMeterDatumLoggerTrigger"/>
-					<property name="jobName" value="mockMeterDatumLoggerJob"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
 			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 					<property name="name" value="mockMeterDatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">

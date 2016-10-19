@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
@@ -28,8 +26,16 @@ package net.solarnetwork.node.settings;
  * A read-write string setting.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public interface TextFieldSettingSpecifier extends TitleSettingSpecifier {
+
+	/**
+	 * Flag indicating the text should be hidden when editing.
+	 * 
+	 * @return <em>true</em> to hide the text
+	 * @since 1.1
+	 */
+	boolean isSecureTextEntry();
 
 }

@@ -42,9 +42,7 @@ public class BootstrapTransactionalTest extends AbstractNodeTransactionalTest {
 	 */
 	@Test
 	public void testConnectToDatabase() throws DataAccessException {
-		@SuppressWarnings("deprecation")
-		Date now = simpleJdbcTemplate.queryForObject("VALUES CURRENT_TIMESTAMP", java.util.Date.class,
-				(Object[]) null);
+		Date now = jdbcTemplate.queryForObject("VALUES CURRENT_TIMESTAMP", java.util.Date.class);
 		assertNotNull(now);
 		log.debug("Got timestamp: " + now);
 	}

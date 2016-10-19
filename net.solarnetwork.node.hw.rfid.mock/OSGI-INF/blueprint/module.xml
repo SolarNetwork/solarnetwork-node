@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<reference id="eventAdmin" interface="org.osgi.service.event.EventAdmin" availability="optional"/>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.hw.rfid.mock.MockRfidEventGenerator"/>
+	</bean>
+
+	<!-- Published Services -->
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Mock RFID Scanner"/>
+			<property name="factoryUID" value="net.solarnetwork.node.hw.rfid.mock"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.hw.rfid.mock" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.hw.rfid.mock"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.hw.rfid.mock.MockRfidEventGenerator">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

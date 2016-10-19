@@ -22,18 +22,21 @@
 
 package net.solarnetwork.node.job;
 
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.util.OptionalService;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Scheduled backup job using {@link BackupManager}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class BackupJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class BackupJob extends AbstractJob {
 
 	private OptionalService<BackupManager> backupManagerTracker;
 

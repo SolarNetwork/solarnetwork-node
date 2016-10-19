@@ -1,8 +1,8 @@
 /* ==================================================================
  * rfid-server
- * 
- * Listen on a socket, and once connected read key presses from an 
- * input device, under the assumption  the input device is an RFID 
+ *
+ * Listen on a socket, and once connected read key presses from an
+ * input device, under the assumption  the input device is an RFID
  * reader masquerading as a keyboard. Each key press is translated
  * to an ASCII character (or string) and sent to client. Each RFID
  * ID is assumed to be terminated by an ENTER key (newline).
@@ -11,24 +11,31 @@
  * send a "heartbeat" message to the client, to ensure the
  * connection is still valid. The message is the string "ping"
  * followed by a newline character.
- * 
+ *
  * The server handles only a single connection at a time!
  *
- * Pass the device name to read from as the program agrument.
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ * Pass the device name to read from as the program agrument. The
+ * default port will be 9090. The port can be passed as the 2nd
+ * command argument. If no specific port is provided and the device
+ * path ends in a number, that number will be added to the default
+ * port. For example, if the device is /dev/rfid1 the port would
+ * be 9091. This is to allow the server to be started by systemd
+ * via instance service units with minimal configuration.
+ *
+ * ==================================================================
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,6 +43,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <linux/input.h>
 #include <resolv.h>
@@ -67,6 +75,7 @@ static const int kDefaultTimeoutSecs = 10;
 int main(int argc, char* argv[])
 {
 	char *device = "/dev/rfid-reader";
+	int port = kDefaultPort;
 	struct input_event ev;
 	const ev_size = sizeof(ev);
 	ssize_t n;
@@ -82,6 +91,20 @@ int main(int argc, char* argv[])
 		// get the device to read from the first arg
 		device = argv[1];
 	}
+	if ( argc > 2 ) {
+		int p = strtoimax(argv[2], NULL, 10);
+		if ( errno ) {
+			fprintf(stderr, "Invalid port argument %s: %s.\n", argv[2], strerror(errno));
+			exit(errno);
+		}
+		port = p;
+	} else {
+		// check if device name ends with number, and if so ADD that to default port
+		int val = 0;
+		if ( sscanf(device, "%*[^0123456789]%d", &val) == 1 ) {
+			port += val;
+		}
+	}
 
 	// open our RFID input device
 	fd = open(device, O_RDONLY);
@@ -94,7 +117,7 @@ int main(int argc, char* argv[])
 	result = ioctl(fd, EVIOCGNAME(sizeof(name)), name);
 	fprintf(stdout, "Reading from : %s (%s)\n", device, name);
 	fflush(stdout);
-	
+
 	// get exclusive access to the device, so that RFID keyboard events don't go to the system console
 	fprintf(stderr, "Getting exclusive access: ");
 	result = ioctl(fd, EVIOCGRAB, 1);
@@ -117,7 +140,7 @@ int main(int argc, char* argv[])
 	// set up the port # we'd like to listen on and bind to any address
 	bzero(&self, sizeof(self));
 	self.sin_family = AF_INET;
-	self.sin_port = htons(kDefaultPort);
+	self.sin_port = htons(port);
 	self.sin_addr.s_addr = INADDR_ANY;
 	if ( bind(sockfd, (struct sockaddr*)&self, sizeof(self)) != 0 ) {
 		perror("socket--bind");
@@ -142,11 +165,11 @@ int main(int argc, char* argv[])
   		struct timeval timeout;
 
 		// accept incoming socket connection
-		fprintf(stderr, "Accepting connections on port %d\n", kDefaultPort);
+		fprintf(stderr, "Accepting connections on port %d\n", port);
 		clientfd = accept(sockfd, (struct sockaddr*)&client_addr, &addrlen);
 		fprintf(stderr, "%s:%d connected\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-		// send a preamble to the client, in the form of a status message about what device we're 
+		// send a preamble to the client, in the form of a status message about what device we're
 		// reading from, terminated by a newline
 		sprintf(buf, "Reading from: %s\n", name);
 		result = send(clientfd, buf, strlen(buf), MSG_NOSIGNAL);
@@ -169,20 +192,20 @@ int main(int argc, char* argv[])
 				perror("select");
 				break;
 			} else if ( n == (ssize_t)0 ) {
-				// read timeout from RFID device; ping server with heartbeat				
+				// read timeout from RFID device; ping server with heartbeat
 				result = send(clientfd, heartbeat, strlen(heartbeat), MSG_NOSIGNAL);
 				bufPtr = 0;
 				if ( result < 0 ) {
 					fprintf(stderr, "Error sending heartbeat to client: %d\n", errno);
-					
+
 					// exit out of RFID read loop, to jump back to accepting connection loop
 					break;
 				}
-				
+
 				// continue to wait for more RFID data
 				continue;
 			}
-			
+
 			// we've got some data, so read it into our input event structure
 			n = read(fd, &ev, ev_size);
 			if ( n == (ssize_t)-1 ) {
@@ -195,7 +218,7 @@ int main(int argc, char* argv[])
 				errno = EIO;
 				break;
 			}
-			
+
 			// copy each keyboard input event into a buffer until we find a KEY_ENTER (newline)
 			if ( ev.type == EV_KEY && ev.value == 1 ) {
 				if ( (int)ev.code < kKeymapSize ) {
@@ -208,7 +231,7 @@ int main(int argc, char* argv[])
 				if ( (int)ev.code == KEY_ENTER ) {
 					// we found our newline key press, so send our collected RFID ID value to the client
 					result = send(clientfd, buf, bufPtr, MSG_NOSIGNAL);
-					
+
 					// reset our buffer position back to 0
 					bufPtr = 0;
 					if ( result < 0 ) {
@@ -218,7 +241,7 @@ int main(int argc, char* argv[])
 				}
 			}
 		}
-		
+
 		// done sending to client, close the connection and start listening again
 		close(clientfd);
 	}

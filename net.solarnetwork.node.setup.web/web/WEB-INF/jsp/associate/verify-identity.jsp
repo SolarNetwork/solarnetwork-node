@@ -55,4 +55,5 @@
 	 		<fmt:message key='node.setup.associate.certpass.reiterate'/>
 	 	</div>
 	</div>
+	<sec:csrfInput/>
 </form:form>

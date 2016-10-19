@@ -26,6 +26,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.context.MessageSource;
+import org.springframework.dao.DuplicateKeyException;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
@@ -34,10 +39,6 @@ import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.util.OptionalService;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.context.MessageSource;
-import org.springframework.dao.DuplicateKeyException;
 
 /**
  * Extension of {@link DatumDataSourceLoggerJob} designed to be used as a
@@ -49,10 +50,12 @@ import org.springframework.dao.DuplicateKeyException;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJob implements
-		StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJob
+		implements SettingSpecifierProvider {
 
 	private DatumDataSource<T> datumDataSource = null;
 	private MultiDatumDataSource<T> multiDatumDataSource = null;
@@ -86,8 +89,8 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 
 	private void executeForMultiDatumDataSource(JobExecutionContext jobContext) {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Collecting [{}] from [{}]", multiDatumDataSource.getMultiDatumType()
-					.getSimpleName(), multiDatumDataSource);
+			log.debug("Collecting [{}] from [{}]",
+					multiDatumDataSource.getMultiDatumType().getSimpleName(), multiDatumDataSource);
 		}
 		Collection<T> datum = multiDatumDataSource.readMultipleDatum();
 		if ( datum != null && datum.size() > 0 ) {
@@ -102,8 +105,8 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 			return;
 		}
 		if ( log.isInfoEnabled() ) {
-			log.info("Got Datum to persist: {}", (datumList.size() == 1 ? datumList.iterator().next()
-					.toString() : datumList.toString()));
+			log.info("Got Datum to persist: {}", (datumList.size() == 1
+					? datumList.iterator().next().toString() : datumList.toString()));
 		}
 		DatumDao<T> dao = datumDao.service();
 		if ( dao == null ) {

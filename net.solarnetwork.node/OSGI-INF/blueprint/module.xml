@@ -10,9 +10,9 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
 	<!-- Configuration -->
 
@@ -53,7 +53,44 @@
 	
 	<!-- Published Services -->
 
+	<!-- Provide a centralized ObjectMapper for JSON processing. -->
+	<service interface="net.solarnetwork.util.ObjectMapperService">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+		<bean class="net.solarnetwork.util.SimpleObjectMapperService">
+			<property name="objectMapper" ref="objectMapper"/>
+		</bean>
+	</service>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
+		<property name="serializers">
+			<list>
+				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
+				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
+			</list>
+		</property>
+		<property name="featuresToDisable">
+			<list>
+				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).FAIL_ON_UNKNOWN_PROPERTIES}</value>
+			</list>
+		</property>
+	</bean>
+
 	<service ref="scheduler" interface="org.quartz.Scheduler">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
+	<service ref="taskScheduler">
+		<interfaces>
+			<value>org.springframework.scheduling.TaskScheduler</value>
+			<value>org.springframework.scheduling.SchedulingTaskExecutor</value>
+			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
+			<value>org.springframework.core.task.TaskExecutor</value>
+		</interfaces>
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
@@ -81,6 +118,14 @@
 		</bean>
 	</service>
 	
+	<service interface="net.solarnetwork.node.setup.SetupResourceService">
+		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceService">
+			<property name="setupResourceProviders">
+				<reference-list availability="optional" interface="net.solarnetwork.node.setup.SetupResourceProvider"/>
+			</property>
+		</bean>
+	</service>
+	
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>
@@ -101,6 +146,11 @@
 		</property>
 	</bean>
 	
+	<!-- Task scheduler for simple repeating tasks -->
+	<bean id="taskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
+		<property name="poolSize" value="1"/>
+	</bean>
+		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
 		<property name="serializers" ref="serializers"/>
@@ -137,7 +187,7 @@
 
 	<bean id="backupJob" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger">
-			<bean class="org.springframework.scheduling.quartz.CronTriggerBean">
+			<bean class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 				<property name="name" value="backupTrigger"/>
 				<property name="description" value="Backup node configuration data."/>
 				<property name="cronExpression" value="${job.backup.cron}"/>
@@ -145,7 +195,7 @@
 			</bean>
 		</property>
 		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 				<property name="name" value="backupJob"/>
 				<property name="jobClass" value="net.solarnetwork.node.job.BackupJob"/>
 				<property name="jobDataAsMap">

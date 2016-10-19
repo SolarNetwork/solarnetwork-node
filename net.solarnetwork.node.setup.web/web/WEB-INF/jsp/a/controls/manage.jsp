@@ -9,7 +9,7 @@
 			<fmt:param>${controlId}</fmt:param>
 		</fmt:message>
 	</p>
-	<a href="<c:url value='/controls'/>" class="btn">
+	<a href="<c:url value='/a/controls'/>" class="btn">
 		<i class="icon-arrow-left"></i>
 		<fmt:message key="back.label"/>
 	</a>
@@ -65,7 +65,7 @@
 	<p>
 		<fmt:message key="controls.manage.SetControlParameter.intro"/>
 	</p>
-	<form class="form-horizontal" action="<c:url value='/controls/setControlParameter'/>" method="post">
+	<form class="form-horizontal" action="<c:url value='/a/controls/setControlParameter'/>" method="post">
 		<fieldset>
 			<div class="control-group">
 				<label class="control-label" for="SetControlParameter-parameterValue">
@@ -82,6 +82,7 @@
 			<button type="submit" class="btn btn-primary" id="submit"><fmt:message key='controls.manage.SetControlParameter.submit'/></button>
 		</div>
 		<input type="hidden" name="controlId" value="${controlId}"/>
+		<sec:csrfInput/>
 	</form>
 </section>
 </c:if><%-- !info.readonly --%>

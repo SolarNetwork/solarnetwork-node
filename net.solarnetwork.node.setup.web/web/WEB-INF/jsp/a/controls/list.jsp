@@ -14,7 +14,7 @@
 				<tr>
 					<td><strong>${controlId}</strong></td>
 					<td>
-						<a class="btn" href="<c:url value='/controls/manage?id=${controlId}'/>">
+						<a class="btn" href="<c:url value='/a/controls/manage?id=${controlId}'/>">
 							<i class="icon-edit icon-large"></i> 
 							<fmt:message key="controls.manage.label"/>
 						</a>

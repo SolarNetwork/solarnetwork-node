@@ -33,6 +33,11 @@ import java.util.List;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -43,10 +48,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Make a HTTP request to test for network connectivity, and toggle a control
@@ -110,9 +111,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class HttpRequesterJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class HttpRequesterJob extends AbstractJob implements SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 
@@ -180,12 +183,16 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 			@Override
 			public void run() {
 				Scanner sc = new Scanner(src);
-				while ( sc.hasNextLine() ) {
-					if ( errorStream ) {
-						log.error(sc.nextLine());
-					} else {
-						log.info(sc.nextLine());
+				try {
+					while ( sc.hasNextLine() ) {
+						if ( errorStream ) {
+							log.error(sc.nextLine());
+						} else {
+							log.info(sc.nextLine());
+						}
 					}
+				} finally {
+					sc.close();
 				}
 			}
 		}).start();
@@ -279,14 +286,15 @@ public class HttpRequesterJob extends AbstractJob implements StatefulJob, Settin
 		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
 		results.add(new BasicToggleSettingSpecifier("failedToggleValue", defaults.failedToggleValue));
-		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds", String
-				.valueOf(defaults.connectionTimeoutSeconds)));
-		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds", String
-				.valueOf(defaults.sleepSeconds)));
-		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
+		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds",
+				String.valueOf(defaults.connectionTimeoutSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds",
+				String.valueOf(defaults.sleepSeconds)));
+		results.add(
+				new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
 		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", defaults.osCommandToggleOn));
-		results.add(new BasicTextFieldSettingSpecifier("osCommandSleepSeconds", String
-				.valueOf(defaults.osCommandSleepSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandSleepSeconds",
+				String.valueOf(defaults.osCommandSleepSeconds)));
 
 		return results;
 	}

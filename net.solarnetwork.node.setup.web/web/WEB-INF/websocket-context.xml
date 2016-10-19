@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/websocket
+        http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+	<websocket:message-broker application-destination-prefix="/app">
+		<websocket:stomp-endpoint path="/ws"/>
+		<websocket:simple-broker prefix="/topic, /queue"/>
+		<websocket:message-converters register-defaults="true">
+			<bean class="org.springframework.messaging.converter.MappingJackson2MessageConverter">
+				<property name="objectMapper" ref="objectMapper"/>
+			</bean>
+		</websocket:message-converters>
+	</websocket:message-broker>
+
+</beans>

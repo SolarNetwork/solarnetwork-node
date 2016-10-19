@@ -10,9 +10,9 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.1.xsd">
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
 	<!-- Configuration -->
 	
@@ -97,16 +97,15 @@
 	
 	<bean id="purgeExpiredAuthorizationsJob" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger">
-			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerBean">
+			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 				<property name="name" value="purgeExpiredAuthorizationsTrigger"/>
-				<property name="jobName" value="purgeExpiredAuthorizationsJob"/>
 				<property name="cronExpression" value="${purgeExpiredJob.cronExpression}"/>
 				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 				<property name="randomSecond" value="true"/>
 			</bean>
 		</property>
 		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailBean">
+			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 				<property name="name" value="purgeExpiredAuthorizationsJob"/>
 				<property name="jobClass" value="net.solarnetwork.node.ocpp.dao.PurgeExpiredAuthorizationsJob"/>
 				<property name="jobDataAsMap">

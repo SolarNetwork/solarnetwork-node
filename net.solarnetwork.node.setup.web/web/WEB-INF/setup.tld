@@ -6,7 +6,7 @@
 	version="2.1">
 
 	<description>SolarNetwork Setup Taglib</description>
-	<tlib-version>1.1</tlib-version>
+	<tlib-version>1.3</tlib-version>
 	<short-name>setup</short-name>
 	<uri>http://solarnetwork.net/taglib/setup</uri>
 
@@ -47,6 +47,14 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
+		<attribute>
+			<description>
+				An optional array of message arguments to use when formatting.
+			</description>
+			<name>arguments</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
 	</tag>
 
 	<tag>
@@ -75,6 +83,72 @@
 		<attribute>
 			<description>Escape XML or not.</description>
 			<name>escapeXml</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+	</tag>
+
+	<tag>
+		<description>Render SetupResource values for web consumer</description>
+		<name>resources</name>
+		<tag-class>net.solarnetwork.node.setup.web.support.SetupResourcesTag</tag-class>
+		<body-content>JSP</body-content>
+		<attribute>
+			<description>
+				A role to restrict the resources to.
+			</description>
+			<name>role</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				A role to restrict the resources to.
+			</description>
+			<name>type</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				A SetupResourceProvider to use specifically. If not configured then a registered SetupResourceService
+				will be used instead.
+			</description>
+			<name>provider</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				A Map of additional properties to render as data attributes on a wrapper element, only if inline
+				is also set to true.
+			</description>
+			<name>properties</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				If true, the resource content should be rendered directly into the output body. Otherwise an 
+				appropriate HTML element that links to the resource will be rendered.
+			</description>
+			<name>inline</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				The wrapper element to use if properties are provided. Defaults to "div".
+			</description>
+			<name>wrapperElement</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>
+				If a wrapper element is used, then a class attribute value to add.
+			</description>
+			<name>wrapperClass</name>
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>

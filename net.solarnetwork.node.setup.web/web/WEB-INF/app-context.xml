@@ -5,11 +5,11 @@
 	xmlns:util="http://www.springframework.org/schema/util"
 	xsi:schemaLocation="
 			http://www.springframework.org/schema/beans
-			http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+			http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 			http://www.springframework.org/schema/context 
-			http://www.springframework.org/schema/context/spring-context-3.1.xsd
+			http://www.springframework.org/schema/context/spring-context-4.2.xsd
 			http://www.springframework.org/schema/util
-			http://www.springframework.org/schema/util/spring-util-3.1.xsd">
+			http://www.springframework.org/schema/util/spring-util-4.2.xsd">
 
 	<ctx:property-placeholder properties-ref="setup.web.cfg"/>
 
@@ -85,5 +85,12 @@
 	<util:map id="networkLinks" key-type="java.lang.String" value-type="java.lang.String">
 		<entry key="solaruser" value="${link.solaruser}"/>
 	</util:map>
+	
+	<bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="0"/>
+		<property name="maxPoolSize" value="5"/>
+		<property name="queueCapacity" value="10"/>
+		<property name="keepAliveSeconds" value="120"/>
+	</bean>
 	
 </beans>

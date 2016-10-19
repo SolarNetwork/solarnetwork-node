@@ -18,13 +18,13 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.job;
 
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobDetail;
+import org.quartz.PersistJobDataAfterExecution;
 import org.quartz.Trigger;
 import org.springframework.context.MessageSource;
 
@@ -32,38 +32,41 @@ import org.springframework.context.MessageSource;
  * Simple implementation of {@link TriggerAndJobDetail}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
 public class SimpleTriggerAndJobDetail implements TriggerAndJobDetail {
 
 	private Trigger trigger;
 	private JobDetail jobDetail;
 	private MessageSource messageSource;
-	
+
 	@Override
 	public String toString() {
-		return "TriggerAndJobDetail{trigger="
-			+trigger.getName() +",job="
-			+jobDetail.getName()
-			+'}';
+		return "TriggerAndJobDetail{trigger=" + trigger.getKey().getName() + ",job="
+				+ jobDetail.getKey().getName() + '}';
 	}
 
+	@Override
 	public Trigger getTrigger() {
 		return trigger;
 	}
-	
+
 	public void setTrigger(Trigger trigger) {
 		this.trigger = trigger;
 	}
-	
+
+	@Override
 	public JobDetail getJobDetail() {
 		return jobDetail;
 	}
-	
+
 	public void setJobDetail(JobDetail jobDetail) {
 		this.jobDetail = jobDetail;
 	}
 
+	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}

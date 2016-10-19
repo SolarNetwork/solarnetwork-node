@@ -50,7 +50,7 @@ import net.solarnetwork.node.setup.PKIService;
  * @version 1.1
  */
 @Controller
-@RequestMapping("/certs")
+@RequestMapping("/a/certs")
 public class NodeCertificatesController extends BaseSetupController {
 
 	@Autowired
@@ -145,7 +145,7 @@ public class NodeCertificatesController extends BaseSetupController {
 			pem = FileCopyUtils.copyToString(new InputStreamReader(file.getInputStream(), "UTF-8"));
 		}
 		pkiService.saveNodeSignedCertificate(pem);
-		return "redirect:/certs";
+		return "redirect:/a/certs";
 	}
 
 	@RequestMapping(value = "/renew", method = RequestMethod.POST)

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.test;
@@ -27,36 +25,35 @@ package net.solarnetwork.node.test;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
 import org.springframework.test.context.transaction.BeforeTransaction;
-import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Base test class for transactional unit tests.
  * 
  * @author matt
- * @version $Id$
+ * @version 1.1
  */
-@ContextConfiguration(locations={"classpath:/net/solarnetwork/node/test/test-context.xml"})
-@TransactionConfiguration(transactionManager="txManager", defaultRollback=true) 
-@Transactional
-public abstract class AbstractNodeTransactionalTest 
-extends AbstractTransactionalJUnit4SpringContextTests {
-	
+@ContextConfiguration(locations = { "classpath:/net/solarnetwork/node/test/test-context.xml" })
+@Transactional(transactionManager = "txManager")
+@Rollback
+public abstract class AbstractNodeTransactionalTest
+		extends AbstractTransactionalJUnit4SpringContextTests {
+
 	/** A test Node ID. */
 	protected static final Long TEST_NODE_ID = -5555L;
-	
+
 	/** A test Weather Source ID. */
 	protected static final Long TEST_WEATHER_SOURCE_ID = -5554L;
-	
+
 	/** A test Location ID. */
 	protected static final Long TEST_LOC_ID = -5553L;
-	
+
 	/** A test TimeZone ID. */
 	protected static final String TEST_TZ = "Pacific/Auckland";
 
@@ -65,13 +62,13 @@ extends AbstractTransactionalJUnit4SpringContextTests {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-	
+
 	/**
 	 * Setup the {@link #dateTimeFormat} timezone.
 	 */
 	@BeforeTransaction
 	public void setupDateTime() {
-		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(TEST_TZ));		
+		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(TEST_TZ));
 	}
-	
+
 }

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: New Zealand MetService Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.nz.metservice
 Bundle-Description: Collect weather data from the New Zealand MetService.
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -13,23 +13,23 @@ Import-Package:
  net.solarnetwork.node;version="1.16.0",
  net.solarnetwork.node.domain;version="1.7.0",
  net.solarnetwork.node.job;version="1.10.0",
- net.solarnetwork.node.settings;version="1.5.0",
- net.solarnetwork.node.settings.support;version="1.4.0",
+ net.solarnetwork.node.settings;version="1.8.0",
+ net.solarnetwork.node.settings.support;version="1.6.0",
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.node.util;version="1.5.0",
  net.solarnetwork.util;version="1.18.0",
- org.eclipse.gemini.blueprint.compendium.cm;version="[1.0,2.0)",
- org.joda.time;version="[1.6,3.0)",
- org.joda.time.base;version="[1.6,3.0)",
- org.quartz;version="[1.6.2,2.0.0)",
- org.quartz.simpl;version="[1.6.2,2.0.0)",
- org.slf4j;version="[1.5.0,2.0.0)",
- org.springframework.beans;version="[3.1,4.0)",
- org.springframework.beans.factory.config;version="[3.1,4.0)",
- org.springframework.beans.propertyeditors;version="[3.1,4.0)",
- org.springframework.context;version="[3.1,4.0)",
- org.springframework.context.support;version="[3.1,4.0)",
- org.springframework.scheduling.quartz;version="[3.1,4.0)",
- org.springframework.util;version="[3.1,4.0)",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.base;version="[2.4,3.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.beans.factory.config;version="[4.2,5.0)",
+ org.springframework.beans.propertyeditors;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.scheduling.quartz;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)",
  org.supercsv.io;version="2.1.0",
  org.supercsv.prefs;version="2.1.0"

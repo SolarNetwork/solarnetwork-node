@@ -39,12 +39,12 @@ import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
-import net.solarnetwork.util.OptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.SSLService;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting methods for HTTP client operations.
@@ -294,7 +294,7 @@ public abstract class HttpClientSupport {
 		URLConnection conn = getURLConnection(url, HTTP_METHOD_POST, accept);
 		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 		String body = xWWWFormURLEncoded(data);
-		log.trace("Encoded HTTP POST data {} as {}", data, body);
+		log.trace("Encoded HTTP POST data {} for {} as {}", data, url, body);
 		OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
 		FileCopyUtils.copy(new StringReader(body), out);
 		if ( conn instanceof HttpURLConnection ) {

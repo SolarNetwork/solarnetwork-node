@@ -35,6 +35,9 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.io.serial.SerialConnection;
@@ -45,9 +48,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * Support class for reading CurrentCost watt meter data from a serial
@@ -98,7 +98,8 @@ import org.springframework.context.MessageSource;
  * device not part of this node might be received. Configuring this field
  * prevents data from sources other than those configured here from being
  * collected. Note the source values configured here should be the values
- * <em>after</em> any {@code addressSourceMapping} translation has occurred.</dd>
+ * <em>after</em> any {@code addressSourceMapping} translation has
+ * occurred.</dd>
  * 
  * <dt>collectAllSourceIds</dt>
  * <dd>If <em>true</em> and the
@@ -120,7 +121,7 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CCSupport extends SerialDeviceSupport {
 
@@ -133,7 +134,9 @@ public class CCSupport extends SerialDeviceSupport {
 	/** The default value for the {@code sourceIdFormat} property. */
 	public static final String DEFAULT_SOURCE_ID_FORMAT = "%s.%d";
 
-	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
+	/**
+	 * The default value for the {@code collectAllSourceIdsTimeout} property.
+	 */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 30;
 
 	/** The default value for the {@code multiAmpSensorIndexFlags} property. */
@@ -244,8 +247,8 @@ public class CCSupport extends SerialDeviceSupport {
 	 * @return set of cached {@link CCDatum}, or an empty Set if none available
 	 */
 	protected Set<CCDatum> allCachedDataForConfiguredAddresses() {
-		Set<String> captureAddresses = (addressSourceMapping == null ? null : addressSourceMapping
-				.keySet());
+		Set<String> captureAddresses = (addressSourceMapping == null ? null
+				: addressSourceMapping.keySet());
 		if ( captureAddresses == null ) {
 			return Collections.emptySet();
 		}
@@ -342,17 +345,23 @@ public class CCSupport extends SerialDeviceSupport {
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
 				"Serial Port"));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
-				.getSampleCacheMs())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
-		results.add(new BasicTextFieldSettingSpecifier("multiAmpSensorIndexFlags", String
-				.valueOf(DEFAULT_MULTI_AMP_SENSOR_INDEX_FLAGS)));
+
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor1",
+				defaults.isMultiCollectSensor1()));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor2",
+				defaults.isMultiCollectSensor2()));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor3",
+				defaults.isMultiCollectSensor3()));
+
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
 		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", Boolean.TRUE));
-		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
-				.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
+		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout",
+				String.valueOf(DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT)));
 
 		return results;
 	}
@@ -423,12 +432,114 @@ public class CCSupport extends SerialDeviceSupport {
 		this.ampSensorIndex = ampSensorIndex;
 	}
 
+	/**
+	 * Get the bitmask flag of amp sensor index values to return when requesting
+	 * multiple datum samples.
+	 * 
+	 * @return The current bitmask value.
+	 */
 	public int getMultiAmpSensorIndexFlags() {
 		return multiAmpSensorIndexFlags;
 	}
 
+	/**
+	 * Set the bitmask flag for which amp sensor index readings to return when
+	 * requesting multiple datum samples.
+	 * 
+	 * The amp sensors number 1 - 3. Enable reading each index by adding
+	 * together each index as 2 ^ (index - 1). Thus to enable reading from all 3
+	 * indexes set this value to <em>7</em> (2^0 + 2^1 + 2^2) = 7). Defaults to
+	 * {@code 7}.
+	 * 
+	 * @param multiAmpSensorIndexFlags
+	 *        The bitmask to set.
+	 */
 	public void setMultiAmpSensorIndexFlags(int multiAmpSensorIndexFlags) {
 		this.multiAmpSensorIndexFlags = multiAmpSensorIndexFlags;
+	}
+
+	private boolean isMultiCollectSensor(int index) {
+		return (this.multiAmpSensorIndexFlags & index) == index;
+	}
+
+	private void setMultiCollectSensor(int index, boolean value) {
+		if ( value ) {
+			this.multiAmpSensorIndexFlags |= index;
+		} else {
+			this.multiAmpSensorIndexFlags &= ~index;
+		}
+	}
+
+	/**
+	 * Test if sensor 1 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @return <em>true</em> if sensor 1 should be collected
+	 * @see #getMultiAmpSensorIndexFlags()
+	 * @since 2.1
+	 */
+	public boolean isMultiCollectSensor1() {
+		return isMultiCollectSensor(1);
+	}
+
+	/**
+	 * Set if sensor 1 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @param value
+	 *        <em>true</em> if sensor 1 should be collected
+	 * @since 2.1
+	 */
+	public void setMultiCollectSensor1(boolean value) {
+		setMultiCollectSensor(1, value);
+	}
+
+	/**
+	 * Test if sensor 2 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @return <em>true</em> if sensor 2 should be collected
+	 * @see #getMultiAmpSensorIndexFlags()
+	 * @since 2.1
+	 */
+	public boolean isMultiCollectSensor2() {
+		return isMultiCollectSensor(2);
+	}
+
+	/**
+	 * Set if sensor 2 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @param value
+	 *        <em>true</em> if sensor 2 should be collected
+	 * @since 2.1
+	 */
+	public void setMultiCollectSensor2(boolean value) {
+		setMultiCollectSensor(2, value);
+	}
+
+	/**
+	 * Test if sensor 3 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @return <em>true</em> if sensor 3 should be collected
+	 * @see #getMultiAmpSensorIndexFlags()
+	 * @since 2.1
+	 */
+	public boolean isMultiCollectSensor3() {
+		return isMultiCollectSensor(3);
+	}
+
+	/**
+	 * Set if sensor 3 should be collected when requesting multiple datum
+	 * samples.
+	 * 
+	 * @param value
+	 *        <em>true</em> if sensor 3 should be collected
+	 * @since 2.1
+	 */
+	public void setMultiCollectSensor3(boolean value) {
+		setMultiCollectSensor(3, value);
 	}
 
 	public String getSourceIdFormat() {

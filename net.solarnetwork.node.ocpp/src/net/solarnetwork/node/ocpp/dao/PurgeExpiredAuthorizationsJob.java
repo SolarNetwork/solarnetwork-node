@@ -23,10 +23,11 @@
 package net.solarnetwork.node.ocpp.dao;
 
 import java.util.Calendar;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
 
 /**
  * Job to purge expired authorizations by calling
@@ -35,9 +36,11 @@ import org.quartz.StatefulJob;
  * {@link #getMinPurgeExpiredAuthorizationDays()}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PurgeExpiredAuthorizationsJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class PurgeExpiredAuthorizationsJob extends AbstractJob {
 
 	private AuthorizationDao authorizationDao;
 	private int minPurgeExpiredAuthorizationDays = 1;

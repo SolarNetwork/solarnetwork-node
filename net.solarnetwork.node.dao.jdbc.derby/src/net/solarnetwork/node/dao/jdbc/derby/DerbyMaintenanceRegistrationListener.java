@@ -31,20 +31,20 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import net.solarnetwork.node.dao.jdbc.JdbcDao;
-import net.solarnetwork.node.job.RandomizedCronTriggerBean;
-import net.solarnetwork.node.job.SimpleTriggerAndJobDetail;
-import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.util.BaseServiceListener;
-import net.solarnetwork.node.util.RegisteredService;
 import org.osgi.framework.ServiceRegistration;
 import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.scheduling.quartz.CronTriggerBean;
-import org.springframework.scheduling.quartz.JobDetailBean;
+import org.springframework.scheduling.quartz.JobDetailFactoryBean;
+import net.solarnetwork.node.dao.jdbc.JdbcDao;
+import net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean;
+import net.solarnetwork.node.job.SimpleTriggerAndJobDetail;
+import net.solarnetwork.node.job.TriggerAndJobDetail;
+import net.solarnetwork.node.util.BaseServiceListener;
+import net.solarnetwork.node.util.RegisteredService;
 
 /**
  * An OSGi service registration listener for JdbcDao services, so various
@@ -84,7 +84,8 @@ import org.springframework.scheduling.quartz.JobDetailBean;
  * <dl class="class-properties">
  * <dt>scheduler</dt>
  * <dd>The Quartz {@link Scheduler} for scheduling and un-scheduling jobs with
- * as {@link TriggerAndJobDetail} services are registered and un-registered.</dd>
+ * as {@link TriggerAndJobDetail} services are registered and
+ * un-registered.</dd>
  * 
  * <dt>jdbcOperations</dt>
  * <dd>The {@link JdbcOperations} to use.</dd>
@@ -102,15 +103,15 @@ import org.springframework.scheduling.quartz.JobDetailBean;
  * <dt>maintenanceProperties</dt>
  * <dd>Configuration properties to use when creating the maintenance jobs for
  * each registered table. In general properties will be in the form
- * <code>derby.maintenacne.schema.table.<em>task</em>. See
- *   the documentation for each task for more information.</dd>
+ * <code>derby.maintenacne.schema.table.<em>task</em>. See the documentation for
+ * each task for more information.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class DerbyMaintenanceRegistrationListener extends
-		BaseServiceListener<JdbcDao, RegisteredService<JdbcDao>> {
+public class DerbyMaintenanceRegistrationListener
+		extends BaseServiceListener<JdbcDao, RegisteredService<JdbcDao>> {
 
 	/** The name of the {@link DerbyCompressTableJob} task. */
 	public static final String TASK_COMPRESS = "compress";
@@ -143,18 +144,18 @@ public class DerbyMaintenanceRegistrationListener extends
 		serviceProps.put("Bundle-SymbolicName", getBundleContext().getBundle().getSymbolicName());
 
 		for ( String tableName : jdbcDao.getTableNames() ) {
-			JobDetailBean jobDetail = getCompressJobDetail(jdbcDao.getSchemaName(), tableName,
+			JobDetail jobDetail = getCompressJobDetail(jdbcDao.getSchemaName(), tableName,
 					getJobName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS));
-			CronTriggerBean trigger = getCronTrigger(
+			CronTrigger trigger = getCronTrigger(
 					getTaskPropertyValue(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS + ".cron",
-							compressTableCronExpression), jobDetail,
-					getTriggerName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS));
+							compressTableCronExpression),
+					jobDetail, getTriggerName(jdbcDao.getSchemaName(), tableName, TASK_COMPRESS));
 			SimpleTriggerAndJobDetail tjd = new SimpleTriggerAndJobDetail();
 			tjd.setJobDetail(jobDetail);
 			tjd.setTrigger(trigger);
 			tjd.setMessageSource(jdbcDao.getMessageSource());
-			ServiceRegistration<TriggerAndJobDetail> reg = getBundleContext().registerService(
-					TriggerAndJobDetail.class, tjd, serviceProps);
+			ServiceRegistration<TriggerAndJobDetail> reg = getBundleContext()
+					.registerService(TriggerAndJobDetail.class, tjd, serviceProps);
 			services.add(reg);
 		}
 		this.addRegisteredService(new RegisteredService<JdbcDao>(jdbcDao, properties), services);
@@ -179,8 +180,8 @@ public class DerbyMaintenanceRegistrationListener extends
 		removeRegisteredService(jdbcDao, properties);
 	}
 
-	private JobDetailBean getCompressJobDetail(String schema, String table, String name) {
-		JobDetailBean jobDetail = new JobDetailBean();
+	private JobDetail getCompressJobDetail(String schema, String table, String name) {
+		JobDetailFactoryBean jobDetail = new JobDetailFactoryBean();
 		jobDetail.setJobClass(DerbyCompressTableJob.class);
 		jobDetail.setName(name);
 
@@ -189,21 +190,23 @@ public class DerbyMaintenanceRegistrationListener extends
 		jobData.put("table", table.toUpperCase());
 		jobData.put("jdbcOperations", jdbcOperations);
 		jobDetail.setJobDataAsMap(jobData);
-		return jobDetail;
+		jobDetail.afterPropertiesSet();
+		return jobDetail.getObject();
 	}
 
-	private CronTriggerBean getCronTrigger(String cronExpression, JobDetailBean jobDetail, String name) {
-		RandomizedCronTriggerBean cronTrigger = new RandomizedCronTriggerBean();
+	private CronTrigger getCronTrigger(String cronExpression, JobDetail jobDetail, String name) {
+		RandomizedCronTriggerFactoryBean cronTrigger = new RandomizedCronTriggerFactoryBean();
 		cronTrigger.setName(name);
 		try {
 			cronTrigger.setCronExpression(cronExpression);
+			cronTrigger.setJobDetail(jobDetail);
+			cronTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+			cronTrigger.setRandomSecond(true);
+			cronTrigger.afterPropertiesSet();
 		} catch ( ParseException e ) {
 			throw new RuntimeException(e);
 		}
-		cronTrigger.setJobDetail(jobDetail);
-		cronTrigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
-		cronTrigger.setRandomSecond(true);
-		return cronTrigger;
+		return cronTrigger.getObject();
 	}
 
 	private String getJobName(String schema, String table, String task) {

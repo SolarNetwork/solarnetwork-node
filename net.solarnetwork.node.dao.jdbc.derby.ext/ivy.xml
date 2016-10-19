@@ -11,6 +11,6 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="org.apache.derby" name="derby" rev="10.8.3.0" conf="runtime"/>
+		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 	</dependencies>
 </ivy-module>

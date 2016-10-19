@@ -22,9 +22,10 @@
 
 package net.solarnetwork.node.dao.jdbc.derby;
 
-import net.solarnetwork.node.job.AbstractJob;
+import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
+import org.quartz.PersistJobDataAfterExecution;
+import net.solarnetwork.node.job.AbstractJob;
 
 /**
  * Job to backup the Derby database using the SYSCS_UTIL.SYSCS_FREEZE_DATABASE
@@ -36,9 +37,11 @@ import org.quartz.StatefulJob;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class DerbyOnlineSyncJob extends AbstractJob implements StatefulJob {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class DerbyOnlineSyncJob extends AbstractJob {
 
 	private DerbyOnlineSyncService syncService;
 

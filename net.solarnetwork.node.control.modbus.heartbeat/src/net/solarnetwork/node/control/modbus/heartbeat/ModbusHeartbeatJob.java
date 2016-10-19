@@ -28,6 +28,11 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.joda.time.DateTime;
+import org.quartz.DisallowConcurrentExecution;
+import org.quartz.JobExecutionContext;
+import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
@@ -38,10 +43,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
-import org.joda.time.DateTime;
-import org.quartz.JobExecutionContext;
-import org.quartz.StatefulJob;
-import org.springframework.context.MessageSource;
 
 /**
  * Periodically set a Modbus "coil" type register to a specific value, to act as
@@ -66,9 +67,11 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, SettingSpecifierProvider {
+@PersistJobDataAfterExecution
+@DisallowConcurrentExecution
+public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierProvider {
 
 	private Integer address = 0x4008;
 	private Integer unitId = 1;
@@ -163,8 +166,8 @@ public class ModbusHeartbeatJob extends AbstractJob implements StatefulJob, Sett
 		}
 		results.add(lhDate);
 		if ( lastHeartbeatStatus != null && lastHeartbeatStatus.getMessage() != null ) {
-			results.add(new BasicTitleSettingSpecifier("lastHeartbeatMessage", lastHeartbeatStatus
-					.getMessage(), true));
+			results.add(new BasicTitleSettingSpecifier("lastHeartbeatMessage",
+					lastHeartbeatStatus.getMessage(), true));
 		}
 
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",

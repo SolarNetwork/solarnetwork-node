@@ -29,14 +29,15 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Base implementation of {@link KeyedSettingSpecifier}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier implements
-		KeyedSettingSpecifier<T> {
+public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier
+		implements KeyedSettingSpecifier<T> {
 
 	private String key;
 	private T defaultValue;
 	private boolean trans;
+	private Object[] descriptionArguments;
 
 	/**
 	 * Constructor.
@@ -110,6 +111,22 @@ public abstract class BaseKeyedSettingSpecifier<T> extends BaseSettingSpecifier 
 
 	public void setDefaultValue(T defaultValue) {
 		this.defaultValue = defaultValue;
+	}
+
+	/**
+	 * Set the optional description arguments.
+	 * 
+	 * @param descriptionArguments
+	 *        The arguments to set.
+	 * @since 1.2
+	 */
+	public void setDescriptionArguments(Object[] descriptionArguments) {
+		this.descriptionArguments = descriptionArguments;
+	}
+
+	@Override
+	public Object[] getDescriptionArguments() {
+		return descriptionArguments;
 	}
 
 }

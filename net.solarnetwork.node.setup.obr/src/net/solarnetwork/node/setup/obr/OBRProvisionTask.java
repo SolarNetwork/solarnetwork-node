@@ -32,14 +32,12 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import net.solarnetwork.node.backup.Backup;
-import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.setup.BundlePlugin;
-import net.solarnetwork.node.setup.Plugin;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -50,12 +48,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.setup.BundlePlugin;
+import net.solarnetwork.node.setup.Plugin;
 
 /**
  * Task to install plugins.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
@@ -80,8 +82,8 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	 *        if provided, then a backup will be performed before provisioning
 	 *        any bundles
 	 */
-	public OBRProvisionTask(BundleContext bundleContext, OBRPluginProvisionStatus status,
-			File directory, BackupManager backupManager) {
+	public OBRProvisionTask(BundleContext bundleContext, OBRPluginProvisionStatus status, File directory,
+			BackupManager backupManager) {
 		super();
 		this.bundleContext = bundleContext;
 		this.status = status;
@@ -130,14 +132,39 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		}
 	}
 
-	private Bundle findBundle(String symbolicName) {
+	/**
+	 * Find all installed bundles for a specific ID that are less than or equal
+	 * to a specific version.
+	 * 
+	 * @param symbolicName
+	 *        The bundle ID to look for.
+	 * @param maxVersion
+	 *        The maximum version to include in the result.
+	 * @return All found bundles whose symbolic name matches and has a version
+	 *         less than {@code maxVersion}, in largest to smallest order, or
+	 *         <em>null</em> if none found.
+	 */
+	private List<Bundle> findBundlesOlderThanVersion(String symbolicName, Version maxVersion) {
+		List<Bundle> olderBundles = null;
 		Bundle[] bundles = bundleContext.getBundles();
 		for ( Bundle b : bundles ) {
-			if ( b.getSymbolicName().equals(symbolicName) ) {
-				return b;
+			if ( b.getSymbolicName().equals(symbolicName) && b.getVersion().compareTo(maxVersion) < 1 ) {
+				if ( olderBundles == null ) {
+					olderBundles = new ArrayList<Bundle>(2);
+				}
+				olderBundles.add(b);
 			}
 		}
-		return null;
+		if ( olderBundles != null ) {
+			olderBundles.sort(new Comparator<Bundle>() {
+
+				@Override
+				public int compare(Bundle o1, Bundle o2) {
+					return o2.getVersion().compareTo(o1.getVersion());
+				}
+			});
+		}
+		return olderBundles;
 	}
 
 	private void downloadPlugins(List<Plugin> plugins) throws InterruptedException {
@@ -170,61 +197,20 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			String pluginFileName = StringUtils.getFilename(resourceURL.getPath());
 			File outputFile = new File(directory, pluginFileName);
 			String bundleSymbolicName = resource.getSymbolicName();
-			LOG.debug("Downloading plugin {} => {}", resourceURL, outputFile);
+
+			// download to tmp file first, then we'll rename
+			File tmpOutputFile = new File(directory, "." + pluginFileName);
+			LOG.debug("Downloading plugin {} => {}", resourceURL, tmpOutputFile);
 			try {
-				FileCopyUtils.copy(resourceURL.openStream(), new FileOutputStream(outputFile));
+				FileCopyUtils.copy(resourceURL.openStream(), new FileOutputStream(tmpOutputFile));
 			} catch ( IOException e ) {
 				throw new RuntimeException("Unable to download plugin " + bundleSymbolicName, e);
 			}
 
-			try {
-				URL newBundleURL = outputFile.toURI().toURL();
-				Bundle oldBundle = findBundle(bundleSymbolicName);
-				if ( oldBundle != null ) {
-					Version oldVersion = oldBundle.getVersion();
-					LOG.debug("Upgrading plugin {} from {} to {}", bundleSymbolicName, oldVersion,
-							resource.getVersion());
-					InputStream in = null;
-					try {
-						in = new BufferedInputStream(new FileInputStream(outputFile));
-						oldBundle.update(in);
+			moveTemporaryDownloadedPluginFile(resource, outputFile, tmpOutputFile);
 
-						// try to delete the old version
-						File oldJar = new File(directory, bundleSymbolicName + "-" + oldVersion + ".jar");
-						if ( !oldJar.delete() ) {
-							LOG.warn("Error deleting old plugin " + oldJar.getName());
-						}
-
-						installedBundles.add(oldBundle);
-						LOG.info("Upgraded plugin {} from version {} to {}", bundleSymbolicName,
-								oldVersion, resource.getVersion());
-						if ( !refreshNeeded ) {
-							refreshNeeded = true;
-						}
-					} catch ( BundleException e ) {
-						throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
-					} catch ( FileNotFoundException e ) {
-						throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
-					} finally {
-						if ( in != null ) {
-							try {
-								in.close();
-							} catch ( IOException e ) {
-								// ignore
-							}
-						}
-					}
-				} else {
-					LOG.debug("Installing plugin {} version {}", newBundleURL, resource.getVersion());
-					Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
-					LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
-							newBundle.getVersion());
-					installedBundles.add(newBundle);
-				}
-			} catch ( BundleException e ) {
-				throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
-			} catch ( MalformedURLException e ) {
-				throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
+			if ( installDownloadedPlugin(resource, outputFile, installedBundles) && !refreshNeeded ) {
+				refreshNeeded = true;
 			}
 
 			LOG.debug("Installed plugin: {}", plugin.getUID());
@@ -241,8 +227,9 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 				Plugin p = plugins.get(plugins.size() - itr.nextIndex());
 				status.markPluginStarted(p);
 			} catch ( BundleException e ) {
-				throw new RuntimeException("Unable to start plugin " + b.getSymbolicName() + " version "
-						+ b.getVersion(), e);
+				throw new RuntimeException(
+						"Unable to start plugin " + b.getSymbolicName() + " version " + b.getVersion(),
+						e);
 			}
 		}
 		if ( refreshNeeded ) {
@@ -252,6 +239,109 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		}
 		LOG.debug("Install of {} plugins complete", plugins.size());
 		status.setStatusMessage("Install of " + plugins.size() + " plugins complete");
+	}
+
+	private void moveTemporaryDownloadedPluginFile(Resource resource, File outputFile,
+			File tmpOutputFile) {
+		if ( outputFile.exists() ) {
+			// if the file has not changed, just delete tmp file
+			InputStream outputFileInputStream = null;
+			InputStream tmpOutputFileInputStream = null;
+			try {
+				outputFileInputStream = new FileInputStream(outputFile);
+				tmpOutputFileInputStream = new FileInputStream(tmpOutputFile);
+				String outputFileHash = DigestUtils.sha1Hex(outputFileInputStream);
+				String tmpOutputFileHash = DigestUtils.sha1Hex(tmpOutputFileInputStream);
+				if ( tmpOutputFileHash.equals(outputFileHash) ) {
+					// file unchanged, so just delete tmp file
+					tmpOutputFile.delete();
+				} else {
+					LOG.debug("Bundle {} version {} content updated", resource.getSymbolicName(),
+							resource.getVersion());
+					outputFile.delete();
+					tmpOutputFile.renameTo(outputFile);
+				}
+			} catch ( IOException e ) {
+				throw new RuntimeException("Error downloading plugin " + resource.getSymbolicName(), e);
+			} finally {
+				if ( outputFileInputStream != null ) {
+					try {
+						outputFileInputStream.close();
+					} catch ( IOException e ) {
+						// ignore;
+					}
+				}
+				if ( tmpOutputFileInputStream != null ) {
+					try {
+						tmpOutputFileInputStream.close();
+					} catch ( IOException e ) {
+						// ignore
+					}
+				}
+			}
+		} else {
+			// rename tmp file
+			tmpOutputFile.renameTo(outputFile);
+		}
+	}
+
+	private boolean installDownloadedPlugin(Resource resource, File outputFile,
+			List<Bundle> installedBundles) {
+		final String bundleSymbolicName = resource.getSymbolicName();
+		boolean refreshNeeded = false;
+		try {
+			URL newBundleURL = outputFile.toURI().toURL();
+			List<Bundle> oldBundles = findBundlesOlderThanVersion(bundleSymbolicName,
+					resource.getVersion());
+			Bundle oldBundle = (oldBundles != null && oldBundles.size() > 0 ? oldBundles.get(0) : null);
+			Version oldVersion = (oldBundle != null ? oldBundle.getVersion() : null);
+			if ( oldVersion != null && oldVersion.compareTo(resource.getVersion()) >= 0 ) {
+				LOG.debug("Skipping install of plugin {} as version is unchanged at {}",
+						bundleSymbolicName, oldVersion);
+			} else if ( oldVersion != null ) {
+				LOG.debug("Upgrading plugin {} from {} to {}", bundleSymbolicName, oldVersion,
+						resource.getVersion());
+				InputStream in = null;
+				try {
+					in = new BufferedInputStream(new FileInputStream(outputFile));
+					oldBundle.update(in);
+
+					// try to delete the old version
+					File oldJar = new File(directory, bundleSymbolicName + "-" + oldVersion + ".jar");
+					if ( !oldJar.delete() ) {
+						LOG.warn("Error deleting old plugin " + oldJar.getName());
+					}
+
+					installedBundles.add(oldBundle);
+					LOG.info("Upgraded plugin {} from version {} to {}", bundleSymbolicName, oldVersion,
+							resource.getVersion());
+					refreshNeeded = true;
+				} catch ( BundleException e ) {
+					throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
+				} catch ( FileNotFoundException e ) {
+					throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
+				} finally {
+					if ( in != null ) {
+						try {
+							in.close();
+						} catch ( IOException e ) {
+							// ignore
+						}
+					}
+				}
+			} else {
+				LOG.debug("Installing plugin {} version {}", newBundleURL, resource.getVersion());
+				Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
+				LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
+						newBundle.getVersion());
+				installedBundles.add(newBundle);
+			}
+		} catch ( BundleException e ) {
+			throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
+		} catch ( MalformedURLException e ) {
+			throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
+		}
+		return refreshNeeded;
 	}
 
 	private void removePlugins(List<Plugin> plugins) {
@@ -272,11 +362,11 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 					oldBundle.uninstall();
 					refreshNeeded = true;
 				} catch ( BundleException e ) {
-					throw new RuntimeException("Unable to uninstall plugin "
-							+ oldBundle.getSymbolicName(), e);
+					throw new RuntimeException(
+							"Unable to uninstall plugin " + oldBundle.getSymbolicName(), e);
 				}
-				File oldJar = new File(directory, oldBundle.getSymbolicName() + "-" + oldVersion
-						+ ".jar");
+				File oldJar = new File(directory,
+						oldBundle.getSymbolicName() + "-" + oldVersion + ".jar");
 				if ( !oldJar.delete() ) {
 					LOG.warn("Error deleting plugin JAR " + oldJar.getName());
 				}

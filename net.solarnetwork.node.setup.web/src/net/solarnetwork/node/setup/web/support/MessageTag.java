@@ -50,10 +50,13 @@ import org.springframework.context.NoSuchMessageException;
  * 
  * <dt>text</dt>
  * <dd>An optional default value to use if message can't be resolved.</dd>
+ * 
+ * <dt>arguments</dt>
+ * <dd>An optional array of objects to pass to the message when formatting.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MessageTag extends TagSupport {
 
@@ -63,6 +66,7 @@ public class MessageTag extends TagSupport {
 	private String key;
 	private String text;
 	private Integer index;
+	private Object[] arguments;
 
 	private static final Pattern IndexKeysPattern = Pattern.compile("\\[\\d+\\]");
 
@@ -72,15 +76,19 @@ public class MessageTag extends TagSupport {
 		if ( messageSource != null && key != null ) {
 			Locale locale = this.pageContext.getRequest().getLocale();
 			try {
-				msg = this.messageSource.getMessage(this.key, null, locale);
+				msg = this.messageSource.getMessage(this.key, arguments, locale);
 			} catch ( NoSuchMessageException e ) {
 				// try with index subscripts removed
 				String keyNoIndcies = IndexKeysPattern.matcher(this.key).replaceAll("Item");
 				if ( !keyNoIndcies.equals(this.key) ) {
 					try {
-						Object[] params = null;
+						Object[] params = arguments;
 						if ( index != null ) {
-							params = new Object[] { index };
+							params = new Object[1 + (arguments == null ? 0 : arguments.length)];
+							params[0] = index;
+							if ( arguments != null ) {
+								System.arraycopy(arguments, 0, params, 1, arguments.length);
+							}
 						}
 						msg = this.messageSource.getMessage(keyNoIndcies, params, locale);
 					} catch ( NoSuchMessageException e2 ) {
@@ -120,6 +128,10 @@ public class MessageTag extends TagSupport {
 
 	public void setIndex(Integer index) {
 		this.index = index;
+	}
+
+	public void setArguments(Object[] arguments) {
+		this.arguments = arguments;
 	}
 
 }

@@ -8,24 +8,25 @@
 	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
 		http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
-		http://www.springframework.org/schema/context/spring-context-3.1.xsd
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd
 		http://www.springframework.org/schema/jee
-		http://www.springframework.org/schema/jee/spring-jee-3.1.xsd
+		http://www.springframework.org/schema/jee/spring-jee-4.2.xsd
 		http://www.springframework.org/schema/mvc
-		http://www.springframework.org/schema/mvc/spring-mvc-3.1.xsd
+		http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
 		http://www.springframework.org/schema/tx
-		http://www.springframework.org/schema/tx/spring-tx-3.1.xsd">
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
-	<bean id="messageSource" 
-		class="org.springframework.context.support.ReloadableResourceBundleMessageSource"
-		p:cacheSeconds="-1" p:basename="WEB-INF/messages"/>
+	<!-- Combine all /WEB-INF/**/messages.properties into a single message source. -->
+	<bean id="messageSource" class="net.solarnetwork.web.support.PatternMatchingResourceBundleMessagesSource"
+		p:cacheSeconds="-1" p:basename="WEB-INF/**/messages"/>
 	
 	<ctx:annotation-config/>
 	<ctx:component-scan base-package="net.solarnetwork.node.setup.web"/>
 
 	<mvc:annotation-driven>
+		<mvc:async-support default-timeout="30000" task-executor="taskExecutor"/>
 		<mvc:message-converters register-defaults="true">
 			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
 				<property name="prefixJson" value="false" />
@@ -35,27 +36,27 @@
 		</mvc:message-converters>
 	</mvc:annotation-driven>
 	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
-		<property name="serializers">
-			<list>
-				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
-			</list>
-		</property>
-	</bean>
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-bean="objectMapperService" factory-method="getObjectMapper"/>
 	
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
-	<!-- Dispatch requests mapped to POJO @Controllers implementations -->
-	<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping"
-		p:alwaysUseFullPath="true"/>
+	<!-- Dispatch view-only requests, e.g. login -->
+	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
+		<property name="order" value="2" />
+        <property name="mappings">
+            <props>
+                <prop key="/**/*.do">urlViewController</prop>
+            </props>
+        </property>
+	</bean>
 
+    <bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
+	
 	<!-- Resolves logical view names returned by Controllers to Tiles; 
 		a view name to resolve is treated as the name of a tiles definition -->
 	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
-		<property name="viewClass" value="org.springframework.web.servlet.view.tiles2.TilesView"/>
+		<property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
 	</bean>
 
 	<!-- If Tiles view not found, try a bean name (xml, json below) -->
@@ -64,7 +65,7 @@
 	</bean>
 	
 	<!-- Configures the Tiles layout system -->
-	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles2.TilesConfigurer">
+	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
 		<property name="definitions">
 			<list>
 				<value>/WEB-INF/jsp/layout/layout.xml</value>

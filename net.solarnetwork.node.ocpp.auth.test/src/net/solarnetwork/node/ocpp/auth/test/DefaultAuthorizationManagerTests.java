@@ -29,6 +29,12 @@ import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import net.solarnetwork.node.ocpp.Authorization;
 import net.solarnetwork.node.ocpp.AuthorizationDao;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
@@ -40,12 +46,6 @@ import ocpp.v15.cs.AuthorizeRequest;
 import ocpp.v15.cs.AuthorizeResponse;
 import ocpp.v15.cs.CentralSystemService;
 import ocpp.v15.cs.IdTagInfo;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Test cases for the {@link DefaultAuthorizationManager} class.
@@ -117,33 +117,34 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 
 		replayAll();
 
-		boolean authorized = manager.authorize(TEST_ID_TAG);
-		Assert.assertTrue("Authorized", authorized);
+		AuthorizationStatus authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertEquals("Authorized", AuthorizationStatus.ACCEPTED, authorized);
 
 		Assert.assertEquals("Req IdTag", TEST_ID_TAG, reqCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG, authCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.ACCEPTED, authCapture
-				.getValue().getStatus());
+		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG,
+				authCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.ACCEPTED,
+				authCapture.getValue().getStatus());
 	}
 
 	@Test
 	public void acceptedCached() {
 		// look in DAO first
-		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
-				AuthorizationStatus.ACCEPTED, null));
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG,
+				newIdTagInfo(null, AuthorizationStatus.ACCEPTED, null));
 		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
 
 		replayAll();
 
-		boolean authorized = manager.authorize(TEST_ID_TAG);
-		Assert.assertTrue("Authorized", authorized);
+		AuthorizationStatus authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertEquals("Authorized", AuthorizationStatus.ACCEPTED, authorized);
 	}
 
 	@Test
 	public void invalidCachedNoExpiry() {
 		// look in DAO first
-		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
-				AuthorizationStatus.INVALID, null));
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG,
+				newIdTagInfo(null, AuthorizationStatus.INVALID, null));
 		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
 
 		// invalid in DAO but no expiry date, so query central system
@@ -159,13 +160,14 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 
 		replayAll();
 
-		boolean authorized = manager.authorize(TEST_ID_TAG);
-		Assert.assertFalse("Authorized", authorized);
+		AuthorizationStatus authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertEquals("Authorized", AuthorizationStatus.INVALID, authorized);
 
 		Assert.assertEquals("Req IdTag", TEST_ID_TAG, reqCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG, authCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.INVALID, authCapture
-				.getValue().getStatus());
+		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG,
+				authCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.INVALID,
+				authCapture.getValue().getStatus());
 	}
 
 	private XMLGregorianCalendar newXmlCalendar() {
@@ -184,14 +186,14 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 		// look in DAO first
 		XMLGregorianCalendar futureExipryDate = newXmlCalendar();
 		futureExipryDate.setYear(futureExipryDate.getYear() + 1);
-		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
-				AuthorizationStatus.INVALID, futureExipryDate));
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG,
+				newIdTagInfo(null, AuthorizationStatus.INVALID, futureExipryDate));
 		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
 
 		replayAll();
 
-		boolean authorized = manager.authorize(TEST_ID_TAG);
-		Assert.assertFalse("Authorized", authorized);
+		AuthorizationStatus authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertEquals("Authorized", AuthorizationStatus.INVALID, authorized);
 	}
 
 	@Test
@@ -199,8 +201,8 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 		// look in DAO first
 		XMLGregorianCalendar pastExipryDate = newXmlCalendar();
 		pastExipryDate.setYear(pastExipryDate.getYear() - 1);
-		Authorization cachedAuth = new Authorization(TEST_ID_TAG, newIdTagInfo(null,
-				AuthorizationStatus.INVALID, null));
+		Authorization cachedAuth = new Authorization(TEST_ID_TAG,
+				newIdTagInfo(null, AuthorizationStatus.INVALID, null));
 		EasyMock.expect(authorizationDao.getAuthorization(TEST_ID_TAG)).andReturn(cachedAuth);
 
 		// invalid in DAO but expiry date in past, so query central system (which says accepted)
@@ -216,12 +218,13 @@ public class DefaultAuthorizationManagerTests extends AbstractNodeTest {
 
 		replayAll();
 
-		boolean authorized = manager.authorize(TEST_ID_TAG);
-		Assert.assertTrue("Authorized", authorized);
+		AuthorizationStatus authorized = manager.authorize(TEST_ID_TAG);
+		Assert.assertEquals("Authorized", AuthorizationStatus.ACCEPTED, authorized);
 
 		Assert.assertEquals("Req IdTag", TEST_ID_TAG, reqCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG, authCapture.getValue().getIdTag());
-		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.ACCEPTED, authCapture
-				.getValue().getStatus());
+		Assert.assertEquals("Cached Authorization IdTag", TEST_ID_TAG,
+				authCapture.getValue().getIdTag());
+		Assert.assertEquals("Cached Authorization IdTag", AuthorizationStatus.ACCEPTED,
+				authCapture.getValue().getStatus());
 	}
 }

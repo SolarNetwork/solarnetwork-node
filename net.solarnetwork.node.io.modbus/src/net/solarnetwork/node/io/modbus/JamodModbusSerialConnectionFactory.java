@@ -28,25 +28,25 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.util.SerialParameters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * Default implementation of {@link ModbusSerialConnectionFactory}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectionFactory,
-		SettingSpecifierProvider {
+public class JamodModbusSerialConnectionFactory
+		implements ModbusSerialConnectionFactory, SettingSpecifierProvider {
 
 	private static MessageSource MESSAGE_SOURCE;
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
@@ -146,8 +146,8 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 			log.debug("Port {} lock already acquired", serialParams.getPortName());
 			return;
 		}
-		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}", serialParams.getPortName(),
-				timeout, unit);
+		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}",
+				new Object[] { serialParams.getPortName(), timeout, unit });
 		try {
 			if ( lock.tryLock(timeout, unit) ) {
 				log.debug("Acquired port {} lock", serialParams.getPortName());
@@ -194,8 +194,8 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 				}
 			}
 		} while ( tries > 0 );
-		throw new RuntimeException("Unable to open serial connection to [" + serialParams.getPortName()
-				+ "]", exception);
+		throw new RuntimeException(
+				"Unable to open serial connection to [" + serialParams.getPortName() + "]", exception);
 	}
 
 	@Override
@@ -246,23 +246,23 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 		JamodModbusSerialConnectionFactory defaults = new JamodModbusSerialConnectionFactory();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", defaults.serialParams
-				.getPortName()));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate", String
-				.valueOf(defaults.serialParams.getBaudRate())));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.databits", String
-				.valueOf(defaults.serialParams.getDatabits())));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.stopbits", String
-				.valueOf(defaults.serialParams.getStopbits())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
+				defaults.serialParams.getPortName()));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate",
+				String.valueOf(defaults.serialParams.getBaudRate())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.databits",
+				String.valueOf(defaults.serialParams.getDatabits())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.stopbits",
+				String.valueOf(defaults.serialParams.getStopbits())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.parityString",
 				defaults.serialParams.getParityString()));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.encoding", defaults.serialParams
-				.getEncoding()));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.receiveTimeout", String
-				.valueOf(defaults.serialParams.getReceiveTimeout())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.encoding",
+				defaults.serialParams.getEncoding()));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.receiveTimeout",
+				String.valueOf(defaults.serialParams.getReceiveTimeout())));
 
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.echo", String
-				.valueOf(defaults.serialParams.isEcho())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.echo",
+				String.valueOf(defaults.serialParams.isEcho())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlInString",
 				defaults.serialParams.getFlowControlInString()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlOutString",

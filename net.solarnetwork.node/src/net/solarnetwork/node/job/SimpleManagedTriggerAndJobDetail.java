@@ -22,22 +22,25 @@
 
 package net.solarnetwork.node.job;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.node.util.TemplatedMessageSource;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.settings.MappableSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
+import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.node.util.TemplatedMessageSource;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a
@@ -92,9 +95,11 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider {
+
+	private static final Logger LOG = LoggerFactory.getLogger(SimpleManagedTriggerAndJobDetail.class);
 
 	/**
 	 * The regular expression used to delegate properties to the delegate
@@ -106,6 +111,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 
 	private SettingSpecifierProvider settingSpecifierProvider;
 	private Trigger trigger;
+	private String triggerCronExpression;
 	private JobDetail jobDetail;
 	private MessageSource messageSource;
 	private String simplePrefix;
@@ -119,13 +125,25 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 
 	@Override
 	public String toString() {
-		return "ManagedTriggerAndJobDetail{job=" + jobDetail.getName() + ",trigger=" + trigger.getName()
-				+ '}';
+		return "ManagedTriggerAndJobDetail{job=" + jobDetail.getKey().getName() + ",trigger="
+				+ trigger.getKey().getName() + '}';
 	}
 
 	@Override
 	public Trigger getTrigger() {
-		return trigger;
+		Trigger result = trigger;
+		if ( triggerCronExpression != null && result instanceof CronTrigger ) {
+			try {
+				result = ((CronTrigger) result).getTriggerBuilder().withSchedule(
+						CronScheduleBuilder.cronScheduleNonvalidatedExpression(triggerCronExpression))
+						.build();
+			} catch ( ParseException e ) {
+				LOG.warn("Error parsing cron expression [{}]: {}. Trigger unchanged as {}",
+						triggerCronExpression, e.getMessage(),
+						((CronTrigger) result).getCronExpression());
+			}
+		}
+		return result;
 	}
 
 	public void setTrigger(Trigger trigger) {
@@ -151,13 +169,40 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		return getSettingSpecifierProvider().getDisplayName();
 	}
 
+	/**
+	 * Get the trigger cron expression, if available.
+	 * 
+	 * @return The cron expression, or <em>null</em> if not configured or the
+	 *         configured {@code Trigger} is not a {@code CronTrigger}.
+	 * @since 2.0
+	 */
+	public String getTriggerCronExpression() {
+		if ( triggerCronExpression != null ) {
+			return triggerCronExpression;
+		}
+		if ( trigger instanceof CronTrigger ) {
+			return ((CronTrigger) trigger).getCronExpression();
+		}
+		return null;
+	}
+
+	/**
+	 * Set a cron expression to use for the trigger.
+	 * 
+	 * @param cronExpression
+	 *        The cron expression to use.
+	 */
+	public void setTriggerCronExpression(String cronExpression) {
+		this.triggerCronExpression = cronExpression;
+	}
+
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		if ( trigger instanceof CronTrigger ) {
 			CronTrigger ct = (CronTrigger) trigger;
-			result.add(new BasicTextFieldSettingSpecifier("trigger.cronExpression", ct
-					.getCronExpression()));
+			result.add(new BasicCronExpressionSettingSpecifier("triggerCronExpression",
+					ct.getCronExpression()));
 		}
 		for ( SettingSpecifier spec : getSettingSpecifierProvider().getSettingSpecifiers() ) {
 			if ( spec instanceof MappableSpecifier ) {
@@ -185,13 +230,11 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		return messageSource;
 	}
 
-	@SuppressWarnings("unchecked")
 	public SettingSpecifierProvider getSettingSpecifierProvider() {
 		if ( settingSpecifierProvider != null ) {
 			return settingSpecifierProvider;
 		}
-		for ( Map.Entry<String, Object> me : (Set<Map.Entry<String, Object>>) jobDetail.getJobDataMap()
-				.entrySet() ) {
+		for ( Map.Entry<String, Object> me : jobDetail.getJobDataMap().entrySet() ) {
 			Object o = me.getValue();
 			if ( o instanceof SettingSpecifierProvider ) {
 				SettingSpecifierProvider ssp = (SettingSpecifierProvider) o;

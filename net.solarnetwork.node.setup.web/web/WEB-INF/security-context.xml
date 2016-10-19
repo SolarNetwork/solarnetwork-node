@@ -2,45 +2,42 @@
 <beans:beans xmlns="http://www.springframework.org/schema/security"
 	xmlns:beans="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans
-			http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-			http://www.springframework.org/schema/security
-			http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security-4.1.xsd">
 
-	<http security="none" pattern="/*.do"/>
+	<http security="none" pattern="/hello"/>
 	
 	<!-- Configure Spring Security -->
-	<http auto-config="true">
-	    <intercept-url pattern="/a/**" access="ROLE_USER" />
+	<http auto-config="true" use-expressions="true">
+		<intercept-url pattern='/*.do' access="permitAll" />
+	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')" />
 	    <custom-filter ref="associationFilter" before="FIRST"/>
-		<form-login login-page="/login.do" default-target-url="/a/home"
+		<form-login login-page="/login.do" default-target-url="/a/home.do"
 			authentication-failure-url="/login.do?login_error=1"/>
-		<logout logout-success-url="/logoutSuccess.do"/>
+		<logout logout-url="/logout" logout-success-url="/loggedout.do"/>
 	</http>
 	
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
 
-	<authentication-manager>
-		<authentication-provider user-service-ref="testUserService">
-			<!--password-encoder hash="sha-256"/-->
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider user-service-ref="settingsUserService">			
+			<password-encoder ref="passwordEncoder"/>
 		</authentication-provider>
 	</authentication-manager>
+	
+	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
 
-	<user-service id="testUserService">
-		<user name="admin" password="admin" authorities="ROLE_USER, ROLE_ADMIN" />
-		<user name="user" password="user" authorities="ROLE_USER" />
-	</user-service>
+	<beans:bean id="settingsUserService" class="net.solarnetwork.node.setup.web.support.SettingsUserService">
+		<beans:constructor-arg ref="settingDao"/>
+		<beans:constructor-arg ref="identityService"/>
+		<beans:constructor-arg ref="passwordEncoder"/>
+	</beans:bean>
 
-	<!--beans:bean id="jdbcUserService" class="net.solarnetwork.central.security.jdbc.JdbcUserDetailsService">
-		<beans:property name="dataSource" ref="dataSource"/>
-		<beans:property name="usersByUsernameQuery" 
-				value="SELECT username, password, enabled, user_id
-						FROM solarnet.user_login 
-						WHERE username = ?"/>
-		<beans:property name="authoritiesByUsernameQuery" 
-				value="SELECT username, authority
-						FROM solarnet.user_login_role
-						WHERE username = ?"/>
-	</beans:bean-->
+	<websocket-message-broker>
+		<intercept-message pattern="/**" access="hasRole('USER')" />
+	</websocket-message-broker>
 
 </beans:beans>
