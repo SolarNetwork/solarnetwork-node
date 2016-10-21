@@ -64,7 +64,7 @@
 	<osgi:reference id="setupResourceService" availability="optional"
 		interface="net.solarnetwork.node.setup.SetupResourceService"/>
 	
-	<!-- A SimpMessagingTemplate for the 'broker' configured for Loxone messages -->
+	<!-- A SimpMessagingTemplate for the 'broker' configured for websocket messages -->
 	<osgi:service interface="org.springframework.messaging.simp.SimpMessageSendingOperations">
 		<osgi:service-properties>
 			<entry key="channel" value="broker"/>
