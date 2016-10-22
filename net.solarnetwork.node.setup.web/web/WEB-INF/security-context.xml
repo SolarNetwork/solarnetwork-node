@@ -37,6 +37,10 @@
 	</beans:bean>
 
 	<websocket-message-broker>
+		<intercept-message type="CONNECT" access="permitAll" />
+	    <intercept-message type="UNSUBSCRIBE" access="permitAll" />
+	    <intercept-message type="DISCONNECT" access="permitAll" />
+	    <intercept-message pattern="/pub/**" access="permitAll" />
 		<intercept-message pattern="/**" access="hasRole('USER')" />
 	</websocket-message-broker>
 
