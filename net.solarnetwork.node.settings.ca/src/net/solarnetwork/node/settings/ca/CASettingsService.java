@@ -54,6 +54,24 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.supercsv.cellprocessor.ConvertNullTo;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.CsvBeanReader;
+import org.supercsv.io.CsvBeanWriter;
+import org.supercsv.io.ICsvBeanReader;
+import org.supercsv.io.ICsvBeanWriter;
+import org.supercsv.prefs.CsvPreference;
+import org.supercsv.util.CsvContext;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.backup.BackupResource;
@@ -75,24 +93,6 @@ import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
 import net.solarnetwork.node.support.KeyValuePair;
-import org.osgi.framework.Constants;
-import org.osgi.framework.InvalidSyntaxException;
-import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.supercsv.cellprocessor.ConvertNullTo;
-import org.supercsv.cellprocessor.ift.CellProcessor;
-import org.supercsv.io.CsvBeanReader;
-import org.supercsv.io.CsvBeanWriter;
-import org.supercsv.io.ICsvBeanReader;
-import org.supercsv.io.ICsvBeanWriter;
-import org.supercsv.prefs.CsvPreference;
-import org.supercsv.util.CsvContext;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -177,8 +177,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				cmd.setInstanceKey(instanceKey.getKey());
 
 				// now lookup all settings for the configured instance
-				List<KeyValuePair> settings = settingDao.getSettings(getFactoryInstanceSettingKey(
-						factoryPid, instanceKey.getKey()));
+				List<KeyValuePair> settings = settingDao
+						.getSettings(getFactoryInstanceSettingKey(factoryPid, instanceKey.getKey()));
 				for ( KeyValuePair setting : settings ) {
 					SettingValueBean bean = new SettingValueBean();
 					bean.setKey(setting.getKey());
@@ -339,7 +339,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(factoryUID);
 			if ( helper != null ) {
-				for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper.instanceEntrySet() ) {
+				for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper
+						.instanceEntrySet() ) {
 					String instanceUID = me.getKey();
 					List<FactorySettingSpecifierProvider> list = new ArrayList<FactorySettingSpecifierProvider>(
 							me.getValue().size());
@@ -361,8 +362,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				return keyedSetting.getDefaultValue();
 			}
 			final String providerUID = provider.getSettingUID();
-			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider ? ((FactorySettingSpecifierProvider) provider)
-					.getFactoryInstanceUID() : null);
+			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider
+					? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID() : null);
 			try {
 				Configuration conf = getConfiguration(providerUID, instanceUID);
 				@SuppressWarnings("unchecked")
@@ -764,8 +765,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		try {
 			writer = new BufferedWriter(new FileWriter(f));
 			exportSettingsCSV(writer);
-			settingDao.storeSetting(new Setting(SETTING_LAST_BACKUP_DATE, null, backupDateKey, EnumSet
-					.of(SettingFlag.IgnoreModificationDate)));
+			settingDao.storeSetting(new Setting(SETTING_LAST_BACKUP_DATE, null, backupDateKey,
+					EnumSet.of(SettingFlag.IgnoreModificationDate)));
 		} catch ( IOException e ) {
 			log.error("Unable to create settings backup {}: {}", f.getPath(), e.getMessage());
 		} finally {
@@ -920,8 +921,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return conf;
 	}
 
-	private Configuration findExistingConfiguration(String pid, String instanceKey) throws IOException,
-			InvalidSyntaxException {
+	private Configuration findExistingConfiguration(String pid, String instanceKey)
+			throws IOException, InvalidSyntaxException {
 		String filter = "(&(" + ConfigurationAdmin.SERVICE_FACTORYPID + "=" + pid + ")("
 				+ OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY + "=" + instanceKey + "))";
 		Configuration[] configurations = configurationAdmin.listConfigurations(filter);
