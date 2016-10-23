@@ -31,6 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.OCPPException;
@@ -43,11 +48,6 @@ import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 import ocpp.v15.cs.AuthorizationStatus;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * A mock service that listens for
@@ -82,8 +82,8 @@ public class MockIdTagScanner implements SettingSpecifierProvider {
 			return;
 		}
 		final String socketId = this.socketId;
-		Map<String, Object> props = Collections.singletonMap(
-				ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, (Object) socketId);
+		Map<String, Object> props = Collections
+				.singletonMap(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, (Object) socketId);
 		ea.postEvent(new Event(pluggedIn ? ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED
 				: ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED, props));
 		if ( pluggedIn ) {
@@ -108,7 +108,7 @@ public class MockIdTagScanner implements SettingSpecifierProvider {
 				}
 			});
 		} else {
-			final String sessionId = socketSessionMap.remove(socketId);
+			final String sessionId = endSessionOnSocket(socketId);
 			if ( sessionId == null ) {
 				log.debug("Unknown session ID for socket {}", socketId);
 				return;
@@ -125,6 +125,17 @@ public class MockIdTagScanner implements SettingSpecifierProvider {
 				}
 			});
 		}
+	}
+
+	private String endSessionOnSocket(String socketId) {
+		String sessionId = socketSessionMap.remove(socketId);
+		if ( sessionId == null ) {
+			ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
+			if ( session != null ) {
+				sessionId = session.getSessionId();
+			}
+		}
+		return sessionId;
 	}
 
 	@Override
