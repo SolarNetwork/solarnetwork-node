@@ -309,6 +309,7 @@ public class ConfigurableCentralSystemServiceFactory
 				}
 			} else {
 				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
+						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
 						.withSchedule(repeatCount < 1
 								? SimpleScheduleBuilder.repeatSecondlyForever(heartbeatInterval)
 								: SimpleScheduleBuilder.repeatSecondlyForTotalCount(repeatCount,
@@ -319,7 +320,7 @@ public class ConfigurableCentralSystemServiceFactory
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP heartbeat job", e);
 				} finally {
-					heartbeatTrigger = null;
+					heartbeatTrigger = trigger;
 				}
 			}
 			return true;
