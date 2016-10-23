@@ -245,7 +245,7 @@ public class ConfigurableCentralSystemServiceFactory
 		}
 		CentralSystemService client = getServiceInternal();
 		if ( client == null ) {
-			log.debug("Node ID not available; cannot post BootNotification");
+			log.debug("CentralSystemService not available; cannot post BootNotification");
 			return false;
 		}
 		synchronized ( this ) {
