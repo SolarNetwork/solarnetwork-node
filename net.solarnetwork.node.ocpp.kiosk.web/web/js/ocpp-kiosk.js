@@ -104,7 +104,7 @@ var OCPPKiosk = (function() {
 			headers[csrf.headerName] = csrf.token;
 			client.connect(headers, function(frame) {
 				// subscribe to /pub/topic/ocpp to get notified of updates
-				var valueEventUpdates = client.subscribe('/pub/topic/ocpp', function(message) {
+				var valueEventUpdates = client.subscribe('/pub/topic/ocpp/kiosk', function(message) {
 					defaultHandleDataMessage(message, processEvents);
 				});
 			}, function (error) {
