@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
@@ -68,6 +69,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 import ocpp.v15.cs.AuthorizationStatus;
@@ -92,7 +94,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Default implementation of {@link ChargeSessionManager}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
@@ -115,6 +117,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public static final long POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL = 600 * 1000L;
 
+	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
 	private ChargeSessionDao chargeSessionDao;
 	private SocketDao socketDao;
@@ -229,6 +232,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 					chargeSessionDao.addMeterReadings(sessionId,
 							(meterReading != null ? meterReading.getCreated() : new Date(now)),
 							readings);
+					postChargeSessionStateEvent(session, true, meterReading);
 					return sessionId;
 				}
 
@@ -239,6 +243,31 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				resumeReadingsForSocket(socketId, socketLock);
 			}
 		}
+	}
+
+	private void postChargeSessionStateEvent(ChargeSession session, boolean started,
+			ACEnergyDatum datum) {
+		Map<String, Object> props = new HashMap<String, Object>(4);
+		if ( started && session.getCreated() != null ) {
+			props.put(EVENT_PROPERTY_DATE, session.getCreated().getTime());
+		} else if ( !started && session.getEnded() != null ) {
+			props.put(EVENT_PROPERTY_DATE, session.getEnded().getTime());
+		}
+		props.put(EVENT_PROPERTY_SESSION_ID, session.getSessionId());
+		props.put(EVENT_PROPERTY_SOCKET_ID, session.getSocketId());
+		if ( datum != null ) {
+			props.put(EVENT_PROPERTY_METER_READING_POWER, datum.getWatts());
+			props.put(EVENT_PROPERTY_METER_READING_ENERGY, datum.getWattHourReading());
+		}
+		postEvent(started ? EVENT_TOPIC_SESSION_STARTED : EVENT_TOPIC_SESSION_ENDED, props);
+	}
+
+	private void postEvent(String topic, Map<String, Object> props) {
+		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		if ( admin == null ) {
+			return;
+		}
+		admin.postEvent(new Event(topic, props));
 	}
 
 	private StatusNotificationResponse postStatusNotification(final ChargePointStatus status,
@@ -366,6 +395,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		// mark this socket as "stopping" so the subsequent meter reading doesn't get added
 		final Object socketLock = ignoreReadingsForSocket(socketId);
 		synchronized ( socketLock ) {
+			ACEnergyDatum meterReading = null;
 			try {
 				// get current meter reading
 				final String meterSourceId = socketMeterSourceMapping.get(socketId);
@@ -374,7 +404,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 							"No meter source ID available for socket ID {}, final meter value will not be available for charge session",
 							session.getSocketId());
 				}
-				final ACEnergyDatum meterReading = getMeterReading(meterSourceId);
+				meterReading = getMeterReading(meterSourceId);
 
 				// add end transaction readings
 				List<Value> readings = readingsForDatum(meterReading);
@@ -392,6 +422,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				session.setEnded(new Date(now));
 				chargeSessionDao.storeChargeSession(session);
 			} finally {
+				postChargeSessionStateEvent(session, false, meterReading);
 				postStatusNotification(ChargePointStatus.AVAILABLE, connectorId, now);
 				resumeReadingsForSocket(socketId, socketLock);
 			}
@@ -459,6 +490,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			}
 		}
 		return res;
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+	public List<ChargeSessionMeterReading> meterReadingsForChargeSession(String sessionId) {
+		return chargeSessionDao.findMeterReadingsForSession(sessionId);
 	}
 
 	@Override
@@ -1053,6 +1090,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			super.setUid(uid);
 			configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
 		}
+	}
+
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
