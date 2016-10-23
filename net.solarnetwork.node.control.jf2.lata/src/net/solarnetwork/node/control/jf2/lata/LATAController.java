@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
@@ -50,7 +53,8 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import org.springframework.context.MessageSource;
+import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -75,10 +79,10 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class LATAController extends SerialDeviceSupport implements NodeControlProvider,
-		InstructionHandler, SettingSpecifierProvider {
+public class LATAController extends SerialDeviceSupport
+		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
 
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
@@ -89,6 +93,7 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 			.compile("^T(\\w{8})2\\d{2}(\\w*)");
 
 	private MessageSource messageSource;
+	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Default constructor.
@@ -134,7 +139,8 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 		return result;
 	}
 
-	private synchronized boolean setSwitchStatus(String controlId, boolean newStatus) throws IOException {
+	private synchronized boolean setSwitchStatus(String controlId, boolean newStatus)
+			throws IOException {
 		String address = controlIdMapping.get(controlId);
 		log.debug("Setting switch {} status at address {}", controlId, address);
 		if ( address == null ) {
@@ -145,13 +151,15 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 		try {
 			cmd = new AddressableCommand(address, newStatus ? Command.SwitchOn : Command.SwitchOff);
 		} catch ( CommandValidationException e ) {
-			log.error("Bad address [{}] configured for control ID {}: {}", new Object[] { address,
-					controlId, e.getMessage() });
+			log.error("Bad address [{}] configured for control ID {}: {}",
+					new Object[] { address, controlId, e.getMessage() });
 			return false;
 		}
 		performAction(new LATABusConverser(cmd));
-		log.trace("Set status to {} for control {}, address {}", new Object[] { newStatus, controlId,
-				address });
+		log.trace("Set status to {} for control {}, address {}",
+				new Object[] { newStatus, controlId, address });
+		postControlEvent(newNodeControlInfoDatum(controlId, newStatus),
+				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		return true;
 	}
 
@@ -185,8 +193,8 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 		try {
 			cmd = new AddressableCommand(address, Command.SwitchStatus);
 		} catch ( CommandValidationException e ) {
-			log.error("Bad address [{}] configured for control ID {}: {}", new Object[] { address,
-					controlId, e.getMessage() });
+			log.error("Bad address [{}] configured for control ID {}: {}",
+					new Object[] { address, controlId, e.getMessage() });
 			return null;
 		}
 
@@ -197,8 +205,8 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 				log.info("Status unavailable for control {}, address {}", controlId, address);
 				return null;
 			}
-			log.trace("Got status result [{}] for control {}, address {}", new Object[] { result,
-					controlId, address });
+			log.trace("Got status result [{}] for control {}, address {}",
+					new Object[] { result, controlId, address });
 			Matcher m = SWITCH_STATUS_RESULT_PATTERN.matcher(result);
 			if ( m.find() ) {
 				String resultAddress = m.group(1);
@@ -210,7 +218,10 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 					String status = m.group(2);
 					Boolean switchOn = ToggleMode.ON.hexString().equals(status);
 					log.trace("Address {} status is {}", address, switchOn);
-					return newNodeControlInfoDatum(controlId, switchOn);
+					NodeControlInfo info = newNodeControlInfoDatum(controlId, switchOn);
+					postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
+					return info;
+
 				}
 			}
 			log.info("Invalid status result [{}], ignoring", result);
@@ -228,6 +239,15 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 		info.setReadonly(false);
 		info.setValue(status.toString());
 		return info;
+	}
+
+	private void postControlEvent(NodeControlInfo info, String topic) {
+		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+		if ( admin == null ) {
+			return;
+		}
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+		admin.postEvent(new Event(topic, props));
 	}
 
 	/**
@@ -305,8 +325,8 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 		results.add(new BasicTitleSettingSpecifier("info", getDeviceInfoMessage(), true));
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("controlIdMappingValue",
-				DEFAULT_CONTROL_ID_MAPPING));
+		results.add(
+				new BasicTextFieldSettingSpecifier("controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		return results;
@@ -318,6 +338,17 @@ public class LATAController extends SerialDeviceSupport implements NodeControlPr
 
 	public void setControlIdMapping(Map<String, String> controlIdMapping) {
 		this.controlIdMapping = controlIdMapping;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} to use for posting control provider events.
+	 * 
+	 * @param eventAdmin
+	 *        The service to use.
+	 * @since 2.1
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }
