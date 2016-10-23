@@ -382,27 +382,50 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return null;
 	}
 
+	private static final Pattern INDEXED_PROP_PATTERN = Pattern.compile("\\[\\d+\\]");
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public void updateSettings(SettingsCommand command) {
 		// group all updates by provider+instance, to reduce the number of CA updates
 		// when multiple settings are changed
 		if ( command.getProviderKey() == null ) {
-			Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>();
+			Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
+			Map<String, SettingsCommand> indexedGroups = null;
 			for ( SettingValueBean bean : command.getValues() ) {
 				String groupKey = bean.getProviderKey()
 						+ (bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
-				SettingsCommand cmd = groups.get(groupKey);
+				final boolean indexed = INDEXED_PROP_PATTERN.matcher(bean.getKey()).find();
+				SettingsCommand cmd = null;
+				if ( indexed ) {
+					// indexed property, add in indexed groups
+					if ( indexedGroups == null ) {
+						indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
+					}
+					cmd = indexedGroups.get(groupKey);
+				} else {
+					cmd = groups.get(groupKey);
+				}
+
 				if ( cmd == null ) {
 					cmd = new SettingsCommand();
 					cmd.setProviderKey(bean.getProviderKey());
 					cmd.setInstanceKey(bean.getInstanceKey());
-					groups.put(groupKey, cmd);
+					if ( indexed ) {
+						indexedGroups.put(groupKey, cmd);
+					} else {
+						groups.put(groupKey, cmd);
+					}
 				}
 				cmd.getValues().add(bean);
 			}
 			for ( SettingsCommand cmd : groups.values() ) {
 				updateSettings(cmd);
+			}
+			if ( indexedGroups != null ) {
+				for ( SettingsCommand cmd : indexedGroups.values() ) {
+					updateSettings(cmd);
+				}
 			}
 			return;
 		}
