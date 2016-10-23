@@ -69,7 +69,7 @@ import ocpp.v15.support.WSAddressingFromHandler;
  * the service.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ConfigurableCentralSystemServiceFactory
 		implements CentralSystemServiceFactory, SettingSpecifierProvider {
@@ -309,8 +309,10 @@ public class ConfigurableCentralSystemServiceFactory
 				}
 			} else {
 				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
-						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
-								heartbeatInterval))
+						.withSchedule(repeatCount < 1
+								? SimpleScheduleBuilder.repeatSecondlyForever(heartbeatInterval)
+								: SimpleScheduleBuilder.repeatSecondlyForTotalCount(repeatCount,
+										heartbeatInterval))
 						.build();
 				try {
 					sched.rescheduleJob(trigger.getKey(), trigger);
