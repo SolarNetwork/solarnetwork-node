@@ -157,7 +157,7 @@ public class ConfigurableCentralSystemServiceFactory
 			setupFromHandler(client, useFromAddress);
 			service = client;
 		}
-		return service;
+		return result;
 	}
 
 	private void setupFromHandler(final CentralSystemService client, final boolean use) {
