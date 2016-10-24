@@ -130,7 +130,10 @@ div.vbox {
 }
 
 #socket-status-b > .session {
-	left: 10px;
+	left: 0px;
+	-webkit-justify-content: flex-start;
+	-moz-justify-content: flex-start;
+	justify-content: flex-start;
 }
 
 .socket-status {
@@ -170,8 +173,8 @@ div.vbox {
 .socket-status .session {
 	position: absolute;
 	top: 0px;
-	left: 114px;
-	width: 66px;
+	left: 104px;
+	width: 76px;
 	height: 104px;
 	font-size: 24px;
 	line-height: 20px;
@@ -187,7 +190,7 @@ div.vbox {
 	display: inline-block;
 	text-align: right;
 	font-weight: 600;
-	width: 32px;
+	width: 42px;
 }
 
 .session .unit {
@@ -198,3 +201,10 @@ div.vbox {
 	font-size: 16px;
 }
 
+.active .session .energy {
+	color: black;
+}
+
+.active .session .duration {
+	color: #005577;
+}

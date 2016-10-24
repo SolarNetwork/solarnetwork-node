@@ -1,15 +1,15 @@
 {
   "pvData" : {
-    "power" : 1220,
-    "energy" : 4989992
+    "power" : 220,
+    "energy" : 498952
   },
   "socketData": {
-    "A": {
-      "duration": 108970,
+    "B": {
+      "duration": 3121890,
       "endDate": 0,
-      "energy": 224,
+      "energy": 4563,
       "energyStart": 3583157,
-      "power": 2541,
+      "power": 4541,
       "sessionId": "39fe6f51-8eb3-4256-aab4-0f44893bf2ce",
       "socketId": "/socket/mock/1",
       "startDate": 1477292190136
