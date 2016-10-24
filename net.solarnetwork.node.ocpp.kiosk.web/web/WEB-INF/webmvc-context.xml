@@ -43,6 +43,7 @@
 			init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties 
 				persistent-id="net.solarnetwork.node.ocpp.kiosk.web.DefaultKioskDataService" 
+				update-method="configurationChanged"
 				autowire-on-update="true"/>
 		<property name="scheduler" ref="scheduler"/>
 		<property name="messageSendingOps" ref="messageSendingOps"/>

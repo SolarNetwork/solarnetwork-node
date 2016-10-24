@@ -50,7 +50,9 @@ import org.springframework.context.MessageSource;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
+import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -58,6 +60,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
+import ocpp.v15.cs.Measurand;
+import ocpp.v15.cs.ReadingContext;
 
 /**
  * Default implementation of {@link KioskDataService}.
@@ -121,6 +125,28 @@ public class DefaultKioskDataService
 	@Override
 	public void shutdown() {
 		configureKioskRefreshJob(0);
+	}
+
+	/**
+	 * Call to notify of any configuration changes, for example on any of the
+	 * configured {@link SocketConfiguration} instances.
+	 */
+	public synchronized void configurationChanged(Map<String, ?> properties) {
+		List<SocketConfiguration> confs = getSocketConfigurations();
+		if ( confs == null || confs.isEmpty() ) {
+			return;
+		}
+		for ( SocketConfiguration conf : confs ) {
+			final String socketId = conf.getSocketId();
+			if ( socketId == null ) {
+				continue;
+			}
+			final String socketKey = conf.getKey();
+			if ( socketKey == null ) {
+				continue;
+			}
+			populateSessionDataForSocket(socketId);
+		}
 	}
 
 	@Override
@@ -240,46 +266,42 @@ public class DefaultKioskDataService
 		return socketDataMap.get(socketKey);
 	}
 
-	// TODO: repopulate kiosk data when configured after startup
-	//	private void populateSessionDataForSocket(String socketId) {
-	//		// either no session active on socket, or we've restarted and need to re-create the info
-	//		ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
-	//		if ( session == null ) {
-	//			// no session info for this socket
-	//			return;
-	//		}
-	//		// maybe the node has restarted mid-session; pretend we got a Start event
-	//		Map<String, Object> eventData = new HashMap<String, Object>(8);
-	//		eventData.put(ChargeSessionManager.EVENT_PROPERTY_DATE, session.getCreated().getTime());
-	//		eventData.put(ChargeSessionManager.EVENT_PROPERTY_SESSION_ID, session.getSessionId());
-	//		eventData.put(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, session.getSocketId());
-	//
-	//		List<ChargeSessionMeterReading> readings = chargeSessionManager
-	//				.meterReadingsForChargeSession(session.getSessionId());
-	//		if ( readings != null && !readings.isEmpty() ) {
-	//			int left = 2;
-	//			for ( ChargeSessionMeterReading reading : readings ) {
-	//				if ( ReadingContext.TRANSACTION_BEGIN.equals(reading.getContext()) ) {
-	//					if ( Measurand.POWER_ACTIVE_IMPORT.equals(reading.getMeasurand()) ) {
-	//						Integer power = Integer.valueOf(reading.getValue());
-	//						eventData.put(ChargeSessionManager.EVENT_PROPERTY_METER_READING_POWER,
-	//								power);
-	//						left--;
-	//					} else if ( Measurand.ENERGY_ACTIVE_IMPORT_REGISTER
-	//							.equals(reading.getMeasurand()) ) {
-	//						Long energy = Long.valueOf(reading.getValue());
-	//						eventData.put(ChargeSessionManager.EVENT_PROPERTY_METER_READING_ENERGY,
-	//								energy);
-	//						left--;
-	//					}
-	//				}
-	//				if ( left < 1 ) {
-	//					break;
-	//				}
-	//			}
-	//		}
-	//		handleEvent(new Event(ChargeSessionManager.EVENT_TOPIC_SESSION_STARTED, eventData));
-	//	}
+	private void populateSessionDataForSocket(String socketId) {
+		ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
+		if ( session == null ) {
+			// no session info for this socket
+			return;
+		}
+		// maybe the node has restarted mid-session; pretend we got a Start event
+		Map<String, Object> eventData = new HashMap<String, Object>(8);
+		eventData.put(ChargeSessionManager.EVENT_PROPERTY_DATE, session.getCreated().getTime());
+		eventData.put(ChargeSessionManager.EVENT_PROPERTY_SESSION_ID, session.getSessionId());
+		eventData.put(ChargeSessionManager.EVENT_PROPERTY_SOCKET_ID, session.getSocketId());
+
+		List<ChargeSessionMeterReading> readings = chargeSessionManager
+				.meterReadingsForChargeSession(session.getSessionId());
+		if ( readings != null && !readings.isEmpty() ) {
+			int left = 2;
+			for ( ChargeSessionMeterReading reading : readings ) {
+				if ( ReadingContext.TRANSACTION_BEGIN.equals(reading.getContext()) ) {
+					if ( Measurand.POWER_ACTIVE_IMPORT.equals(reading.getMeasurand()) ) {
+						Integer power = Integer.valueOf(reading.getValue());
+						eventData.put(ChargeSessionManager.EVENT_PROPERTY_METER_READING_POWER, power);
+						left--;
+					} else if ( Measurand.ENERGY_ACTIVE_IMPORT_REGISTER
+							.equals(reading.getMeasurand()) ) {
+						Long energy = Long.valueOf(reading.getValue());
+						eventData.put(ChargeSessionManager.EVENT_PROPERTY_METER_READING_ENERGY, energy);
+						left--;
+					}
+				}
+				if ( left < 1 ) {
+					break;
+				}
+			}
+		}
+		handleEvent(new Event(ChargeSessionManager.EVENT_TOPIC_SESSION_STARTED, eventData));
+	}
 
 	@Override
 	public void refreshKioskData() {
