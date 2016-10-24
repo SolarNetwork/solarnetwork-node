@@ -1,6 +1,7 @@
 var OCPPKiosk = (function() {
 	'use strict';
 	
+	var $ = document.querySelector.bind(document);
 	var self = {};
 	
 	var context = (function() {
@@ -8,7 +9,7 @@ var OCPPKiosk = (function() {
 		
 		var contextPath = function() {
 			if ( basePath === undefined ) {
-				basePath = document.querySelector('meta[name=base-path]').getAttribute('content');
+				basePath = $('meta[name=base-path]').getAttribute('content');
 			}
 			return (basePath === undefined ? "" : basePath);
 		};
@@ -70,9 +71,23 @@ var OCPPKiosk = (function() {
 		});
 	  }
 
-
+	function formatPower(power) {
+		var k = (Number.isFinite(power) ? power : 0) / 1000;
+		return k.toFixed(1);
+	}
+	
+	function refreshPvData(data) {
+		var el = $('#pv-power');
+		if ( el ) {
+			el.innerText = formatPower(data.power);
+		}
+	}
+	
 	function processKioskDataUpdate(data) {
 		console.log('Got kisok data: %s', JSON.stringify(data));
+		if ( data.pvData ) {
+			refreshPvData(data.pvData);
+		}
 	}
 
 	function websocketConnect() {
@@ -104,6 +119,26 @@ var OCPPKiosk = (function() {
 		});
 	}
 	
+	function mockCycle() {
+		var max = 1, 
+			digits = 2,
+			r = (Math.floor(Math.random() * max) +1),
+			path = ('/data/mock-'+(function() {
+				var s = ''+r;
+				while ( s.length < digits ) {
+					s = '0' +s;
+				}
+				return s;
+			}()) + '.json');
+		reqJSON({path : path}).then(function(data) {
+			processKioskDataUpdate(data)
+			//setTimeout(mockCycle, 2000);
+		}, function(error) {
+			//setTimeout(mockCycle, 2000);
+		});
+	}
+	
 	websocketConnect();
+	mockCycle();
 	return self;
 })();
