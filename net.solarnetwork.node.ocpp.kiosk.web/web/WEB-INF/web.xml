@@ -53,6 +53,7 @@
 	<servlet-mapping>
 	    <servlet-name>default</servlet-name>
 	    <url-pattern>/css/*</url-pattern>
+	    <url-pattern>/data/*</url-pattern>
 	    <url-pattern>/font/*</url-pattern>
 	    <url-pattern>/img/*</url-pattern>
 	    <url-pattern>/js/*</url-pattern>
