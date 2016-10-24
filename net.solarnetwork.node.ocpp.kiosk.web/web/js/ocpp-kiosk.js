@@ -98,6 +98,9 @@ var OCPPKiosk = (function() {
 				console.log('STOMP protocol error: %s (will attempt to reconnect)', error);
 				setTimeout(websocketConnect, 2000);
 			});
+		}, function(error) {
+			console.log('Failed to obtain CSRF token: %s (will attempt to reconnect)', error);
+			setTimeout(websocketConnect, 2000);
 		});
 	}
 	
