@@ -8,8 +8,36 @@
 <body>
 	<img id="ocpp-state" src="img/Off.png">
 	<div id="pv-status" class="status">
-		<p id="pv-power" class="heading">0</p>
-		<p class="unit">kW</p>
+		<div id="pv-power" class="heading">0</div>
+		<div class="unit">kW</div>
+	</div>
+	<div id="grid-status" class="status">
+		<div id="grid-power" class="heading">0</div>
+		<div class="unit">kW</div>
+	</div>
+	<div id="socket-status-a" class="socket-status">
+		<div id="socket-a-power" class="heading">0</div>
+		<div class="unit">kW</div>
+		<div class="session vbox">
+			<div>
+				<span class="value" id="socket-b-energy">0</span><span class="unit">kWh</span>
+			</div>
+			<div>
+				<span class="value" id="socket-b-duration">0</span><span class="unit">min</span>
+			</div>
+		</div>
+	</div>
+	<div id="socket-status-b" class="socket-status">
+		<div id="socket-b-power" class="heading">0</div>
+		<div class="unit">kW</div>
+		<div class="session vbox">
+			<div>
+				<span class="value" id="socket-b-energy">0</span><span class="unit">kWh</span>
+			</div>
+			<div>
+				<span class="value" id="socket-b-duration">0</span><span class="unit">min</span>
+			</div>
+		</div>
 	</div>
 	<script src="js-lib/stomp.min.js"></script>
 	<script src="js/ocpp-kiosk.js"></script>

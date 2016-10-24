@@ -16,11 +16,16 @@ body {
 	top: 120px;
 }
 
+#grid-status {
+	position: absolute;
+	left: 346px;
+	top: 267px;
+}
+
 .status {
 	width: 94px;
 	height: 94px;
 	color: white;
-	/* background-color: rgba(255,0,0,0.2); */
 }
 
 .status .heading {
@@ -29,12 +34,12 @@ body {
 	left: 0px;
 	right: 0px;
 	height: 30px;
+	line-height: 30px;
 	font-size: 36px;
 	font-weight: bold;
 	text-align: center;
 	margin: 0;
 	padding: 0;
-	/* background-color: rgba(0,255,0,0.2); */
 }
 
 .status .unit {
@@ -43,10 +48,112 @@ body {
 	left: 0px;
 	right: 0px;
 	height: 16px;
+	line-height: 16px;
 	font-size: 18px;
 	font-weight: normal;
 	text-align: center;
 	margin: 0;
 	padding: 0;
-	/* background-color: rgba(0,0,255,0.2); */
+}
+
+#socket-status-a {
+	position: absolute;
+	left: 357px;
+	top: 99px;
+}
+
+#socket-status-b {
+	position: absolute;
+	left: 104px;
+	top: 276px;
+}
+
+#socket-status-b > .heading,
+#socket-status-b > .unit {
+	left: 76px;
+}
+
+#socket-status-b > .session {
+	left: 0px;
+}
+
+.socket-status {
+	width: 180px;
+	height: 104px;
+	color: white;
+}
+
+.socket-status > .heading {
+	position: absolute;
+	top: 26px;
+	left: 0px;
+	width: 104px;
+	height: 36px;
+	line-height: 36px;
+	font-size: 44px;
+	font-weight: bold;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+}
+
+.socket-status > .unit {
+	position: absolute;
+	top: 64px;
+	left: 0px;
+	width: 104px;
+	height: 22px;
+	line-height: 22px;
+	font-size: 26px;
+	font-weight: normal;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+}
+
+.socket-status .session {
+	position: absolute;
+	top: 0px;
+	left: 114px;
+	width: 66px;
+	height: 104px;
+	font-size: 20px;
+	font-weight: normal;
+	margin: 0;
+	padding: 0;
+	-webkit-justify-content: flex-end;
+	-moz-justify-content: flex-end;
+	justify-content: flex-end;
+}
+
+.session .value {
+	display: inline-block;
+	text-align: right;
+	width: 32px;
+}
+
+.session .unit {
+	display: inline-block;
+	margin-left: 4px;
+	width: 30px;
+	text-align: left;
+	font-size: 12px;
+}
+
+div.hbox {
+	display: -webkit-flex;
+	-webkit-flex-direction: row;
+	display: -moz-flex;
+	-moz-flex-direction: row;
+	display: flex;
+	flex-direction: row;
+}
+
+div.vbox {
+	display: -webkit-flex;
+	-webkit-flex-direction: column;
+	display: -moz-flex;
+	-moz-flex-orient: column;
+	display: flex;
+	flex-direction: column;
 }
