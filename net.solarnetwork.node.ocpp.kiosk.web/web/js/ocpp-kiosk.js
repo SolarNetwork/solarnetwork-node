@@ -71,23 +71,8 @@ var OCPPKiosk = (function() {
 	  }
 
 
-	function processEvents(list) {
-		console.log('Got events: %s', list);
-	}
-
-	function defaultHandleDataMessage(message, successHandler, errorHandler) {
-		if ( message.body ) {
-			var json = JSON.parse(message.body);
-			if ( json.success ) {
-				if ( typeof successHandler === 'function' ) {
-					successHandler(json.data);
-				}
-			} else if ( typeof errorHandler === 'function' ) {
-				errorHandler(json);
-			}
-		} else {
-			console.log("got empty message");
-		}
+	function processKioskDataUpdate(data) {
+		console.log('Got kisok data: %s', JSON.stringify(data));
 	}
 
 	function websocketConnect() {
@@ -103,12 +88,15 @@ var OCPPKiosk = (function() {
 			var headers = {};
 			headers[csrf.headerName] = csrf.token;
 			client.connect(headers, function(frame) {
-				// subscribe to /pub/topic/ocpp to get notified of updates
-				var valueEventUpdates = client.subscribe('/pub/topic/ocpp/kiosk', function(message) {
-					defaultHandleDataMessage(message, processEvents);
+				// subscribe to /pub/topic/ocpp/kiosk to get notified of updates
+				client.subscribe('/pub/topic/ocpp/kiosk', function(message) {
+					if ( message.body ) {
+						processKioskDataUpdate(JSON.parse(message.body));
+					}
 				});
 			}, function (error) {
-				console.log('STOMP protocol error %s', error);
+				console.log('STOMP protocol error: %s (will attempt to reconnect)', error);
+				setTimeout(websocketConnect, 2000);
 			});
 		});
 	}

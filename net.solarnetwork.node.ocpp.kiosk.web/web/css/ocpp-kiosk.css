@@ -1,0 +1,52 @@
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #ccc;
+	font-family: helvetica, sans-serif;
+}
+
+#ocpp-state {
+	width: 640px;
+	height: 480px;
+}
+
+#pv-status {
+	position: absolute;
+	left: 200px;
+	top: 120px;
+}
+
+.status {
+	width: 94px;
+	height: 94px;
+	color: white;
+	/* background-color: rgba(255,0,0,0.2); */
+}
+
+.status .heading {
+	position: absolute;
+	top: 25px;
+	left: 0px;
+	right: 0px;
+	height: 30px;
+	font-size: 36px;
+	font-weight: bold;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+	/* background-color: rgba(0,255,0,0.2); */
+}
+
+.status .unit {
+	position: absolute;
+	top: 57px;
+	left: 0px;
+	right: 0px;
+	height: 16px;
+	font-size: 18px;
+	font-weight: normal;
+	text-align: center;
+	margin: 0;
+	padding: 0;
+	/* background-color: rgba(0,0,255,0.2); */
+}

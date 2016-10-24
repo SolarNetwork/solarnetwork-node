@@ -1,10 +1,17 @@
+<!DOCTYPE html>
 <html>
 <head>
-	<meta name="base-path" content=""/>
+	<meta name="base-path" content="">
+	<meta name="viewport" content="width=640,height=480">
+	<link type="text/css" rel="stylesheet" href="css/ocpp-kiosk.css">
 </head>
 <body>
-<p>Hi.</p>
-<script src="js-lib/stomp.min.js"></script>
-<script src="js/ocpp-kiosk.js"></script>
+	<img id="ocpp-state" src="img/Off.png">
+	<div id="pv-status" class="status">
+		<p id="pv-power" class="heading">0</p>
+		<p class="unit">kW</p>
+	</div>
+	<script src="js-lib/stomp.min.js"></script>
+	<script src="js/ocpp-kiosk.js"></script>
 </body>
 </html>
