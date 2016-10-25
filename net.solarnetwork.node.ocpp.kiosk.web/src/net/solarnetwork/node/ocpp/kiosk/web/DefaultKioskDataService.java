@@ -353,6 +353,8 @@ public class DefaultKioskDataService
 			log.warn("No scheduler avaialable, cannot schedule OCPP kiosk refresh job");
 			return false;
 		}
+		final JobKey jobKey = new JobKey(KIOSK_REFRESH_JOB_NAME, SCHEDULER_GROUP);
+		final TriggerKey triggerKey = new TriggerKey(KIOSK_REFRESH_JOB_NAME, SCHEDULER_GROUP);
 		SimpleTrigger trigger = refreshKioskDataTrigger;
 		if ( trigger != null ) {
 			// check if interval actually changed
@@ -363,7 +365,7 @@ public class DefaultKioskDataService
 			// trigger has changed!
 			if ( interval == 0 ) {
 				try {
-					sched.unscheduleJob(trigger.getKey());
+					sched.deleteJob(jobKey);
 					log.info("Unscheduled OCPP kiosk refresh job");
 				} catch ( SchedulerException e ) {
 					log.error("Error unscheduling OCPP kiosk refresh job", e);
@@ -371,8 +373,7 @@ public class DefaultKioskDataService
 					refreshKioskDataTrigger = null;
 				}
 			} else {
-				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey())
-						.forJob(KIOSK_REFRESH_JOB_NAME, SCHEDULER_GROUP)
+				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
 						.withSchedule(
 								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L))))
 						.build();
@@ -391,14 +392,12 @@ public class DefaultKioskDataService
 
 		synchronized ( sched ) {
 			try {
-				final JobKey jobKey = new JobKey(KIOSK_REFRESH_JOB_NAME, SCHEDULER_GROUP);
 				JobDetail jobDetail = sched.getJobDetail(jobKey);
 				if ( jobDetail == null ) {
 					jobDetail = JobBuilder.newJob(KioskDataServiceRefreshJob.class).withIdentity(jobKey)
 							.storeDurably().build();
 					sched.addJob(jobDetail, true);
 				}
-				final TriggerKey triggerKey = new TriggerKey(KIOSK_REFRESH_JOB_NAME, SCHEDULER_GROUP);
 				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
 						.startAt(new Date(System.currentTimeMillis() + interval))
 						.usingJobData(new JobDataMap(Collections.singletonMap("dataService", this)))
