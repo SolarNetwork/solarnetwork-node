@@ -1,8 +1,10 @@
-var OCPPKiosk = (function() {
+var OCPPKiosk = (function(document, window) {
 	'use strict';
 	
 	var $ = document.querySelector.bind(document);
-	var self = {};
+	var self = {
+			env : parseURLQueryTerms(window.location.search)
+	};
 	
 	var context = (function() {
 		var basePath = undefined;
@@ -34,6 +36,36 @@ var OCPPKiosk = (function() {
 		return helper;
 	})();
 	
+	function parseURLQueryTerms(search) {
+		var params = {};
+		var pairs;
+		var pair;
+		var i, len, k, v;
+		if ( search !== undefined && search.length > 0 ) {
+			// remove any leading ? character
+			if ( search.match(/^\?/) ) {
+				search = search.substring(1);
+			}
+			pairs = search.split('&');
+			for ( i = 0, len = pairs.length; i < len; i++ ) {
+				pair = pairs[i].split('=', 2);
+				if ( pair.length === 2 ) {
+					k = decodeURIComponent(pair[0]);
+					v = decodeURIComponent(pair[1]);
+					if ( params[k] ) {
+						if ( !Array.isArray(params[k]) ) {
+							params[k] = [params[k]]; // turn into array;
+						}
+						params[k].push(v);
+					} else {
+						params[k] = v;
+					}
+				}
+			}
+		}
+		return params;
+	}
+
 	function reqJSON(req) {
 		return new Promise(function(resolve, reject) {
 			var xhr, h;
@@ -239,6 +271,8 @@ var OCPPKiosk = (function() {
 	}
 	
 	websocketConnect();
-	mockCycle();
+	if ( self.env.mock === 'true' ) {
+		mockCycle();
+	}
 	return self;
-})();
+}(document, window));
