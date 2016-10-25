@@ -184,7 +184,10 @@ var OCPPKiosk = (function() {
 				gifName += '4';
 			}
 		}
-		gif.src = ('img/'+gifName+'.gif');
+		gifName = 'img/'+gifName+'.gif';
+		if ( !gif.src.endsWith(gifName) ) {
+			gif.src = gifName;
+		}
 	}
 
 	function websocketConnect() {
