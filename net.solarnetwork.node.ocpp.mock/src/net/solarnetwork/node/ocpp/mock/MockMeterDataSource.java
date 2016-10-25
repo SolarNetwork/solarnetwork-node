@@ -31,6 +31,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicLong;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.osgi.service.event.EventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -43,12 +49,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.osgi.service.event.EventHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * Mock implementation of {@link DatumDataSource} to simulate a power meter used
@@ -103,8 +103,8 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			if ( currSample == null ) {
 				newSample.setWattHourReading(mockMeter.get());
 			} else {
-				double diffHours = ((newSample.getCreated().getTime() - currSample.getCreated()
-						.getTime()) / (double) (1000 * 60 * 60));
+				double diffHours = ((newSample.getCreated().getTime()
+						- currSample.getCreated().getTime()) / (double) (1000 * 60 * 60));
 				double watts;
 				if ( charging ) {
 					watts = 2400;
@@ -113,8 +113,8 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 					watts = 5;
 				}
 				watts += (watts
-						* (Math.random() * (charging ? chargingWattsRandomness : wattsRandomness)) * (Math
-						.random() < 0.5 ? -1 : 1));
+						* (Math.random() * (charging ? chargingWattsRandomness : wattsRandomness))
+						* (Math.random() < 0.5 ? -1 : 1));
 				long wh = (long) (watts * diffHours);
 				long newWh = currSample.getWattHourReading() + wh;
 				if ( mockMeter.compareAndSet(currSample.getWattHourReading(), newWh) ) {
@@ -176,12 +176,12 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 		results.add(new BasicTextFieldSettingSpecifier("socketId", defaults.socketId));
 
 		results.add(new BasicTextFieldSettingSpecifier("watts", String.valueOf(defaults.watts)));
-		results.add(new BasicTextFieldSettingSpecifier("wattsRandomness", String
-				.valueOf(defaults.wattsRandomness)));
-		results.add(new BasicTextFieldSettingSpecifier("chargingWatts", String
-				.valueOf(defaults.chargingWatts)));
-		results.add(new BasicTextFieldSettingSpecifier("chargingWattsRandomness", String
-				.valueOf(defaults.chargingWattsRandomness)));
+		results.add(new BasicTextFieldSettingSpecifier("wattsRandomness",
+				String.valueOf(defaults.wattsRandomness)));
+		results.add(new BasicTextFieldSettingSpecifier("chargingWatts",
+				String.valueOf(defaults.chargingWatts)));
+		results.add(new BasicTextFieldSettingSpecifier("chargingWattsRandomness",
+				String.valueOf(defaults.chargingWattsRandomness)));
 
 		return results;
 	}
