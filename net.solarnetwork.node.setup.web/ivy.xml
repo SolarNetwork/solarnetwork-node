@@ -32,6 +32,6 @@
 		<dependency org="org.springframework.security" name="spring-security-core" rev="4.1.0.RELEASE"/>
 		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.spring-security-messaging" rev="4.1.0.RELEASE_1" conf="runtime"/>
 		<dependency org="org.springframework.security" name="spring-security-taglibs" rev="4.1.0.RELEASE" conf="runtime"/>
-		<dependency org="org.springframework.security" name="spring-security-web" rev="4.1.0.RELEASE" conf="runtime"/>
+		<dependency org="org.springframework.security" name="spring-security-web" rev="4.1.0.RELEASE"/>
     </dependencies>
 </ivy-module>
