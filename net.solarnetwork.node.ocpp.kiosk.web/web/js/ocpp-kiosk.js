@@ -125,6 +125,10 @@ var OCPPKiosk = (function(document, window) {
 		}
 		return mins.toFixed(0);
 	}
+
+	function isSocketActive(data) {
+		return (data !== undefined && data.endDate === 0);
+	}
 	
 	function refreshPvData(data) {
 		var el = $('#pv-power');
@@ -139,10 +143,11 @@ var OCPPKiosk = (function(document, window) {
 			powerEl = $('#socket-power-' +cssKey),
 			energyEl = $('#socket-energy-' +cssKey),
 			durEl = $('#socket-duration-' +cssKey),
-			durUnitEl = $('#socket-duration-unit-' +cssKey);
-		statusEl.classList.toggle('active', data.endDate === 0);
+			durUnitEl = $('#socket-duration-unit-' +cssKey),
+			active = isSocketActive(data);
+		statusEl.classList.toggle('active', active);
 		if ( powerEl ) {
-			powerEl.innerText = formatPower(data.power);
+			powerEl.innerText = formatPower(active ? data.power : 0);
 		}
 		if ( energyEl ) {
 			energyEl.innerText = formatEnergy(data.energy);
@@ -178,8 +183,10 @@ var OCPPKiosk = (function(document, window) {
 			for ( key in data.socketData ) {
 				refreshSocketData(data.socketData[key], key);
 				if ( data.socketData[key].power !== undefined ) {
-					socketDraw[key] = data.socketData[key].power;
-					socketTotalDraw += socketDraw[key];
+					if ( isSocketActive(data.socketData[key]) ) {
+						socketDraw[key] = data.socketData[key].power;
+						socketTotalDraw += socketDraw[key];
+					}
 				}
 			}
 			
@@ -216,7 +223,7 @@ var OCPPKiosk = (function(document, window) {
 				gifName += '4';
 			}
 		}
-		gifName = 'img/'+gifName+'.gif';
+		gifName = ('img/' +gifName +(gifName === 'Off' ? '.png' : '.gif'));
 		if ( !gif.src.endsWith(gifName) ) {
 			gif.src = gifName;
 		}
