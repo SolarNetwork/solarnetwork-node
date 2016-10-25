@@ -272,8 +272,10 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 		}
 		if ( ChargeSessionManager.EVENT_TOPIC_SOCKET_ACTIVATED.equals(topic) ) {
 			setCharging(true);
+			log.info("Mock OCPP meter {} simulating charging load ACTIVATED on socket {}", socketId);
 		} else if ( ChargeSessionManager.EVENT_TOPIC_SOCKET_DEACTIVATED.equals(topic) ) {
 			setCharging(false);
+			log.info("Mock OCPP meter {} simulating charging load DEACTIVATED on socket {}", socketId);
 		}
 	}
 
