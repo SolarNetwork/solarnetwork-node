@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.osgi.service.event.Event;
@@ -58,6 +59,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.DynamicServiceUnavailableException;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.cs.Measurand;
@@ -104,6 +106,7 @@ public class DefaultKioskDataService
 	private Scheduler scheduler;
 	private MessageSource messageSource;
 	private SimpleTrigger refreshKioskDataTrigger;
+	private final AtomicBoolean sessionDataRefreshNeeded = new AtomicBoolean(true);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -131,7 +134,11 @@ public class DefaultKioskDataService
 	 * Call to notify of any configuration changes, for example on any of the
 	 * configured {@link SocketConfiguration} instances.
 	 */
-	public synchronized void configurationChanged(Map<String, ?> properties) {
+	public void configurationChanged(Map<String, ?> properties) {
+		refreshSessionDataForConfiguredSockets();
+	}
+
+	private synchronized void refreshSessionDataForConfiguredSockets() {
 		List<SocketConfiguration> confs = getSocketConfigurations();
 		if ( confs == null || confs.isEmpty() ) {
 			return;
@@ -145,8 +152,15 @@ public class DefaultKioskDataService
 			if ( socketKey == null ) {
 				continue;
 			}
-			populateSessionDataForSocket(socketId);
+			try {
+				populateSessionDataForSocket(socketId);
+			} catch ( DynamicServiceUnavailableException e ) {
+				// refresh again later (via refreshKioskData} in case the OCPP service was not yet available at startup
+				sessionDataRefreshNeeded.set(true);
+				throw e;
+			}
 		}
+		sessionDataRefreshNeeded.set(false);
 	}
 
 	@Override
@@ -307,6 +321,9 @@ public class DefaultKioskDataService
 	public void refreshKioskData() {
 		if ( socketConfigurations == null || socketConfigurations.isEmpty() ) {
 			return;
+		}
+		if ( sessionDataRefreshNeeded.get() ) {
+			refreshSessionDataForConfiguredSockets();
 		}
 		for ( SocketConfiguration socketConf : socketConfigurations ) {
 			final String socketId = socketConf.getSocketId();
