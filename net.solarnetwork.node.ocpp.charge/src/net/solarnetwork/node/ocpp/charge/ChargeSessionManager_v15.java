@@ -51,6 +51,7 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -233,6 +234,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 							(meterReading != null ? meterReading.getCreated() : new Date(now)),
 							readings);
 					postChargeSessionStateEvent(session, true, meterReading);
+					postConfigurationChangedEvent();
 					return sessionId;
 				}
 
@@ -260,6 +262,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			props.put(EVENT_PROPERTY_METER_READING_ENERGY, datum.getWattHourReading());
 		}
 		postEvent(started ? EVENT_TOPIC_SESSION_STARTED : EVENT_TOPIC_SESSION_ENDED, props);
+	}
+
+	private void postConfigurationChangedEvent() {
+		postEvent(Constants.EVENT_TOPIC_CONFIGURATION_CHANGED, null);
 	}
 
 	private void postEvent(String topic, Map<String, Object> props) {
@@ -425,6 +431,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				postChargeSessionStateEvent(session, false, meterReading);
 				postStatusNotification(ChargePointStatus.AVAILABLE, connectorId, now);
 				resumeReadingsForSocket(socketId, socketLock);
+				postConfigurationChangedEvent();
 			}
 		}
 	}

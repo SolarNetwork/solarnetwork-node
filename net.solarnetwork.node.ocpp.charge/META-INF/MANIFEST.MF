@@ -6,7 +6,7 @@ Bundle-Version: 0.4.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.node;version="1.17.0",
+ net.solarnetwork.node;version="1.19.0",
  net.solarnetwork.node.domain;version="1.4.0",
  net.solarnetwork.node.job;version="1.12.0",
  net.solarnetwork.node.ocpp;version="0.3.0",
