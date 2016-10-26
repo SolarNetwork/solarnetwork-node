@@ -47,6 +47,7 @@
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<array value-type="java.lang.String">
 					<value>net/solarnetwork/node/ocpp/*</value>
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
 				</array>
 			</entry>
 		</osgi:service-properties>

@@ -27,9 +27,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,6 +66,7 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.DynamicServiceUnavailableException;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.ReadingContext;
 
@@ -99,7 +104,14 @@ public class DefaultKioskDataService
 	// a cache of socket ID -> data source for meter data
 	private final Map<String, DatumDataSource<ACEnergyDatum>> socketMeterDataSources;
 
+	// last seen PV generation power, by source ID
+	private final ConcurrentMap<String, AtomicInteger> pvPowerMap;
+
+	// pv data
+	private final Map<String, Object> pvDataMap;
+
 	private List<SocketConfiguration> socketConfigurations;
+	private Set<String> pvSourceIdSet;
 	private Collection<DatumDataSource<ACEnergyDatum>> meterDataSources;
 	private ChargeSessionManager chargeSessionManager;
 	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
@@ -112,11 +124,17 @@ public class DefaultKioskDataService
 
 	public DefaultKioskDataService() {
 		super();
-		kioskData = new ConcurrentHashMap<String, Object>(8);
 		socketMeterDataSources = new HashMap<String, DatumDataSource<ACEnergyDatum>>(2);
 		socketDataMap = new ConcurrentHashMap<String, Map<String, Object>>(2);
-		kioskData.put("socketData", socketDataMap);
 		socketConfigurations = new ArrayList<SocketConfiguration>(2);
+		pvSourceIdSet = new LinkedHashSet<String>(1);
+		pvPowerMap = new ConcurrentHashMap<String, AtomicInteger>(2);
+		pvDataMap = new HashMap<String, Object>(2);
+		pvDataMap.put("power", new AtomicInteger(0));
+		Map<String, Object> kData = new LinkedHashMap<String, Object>(8);
+		kData.put("socketData", socketDataMap);
+		kData.put("pvData", pvDataMap);
+		kioskData = Collections.unmodifiableMap(kData);
 	}
 
 	@Override
@@ -174,6 +192,8 @@ public class DefaultKioskDataService
 		if ( topic.equals(ChargeSessionManager.EVENT_TOPIC_SESSION_STARTED)
 				|| topic.equals(ChargeSessionManager.EVENT_TOPIC_SESSION_ENDED) ) {
 			handleSessionEvent(event);
+		} else if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
+			handleDatumCapturedEvent(event);
 		}
 	}
 
@@ -229,6 +249,31 @@ public class DefaultKioskDataService
 		postMessage(MESSAGE_TOPIC_KIOSK_DATA, kioskData);
 		if ( !sessionStarted ) {
 			socketDataMap.remove(socketKey);
+		}
+	}
+
+	private void handleDatumCapturedEvent(Event event) {
+		final Object sourceIdObj = event.getProperty("sourceId");
+		if ( sourceIdObj == null ) {
+			return;
+		}
+		String sourceId = sourceIdObj.toString();
+		if ( !pvSourceIdSet.contains(sourceId) ) {
+			return;
+		}
+		Object powerObj = event.getProperty("watts");
+		if ( !(powerObj instanceof Number) ) {
+			return;
+		}
+		Number power = (Number) powerObj;
+		AtomicInteger currPower = pvPowerMap.get(sourceId);
+		if ( currPower != null ) {
+			currPower.set(power.intValue());
+		} else {
+			currPower = pvPowerMap.putIfAbsent(sourceId, new AtomicInteger(power.intValue()));
+			if ( currPower != null ) {
+				currPower.set(power.intValue());
+			}
 		}
 	}
 
@@ -319,6 +364,21 @@ public class DefaultKioskDataService
 
 	@Override
 	public void refreshKioskData() {
+		refreshKioskPvData();
+		refreshKioskSocketData();
+		postMessage(MESSAGE_TOPIC_KIOSK_DATA, kioskData);
+	}
+
+	private void refreshKioskPvData() {
+		int totalPower = 0;
+		for ( AtomicInteger p : pvPowerMap.values() ) {
+			totalPower += p.get();
+		}
+		AtomicInteger total = (AtomicInteger) pvDataMap.get("power");
+		total.set(totalPower);
+	}
+
+	private void refreshKioskSocketData() {
 		if ( socketConfigurations == null || socketConfigurations.isEmpty() ) {
 			return;
 		}
@@ -359,7 +419,6 @@ public class DefaultKioskDataService
 			if ( meterData != null ) {
 				updateSessionData(sessionData, meterData.getWatts(), meterData.getWattHourReading(),
 						null);
-				postMessage(MESSAGE_TOPIC_KIOSK_DATA, kioskData);
 			}
 		}
 	}
@@ -457,6 +516,7 @@ public class DefaultKioskDataService
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
 		results.add(new BasicTextFieldSettingSpecifier(
 				"filterableChargeSessionManager.propertyFilters['UID']", "OCPP Central System"));
+		results.add(new BasicTextFieldSettingSpecifier("pvSourceIds", ""));
 
 		// dynamic list of SocketConfiguration
 		Collection<SocketConfiguration> socketConfs = getSocketConfigurations();
@@ -552,6 +612,34 @@ public class DefaultKioskDataService
 
 	public void setScheduler(Scheduler scheduler) {
 		this.scheduler = scheduler;
+	}
+
+	public Set<String> getPvSourceIdSet() {
+		return pvSourceIdSet;
+	}
+
+	public void setPvSourceIdSet(Set<String> pvSourceIdSet) {
+		this.pvSourceIdSet = pvSourceIdSet;
+	}
+
+	/**
+	 * Get the {@code pvSourceIdSet} as a comma-delimited string.
+	 * 
+	 * @return The {@link #getPvSourceIdSet()} as a delimited string.
+	 */
+	public String getPvSourceIds() {
+		return StringUtils.commaDelimitedStringFromCollection(this.pvSourceIdSet);
+	}
+
+	/**
+	 * Set the {@code pvSourceIdSet} from a comma-delimited string.
+	 * 
+	 * @param value
+	 *        A comma-delimited string to parse and pass to
+	 *        {@link #setPvSourceIdSet(Set)}.
+	 */
+	public void setPvSourceIds(String value) {
+		this.pvSourceIdSet = StringUtils.commaDelimitedStringToSet(value);
 	}
 
 }
