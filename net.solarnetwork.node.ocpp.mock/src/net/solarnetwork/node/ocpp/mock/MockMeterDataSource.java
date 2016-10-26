@@ -105,21 +105,21 @@ public class MockMeterDataSource implements DatumDataSource<GeneralNodeACEnergyD
 			} else {
 				double diffHours = ((newSample.getCreated().getTime()
 						- currSample.getCreated().getTime()) / (double) (1000 * 60 * 60));
-				double watts;
+				double power;
 				if ( charging ) {
-					watts = 2400;
+					power = chargingWatts;
 				} else {
 					// we expect very little draw (ideally 0, but let's allow for a little)
-					watts = 5;
+					power = watts;
 				}
-				watts += (watts
+				power += (power
 						* (Math.random() * (charging ? chargingWattsRandomness : wattsRandomness))
 						* (Math.random() < 0.5 ? -1 : 1));
-				long wh = (long) (watts * diffHours);
+				long wh = (long) (power * diffHours);
 				long newWh = currSample.getWattHourReading() + wh;
 				if ( mockMeter.compareAndSet(currSample.getWattHourReading(), newWh) ) {
 					newSample.setWattHourReading(newWh);
-					newSample.setWatts((int) watts);
+					newSample.setWatts((int) power);
 				} else {
 					newSample.setWattHourReading(currSample.getWattHourReading());
 				}
