@@ -101,7 +101,7 @@ var OCPPKiosk = (function(document, window) {
 	
 			xhr.send(req.body);
 		});
-	  }
+	}
 
 	function formatPower(power) {
 		var k = (Number.isFinite(power) ? power : 0) / 1000;
@@ -238,7 +238,7 @@ var OCPPKiosk = (function(document, window) {
 			var url = 'ws://' +document.location.host +'/ws';
 			var socket = new WebSocket(url);
 			var client = Stomp.over(socket);
-			//client.debug = null;
+			client.debug = null;
 			var headers = {};
 			headers[csrf.headerName] = csrf.token;
 			client.connect(headers, function(frame) {
