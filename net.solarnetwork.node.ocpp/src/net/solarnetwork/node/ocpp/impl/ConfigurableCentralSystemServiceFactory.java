@@ -107,22 +107,30 @@ public class ConfigurableCentralSystemServiceFactory
 	@Override
 	public CentralSystemService service() {
 		CentralSystemService client = getServiceInternal();
-		synchronized ( this ) {
-			if ( bootNotificationResponse == null ) {
-				try {
-					postBootNotification();
-				} catch ( RuntimeException e ) {
-					bootNotificationError = e;
-					if ( log.isDebugEnabled() ) {
-						log.debug("Error posting BootNotification message to {}", url, e);
-					} else {
-						log.warn("Error posting BootNotification message to {}: {}", url,
-								e.getMessage());
-					}
+		postBootNotificationIfNeeded();
+		configureHeartbeatIfNeeded();
+		return client;
+	}
+
+	private synchronized void postBootNotificationIfNeeded() {
+		if ( bootNotificationResponse == null ) {
+			try {
+				postBootNotification();
+			} catch ( RuntimeException e ) {
+				bootNotificationError = e;
+				if ( log.isDebugEnabled() ) {
+					log.debug("Error posting BootNotification message to {}", url, e);
+				} else {
+					log.warn("Error posting BootNotification message to {}: {}", url, e.getMessage());
 				}
 			}
 		}
-		return client;
+	}
+
+	private synchronized void configureHeartbeatIfNeeded() {
+		if ( heartbeatTrigger == null ) {
+			configureHeartbeat(30, 1);
+		}
 	}
 
 	/**
@@ -131,7 +139,8 @@ public class ConfigurableCentralSystemServiceFactory
 	 */
 	public void startup() {
 		log.info("Starting up OCPP service {}", url);
-		configureHeartbeat(30, 1);
+		postBootNotificationIfNeeded();
+		configureHeartbeatIfNeeded();
 	}
 
 	/**
@@ -341,9 +350,11 @@ public class ConfigurableCentralSystemServiceFactory
 				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
 						.startAt(new Date(System.currentTimeMillis() + repeatInterval))
 						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
-						.withSchedule(SimpleScheduleBuilder
-								.repeatMinutelyForTotalCount(repeatCount, heartbeatInterval)
-								.withMisfireHandlingInstructionNextWithExistingCount())
+						.withSchedule((repeatCount < 1
+								? SimpleScheduleBuilder.repeatMinutelyForever(heartbeatInterval)
+								: SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
+										heartbeatInterval))
+												.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
