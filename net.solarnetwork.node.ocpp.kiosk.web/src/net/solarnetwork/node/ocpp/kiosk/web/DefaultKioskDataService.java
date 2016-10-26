@@ -52,6 +52,7 @@ import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
@@ -117,6 +118,7 @@ public class DefaultKioskDataService
 	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
 	private Scheduler scheduler;
 	private MessageSource messageSource;
+	private TaskExecutor taskExecutor;
 	private SimpleTrigger refreshKioskDataTrigger;
 	private final AtomicBoolean sessionDataRefreshNeeded = new AtomicBoolean(true);
 
@@ -175,7 +177,7 @@ public class DefaultKioskDataService
 			} catch ( DynamicServiceUnavailableException e ) {
 				// refresh again later (via refreshKioskData} in case the OCPP service was not yet available at startup
 				sessionDataRefreshNeeded.set(true);
-				throw e;
+				return;
 			}
 		}
 		sessionDataRefreshNeeded.set(false);
@@ -187,7 +189,23 @@ public class DefaultKioskDataService
 	}
 
 	@Override
-	public void handleEvent(Event event) {
+	public void handleEvent(final Event event) {
+		// use the task executor if available, to avoid being blacklisted
+		TaskExecutor executor = taskExecutor;
+		if ( executor != null ) {
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					handleEventInternal(event);
+				}
+			});
+		} else {
+			handleEventInternal(event);
+		}
+	}
+
+	private void handleEventInternal(Event event) {
 		final String topic = event.getTopic();
 		if ( topic.equals(ChargeSessionManager.EVENT_TOPIC_SESSION_STARTED)
 				|| topic.equals(ChargeSessionManager.EVENT_TOPIC_SESSION_ENDED) ) {
@@ -640,6 +658,16 @@ public class DefaultKioskDataService
 	 */
 	public void setPvSourceIds(String value) {
 		this.pvSourceIdSet = StringUtils.commaDelimitedStringToSet(value);
+	}
+
+	/**
+	 * Set a {@link TaskExecutor} to handle asynchronous operations with.
+	 * 
+	 * @param taskExecutor
+	 *        The task executor.
+	 */
+	public void setTaskExecutor(TaskExecutor taskExecutor) {
+		this.taskExecutor = taskExecutor;
 	}
 
 }

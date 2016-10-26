@@ -57,6 +57,7 @@ Import-Package:
  org.springframework.core;version="[4.2,5.0)",
  org.springframework.core.io;version="[4.2,5.0)",
  org.springframework.core.io.support;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
  org.springframework.http;version="[4.2,5.0)",
  org.springframework.http.converter.json;version="[4.2,5.0)",
  org.springframework.messaging;version="4.2.6.RELEASE",

@@ -50,6 +50,7 @@
 		<property name="chargeSessionManager" ref="chargeSessionManager"/>
 		<property name="meterDataSources" ref="meterDataSources"/>
 		<property name="messageSource" ref="messageSource"/>
+		<property name="taskExecutor" ref="taskExecutor"/>
 	</bean>
 	
 </beans>

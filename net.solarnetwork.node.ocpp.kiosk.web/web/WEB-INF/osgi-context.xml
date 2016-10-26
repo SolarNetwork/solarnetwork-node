@@ -21,6 +21,10 @@
 	<osgi:list id="meterDataSources" availability="optional"
 		interface="net.solarnetwork.node.DatumDataSource"
 		filter="(datumClassName=net.solarnetwork.node.domain.ACEnergyDatum)"/>
+		
+	<osgi:reference id="taskExecutor"
+		interface="org.springframework.core.task.TaskExecutor"
+		filter="(function=node)"/>
 
 	<bean id="chargeSessionManager" class="net.solarnetwork.util.DynamicServiceProxy">
 		<property name="bundleContext" ref="bundleContext"/>
