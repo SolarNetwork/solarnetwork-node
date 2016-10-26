@@ -240,10 +240,8 @@ public class DefaultKioskDataService
 			return;
 		}
 		Map<String, Object> sessionData = socketDataMap.get(socketKey);
-		if ( sessionData == null ) {
+		if ( sessionStarted && sessionData == null ) {
 			sessionData = new HashMap<String, Object>(8);
-		}
-		if ( sessionStarted ) {
 			sessionData.put("sessionId", sessionId);
 			sessionData.put("socketId", socketId);
 			Number n = (Number) event.getProperty(ChargeSessionManager.EVENT_PROPERTY_DATE);
@@ -258,7 +256,7 @@ public class DefaultKioskDataService
 			sessionData.put("energy", new AtomicInteger(0));
 			sessionData.put("endDate", new AtomicLong(0));
 			socketDataMap.put(socketKey, Collections.unmodifiableMap(sessionData));
-		} else {
+		} else if ( sessionData != null ) {
 			updateSessionData(sessionData,
 					(Number) event.getProperty(ChargeSessionManager.EVENT_PROPERTY_METER_READING_POWER),
 					(Number) event.getProperty(ChargeSessionManager.EVENT_PROPERTY_METER_READING_ENERGY),
