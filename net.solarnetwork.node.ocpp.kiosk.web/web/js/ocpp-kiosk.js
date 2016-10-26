@@ -1,3 +1,23 @@
+// first, some polyfill for older WebKit (from MDN)
+
+Number.isFinite = Number.isFinite || function(value) {
+	return typeof value === 'number' && isFinite(value);
+};
+
+if (!String.prototype.endsWith) {
+  String.prototype.endsWith = function(searchString, position) {
+      var subjectString = this.toString();
+      if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+        position = subjectString.length;
+      }
+      position -= searchString.length;
+      var lastIndex = subjectString.lastIndexOf(searchString, position);
+      return lastIndex !== -1 && lastIndex === position;
+  };
+}
+
+// end polyfill
+
 var OCPPKiosk = (function(document, window) {
 	'use strict';
 	
@@ -165,7 +185,7 @@ var OCPPKiosk = (function(document, window) {
 	}
 	
 	function processKioskDataUpdate(data) {
-		console.log('Got kisok data: %s', JSON.stringify(data));
+		console.log('Got kisok data: ' +JSON.stringify(data));
 		var key, 
 			pvProd = 0,
 			gridDraw = 0,
