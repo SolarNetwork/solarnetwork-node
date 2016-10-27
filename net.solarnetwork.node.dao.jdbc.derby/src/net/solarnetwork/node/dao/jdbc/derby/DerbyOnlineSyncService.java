@@ -51,6 +51,7 @@ import org.springframework.jdbc.core.CallableStatementCallback;
 import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.SetupService;
 
@@ -79,12 +80,12 @@ import net.solarnetwork.node.setup.SetupService;
  * value of the {@code destinationPath} property.</dd>
  * 
  * <dt>destinationPath</dt>
- * <dd>The path to perform the backup sync to. Defaults to {@code /var/tmp}</dd>
- * .
+ * <dd>The path to perform the backup sync to. Defaults to
+ * {@code /var/tmp}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DerbyOnlineSyncService implements EventHandler {
 
@@ -135,8 +136,9 @@ public class DerbyOnlineSyncService implements EventHandler {
 	 * Listen for events to automatically trigger a database sync.
 	 * 
 	 * The {@link SetupService#TOPIC_NETWORK_ASSOCIATION_ACCEPTED} and
-	 * {@link SettingDao#EVENT_TOPIC_SETTING_CHANGED} event topics are handled,
-	 * and will cause a sync to be scheduled in the "near future".
+	 * {@link SettingDao#EVENT_TOPIC_SETTING_CHANGED} and
+	 * {@link Constants#EVENT_TOPIC_CONFIGURATION_CHANGED} event topics are
+	 * handled, and will cause a sync to be scheduled in the "near future".
 	 */
 	@Override
 	public void handleEvent(Event event) {
@@ -146,6 +148,9 @@ public class DerbyOnlineSyncService implements EventHandler {
 			syncSoon();
 		} else if ( SettingDao.EVENT_TOPIC_SETTING_CHANGED.equals(event.getTopic()) ) {
 			log.info("Scheduling database backup sync after setting change event.");
+			syncSoon();
+		} else if ( Constants.EVENT_TOPIC_CONFIGURATION_CHANGED.equals(event.getTopic()) ) {
+			log.info("Scheduling database backup sync after configuration change event.");
 			syncSoon();
 		}
 	}

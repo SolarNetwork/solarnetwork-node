@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OCPP RFID Charge Session Manager
 Bundle-Description: Manage OCPP charge sessions via RFID card scans.
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge.rfid
-Bundle-Version: 1.2.0
+Bundle-Version: 1.2.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

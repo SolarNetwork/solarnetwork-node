@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.eclipse.org/gemini/blueprint/schema/blueprint"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd">
+
+	<osgi:reference id="messageSendingOperations"
+		interface="org.springframework.messaging.simp.SimpMessageSendingOperations"
+		filter="(channel=broker)"/>
+		
+	<osgi:reference id="objectMapperService" 
+		interface="net.solarnetwork.util.ObjectMapperService"
+		filter="(function=node)"/>
+	
+	<osgi:reference id="scheduler" interface="org.quartz.Scheduler"/>
+	
+	<osgi:list id="meterDataSources" availability="optional"
+		interface="net.solarnetwork.node.DatumDataSource"
+		filter="(datumClassName=net.solarnetwork.node.domain.ACEnergyDatum)"/>
+		
+	<osgi:reference id="taskExecutor"
+		interface="org.springframework.core.task.TaskExecutor"
+		filter="(function=node)"/>
+
+	<bean id="chargeSessionManager" class="net.solarnetwork.util.DynamicServiceProxy">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClass" value="net.solarnetwork.node.ocpp.ChargeSessionManager"/>
+		<property name="propertyFilters">
+			<map>
+				<entry key="UID" value="OCPP Central System"/>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="messageSendingOps" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.messaging.simp.SimpMessageSendingOperations"/>
+		<property name="serviceFilter" value="(channel=broker)"/>
+	</bean>
+	
+	<osgi:service ref="kioskDataService">
+		<osgi:interfaces>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>org.osgi.service.event.EventHandler</value>
+		</osgi:interfaces>
+		<osgi:service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>net/solarnetwork/node/ocpp/*</value>
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+		</osgi:service-properties>
+	</osgi:service>
+	
+</beans>

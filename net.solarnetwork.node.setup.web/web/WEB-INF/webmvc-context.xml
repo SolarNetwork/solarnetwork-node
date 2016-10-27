@@ -34,6 +34,9 @@
 				<property name="objectMapper" ref="objectMapper"/>
 		    </bean>
 		</mvc:message-converters>
+		<mvc:argument-resolvers>
+    		<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
+		</mvc:argument-resolvers>
 	</mvc:annotation-driven>
 	
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
