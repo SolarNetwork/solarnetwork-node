@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="base-path" content="/ocpp-kiosk">
+	<meta name="viewport" content="width=640,height=480">
+	<link type="text/css" rel="stylesheet" href="css/ocpp-kiosk.css">
+</head>
+<body>
+	<img id="ocpp-state" src="img/Off.png">
+	<div id="pv-status" class="status">
+		<div id="pv-power" class="heading">0</div>
+		<div class="unit">kW</div>
+	</div>
+	<div id="grid-status" class="status">
+		<div id="grid-power" class="heading">0</div>
+		<div class="unit">kW</div>
+	</div>
+	<div id="socket-status-a" class="socket-status">
+		<div id="socket-power-a" class="heading">0</div>
+		<div class="unit">kW</div>
+		<div class="session vbox">
+			<div class="energy">
+				<span class="value" id="socket-energy-a">0</span><span class="unit">kWh</span>
+			</div>
+			<div class="duration">
+				<span class="value" id="socket-duration-a">0</span><span class="unit" id="socket-duration-unit-a">min</span>
+			</div>
+		</div>
+	</div>
+	<div id="socket-status-b" class="socket-status">
+		<div id="socket-power-b" class="heading">0</div>
+		<div class="unit">kW</div>
+		<div class="session vbox">
+			<div class="energy">
+				<span class="value" id="socket-energy-b">0</span><span class="unit">kWh</span>
+			</div>
+			<div class="duration">
+				<span class="value" id="socket-duration-b">0</span><span class="unit" id="socket-duration-unit-b">min</span>
+			</div>
+		</div>
+	</div>
+	<script src="js-lib/stomp.min.js"></script>
+	<script src="js/ocpp-kiosk.js"></script>
+</body>
+</html>

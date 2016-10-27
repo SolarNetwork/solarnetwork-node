@@ -1,0 +1,28 @@
+{
+  "pvData" : {
+    "power" : 3200,
+    "energy" : 498952
+  },
+  "socketData": {
+    "A": {
+      "duration": 97348579,
+      "endDate": 0,
+      "energy": 204,
+      "energyStart": 3583157,
+      "power": 3000,
+      "sessionId": "39fe6f51-8eb3-4256-aab4-0f44893bf2ce",
+      "socketId": "/socket/mock/1",
+      "startDate": 1477292190136
+    },
+    "B": {
+      "duration": 60970,
+      "endDate": 0,
+      "energy": 2834,
+      "energyStart": 3583157,
+      "power": 200,
+      "sessionId": "39fe6f51-8eb3-4256-aab4-0f44893bf2ce",
+      "socketId": "/socket/mock/1",
+      "startDate": 1477292190136
+    }
+  }
+}

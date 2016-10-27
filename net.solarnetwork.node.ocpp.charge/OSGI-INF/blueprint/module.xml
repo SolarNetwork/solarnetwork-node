@@ -24,6 +24,11 @@
 	<reference id="chargeSessionDao" interface="net.solarnetwork.node.ocpp.ChargeSessionDao"/>
 	
 	<reference id="socketDao" interface="net.solarnetwork.node.ocpp.SocketDao"/>
+
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -59,6 +64,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.ocpp.charge.ChargeSessionManager_v15" init-method="startup" destroy-method="shutdown">
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="chargeSessionDao" ref="chargeSessionDao"/>
 			<property name="socketDao" ref="socketDao"/>
 			<property name="scheduler" ref="scheduler"/>
@@ -92,7 +98,7 @@
 					<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.ACEnergyDatum)"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="UID" value="OCPP Meter"/>
+							<entry key="groupUID" value="OCPP Meter"/>
 						</map>
 					</property>
 				</bean>

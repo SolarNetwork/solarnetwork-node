@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Collection;
+import java.util.List;
 import net.solarnetwork.node.Identifiable;
 
 /**
@@ -33,7 +34,7 @@ import net.solarnetwork.node.Identifiable;
  * and finally confirming that charging is complete.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface ChargeSessionManager extends Identifiable {
 
@@ -52,9 +53,62 @@ public interface ChargeSessionManager extends Identifiable {
 	String EVENT_TOPIC_SOCKET_DEACTIVATED = "net/solarnetwork/node/ocpp/SOCKET_DEACTIVATED";
 
 	/**
+	 * The EventAdmin topic used to post events when a charge session has been
+	 * initiated.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_TOPIC_SESSION_STARTED = "net/solarnetwork/node/ocpp/SESSION_STARTED";
+
+	/**
+	 * The EventAdmin topic used to post events when a charge session has ended.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_TOPIC_SESSION_ENDED = "net/solarnetwork/node/ocpp/SESSION_ENDED";
+
+	/**
+	 * The EventAdmin topic used to post events for captured meter reading data
+	 * related to a charge session.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_TOPIC_SESSION_METER_READING = "net/solarnetwork/node/ocpp/METER_READING";
+
+	/**
 	 * The Event property used to convey a String socket ID.
 	 */
 	String EVENT_PROPERTY_SOCKET_ID = "socketId";
+
+	/**
+	 * The Event property used to convey a String charge session ID.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_PROPERTY_SESSION_ID = "sessionId";
+
+	/**
+	 * The Event property used to convey a date expressed as an epoch Long.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_PROPERTY_DATE = "date";
+
+	/**
+	 * The Event property used to convey a Number instantaneous power reading,
+	 * in watts.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_PROPERTY_METER_READING_POWER = "power";
+
+	/**
+	 * The Event property used to convey a Number instantaneous energy reading,
+	 * in watt hours.
+	 * 
+	 * @since 1.1
+	 */
+	String EVENT_PROPERTY_METER_READING_ENERGY = "energy";
 
 	/**
 	 * Initiate a new charge session.
@@ -86,6 +140,16 @@ public interface ChargeSessionManager extends Identifiable {
 	 *         charge session for the given socket ID.
 	 */
 	ChargeSession activeChargeSession(String socketId);
+
+	/**
+	 * Get all available meter readings for a charge session.
+	 * 
+	 * @param sessionId
+	 *        The ID of the charge session to get meter readings for.
+	 * @return The meter reading, or {@code null} if none available.
+	 * @since 1.1
+	 */
+	List<ChargeSessionMeterReading> meterReadingsForChargeSession(String sessionId);
 
 	/**
 	 * Get an <em>active</em> charge session for an OCPP transaction ID, if

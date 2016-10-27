@@ -23,6 +23,11 @@
 		</property>
 	</bean>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -45,6 +50,7 @@
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.jf2.lata.LATAController">
 			<property name="messageSource" ref="messageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="serialNetwork">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>

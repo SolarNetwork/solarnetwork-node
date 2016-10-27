@@ -11,7 +11,7 @@
 
 	<websocket:message-broker application-destination-prefix="/app">
 		<websocket:stomp-endpoint path="/ws"/>
-		<websocket:simple-broker prefix="/topic, /queue"/>
+		<websocket:simple-broker prefix="/topic, /queue, /pub/topic, /pub/queue"/>
 		<websocket:message-converters register-defaults="true">
 			<bean class="org.springframework.messaging.converter.MappingJackson2MessageConverter">
 				<property name="objectMapper" ref="objectMapper"/>

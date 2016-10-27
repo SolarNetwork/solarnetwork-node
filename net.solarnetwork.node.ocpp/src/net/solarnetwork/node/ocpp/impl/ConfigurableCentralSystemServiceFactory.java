@@ -69,7 +69,7 @@ import ocpp.v15.support.WSAddressingFromHandler;
  * the service.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ConfigurableCentralSystemServiceFactory
 		implements CentralSystemServiceFactory, SettingSpecifierProvider {
@@ -107,22 +107,30 @@ public class ConfigurableCentralSystemServiceFactory
 	@Override
 	public CentralSystemService service() {
 		CentralSystemService client = getServiceInternal();
-		synchronized ( this ) {
-			if ( bootNotificationResponse == null ) {
-				try {
-					postBootNotification();
-				} catch ( RuntimeException e ) {
-					bootNotificationError = e;
-					if ( log.isDebugEnabled() ) {
-						log.debug("Error posting BootNotification message to {}", url, e);
-					} else {
-						log.warn("Error posting BootNotification message to {}: {}", url,
-								e.getMessage());
-					}
+		postBootNotificationIfNeeded();
+		configureHeartbeatIfNeeded();
+		return client;
+	}
+
+	private synchronized void postBootNotificationIfNeeded() {
+		if ( bootNotificationResponse == null ) {
+			try {
+				postBootNotification();
+			} catch ( RuntimeException e ) {
+				bootNotificationError = e;
+				if ( log.isDebugEnabled() ) {
+					log.debug("Error posting BootNotification message to {}", url, e);
+				} else {
+					log.warn("Error posting BootNotification message to {}: {}", url, e.getMessage());
 				}
 			}
 		}
-		return client;
+	}
+
+	private synchronized void configureHeartbeatIfNeeded() {
+		if ( heartbeatTrigger == null ) {
+			configureHeartbeat(30, 1);
+		}
 	}
 
 	/**
@@ -131,7 +139,8 @@ public class ConfigurableCentralSystemServiceFactory
 	 */
 	public void startup() {
 		log.info("Starting up OCPP service {}", url);
-		configureHeartbeat(30, 1);
+		postBootNotificationIfNeeded();
+		configureHeartbeatIfNeeded();
 	}
 
 	/**
@@ -157,7 +166,7 @@ public class ConfigurableCentralSystemServiceFactory
 			setupFromHandler(client, useFromAddress);
 			service = client;
 		}
-		return service;
+		return result;
 	}
 
 	private void setupFromHandler(final CentralSystemService client, final boolean use) {
@@ -245,7 +254,7 @@ public class ConfigurableCentralSystemServiceFactory
 		}
 		CentralSystemService client = getServiceInternal();
 		if ( client == null ) {
-			log.debug("Node ID not available; cannot post BootNotification");
+			log.debug("CentralSystemService not available; cannot post BootNotification");
 			return false;
 		}
 		synchronized ( this ) {
@@ -309,15 +318,18 @@ public class ConfigurableCentralSystemServiceFactory
 				}
 			} else {
 				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
-						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
-								heartbeatInterval))
+						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
+						.withSchedule(repeatCount < 1
+								? SimpleScheduleBuilder.repeatSecondlyForever(heartbeatInterval)
+								: SimpleScheduleBuilder.repeatSecondlyForTotalCount(repeatCount,
+										heartbeatInterval))
 						.build();
 				try {
 					sched.rescheduleJob(trigger.getKey(), trigger);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP heartbeat job", e);
 				} finally {
-					heartbeatTrigger = null;
+					heartbeatTrigger = trigger;
 				}
 			}
 			return true;
@@ -338,9 +350,11 @@ public class ConfigurableCentralSystemServiceFactory
 				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
 						.startAt(new Date(System.currentTimeMillis() + repeatInterval))
 						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
-						.withSchedule(SimpleScheduleBuilder
-								.repeatMinutelyForTotalCount(repeatCount, heartbeatInterval)
-								.withMisfireHandlingInstructionNextWithExistingCount())
+						.withSchedule((repeatCount < 1
+								? SimpleScheduleBuilder.repeatMinutelyForever(heartbeatInterval)
+								: SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
+										heartbeatInterval))
+												.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
 				sched.scheduleJob(trigger);
 				heartbeatTrigger = trigger;
