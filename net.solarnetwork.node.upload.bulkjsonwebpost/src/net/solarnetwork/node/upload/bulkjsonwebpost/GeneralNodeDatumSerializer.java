@@ -23,21 +23,26 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import java.util.List;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
  * Serialize {@link GeneralNodeDatum} to JSON. The {@link GeneralLocationDatum}
  * is also supported.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum> {
+
+	private List<GeneralDatumSamplesTransformer> sampleTransformers;
 
 	/**
 	 * Default constructor.
@@ -56,8 +61,28 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 			generator.writeNumberField("locationId", loc.getLocationId());
 		}
 		generator.writeStringField("sourceId", datum.getSourceId());
-		generator.writeObjectField("samples", datum.getSamples());
+
+		GeneralDatumSamples samples = datum.getSamples();
+		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
+		if ( samples != null && xforms != null ) {
+			for ( GeneralDatumSamplesTransformer xform : xforms ) {
+				samples = xform.transformSamples(datum, samples);
+			}
+		}
+		generator.writeObjectField("samples", samples);
 		generator.writeEndObject();
+	}
+
+	/**
+	 * Set a list of sample transformers to apply when serializing.
+	 * 
+	 * @param sampleTransformers
+	 *        The sample transformers to apply.
+	 * @since 1.2
+	 */
+	public void setSampleTransformers(
+			List<net.solarnetwork.node.domain.GeneralDatumSamplesTransformer> sampleTransformers) {
+		this.sampleTransformers = sampleTransformers;
 	}
 
 }
