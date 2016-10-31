@@ -166,6 +166,10 @@ pre.pre-scrollable {
 	margin-left: 1em;
 }
 
+#settings .popover {
+	min-width: 240px;
+}
+
 #weather-lookup-modal {
 	width: 700px;
 	margin-left: -350px;
