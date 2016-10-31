@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -78,41 +80,36 @@ public class SimpleFilterSampleTransformer
 		// handle property inclusion rules
 		Pattern[] incs = this.includePatterns;
 		if ( incs != null && incs.length > 0 ) {
-			for ( Pattern pat : incs ) {
-				if ( pat == null ) {
-					continue;
-				}
-				Map<String, ?> map = samples.getAccumulating();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && !pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getAccumulating().remove(propName);
+			Map<String, ?> map = samples.getAccumulating();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( !matchesAny(incs, propName, true) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getAccumulating().remove(propName);
 					}
 				}
-				map = samples.getInstantaneous();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && !pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getInstantaneous().remove(propName);
+			}
+			map = samples.getInstantaneous();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( !matchesAny(incs, propName, true) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getInstantaneous().remove(propName);
 					}
 				}
-				map = samples.getStatus();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && !pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getStatus().remove(propName);
+			}
+			map = samples.getStatus();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( !matchesAny(incs, propName, true) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getStatus().remove(propName);
 					}
 				}
 			}
@@ -121,48 +118,45 @@ public class SimpleFilterSampleTransformer
 		// handle property exclusion rules
 		Pattern[] excs = this.excludePatterns;
 		if ( excs != null && excs.length > 0 ) {
-			for ( Pattern pat : excs ) {
-				if ( pat == null ) {
-					continue;
-				}
-				Map<String, ?> map = samples.getAccumulating();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getAccumulating().remove(propName);
+			Map<String, ?> map = samples.getAccumulating();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( matchesAny(excs, propName, false) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getAccumulating().remove(propName);
 					}
 				}
-				map = samples.getInstantaneous();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getInstantaneous().remove(propName);
+			}
+			map = samples.getInstantaneous();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( matchesAny(excs, propName, false) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getInstantaneous().remove(propName);
 					}
 				}
-				map = samples.getStatus();
-				if ( map != null ) {
-					for ( String propName : map.keySet() ) {
-						if ( propName != null && pat.matcher(propName).find() ) {
-							if ( copy == null ) {
-								copy = copy(samples);
-							}
-							copy.getStatus().remove(propName);
+			}
+			map = samples.getStatus();
+			if ( map != null ) {
+				for ( String propName : map.keySet() ) {
+					if ( matchesAny(excs, propName, false) ) {
+						if ( copy == null ) {
+							copy = copy(samples);
 						}
+						copy.getStatus().remove(propName);
 					}
 				}
 			}
 		}
 
 		// tidy up any empty maps we created during filtering
-		if ( copy != null ) {
+		if ( copy != null )
+
+		{
 			if ( copy.getAccumulating() != null && copy.getAccumulating().isEmpty() ) {
 				copy.setAccumulating(null);
 			}
@@ -175,6 +169,25 @@ public class SimpleFilterSampleTransformer
 		}
 
 		return (copy != null ? copy : samples);
+	}
+
+	private boolean matchesAny(final Pattern[] pats, final String value,
+			final boolean emptyPatternMatches) {
+		if ( pats == null || pats.length < 1 || value == null ) {
+			return true;
+		}
+		for ( Pattern pat : pats ) {
+			if ( pat == null ) {
+				if ( emptyPatternMatches ) {
+					return true;
+				}
+				continue;
+			}
+			if ( pat.matcher(value).find() ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	private static GeneralDatumSamples copy(GeneralDatumSamples samples) {
