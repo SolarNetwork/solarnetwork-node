@@ -40,6 +40,7 @@ body {
 	padding: 0;
 	background-color: #ccc;
 	font-family: Assistant, sans-serif;
+	overflow: hidden;
 }
 
 div.hbox {
