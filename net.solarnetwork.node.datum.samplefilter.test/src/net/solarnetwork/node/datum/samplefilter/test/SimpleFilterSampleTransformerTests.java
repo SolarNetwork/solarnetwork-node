@@ -153,4 +153,29 @@ public class SimpleFilterSampleTransformerTests {
 		assertSame("Sample sample instance", datum.getSamples(), result);
 	}
 
+	@Test
+	public void testNoMatchingIncludes() {
+		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		xform.setSourceId("^test");
+		xform.setIncludes(new String[] { "^foo" });
+		xform.init();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertNotSame("New sample instance", datum.getSamples(), result);
+		assertNull("All accumulating filtered", result.getAccumulating());
+		assertNull("All instantaneous filtered", result.getInstantaneous());
+		assertNull("All status filtered", result.getStatus());
+	}
+
+	@Test
+	public void testNoMatchingExcludes() {
+		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		xform.setSourceId("^test");
+		xform.setExcludes(new String[] { "^foo" });
+		xform.init();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertSame("Sample sample instance", datum.getSamples(), result);
+	}
+
 }
