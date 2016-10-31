@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.samplefilter.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer;
@@ -121,6 +122,35 @@ public class SimpleFilterSampleTransformerTests {
 				result.getInstantaneousSampleDouble(PROP_FREQUENCY));
 		assertNull("Watt hours filtered", result.getAccumulatingSampleLong(PROP_WATTHOURS));
 		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
+	}
+
+	@Test
+	public void testIncludeAndExclude() {
+		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		xform.setSourceId("^test");
+		xform.setIncludes(new String[] { "^watt" });
+		xform.setExcludes(new String[] { "^watts$" });
+		xform.init();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertNotSame("New sample instance", datum.getSamples(), result);
+		assertNull("Watts filtered", result.getInstantaneousSampleDouble(PROP_WATTS));
+		assertNull("Frequency filtered", result.getInstantaneousSampleDouble(PROP_FREQUENCY));
+		assertEquals("Watt hours", datum.getSamples().getAccumulatingSampleLong(PROP_WATTHOURS),
+				result.getAccumulatingSampleLong(PROP_WATTHOURS));
+		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
+	}
+
+	@Test
+	public void testNonMatchingSourceId() {
+		GeneralNodeDatum datum = createTestGeneralNodeDatum("other.source");
+		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		xform.setSourceId("^test");
+		xform.setIncludes(new String[] { "^watt" });
+		xform.setExcludes(new String[] { "^watts$" });
+		xform.init();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertSame("Sample sample instance", datum.getSamples(), result);
 	}
 
 }
