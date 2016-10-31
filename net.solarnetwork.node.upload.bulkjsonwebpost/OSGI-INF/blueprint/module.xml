@@ -24,7 +24,10 @@
 	
 	<reference-list id="datumDaoCollection" availability="optional"
 		interface="net.solarnetwork.node.dao.DatumDao"/>
-	
+
+	<reference-list id="sampleTransformers" availability="optional" 
+		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
+		
 	<reference id="identityService" availability="optional"
 		interface="net.solarnetwork.node.IdentityService"/>
 	
@@ -51,7 +54,9 @@
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="serializers">
 			<list>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer"/>
+				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer">
+					<property name="sampleTransformers" ref="sampleTransformers"/>	
+				</bean>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer"/>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer"/>
 				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer"/>
