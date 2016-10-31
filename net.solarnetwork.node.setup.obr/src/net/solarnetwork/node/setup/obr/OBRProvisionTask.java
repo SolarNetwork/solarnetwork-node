@@ -32,16 +32,24 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
+import org.osgi.framework.VersionRange;
+import org.osgi.framework.wiring.BundleRevision;
 import org.osgi.framework.wiring.FrameworkWiring;
 import org.osgi.service.obr.Resource;
 import org.slf4j.Logger;
@@ -181,7 +189,6 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		// but we want these downloaded bundles to be persisted to disk. Thus we
 		// just do a bit of work here to download and start the bundles ourselves.
 
-		boolean refreshNeeded = false;
 		List<Bundle> installedBundles = new ArrayList<Bundle>(plugins.size());
 
 		// iterate backwards, to work our way up through deps to requested plugin
@@ -209,36 +216,94 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
 			moveTemporaryDownloadedPluginFile(resource, outputFile, tmpOutputFile);
 
-			if ( installDownloadedPlugin(resource, outputFile, installedBundles) && !refreshNeeded ) {
-				refreshNeeded = true;
-			}
+			installDownloadedPlugin(resource, outputFile, installedBundles);
 
 			LOG.debug("Installed plugin: {}", plugin.getUID());
 			status.markPluginInstalled(plugin);
 		}
-		for ( ListIterator<Bundle> itr = installedBundles.listIterator(); itr.hasNext(); ) {
-			Bundle b = itr.next();
-			status.setStatusMessage("Starting plugin: " + b.getSymbolicName());
-			try {
-				if ( !(b.getState() == Bundle.ACTIVE || b.getState() == Bundle.STARTING) ) {
-					b.start();
-				}
-				// bundles are in reverse order of plugins
-				Plugin p = plugins.get(plugins.size() - itr.nextIndex());
-				status.markPluginStarted(p);
-			} catch ( BundleException e ) {
-				throw new RuntimeException(
-						"Unable to start plugin " + b.getSymbolicName() + " version " + b.getVersion(),
-						e);
-			}
-		}
-		if ( refreshNeeded ) {
+		if ( !installedBundles.isEmpty() ) {
+			Set<Bundle> toRefresh = findFragmentHostsForBundles(installedBundles);
+			toRefresh.addAll(installedBundles);
 			status.setStatusMessage("Refreshing OSGi framework.");
 			FrameworkWiring fw = bundleContext.getBundle(0).adapt(FrameworkWiring.class);
-			fw.refreshBundles(null);
+			fw.refreshBundles(toRefresh);
+
+			for ( ListIterator<Bundle> itr = installedBundles.listIterator(); itr.hasNext(); ) {
+				Bundle b = itr.next();
+				boolean fragment = isFragment(b);
+				status.setStatusMessage("Starting plugin: " + b.getSymbolicName());
+				try {
+					if ( !fragment
+							&& !(b.getState() == Bundle.ACTIVE || b.getState() == Bundle.STARTING) ) {
+						b.start();
+					}
+					// bundles are in reverse order of plugins
+					Plugin p = plugins.get(plugins.size() - itr.nextIndex());
+					status.markPluginStarted(p);
+				} catch ( BundleException e ) {
+					throw new RuntimeException("Unable to start plugin " + b.getSymbolicName()
+							+ " version " + b.getVersion(), e);
+				}
+			}
 		}
 		LOG.debug("Install of {} plugins complete", plugins.size());
 		status.setStatusMessage("Install of " + plugins.size() + " plugins complete");
+	}
+
+	private boolean isFragment(Bundle b) {
+		BundleRevision r = b.adapt(BundleRevision.class);
+		return (r != null && (r.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0);
+	}
+
+	private static final Pattern BUNDLE_VERSION_PATTERN = Pattern
+			.compile("bundle-version\\s*=\\s*\"([^\"]+)", Pattern.CASE_INSENSITIVE);
+
+	protected Set<Bundle> findFragmentHostsForBundles(Collection<Bundle> toRefresh) {
+		Set<Bundle> fragmentHosts = new HashSet<Bundle>();
+		Bundle[] bundles = bundleContext.getBundles();
+		for ( Bundle b : toRefresh ) {
+			if ( b.getState() == Bundle.UNINSTALLED ) {
+				continue;
+			}
+			String hostHeader = b.getHeaders().get(Constants.FRAGMENT_HOST);
+			if ( hostHeader == null ) {
+				continue;
+			}
+			String[] clauses = StringUtils.delimitedListToStringArray(hostHeader, ";");
+			if ( clauses == null || clauses.length < 1 ) {
+				continue;
+			}
+			String hostSymbolicName = clauses[0];
+			for ( Bundle hostBundle : bundles ) {
+				if ( hostBundle.getSymbolicName() != null
+						&& hostBundle.getSymbolicName().equals(hostSymbolicName) ) {
+					VersionRange hostVersionRange = null;
+					if ( clauses.length > 1 ) {
+						for ( String clause : clauses ) {
+							Matcher m = BUNDLE_VERSION_PATTERN.matcher(clause);
+							if ( m.find() ) {
+								String ver = m.group(1);
+								try {
+									hostVersionRange = new org.osgi.framework.VersionRange(ver);
+								} catch ( IllegalArgumentException e ) {
+									LOG.warn(
+											"Ignoring fragment bundle {} version range syntax error: {}",
+											hostSymbolicName, e.getMessage());
+								}
+								break;
+							}
+						}
+					}
+					if ( hostVersionRange == null
+							|| hostVersionRange.includes(hostBundle.getVersion()) ) {
+						LOG.debug("Found fragment {} host {} to refresh", b, hostBundle);
+						fragmentHosts.add(hostBundle);
+					}
+					continue;
+				}
+			}
+		}
+		return fragmentHosts;
 	}
 
 	private void moveTemporaryDownloadedPluginFile(Resource resource, File outputFile,
