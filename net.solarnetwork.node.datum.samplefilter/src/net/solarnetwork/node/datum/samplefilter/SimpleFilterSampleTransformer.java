@@ -178,9 +178,14 @@ public class SimpleFilterSampleTransformer
 	}
 
 	private static GeneralDatumSamples copy(GeneralDatumSamples samples) {
-		GeneralDatumSamples copy = new GeneralDatumSamples(samples.getInstantaneous(),
-				samples.getAccumulating(), samples.getStatus());
-		copy.setTags(samples.getTags());
+		GeneralDatumSamples copy = new GeneralDatumSamples(
+				samples.getInstantaneous() != null
+						? new LinkedHashMap<String, Number>(samples.getInstantaneous()) : null,
+				samples.getAccumulating() != null
+						? new LinkedHashMap<String, Number>(samples.getAccumulating()) : null,
+				samples.getStatus() != null ? new LinkedHashMap<String, Object>(samples.getStatus())
+						: null);
+		copy.setTags(samples.getTags() != null ? new LinkedHashSet<String>(samples.getTags()) : null);
 		return copy;
 	}
 
