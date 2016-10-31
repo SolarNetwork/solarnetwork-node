@@ -258,7 +258,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	private static final Pattern BUNDLE_VERSION_PATTERN = Pattern
 			.compile("bundle-version\\s*=\\s*\"([^\"]+)", Pattern.CASE_INSENSITIVE);
 
-	protected Set<Bundle> findFragmentHostsForBundles(Collection<Bundle> toRefresh) {
+	private Set<Bundle> findFragmentHostsForBundles(Collection<Bundle> toRefresh) {
 		Set<Bundle> fragmentHosts = new HashSet<Bundle>();
 		Bundle[] bundles = bundleContext.getBundles();
 		for ( Bundle b : toRefresh ) {
