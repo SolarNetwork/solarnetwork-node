@@ -74,6 +74,7 @@ import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
+import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceProvider;
 import net.solarnetwork.node.backup.ResourceBackupResource;
@@ -109,7 +110,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider {
 
@@ -126,6 +127,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			+ "(\\d{4}-\\d{2}-\\d{2}-\\d{6})\\." + BACKUP_FILENAME_EXT + "$");
 	private static final int DEFAULT_BACKUP_MAX_COUNT = 5;
 	private static final String FACTORY_SETTING_KEY_SUFFIX = ".FACTORY";
+
+	// a CA PID pattern so that only these are attempted to be restored
+	private static final Pattern CA_PID_PATTERN = Pattern.compile("^[a-zA-Z0-9.]+$");
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
@@ -732,6 +736,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 			// skip factory instance definitions
 			if ( s.getKey().endsWith(FACTORY_SETTING_KEY_SUFFIX) ) {
+				continue;
+			}
+
+			// skip things that don't look like CA settings
+			if ( !CA_PID_PATTERN.matcher(s.getKey()).matches() || s.getType() == null
+					|| SetupSettings.SETUP_TYPE_KEY.equals(s.getType()) || s.getType().length() < 1 ) {
 				continue;
 			}
 
