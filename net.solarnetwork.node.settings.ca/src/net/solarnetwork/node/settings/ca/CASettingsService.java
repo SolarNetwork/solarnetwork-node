@@ -110,7 +110,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider {
 
@@ -885,7 +885,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 		List<BackupResource> resources = new ArrayList<BackupResource>(1);
 		resources.add(new ResourceBackupResource(new ByteArrayResource(byos.toByteArray()),
-				BACKUP_RESOURCE_SETTINGS_CSV));
+				BACKUP_RESOURCE_SETTINGS_CSV, getKey()));
 		return resources;
 	}
 

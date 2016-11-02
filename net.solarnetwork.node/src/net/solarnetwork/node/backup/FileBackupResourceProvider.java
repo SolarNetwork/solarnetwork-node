@@ -30,12 +30,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.node.Constants;
 
 /**
  * {@link BackupResourceProvider} for node files, such as installed application
@@ -51,7 +51,8 @@ import org.springframework.util.StringUtils;
  * not provided, the runtime working directory will be used.</dd>
  * <dt>resourceDirectories</dt>
  * <dd>An array of directory paths, relative to {@code rootPath}, to look for
- * files to include in the backup. Defaults to {@code [app/base, app/main]}.</dd>
+ * files to include in the backup. Defaults to
+ * {@code [app/base, app/main]}.</dd>
  * 
  * <dt>fileNamePattern</dt>
  * <dd>A regexp used to match against files found in the
@@ -80,8 +81,8 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		if ( resourceDirectories == null || resourceDirectories.length < 1 ) {
 			return Collections.emptyList();
 		}
-		final Pattern pat = (fileNamePattern == null ? null : Pattern.compile(fileNamePattern,
-				Pattern.CASE_INSENSITIVE));
+		final Pattern pat = (fileNamePattern == null ? null
+				: Pattern.compile(fileNamePattern, Pattern.CASE_INSENSITIVE));
 		List<BackupResource> fileList = new ArrayList<BackupResource>(20);
 		for ( String path : resourceDirectories ) {
 			File rootDir = (rootPath != null && rootPath.length() > 0 ? new File(rootPath, path)
@@ -104,7 +105,8 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			for ( File f : files ) {
 				// make sure backup path is relative
 				final String backupPath = path + '/' + f.getName();
-				fileList.add(new ResourceBackupResource(new FileSystemResource(f), backupPath));
+				fileList.add(
+						new ResourceBackupResource(new FileSystemResource(f), backupPath, getKey()));
 			}
 		}
 		return fileList;

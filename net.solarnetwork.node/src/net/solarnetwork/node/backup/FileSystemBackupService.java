@@ -55,7 +55,6 @@ import java.util.zip.ZipOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -86,7 +85,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class FileSystemBackupService implements BackupService, SettingSpecifierProvider {
 
@@ -101,13 +100,13 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	 */
 	public static final String ARCHIVE_KEY_NAME_FORMAT = "node-%2$d-backup-%1$s.zip";
 
-	private static final MessageSource MESSAGE_SOURCE = getMessageSourceInstance();
 	private static final String ARCHIVE_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
 	private static final Pattern ARCHIVE_NAME_PAT = Pattern
 			.compile("node-\\d+-backup-(\\d{8}T\\d{6})\\.zip");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	private MessageSource messageSource;
 	private File backupDir = defaultBackuprDir();
 	private OptionalService<IdentityService> identityService;
 	private int additionalBackupCount = 1;
@@ -126,13 +125,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		return new File(path);
 	}
 
-	private static MessageSource getMessageSourceInstance() {
-		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-		source.setBundleClassLoader(FileSystemBackupService.class.getClassLoader());
-		source.setBasename(FileSystemBackupService.class.getName());
-		return source;
-	}
-
 	@Override
 	public String getSettingUID() {
 		return getClass().getName();
@@ -145,7 +137,11 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	@Override
 	public MessageSource getMessageSource() {
-		return MESSAGE_SOURCE;
+		return messageSource;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	@Override
@@ -189,6 +185,12 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	@Override
 	public Backup performBackup(final Iterable<BackupResource> resources) {
+		final Calendar now = new GregorianCalendar();
+		now.set(Calendar.MILLISECOND, 0);
+		return performBackupInternal(resources, now);
+	}
+
+	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now) {
 		if ( resources == null ) {
 			return null;
 		}
@@ -205,8 +207,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 				return null;
 			}
 		}
-		final Calendar now = new GregorianCalendar();
-		now.set(Calendar.MILLISECOND, 0);
 		final Long nodeId = nodeIdForArchiveFileName();
 		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now, nodeId);
 		final File archiveFile = new File(backupDir, archiveName);
@@ -327,6 +327,34 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		}
 		Collection<BackupResource> col = Collections.emptyList();
 		return new CollectionBackupResourceIterable(col);
+	}
+
+	private Date backupDateFromProps(Date date, Map<String, String> props) {
+		if ( date != null ) {
+			return date;
+		}
+		final SimpleDateFormat sdf = new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT);
+		String backupKey = (props == null ? null : props.get(BackupManager.BACKUP_KEY));
+		if ( backupKey != null ) {
+			Matcher m = ARCHIVE_NAME_PAT.matcher(backupKey);
+			if ( m.matches() ) {
+				try {
+					return sdf.parse(m.group(1));
+				} catch ( ParseException e ) {
+					log.warn("Unable to parse backup date from key [{}]", backupKey);
+				}
+			}
+		}
+		return new Date();
+	}
+
+	@Override
+	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
+		final Date backupDate = backupDateFromProps(date, props);
+		final Calendar cal = new GregorianCalendar();
+		cal.setTime(backupDate);
+		cal.set(Calendar.MILLISECOND, 0);
+		return performBackupInternal(resources, cal);
 	}
 
 	/**

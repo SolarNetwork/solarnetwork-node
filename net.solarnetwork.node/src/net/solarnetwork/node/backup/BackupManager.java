@@ -34,7 +34,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * Manager API for node-level backups.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface BackupManager extends SettingSpecifierProvider {
 
@@ -46,6 +46,13 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * @since 1.1
 	 */
 	String RESOURCE_PROVIDER_FILTER = "ResourceProviderFilter";
+
+	/**
+	 * A property key a {@link Backup} {@code key} value.
+	 * 
+	 * @since 1.2
+	 */
+	String BACKUP_KEY = "BackupKey";
 
 	/**
 	 * Get the active {@link BackupService}.
@@ -147,27 +154,29 @@ public interface BackupManager extends SettingSpecifierProvider {
 			throws IOException;
 
 	/**
-	 * Import a backup zip archive.
+	 * Import a backup archive into the active backup service.
 	 * 
-	 * <p>
 	 * This method can import an archive exported via
-	 * {@link #exportBackupArchive(String, OutputStream)}.
-	 * </p>
+	 * {@link #exportBackupArchive(String, OutputStream)}. Once imported, the
+	 * backup will appear as a new backup in the active backup service.
 	 * 
 	 * @param archive
 	 *        the archive input stream to import
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	public void importBackupArchive(InputStream archive) throws IOException;
+	public Future<Backup> importBackupArchive(InputStream archive) throws IOException;
 
 	/**
-	 * Import a backup zip archive.
+	 * Import a backup archive with properties.
 	 * 
-	 * <p>
 	 * This method can import an archive exported via
-	 * {@link #exportBackupArchive(String, OutputStream)}.
-	 * </p>
+	 * {@link #exportBackupArchive(String, OutputStream)}. The
+	 * {@link #RESOURCE_PROVIDER_FILTER} property can be used to filter which
+	 * provider resources are included in the imported backup. The
+	 * {@link #BACKUP_KEY} can be used to provide a hint of the original backup
+	 * key (and possibly date). Once imported, the backup will appear as a new
+	 * backup in the active backup service.
 	 * 
 	 * @param archive
 	 *        the archive input stream to import
@@ -177,5 +186,6 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	public void importBackupArchive(InputStream archive, Map<String, String> props) throws IOException;
+	public Future<Backup> importBackupArchive(InputStream archive, Map<String, String> props)
+			throws IOException;
 }

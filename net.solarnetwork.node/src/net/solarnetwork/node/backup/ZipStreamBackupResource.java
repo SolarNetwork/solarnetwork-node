@@ -1,7 +1,7 @@
 /* ==================================================================
- * ResourceBackupResource.java - Mar 27, 2013 3:56:48 PM
+ * ZipStreamBackupResource.java - 2/11/2016 11:02:04 AM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,53 +22,42 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.springframework.core.io.Resource;
+import java.util.zip.ZipEntry;
 
 /**
- * {@link BackupResource} implementation using a Spring {@link Resource}.
+ * A zip input stream backup resource.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.46
  */
-public class ResourceBackupResource implements BackupResource {
+public class ZipStreamBackupResource implements BackupResource {
 
-	private final Resource resource;
-	private final String backupPath;
+	private final InputStream stream;
+	private final ZipEntry entry;
 	private final String providerKey;
+	private final String path;
 
 	/**
-	 * Constructor.
+	 * Construct with values.
 	 * 
-	 * The {@code providerKey} will be set to
-	 * {@code net.solarnetwork.node.backup.FileBackupResourceProvider}.
-	 * 
-	 * @param resource
-	 *        The resource.
-	 * @param backupPath
-	 *        The backup path.
-	 */
-	public ResourceBackupResource(Resource resource, String backupPath) {
-		this(resource, backupPath, FileBackupResourceProvider.class.getName());
-	}
-
-	/**
-	 * Construct with a specific provider key.
-	 * 
-	 * @param resource
-	 *        The resource.
-	 * @param backupPath
-	 *        The backup path.
+	 * @param archiveFile
+	 *        the archive file
+	 * @param entry
+	 *        the entry previously obtained from the zip archive
 	 * @param providerKey
-	 *        The provider key.
-	 * @since 1.1
+	 *        the provider key
+	 * @parm path the path to use
 	 */
-	public ResourceBackupResource(Resource resource, String backupPath, String providerKey) {
+	public ZipStreamBackupResource(InputStream stream, ZipEntry entry, String providerKey, String path) {
 		super();
-		this.resource = resource;
-		this.backupPath = backupPath;
+		this.stream = stream;
+		this.entry = entry;
 		this.providerKey = providerKey;
+		this.path = path;
 	}
 
 	@Override
@@ -78,22 +67,22 @@ public class ResourceBackupResource implements BackupResource {
 
 	@Override
 	public String getBackupPath() {
-		return backupPath;
+		return path;
 	}
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return resource.getInputStream();
+		return new FilterInputStream(stream) {
+
+			@Override
+			public void close() throws IOException {
+			}
+		};
 	}
 
 	@Override
 	public long getModificationDate() {
-		try {
-			return resource.getFile().lastModified();
-		} catch ( IOException e ) {
-			// ignore
-		}
-		return -1;
+		return entry.getTime();
 	}
 
 }

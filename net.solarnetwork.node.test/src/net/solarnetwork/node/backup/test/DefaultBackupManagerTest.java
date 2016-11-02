@@ -27,12 +27,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import org.junit.Before;
@@ -42,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceProvider;
 import net.solarnetwork.node.backup.BackupService;
@@ -67,6 +73,7 @@ public class DefaultBackupManagerTest {
 	private DefaultBackupManager manager;
 	private FileSystemBackupService service;
 	private Backup backup;
+	private File backupArchiveFile;
 
 	@Before
 	public void setup() {
@@ -108,6 +115,7 @@ public class DefaultBackupManagerTest {
 			}
 			assertEquals(1, entryCount);
 			this.backup = backup;
+			this.backupArchiveFile = archiveFile;
 		} finally {
 			zipFile.close();
 		}
@@ -123,6 +131,43 @@ public class DefaultBackupManagerTest {
 		assertArrayEquals(FileCopyUtils.copyToByteArray(
 				new ClassPathResource(TEST_FILE_TXT, DefaultBackupManagerTest.class).getInputStream()),
 				restoredData);
+	}
+
+	@Test
+	public void importBackup() throws Exception {
+		createBackup();
+		Map<String, String> props = new HashMap<String, String>(2);
+		props.put(BackupManager.BACKUP_KEY, backupArchiveFile.getName());
+		File importFile = new File(System.getProperty("java.io.tmpdir"), "backup-import.tmp");
+		backupArchiveFile.renameTo(importFile);
+		importFile.deleteOnExit();
+		Future<Backup> backupFuture = manager.importBackupArchive(new FileInputStream(importFile),
+				props);
+		assertNotNull("Backup future", backupFuture);
+		Backup backup = backupFuture.get(10, TimeUnit.MINUTES);
+		assertNotNull("Backup", backup);
+
+		final File archiveFile = new File(service.getBackupDir(),
+				String.format(FileSystemBackupService.ARCHIVE_KEY_NAME_FORMAT, backup.getKey(), 0L));
+		assertTrue(archiveFile.canRead());
+		assertEquals("Imported backup file name", props.get(BackupManager.BACKUP_KEY),
+				archiveFile.getName());
+		ZipFile zipFile = new ZipFile(archiveFile);
+		try {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			int entryCount;
+			for ( entryCount = 0; entries.hasMoreElements(); entryCount++ ) {
+				ZipEntry entry = entries.nextElement();
+				assertEquals("The zip entry should be prefixed by the BackupResourceProvider key",
+						DefaultBackupManagerTest.class.getName() + '/' + TEST_FILE_TXT, entry.getName());
+			}
+			assertEquals(1, entryCount);
+			this.backup = backup;
+			this.backupArchiveFile = archiveFile;
+		} finally {
+			zipFile.close();
+		}
+
 	}
 
 	private static class StaticBackupResourceProvider implements BackupResourceProvider {

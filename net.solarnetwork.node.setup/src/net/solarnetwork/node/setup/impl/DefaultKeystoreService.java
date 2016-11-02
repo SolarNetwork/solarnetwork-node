@@ -143,7 +143,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		}
 		List<BackupResource> result = new ArrayList<BackupResource>(1);
 		result.add(new ResourceBackupResource(new FileSystemResource(ksFile),
-				BACKUP_RESOURCE_NAME_KEYSTORE));
+				BACKUP_RESOURCE_NAME_KEYSTORE, getKey()));
 		return result;
 	}
 

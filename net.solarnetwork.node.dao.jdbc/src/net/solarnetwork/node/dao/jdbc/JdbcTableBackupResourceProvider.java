@@ -60,7 +60,7 @@ import net.solarnetwork.node.backup.BackupResourceProvider;
  * Backup support for JDBC tables.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -115,6 +115,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 			this.tableName = tableName;
 			this.modTime = System.currentTimeMillis();
 			this.preference = preference;
+		}
+
+		@Override
+		public String getProviderKey() {
+			return getKey();
 		}
 
 		@Override
