@@ -94,6 +94,11 @@
 		<property name="trustStorePassword" value="${PKIService.trustStorePassword}"/>
 		<property name="jreTrustStorePassword" value="${PKIService.jreTrustStorePassword}"/>
 		<property name="settingDao" ref="settingDao"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.setup.impl.DefaultKeystoreService"/>
+			</bean>
+		</property>
 	</bean>
 
 </blueprint>

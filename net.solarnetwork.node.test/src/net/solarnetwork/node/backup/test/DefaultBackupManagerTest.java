@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -49,18 +50,22 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.DefaultBackupManager;
 import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test case for the {@link DefaultBackupManager} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultBackupManagerTest {
 
@@ -204,6 +209,18 @@ public class DefaultBackupManagerTest {
 				log.error("Error restoring resource {}", resource.getBackupPath(), e);
 			}
 			return false;
+		}
+
+		@Override
+		public BackupResourceProviderInfo providerInfo(Locale locale) {
+			// TODO Auto-generated method stub
+			return new SimpleBackupResourceProviderInfo(getKey(), "Static Provider", null);
+		}
+
+		@Override
+		public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+			return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(),
+					null);
 		}
 
 	}

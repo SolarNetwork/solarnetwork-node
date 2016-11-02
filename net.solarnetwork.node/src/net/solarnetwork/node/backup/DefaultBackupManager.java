@@ -31,7 +31,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -423,6 +425,75 @@ public class DefaultBackupManager implements BackupManager {
 			}
 		}
 		return result;
+	}
+
+	@Override
+	public BackupInfo infoForBackup(final String key, final Locale locale) {
+		BackupService service = activeBackupService();
+		if ( service == null ) {
+			log.debug("No BackupService available, can't find resources for backup");
+			return null;
+		}
+		Backup backup = service.backupForKey(key);
+		if ( backup == null ) {
+			log.debug("No backup avaialble from service {} for key {}", service.getKey(), key);
+			return null;
+		}
+
+		Map<String, BackupResourceProviderInfo> providerInfos = new LinkedHashMap<String, BackupResourceProviderInfo>();
+		List<BackupResourceInfo> resourceInfos = new ArrayList<BackupResourceInfo>();
+
+		BackupResourceIterable resources = null;
+		try {
+			resources = service.getBackupResources(backup);
+			for ( BackupResource r : resources ) {
+				final String path = r.getBackupPath();
+				final int providerIndex = path.indexOf('/');
+				if ( providerIndex == -1 ) {
+					continue;
+				}
+				final String providerKey = path.substring(0, providerIndex);
+				BackupResourceProvider provider = providerForKey(providerKey);
+				if ( provider == null ) {
+					continue;
+				}
+				if ( !providerInfos.containsKey(providerKey) ) {
+					providerInfos.put(providerKey, provider.providerInfo(locale));
+				}
+				BackupResourceInfo info = provider.resourceInfo(r, locale);
+				if ( info != null ) {
+					String name = info.getName();
+					if ( name != null && name.equals(path) ) {
+						name = path.substring(providerIndex + 1);
+					}
+					resourceInfos
+							.add(new SimpleBackupResourceInfo(providerKey, name, info.getDescription()));
+				}
+			}
+		} finally {
+			if ( resources != null ) {
+				try {
+					resources.close();
+				} catch ( IOException e ) {
+					// ignore
+				}
+			}
+		}
+
+		return new SimpleBackupInfo(key, backup.getDate(), providerInfos.values(), resourceInfos);
+	}
+
+	private BackupResourceProvider providerForKey(String key) {
+		Collection<BackupResourceProvider> providers = resourceProviders;
+		if ( providers == null || providers.isEmpty() ) {
+			return null;
+		}
+		for ( BackupResourceProvider provider : providers ) {
+			if ( key.equals(provider.getKey()) ) {
+				return provider;
+			}
+		}
+		return null;
 	}
 
 	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {

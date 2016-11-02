@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -135,7 +136,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	public void exportBackupArchive(String backupKey, OutputStream out) throws IOException;
+	void exportBackupArchive(String backupKey, OutputStream out) throws IOException;
 
 	/**
 	 * Export a backup zip archive.
@@ -150,7 +151,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	public void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
+	void exportBackupArchive(String backupKey, OutputStream out, Map<String, String> props)
 			throws IOException;
 
 	/**
@@ -165,7 +166,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	public Future<Backup> importBackupArchive(InputStream archive) throws IOException;
+	Future<Backup> importBackupArchive(InputStream archive) throws IOException;
 
 	/**
 	 * Import a backup archive with properties.
@@ -186,6 +187,20 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *         if any IO error occurs
 	 * @since 1.1
 	 */
-	public Future<Backup> importBackupArchive(InputStream archive, Map<String, String> props)
+	Future<Backup> importBackupArchive(InputStream archive, Map<String, String> props)
 			throws IOException;
+
+	/**
+	 * Get metadata about a particular backup.
+	 * 
+	 * @param key
+	 *        The key of the backup to get the information for.
+	 * @param locale
+	 *        The desired locale of the information, or {@code null} for the
+	 *        system locale.
+	 * @return The backup info, or {@code null} if no backup is available for
+	 *         the given key.
+	 * @since 1.2
+	 */
+	BackupInfo infoForBackup(String key, Locale locale);
 }

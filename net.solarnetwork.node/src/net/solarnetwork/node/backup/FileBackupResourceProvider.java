@@ -29,9 +29,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
@@ -61,13 +63,14 @@ import net.solarnetwork.node.Constants;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	private String rootPath = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, "");
 	private String[] resourceDirectories = new String[] { "app/base", "app/main" };
 	private String fileNamePattern = "\\.jar$";
+	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -138,6 +141,23 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		return false;
 	}
 
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "File Backup Provider";
+		String desc = "Backs up system plugins.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
+	}
+
 	/**
 	 * Set the {@code resourceDirectories} property as a comma-delimieted
 	 * string.
@@ -181,6 +201,16 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	public String getFileNamePattern() {
 		return fileNamePattern;
+	}
+
+	/**
+	 * Set the {@link MessageSource} to resolve localized messages with.
+	 * 
+	 * @param messageSource
+	 *        The message source.
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }
