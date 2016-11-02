@@ -97,32 +97,46 @@
 			</c:if>
 		</fieldset>
 
-		<fieldset>
-			<c:if test="${fn:length(backups) > 0}">
-				<div class="control-group">
-					<label class="control-label" for="backup-backups">
-						<fmt:message key="backup.backups.label"/>
-					</label>
-					<form class="controls form-inline" action="<c:url value='/a/settings/exportBackup'/>">
-						<select name="backup" class="span3" id="backup-backups">
-							<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
-								<option value="${backup.key}">
-									<fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/>
-								</option>
-							</c:forEach>
-						</select>
-						<button type="submit" class="btn btn-primary">
-							<fmt:message key="backup.download.button"/>
-						</button>
-						<button type="button" class="help-popover help-icon" tabindex="-1"
-								data-content="<fmt:message key='backup.backups.info'/>"
-								data-html="true">
-							<i class="icon-question-sign"></i>
-						</button>
-						<sec:csrfInput/>
-					</form>
-				</div>
-			</c:if>
+		<fieldset style="margin-top: 24px;">
+			<div class="control-group">
+				<label class="control-label" for="backup-backups">
+					<fmt:message key="backup.now.label"/>
+				</label>
+				<form class="controls form-inline" id="create-backup-form" action="<c:url value='/a/backups/create'/>" method="post">
+	 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
+	 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
+ 					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-content="<fmt:message key='backup.now.caption'/>"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+					<sec:csrfInput/>
+				</form>
+			</div>
+
+
+			<div class="control-group">
+				<label class="control-label" for="backup-backups">
+					<fmt:message key="backup.backups.label"/>
+				</label>
+				<form class="controls form-inline" action="<c:url value='/a/settings/exportBackup'/>">
+					<select name="backup" class="span3" id="backup-backups">
+						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
+							<option value="${backup.key}"><fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/></option>
+						</c:forEach>
+					</select>
+					<button type="submit" class="btn btn-primary">
+						<fmt:message key="backup.download.button"/>
+					</button>
+					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-content="<fmt:message key='backup.backups.info'/>"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+					<sec:csrfInput/>
+				</form>
+			</div>
+
 			<div class="control-group">
 				<label class="control-label" for="backup-import-field">
 					<fmt:message key="backup.import.label"/>
@@ -139,13 +153,6 @@
 				</form>
 			</div>
 		</fieldset>
-		<div class="form-actions">
-			<form class="form-inline" action="<c:url value='/a/settings/backupNow'/>" method="post">
- 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
- 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
-				<sec:csrfInput/>
-			</form>
-		</div>
 	</div>
 </section>
 </c:if>

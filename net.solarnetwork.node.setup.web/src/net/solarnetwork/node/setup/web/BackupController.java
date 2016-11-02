@@ -23,6 +23,10 @@
 package net.solarnetwork.node.setup.web;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -36,6 +40,7 @@ import org.springframework.web.multipart.MultipartFile;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -46,13 +51,57 @@ import net.solarnetwork.web.domain.Response;
  * @version 1.0
  */
 @Controller
-@RequestMapping("/a/backup")
+@RequestMapping("/a/backups")
 public class BackupController {
 
 	private Future<Backup> importTask;
 
 	@Resource(name = "backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
+
+	/**
+	 * Get a list of all available backups from the active backup service.
+	 * 
+	 * @return All avaialble backups.
+	 */
+	@RequestMapping(value = { "", "/" }, method = RequestMethod.GET)
+	@ResponseBody
+	public Response<List<Backup>> availableBackups() {
+		final BackupManager backupManager = backupManagerTracker.service();
+		List<Backup> backups = new ArrayList<Backup>();
+		if ( backupManager != null ) {
+			BackupService service = backupManager.activeBackupService();
+			if ( service != null ) {
+				backups.addAll(service.getAvailableBackups());
+				Collections.sort(backups, new Comparator<Backup>() {
+
+					@Override
+					public int compare(Backup o1, Backup o2) {
+						// sort in reverse chronological order (newest to oldest)
+						return o2.getDate().compareTo(o1.getDate());
+					}
+				});
+			}
+		}
+		return Response.response(backups);
+	}
+
+	/**
+	 * Create a new backup.
+	 * 
+	 * @param model
+	 * @return
+	 */
+	@RequestMapping(value = "/create", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Backup> initiateBackup() {
+		final BackupManager manager = backupManagerTracker.service();
+		Backup backup = null;
+		if ( manager != null ) {
+			backup = manager.createBackup();
+		}
+		return Response.response(backup);
+	}
 
 	/**
 	 * Import a backup into the system.

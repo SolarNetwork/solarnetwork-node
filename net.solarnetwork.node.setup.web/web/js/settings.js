@@ -389,27 +389,36 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	alert.insertAfter(origButton).removeClass('hidden');
 };
 
+function setupBackups() {
+	var createBackupSubmitButton = $('#backup-now-btn');
+	
+	$('#create-backup-form').ajaxForm({
+		dataType : 'json',
+		
+		beforeSubmit : function(dataArray, form, options) {
+			SolarNode.showSpinner(createBackupSubmitButton);
+			createBackupSubmitButton.attr('disabled', 'disabled');
+		},
+		success : function(json, status, xhr, form) {
+			if ( json.success !== true || json.data === undefined || json.data.key === undefined ) {
+				SolarNode.errorAlert("Error querying SolarNetwork for locations: " +json.message);
+				return;
+			}
+			var option = new Option(new Date(json.data.date).toString(), json.data.key);
+			$('#backup-backups').prepend($(option)).focus().get(0).selectedIndex = 0;
+		},
+		error : function(xhr, status, statusText) {
+			SolarNode.errorAlert("Error creating new backup: " +statusText);
+		},
+		complete : function() {
+			createBackupSubmitButton.removeAttr('disabled');
+			SolarNode.hideSpinner(createBackupSubmitButton);
+		}
+	});
+}
+
 $(document).ready(function() {
 	$('.help-popover').popover();
-	
-	$('#backup-now-btn').click(function(event) {
-		event.preventDefault();
-		var l = Ladda.create(this),
-			form = $(this.form),
-			url = form.attr('action'),
-			csrf = form.get(0).elements['_csrf'].value;
-		l.start();
-		$.ajax({
-			type : 'POST',
-			url : url,
-			beforeSend: function(xhr) {
-				SolarNode.csrf(xhr);
-	        },
-			success: function() {
-				l.stop();
-			}
-		});
-	});
 	
 	$('.lookup-modal table.search-results').on('click', 'tr', function() {
 		var me = $(this);
@@ -449,6 +458,8 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
+	
+	setupBackups();
 });
 
 }());
