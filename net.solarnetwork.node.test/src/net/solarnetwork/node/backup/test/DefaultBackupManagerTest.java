@@ -25,6 +25,7 @@ package net.solarnetwork.node.backup.test;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
@@ -175,6 +177,35 @@ public class DefaultBackupManagerTest {
 
 	}
 
+	@Test
+	public void backupInfo() throws Exception {
+		createBackup();
+		BackupInfo info = manager.infoForBackup(backup.getKey(), null);
+		assertNotNull("BackupInfo", info);
+		assertEquals("Backup key", backup.getKey(), info.getKey());
+		assertEquals("Backup date", backup.getDate(), info.getDate());
+
+		Collection<BackupResourceProviderInfo> providerInfos = info.getProviderInfos();
+		assertNotNull("Backup provider infos", providerInfos);
+		assertEquals("Backup provider infos size", 1, providerInfos.size());
+
+		BackupResourceProviderInfo providerInfo = providerInfos.iterator().next();
+		assertEquals("Provider key", DefaultBackupManagerTest.class.getName(),
+				providerInfo.getProviderKey());
+		assertEquals("Provider name", "Static Provider", providerInfo.getName());
+		assertNull("Provider description", providerInfo.getDescription());
+
+		Collection<BackupResourceInfo> resourceInfos = info.getResourceInfos();
+		assertNotNull("Backup resource infos", resourceInfos);
+		assertEquals("Backup resource infos size", 1, resourceInfos.size());
+
+		BackupResourceInfo resourceInfo = resourceInfos.iterator().next();
+		assertEquals("Resource provider key", DefaultBackupManagerTest.class.getName(),
+				resourceInfo.getProviderKey());
+		assertEquals("Resource name", TEST_FILE_TXT, resourceInfo.getName());
+		assertNull("Resource description", resourceInfo.getDescription());
+	}
+
 	private static class StaticBackupResourceProvider implements BackupResourceProvider {
 
 		private final File restoreDir;
@@ -213,7 +244,6 @@ public class DefaultBackupManagerTest {
 
 		@Override
 		public BackupResourceProviderInfo providerInfo(Locale locale) {
-			// TODO Auto-generated method stub
 			return new SimpleBackupResourceProviderInfo(getKey(), "Static Provider", null);
 		}
 
