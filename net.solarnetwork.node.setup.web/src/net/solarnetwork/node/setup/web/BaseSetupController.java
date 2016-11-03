@@ -76,7 +76,7 @@ public class BaseSetupController {
 	protected void shutdownSoon() {
 		final BundleContext ctx = bundleContext;
 		if ( ctx != null ) {
-			final Thread shutdownThread = new Thread(new Runnable() {
+			new Thread(new Runnable() {
 
 				@Override
 				public void run() {
@@ -85,6 +85,32 @@ public class BaseSetupController {
 					} catch ( Exception e ) {
 						// ignore
 					}
+
+					final Thread shutdownThread = Thread.currentThread();
+					final long start = System.currentTimeMillis();
+
+					// start another thread to monitor the shutdown process, in case OSGi takes too long or gets hung up
+					Thread shutdownMonitorThread = new Thread(new Runnable() {
+
+						@Override
+						public void run() {
+							try {
+								shutdownThread.join(8000);
+								final long end = (System.currentTimeMillis() - start);
+								if ( end < 900 ) {
+									Thread.sleep(2000);
+								}
+							} catch ( Exception e ) {
+								// ignore
+							} finally {
+								System.err.println("Exiting from shutdown request.");
+								System.exit(0);
+							}
+						}
+					}, "Backup Restore Shutdown Monitor");
+					shutdownMonitorThread.setDaemon(true);
+					shutdownMonitorThread.start();
+
 					try {
 						log.warn("Stopping OSGi from shutdown request...");
 						ctx.getBundle(0).stop(org.osgi.framework.Bundle.STOP_TRANSIENT);
@@ -92,33 +118,7 @@ public class BaseSetupController {
 						System.err.println("Exception shutting down OSGi: " + e);
 					}
 				}
-			}, "Backup Restore Shutdown");
-			shutdownThread.setDaemon(true);
-			shutdownThread.start();
-
-			// start another thread to monitor the shutdown process, in case OSGi takes too long or gets hung up
-			Thread shutdownMonitorThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					final long start = System.currentTimeMillis();
-					try {
-						shutdownThread.join(60000);
-						final long end = (System.currentTimeMillis() - start);
-						if ( end < 900 ) {
-							Thread.sleep(30000);
-						}
-					} catch ( Exception e ) {
-						// ignore
-					} finally {
-						log.warn("Exiting from shutdown request.");
-						System.exit(0);
-					}
-				}
-			}, "Backup Restore Shutdown Monitor");
-			shutdownMonitorThread.setDaemon(true);
-			shutdownMonitorThread.start();
-
+			}, "Backup Restore Shutdown").start();
 		}
 	}
 
