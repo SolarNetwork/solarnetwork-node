@@ -26,10 +26,13 @@ package net.solarnetwork.node.setup.web;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Future;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -43,12 +46,16 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
+import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
@@ -56,6 +63,7 @@ import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.node.setup.web.support.SettingsUserService;
 import net.solarnetwork.node.setup.web.support.UserProfile;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller used to associate a node with a SolarNet account.
@@ -68,7 +76,9 @@ import net.solarnetwork.util.OptionalService;
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
+	private static final String BACKUP_KEY_SESSION_KEY = "restoreBackupKey";
 	private static final String PAGE_ENTER_CODE = "associate/enter-code";
+	private static final String PAGE_IMPORT_FROM_BACKUP = "associate/import-from-backup";
 	private static final String PAGE_RESTORE_FROM_BACKUP = "associate/restore-from-backup";
 
 	/** The model attribute for the network association details. */
@@ -86,6 +96,9 @@ public class NodeAssociationController extends BaseSetupController {
 	 * @since 1.1
 	 */
 	public static final String KEY_USER = "user";
+
+	@Autowired
+	private MessageSource messageSource;
 
 	@Autowired
 	private PKIService pkiService;
@@ -249,7 +262,7 @@ public class NodeAssociationController extends BaseSetupController {
 
 	@RequestMapping(value = "/restore", method = RequestMethod.GET)
 	public String restoreFromBackup() {
-		return PAGE_RESTORE_FROM_BACKUP;
+		return PAGE_IMPORT_FROM_BACKUP;
 	}
 
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
@@ -259,22 +272,83 @@ public class NodeAssociationController extends BaseSetupController {
 		if ( manager == null ) {
 			request.getSession(true).setAttribute("errorMessageKey",
 					"node.setup.restore.error.noBackupManager");
-		} else {
-			try {
-				manager.importBackupArchive(file.getInputStream());
-				request.getSession(true).setAttribute("statusMessageKey", "node.setup.restore.success");
-			} catch ( Exception e ) {
-				log.error("Exception restoring backup archive", e);
-				Throwable root = e;
-				while ( root.getCause() != null ) {
-					root = root.getCause();
-				}
-				request.getSession(true).setAttribute("errorMessageKey",
-						"node.setup.restore.error.unknown");
-				request.getSession(true).setAttribute("errorMessageParam0", root.getMessage());
-			}
+			return "redirect:/associate";
 		}
-		return "redirect:/associate";
+		Map<String, String> props = new HashMap<String, String>();
+		props.put(BackupManager.BACKUP_KEY, file.getOriginalFilename());
+		try {
+			Future<Backup> backupFuture = manager.importBackupArchive(file.getInputStream(), props);
+			Backup backup = backupFuture.get();
+			if ( backup != null ) {
+				request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
+				return PAGE_RESTORE_FROM_BACKUP;
+			}
+			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
+			request.getSession(true).setAttribute("errorMessageParam0", "Backup not imported");
+			return "redirect:/associate";
+		} catch ( Exception e ) {
+			log.error("Exception restoring backup archive", e);
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
+			request.getSession(true).setAttribute("errorMessageParam0", root.getMessage());
+			return "redirect:/associate";
+		}
+
+	}
+
+	@RequestMapping(value = "/importedBackup", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<BackupInfo> importedBackup(Locale locale, HttpServletRequest request)
+			throws IOException {
+		final BackupManager manager = backupManagerTracker.service();
+		if ( manager == null ) {
+			return new Response<BackupInfo>(false, "500", "No backup manager available.", null);
+		}
+		final String backupKey = (String) request.getSession(true).getAttribute(BACKUP_KEY_SESSION_KEY);
+		if ( backupKey == null ) {
+			return new Response<BackupInfo>(false, "404", "No imported backup available.", null);
+		}
+		try {
+			BackupInfo info = manager.infoForBackup(backupKey, locale);
+			return Response.response(info);
+		} catch ( Exception e ) {
+			log.error("Exception importing backup archive", e);
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			return new Response<BackupInfo>(false, "500", e.getMessage(), null);
+		}
+	}
+
+	@RequestMapping(value = "/restoreBackup", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<?> restoreBackup(BackupOptions options, Locale locale, HttpServletRequest request) {
+		final BackupManager manager = backupManagerTracker.service();
+		if ( manager == null ) {
+			return new Response<Backup>(false, "500", "No backup manager available.", null);
+		}
+		final BackupService backupService = manager.activeBackupService();
+		if ( backupService == null ) {
+			return new Response<Backup>(false, "500", "No backup service available.", null);
+		}
+		final String backupKey = (String) request.getSession(true).getAttribute(BACKUP_KEY_SESSION_KEY);
+		if ( backupKey == null ) {
+			return new Response<Object>(false, "404", "No imported backup available.", null);
+		}
+		Backup backup = manager.activeBackupService().backupForKey(backupKey);
+		if ( backup == null ) {
+			return new Response<Object>(false, "404", "Imported backup not available.", null);
+		}
+		Map<String, String> props = options.asBackupManagerProperties();
+		manager.restoreBackup(backup, props);
+		request.getSession().removeAttribute(BACKUP_KEY_SESSION_KEY);
+		shutdownSoon();
+		return new Response<Object>(true, null,
+				messageSource.getMessage("node.setup.restore.success", null, locale), null);
 	}
 
 	public void setPkiService(PKIService pkiService) {

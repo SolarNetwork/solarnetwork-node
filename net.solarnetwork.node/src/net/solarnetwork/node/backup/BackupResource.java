@@ -29,7 +29,7 @@ import java.io.InputStream;
  * API for a resource to take part in the backup system.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface BackupResource {
 
@@ -59,5 +59,14 @@ public interface BackupResource {
 	 * @return the modification date, or <em>-1</em> if not known
 	 */
 	long getModificationDate();
+
+	/**
+	 * Get the key of the {@link BackupResourceProvider} that provided this
+	 * resource.
+	 * 
+	 * @return The provider key.
+	 * @since 1.1
+	 */
+	String getProviderKey();
 
 }

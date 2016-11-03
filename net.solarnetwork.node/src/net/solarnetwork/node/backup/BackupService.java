@@ -23,6 +23,7 @@
 package net.solarnetwork.node.backup;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
@@ -30,7 +31,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * API for node backup.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface BackupService {
 
@@ -128,5 +129,21 @@ public interface BackupService {
 	 * @since 1.1
 	 */
 	Backup markedBackupForRestore(Map<String, String> props);
+
+	/**
+	 * Import a set of backup resources as a new {@code Backup}.
+	 * 
+	 * @param date
+	 *        The backup date, or {@code null} if not known.
+	 * @param resources
+	 *        The resources to include in the backup.
+	 * @param props
+	 *        An optional map of properties to pass to the import process. The
+	 *        {@link BackupManager#BACKUP_KEY} property can be used to provide a
+	 *        proposed backup key.
+	 * @return A backup instance for the imported resources.
+	 * @since 1.2
+	 */
+	Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props);
 
 }

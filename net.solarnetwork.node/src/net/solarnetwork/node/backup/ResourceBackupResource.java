@@ -30,17 +30,50 @@ import org.springframework.core.io.Resource;
  * {@link BackupResource} implementation using a Spring {@link Resource}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ResourceBackupResource implements BackupResource {
 
 	private final Resource resource;
 	private final String backupPath;
+	private final String providerKey;
 
+	/**
+	 * Constructor.
+	 * 
+	 * The {@code providerKey} will be set to
+	 * {@code net.solarnetwork.node.backup.FileBackupResourceProvider}.
+	 * 
+	 * @param resource
+	 *        The resource.
+	 * @param backupPath
+	 *        The backup path.
+	 */
 	public ResourceBackupResource(Resource resource, String backupPath) {
+		this(resource, backupPath, FileBackupResourceProvider.class.getName());
+	}
+
+	/**
+	 * Construct with a specific provider key.
+	 * 
+	 * @param resource
+	 *        The resource.
+	 * @param backupPath
+	 *        The backup path.
+	 * @param providerKey
+	 *        The provider key.
+	 * @since 1.1
+	 */
+	public ResourceBackupResource(Resource resource, String backupPath, String providerKey) {
 		super();
 		this.resource = resource;
 		this.backupPath = backupPath;
+		this.providerKey = providerKey;
+	}
+
+	@Override
+	public String getProviderKey() {
+		return providerKey;
 	}
 
 	@Override

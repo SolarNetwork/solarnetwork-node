@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.backup;
 
+import java.util.Locale;
+
 /**
  * A provider of {@link BackupResource} instances.
  * 
@@ -31,7 +33,7 @@ package net.solarnetwork.node.backup;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface BackupResourceProvider {
 
@@ -64,4 +66,27 @@ public interface BackupResourceProvider {
 	 */
 	boolean restoreBackupResource(BackupResource resource);
 
+	/**
+	 * Get info about the provider.
+	 * 
+	 * @param locale
+	 *        The desired locale of the information, or {@code null} for the
+	 *        system locale.
+	 * @return The info.
+	 * @since 1.1
+	 */
+	BackupResourceProviderInfo providerInfo(Locale locale);
+
+	/**
+	 * Get info about a particular resource.
+	 * 
+	 * @param resource
+	 *        The resource to get the information for.
+	 * @param locale
+	 *        The desired locale of the information, or {@code null} for the
+	 *        system locale.
+	 * @return The info, or {@code null} if none available.
+	 * @since 1.1
+	 */
+	BackupResourceInfo resourceInfo(BackupResource resource, Locale locale);
 }

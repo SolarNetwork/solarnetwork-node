@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -60,6 +61,7 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
@@ -76,8 +78,12 @@ import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
@@ -110,7 +116,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider {
 
@@ -136,6 +142,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private TransactionTemplate transactionTemplate;
 	private String backupDestinationPath;
 	private int backupMaxCount = DEFAULT_BACKUP_MAX_COUNT;
+	private MessageSource messageSource;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
 	// private final Map<String, SettingSpecifierProviderFactory> factories =
@@ -885,7 +892,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 		List<BackupResource> resources = new ArrayList<BackupResource>(1);
 		resources.add(new ResourceBackupResource(new ByteArrayResource(byos.toByteArray()),
-				BACKUP_RESOURCE_SETTINGS_CSV));
+				BACKUP_RESOURCE_SETTINGS_CSV, getKey()));
 		return resources;
 	}
 
@@ -913,6 +920,23 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "Settings Backup Provider";
+		String desc = "Backs up system settings.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
 	private static class FilenameReverseComparator implements Comparator<File> {
@@ -984,6 +1008,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	public void setBackupMaxCount(int backupMaxCount) {
 		this.backupMaxCount = backupMaxCount;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import javax.annotation.Resource;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -69,12 +70,17 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
@@ -119,6 +125,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	private String caAlias = "ca";
 	private int keySize = 2048;
 	private String manualKeyStorePassword;
+	private MessageSource messageSource;
 
 	@Resource
 	private CertificateService certificateService;
@@ -143,7 +150,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		}
 		List<BackupResource> result = new ArrayList<BackupResource>(1);
 		result.add(new ResourceBackupResource(new FileSystemResource(ksFile),
-				BACKUP_RESOURCE_NAME_KEYSTORE));
+				BACKUP_RESOURCE_NAME_KEYSTORE, getKey()));
 		return result;
 	}
 
@@ -172,6 +179,23 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "Certificate Backup Provider";
+		String desc = "Backs up the SolarNode certificates.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
 	private String getKeyStorePassword() {
@@ -801,6 +825,10 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	public void setJreTrustStorePassword(String jreTrustStorePassword) {
 		this.jreTrustStorePassword = jreTrustStorePassword;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

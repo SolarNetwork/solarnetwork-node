@@ -67,6 +67,11 @@
 				<argument ref="txManager"/>
 			</bean>
 		</property>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.settings.ca.CASettingsService"/>
+			</bean>
+		</property>
 	</bean>
 	
 	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>

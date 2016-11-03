@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.backup;
 
-import java.io.FilterInputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +31,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -54,6 +55,7 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.DynamicServiceUnavailableException;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.util.UnionIterator;
@@ -75,7 +77,7 @@ import net.solarnetwork.util.UnionIterator;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -318,63 +320,27 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public void importBackupArchive(InputStream archive) throws IOException {
-		importBackupArchive(archive, null);
+	public Future<Backup> importBackupArchive(InputStream archive) throws IOException {
+		return importBackupArchive(archive, null);
 	}
 
 	@Override
-	public void importBackupArchive(InputStream archive, Map<String, String> props) throws IOException {
-		final ZipInputStream zin = new ZipInputStream(archive);
-		final Set<String> providerKeySet = (props == null ? null
-				: StringUtils.commaDelimitedStringToSet(props.get(RESOURCE_PROVIDER_FILTER)));
-		while ( true ) {
-			final ZipEntry entry = zin.getNextEntry();
-			if ( entry == null ) {
-				break;
-			}
-			final String path = entry.getName();
-			log.debug("Inspecting backup resource {}", path);
-			final int providerIndex = path.indexOf('/');
-			if ( providerIndex != -1 ) {
-				final String providerKey = path.substring(0, providerIndex);
-				if ( providerKeySet != null && !providerKeySet.isEmpty()
-						&& !providerKeySet.contains(providerKey) ) {
-					log.debug("Skipping resource {} (provider filtered)", path);
-					continue;
-				}
-				for ( BackupResourceProvider provider : resourceProviders ) {
-					if ( providerKey.equals(provider.getKey()) ) {
-						log.debug("Restoring backup resource {}", path);
-						provider.restoreBackupResource(new BackupResource() {
-
-							@Override
-							public String getBackupPath() {
-								return path.substring(providerIndex + 1);
-							}
-
-							@Override
-							public InputStream getInputStream() throws IOException {
-								return new FilterInputStream(zin) {
-
-									@Override
-									public void close() throws IOException {
-										// don't close me
-									}
-
-								};
-							}
-
-							@Override
-							public long getModificationDate() {
-								return entry.getTime();
-							}
-
-						});
-						break;
-					}
-				}
-			}
+	public Future<Backup> importBackupArchive(InputStream archive, final Map<String, String> props)
+			throws IOException {
+		final BackupService service = backupServiceTracker.service();
+		if ( service == null ) {
+			throw new DynamicServiceUnavailableException(
+					"No BackupService available to import backup with");
 		}
+		final ZipInputStream zin = new ZipInputStream(archive);
+		return executorService.submit(new Callable<Backup>() {
+
+			@Override
+			public Backup call() throws Exception {
+				final BackupResourceIterable itr = new ZipStreamBackupResourceIterable(zin, props);
+				return service.importBackup(null, itr, props);
+			}
+		});
 	}
 
 	@Override
@@ -418,6 +384,11 @@ public class DefaultBackupManager implements BackupManager {
 							resourceHandled = provider.restoreBackupResource(new BackupResource() {
 
 								@Override
+								public String getProviderKey() {
+									return providerKey;
+								}
+
+								@Override
 								public String getBackupPath() {
 									return path.substring(providerIndex + 1);
 								}
@@ -456,49 +427,73 @@ public class DefaultBackupManager implements BackupManager {
 		return result;
 	}
 
-	private static class PrefixedBackupResourceIterator implements Iterator<BackupResource> {
-
-		private final Iterator<BackupResource> delegate;
-		private final String prefix;
-
-		private PrefixedBackupResourceIterator(Iterator<BackupResource> delegate, String prefix) {
-			super();
-			this.delegate = delegate;
-			this.prefix = prefix;
+	@Override
+	public BackupInfo infoForBackup(final String key, final Locale locale) {
+		BackupService service = activeBackupService();
+		if ( service == null ) {
+			log.debug("No BackupService available, can't find resources for backup");
+			return null;
+		}
+		Backup backup = service.backupForKey(key);
+		if ( backup == null ) {
+			log.debug("No backup avaialble from service {} for key {}", service.getKey(), key);
+			return null;
 		}
 
-		@Override
-		public boolean hasNext() {
-			return delegate.hasNext();
-		}
+		Map<String, BackupResourceProviderInfo> providerInfos = new LinkedHashMap<String, BackupResourceProviderInfo>();
+		List<BackupResourceInfo> resourceInfos = new ArrayList<BackupResourceInfo>();
 
-		@Override
-		public BackupResource next() {
-			final BackupResource r = delegate.next();
-			return new BackupResource() {
-
-				@Override
-				public String getBackupPath() {
-					return prefix + '/' + r.getBackupPath();
+		BackupResourceIterable resources = null;
+		try {
+			resources = service.getBackupResources(backup);
+			for ( BackupResource r : resources ) {
+				final String path = r.getBackupPath();
+				final int providerIndex = path.indexOf('/');
+				if ( providerIndex == -1 ) {
+					continue;
 				}
-
-				@Override
-				public InputStream getInputStream() throws IOException {
-					return r.getInputStream();
+				final String providerKey = path.substring(0, providerIndex);
+				BackupResourceProvider provider = providerForKey(providerKey);
+				if ( provider == null ) {
+					continue;
 				}
-
-				@Override
-				public long getModificationDate() {
-					return r.getModificationDate();
+				if ( !providerInfos.containsKey(providerKey) ) {
+					providerInfos.put(providerKey, provider.providerInfo(locale));
 				}
-
-			};
+				BackupResourceInfo info = provider.resourceInfo(r, locale);
+				if ( info != null ) {
+					String name = info.getName();
+					if ( name != null && name.equals(path) ) {
+						name = path.substring(providerIndex + 1);
+					}
+					resourceInfos
+							.add(new SimpleBackupResourceInfo(providerKey, name, info.getDescription()));
+				}
+			}
+		} finally {
+			if ( resources != null ) {
+				try {
+					resources.close();
+				} catch ( IOException e ) {
+					// ignore
+				}
+			}
 		}
 
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
+		return new SimpleBackupInfo(key, backup.getDate(), providerInfos.values(), resourceInfos);
+	}
+
+	private BackupResourceProvider providerForKey(String key) {
+		Collection<BackupResourceProvider> providers = resourceProviders;
+		if ( providers == null || providers.isEmpty() ) {
+			return null;
 		}
+		for ( BackupResourceProvider provider : providers ) {
+			if ( key.equals(provider.getKey()) ) {
+				return provider;
+			}
+		}
+		return null;
 	}
 
 	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
