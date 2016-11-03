@@ -207,6 +207,9 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 				return null;
 			}
 		}
+		if ( !backupDir.exists() ) {
+			backupDir.mkdirs();
+		}
 		final Long nodeId = nodeIdForArchiveFileName();
 		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now, nodeId);
 		final File archiveFile = new File(backupDir, archiveName);
