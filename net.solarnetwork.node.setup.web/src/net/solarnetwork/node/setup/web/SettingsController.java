@@ -28,7 +28,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -223,7 +225,9 @@ public class SettingsController {
 		if ( manager == null ) {
 			return "redirect:/a/settings";
 		}
-		manager.importBackupArchive(file.getInputStream());
+		Map<String, String> props = new HashMap<String, String>();
+		props.put(BackupManager.BACKUP_KEY, file.getName());
+		manager.importBackupArchive(file.getInputStream(), props);
 		return "redirect:/a/settings";
 	}
 

@@ -53,6 +53,7 @@ import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.node.backup.Backup;
+import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
@@ -75,7 +76,9 @@ import net.solarnetwork.web.domain.Response;
 @RequestMapping("/associate")
 public class NodeAssociationController extends BaseSetupController {
 
+	private static final String BACKUP_KEY_SESSION_KEY = "restoreBackupKey";
 	private static final String PAGE_ENTER_CODE = "associate/enter-code";
+	private static final String PAGE_IMPORT_FROM_BACKUP = "associate/import-from-backup";
 	private static final String PAGE_RESTORE_FROM_BACKUP = "associate/restore-from-backup";
 
 	/** The model attribute for the network association details. */
@@ -259,31 +262,60 @@ public class NodeAssociationController extends BaseSetupController {
 
 	@RequestMapping(value = "/restore", method = RequestMethod.GET)
 	public String restoreFromBackup() {
-		return PAGE_RESTORE_FROM_BACKUP;
+		return PAGE_IMPORT_FROM_BACKUP;
 	}
 
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
-	@ResponseBody
-	public Response<Backup> importBackup(@RequestParam("file") MultipartFile file,
-			HttpServletRequest request) throws IOException {
+	public String importBackup(@RequestParam("file") MultipartFile file, HttpServletRequest request)
+			throws IOException {
 		final BackupManager manager = backupManagerTracker.service();
 		if ( manager == null ) {
-			return new Response<Backup>(false, "500", "No backup manager available.", null);
+			request.getSession(true).setAttribute("errorMessageKey",
+					"node.setup.restore.error.noBackupManager");
+			return "redirect:/associate";
+		}
+		Map<String, String> props = new HashMap<String, String>();
+		props.put(BackupManager.BACKUP_KEY, file.getOriginalFilename());
+		try {
+			Future<Backup> backupFuture = manager.importBackupArchive(file.getInputStream(), props);
+			Backup backup = backupFuture.get();
+			request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
+			return PAGE_RESTORE_FROM_BACKUP;
+		} catch ( Exception e ) {
+			log.error("Exception restoring backup archive", e);
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
+			request.getSession(true).setAttribute("errorMessageParam0", root.getMessage());
+			return "redirect:/associate";
+		}
+
+	}
+
+	@RequestMapping(value = "/importedBackup", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<BackupInfo> importedBackup(Locale locale, HttpServletRequest request)
+			throws IOException {
+		final BackupManager manager = backupManagerTracker.service();
+		if ( manager == null ) {
+			return new Response<BackupInfo>(false, "500", "No backup manager available.", null);
+		}
+		final String backupKey = (String) request.getSession(true).getAttribute(BACKUP_KEY_SESSION_KEY);
+		if ( backupKey == null ) {
+			return new Response<BackupInfo>(false, "404", "No imported backup available.", null);
 		}
 		try {
-			Future<Backup> backupFuture = manager.importBackupArchive(file.getInputStream());
-			Backup backup = backupFuture.get();
-			if ( backup != null ) {
-				request.getSession(true).setAttribute("restoreBackupKey", backup.getKey());
-			}
-			return Response.response(backup);
+			BackupInfo info = manager.infoForBackup(backupKey, locale);
+			return Response.response(info);
 		} catch ( Exception e ) {
 			log.error("Exception importing backup archive", e);
 			Throwable root = e;
 			while ( root.getCause() != null ) {
 				root = root.getCause();
 			}
-			return new Response<Backup>(false, "500", e.getMessage(), null);
+			return new Response<BackupInfo>(false, "500", e.getMessage(), null);
 		}
 	}
 
@@ -298,7 +330,7 @@ public class NodeAssociationController extends BaseSetupController {
 		if ( backupService == null ) {
 			return new Response<Backup>(false, "500", "No backup service available.", null);
 		}
-		final String backupKey = (String) request.getSession(true).getAttribute("restoreBackupKey");
+		final String backupKey = (String) request.getSession(true).getAttribute(BACKUP_KEY_SESSION_KEY);
 		if ( backupKey == null ) {
 			return new Response<Object>(false, "404", "No imported backup available.", null);
 		}
@@ -308,6 +340,8 @@ public class NodeAssociationController extends BaseSetupController {
 		}
 		Map<String, String> props = options.asBackupManagerProperties();
 		manager.restoreBackup(backup, props);
+		request.getSession().removeAttribute(BACKUP_KEY_SESSION_KEY);
+		shutdownSoon();
 		return new Response<Object>(true, null,
 				messageSource.getMessage("node.setup.restore.success", null, locale), null);
 	}

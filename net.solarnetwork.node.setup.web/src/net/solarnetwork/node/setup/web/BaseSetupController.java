@@ -24,11 +24,12 @@
 
 package net.solarnetwork.node.setup.web;
 
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.setup.SetupService;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.setup.SetupService;
 
 /**
  * Base class for setup controllers.
@@ -43,11 +44,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  * information.</dd>
  * 
  * <dt>identityService</dt>
- * <dd>The {@link IdentityService} to use for querying identity information.</dd>
+ * <dd>The {@link IdentityService} to use for querying identity
+ * information.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BaseSetupController {
 
@@ -58,6 +60,60 @@ public class BaseSetupController {
 
 	@Autowired
 	private IdentityService identityService;
+
+	@Autowired(required = false)
+	private BundleContext bundleContext;
+
+	/**
+	 * Shutdown SolarNode in the near future.
+	 * 
+	 * This can be used during the setup process, when restoring backups for
+	 * example. By shutting down we assume some external watchdog process will
+	 * bring SolarNode back up, such as {@code systemd} or Monit.
+	 * 
+	 * @since 1.1
+	 */
+	protected void shutdownSoon() {
+		final BundleContext ctx = bundleContext;
+		if ( ctx != null ) {
+			final Thread shutdownThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						Thread.sleep(2000);
+					} catch ( Exception e ) {
+						// ignore
+					}
+					try {
+						ctx.getBundle(0).stop(org.osgi.framework.Bundle.STOP_TRANSIENT);
+					} catch ( Exception e ) {
+						System.err.println("Exception shutting down OSGi: " + e);
+					}
+				}
+			}, "Backup Restore Shutdown");
+			shutdownThread.setDaemon(true);
+			shutdownThread.start();
+
+			// start another thread to monitor the shutdown process, in case OSGi takes too long or gets hung up
+			Thread shutdownMonitorThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						shutdownThread.join(60000);
+					} catch ( Exception e ) {
+						// ignore
+					} finally {
+						System.exit(0);
+					}
+				}
+			}, "Backup Restore Shutdown Monitor");
+			shutdownMonitorThread.setDaemon(true);
+			shutdownMonitorThread.start();
+
+		}
+	}
 
 	public SetupService getSetupBiz() {
 		return setupBiz;

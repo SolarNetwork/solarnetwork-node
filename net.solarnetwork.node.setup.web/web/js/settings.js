@@ -462,7 +462,7 @@ function setupBackups() {
 			selectedCount = 0,
 			submit = $('#backup-restore-modal button[type=submit]');
 		row.toggleClass('selected');
-		selectedCount = row.siblings('.selected').size();
+		selectedCount = row.parent().children('.selected').size();
 		if ( selectedCount < 1 ) {
 			submit.attr('disabled', 'disabled');
 		} else {
@@ -487,8 +487,7 @@ function setupBackups() {
 			}
 			var form = $('#backup-restore-modal');
 			SolarNode.info(json.message, $('#backup-restore-list-container').empty());
-			form.find('button').remove();
-			form.find('.modal-body p').remove();
+			form.find('button, .modal-body p').remove();
 			form.find('.progress.hide').removeClass('hide');
 			setTimeout(function() {
 				SolarNode.Backups.handleRestart(SolarNode.context.path('/a/settings'));

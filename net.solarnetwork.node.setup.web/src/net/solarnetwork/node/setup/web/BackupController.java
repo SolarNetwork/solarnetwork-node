@@ -26,13 +26,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import javax.annotation.Resource;
-import org.osgi.framework.BundleContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
@@ -56,7 +56,7 @@ import net.solarnetwork.web.domain.Response;
  */
 @Controller
 @RequestMapping("/a/backups")
-public class BackupController {
+public class BackupController extends BaseSetupController {
 
 	private Future<Backup> importTask;
 
@@ -65,9 +65,6 @@ public class BackupController {
 
 	@Autowired
 	private MessageSource messageSource;
-
-	@Autowired(required = false)
-	private BundleContext bundleContext;
 
 	/**
 	 * Get a list of all available backups from the active backup service.
@@ -135,7 +132,9 @@ public class BackupController {
 		if ( manager == null ) {
 			return new Response<Boolean>(false, "500", "No backup manager available.", null);
 		}
-		importTask = manager.importBackupArchive(file.getInputStream());
+		Map<String, String> props = new HashMap<String, String>();
+		props.put(BackupManager.BACKUP_KEY, file.getName());
+		importTask = manager.importBackupArchive(file.getInputStream(), props);
 		return Response.response(true);
 	}
 
@@ -213,48 +212,6 @@ public class BackupController {
 		shutdownSoon();
 		return new Response<Object>(true, null,
 				messageSource.getMessage("node.setup.restore.success", null, locale), null);
-	}
-
-	private void shutdownSoon() {
-		final BundleContext ctx = bundleContext;
-		if ( ctx != null ) {
-			final Thread shutdownThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						Thread.sleep(2000);
-					} catch ( Exception e ) {
-						// ignore
-					}
-					try {
-						ctx.getBundle(0).stop(org.osgi.framework.Bundle.STOP_TRANSIENT);
-					} catch ( Exception e ) {
-						System.err.println("Exception shutting down OSGi: " + e);
-					}
-				}
-			}, "Backup Restore Shutdown");
-			shutdownThread.setDaemon(true);
-			shutdownThread.start();
-
-			// start another thread to monitor the shutdown process, in case OSGi takes too long or gets hung up
-			Thread shutdownMonitorThread = new Thread(new Runnable() {
-
-				@Override
-				public void run() {
-					try {
-						shutdownThread.join(60000);
-					} catch ( Exception e ) {
-						// ignore
-					} finally {
-						System.exit(0);
-					}
-				}
-			}, "Backup Restore Shutdown Monitor");
-			shutdownMonitorThread.setDaemon(true);
-			shutdownMonitorThread.start();
-
-		}
 	}
 
 }
