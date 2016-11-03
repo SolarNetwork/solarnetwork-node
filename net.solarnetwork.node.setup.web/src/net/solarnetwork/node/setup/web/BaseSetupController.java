@@ -86,6 +86,7 @@ public class BaseSetupController {
 						// ignore
 					}
 					try {
+						log.warn("Stopping OSGi from shutdown request...");
 						ctx.getBundle(0).stop(org.osgi.framework.Bundle.STOP_TRANSIENT);
 					} catch ( Exception e ) {
 						System.err.println("Exception shutting down OSGi: " + e);
@@ -100,11 +101,17 @@ public class BaseSetupController {
 
 				@Override
 				public void run() {
+					final long start = System.currentTimeMillis();
 					try {
 						shutdownThread.join(60000);
+						final long end = (System.currentTimeMillis() - start);
+						if ( end < 900 ) {
+							Thread.sleep(30000);
+						}
 					} catch ( Exception e ) {
 						// ignore
 					} finally {
+						log.warn("Exiting from shutdown request.");
 						System.exit(0);
 					}
 				}
