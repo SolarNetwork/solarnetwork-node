@@ -30,20 +30,21 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import net.solarnetwork.node.IdentityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.GenericFilterBean;
+import net.solarnetwork.node.IdentityService;
 
 /**
  * Filter to force the user to the node association setup if not already
  * associated.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 
 	private static final String NODE_ASSOCIATE_PATH = "/associate";
+	private static final String CSRF_PATH = "/csrf";
 
 	@Autowired
 	private IdentityService identityService;
@@ -61,7 +62,8 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 	private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final String path = request.getPathInfo();
-		if ( !path.startsWith(NODE_ASSOCIATE_PATH) && identityService.getNodeId() == null ) {
+		if ( !(path.startsWith(NODE_ASSOCIATE_PATH) || path.equals(CSRF_PATH))
+				&& identityService.getNodeId() == null ) {
 			response.sendRedirect(request.getContextPath() + NODE_ASSOCIATE_PATH);
 		} else {
 			chain.doFilter(request, response);
