@@ -21,6 +21,7 @@
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
 	/js-lib/ladda.js
+	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
 	/js/global.js
