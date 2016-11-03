@@ -31,6 +31,13 @@ $(document).ready(function() {
 		
 		return true;
 	});
+	
+	$('#associate-import-backup-form').on('submit', function(event) {
+		var form = $(event.target),
+			submitBtn = form.find('button[type=submit]');
+		submitBtn.attr('disabled', 'disabled');
+		SolarNode.showSpinner(submitBtn);
+	});
 
 	$('#associate-restore-list-container').on('click', 'div.menu-item', function(event) {
 		var row = $(this), 
