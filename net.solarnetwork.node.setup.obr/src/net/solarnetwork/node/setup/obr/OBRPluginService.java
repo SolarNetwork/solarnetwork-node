@@ -46,6 +46,17 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Version;
+import org.osgi.service.obr.Repository;
+import org.osgi.service.obr.RepositoryAdmin;
+import org.osgi.service.obr.Requirement;
+import org.osgi.service.obr.Resolver;
+import org.osgi.service.obr.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -62,17 +73,6 @@ import net.solarnetwork.support.SearchFilter.CompareOperator;
 import net.solarnetwork.support.SearchFilter.LogicOperator;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.Version;
-import org.osgi.service.obr.Repository;
-import org.osgi.service.obr.RepositoryAdmin;
-import org.osgi.service.obr.Requirement;
-import org.osgi.service.obr.Resolver;
-import org.osgi.service.obr.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * OBR implementation of {@link PluginService}, using the Apache Felix OBR
@@ -84,7 +84,8 @@ import org.springframework.context.MessageSource;
  * 
  * <dl class="class-properties">
  * <dt>bundleContext</dt>
- * <dd>The OSGi {@link BundleContext} to enable installing/removing plugins.</dd>
+ * <dd>The OSGi {@link BundleContext} to enable installing/removing
+ * plugins.</dd>
  * 
  * <dt>repositoryAdmin</dt>
  * <dd>The {@link RepositoryAdmin} to manage all OBR actions with.</dd>
@@ -115,10 +116,11 @@ import org.springframework.context.MessageSource;
  * backups will be initiated before any provisioning operation.</dd>
  * </dl>
  * 
- * <dt>provisionTaskStatusMinimumKeepSeconds</dt> <dd>The minimum number of
- * seconds to hold provision tasks in memory after the task has completed, to
- * support the {@link #statusForProvisioningOperation(String, Locale)} method.
- * Defaults to 10 minutes.</dd>
+ * <dt>provisionTaskStatusMinimumKeepSeconds</dt>
+ * <dd>The minimum number of seconds to hold provision tasks in memory after the
+ * task has completed, to support the
+ * {@link #statusForProvisioningOperation(String, Locale)} method. Defaults to
+ * 10 minutes.</dd>
  * 
  * @author matt
  * @version 1.0
@@ -142,8 +144,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	private String downloadPath = "app/main";
 	private String[] restrictingSymbolicNameFilters = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
 	private String[] exclusionSymbolicNameFilters = DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS;
-	private Pattern[] coreFeatureSymbolicNamePatterns = StringUtils.patterns(
-			DEFAULT_CORE_FEATURE_EXPRESSIONS, 0);
+	private Pattern[] coreFeatureSymbolicNamePatterns = StringUtils
+			.patterns(DEFAULT_CORE_FEATURE_EXPRESSIONS, 0);
 	private OptionalService<BackupManager> backupManager;
 	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
 
@@ -170,8 +172,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 			for ( itr = provisionTaskMap.values().iterator(); itr.hasNext(); ) {
 				OBRProvisionTask task = itr.next();
 				if ( task.getFuture().isDone() && (now - task.getStatus().getCreationDate()) > min ) {
-					log.debug("Cleaning out old provision task status {}", task.getStatus()
-							.getProvisionID());
+					log.debug("Cleaning out old provision task status {}",
+							task.getStatus().getProvisionID());
 					itr.remove();
 				}
 			}
@@ -295,15 +297,16 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 					if ( uid.contains(exclude) ) {
 						// this plugin is normally excluded... but is it actually installed, and upgradable?
 						Bundle installed = installedBundles.get(uid);
-						if ( installed == null || r.getVersion().compareTo(installed.getVersion()) < 1 ) {
+						if ( installed == null
+								|| r.getVersion().compareTo(installed.getVersion()) < 1 ) {
 							// it's not installed, or the installed version is up to date, so exclude it
 							continue RLOOP;
 						}
 					}
 				}
 			}
-			Plugin p = new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
-					uid) != null));
+			Plugin p = new OBRResourcePlugin(r,
+					(StringUtils.matches(coreFeatureSymbolicNamePatterns, uid) != null));
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
 			}
@@ -331,7 +334,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(bundles.length);
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
-			if ( restrictingSymbolicNameFilters != null && restrictingSymbolicNameFilters.length > 0 ) {
+			if ( uid != null && restrictingSymbolicNameFilters != null
+					&& restrictingSymbolicNameFilters.length > 0 ) {
 				boolean allowed = false;
 				for ( String filter : restrictingSymbolicNameFilters ) {
 					if ( uid.startsWith(filter) ) {
@@ -356,8 +360,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		Map<String, Bundle> installedBundles = installedBundles();
 		List<Plugin> results = new ArrayList<Plugin>(installedBundles.size());
 		for ( Bundle b : installedBundles.values() ) {
-			Plugin p = new BundlePlugin(b, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
-					b.getSymbolicName()) != null));
+			Plugin p = new BundlePlugin(b,
+					(StringUtils.matches(coreFeatureSymbolicNamePatterns, b.getSymbolicName()) != null));
 			if ( locale != null ) {
 				p = new LocalizedPlugin(p, locale);
 			}
@@ -603,8 +607,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		OBRPluginService defaults = new OBRPluginService();
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(new BasicTextFieldSettingSpecifier("restrictingSymbolicNameFilter", defaults
-				.getRestrictingSymbolicNameFilter()));
+		result.add(new BasicTextFieldSettingSpecifier("restrictingSymbolicNameFilter",
+				defaults.getRestrictingSymbolicNameFilter()));
 		return result;
 	}
 
@@ -622,8 +626,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		if ( this.restrictingSymbolicNameFilters == null ) {
 			return null;
 		}
-		return StringUtils.commaDelimitedStringFromCollection(Arrays
-				.asList(this.restrictingSymbolicNameFilters));
+		return StringUtils
+				.commaDelimitedStringFromCollection(Arrays.asList(this.restrictingSymbolicNameFilters));
 	}
 
 	public void setRestrictingSymbolicNameFilter(String restrictingSymbolicNameFilter) {
