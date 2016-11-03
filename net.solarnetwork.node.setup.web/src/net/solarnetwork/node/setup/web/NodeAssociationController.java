@@ -279,8 +279,13 @@ public class NodeAssociationController extends BaseSetupController {
 		try {
 			Future<Backup> backupFuture = manager.importBackupArchive(file.getInputStream(), props);
 			Backup backup = backupFuture.get();
-			request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
-			return PAGE_RESTORE_FROM_BACKUP;
+			if ( backup != null ) {
+				request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
+				return PAGE_RESTORE_FROM_BACKUP;
+			}
+			request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
+			request.getSession(true).setAttribute("errorMessageParam0", "Backup not imported");
+			return "redirect:/associate";
 		} catch ( Exception e ) {
 			log.error("Exception restoring backup archive", e);
 			Throwable root = e;
