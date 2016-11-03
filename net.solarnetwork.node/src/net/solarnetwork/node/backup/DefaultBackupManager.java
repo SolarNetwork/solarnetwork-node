@@ -325,7 +325,7 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public Future<Backup> importBackupArchive(InputStream archive, Map<String, String> props)
+	public Future<Backup> importBackupArchive(InputStream archive, final Map<String, String> props)
 			throws IOException {
 		final BackupService service = backupServiceTracker.service();
 		if ( service == null ) {
