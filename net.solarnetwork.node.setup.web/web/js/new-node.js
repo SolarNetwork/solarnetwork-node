@@ -78,8 +78,9 @@ $(document).ready(function() {
 			SolarNode.error("Error restoring backup: " +statusText, $('#associate-restore-backup-form'));
 		},
 		complete : function() {
-			createBackupSubmitButton.removeAttr('disabled');
-			SolarNode.hideSpinner(createBackupSubmitButton);
+			var submitBtn = $('#associate-restore-backup-form button[type=submit]');
+			submitBtn.removeAttr('disabled');
+			SolarNode.hideSpinner(submitBtn);
 		}
 	}).each(function(idx, el) {
 		$.getJSON(SolarNode.context.path('/associate/importedBackup'), function(json) {
