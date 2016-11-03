@@ -28,9 +28,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import javax.annotation.Resource;
+import org.osgi.framework.BundleContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -58,6 +62,12 @@ public class BackupController {
 
 	@Resource(name = "backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
+
+	@Autowired
+	private MessageSource messageSource;
+
+	@Autowired(required = false)
+	private BundleContext bundleContext;
 
 	/**
 	 * Get a list of all available backups from the active backup service.
@@ -148,6 +158,15 @@ public class BackupController {
 		}
 	}
 
+	/**
+	 * Get information about a backup.
+	 * 
+	 * @param key
+	 *        The key of the backup to get the information for.
+	 * @param locale
+	 *        The desired locale of the information.
+	 * @return The backup info response.
+	 */
 	@RequestMapping(value = "/inspect", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<BackupInfo> inspectBackup(@RequestParam("key") String key, Locale locale) {
@@ -161,6 +180,81 @@ public class BackupController {
 					null);
 		}
 		return Response.response(info);
+	}
+
+	/**
+	 * Restore a backup.
+	 * 
+	 * @param options
+	 * @return
+	 */
+	@RequestMapping(value = "/restore", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<?> restoreBackup(BackupOptions options, Locale locale) {
+		final BackupManager manager = backupManagerTracker.service();
+		if ( manager == null ) {
+			return new Response<BackupInfo>(false, "500", "No backup manager available.", null);
+		}
+		final BackupService backupService = manager.activeBackupService();
+		if ( backupService == null ) {
+			return new Response<Backup>(false, "500", "No backup service available.", null);
+		}
+		final String backupKey = options.getKey();
+		if ( backupKey == null ) {
+			return new Response<Object>(false, "422", "No backup key provided.", null);
+		}
+		Backup backup = manager.activeBackupService().backupForKey(backupKey);
+		if ( backup == null ) {
+			return new Response<Object>(false, "404", "Backup not available.", null);
+		}
+
+		Map<String, String> props = options.asBackupManagerProperties();
+		manager.restoreBackup(backup, props);
+		shutdownSoon();
+		return new Response<Object>(true, null,
+				messageSource.getMessage("node.setup.restore.success", null, locale), null);
+	}
+
+	private void shutdownSoon() {
+		final BundleContext ctx = bundleContext;
+		if ( ctx != null ) {
+			final Thread shutdownThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						Thread.sleep(2000);
+					} catch ( Exception e ) {
+						// ignore
+					}
+					try {
+						ctx.getBundle(0).stop(org.osgi.framework.Bundle.STOP_TRANSIENT);
+					} catch ( Exception e ) {
+						System.err.println("Exception shutting down OSGi: " + e);
+					}
+				}
+			}, "Backup Restore Shutdown");
+			shutdownThread.setDaemon(true);
+			shutdownThread.start();
+
+			// start another thread to monitor the shutdown process, in case OSGi takes too long or gets hung up
+			Thread shutdownMonitorThread = new Thread(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						shutdownThread.join(60000);
+					} catch ( Exception e ) {
+						// ignore
+					} finally {
+						System.exit(0);
+					}
+				}
+			}, "Backup Restore Shutdown Monitor");
+			shutdownMonitorThread.setDaemon(true);
+			shutdownMonitorThread.start();
+
+		}
 	}
 
 }

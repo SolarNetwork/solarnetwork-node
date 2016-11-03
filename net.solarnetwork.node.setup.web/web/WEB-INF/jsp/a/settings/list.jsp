@@ -114,12 +114,11 @@
 				</form>
 			</div>
 
-
 			<div class="control-group">
 				<label class="control-label" for="backup-backups">
 					<fmt:message key="backup.backups.label"/>
 				</label>
-				<form class="controls form-inline" action="<c:url value='/a/settings/exportBackup'/>">
+				<form class="controls form-inline" id="backup-list-form" action="<c:url value='/a/settings/exportBackup'/>">
 					<select name="backup" class="span3" id="backup-backups">
 						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
 							<option value="${backup.key}"><fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/></option>
@@ -127,6 +126,9 @@
 					</select>
 					<button type="submit" class="btn btn-primary">
 						<fmt:message key="backup.download.button"/>
+					</button>
+					<button type="button" class="btn btn-warning" id="backup-restore-button">
+						<fmt:message key="backup.restore.button"/>
 					</button>
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.backups.info'/>"
@@ -212,3 +214,24 @@
 		</fieldset>
 	</div>
 </section>
+
+<form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<c:url value='/a/backups/restore'/>" method="post">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3><fmt:message key='backup.restore.title'/></h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key='backup.restore.intro'/></p>
+		<div id="backup-restore-list-container" class="menu-list noselect" 
+			data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
+		<div class="progress progress-striped active hide">
+      		<div class="bar" style="width: 100%;"></div>
+    	</div>		
+	</div>
+	<div class="modal-footer">
+		<sec:csrfInput/>
+		<input type="hidden" name="key" value=""/>
+		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
+	</div>
+</form>

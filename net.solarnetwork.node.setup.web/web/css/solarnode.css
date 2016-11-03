@@ -211,6 +211,42 @@ div.plugin .desc {
 	margin-bottom: 0;
 }
 
+.menu-list > * {
+	cursor: pointer;
+}
+
+.menu-list > * + * {
+	margin-top: 2px;
+}
+
+.menu-list h4 {
+	margin: 4px 0;
+	font-weight: 600;
+}
+
+.menu-list .checkmark {
+	margin: 8px;
+	display: none;
+}
+
+.menu-list .selected h4,
+.menu-list .selected .checkmark {
+	color: #0e90d2;
+}
+
+.menu-list .selected .checkmark {
+	display: inline-block;
+}
+
+.noselect {
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
 @media (max-width: 767px) {
 	div.plugin {
 		border-top: 1px solid #ccc;
