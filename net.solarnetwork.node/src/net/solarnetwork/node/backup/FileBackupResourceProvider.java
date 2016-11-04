@@ -29,13 +29,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.node.Constants;
 
 /**
  * {@link BackupResourceProvider} for node files, such as installed application
@@ -51,7 +53,8 @@ import org.springframework.util.StringUtils;
  * not provided, the runtime working directory will be used.</dd>
  * <dt>resourceDirectories</dt>
  * <dd>An array of directory paths, relative to {@code rootPath}, to look for
- * files to include in the backup. Defaults to {@code [app/base, app/main]}.</dd>
+ * files to include in the backup. Defaults to
+ * {@code [app/base, app/main]}.</dd>
  * 
  * <dt>fileNamePattern</dt>
  * <dd>A regexp used to match against files found in the
@@ -60,13 +63,14 @@ import org.springframework.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	private String rootPath = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, "");
 	private String[] resourceDirectories = new String[] { "app/base", "app/main" };
 	private String fileNamePattern = "\\.jar$";
+	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -80,8 +84,8 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		if ( resourceDirectories == null || resourceDirectories.length < 1 ) {
 			return Collections.emptyList();
 		}
-		final Pattern pat = (fileNamePattern == null ? null : Pattern.compile(fileNamePattern,
-				Pattern.CASE_INSENSITIVE));
+		final Pattern pat = (fileNamePattern == null ? null
+				: Pattern.compile(fileNamePattern, Pattern.CASE_INSENSITIVE));
 		List<BackupResource> fileList = new ArrayList<BackupResource>(20);
 		for ( String path : resourceDirectories ) {
 			File rootDir = (rootPath != null && rootPath.length() > 0 ? new File(rootPath, path)
@@ -104,7 +108,8 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			for ( File f : files ) {
 				// make sure backup path is relative
 				final String backupPath = path + '/' + f.getName();
-				fileList.add(new ResourceBackupResource(new FileSystemResource(f), backupPath));
+				fileList.add(
+						new ResourceBackupResource(new FileSystemResource(f), backupPath, getKey()));
 			}
 		}
 		return fileList;
@@ -134,6 +139,23 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "File Backup Provider";
+		String desc = "Backs up system plugins.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
 	/**
@@ -179,6 +201,16 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	public String getFileNamePattern() {
 		return fileNamePattern;
+	}
+
+	/**
+	 * Set the {@link MessageSource} to resolve localized messages with.
+	 * 
+	 * @param messageSource
+	 *        The message source.
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

@@ -97,32 +97,48 @@
 			</c:if>
 		</fieldset>
 
-		<fieldset>
-			<c:if test="${fn:length(backups) > 0}">
-				<div class="control-group">
-					<label class="control-label" for="backup-backups">
-						<fmt:message key="backup.backups.label"/>
-					</label>
-					<form class="controls form-inline" action="<c:url value='/a/settings/exportBackup'/>">
-						<select name="backup" class="span3" id="backup-backups">
-							<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
-								<option value="${backup.key}">
-									<fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/>
-								</option>
-							</c:forEach>
-						</select>
-						<button type="submit" class="btn btn-primary">
-							<fmt:message key="backup.download.button"/>
-						</button>
-						<button type="button" class="help-popover help-icon" tabindex="-1"
-								data-content="<fmt:message key='backup.backups.info'/>"
-								data-html="true">
-							<i class="icon-question-sign"></i>
-						</button>
-						<sec:csrfInput/>
-					</form>
-				</div>
-			</c:if>
+		<fieldset style="margin-top: 24px;">
+			<div class="control-group">
+				<label class="control-label" for="backup-backups">
+					<fmt:message key="backup.now.label"/>
+				</label>
+				<form class="controls form-inline" id="create-backup-form" action="<c:url value='/a/backups/create'/>" method="post">
+	 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
+	 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
+ 					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-content="<fmt:message key='backup.now.caption'/>"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+					<sec:csrfInput/>
+				</form>
+			</div>
+
+			<div class="control-group">
+				<label class="control-label" for="backup-backups">
+					<fmt:message key="backup.backups.label"/>
+				</label>
+				<form class="controls form-inline" id="backup-list-form" action="<c:url value='/a/settings/exportBackup'/>">
+					<select name="backup" class="span3" id="backup-backups">
+						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
+							<option value="${backup.key}"><fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/></option>
+						</c:forEach>
+					</select>
+					<button type="submit" class="btn btn-primary">
+						<fmt:message key="backup.download.button"/>
+					</button>
+					<button type="button" class="btn btn-warning" id="backup-restore-button">
+						<fmt:message key="backup.restore.button"/>
+					</button>
+					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-content="<fmt:message key='backup.backups.info'/>"
+							data-html="true">
+						<i class="icon-question-sign"></i>
+					</button>
+					<sec:csrfInput/>
+				</form>
+			</div>
+
 			<div class="control-group">
 				<label class="control-label" for="backup-import-field">
 					<fmt:message key="backup.import.label"/>
@@ -139,13 +155,6 @@
 				</form>
 			</div>
 		</fieldset>
-		<div class="form-actions">
-			<form class="form-inline" action="<c:url value='/a/settings/backupNow'/>" method="post">
- 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
- 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
-				<sec:csrfInput/>
-			</form>
-		</div>
 	</div>
 </section>
 </c:if>
@@ -205,3 +214,24 @@
 		</fieldset>
 	</div>
 </section>
+
+<form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<c:url value='/a/backups/restore'/>" method="post">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3><fmt:message key='backup.restore.title'/></h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key='backup.restore.intro'/></p>
+		<div id="backup-restore-list-container" class="menu-list noselect" 
+			data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
+		<div class="progress progress-striped active hide">
+      		<div class="bar" style="width: 100%;"></div>
+    	</div>		
+	</div>
+	<div class="modal-footer">
+		<sec:csrfInput/>
+		<input type="hidden" name="key" value=""/>
+		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
+	</div>
+</form>

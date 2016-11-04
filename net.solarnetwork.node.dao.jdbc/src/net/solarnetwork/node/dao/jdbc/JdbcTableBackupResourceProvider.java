@@ -38,9 +38,11 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -54,13 +56,17 @@ import org.springframework.util.StringUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 
 /**
  * Backup support for JDBC tables.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
@@ -68,6 +74,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	private final JdbcTemplate jdbcTemplate;
 	private final TransactionTemplate transactionTemplate;
 	private final TaskExecutor taskExecutor;
+	private MessageSource messageSource;
 	private String[] tableNames;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -81,6 +88,8 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 *        A transaction template to use, for supporting savepoints.
 	 * @param taskExecutor
 	 *        A task executor to use.
+	 * @param messageSource
+	 *        The {@link MessageSource} to use.
 	 */
 	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate, TransactionTemplate txTemplate,
 			TaskExecutor taskExecutor) {
@@ -115,6 +124,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 			this.tableName = tableName;
 			this.modTime = System.currentTimeMillis();
 			this.preference = preference;
+		}
+
+		@Override
+		public String getProviderKey() {
+			return getKey();
 		}
 
 		@Override
@@ -235,6 +249,23 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 		});
 	}
 
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "Database Table Backup Provider";
+		String desc = "Backs up the SolarNode database tables.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
+	}
+
 	private boolean restoreWithConnection(final BackupResource resource, final Connection con,
 			final String tableName) throws SQLException {
 		final Map<String, ColumnCsvMetaData> columnMetaData = JdbcUtils
@@ -295,6 +326,17 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 */
 	public void setTableNames(String[] tableNames) {
 		this.tableNames = tableNames;
+	}
+
+	/**
+	 * Set a {@link MessageSource} to use for resolving backup info messages.
+	 * 
+	 * @param messageSource
+	 *        The message source to use.
+	 * @since 1.2
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

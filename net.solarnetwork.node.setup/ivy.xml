@@ -13,9 +13,10 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
     	<dependency org="commons-codec" name="commons-codec" rev="1.7"/>
 		<dependency org="joda-time" name="joda-time" rev="2.1"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.39,2.0)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.46,2.0)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.2.6.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context" rev="4.2.6.RELEASE"/>
 		<dependency org="org.springframework" name="spring-tx" rev="4.2.6.RELEASE"/>
 	</dependencies>
 </ivy-module>

@@ -115,6 +115,11 @@
 			<osgix:managed-properties 
 				persistent-id="net.solarnetwork.node.backup.FileBackupResourceProvider" 
 				autowire-on-update="true"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.backup.FileBackupResourceProvider"/>
+				</bean>
+			</property>
 		</bean>
 	</service>
 	
@@ -171,6 +176,11 @@
 		<osgix:managed-properties 
 			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService" 
 			autowire-on-update="true"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.backup.FileSystemBackupService"/>
+			</bean>
+		</property>
 		<property name="identityService">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>

@@ -389,27 +389,124 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	alert.insertAfter(origButton).removeClass('hidden');
 };
 
-$(document).ready(function() {
-	$('.help-popover').popover();
+function formatTimestamp(date) {
+	if ( !date ) {
+		return;
+	}
+	return moment(date).format('D MMM YYYY HH:mm');
+}
+
+function refreshBackupList() {
+	$.getJSON(SolarNode.context.path('/a/backups'), function(json) {
+		if ( json.success !== true ) {
+			SolarNode.error(json.message, $('#backup-list-form'));
+			return;
+		}
+		var optionEl = $('#backup-backups').get(0);
+		while ( optionEl.length > 0 ) {
+			optionEl.remove(0);
+		}
+		if ( Array.isArray(json.data) ) {
+			json.data.forEach(function(backup) {
+				var date = new Date(backup.date);
+				optionEl.add(new Option(formatTimestamp(date), json.data.key));
+			});
+		}
+		optionEl.selectedIndex = 0;
+	});
+}
+
+function setupBackups() {
+	var createBackupSubmitButton = $('#backup-now-btn');
 	
-	$('#backup-now-btn').click(function(event) {
-		event.preventDefault();
-		var l = Ladda.create(this),
-			form = $(this.form),
-			url = form.attr('action'),
-			csrf = form.get(0).elements['_csrf'].value;
-		l.start();
-		$.ajax({
-			type : 'POST',
-			url : url,
-			beforeSend: function(xhr) {
-				SolarNode.csrf(xhr);
-	        },
-			success: function() {
-				l.stop();
+	$('#create-backup-form').ajaxForm({
+		dataType : 'json',
+		
+		beforeSubmit : function(dataArray, form, options) {
+			SolarNode.showSpinner(createBackupSubmitButton);
+			createBackupSubmitButton.attr('disabled', 'disabled');
+		},
+		success : function(json, status, xhr, form) {
+			if ( json.success !== true || json.data === undefined || json.data.key === undefined ) {
+				SolarNode.errorAlert("Error creating backup: " +json.message);
+				return;
 			}
+			refreshBackupList();
+		},
+		error : function(xhr, status, statusText) {
+			SolarNode.errorAlert("Error creating new backup: " +statusText);
+		},
+		complete : function() {
+			createBackupSubmitButton.removeAttr('disabled');
+			SolarNode.hideSpinner(createBackupSubmitButton);
+		}
+	});
+	
+	$('#backup-restore-button').on('click', function(event) {
+		var form = event.target.form,
+			backupKey = form.elements['backup-backups'].value;
+		$.getJSON(SolarNode.context.path('/a/backups/inspect')+'?key='+encodeURIComponent(backupKey), function(json) {
+			if ( json.success !== true ) {
+				SolarNode.error(json.message, $('#backup-list-form'));
+				return;
+			}
+			SolarNode.Backups.generateBackupList(json.data, $('#backup-restore-list-container'));
+			var form = $('#backup-restore-modal');
+			form.find('input[name=key]').val(backupKey);
+			form.modal('show');
 		});
 	});
+	
+	$('#backup-restore-list-container').on('click', 'div.menu-item', function(event) {
+		var row = $(this), 
+			selectedCount = 0,
+			submit = $('#backup-restore-modal button[type=submit]');
+		row.toggleClass('selected');
+		selectedCount = row.parent().children('.selected').size();
+		if ( selectedCount < 1 ) {
+			submit.attr('disabled', 'disabled');
+		} else {
+			submit.removeAttr('disabled');
+		}
+	});
+	
+	$('#backup-restore-modal').ajaxForm({
+		dataType : 'json',
+		beforeSubmit : function(dataArray, form, options) {
+			var providers = SolarNode.Backups.selectedProviders($('#backup-restore-list-container')),
+				form = $('#backup-restore-modal'),
+				submitBtn = form.find('button[type=submit]');
+			Array.prototype.splice.apply(dataArray, [dataArray.length, 0].concat(providers));
+			submitBtn.attr('disabled', 'disabled');
+			SolarNode.showSpinner(submitBtn);
+		},
+		success : function(json, status, xhr, form) {
+			if ( json.success !== true ) {
+				SolarNode.error(json.message, $('#backup-restore-modal div.modal-body'));
+				return;
+			}
+			var form = $('#backup-restore-modal');
+			SolarNode.info(json.message, $('#backup-restore-list-container').empty());
+			form.find('button, .modal-body p').remove();
+			form.find('.progress.hide').removeClass('hide');
+			setTimeout(function() {
+				SolarNode.Backups.handleRestart(SolarNode.context.path('/a/settings'));
+			}, 10000);
+		},
+		error : function(xhr, status, statusText) {
+			SolarNode.error("Error restoring backup: " +statusText, $('#backup-restore-modal div.modal-body'));
+		},
+		complete : function() {
+			createBackupSubmitButton.removeAttr('disabled');
+			SolarNode.hideSpinner(createBackupSubmitButton);
+		}
+	}).on('show', function() {
+		$(this).find('button[type=submit]').removeAttr('disabled');
+	});
+}
+
+$(document).ready(function() {
+	$('.help-popover').popover();
 	
 	$('.lookup-modal table.search-results').on('click', 'tr', function() {
 		var me = $(this);
@@ -449,6 +546,8 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
+	
+	setupBackups();
 });
 
 }());

@@ -8,6 +8,8 @@
 	/css/bootstrap-responsive.css
 	/css/ladda.css
 	/css/solarnode.css
+	/css/fonts.css
+	/css/font-awesome.css
 </pack:style>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="text/css"/>
@@ -19,9 +21,11 @@
 	/js-lib/jquery-1.7.1.js
 	/js-lib/bootstrap.js
 	/js-lib/ladda.js
+	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
 	/js/global.js
+	/js/backups.js
 	/js/certs.js
 	/js/login.js
 	/js/settings.js

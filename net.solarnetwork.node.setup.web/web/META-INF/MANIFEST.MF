@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.21.1
+Bundle-Version: 1.22.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
@@ -33,7 +33,7 @@ Import-Package:
  net.sf.packtag.tag;version="3.8",
  net.solarnetwork.domain;version="1.7",
  net.solarnetwork.node;version="1.16",
- net.solarnetwork.node.backup;version="1.2",
+ net.solarnetwork.node.backup;version="1.4",
  net.solarnetwork.node.dao;version="1.6",
  net.solarnetwork.node.reactor;version="1.1",
  net.solarnetwork.node.reactor.support;version="1.2",
@@ -97,11 +97,11 @@ Import-Package:
  org.springframework.http.converter.json;version="[4.2,5.0)",
  org.springframework.jdbc.support;version="[4.2,5.0)",
  org.springframework.mail;version="[4.2,5.0)",
- org.springframework.messaging;version="4.2.6.RELEASE",
- org.springframework.messaging.converter;version="4.2.6.RELEASE",
- org.springframework.messaging.handler.annotation;version="4.2.6.RELEASE",
- org.springframework.messaging.simp;version="4.2.6.RELEASE",
- org.springframework.messaging.simp.annotation;version="4.2.6.RELEASE",
+ org.springframework.messaging;version="[4.2,5.0)",
+ org.springframework.messaging.converter;version="[4.2,5.0)",
+ org.springframework.messaging.handler.annotation;version="[4.2,5.0)",
+ org.springframework.messaging.simp;version="[4.2,5.0)",
+ org.springframework.messaging.simp.annotation;version="[4.2,5.0)",
  org.springframework.scheduling.concurrent;version="[4.1,5.0)",
  org.springframework.security.authentication;version="[4.1,5.0)",
  org.springframework.security.config;version="[4.1,5.0)",
