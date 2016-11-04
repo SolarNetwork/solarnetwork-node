@@ -409,7 +409,7 @@ function refreshBackupList() {
 		if ( Array.isArray(json.data) ) {
 			json.data.forEach(function(backup) {
 				var date = new Date(backup.date);
-				optionEl.add(new Option(formatTimestamp(date), json.data.key));
+				optionEl.add(new Option(formatTimestamp(date), backup.key));
 			});
 		}
 		optionEl.selectedIndex = 0;
