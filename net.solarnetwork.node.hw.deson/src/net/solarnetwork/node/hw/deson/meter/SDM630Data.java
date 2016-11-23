@@ -1,5 +1,5 @@
 /* ==================================================================
- * SDM360Data.java - 23/01/2016 5:34:07 pm
+ * SDM630Data.java - 23/01/2016 5:34:07 pm
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
  * @author matt
  * @version 1.1
  */
-public class SDM360Data extends BaseSDMData {
+public class SDM630Data extends BaseSDMData {
 
 	public static final String INFO_KEY_DEVICE_WIRING_TYPE = "Wiring Type";
 
@@ -92,7 +92,7 @@ public class SDM360Data extends BaseSDMData {
 	/**
 	 * Default constructor.
 	 */
-	public SDM360Data() {
+	public SDM630Data() {
 		super();
 	}
 
@@ -102,13 +102,13 @@ public class SDM360Data extends BaseSDMData {
 	 * @param other
 	 *        the object to copy
 	 */
-	public SDM360Data(SDM360Data other) {
+	public SDM630Data(SDM630Data other) {
 		super(other);
 	}
 
 	@Override
 	public String toString() {
-		return "SDM360Data{V=" + getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE) + ",A="
+		return "SDM630Data{V=" + getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE) + ",A="
 				+ getCurrent(ADDR_DATA_I_AVERAGE) + ",PF=" + getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL)
 				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
 				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
@@ -122,12 +122,12 @@ public class SDM360Data extends BaseSDMData {
 
 	@Override
 	public SDMData getSnapshot() {
-		return new SDM360Data(this);
+		return new SDM630Data(this);
 	}
 
 	@Override
 	public String dataDebugString() {
-		final SDM360Data snapshot = new SDM360Data(this);
+		final SDM630Data snapshot = new SDM630Data(this);
 		return dataDebugString(snapshot);
 	}
 
@@ -215,7 +215,7 @@ public class SDM360Data extends BaseSDMData {
 
 	@Override
 	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
-		SDM360Data sample = new SDM360Data(this);
+		SDM630Data sample = new SDM630Data(this);
 		switch (phase) {
 			case Total:
 				populateTotalMeasurements(sample, datum);

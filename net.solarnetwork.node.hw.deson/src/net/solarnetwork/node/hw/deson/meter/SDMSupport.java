@@ -354,8 +354,8 @@ public class SDMSupport extends ModbusDeviceSupport {
 		}
 		this.deviceType = deviceType;
 		switch (deviceType) {
-			case SDM360:
-				sample = new SDM360Data();
+			case SDM630:
+				sample = new SDM630Data();
 				break;
 
 			default:

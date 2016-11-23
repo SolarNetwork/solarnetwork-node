@@ -34,5 +34,5 @@ public enum SDMDeviceType {
 
 	SDM220,
 
-	SDM360;
+	SDM630;
 }

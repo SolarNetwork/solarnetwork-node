@@ -1,5 +1,5 @@
 /* ==================================================================
- * SDM360DataTests.java - 26/01/2016 9:35:21 am
+ * SDM630DataTests.java - 26/01/2016 9:35:21 am
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -31,18 +31,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.hw.deson.meter.SDM120Data;
-import net.solarnetwork.node.hw.deson.meter.SDM360Data;
+import net.solarnetwork.node.hw.deson.meter.SDM630Data;
 import net.solarnetwork.node.hw.deson.meter.SDMWiringMode;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 
 /**
- * Test cases for the {@link SDM360Data} class.
+ * Test cases for the {@link SDM630Data} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class SDM360DataTests {
+public class SDM630DataTests {
 
 	private static final int[] TEST_DATA_30001_80 = SDM120DataTests.bytesToModbusWords(new int[] { 0x43,
 			0x64, 0xB3, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 7 */0x41, 0x00, 0x28,
@@ -59,7 +59,7 @@ public class SDM360DataTests {
 			/* 75 */0x3D, 0x13, 0x74, 0xBC, /* 77 */0x3C, 0x13, 0x74, 0xBC, /* 79 */0x00, 0x00, 0x00,
 			0x00, });
 
-	private static class TestSDM360Data extends SDM360Data {
+	private static class TestSDM360Data extends SDM630Data {
 
 		@Override
 		public void saveDataArray(final int[] data, int addr) {
@@ -80,7 +80,7 @@ public class SDM360DataTests {
 		conn = EasyMock.createMock(ModbusConnection.class);
 	}
 
-	private SDM360Data getTestDataInstance() {
+	private SDM630Data getTestDataInstance() {
 		TestSDM360Data data = new TestSDM360Data();
 		data.saveDataArray(TEST_DATA_30001_80, 0);
 		return data;
@@ -88,7 +88,7 @@ public class SDM360DataTests {
 
 	@Test
 	public void readDeviceInfo() {
-		expect(conn.readInts(SDM360Data.ADDR_SYSTEM_WIRING_TYPE, 34))
+		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
 				.andReturn(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -105,14 +105,14 @@ public class SDM360DataTests {
 		Assert.assertNotNull(info);
 		Assert.assertEquals(3, info.size());
 		Assert.assertEquals("SDM-360", info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL));
-		Assert.assertEquals("3 phase, 4 wire", info.get(SDM360Data.INFO_KEY_DEVICE_WIRING_TYPE));
+		Assert.assertEquals("3 phase, 4 wire", info.get(SDM630Data.INFO_KEY_DEVICE_WIRING_TYPE));
 		Assert.assertNotNull(info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER));
 		Assert.assertEquals("123456.0", info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER));
 	}
 
 	@Test
 	public void interpretWiringMode1P2() {
-		expect(conn.readInts(SDM360Data.ADDR_SYSTEM_WIRING_TYPE, 34))
+		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
 				.andReturn(new int[] { 0x3f80, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -129,7 +129,7 @@ public class SDM360DataTests {
 
 	@Test
 	public void interpretWiringMode3P3() {
-		expect(conn.readInts(SDM360Data.ADDR_SYSTEM_WIRING_TYPE, 34))
+		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
 				.andReturn(new int[] { 0x4000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -146,7 +146,7 @@ public class SDM360DataTests {
 
 	@Test
 	public void interpretWiringMode3P4() {
-		expect(conn.readInts(SDM360Data.ADDR_SYSTEM_WIRING_TYPE, 34))
+		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
 				.andReturn(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
@@ -163,46 +163,46 @@ public class SDM360DataTests {
 
 	@Test
 	public void interpretVoltage() {
-		SDM360Data data = getTestDataInstance();
+		SDM630Data data = getTestDataInstance();
 		Assert.assertEquals(228.7, data.getVoltage(SDM120Data.ADDR_DATA_V_NEUTRAL), 0.001);
 	}
 
 	@Test
 	public void interpretCurrent() {
-		SDM360Data data = getTestDataInstance();
+		SDM630Data data = getTestDataInstance();
 		Assert.assertEquals(8.01, data.getCurrent(SDM120Data.ADDR_DATA_I), 0.001);
 	}
 
 	@Test
 	public void interpretPower() {
-		SDM360Data data = getTestDataInstance();
-		Assert.assertEquals(-1833, (int) data.getPower(SDM360Data.ADDR_DATA_ACTIVE_POWER_P1));
-		Assert.assertEquals(1833, (int) data.getPower(SDM360Data.ADDR_DATA_APPARENT_POWER_P1));
-		Assert.assertEquals(18, (int) data.getPower(SDM360Data.ADDR_DATA_REACTIVE_POWER_P1));
+		SDM630Data data = getTestDataInstance();
+		Assert.assertEquals(-1833, (int) data.getPower(SDM630Data.ADDR_DATA_ACTIVE_POWER_P1));
+		Assert.assertEquals(1833, (int) data.getPower(SDM630Data.ADDR_DATA_APPARENT_POWER_P1));
+		Assert.assertEquals(18, (int) data.getPower(SDM630Data.ADDR_DATA_REACTIVE_POWER_P1));
 	}
 
 	@Test
 	public void interpretPowerFactor() {
-		SDM360Data data = getTestDataInstance();
-		Assert.assertEquals(-0.9999511, data.getPowerFactor(SDM360Data.ADDR_DATA_POWER_FACTOR_P1),
+		SDM630Data data = getTestDataInstance();
+		Assert.assertEquals(-0.9999511, data.getPowerFactor(SDM630Data.ADDR_DATA_POWER_FACTOR_P1),
 				0.001);
 	}
 
 	@Test
 	public void interpretFrequency() {
-		SDM360Data data = getTestDataInstance();
-		Assert.assertEquals(49.95, data.getFrequency(SDM360Data.ADDR_DATA_FREQUENCY), 0.001);
+		SDM630Data data = getTestDataInstance();
+		Assert.assertEquals(49.95, data.getFrequency(SDM630Data.ADDR_DATA_FREQUENCY), 0.001);
 	}
 
 	@Test
 	public void interpretEnergy() {
-		SDM360Data data = getTestDataInstance();
-		Assert.assertEquals(97L, (long) data.getEnergy(SDM360Data.ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
-		Assert.assertEquals(36L, (long) data.getEnergy(SDM360Data.ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
+		SDM630Data data = getTestDataInstance();
+		Assert.assertEquals(97L, (long) data.getEnergy(SDM630Data.ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
+		Assert.assertEquals(36L, (long) data.getEnergy(SDM630Data.ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
 		Assert.assertEquals(9L,
-				(long) data.getEnergy(SDM360Data.ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL));
+				(long) data.getEnergy(SDM630Data.ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL));
 		Assert.assertEquals(0L,
-				(long) data.getEnergy(SDM360Data.ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL));
+				(long) data.getEnergy(SDM630Data.ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL));
 	}
 
 }
