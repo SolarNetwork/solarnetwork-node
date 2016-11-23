@@ -78,6 +78,11 @@ public final class ZipStreamBackupResourceIterable implements BackupResourceIter
 			private String currProviderKey = null;
 
 			@Override
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
 			public boolean hasNext() {
 				if ( currEntry == null ) {
 					currProviderKey = null;
