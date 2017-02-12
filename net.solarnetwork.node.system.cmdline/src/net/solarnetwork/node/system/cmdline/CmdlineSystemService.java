@@ -121,7 +121,24 @@ public class CmdlineSystemService implements SystemService, SettingSpecifierProv
 
 	@Override
 	public void reboot() {
-		handleOSCommand(rebootCommand);
+		if ( shutdownThread != null ) {
+			return;
+		}
+		shutdownThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				// pause slightly at start to give time for original calling thread time to complete
+				try {
+					Thread.sleep(1000);
+				} catch ( Exception e ) {
+					// ignore
+				}
+
+				handleOSCommand(rebootCommand);
+			}
+		}, "System Service Reboot");
+		shutdownThread.start();
 	}
 
 	private void handleOSCommand(String command) {
