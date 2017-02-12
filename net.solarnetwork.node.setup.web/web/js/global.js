@@ -332,6 +332,19 @@ SolarNode.extractJSONPath = function(root, path) {
 	return SolarNode.extractJSONPath(child, path.slice(1));
 };
 
+SolarNode.tryGotoURL = function(destURL) {
+	function tryLoadUrl(url) {
+		SolarNode.info('Trying to refresh URL ' + url);
+		$.getJSON(url).then(function() {
+			window.location = destURL;
+		}, function(error) {
+			setTimeout(function() {
+				tryLoadUrl(url);
+			}, 2000);
+		});
+	}
+	tryLoadUrl(SolarNode.context.path('/csrf'));
+};
 
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
@@ -340,5 +353,37 @@ $(document).ready(function() {
 	$('a.logout').on('click', function(event) {
 		event.preventDefault();
 		$('#logout-form').get(0).submit();
+	});
+	$('a.restart').on('click', function(event) {
+		event.preventDefault();
+		$('#restart-modal').modal('show');
+	});
+	$('#restart-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#restart-modal .modal-footer button').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#restart-modal');
+			if ( json && json.success === true ) {
+				modal.find('.start').hide();
+				modal.find('.success').show();
+				SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+			} else {
+				SolarNode.error(json.message, $('#restart-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#restart-modal .modal-body.start'));
+		}
+	}).find('button.reboot').on('click', function(event) {
+		var btn = event.target,
+			form = btn.form,
+			input = form.elements['reboot'];
+		if ( input ) {
+			input.value = 'true';
+		}
 	});
 });

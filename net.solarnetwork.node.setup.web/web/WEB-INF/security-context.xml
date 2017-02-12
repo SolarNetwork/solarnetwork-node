@@ -15,7 +15,7 @@
 		<intercept-url pattern='/*.do' access="permitAll" />
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')" />
 	    <custom-filter ref="associationFilter" before="FIRST"/>
-		<form-login login-page="/login.do" default-target-url="/a/home.do"
+		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
 		<logout logout-url="/logout" logout-success-url="/loggedout.do"/>
 	</http>

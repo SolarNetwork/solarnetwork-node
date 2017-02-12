@@ -35,7 +35,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,6 +49,7 @@ import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -58,7 +58,7 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.1
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/settings")
 public class SettingsController {
 
