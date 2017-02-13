@@ -20,13 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.web.support;
+package net.solarnetwork.node.setup.security;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -42,14 +43,16 @@ import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.setup.UserProfile;
+import net.solarnetwork.node.setup.UserService;
 
 /**
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class SettingsUserService implements UserDetailsService {
+public class SettingsUserService implements UserService, UserDetailsService {
 
 	public static final String SETTING_TYPE_USER = "solarnode.user";
 	public static final String SETTING_TYPE_ROLE = "solarnode.role";
@@ -81,7 +84,8 @@ public class SettingsUserService implements UserDetailsService {
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		UserDetails result = null;
 		String password = settingDao.getSetting(username, SETTING_TYPE_USER);
-		if ( password == null && identityService != null && passwordEncoder != null ) {
+		if ( password == null && identityService != null && passwordEncoder != null
+				&& !someUserExists() ) {
 			// for backwards-compat with nodes created before user auth, provide a default
 			Long nodeId = identityService.getNodeId();
 			if ( nodeId != null && nodeId.toString().equalsIgnoreCase(username) ) {
@@ -106,11 +110,7 @@ public class SettingsUserService implements UserDetailsService {
 		return result;
 	}
 
-	/**
-	 * Test if any user exists in settings.
-	 * 
-	 * @return <em>true</em> if some user exists
-	 */
+	@Override
 	public boolean someUserExists() {
 		final AtomicBoolean result = new AtomicBoolean(false);
 		settingDao.batchProcess(new BatchCallback<Setting>() {
@@ -147,6 +147,7 @@ public class SettingsUserService implements UserDetailsService {
 	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
 	 *         not match, or are <em>null</em>
 	 */
+	@Override
 	public void changePassword(final String existingPassword, final String newPassword,
 			final String newPasswordAgain) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -179,16 +180,61 @@ public class SettingsUserService implements UserDetailsService {
 		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
 	}
 
-	/**
-	 * Store a user profile into settings.
-	 * 
-	 * @param profile
-	 *        The profile to store.
-	 * @throws IllegalArgumentException
-	 *         if {@code username} is <em>null</em>, or if the {@code password}
-	 *         and {@code passwordAgain} values do not match or are
-	 *         <em>null</em>
-	 */
+	@Override
+	public void changeUsername(final String newUsername, final String newUsernameAgain) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
+		if ( activeUser == null ) {
+			throw new InsufficientAuthenticationException("Active user not found.");
+		}
+		final UserDetails dbUser = loadUserByUsername(activeUser.getUsername());
+		if ( dbUser == null ) {
+			throw new UsernameNotFoundException("User not found");
+		}
+		if ( newUsername == null || newUsernameAgain == null || !newUsername.equals(newUsernameAgain) ) {
+			throw new IllegalArgumentException(
+					"New username not provided or does not match repeated username.");
+		}
+		final AtomicBoolean updatedUsername = new AtomicBoolean(false);
+		final AtomicBoolean updatedRole = new AtomicBoolean(false);
+		settingDao.batchProcess(new BatchCallback<Setting>() {
+
+			@Override
+			public BatchCallbackResult handle(Setting domainObject) {
+				if ( domainObject.getType().equals(SETTING_TYPE_USER)
+						&& domainObject.getKey().equals(dbUser.getUsername()) ) {
+					updatedUsername.set(true);
+					domainObject.setKey(newUsername);
+					return (updatedRole.get() ? BatchCallbackResult.UPDATE_STOP
+							: BatchCallbackResult.UPDATE);
+				} else if ( domainObject.getType().equals(SETTING_TYPE_ROLE)
+						&& domainObject.getKey().equals(dbUser.getUsername()) ) {
+					updatedRole.set(true);
+					domainObject.setKey(newUsername);
+					return (updatedUsername.get() ? BatchCallbackResult.UPDATE_STOP
+							: BatchCallbackResult.UPDATE);
+				}
+				return BatchCallbackResult.CONTINUE;
+			}
+		}, new BasicBatchOptions("UpdateUser", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
+		if ( !updatedUsername.get() ) {
+			// no username exists, treat as a legacy node whose password was "solar"
+			UserProfile newProfile = new UserProfile();
+			newProfile.setUsername(newUsername);
+			newProfile.setPassword("solar");
+			newProfile.setPasswordAgain("solar");
+			storeUserProfile(newProfile);
+		}
+
+		// update active user details to new usenrame
+		User newUser = new User(newUsername, "",
+				Collections.singleton(new SimpleGrantedAuthority(GRANTED_AUTH_USER)));
+		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+				newUser, null, newUser.getAuthorities());
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+	}
+
+	@Override
 	public void storeUserProfile(UserProfile profile) {
 		if ( profile.getUsername() == null || profile.getPassword() == null
 				|| !profile.getPassword().equals(profile.getPasswordAgain()) ) {

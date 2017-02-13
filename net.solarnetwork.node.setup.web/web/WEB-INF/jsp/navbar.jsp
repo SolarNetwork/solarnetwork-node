@@ -22,15 +22,16 @@
 			<ul class="nav pull-right">
 				<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-						<fmt:message key='nav.label.principal'>
-							<fmt:param><sec:authentication property="principal.username" /></fmt:param>
-						</fmt:message>
+						<span class="active-user-display">
+							<fmt:message key='nav.label.principal'>
+								<fmt:param><sec:authentication property="principal.username" /></fmt:param>
+							</fmt:message>
+						</span>
 						<b class="caret"></b>
 					</a>
 					<ul class="dropdown-menu">
-						<li  ${navloc == 'profile' ? 'class="active"' : ''}>
-							<a href="<c:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a>
-						</li>
+						<li><a href="<c:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
+						<li><a href="<c:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
 						<li><a class="logout" href="#"><fmt:message key='link.logout'/></a></li>
 						<c:if test="${not empty systemService}">
 							<li role="separator" class="divider"></li>

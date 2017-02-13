@@ -36,11 +36,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.support.KeyValuePair;
-import net.solarnetwork.util.OptionalService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.dao.DataAccessException;
@@ -51,6 +46,11 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.support.KeyValuePair;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Simple JDBC-based implementation of {@link SettingDao}.
@@ -70,7 +70,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -80,8 +80,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
 
-	private static final String DEFAULT_BATCH_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
-			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " ORDER BY skey,tkey";
+	private static final String DEFAULT_BATCH_SQL_GET_FOR_UPDATE = "SELECT svalue,modified,skey,tkey,flags FROM "
+			+ SCHEMA_NAME + '.' + TABLE_SETTINGS;
+
+	private static final String DEFAULT_BATCH_SQL_GET = DEFAULT_BATCH_SQL_GET_FOR_UPDATE
+			+ " ORDER BY skey,tkey";
 
 	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " + SCHEMA_NAME + '.'
 			+ TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
@@ -92,6 +95,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	private final String sqlGet = DEFAULT_SQL_GET;
 	private final String sqlFind = DEFAULT_SQL_FIND;
+	private final String sqlBatchGetForUpdate = DEFAULT_BATCH_SQL_GET_FOR_UPDATE;
 	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
 	private final String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
@@ -331,7 +335,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	protected String getBatchJdbcStatement(BatchOptions options) {
-		return sqlBatchGet;
+		return (options != null && options.isUpdatable() ? sqlBatchGetForUpdate : sqlBatchGet);
 	}
 
 	@Override
@@ -349,9 +353,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	@Override
 	protected void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
 			Setting entity) throws SQLException {
-		resultSet.updateString(1, entity.getKey());
-		resultSet.updateString(2, entity.getType());
-		resultSet.updateString(3, entity.getValue());
+		// SELECT svalue,modified,skey,tkey,flags
+		resultSet.updateString(1, entity.getValue());
+		resultSet.updateTimestamp(2, new Timestamp(System.currentTimeMillis()));
+		resultSet.updateString(3, entity.getKey());
+		resultSet.updateString(4, entity.getType());
 		resultSet.updateInt(5, SettingFlag.maskForSet(entity.getFlags()));
 	}
 

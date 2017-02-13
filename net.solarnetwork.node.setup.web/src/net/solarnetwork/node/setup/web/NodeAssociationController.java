@@ -59,9 +59,9 @@ import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
+import net.solarnetwork.node.setup.UserProfile;
+import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
-import net.solarnetwork.node.setup.web.support.SettingsUserService;
-import net.solarnetwork.node.setup.web.support.UserProfile;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -69,7 +69,7 @@ import net.solarnetwork.web.domain.Response;
  * Controller used to associate a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 1.2
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -104,7 +104,7 @@ public class NodeAssociationController extends BaseSetupController {
 	private PKIService pkiService;
 
 	@Autowired
-	private SettingsUserService userService;
+	private UserService userService;
 
 	@Resource(name = "authenticationManager")
 	private AuthenticationManager authenticationManager;
