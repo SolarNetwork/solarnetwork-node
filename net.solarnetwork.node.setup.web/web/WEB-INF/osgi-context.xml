@@ -35,7 +35,16 @@
 	<osgi:reference id="setupService" interface="net.solarnetwork.node.setup.SetupService" availability="optional"/>
 		
 	<osgi:reference id="pkiService" interface="net.solarnetwork.node.setup.PKIService" availability="optional"/>
-		
+	
+	<osgi:reference id="passwordEncoder" interface="org.springframework.security.crypto.password.PasswordEncoder"
+		filter="(app=node)"/>
+	
+	<osgi:reference id="userService" interface="net.solarnetwork.node.setup.UserService"
+		filter="(app=node)"/>
+	
+	<osgi:reference id="userDetailsService" interface="org.springframework.security.core.userdetails.UserDetailsService"
+		filter="(app=node)"/>
+	
 	<osgi:reference id="sslServiceRef" availability="optional"
 		interface="net.solarnetwork.node.SSLService">
 		<osgi:reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>

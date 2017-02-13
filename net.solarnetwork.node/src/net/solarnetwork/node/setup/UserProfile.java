@@ -20,13 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.web.support;
+package net.solarnetwork.node.setup;
 
 /**
  * Command object for a user profile.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.48
  */
 public class UserProfile {
 
