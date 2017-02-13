@@ -71,7 +71,7 @@ $(document).ready(function() {
 			form.find('button, p').remove();
 			form.find('.progress.hide').removeClass('hide');
 			setTimeout(function() {
-				SolarNode.Backups.handleRestart(SolarNode.context.path('/a/settings'));
+				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);
 		},
 		error : function(xhr, status, statusText) {

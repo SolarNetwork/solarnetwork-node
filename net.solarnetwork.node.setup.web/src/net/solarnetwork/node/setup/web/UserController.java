@@ -23,12 +23,12 @@
 package net.solarnetwork.node.setup.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingsUserService;
 import net.solarnetwork.node.setup.web.support.UserProfile;
 import net.solarnetwork.web.domain.Response;
@@ -39,7 +39,7 @@ import net.solarnetwork.web.domain.Response;
  * @author matt
  * @version 1.0
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/user")
 public class UserController extends BaseSetupWebServiceController {
 
