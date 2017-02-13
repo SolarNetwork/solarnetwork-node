@@ -369,7 +369,9 @@ $(document).ready(function() {
 			if ( json && json.success === true ) {
 				modal.find('.start').hide();
 				modal.find('.success').show();
-				SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+				setTimeout(function() {
+					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+				}, 10000);
 			} else {
 				SolarNode.error(json.message, $('#restart-modal .modal-body.start'));
 			}
