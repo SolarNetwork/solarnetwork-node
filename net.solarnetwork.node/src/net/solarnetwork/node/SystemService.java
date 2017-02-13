@@ -1,7 +1,7 @@
 /* ==================================================================
- * SDMDeviceType.java - 26/01/2016 3:50:33 pm
+ * SystemService.java - 10/02/2017 8:31:04 AM
  * 
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2007-2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,19 +20,30 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.deson.meter;
+package net.solarnetwork.node;
 
 /**
- * The SDM model type.
+ * API for node system services, such as restarting, rebooting, or making system
+ * configuration changes.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.47
  */
-public enum SDMDeviceType {
+public interface SystemService {
 
-	SDM120,
+	/**
+	 * Exit the node application, stopping the active process.
+	 * 
+	 * @param syncState
+	 *        A flag to indicate (when {@code true}) that any transient data
+	 *        should be persisted to permanent storage.
+	 */
+	void exit(boolean syncState);
 
-	SDM220,
+	/**
+	 * Reboot the device the application is running on.
+	 */
+	void reboot();
 
-	SDM630;
 }

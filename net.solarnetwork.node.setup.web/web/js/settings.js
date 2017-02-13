@@ -409,7 +409,7 @@ function refreshBackupList() {
 		if ( Array.isArray(json.data) ) {
 			json.data.forEach(function(backup) {
 				var date = new Date(backup.date);
-				optionEl.add(new Option(formatTimestamp(date), json.data.key));
+				optionEl.add(new Option(formatTimestamp(date), backup.key));
 			});
 		}
 		optionEl.selectedIndex = 0;
@@ -490,7 +490,7 @@ function setupBackups() {
 			form.find('button, .modal-body p').remove();
 			form.find('.progress.hide').removeClass('hide');
 			setTimeout(function() {
-				SolarNode.Backups.handleRestart(SolarNode.context.path('/a/settings'));
+				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);
 		},
 		error : function(xhr, status, statusText) {

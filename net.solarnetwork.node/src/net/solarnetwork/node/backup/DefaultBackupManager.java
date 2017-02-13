@@ -122,7 +122,7 @@ public class DefaultBackupManager implements BackupManager {
 				} catch ( InterruptedException e ) {
 					return;
 				}
-				log.debug("Looking for marked backup to restore");
+				log.debug("Looking to see if there is a marked backup to restore");
 				BackupService backupService = (backupServiceTracker != null
 						? backupServiceTracker.service() : null);
 				if ( backupService != null ) {
@@ -142,7 +142,8 @@ public class DefaultBackupManager implements BackupManager {
 					}
 				}
 				if ( retry ) {
-					log.debug("Will retry looking for marked backup to store in {} seconds",
+					log.debug(
+							"Will retry looking to see if there is a marked backup to restore in {} seconds",
 							backupRestoreDelaySeconds);
 					scheduleRestore();
 				}

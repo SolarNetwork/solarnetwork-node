@@ -102,7 +102,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	private static final String ARCHIVE_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
 	private static final Pattern ARCHIVE_NAME_PAT = Pattern
-			.compile("node-\\d+-backup-(\\d{8}T\\d{6})\\.zip");
+			.compile("node-(\\d+)-backup-(\\d{8}T\\d{6})\\.zip");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -169,7 +169,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	private String getArchiveKey(String archiveName) {
 		Matcher m = ARCHIVE_NAME_PAT.matcher(archiveName);
 		if ( m.matches() ) {
-			return m.group(1);
+			return m.group(2);
 		}
 		return archiveName;
 	}
@@ -342,7 +342,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			Matcher m = ARCHIVE_NAME_PAT.matcher(backupKey);
 			if ( m.matches() ) {
 				try {
-					return sdf.parse(m.group(1));
+					return sdf.parse(m.group(2));
 				} catch ( ParseException e ) {
 					log.warn("Unable to parse backup date from key [{}]", backupKey);
 				}
@@ -364,7 +364,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	 * Delete any existing backups.
 	 */
 	public void removeAllBackups() {
-		File[] archives = backupDir.listFiles(new ArchiveFilter());
+		File[] archives = backupDir.listFiles(new ArchiveFilter(nodeIdForArchiveFileName()));
 		if ( archives == null ) {
 			return;
 		}
@@ -384,7 +384,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	 *         not exist
 	 */
 	private File[] getAvailableBackupFiles() {
-		File[] archives = backupDir.listFiles(new ArchiveFilter());
+		File[] archives = backupDir.listFiles(new ArchiveFilter(nodeIdForArchiveFileName()));
 		if ( archives != null ) {
 			Arrays.sort(archives, new Comparator<File>() {
 
@@ -402,8 +402,8 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		Matcher m = ARCHIVE_NAME_PAT.matcher(f.getName());
 		if ( m.matches() ) {
 			try {
-				Date d = sdf.parse(m.group(1));
-				return new SimpleBackup(d, m.group(1), f.length(), true);
+				Date d = sdf.parse(m.group(2));
+				return new SimpleBackup(d, m.group(2), f.length(), true);
 			} catch ( ParseException e ) {
 				log.error("Error parsing date from archive " + f.getName() + ": " + e.getMessage());
 			}
@@ -502,9 +502,17 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 	private static class ArchiveFilter implements FilenameFilter {
 
+		final Long nodeId;
+
+		private ArchiveFilter(Long nodeId) {
+			super();
+			this.nodeId = nodeId;
+		}
+
 		@Override
 		public boolean accept(File dir, String name) {
-			return ARCHIVE_NAME_PAT.matcher(name).matches();
+			Matcher m = ARCHIVE_NAME_PAT.matcher(name);
+			return (m.matches() && (nodeId == null || nodeId.equals(Long.valueOf(m.group(1)))));
 		}
 
 	}

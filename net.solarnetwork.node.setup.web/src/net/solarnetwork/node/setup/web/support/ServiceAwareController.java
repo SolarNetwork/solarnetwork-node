@@ -1,7 +1,7 @@
 /* ==================================================================
- * SDMDeviceType.java - 26/01/2016 3:50:33 pm
+ * ServiceAwareController.java - 13/02/2017 10:30:42 AM
  * 
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2007-2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,19 +20,26 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.deson.meter;
+package net.solarnetwork.node.setup.web.support;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.springframework.stereotype.Controller;
 
 /**
- * The SDM model type.
+ * Controller extension to indicate global services should be injected into the
+ * model.
  * 
  * @author matt
  * @version 1.0
  */
-public enum SDMDeviceType {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Controller
+public @interface ServiceAwareController {
 
-	SDM120,
-
-	SDM220,
-
-	SDM630;
 }

@@ -33,6 +33,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -164,7 +165,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			}
 		}
 		if ( olderBundles != null ) {
-			olderBundles.sort(new Comparator<Bundle>() {
+			Collections.sort(olderBundles, new Comparator<Bundle>() {
 
 				@Override
 				public int compare(Bundle o1, Bundle o2) {

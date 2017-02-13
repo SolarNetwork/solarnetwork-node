@@ -40,17 +40,4 @@ SolarNode.Backups.selectedProviders = function(container) {
 	}).toArray();
 };
 
-SolarNode.Backups.handleRestart = function(destURL) {
-	function tryLoadUrl(url) {
-		$.getJSON(url).then(function() {
-			window.location = destURL;
-		}, function(error) {
-			setTimeout(function() {
-				tryLoadUrl(url);
-			}, 2000);
-		});
-	}
-	tryLoadUrl(SolarNode.context.path('/csrf'));
-}
-
 }());

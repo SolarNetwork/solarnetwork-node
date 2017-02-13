@@ -62,9 +62,13 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 	private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final String path = request.getPathInfo();
-		if ( !(path.startsWith(NODE_ASSOCIATE_PATH) || path.equals(CSRF_PATH))
-				&& identityService.getNodeId() == null ) {
+		final Long nodeId = identityService.getNodeId();
+		if ( !(path.startsWith(NODE_ASSOCIATE_PATH) || path.equals(CSRF_PATH)) && nodeId == null ) {
+			// not associated yet, so redirect to associate start
 			response.sendRedirect(request.getContextPath() + NODE_ASSOCIATE_PATH);
+		} else if ( nodeId != null && path.startsWith(NODE_ASSOCIATE_PATH) ) {
+			// not allowed to visit association URLs once associated
+			response.sendError(HttpServletResponse.SC_FORBIDDEN);
 		} else {
 			chain.doFilter(request, response);
 		}
