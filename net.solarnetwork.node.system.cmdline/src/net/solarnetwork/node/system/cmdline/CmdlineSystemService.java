@@ -66,11 +66,14 @@ public class CmdlineSystemService implements SystemService, SettingSpecifierProv
 		if ( shutdownThread != null ) {
 			return;
 		}
+		log.warn("Restart requested");
 		final BundleContext ctx = bundleContext;
 		shutdownThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
+				log.warn("Restart sequence initiated");
+
 				// pause slightly at start to give time for original calling thread time to complete
 				try {
 					Thread.sleep(1000);
@@ -95,6 +98,7 @@ public class CmdlineSystemService implements SystemService, SettingSpecifierProv
 							// ignore
 						} finally {
 							if ( syncState ) {
+								System.err.println("Exiting via command: " + exitCommand);
 								handleOSCommand(exitCommand);
 							} else {
 								System.err.println("Exiting from shutdown request.");
@@ -124,10 +128,13 @@ public class CmdlineSystemService implements SystemService, SettingSpecifierProv
 		if ( shutdownThread != null ) {
 			return;
 		}
+		log.warn("Reboot requested");
 		shutdownThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
+				log.warn("Reboot sequence initiated");
+
 				// pause slightly at start to give time for original calling thread time to complete
 				try {
 					Thread.sleep(1000);
