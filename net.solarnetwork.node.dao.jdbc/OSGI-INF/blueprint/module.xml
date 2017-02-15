@@ -37,6 +37,7 @@
 		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
 		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
+		<beans:prop key="JdbcDatumDao.maxFetchForUpload">60</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
@@ -196,6 +197,7 @@
 		<property name="dataSource" ref="dataSource"/>
 		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}"/>
 		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}"/>
+		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}"/>
 	</bean>
 
 	<bean id="generalLocationDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
@@ -204,6 +206,7 @@
 		<property name="dataSource" ref="dataSource"/>
 		<property name="initSqlResource" value="${JdbcGeneralLocationDatumDao.initSqlResource}"/>
 		<property name="sqlResourcePrefix" value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}"/>
+		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}"/>
 	</bean>
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->
