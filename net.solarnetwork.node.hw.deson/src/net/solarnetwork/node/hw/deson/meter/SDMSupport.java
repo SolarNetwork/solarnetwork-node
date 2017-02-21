@@ -27,6 +27,10 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
@@ -36,19 +40,16 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 
 /**
  * Supporting class for the SDM series power meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SDMSupport extends ModbusDeviceSupport {
 
@@ -63,6 +64,9 @@ public class SDMSupport extends ModbusDeviceSupport {
 
 	// the type of device to use
 	private SDMDeviceType deviceType = SDMDeviceType.SDM120;
+
+	// the "installed backwards" setting
+	private boolean backwards = false;
 
 	/**
 	 * An instance of {@link SDMData} to support keeping the last-read values of
@@ -199,8 +203,10 @@ public class SDMSupport extends ModbusDeviceSupport {
 		deviceTypeSpec.setValueTitles(deviceTypeValues);
 		results.add(deviceTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
-				.getSourceMappingValue()));
+		results.add(new BasicToggleSettingSpecifier("backwards", Boolean.valueOf(defaults.backwards)));
+
+		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue",
+				defaults.getSourceMappingValue()));
 
 		return results;
 	}
@@ -353,13 +359,17 @@ public class SDMSupport extends ModbusDeviceSupport {
 			return;
 		}
 		this.deviceType = deviceType;
+		setupNewSample(deviceType);
+	}
+
+	private void setupNewSample(final SDMDeviceType deviceType) {
 		switch (deviceType) {
 			case SDM630:
-				sample = new SDM630Data();
+				sample = new SDM630Data(backwards);
 				break;
 
 			default:
-				sample = new SDM120Data();
+				sample = new SDM120Data(backwards);
 				break;
 		}
 	}
@@ -387,4 +397,20 @@ public class SDMSupport extends ModbusDeviceSupport {
 			// not supported type
 		}
 	}
+
+	/**
+	 * Set the backwards setting.
+	 * 
+	 * @param backwards
+	 *        the backwards setting
+	 * @since 1.1
+	 */
+	public void setBackwards(boolean value) {
+		if ( value == backwards ) {
+			return;
+		}
+		this.backwards = value;
+		setupNewSample(this.deviceType);
+	}
+
 }

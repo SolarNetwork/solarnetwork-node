@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.deson.meter;
 
-import gnu.trove.map.hash.TIntIntHashMap;
 import java.util.Arrays;
 import java.util.Map;
+import gnu.trove.map.hash.TIntIntHashMap;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 
@@ -38,12 +38,13 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * register data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class BaseSDMData implements SDMData {
 
 	private final TIntIntHashMap dataRegisters;
 	private final TIntIntHashMap controlRegisters;
+	private final boolean backwards;
 	private long meterDataTimestamp = 0;
 	private long controlDataTimestamp = 0;
 
@@ -54,6 +55,25 @@ public abstract class BaseSDMData implements SDMData {
 		super();
 		this.dataRegisters = new TIntIntHashMap(64);
 		this.controlRegisters = new TIntIntHashMap(8);
+		this.backwards = false;
+	}
+
+	/**
+	 * Construct with backwards setting.
+	 * 
+	 * @param backwards
+	 *        If {@code true} then treat the meter as being installed backwards
+	 *        with respect to the current direction. In this case certain
+	 *        instantaneous measurements will be negated and certain
+	 *        accumulating properties will be switched (like {@code wattHours}
+	 *        and {@code wattHoursReverse}) when
+	 *        {@link SDMData#populateMeasurements} is called.
+	 */
+	public BaseSDMData(boolean backwards) {
+		super();
+		this.dataRegisters = new TIntIntHashMap(64);
+		this.controlRegisters = new TIntIntHashMap(8);
+		this.backwards = backwards;
 	}
 
 	/**
@@ -63,11 +83,11 @@ public abstract class BaseSDMData implements SDMData {
 	 *        the object to copy
 	 */
 	public BaseSDMData(BaseSDMData other) {
-		super();
 		this.dataRegisters = new TIntIntHashMap(other.dataRegisters);
 		this.controlRegisters = new TIntIntHashMap(other.controlRegisters);
 		this.meterDataTimestamp = other.meterDataTimestamp;
 		this.controlDataTimestamp = other.controlDataTimestamp;
+		this.backwards = other.backwards;
 	}
 
 	@Override
@@ -123,8 +143,8 @@ public abstract class BaseSDMData implements SDMData {
 	 *        The ending Modbus register address.
 	 */
 	protected void readInputData(final ModbusConnection conn, final int startAddr, final int endAddr) {
-		Map<Integer, Integer> data = conn.readInputValues(new Integer[] { startAddr }, (endAddr
-				- startAddr + 1));
+		Map<Integer, Integer> data = conn.readInputValues(new Integer[] { startAddr },
+				(endAddr - startAddr + 1));
 		dataRegisters.putAll(data);
 	}
 
@@ -185,8 +205,8 @@ public abstract class BaseSDMData implements SDMData {
 	 * Get a string of data values, useful for debugging. The generated string
 	 * will contain a register address followed by two register values per line,
 	 * printed as hexidecimal integers, with a prefix and suffix line. The
-	 * register addresses will be printed as {@bold 30001-based} values,
-	 * to match Deson's documentation. For example:
+	 * register addresses will be printed as {@bold 30001-based} values, to
+	 * match Deson's documentation. For example:
 	 * 
 	 * <pre>
 	 * SDM120Data{
@@ -282,6 +302,11 @@ public abstract class BaseSDMData implements SDMData {
 			return null;
 		}
 		return Long.valueOf(Math.round(value.doubleValue() * 1000.0));
+	}
+
+	@Override
+	public boolean isBackwards() {
+		return backwards;
 	}
 
 }

@@ -31,7 +31,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  * Common API for SDM meter data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface SDMData {
 
@@ -197,4 +197,17 @@ public interface SDMData {
 	 * @return the value interpreted as an energy value
 	 */
 	Long getEnergy(int addr);
+
+	/**
+	 * Get the <em>backwards</em> flag. When {@code true} then treat the meter
+	 * as being installed backwards with respect to the current direction. In
+	 * this case certain instantaneous measurements will be negated and certain
+	 * accumulating properties will be switched (like {@code wattHours} and
+	 * {@code wattHoursReverse}) when {@link #populateMeasurements} is called.
+	 * 
+	 * @return the backwards flag
+	 * @since 1.2
+	 */
+	boolean isBackwards();
+
 }

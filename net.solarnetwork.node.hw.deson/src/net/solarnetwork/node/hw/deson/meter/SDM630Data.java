@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
  * Encapsulates raw Modbus register data from SDM 360 meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SDM630Data extends BaseSDMData {
 
@@ -104,6 +104,15 @@ public class SDM630Data extends BaseSDMData {
 	 */
 	public SDM630Data(SDM630Data other) {
 		super(other);
+	}
+
+	/**
+	 * Construct with backwards setting.
+	 * 
+	 * @since 1.2
+	 */
+	public SDM630Data(boolean backwards) {
+		super(backwards);
 	}
 
 	@Override
@@ -237,8 +246,17 @@ public class SDM630Data extends BaseSDMData {
 
 	private void populateTotalMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
 		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
-		datum.setWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
-		datum.setReverseWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
+
+		Long whImport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL);
+		Long whExport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL);
+
+		if ( isBackwards() ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
 
 		final SDMWiringMode wiringMode = getWiringMode();
 
@@ -254,7 +272,7 @@ public class SDM630Data extends BaseSDMData {
 		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_TOTAL));
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
-		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
+		datum.setWatts((isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
 	}
 
 	private void populatePhaseAMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
@@ -265,7 +283,7 @@ public class SDM630Data extends BaseSDMData {
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P1));
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
-		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
+		datum.setWatts((isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
 	}
 
 	private void populatePhaseBMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
@@ -276,7 +294,7 @@ public class SDM630Data extends BaseSDMData {
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P2));
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L2_NEUTRAL));
-		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
+		datum.setWatts((isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
 	}
 
 	private void populatePhaseCMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
@@ -287,7 +305,7 @@ public class SDM630Data extends BaseSDMData {
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P3));
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L3_NEUTRAL));
-		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
+		datum.setWatts((isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
 	}
 
 }
