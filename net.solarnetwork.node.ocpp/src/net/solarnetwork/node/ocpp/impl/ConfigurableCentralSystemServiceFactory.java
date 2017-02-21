@@ -351,8 +351,8 @@ public class ConfigurableCentralSystemServiceFactory
 						.startAt(new Date(System.currentTimeMillis() + repeatInterval))
 						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
 						.withSchedule((repeatCount < 1
-								? SimpleScheduleBuilder.repeatMinutelyForever(heartbeatInterval)
-								: SimpleScheduleBuilder.repeatMinutelyForTotalCount(repeatCount,
+								? SimpleScheduleBuilder.repeatSecondlyForever(heartbeatInterval)
+								: SimpleScheduleBuilder.repeatSecondlyForTotalCount(repeatCount,
 										heartbeatInterval))
 												.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
