@@ -129,7 +129,8 @@ public class ConfigurableCentralSystemServiceFactory
 
 	private synchronized void configureHeartbeatIfNeeded() {
 		if ( heartbeatTrigger == null ) {
-			configureHeartbeat(30, 1);
+			// we use the heartbeat job to also re-try the initial boot notification if that has failed
+			configureHeartbeat(30, SimpleTrigger.REPEAT_INDEFINITELY);
 		}
 	}
 
