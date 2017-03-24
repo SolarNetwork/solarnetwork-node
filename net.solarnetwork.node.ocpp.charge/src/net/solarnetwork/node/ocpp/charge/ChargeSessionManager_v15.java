@@ -39,16 +39,10 @@ import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
-import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.TriggerKey;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.Constants;
@@ -95,7 +89,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Default implementation of {@link ChargeSessionManager}.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
@@ -104,6 +98,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * The name used to schedule the {@link PostOfflineChargeSessionsJob} as.
 	 */
 	public static final String POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME = "OCPP_PostOfflineChargeSessions";
+
+	/**
+	 * The name used to schedule the {@link CloseCompletedChargeSessionsJob} as.
+	 */
+	public static final String CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME = "OCPP_CloseCompletedChargeSessions";
 
 	/**
 	 * The job and trigger group used to schedule the
@@ -118,6 +117,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public static final long POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL = 600 * 1000L;
 
+	/**
+	 * The interval at which to try closing sessions that appear to be completed
+	 * but are still active.
+	 */
+	public static final long CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL = 600 * 1000L;
+
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
 	private ChargeSessionDao chargeSessionDao;
@@ -127,6 +132,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
 	private Scheduler scheduler;
 	private SimpleTrigger postOfflineChargeSessionsTrigger;
+	private SimpleTrigger closeCompletedChargeSessionsTrigger;
 
 	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
 			8);
@@ -139,6 +145,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public void startup() {
 		log.info("Starting up OCPP ChargeSessionManager {}", getUID());
 		configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
+		configureCloseCompletedChargeSessionJob(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL);
 	}
 
 	/**
@@ -147,6 +154,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	@Override
 	public void shutdown() {
 		configurePostOfflineChargeSessionsJob(0);
+		configureCloseCompletedChargeSessionJob(0);
 	}
 
 	@Override
@@ -576,70 +584,25 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	}
 
 	private boolean configurePostOfflineChargeSessionsJob(final long interval) {
-		Scheduler sched = scheduler;
-		if ( sched == null ) {
-			log.warn("No scheduler avaialable, cannot schedule post offline charge sessions job");
-			return false;
-		}
-		SimpleTrigger trigger = postOfflineChargeSessionsTrigger;
-		if ( trigger != null ) {
-			// check if interval actually changed
-			if ( trigger.getRepeatInterval() == interval ) {
-				log.debug("Post offline charge sessions interval unchanged at {}s", interval);
-				return true;
-			}
-			// trigger has changed!
-			if ( interval == 0 ) {
-				try {
-					sched.unscheduleJob(trigger.getKey());
-				} catch ( SchedulerException e ) {
-					log.error("Error unscheduling OCPP post offline charge sessions job", e);
-				} finally {
-					postOfflineChargeSessionsTrigger = null;
-				}
-			} else {
-				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey())
-						.forJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP)
-						.withSchedule(
-								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L))))
-						.build();
-				try {
-					sched.rescheduleJob(trigger.getKey(), trigger);
-				} catch ( SchedulerException e ) {
-					log.error("Error rescheduling OCPP post offline charge sessions job", e);
-				} finally {
-					postOfflineChargeSessionsTrigger = null;
-				}
-			}
-			return true;
-		}
+		postOfflineChargeSessionsTrigger = scheduleIntervalJob(scheduler, interval,
+				postOfflineChargeSessionsTrigger,
+				new JobKey(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
+				PostOfflineChargeSessionsJob.class,
+				new JobDataMap(Collections.singletonMap("service", this)),
+				"OCPP post offline charge sessions");
+		return ((interval > 0 && postOfflineChargeSessionsTrigger != null)
+				|| (interval < 1 && postOfflineChargeSessionsTrigger == null));
+	}
 
-		synchronized ( sched ) {
-			try {
-				final JobKey jobKey = new JobKey(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP);
-				JobDetail jobDetail = sched.getJobDetail(jobKey);
-				if ( jobDetail == null ) {
-					jobDetail = JobBuilder.newJob(PostOfflineChargeSessionsJob.class)
-							.withIdentity(jobKey).storeDurably().build();
-					sched.addJob(jobDetail, true);
-				}
-				final TriggerKey triggerKey = new TriggerKey(
-						POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME + getUID(), SCHEDULER_GROUP);
-				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
-						.startAt(new Date(System.currentTimeMillis() + interval))
-						.usingJobData(new JobDataMap(Collections.singletonMap("service", this)))
-						.withSchedule(
-								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L)))
-										.withMisfireHandlingInstructionNextWithExistingCount())
-						.build();
-				sched.scheduleJob(trigger);
-				postOfflineChargeSessionsTrigger = trigger;
-				return true;
-			} catch ( Exception e ) {
-				log.error("Error scheduling OCPP post offline charge sessions job", e);
-				return false;
-			}
-		}
+	private boolean configureCloseCompletedChargeSessionJob(final long interval) {
+		closeCompletedChargeSessionsTrigger = scheduleIntervalJob(scheduler, interval,
+				closeCompletedChargeSessionsTrigger,
+				new JobKey(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
+				CloseCompletedChargeSessionsJob.class,
+				new JobDataMap(Collections.singletonMap("service", this)),
+				"OCPP close completed charge sessions");
+		return ((interval > 0 && closeCompletedChargeSessionsTrigger != null)
+				|| (interval < 1 && closeCompletedChargeSessionsTrigger == null));
 	}
 
 	// Datum support
