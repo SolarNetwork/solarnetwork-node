@@ -52,7 +52,7 @@ public class SimpleChargeConfiguration implements ChargeConfiguration {
 	public SimpleChargeConfiguration(ChargeConfiguration config) {
 		super();
 		this.heartBeatInterval = config.getHeartBeatInterval();
-		this.meterValueSampleInterval = config.getHeartBeatInterval();
+		this.meterValueSampleInterval = config.getMeterValueSampleInterval();
 	}
 
 	@Override
