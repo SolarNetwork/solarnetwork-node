@@ -35,6 +35,8 @@ import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.Handler;
 import javax.xml.ws.soap.AddressingFeature;
 import org.osgi.framework.Version;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventHandler;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
@@ -50,6 +52,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
+import net.solarnetwork.node.ocpp.ChargeConfiguration;
+import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -72,7 +76,7 @@ import ocpp.v15.support.WSAddressingFromHandler;
  * @version 1.1
  */
 public class ConfigurableCentralSystemServiceFactory
-		implements CentralSystemServiceFactory, SettingSpecifierProvider {
+		implements CentralSystemServiceFactory, SettingSpecifierProvider, EventHandler {
 
 	/** The name used to schedule the {@link HeartbeatJob} as. */
 	public static final String HEARTBEAT_JOB_NAME = "OCPP_Heartbeat";
@@ -91,6 +95,7 @@ public class ConfigurableCentralSystemServiceFactory
 	private String firmwareVersion;
 
 	private MessageSource messageSource;
+	private ChargeConfigurationDao chargeConfigurationDao;
 	private OptionalService<IdentityService> identityService;
 	private Scheduler scheduler;
 
@@ -367,6 +372,25 @@ public class ConfigurableCentralSystemServiceFactory
 		}
 	}
 
+	@Override
+	public void handleEvent(Event event) {
+		final String topic = event.getTopic();
+		try {
+			if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
+				handleChargeConfigurationUpdated();
+			}
+		} catch ( RuntimeException e ) {
+			log.error("Error handling event {}", topic, e);
+		}
+	}
+
+	private void handleChargeConfigurationUpdated() {
+		ChargeConfiguration config = chargeConfigurationDao.getChargeConfiguration();
+		if ( config.getHeartBeatInterval() >= 0 ) {
+			configureHeartbeat(config.getHeartBeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY);
+		}
+	}
+
 	// SettingSpecifierProvider
 
 	@Override
@@ -596,6 +620,10 @@ public class ConfigurableCentralSystemServiceFactory
 
 	public HMACHandler getHmacHandler() {
 		return hmacHandler;
+	}
+
+	public void setChargeConfigurationDao(ChargeConfigurationDao chargeConfigurationDao) {
+		this.chargeConfigurationDao = chargeConfigurationDao;
 	}
 
 }

@@ -276,7 +276,7 @@ public abstract class CentralSystemServiceFactorySupport
 	 *         the job is unscheduled.
 	 * @since 1.1
 	 */
-	protected SimpleTrigger scheduleIntervalJob(final Scheduler scheduler, final long interval,
+	protected SimpleTrigger scheduleIntervalJob(final Scheduler scheduler, final int interval,
 			final SimpleTrigger currTrigger, final JobKey jobKey, final Class<? extends Job> jobClass,
 			final JobDataMap jobData, final String jobDescription) {
 		if ( scheduler == null ) {
@@ -301,18 +301,20 @@ public abstract class CentralSystemServiceFactorySupport
 				}
 			} else {
 				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(jobKey)
-						.withSchedule(
-								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L))))
-						.build();
+						.startAt(new Date(System.currentTimeMillis() + interval)).usingJobData(jobData)
+						.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(interval)).build();
 				try {
 					scheduler.rescheduleJob(trigger.getKey(), trigger);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling {} job", jobDescription, e);
-				} finally {
-					trigger = null;
 				}
 			}
 			return trigger;
+		}
+
+		if ( interval == 0 ) {
+			// asked to unschedule, but not scheduled so nothing more to do
+			return null;
 		}
 
 		synchronized ( scheduler ) {
@@ -326,9 +328,8 @@ public abstract class CentralSystemServiceFactorySupport
 						jobKey.getGroup());
 				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobKey)
 						.startAt(new Date(System.currentTimeMillis() + interval)).usingJobData(jobData)
-						.withSchedule(
-								SimpleScheduleBuilder.repeatMinutelyForever((int) (interval / (60000L)))
-										.withMisfireHandlingInstructionNextWithExistingCount())
+						.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(interval)
+								.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
 				scheduler.scheduleJob(trigger);
 				return trigger;
