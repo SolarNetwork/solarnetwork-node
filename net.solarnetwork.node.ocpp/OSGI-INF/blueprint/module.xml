@@ -25,6 +25,11 @@
 	
 	<!-- Support -->
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<bean id="identityService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
@@ -52,6 +57,13 @@
 	<bean id="authDao" class="net.solarnetwork.node.ocpp.dao.JdbcAuthorizationDao" init-method="init">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
+	
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	
+	<bean id="chargeConfigurationDao" class="net.solarnetwork.node.ocpp.dao.SettingsChargeConfigurationDao">
+		<argument ref="settingDao"/>
+		<argument ref="eventAdmin"/>
+	</bean>
 
 	<bean id="chargeSessionDao" class="net.solarnetwork.node.ocpp.dao.JdbcChargeSessionDao" init-method="init">
 		<property name="dataSource" ref="dataSource"/>
@@ -64,6 +76,8 @@
 	<!-- Published Services -->
 	
 	<service ref="authDao" interface="net.solarnetwork.node.ocpp.AuthorizationDao"/>
+	
+	<service ref="chargeConfigurationDao" interface="net.solarnetwork.node.ocpp.ChargeConfigurationDao"/>
 
 	<service ref="chargeSessionDao" interface="net.solarnetwork.node.ocpp.ChargeSessionDao"/>
 
