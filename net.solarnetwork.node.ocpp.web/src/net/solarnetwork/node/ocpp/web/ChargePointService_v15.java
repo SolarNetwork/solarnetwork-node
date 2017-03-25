@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp.web;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -30,8 +31,16 @@ import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.jws.WebService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import net.solarnetwork.node.ocpp.ChargeConfiguration;
+import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
+import net.solarnetwork.node.ocpp.support.SimpleChargeConfiguration;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -48,6 +57,7 @@ import ocpp.v15.cp.ChangeConfigurationResponse;
 import ocpp.v15.cp.ChargePointService;
 import ocpp.v15.cp.ClearCacheRequest;
 import ocpp.v15.cp.ClearCacheResponse;
+import ocpp.v15.cp.ConfigurationStatus;
 import ocpp.v15.cp.DataTransferRequest;
 import ocpp.v15.cp.DataTransferResponse;
 import ocpp.v15.cp.GetConfigurationRequest;
@@ -56,6 +66,7 @@ import ocpp.v15.cp.GetDiagnosticsRequest;
 import ocpp.v15.cp.GetDiagnosticsResponse;
 import ocpp.v15.cp.GetLocalListVersionRequest;
 import ocpp.v15.cp.GetLocalListVersionResponse;
+import ocpp.v15.cp.KeyValue;
 import ocpp.v15.cp.RemoteStartStopStatus;
 import ocpp.v15.cp.RemoteStartTransactionRequest;
 import ocpp.v15.cp.RemoteStartTransactionResponse;
@@ -72,20 +83,19 @@ import ocpp.v15.cp.UnlockConnectorResponse;
 import ocpp.v15.cp.UnlockStatus;
 import ocpp.v15.cp.UpdateFirmwareRequest;
 import ocpp.v15.cp.UpdateFirmwareResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
+import ocpp.v15.support.ConfigurationKeys;
 
 /**
  * SolarNode implementation of {@link ChargePointService}
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @WebService(serviceName = "ChargePointService", targetNamespace = "urn://Ocpp/Cp/2012/06/")
 public class ChargePointService_v15 implements ChargePointService, SettingSpecifierProvider {
 
 	private ChargeSessionManager chargeSessionManager;
+	private ChargeConfigurationDao chargeConfigurationDao;
 
 	private MessageSource messageSource;
 	private final ExecutorService executor = Executors.newCachedThreadPool();
@@ -157,9 +167,37 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	}
 
 	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public ChangeConfigurationResponse changeConfiguration(ChangeConfigurationRequest parameters,
 			String chargeBoxIdentity) {
-		throw new UnsupportedOperationException();
+		ChangeConfigurationResponse resp = new ChangeConfigurationResponse();
+		resp.setStatus(ConfigurationStatus.ACCEPTED);
+		ChargeConfiguration config = chargeConfigurationDao.getChargeConfiguration();
+		SimpleChargeConfiguration newConfig = new SimpleChargeConfiguration(config);
+		try {
+			ConfigurationKeys key = ConfigurationKeys.forKey(parameters.getKey());
+			switch (key) {
+				case HeartBeatInterval:
+					newConfig.setHeartBeatInterval(Integer.parseInt(parameters.getValue()));
+					break;
+
+				case MeterValueSampleInterval:
+					newConfig.setMeterValueSampleInterval(Integer.parseInt(parameters.getValue()));
+					break;
+
+				default:
+					resp.setStatus(ConfigurationStatus.NOT_SUPPORTED);
+
+			}
+		} catch ( NumberFormatException e ) {
+			resp.setStatus(ConfigurationStatus.REJECTED);
+		} catch ( IllegalArgumentException e ) {
+			resp.setStatus(ConfigurationStatus.NOT_SUPPORTED);
+		}
+		if ( newConfig.differsFrom(config) ) {
+			chargeConfigurationDao.storeChargeConfiguration(newConfig);
+		}
+		return resp;
 	}
 
 	@Override
@@ -233,10 +271,47 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		throw new UnsupportedOperationException();
 	}
 
+	private void addKeyValue(String key, String value, boolean readonly, List<KeyValue> list) {
+		KeyValue kv = new KeyValue();
+		kv.setKey(key);
+		kv.setValue(value);
+		kv.setReadonly(readonly);
+		list.add(kv);
+	}
+
 	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public GetConfigurationResponse getConfiguration(GetConfigurationRequest parameters,
 			String chargeBoxIdentity) {
-		throw new UnsupportedOperationException();
+		final ChargeConfiguration config = chargeConfigurationDao.getChargeConfiguration();
+		final GetConfigurationResponse resp = new GetConfigurationResponse();
+		List<String> keys = parameters.getKey();
+		if ( keys == null || keys.isEmpty() ) {
+			keys = Arrays.asList(ConfigurationKeys.HeartBeatInterval.getKey(),
+					ConfigurationKeys.MeterValueSampleInterval.getKey());
+		}
+		for ( String key : keys ) {
+			try {
+				ConfigurationKeys confKey = ConfigurationKeys.forKey(key);
+				switch (confKey) {
+					case HeartBeatInterval:
+						addKeyValue(key, String.valueOf(config.getHeartBeatInterval()), false,
+								resp.getConfigurationKey());
+						break;
+
+					case MeterValueSampleInterval:
+						addKeyValue(key, String.valueOf(config.getMeterValueSampleInterval()), false,
+								resp.getConfigurationKey());
+						break;
+
+					default:
+						resp.getUnknownKey().add(key);
+				}
+			} catch ( IllegalArgumentException e ) {
+				resp.getUnknownKey().add(key);
+			}
+		}
+		return resp;
 	}
 
 	@Override
@@ -251,7 +326,8 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	}
 
 	@Override
-	public SendLocalListResponse sendLocalList(SendLocalListRequest parameters, String chargeBoxIdentity) {
+	public SendLocalListResponse sendLocalList(SendLocalListRequest parameters,
+			String chargeBoxIdentity) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -312,6 +388,17 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set the {@link ChargeConfigurationDao} to use.
+	 * 
+	 * @param chargeConfigurationDao
+	 *        The DAO to use.
+	 * @since 1.1
+	 */
+	public void setChargeConfigurationDao(ChargeConfigurationDao chargeConfigurationDao) {
+		this.chargeConfigurationDao = chargeConfigurationDao;
 	}
 
 }

@@ -17,11 +17,12 @@
 	
 	<!-- Service References -->
 	
-	<osgi:reference id="transactionManager"
-		interface="org.springframework.transaction.PlatformTransactionManager"
+	<osgi:reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>
 	
 	<osgi:reference id="identityService" interface="net.solarnetwork.node.IdentityService"/>
+	
+	<osgi:reference id="chargeConfigurationDao" interface="net.solarnetwork.node.ocpp.ChargeConfigurationDao"/>
 	
 	<!-- Services -->
 	
@@ -57,6 +58,7 @@
 
  	<bean id="chargePointService" class="net.solarnetwork.node.ocpp.web.ChargePointService_v15">
 		<property name="messageSource" ref="messageSource"/>
+		<property name="chargeConfigurationDao" ref="chargeConfigurationDao"/>
 		<property name="chargeSessionManager">
 			<bean class="net.solarnetwork.util.DynamicServiceProxy">
 				<property name="bundleContext" ref="bundleContext"/>
