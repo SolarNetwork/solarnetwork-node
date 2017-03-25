@@ -45,6 +45,7 @@ import org.quartz.Scheduler;
 import org.quartz.SimpleTrigger;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
@@ -52,6 +53,8 @@ import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.ocpp.AuthorizationManager;
 import net.solarnetwork.node.ocpp.CentralSystemServiceFactory;
+import net.solarnetwork.node.ocpp.ChargeConfiguration;
+import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionDao;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
@@ -75,6 +78,7 @@ import ocpp.v15.cs.IdTagInfo;
 import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.MeterValue;
 import ocpp.v15.cs.MeterValue.Value;
+import ocpp.v15.cs.MeterValuesRequest;
 import ocpp.v15.cs.ReadingContext;
 import ocpp.v15.cs.StartTransactionRequest;
 import ocpp.v15.cs.StartTransactionResponse;
@@ -105,6 +109,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public static final String CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME = "OCPP_CloseCompletedChargeSessions";
 
 	/**
+	 * The name used to schedule the
+	 * {@link PostActiveChargeSessionsMeterValuesJob} as.
+	 */
+	public static final String CLOSE_POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_NAME = "OCPP_PostActiveChargeSessionsMeterValues";
+
+	/**
 	 * The job and trigger group used to schedule the
 	 * {@link PostOfflineChargeSessionsJob} with. Note the trigger name will be
 	 * the {@link #getUID()} property value.
@@ -113,26 +123,35 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	/**
 	 * The interval at which to try posting offline charge session data to the
-	 * central system.
+	 * central system, in seconds.
 	 */
-	public static final long POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL = 600 * 1000L;
+	public static final int POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL = 600;
+
+	/**
+	 * The interval at which to try posting active charge session meter value
+	 * data to the central system, in sesconds.
+	 */
+	public static final int POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_INTERVAL = 600;
 
 	/**
 	 * The interval at which to try closing sessions that appear to be completed
 	 * but are still active.
 	 */
-	public static final long CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL = 600 * 1000L;
+	public static final int CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL = 600;
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
+	private ChargeConfigurationDao chargeConfigurationDao;
 	private ChargeSessionDao chargeSessionDao;
 	private SocketDao socketDao;
+	private TransactionTemplate transactionTemplate;
 	private Map<String, Integer> socketConnectorMapping = Collections.emptyMap();
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
 	private Scheduler scheduler;
 	private SimpleTrigger postOfflineChargeSessionsTrigger;
 	private SimpleTrigger closeCompletedChargeSessionsTrigger;
+	private SimpleTrigger postActiveChargeSessionsMeterValuesTrigger;
 
 	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
 			8);
@@ -146,6 +165,9 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		log.info("Starting up OCPP ChargeSessionManager {}", getUID());
 		configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
 		configureCloseCompletedChargeSessionJob(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL);
+
+		// configure aspects from OCPP properties
+		handleChargeConfigurationUpdated();
 	}
 
 	/**
@@ -155,6 +177,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public void shutdown() {
 		configurePostOfflineChargeSessionsJob(0);
 		configureCloseCompletedChargeSessionJob(0);
+		configurePostActiveChargeSessionsMeterValuesJob(0);
 	}
 
 	@Override
@@ -479,18 +502,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			// add any associated readings
 			List<ChargeSessionMeterReading> readings = chargeSessionDao
 					.findMeterReadingsForSession(session.getSessionId());
-			TransactionData data = new TransactionData();
-			MeterValue currMeterValue = null;
-			long currTimestamp = -1;
-			for ( ChargeSessionMeterReading r : readings ) {
-				if ( r.getTs().getTime() != currTimestamp ) {
-					currMeterValue = new MeterValue();
-					data.getValues().add(currMeterValue);
-					currTimestamp = r.getTs().getTime();
-					currMeterValue.setTimestamp(newXmlCalendar(currTimestamp));
-				}
-				currMeterValue.getValue().add(r);
-			}
+			TransactionData data = transactionDataForMeterReadings(readings);
 			if ( data.getValues().size() > 0 ) {
 				req.getTransactionData().add(data);
 			}
@@ -505,6 +517,22 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			}
 		}
 		return res;
+	}
+
+	private TransactionData transactionDataForMeterReadings(List<ChargeSessionMeterReading> readings) {
+		TransactionData data = new TransactionData();
+		MeterValue currMeterValue = null;
+		long currTimestamp = -1;
+		for ( ChargeSessionMeterReading r : readings ) {
+			if ( r.getTs().getTime() != currTimestamp ) {
+				currMeterValue = new MeterValue();
+				data.getValues().add(currMeterValue);
+				currTimestamp = r.getTs().getTime();
+				currMeterValue.setTimestamp(newXmlCalendar(currTimestamp));
+			}
+			currMeterValue.getValue().add(r);
+		}
+		return data;
 	}
 
 	@Override
@@ -583,26 +611,71 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		return toPost.size();
 	}
 
-	private boolean configurePostOfflineChargeSessionsJob(final long interval) {
-		postOfflineChargeSessionsTrigger = scheduleIntervalJob(scheduler, interval,
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public void postActiveChargeSessionsMeterValues() {
+		final CentralSystemServiceFactory system = getCentralSystem();
+		final CentralSystemService client = (system != null ? system.service() : null);
+		if ( client == null ) {
+			return;
+		}
+		for ( String socketId : availableSocketIds() ) {
+			final ChargeSession session = activeChargeSession(socketId);
+			if ( session == null ) {
+				continue;
+			}
+			final Integer connectorId = socketConnectorMapping.get(socketId);
+			List<ChargeSessionMeterReading> readings = meterReadingsForChargeSession(
+					session.getSessionId());
+			TransactionData data = transactionDataForMeterReadings(readings);
+			if ( data.getValues().size() > 0 ) {
+				MeterValuesRequest req = new MeterValuesRequest();
+				req.getValues().addAll(data.getValues());
+				req.setConnectorId(connectorId);
+				req.setTransactionId(session.getTransactionId());
+				client.meterValues(req, system.chargeBoxIdentity());
+				log.info(
+						"Posted {} meter values for active charge session {} on socket {} to OCPP central server",
+						data.getValues().size(), session.getSessionId(), socketId);
+			}
+		}
+	}
+
+	private boolean configurePostOfflineChargeSessionsJob(final int seconds) {
+		postOfflineChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
 				postOfflineChargeSessionsTrigger,
 				new JobKey(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
 				PostOfflineChargeSessionsJob.class,
 				new JobDataMap(Collections.singletonMap("service", this)),
 				"OCPP post offline charge sessions");
-		return ((interval > 0 && postOfflineChargeSessionsTrigger != null)
-				|| (interval < 1 && postOfflineChargeSessionsTrigger == null));
+		return ((seconds > 0 && postOfflineChargeSessionsTrigger != null)
+				|| (seconds < 1 && postOfflineChargeSessionsTrigger == null));
 	}
 
-	private boolean configureCloseCompletedChargeSessionJob(final long interval) {
-		closeCompletedChargeSessionsTrigger = scheduleIntervalJob(scheduler, interval,
+	private boolean configureCloseCompletedChargeSessionJob(final int seconds) {
+		closeCompletedChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
 				closeCompletedChargeSessionsTrigger,
 				new JobKey(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
 				CloseCompletedChargeSessionsJob.class,
 				new JobDataMap(Collections.singletonMap("service", this)),
 				"OCPP close completed charge sessions");
-		return ((interval > 0 && closeCompletedChargeSessionsTrigger != null)
-				|| (interval < 1 && closeCompletedChargeSessionsTrigger == null));
+		return ((seconds > 0 && closeCompletedChargeSessionsTrigger != null)
+				|| (seconds < 1 && closeCompletedChargeSessionsTrigger == null));
+	}
+
+	private boolean configurePostActiveChargeSessionsMeterValuesJob(final int seconds) {
+		Map<String, Object> jobMap = new HashMap<String, Object>();
+		jobMap.put("service", this);
+		if ( transactionTemplate != null ) {
+			jobMap.put("transactionTemplate", transactionTemplate);
+		}
+		postActiveChargeSessionsMeterValuesTrigger = scheduleIntervalJob(scheduler, seconds,
+				postActiveChargeSessionsMeterValuesTrigger,
+				new JobKey(CLOSE_POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_NAME, SCHEDULER_GROUP),
+				PostActiveChargeSessionsMeterValuesJob.class, new JobDataMap(jobMap),
+				"OCPP post active charge sessions meter values");
+		return ((seconds > 0 && postActiveChargeSessionsMeterValuesTrigger != null)
+				|| (seconds < 1 && postActiveChargeSessionsMeterValuesTrigger == null));
 	}
 
 	// Datum support
@@ -689,6 +762,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		try {
 			if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
 				handleDatumCapturedEvent(event);
+			} else if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
+				handleChargeConfigurationUpdated();
 			}
 		} catch ( RuntimeException e ) {
 			log.error("Error handling event {}", topic, e);
@@ -748,6 +823,13 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		// store readings in DB
 		List<Value> readings = readingsForDatum(datum);
 		chargeSessionDao.addMeterReadings(active.getSessionId(), new Date(created), readings);
+	}
+
+	private void handleChargeConfigurationUpdated() {
+		ChargeConfiguration config = chargeConfigurationDao.getChargeConfiguration();
+		if ( config.getMeterValueSampleInterval() >= 0 ) {
+			configurePostActiveChargeSessionsMeterValuesJob(config.getMeterValueSampleInterval());
+		}
 	}
 
 	private List<Value> readingsForDatum(ACEnergyDatum datum) {
@@ -1064,6 +1146,14 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	public void setChargeConfigurationDao(ChargeConfigurationDao chargeConfigurationDao) {
+		this.chargeConfigurationDao = chargeConfigurationDao;
+	}
+
+	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
 	}
 
 }

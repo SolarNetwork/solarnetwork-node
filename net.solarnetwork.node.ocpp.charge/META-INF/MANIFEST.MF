@@ -26,6 +26,7 @@ Import-Package:
  org.springframework.aop.framework;version="[4.2,5.0)",
  org.springframework.context;version="[4.2,5.0)",
  org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core;version="[4.2,5.0)",
  org.springframework.scheduling.quartz;version="[4.2,5.0)",
  org.springframework.transaction;version="[4.2,5.0)",
  org.springframework.transaction.annotation;version="[4.2,5.0)",
