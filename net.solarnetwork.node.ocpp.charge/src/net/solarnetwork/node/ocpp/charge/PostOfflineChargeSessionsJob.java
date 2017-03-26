@@ -25,6 +25,9 @@ package net.solarnetwork.node.ocpp.charge;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 
@@ -40,6 +43,7 @@ import net.solarnetwork.node.ocpp.ChargeSessionManager;
 public class PostOfflineChargeSessionsJob extends AbstractJob {
 
 	private ChargeSessionManager service;
+	private TransactionTemplate transactionTemplate;
 	private int maximum = 5;
 
 	@Override
@@ -48,6 +52,21 @@ public class PostOfflineChargeSessionsJob extends AbstractJob {
 			log.warn("No ChargeSessionManager available, cannot post offline charge sessions.");
 			return;
 		}
+		if ( transactionTemplate != null ) {
+			transactionTemplate.execute(new TransactionCallback<Object>() {
+
+				@Override
+				public Object doInTransaction(TransactionStatus status) {
+					postCompletedOfflineSessions();
+					return null;
+				}
+			});
+		} else {
+			postCompletedOfflineSessions();
+		}
+	}
+
+	private void postCompletedOfflineSessions() {
 		final int posted = service.postCompleteOfflineSessions(maximum);
 		log.info("{} completed offline charge sessions posted to OCPP central system", posted);
 	}
@@ -60,6 +79,16 @@ public class PostOfflineChargeSessionsJob extends AbstractJob {
 	 */
 	public void setService(ChargeSessionManager service) {
 		this.service = service;
+	}
+
+	/**
+	 * A transaction template to use.
+	 * 
+	 * @param transactionTemplate
+	 *        The template to use.
+	 */
+	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
 	}
 
 	/**

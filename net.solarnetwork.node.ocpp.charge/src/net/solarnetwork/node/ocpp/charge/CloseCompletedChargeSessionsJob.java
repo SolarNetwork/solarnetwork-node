@@ -27,6 +27,9 @@ import java.util.ListIterator;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
@@ -45,12 +48,33 @@ import ocpp.v15.cs.Measurand;
 public class CloseCompletedChargeSessionsJob extends AbstractJob {
 
 	private ChargeSessionManager service;
+	private TransactionTemplate transactionTemplate;
 	private long maxAgeLastReading = (15 * 60 * 1000L);
 	private int readingEnergyCount = 5;
 	private long maxEnergy = 5;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+		if ( service == null ) {
+			log.warn(
+					"No ChargeSessionManager available, cannot close active charge sessions that appear to be completed");
+			return;
+		}
+		if ( transactionTemplate != null ) {
+			transactionTemplate.execute(new TransactionCallback<Object>() {
+
+				@Override
+				public Object doInTransaction(TransactionStatus status) {
+					closeCompletedChargeSessions();
+					return null;
+				}
+			});
+		} else {
+			closeCompletedChargeSessions();
+		}
+	}
+
+	private void closeCompletedChargeSessions() {
 		log.debug("Looking for OCPP active charge sessions that appear to be completed");
 		for ( String socketId : service.availableSocketIds() ) {
 			ChargeSession session = service.activeChargeSession(socketId);
@@ -120,6 +144,16 @@ public class CloseCompletedChargeSessionsJob extends AbstractJob {
 	 */
 	public void setService(ChargeSessionManager service) {
 		this.service = service;
+	}
+
+	/**
+	 * A transaction template to use.
+	 * 
+	 * @param transactionTemplate
+	 *        The template to use.
+	 */
+	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
+		this.transactionTemplate = transactionTemplate;
 	}
 
 	/**

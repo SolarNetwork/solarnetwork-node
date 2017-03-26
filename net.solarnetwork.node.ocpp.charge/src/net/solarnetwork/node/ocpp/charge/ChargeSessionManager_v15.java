@@ -641,12 +641,20 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 	}
 
+	private Map<String, Object> standardJobMap() {
+		Map<String, Object> jobMap = new HashMap<String, Object>();
+		jobMap.put("service", this);
+		if ( transactionTemplate != null ) {
+			jobMap.put("transactionTemplate", transactionTemplate);
+		}
+		return jobMap;
+	}
+
 	private boolean configurePostOfflineChargeSessionsJob(final int seconds) {
 		postOfflineChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
 				postOfflineChargeSessionsTrigger,
 				new JobKey(POST_OFFLINE_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
-				PostOfflineChargeSessionsJob.class,
-				new JobDataMap(Collections.singletonMap("service", this)),
+				PostOfflineChargeSessionsJob.class, new JobDataMap(standardJobMap()),
 				"OCPP post offline charge sessions");
 		return ((seconds > 0 && postOfflineChargeSessionsTrigger != null)
 				|| (seconds < 1 && postOfflineChargeSessionsTrigger == null));
@@ -656,23 +664,17 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		closeCompletedChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
 				closeCompletedChargeSessionsTrigger,
 				new JobKey(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
-				CloseCompletedChargeSessionsJob.class,
-				new JobDataMap(Collections.singletonMap("service", this)),
+				CloseCompletedChargeSessionsJob.class, new JobDataMap(standardJobMap()),
 				"OCPP close completed charge sessions");
 		return ((seconds > 0 && closeCompletedChargeSessionsTrigger != null)
 				|| (seconds < 1 && closeCompletedChargeSessionsTrigger == null));
 	}
 
 	private boolean configurePostActiveChargeSessionsMeterValuesJob(final int seconds) {
-		Map<String, Object> jobMap = new HashMap<String, Object>();
-		jobMap.put("service", this);
-		if ( transactionTemplate != null ) {
-			jobMap.put("transactionTemplate", transactionTemplate);
-		}
 		postActiveChargeSessionsMeterValuesTrigger = scheduleIntervalJob(scheduler, seconds,
 				postActiveChargeSessionsMeterValuesTrigger,
 				new JobKey(CLOSE_POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_NAME, SCHEDULER_GROUP),
-				PostActiveChargeSessionsMeterValuesJob.class, new JobDataMap(jobMap),
+				PostActiveChargeSessionsMeterValuesJob.class, new JobDataMap(standardJobMap()),
 				"OCPP post active charge sessions meter values");
 		return ((seconds > 0 && postActiveChargeSessionsMeterValuesTrigger != null)
 				|| (seconds < 1 && postActiveChargeSessionsMeterValuesTrigger == null));
