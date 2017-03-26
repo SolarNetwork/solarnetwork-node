@@ -605,26 +605,25 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
 		// verify meter values posted
 		Assert.assertNotNull("MeterValuesRequest values", meterValuesReq.getValues());
-		Assert.assertEquals("TransactionData transactionData values", 3,
+		Assert.assertEquals("MeterValuesRequest values only most recent", 1,
 				meterValuesReq.getValues().size());
-		cal.add(Calendar.MINUTE, -3);
-		for ( int i = 0; i < 3; i++ ) {
-			MeterValue meterValue = meterValuesReq.getValues().get(i);
-			Assert.assertNotNull("MeterValue timestamp", meterValue.getTimestamp());
-			Assert.assertEquals("MeterValue timestamp", cal.getTime(),
-					meterValue.getTimestamp().toGregorianCalendar().getTime());
 
-			Assert.assertEquals("MeterValue values", 2, meterValue.getValue().size());
-			Value v = meterValue.getValue().get(0);
-			Assert.assertEquals("MeterValue measurand", Measurand.ENERGY_ACTIVE_IMPORT_REGISTER,
-					v.getMeasurand());
-			Assert.assertEquals("MeterValue unit", UnitOfMeasure.WH, v.getUnit());
-			v = meterValue.getValue().get(1);
-			Assert.assertEquals("MeterValue measurand", Measurand.POWER_ACTIVE_IMPORT, v.getMeasurand());
-			Assert.assertEquals("MeterValue unit", UnitOfMeasure.W, v.getUnit());
+		cal.add(Calendar.MINUTE, -1);
+		MeterValue meterValue = meterValuesReq.getValues().get(0);
+		Assert.assertNotNull("MeterValue timestamp", meterValue.getTimestamp());
+		Assert.assertEquals("MeterValue timestamp", cal.getTime(),
+				meterValue.getTimestamp().toGregorianCalendar().getTime());
 
-			cal.add(Calendar.MINUTE, 1);
-		}
+		Assert.assertEquals("MeterValue values", 2, meterValue.getValue().size());
+		Value v = meterValue.getValue().get(0);
+		Assert.assertEquals("MeterValue measurand", Measurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+				v.getMeasurand());
+		Assert.assertEquals("MeterValue unit", UnitOfMeasure.WH, v.getUnit());
+		v = meterValue.getValue().get(1);
+		Assert.assertEquals("MeterValue measurand", Measurand.POWER_ACTIVE_IMPORT, v.getMeasurand());
+		Assert.assertEquals("MeterValue unit", UnitOfMeasure.W, v.getUnit());
+
+		cal.add(Calendar.MINUTE, 1);
 
 	}
 }

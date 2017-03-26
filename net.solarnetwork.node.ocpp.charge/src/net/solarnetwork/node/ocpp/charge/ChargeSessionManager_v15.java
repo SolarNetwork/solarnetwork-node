@@ -628,9 +628,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 			List<ChargeSessionMeterReading> readings = meterReadingsForChargeSession(
 					session.getSessionId());
 			TransactionData data = transactionDataForMeterReadings(readings);
-			if ( data.getValues().size() > 0 ) {
+			final int valuesCount = data.getValues().size();
+			if ( valuesCount > 0 ) {
+				// post just the most recent (last) value available
 				MeterValuesRequest req = new MeterValuesRequest();
-				req.getValues().addAll(data.getValues());
+				req.getValues().add(data.getValues().get(valuesCount - 1));
 				req.setConnectorId(connectorId);
 				req.setTransactionId(session.getTransactionId());
 				client.meterValues(req, system.chargeBoxIdentity());
