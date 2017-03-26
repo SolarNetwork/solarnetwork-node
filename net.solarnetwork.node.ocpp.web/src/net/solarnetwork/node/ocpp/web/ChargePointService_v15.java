@@ -102,11 +102,19 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public UnlockConnectorResponse unlockConnector(UnlockConnectorRequest parameters,
 			String chargeBoxIdentity) {
 		final Integer connId = parameters.getConnectorId();
 		final String socketId = chargeSessionManager.socketIdForConnectorId(connId);
+
+		// if there is an active session on this socket, complete it now
+		final ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
+		if ( session != null ) {
+			chargeSessionManager.completeChargeSession(session.getIdTag(), session.getSessionId());
+		}
+
 		final UnlockConnectorResponse resp = new UnlockConnectorResponse();
 		if ( socketId == null ) {
 			resp.setStatus(UnlockStatus.REJECTED);
@@ -122,6 +130,7 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		throw new UnsupportedOperationException();
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public ChangeAvailabilityResponse changeAvailability(ChangeAvailabilityRequest parameters,
 			String chargeBoxIdentity) {

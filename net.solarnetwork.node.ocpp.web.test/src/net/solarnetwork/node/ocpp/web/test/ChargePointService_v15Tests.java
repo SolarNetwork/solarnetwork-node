@@ -38,6 +38,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
+import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.support.SimpleChargeConfiguration;
 import net.solarnetwork.node.ocpp.web.ChargePointService_v15;
@@ -51,6 +52,9 @@ import ocpp.v15.cp.ConfigurationStatus;
 import ocpp.v15.cp.GetConfigurationRequest;
 import ocpp.v15.cp.GetConfigurationResponse;
 import ocpp.v15.cp.KeyValue;
+import ocpp.v15.cp.UnlockConnectorRequest;
+import ocpp.v15.cp.UnlockConnectorResponse;
+import ocpp.v15.cp.UnlockStatus;
 import ocpp.v15.support.ConfigurationKeys;
 
 /**
@@ -62,7 +66,10 @@ import ocpp.v15.support.ConfigurationKeys;
 public class ChargePointService_v15Tests {
 
 	private static final String TEST_CHARGE_BOX_ID = "test.id";
+	private static final String TEST_ID_TAG = "id.tag";
 	private static final String TEST_SOCKET_ID = "/test/socket";
+	private static final String TEST_SESSION_ID = "123abc";
+	private static final int TEST_CONNECTOR_ID = 123;
 
 	private ChargePointService_v15 service;
 
@@ -267,7 +274,7 @@ public class ChargePointService_v15Tests {
 
 	@Test
 	public void changeAvailabilitySingleConnectorDisabled() {
-		expect(chargeSessionManager.socketIdForConnectorId(1)).andReturn(TEST_SOCKET_ID);
+		expect(chargeSessionManager.socketIdForConnectorId(TEST_CONNECTOR_ID)).andReturn(TEST_SOCKET_ID);
 
 		Capture<Collection<String>> socketIdsCapture = new Capture<Collection<String>>();
 		chargeSessionManager.configureSocketEnabledState(EasyMock.capture(socketIdsCapture),
@@ -275,7 +282,7 @@ public class ChargePointService_v15Tests {
 
 		replayAll();
 		ChangeAvailabilityRequest req = new ChangeAvailabilityRequest();
-		req.setConnectorId(1);
+		req.setConnectorId(TEST_CONNECTOR_ID);
 		req.setType(AvailabilityType.INOPERATIVE);
 		ChangeAvailabilityResponse resp = service.changeAvailability(req, TEST_CHARGE_BOX_ID);
 
@@ -303,4 +310,65 @@ public class ChargePointService_v15Tests {
 		assertEquals("Status", AvailabilityStatus.REJECTED, resp.getStatus());
 	}
 
+	@Test
+	public void unlockConnectorNoSession() {
+		// get the socket ID
+		expect(chargeSessionManager.socketIdForConnectorId(TEST_CONNECTOR_ID)).andReturn(TEST_SOCKET_ID);
+
+		// check for active session on socket (and indicate there isn't)
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(null);
+
+		Capture<Collection<String>> socketIdsCapture = new Capture<Collection<String>>();
+		chargeSessionManager.configureSocketEnabledState(EasyMock.capture(socketIdsCapture),
+				EasyMock.eq(true));
+
+		replayAll();
+		UnlockConnectorRequest req = new UnlockConnectorRequest();
+		req.setConnectorId(TEST_CONNECTOR_ID);
+		UnlockConnectorResponse resp = service.unlockConnector(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", UnlockStatus.ACCEPTED, resp.getStatus());
+
+		// verify captured socket
+		Collection<String> socketIds = socketIdsCapture.getValue();
+		assertNotNull("Changed socket IDs", socketIds);
+		assertEquals("Changed socket IDs count", 1, socketIds.size());
+		assertEquals("Changed socket ID", TEST_SOCKET_ID, socketIds.iterator().next());
+
+	}
+
+	@Test
+	public void unlockConnectorWithSession() {
+		// get the socket ID
+		expect(chargeSessionManager.socketIdForConnectorId(TEST_CONNECTOR_ID)).andReturn(TEST_SOCKET_ID);
+
+		// check for active session on socket (and return session)
+		final ChargeSession session = new ChargeSession();
+		session.setSessionId(TEST_SESSION_ID);
+		session.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(session);
+
+		// complete session
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		Capture<Collection<String>> socketIdsCapture = new Capture<Collection<String>>();
+		chargeSessionManager.configureSocketEnabledState(EasyMock.capture(socketIdsCapture),
+				EasyMock.eq(true));
+
+		replayAll();
+		UnlockConnectorRequest req = new UnlockConnectorRequest();
+		req.setConnectorId(TEST_CONNECTOR_ID);
+		UnlockConnectorResponse resp = service.unlockConnector(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", UnlockStatus.ACCEPTED, resp.getStatus());
+
+		// verify captured socket
+		Collection<String> socketIds = socketIdsCapture.getValue();
+		assertNotNull("Changed socket IDs", socketIds);
+		assertEquals("Changed socket IDs count", 1, socketIds.size());
+		assertEquals("Changed socket ID", TEST_SOCKET_ID, socketIds.iterator().next());
+
+	}
 }
