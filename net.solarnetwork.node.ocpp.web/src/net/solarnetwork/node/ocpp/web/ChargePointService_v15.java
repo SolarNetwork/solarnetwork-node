@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.ocpp.ChargeConfiguration;
 import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.ocpp.ChargeSession;
@@ -44,6 +45,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.util.OptionalService;
 import ocpp.v15.cp.AvailabilityStatus;
 import ocpp.v15.cp.AvailabilityType;
 import ocpp.v15.cp.CancelReservationRequest;
@@ -74,6 +76,8 @@ import ocpp.v15.cp.ReserveNowRequest;
 import ocpp.v15.cp.ReserveNowResponse;
 import ocpp.v15.cp.ResetRequest;
 import ocpp.v15.cp.ResetResponse;
+import ocpp.v15.cp.ResetStatus;
+import ocpp.v15.cp.ResetType;
 import ocpp.v15.cp.SendLocalListRequest;
 import ocpp.v15.cp.SendLocalListResponse;
 import ocpp.v15.cp.UnlockConnectorRequest;
@@ -94,6 +98,7 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 
 	private ChargeSessionManager chargeSessionManager;
 	private ChargeConfigurationDao chargeConfigurationDao;
+	private OptionalService<SystemService> systemService;
 
 	private MessageSource messageSource;
 
@@ -122,9 +127,26 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		return resp;
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public ResetResponse reset(ResetRequest parameters, String chargeBoxIdentity) {
-		throw new UnsupportedOperationException();
+		for ( String socketId : chargeSessionManager.availableSocketIds() ) {
+			ChargeSession session = chargeSessionManager.activeChargeSession(socketId);
+			if ( session != null ) {
+				chargeSessionManager.completeChargeSession(session.getIdTag(), session.getSessionId());
+			}
+		}
+		if ( parameters.getType() == ResetType.HARD ) {
+			// also restart (via new thread)
+			SystemService sysService = (systemService != null ? systemService.service() : null);
+			if ( sysService != null ) {
+				sysService.reboot();
+			}
+		}
+
+		ResetResponse resp = new ResetResponse();
+		resp.setStatus(ResetStatus.ACCEPTED);
+		return resp;
 	}
 
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
@@ -392,6 +414,18 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	 */
 	public void setChargeConfigurationDao(ChargeConfigurationDao chargeConfigurationDao) {
 		this.chargeConfigurationDao = chargeConfigurationDao;
+	}
+
+	/**
+	 * Set the {@link SystemService} to use. This is required to support the
+	 * {@link #reset(ResetRequest, String)} method.
+	 * 
+	 * @param systemService
+	 *        the systemService to set
+	 * @since 1.1
+	 */
+	public void setSystemService(OptionalService<SystemService> systemService) {
+		this.systemService = systemService;
 	}
 
 }

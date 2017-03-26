@@ -50,6 +50,11 @@
 		</property>
 	</bean>
 
+	<bean id="systemService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.SystemService"/>
+	</bean>
+
 	<osgi:service ref="chargePointService" interface="net.solarnetwork.node.settings.SettingSpecifierProvider">
 		<osgi:service-properties>
 			<entry key="servicePid" value="net.solarnetwork.node.ocpp.web.chargepoint"/>
@@ -58,6 +63,7 @@
 
  	<bean id="chargePointService" class="net.solarnetwork.node.ocpp.web.ChargePointService_v15">
 		<property name="messageSource" ref="messageSource"/>
+		<property name="systemService" ref="systemService"/>
 		<property name="chargeConfigurationDao" ref="chargeConfigurationDao"/>
 		<property name="chargeSessionManager">
 			<bean class="net.solarnetwork.util.DynamicServiceProxy">

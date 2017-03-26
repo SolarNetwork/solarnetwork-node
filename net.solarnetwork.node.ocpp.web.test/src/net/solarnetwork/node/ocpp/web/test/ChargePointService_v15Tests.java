@@ -37,11 +37,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.support.SimpleChargeConfiguration;
 import net.solarnetwork.node.ocpp.web.ChargePointService_v15;
+import net.solarnetwork.util.StaticOptionalService;
 import ocpp.v15.cp.AvailabilityStatus;
 import ocpp.v15.cp.AvailabilityType;
 import ocpp.v15.cp.ChangeAvailabilityRequest;
@@ -57,6 +59,10 @@ import ocpp.v15.cp.RemoteStartTransactionRequest;
 import ocpp.v15.cp.RemoteStartTransactionResponse;
 import ocpp.v15.cp.RemoteStopTransactionRequest;
 import ocpp.v15.cp.RemoteStopTransactionResponse;
+import ocpp.v15.cp.ResetRequest;
+import ocpp.v15.cp.ResetResponse;
+import ocpp.v15.cp.ResetStatus;
+import ocpp.v15.cp.ResetType;
 import ocpp.v15.cp.UnlockConnectorRequest;
 import ocpp.v15.cp.UnlockConnectorResponse;
 import ocpp.v15.cp.UnlockStatus;
@@ -80,6 +86,7 @@ public class ChargePointService_v15Tests {
 	private ChargePointService_v15 service;
 
 	private ChargeConfigurationDao chargeConfigurationDao;
+	private SystemService systemService;
 	private ChargeSessionManager chargeSessionManager;
 	private MessageSource messageSource;
 
@@ -88,21 +95,22 @@ public class ChargePointService_v15Tests {
 		chargeConfigurationDao = EasyMock.createMock(ChargeConfigurationDao.class);
 		chargeSessionManager = EasyMock.createMock(ChargeSessionManager.class);
 		messageSource = EasyMock.createMock(MessageSource.class);
+		systemService = EasyMock.createMock(SystemService.class);
 
 		service = new ChargePointService_v15();
 		service.setChargeConfigurationDao(chargeConfigurationDao);
 		service.setChargeSessionManager(chargeSessionManager);
-		service.setChargeSessionManager(chargeSessionManager);
+		service.setSystemService(new StaticOptionalService<SystemService>(systemService));
 		service.setMessageSource(messageSource);
 	}
 
 	@After
 	public void finished() {
-		EasyMock.verify(chargeConfigurationDao, chargeSessionManager, messageSource);
+		EasyMock.verify(chargeConfigurationDao, chargeSessionManager, messageSource, systemService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(chargeConfigurationDao, chargeSessionManager, messageSource);
+		EasyMock.replay(chargeConfigurationDao, chargeSessionManager, messageSource, systemService);
 	}
 
 	@Test
@@ -449,6 +457,98 @@ public class ChargePointService_v15Tests {
 
 		assertNotNull("Response available", resp);
 		assertEquals("Status", RemoteStartStopStatus.REJECTED, resp.getStatus());
+	}
+
+	@Test
+	public void resetNoSessionsSoft() {
+		// get the available socket IDs to look for sessions to stop
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active charge session on socket (not found)
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(null);
+
+		replayAll();
+		ResetRequest req = new ResetRequest();
+		req.setType(ResetType.SOFT);
+		ResetResponse resp = service.reset(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ResetStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void resetNoSessionsHard() {
+		// get the available socket IDs to look for sessions to stop
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active charge session on socket (not found)
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(null);
+
+		// reboot
+		systemService.reboot();
+
+		replayAll();
+		ResetRequest req = new ResetRequest();
+		req.setType(ResetType.HARD);
+		ResetResponse resp = service.reset(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ResetStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void resetWithActiveSessionsSoft() {
+		// get the available socket IDs to look for sessions to stop
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active charge session on socket
+		final ChargeSession session = new ChargeSession();
+		session.setSessionId(TEST_SESSION_ID);
+		session.setTransactionId(TEST_TRANSACTION_ID);
+		session.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(session);
+
+		// end session
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		replayAll();
+		ResetRequest req = new ResetRequest();
+		req.setType(ResetType.SOFT);
+		ResetResponse resp = service.reset(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ResetStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void resetWithActiveSessionHard() {
+		// get the available socket IDs to look for sessions to stop
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// look for active charge session on socket
+		final ChargeSession session = new ChargeSession();
+		session.setSessionId(TEST_SESSION_ID);
+		session.setTransactionId(TEST_TRANSACTION_ID);
+		session.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_SOCKET_ID)).andReturn(session);
+
+		// end session
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		// reboot
+		systemService.reboot();
+
+		replayAll();
+		ResetRequest req = new ResetRequest();
+		req.setType(ResetType.HARD);
+		ResetResponse resp = service.reset(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ResetStatus.ACCEPTED, resp.getStatus());
 	}
 
 }
