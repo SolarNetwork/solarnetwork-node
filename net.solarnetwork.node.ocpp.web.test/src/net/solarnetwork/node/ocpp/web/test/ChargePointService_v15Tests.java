@@ -22,12 +22,18 @@
 
 package net.solarnetwork.node.ocpp.web.test;
 
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.MessageSource;
@@ -35,6 +41,10 @@ import net.solarnetwork.node.ocpp.ChargeConfigurationDao;
 import net.solarnetwork.node.ocpp.ChargeSessionManager;
 import net.solarnetwork.node.ocpp.support.SimpleChargeConfiguration;
 import net.solarnetwork.node.ocpp.web.ChargePointService_v15;
+import ocpp.v15.cp.AvailabilityStatus;
+import ocpp.v15.cp.AvailabilityType;
+import ocpp.v15.cp.ChangeAvailabilityRequest;
+import ocpp.v15.cp.ChangeAvailabilityResponse;
 import ocpp.v15.cp.ChangeConfigurationRequest;
 import ocpp.v15.cp.ChangeConfigurationResponse;
 import ocpp.v15.cp.ConfigurationStatus;
@@ -52,6 +62,7 @@ import ocpp.v15.support.ConfigurationKeys;
 public class ChargePointService_v15Tests {
 
 	private static final String TEST_CHARGE_BOX_ID = "test.id";
+	private static final String TEST_SOCKET_ID = "/test/socket";
 
 	private ChargePointService_v15 service;
 
@@ -86,18 +97,17 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(1);
 		config.setMeterValueSampleInterval(2);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 		replayAll();
 
 		GetConfigurationRequest req = new GetConfigurationRequest();
 		GetConfigurationResponse resp = service.getConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("All keys returned", 2, resp.getConfigurationKey().size());
-		Assert.assertEquals("No unknown keys returned", 0, resp.getUnknownKey().size());
+		assertNotNull("Response available", resp);
+		assertEquals("All keys returned", 2, resp.getConfigurationKey().size());
+		assertEquals("No unknown keys returned", 0, resp.getUnknownKey().size());
 		Map<String, String> props = getConfigurationProperties(resp);
-		Assert.assertEquals("HeartBeatInterval", "1",
-				props.get(ConfigurationKeys.HeartBeatInterval.getKey()));
-		Assert.assertEquals("MeterValueSampleInterval", "2",
+		assertEquals("HeartBeatInterval", "1", props.get(ConfigurationKeys.HeartBeatInterval.getKey()));
+		assertEquals("MeterValueSampleInterval", "2",
 				props.get(ConfigurationKeys.MeterValueSampleInterval.getKey()));
 	}
 
@@ -114,17 +124,17 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(1);
 		config.setMeterValueSampleInterval(2);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 		replayAll();
 
 		GetConfigurationRequest req = new GetConfigurationRequest();
 		req.getKey().add(ConfigurationKeys.MeterValueSampleInterval.getKey());
 		GetConfigurationResponse resp = service.getConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("All keys returned", 1, resp.getConfigurationKey().size());
-		Assert.assertEquals("No unknown keys returned", 0, resp.getUnknownKey().size());
+		assertNotNull("Response available", resp);
+		assertEquals("All keys returned", 1, resp.getConfigurationKey().size());
+		assertEquals("No unknown keys returned", 0, resp.getUnknownKey().size());
 		Map<String, String> props = getConfigurationProperties(resp);
-		Assert.assertEquals("MeterValueSampleInterval", "2",
+		assertEquals("MeterValueSampleInterval", "2",
 				props.get(ConfigurationKeys.MeterValueSampleInterval.getKey()));
 	}
 
@@ -133,7 +143,7 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(0);
 		config.setMeterValueSampleInterval(0);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 
 		// update
 		Capture<SimpleChargeConfiguration> configCapture = new Capture<SimpleChargeConfiguration>();
@@ -145,15 +155,14 @@ public class ChargePointService_v15Tests {
 		req.setKey(ConfigurationKeys.MeterValueSampleInterval.getKey());
 		req.setValue("100");
 		ChangeConfigurationResponse resp = service.changeConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("Status", ConfigurationStatus.ACCEPTED, resp.getStatus());
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ConfigurationStatus.ACCEPTED, resp.getStatus());
 
 		// verify updated config
-		Assert.assertNotNull("Updated config", configCapture.getValue());
+		assertNotNull("Updated config", configCapture.getValue());
 		SimpleChargeConfiguration updatedConfig = configCapture.getValue();
-		Assert.assertEquals("HeartBeatInterval unchanged", 0, updatedConfig.getHeartBeatInterval());
-		Assert.assertEquals("MeterValueSampleInterval", 100,
-				updatedConfig.getMeterValueSampleInterval());
+		assertEquals("HeartBeatInterval unchanged", 0, updatedConfig.getHeartBeatInterval());
+		assertEquals("MeterValueSampleInterval", 100, updatedConfig.getMeterValueSampleInterval());
 	}
 
 	@Test
@@ -161,7 +170,7 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(0);
 		config.setMeterValueSampleInterval(0);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 
 		replayAll();
 
@@ -169,8 +178,8 @@ public class ChargePointService_v15Tests {
 		req.setKey(ConfigurationKeys.MeterValueSampleInterval.getKey());
 		req.setValue("ABC");
 		ChangeConfigurationResponse resp = service.changeConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("Status", ConfigurationStatus.REJECTED, resp.getStatus());
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ConfigurationStatus.REJECTED, resp.getStatus());
 	}
 
 	@Test
@@ -178,7 +187,7 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(0);
 		config.setMeterValueSampleInterval(0);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 
 		// update
 		Capture<SimpleChargeConfiguration> configCapture = new Capture<SimpleChargeConfiguration>();
@@ -190,14 +199,14 @@ public class ChargePointService_v15Tests {
 		req.setKey(ConfigurationKeys.HeartBeatInterval.getKey());
 		req.setValue("100");
 		ChangeConfigurationResponse resp = service.changeConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("Status", ConfigurationStatus.ACCEPTED, resp.getStatus());
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ConfigurationStatus.ACCEPTED, resp.getStatus());
 
 		// verify updated config
-		Assert.assertNotNull("Updated config", configCapture.getValue());
+		assertNotNull("Updated config", configCapture.getValue());
 		SimpleChargeConfiguration updatedConfig = configCapture.getValue();
-		Assert.assertEquals("HeartBeatInterval", 100, updatedConfig.getHeartBeatInterval());
-		Assert.assertEquals("MeterValueSampleInterval unchanged", 0,
+		assertEquals("HeartBeatInterval", 100, updatedConfig.getHeartBeatInterval());
+		assertEquals("MeterValueSampleInterval unchanged", 0,
 				updatedConfig.getMeterValueSampleInterval());
 	}
 
@@ -206,7 +215,7 @@ public class ChargePointService_v15Tests {
 		SimpleChargeConfiguration config = new SimpleChargeConfiguration();
 		config.setHeartBeatInterval(0);
 		config.setMeterValueSampleInterval(0);
-		EasyMock.expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
+		expect(chargeConfigurationDao.getChargeConfiguration()).andReturn(config);
 
 		replayAll();
 
@@ -214,8 +223,84 @@ public class ChargePointService_v15Tests {
 		req.setKey(ConfigurationKeys.HeartBeatInterval.getKey());
 		req.setValue("ABC");
 		ChangeConfigurationResponse resp = service.changeConfiguration(req, TEST_CHARGE_BOX_ID);
-		Assert.assertNotNull("Response available", resp);
-		Assert.assertEquals("Status", ConfigurationStatus.REJECTED, resp.getStatus());
+		assertNotNull("Response available", resp);
+		assertEquals("Status", ConfigurationStatus.REJECTED, resp.getStatus());
+	}
+
+	@Test
+	public void changeAvailabilityAllDisabled() {
+		// because passing connector ID 0, must change all sockets
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// disable the socket
+		chargeSessionManager.configureSocketEnabledState(availableSocketIds, false);
+
+		replayAll();
+		ChangeAvailabilityRequest req = new ChangeAvailabilityRequest();
+		req.setConnectorId(0);
+		req.setType(AvailabilityType.INOPERATIVE);
+		ChangeAvailabilityResponse resp = service.changeAvailability(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", AvailabilityStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void changeAvailabilityAllEnabled() {
+		// because passing connector ID 0, must change all sockets
+		Set<String> availableSocketIds = new LinkedHashSet<String>(Arrays.asList(TEST_SOCKET_ID));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// disable the socket
+		chargeSessionManager.configureSocketEnabledState(availableSocketIds, true);
+
+		replayAll();
+		ChangeAvailabilityRequest req = new ChangeAvailabilityRequest();
+		req.setConnectorId(0);
+		req.setType(AvailabilityType.OPERATIVE);
+		ChangeAvailabilityResponse resp = service.changeAvailability(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", AvailabilityStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void changeAvailabilitySingleConnectorDisabled() {
+		expect(chargeSessionManager.socketIdForConnectorId(1)).andReturn(TEST_SOCKET_ID);
+
+		Capture<Collection<String>> socketIdsCapture = new Capture<Collection<String>>();
+		chargeSessionManager.configureSocketEnabledState(EasyMock.capture(socketIdsCapture),
+				EasyMock.eq(false));
+
+		replayAll();
+		ChangeAvailabilityRequest req = new ChangeAvailabilityRequest();
+		req.setConnectorId(1);
+		req.setType(AvailabilityType.INOPERATIVE);
+		ChangeAvailabilityResponse resp = service.changeAvailability(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", AvailabilityStatus.ACCEPTED, resp.getStatus());
+
+		// verify captured socket
+		Collection<String> socketIds = socketIdsCapture.getValue();
+		assertNotNull("Changed socket IDs", socketIds);
+		assertEquals("Changed socket IDs count", 1, socketIds.size());
+		assertEquals("Changed socket ID", TEST_SOCKET_ID, socketIds.iterator().next());
+	}
+
+	@Test
+	public void changeAvailabilityUnknownConnectorDisabled() {
+		expect(chargeSessionManager.socketIdForConnectorId(1)).andReturn(null);
+
+		replayAll();
+		ChangeAvailabilityRequest req = new ChangeAvailabilityRequest();
+		req.setConnectorId(1);
+		req.setType(AvailabilityType.INOPERATIVE);
+		ChangeAvailabilityResponse resp = service.changeAvailability(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", AvailabilityStatus.REJECTED, resp.getStatus());
 	}
 
 }
