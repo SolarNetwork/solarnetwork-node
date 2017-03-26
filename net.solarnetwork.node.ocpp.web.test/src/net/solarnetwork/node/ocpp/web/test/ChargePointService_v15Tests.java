@@ -52,6 +52,11 @@ import ocpp.v15.cp.ConfigurationStatus;
 import ocpp.v15.cp.GetConfigurationRequest;
 import ocpp.v15.cp.GetConfigurationResponse;
 import ocpp.v15.cp.KeyValue;
+import ocpp.v15.cp.RemoteStartStopStatus;
+import ocpp.v15.cp.RemoteStartTransactionRequest;
+import ocpp.v15.cp.RemoteStartTransactionResponse;
+import ocpp.v15.cp.RemoteStopTransactionRequest;
+import ocpp.v15.cp.RemoteStopTransactionResponse;
 import ocpp.v15.cp.UnlockConnectorRequest;
 import ocpp.v15.cp.UnlockConnectorResponse;
 import ocpp.v15.cp.UnlockStatus;
@@ -70,6 +75,7 @@ public class ChargePointService_v15Tests {
 	private static final String TEST_SOCKET_ID = "/test/socket";
 	private static final String TEST_SESSION_ID = "123abc";
 	private static final int TEST_CONNECTOR_ID = 123;
+	private static final int TEST_TRANSACTION_ID = 321;
 
 	private ChargePointService_v15 service;
 
@@ -369,6 +375,80 @@ public class ChargePointService_v15Tests {
 		assertNotNull("Changed socket IDs", socketIds);
 		assertEquals("Changed socket IDs count", 1, socketIds.size());
 		assertEquals("Changed socket ID", TEST_SOCKET_ID, socketIds.iterator().next());
-
 	}
+
+	@Test
+	public void remoteStartTransactionWithConnector() {
+		// get the socket ID
+		expect(chargeSessionManager.socketIdForConnectorId(TEST_CONNECTOR_ID)).andReturn(TEST_SOCKET_ID);
+
+		// start the session
+		expect(chargeSessionManager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null))
+				.andReturn(TEST_SESSION_ID);
+
+		replayAll();
+		RemoteStartTransactionRequest req = new RemoteStartTransactionRequest();
+		req.setIdTag(TEST_ID_TAG);
+		req.setConnectorId(TEST_CONNECTOR_ID);
+		RemoteStartTransactionResponse resp = service.remoteStartTransaction(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", RemoteStartStopStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void remoteStartTransactionUnspecifiedConnector() {
+		// get the first available socket ID
+		Set<String> availableSocketIds = new LinkedHashSet<String>(
+				Arrays.asList(TEST_SOCKET_ID, "/another/socket"));
+		expect(chargeSessionManager.availableSocketIds()).andReturn(availableSocketIds);
+
+		// start the session
+		expect(chargeSessionManager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null))
+				.andReturn(TEST_SESSION_ID);
+
+		replayAll();
+		RemoteStartTransactionRequest req = new RemoteStartTransactionRequest();
+		req.setIdTag(TEST_ID_TAG);
+		RemoteStartTransactionResponse resp = service.remoteStartTransaction(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", RemoteStartStopStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void remoteStopTransaction() {
+		// get active session for transaction
+		final ChargeSession session = new ChargeSession();
+		session.setSessionId(TEST_SESSION_ID);
+		session.setTransactionId(TEST_TRANSACTION_ID);
+		session.setIdTag(TEST_ID_TAG);
+		expect(chargeSessionManager.activeChargeSession(TEST_TRANSACTION_ID)).andReturn(session);
+
+		// end the session
+		chargeSessionManager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
+
+		replayAll();
+		RemoteStopTransactionRequest req = new RemoteStopTransactionRequest();
+		req.setTransactionId(TEST_TRANSACTION_ID);
+		RemoteStopTransactionResponse resp = service.remoteStopTransaction(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", RemoteStartStopStatus.ACCEPTED, resp.getStatus());
+	}
+
+	@Test
+	public void remoteStopTransactionNoSession() {
+		// get active session for transaction (not finding)
+		expect(chargeSessionManager.activeChargeSession(TEST_TRANSACTION_ID)).andReturn(null);
+
+		replayAll();
+		RemoteStopTransactionRequest req = new RemoteStopTransactionRequest();
+		req.setTransactionId(TEST_TRANSACTION_ID);
+		RemoteStopTransactionResponse resp = service.remoteStopTransaction(req, TEST_CHARGE_BOX_ID);
+
+		assertNotNull("Response available", resp);
+		assertEquals("Status", RemoteStartStopStatus.REJECTED, resp.getStatus());
+	}
+
 }

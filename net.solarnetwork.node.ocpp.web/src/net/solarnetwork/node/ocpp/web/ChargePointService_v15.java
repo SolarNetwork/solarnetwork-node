@@ -28,8 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.jws.WebService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +96,6 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 	private ChargeConfigurationDao chargeConfigurationDao;
 
 	private MessageSource messageSource;
-	private final ExecutorService executor = Executors.newCachedThreadPool();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -175,8 +172,8 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		throw new UnsupportedOperationException();
 	}
 
-	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	@Override
 	public ChangeConfigurationResponse changeConfiguration(ChangeConfigurationRequest parameters,
 			String chargeBoxIdentity) {
 		ChangeConfigurationResponse resp = new ChangeConfigurationResponse();
@@ -209,6 +206,7 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		return resp;
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public RemoteStartTransactionResponse remoteStartTransaction(
 			final RemoteStartTransactionRequest parameters, final String chargeBoxIdentity) {
@@ -228,22 +226,16 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		if ( socketId == null ) {
 			resp.setStatus(RemoteStartStopStatus.REJECTED);
 		} else {
-			// kick off to another thread so as not to delay our response
-			executor.submit(new Runnable() {
-
-				@Override
-				public void run() {
-					String sessionId = chargeSessionManager.initiateChargeSession(parameters.getIdTag(),
-							socketId, null);
-					log.debug("Initiated remote charge session {} for IdTag {} on socket {}", sessionId,
-							parameters.getIdTag(), socketId);
-				}
-			});
+			String sessionId = chargeSessionManager.initiateChargeSession(parameters.getIdTag(),
+					socketId, null);
+			log.debug("Initiated remote charge session {} for IdTag {} on socket {}", sessionId,
+					parameters.getIdTag(), socketId);
 			resp.setStatus(RemoteStartStopStatus.ACCEPTED);
 		}
 		return resp;
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public RemoteStopTransactionResponse remoteStopTransaction(RemoteStopTransactionRequest parameters,
 			String chargeBoxIdentity) {
@@ -253,17 +245,9 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		if ( session == null ) {
 			resp.setStatus(RemoteStartStopStatus.REJECTED);
 		} else {
-			// kick off to another thread so as not to delay our response
-			executor.submit(new Runnable() {
-
-				@Override
-				public void run() {
-					chargeSessionManager.completeChargeSession(session.getIdTag(),
-							session.getSessionId());
-					log.debug("Completed remote charge session {} for IdTag {} on socket {}",
-							session.getSessionId(), session.getIdTag(), session.getSocketId());
-				}
-			});
+			chargeSessionManager.completeChargeSession(session.getIdTag(), session.getSessionId());
+			log.debug("Completed remote charge session {} for IdTag {} on socket {}",
+					session.getSessionId(), session.getIdTag(), session.getSocketId());
 			resp.setStatus(RemoteStartStopStatus.ACCEPTED);
 		}
 		return resp;
@@ -288,8 +272,8 @@ public class ChargePointService_v15 implements ChargePointService, SettingSpecif
 		list.add(kv);
 	}
 
-	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	@Override
 	public GetConfigurationResponse getConfiguration(GetConfigurationRequest parameters,
 			String chargeBoxIdentity) {
 		final ChargeConfiguration config = chargeConfigurationDao.getChargeConfiguration();
