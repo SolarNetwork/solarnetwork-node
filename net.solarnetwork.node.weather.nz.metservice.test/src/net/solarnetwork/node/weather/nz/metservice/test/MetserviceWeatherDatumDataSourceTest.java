@@ -24,36 +24,37 @@ package net.solarnetwork.node.weather.nz.metservice.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.TimeZone;
+import org.junit.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource;
-import org.junit.Test;
-import org.springframework.util.ResourceUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Test case for the {@link MetserviceWeatherDatumDataSource} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
 	private BasicMetserviceClient createClientInstance() throws Exception {
 		URL url = getClass().getResource("localObs_wellington-city.json");
-		File f = ResourceUtils.getFile(url);
-		String baseDirectory = f.getParent();
+		String urlString = url.toString();
+		String baseDirectory = urlString.substring(0, urlString.lastIndexOf('/'));
+		if ( baseDirectory.startsWith("file:") ) {
+			baseDirectory = "file://" + baseDirectory.substring(5);
+		}
 
 		BasicMetserviceClient client = new BasicMetserviceClient();
-		client.setBaseUrl("file://" + baseDirectory);
+		client.setBaseUrl(baseDirectory);
 		client.setRiseSetTemplate("riseSet_%s.json");
 		client.setLocalObsTemplate("localObs_%s.json");
 		client.setLocalForecastTemplate("localForecast%s.json");

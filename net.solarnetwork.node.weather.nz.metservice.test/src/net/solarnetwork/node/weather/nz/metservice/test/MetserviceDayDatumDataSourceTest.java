@@ -24,23 +24,21 @@ package net.solarnetwork.node.weather.nz.metservice.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import java.io.File;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import org.junit.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
-import org.junit.Test;
-import org.springframework.util.ResourceUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Test case for the {@link MetserviceDayDatumDataSource} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalTest {
 
@@ -48,11 +46,14 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 
 	private BasicMetserviceClient createClientInstance() throws Exception {
 		URL url = getClass().getResource(RISE_SET_RESOURCE_NAME);
-		File f = ResourceUtils.getFile(url);
-		String baseDirectory = f.getParent();
+		String urlString = url.toString();
+		String baseDirectory = urlString.substring(0, urlString.lastIndexOf('/'));
+		if ( baseDirectory.startsWith("file:") ) {
+			baseDirectory = "file://" + baseDirectory.substring(5);
+		}
 
 		BasicMetserviceClient client = new BasicMetserviceClient();
-		client.setBaseUrl("file://" + baseDirectory);
+		client.setBaseUrl(baseDirectory);
 		client.setRiseSetTemplate("riseSet_%s.json");
 		client.setLocalObsTemplate("localObs_%s.json");
 		client.setLocalForecastTemplate("localForecast%s.json");
@@ -81,12 +82,12 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 		assertEquals("1 September 2014", dayFormat.format(datum.getCreated()));
 
 		assertNotNull(datum.getSunrise());
-		assertEquals("6:47am", timeFormat.format(datum.getSunrise().toDateTimeToday().toDate())
-				.toLowerCase());
+		assertEquals("6:47am",
+				timeFormat.format(datum.getSunrise().toDateTimeToday().toDate()).toLowerCase());
 
 		assertNotNull(datum.getSunset());
-		assertEquals("5:56pm", timeFormat.format(datum.getSunset().toDateTimeToday().toDate())
-				.toLowerCase());
+		assertEquals("5:56pm",
+				timeFormat.format(datum.getSunset().toDateTimeToday().toDate()).toLowerCase());
 
 		assertEquals(new BigDecimal("5.0"), datum.getTemperatureMinimum());
 		assertEquals(new BigDecimal("15.0"), datum.getTemperatureMaximum());
