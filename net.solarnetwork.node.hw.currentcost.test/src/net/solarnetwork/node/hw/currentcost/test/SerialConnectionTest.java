@@ -22,31 +22,17 @@
 
 package net.solarnetwork.node.hw.currentcost.test;
 
+import java.io.UnsupportedEncodingException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import gnu.io.CommPortIdentifier;
 import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
-import java.io.UnsupportedEncodingException;
 import net.solarnetwork.node.io.rxtx.AbstractSerialPortSupportFactory;
 import net.solarnetwork.node.io.rxtx.SerialPortVariableDataCollector;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt></dt>
- * <dd></dd>
- * </dl>
+ * Hard-coded test for serial connectivity. Not intended for automated testing.
  * 
  * @author matt
  * @version 1.0
@@ -94,7 +80,6 @@ public class SerialConnectionTest {
 
 	}
 
-	@Test
 	public void readFromSerialConnection() throws InterruptedException, UnsupportedEncodingException {
 		SerialFactory factory = new SerialFactory();
 		SerialPortVariableDataCollector dc = null;
