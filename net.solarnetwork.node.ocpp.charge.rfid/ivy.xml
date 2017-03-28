@@ -15,7 +15,6 @@
     	<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.ocpp.client" rev="[1.5,1.6)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.33,2.0)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.ocpp" rev="[0.2,2.0)"/>
-    	<dependency org="org.eclipse.gemini" name="org.eclipse.gemini.blueprint.core" rev="1.0.2.RELEASE" conf="runtime"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.2.6.RELEASE"/>
 	</dependencies>
