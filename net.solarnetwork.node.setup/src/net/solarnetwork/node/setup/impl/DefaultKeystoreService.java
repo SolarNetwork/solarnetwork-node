@@ -23,21 +23,15 @@
 package net.solarnetwork.node.setup.impl;
 
 import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
@@ -53,23 +47,13 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
 import javax.annotation.Resource;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Base64OutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
@@ -85,6 +69,7 @@ import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
+import net.solarnetwork.support.ConfigurableSSLService;
 
 /**
  * Service for managing a {@link KeyStore}.
@@ -99,17 +84,15 @@ import net.solarnetwork.support.CertificateService;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class DefaultKeystoreService implements PKIService, SSLService, BackupResourceProvider {
+public class DefaultKeystoreService extends ConfigurableSSLService
+		implements PKIService, SSLService, BackupResourceProvider {
 
 	private static final String BACKUP_RESOURCE_NAME_KEYSTORE = "node.jks";
 
 	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
-
-	/** The default value for the {@code trustStorePath} property. */
-	public static final String DEFAULT_TRUST_STORE_PATH = "conf/tls/trust.jks";
 
 	/** The settings key for the key store password. */
 	public static final String KEY_PASSWORD = "solarnode.keystore.pw";
@@ -117,14 +100,9 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	private static final String PKCS12_KEYSTORE_TYPE = "pkcs12";
 	private static final int PASSWORD_LENGTH = 20;
 
-	private String keyStorePath = DEFAULT_KEY_STORE_PATH;
-	private String trustStorePath = DEFAULT_TRUST_STORE_PATH;
-	private String trustStorePassword = "solarnode";
-	private String jreTrustStorePassword = "changeit";
 	private String nodeAlias = "node";
 	private String caAlias = "ca";
 	private int keySize = 2048;
-	private String manualKeyStorePassword;
 	private MessageSource messageSource;
 
 	@Resource
@@ -133,9 +111,15 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	@Resource
 	private SettingDao settingDao;
 
-	private SSLSocketFactory solarInSocketFactory;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	/**
+	 * Default constructor.
+	 */
+	public DefaultKeystoreService() {
+		super();
+		setKeyStorePath(DefaultKeystoreService.DEFAULT_KEY_STORE_PATH);
+		setTrustStorePassword("solarnode");
+		setKeyStorePassword(null);
+	}
 
 	@Override
 	public String getKey() {
@@ -144,7 +128,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	@Override
 	public Iterable<BackupResource> getBackupResources() {
-		File ksFile = new File(keyStorePath);
+		File ksFile = new File(getKeyStorePath());
 		if ( !(ksFile.isFile() && ksFile.canRead()) ) {
 			return Collections.emptyList();
 		}
@@ -158,7 +142,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 	public boolean restoreBackupResource(BackupResource resource) {
 		if ( resource != null
 				&& BACKUP_RESOURCE_NAME_KEYSTORE.equalsIgnoreCase(resource.getBackupPath()) ) {
-			final File ksFile = new File(keyStorePath);
+			final File ksFile = new File(getKeyStorePath());
 			final File ksDir = ksFile.getParentFile();
 			if ( !ksDir.isDirectory() ) {
 				if ( !ksDir.mkdirs() ) {
@@ -198,7 +182,20 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), null);
 	}
 
-	private String getKeyStorePassword() {
+	/**
+	 * Get the keystore password.
+	 * 
+	 * If a password has been configured via
+	 * {@link #setKeyStorePassword(String)} this method will return that.
+	 * Otherwise, the {@link SettingDao} is used to query the
+	 * {@link #KEY_PASSWORD} setting value. If that value is available, that
+	 * value is returned. Othersise, a new random password will be generated and
+	 * persisted into the {@code SettingDao} on {@link #KEY_PASSWORD}, and the
+	 * generated password will be returned.
+	 */
+	@Override
+	protected String getKeyStorePassword() {
+		String manualKeyStorePassword = super.getKeyStorePassword();
 		if ( manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ) {
 			return manualKeyStorePassword;
 		}
@@ -267,7 +264,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 			if ( root instanceof UnrecoverableKeyException ) {
 				// bad password... we shall assume here that a new node association is underway,
 				// so delete the existing key store and re-create
-				File ksFile = new File(keyStorePath);
+				File ksFile = new File(getKeyStorePath());
 				if ( ksFile.isFile() ) {
 					log.info(
 							"Deleting existing certificate store due to invalid password, will create new store");
@@ -442,7 +439,7 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		// change the password to our local random one
 		copyNodeChain(keyStore, password, newKeyStore, newPassword);
 
-		File ksFile = new File(keyStorePath);
+		File ksFile = new File(getKeyStorePath());
 		if ( ksFile.isFile() ) {
 			ksFile.delete();
 		}
@@ -478,36 +475,6 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		} catch ( UnsupportedEncodingException e ) {
 			// should never get here
 			throw new RuntimeException(e);
-		}
-	}
-
-	private KeyStore loadKeyStore(String type, InputStream in, String password) {
-		if ( password == null ) {
-			password = "";
-		}
-		KeyStore keyStore = null;
-		try {
-			keyStore = KeyStore.getInstance(type);
-			keyStore.load(in, (password != null ? password.toCharArray() : null));
-			return keyStore;
-		} catch ( GeneralSecurityException e ) {
-			throw new CertificateException("Error loading certificate key store", e);
-		} catch ( IOException e ) {
-			String msg;
-			if ( e.getCause() instanceof UnrecoverableKeyException ) {
-				msg = "Invalid password loading key store";
-			} else {
-				msg = "Error loading certificate key store";
-			}
-			throw new CertificateException(msg, e);
-		} finally {
-			if ( in != null ) {
-				try {
-					in.close();
-				} catch ( IOException e ) {
-					// ignore this one
-				}
-			}
 		}
 	}
 
@@ -607,106 +574,16 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		}
 	}
 
-	private synchronized void resetFromKeyStoreChange() {
-		solarInSocketFactory = null;
-	}
-
-	private synchronized KeyStore loadTrustStore() {
-		// first load in JDK trust store
-		File jdkTrustStoreFile = new File(System.getProperty("java.home"), "lib/security/cacerts");
-		KeyStore ks = null;
-		InputStream in = null;
-		if ( jdkTrustStoreFile.canRead() ) {
-			try {
-				in = new BufferedInputStream(new FileInputStream(jdkTrustStoreFile));
-			} catch ( FileNotFoundException e ) {
-				// shouldn't really get here after canRead()
-			}
-		}
-		ks = loadKeyStore(KeyStore.getDefaultType(), in, jreTrustStorePassword);
-
-		// now custom trust store
-		File snTrustStoreFile = new File(trustStorePath);
-		if ( snTrustStoreFile.canRead() ) {
-			KeyStore snTrustStore = null;
-			try {
-				in = new BufferedInputStream(new FileInputStream(snTrustStoreFile));
-				snTrustStore = loadKeyStore(KeyStore.getDefaultType(), in, trustStorePassword);
-				Enumeration<String> aliases = snTrustStore.aliases();
-				while ( aliases.hasMoreElements() ) {
-					String alias = aliases.nextElement();
-					Certificate cert = snTrustStore.getCertificate(alias);
-					if ( cert != null ) {
-						ks.setCertificateEntry(alias, cert);
-					}
-				}
-			} catch ( FileNotFoundException e ) {
-				// shouldn't really get here after canRead()
-			} catch ( KeyStoreException e ) {
-				log.warn("Error processing trusted certs in {}: {}", snTrustStoreFile, e.getMessage());
-			}
-		}
-
-		return ks;
-	}
-
 	@Override
 	public synchronized SSLSocketFactory getSolarInSocketFactory() {
-		if ( solarInSocketFactory == null ) {
-			try {
-				KeyStore trustStore = loadTrustStore();
-				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("PKIX");
-				trustManagerFactory.init(trustStore);
-
-				X509TrustManager x509TrustManager = null;
-				for ( TrustManager trustManager : trustManagerFactory.getTrustManagers() ) {
-					if ( trustManager instanceof X509TrustManager ) {
-						x509TrustManager = (X509TrustManager) trustManager;
-						break;
-					}
-				}
-
-				if ( x509TrustManager == null ) {
-					throw new CertificateException("No X509 TrustManager available");
-				}
-
-				KeyManager[] keyManagers = null;
-				File ksFile = new File(keyStorePath);
-				if ( ksFile.isFile() ) {
-					KeyStore keyStore = loadKeyStore();
-					KeyManagerFactory keyManagerFactory = KeyManagerFactory
-							.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-					keyManagerFactory.init(keyStore, getKeyStorePassword().toCharArray());
-
-					for ( KeyManager keyManager : keyManagerFactory.getKeyManagers() ) {
-						if ( keyManager instanceof X509KeyManager ) {
-							keyManagers = new KeyManager[] { keyManager };
-						}
-					}
-				}
-
-				SSLContext sslContext = SSLContext.getInstance("TLS");
-				sslContext.init(keyManagers, new TrustManager[] { x509TrustManager }, null);
-				solarInSocketFactory = sslContext.getSocketFactory();
-
-			} catch ( NoSuchAlgorithmException e ) {
-				throw new CertificateException("Error creating SSLContext", e);
-			} catch ( KeyStoreException e ) {
-				throw new CertificateException("Error creating SSLContext", e);
-			} catch ( UnrecoverableKeyException e ) {
-				throw new CertificateException("Error creating SSLContext", e);
-			} catch ( KeyManagementException e ) {
-				throw new CertificateException("Error creating SSLContext", e);
-			}
-		}
-		return solarInSocketFactory;
+		return getSSLSocketFactory();
 	}
 
 	private synchronized void saveKeyStore(KeyStore keyStore) {
 		if ( keyStore == null ) {
 			return;
 		}
-		File ksFile = new File(keyStorePath);
+		File ksFile = new File(getKeyStorePath());
 		File ksDir = ksFile.getParentFile();
 		if ( !ksDir.isDirectory() && !ksDir.mkdirs() ) {
 			throw new RuntimeException("Unable to create KeyStore directory: " + ksFile.getParent());
@@ -715,51 +592,10 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		String passwd = getKeyStorePassword();
 		try {
 			saveKeyStore(keyStore, passwd, new BufferedOutputStream(new FileOutputStream(ksFile)));
+			resetSocketFactory();
 		} catch ( IOException e ) {
 			throw new CertificateException("Error saving certificate key store to " + ksFile.getPath(),
 					e);
-		}
-	}
-
-	private void saveKeyStore(KeyStore keyStore, String password, OutputStream out) {
-		if ( password == null ) {
-			password = "";
-		}
-		try {
-			keyStore.store(out, password.toCharArray());
-			resetFromKeyStoreChange();
-		} catch ( KeyStoreException e ) {
-			throw new CertificateException("Error saving certificate key store", e);
-		} catch ( NoSuchAlgorithmException e ) {
-			throw new CertificateException("Error saving certificate key store", e);
-		} catch ( java.security.cert.CertificateException e ) {
-			throw new CertificateException("Error saving certificate key store", e);
-		} catch ( IOException e ) {
-			throw new CertificateException("Error saving certificate key store", e);
-		} finally {
-			if ( out != null ) {
-				try {
-					out.flush();
-					out.close();
-				} catch ( IOException e ) {
-					throw new CertificateException("Error closing KeyStore stream", e);
-				}
-			}
-		}
-
-	}
-
-	private synchronized KeyStore loadKeyStore() {
-		File ksFile = new File(keyStorePath);
-		InputStream in = null;
-		String passwd = getKeyStorePassword();
-		try {
-			if ( ksFile.isFile() ) {
-				in = new BufferedInputStream(new FileInputStream(ksFile));
-			}
-			return loadKeyStore(KeyStore.getDefaultType(), in, passwd);
-		} catch ( IOException e ) {
-			throw new CertificateException("Error opening file " + keyStorePath, e);
 		}
 	}
 
@@ -773,10 +609,6 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 
 	private void deleteSetting(String key) {
 		settingDao.deleteSetting(key, SETUP_TYPE_KEY);
-	}
-
-	public void setKeyStorePath(String keyStorePath) {
-		this.keyStorePath = keyStorePath;
 	}
 
 	public void setSettingDao(SettingDao settingDao) {
@@ -799,32 +631,16 @@ public class DefaultKeystoreService implements PKIService, SSLService, BackupRes
 		this.certificateService = certificateService;
 	}
 
+	/**
+	 * Set the manual keystore password to use.
+	 * 
+	 * @param manualKeyStorePassword
+	 *        the password to use
+	 * @deprecated use {@link #setKeyStorePassword(String)}
+	 */
+	@Deprecated
 	public void setManualKeyStorePassword(String manualKeyStorePassword) {
-		this.manualKeyStorePassword = manualKeyStorePassword;
-	}
-
-	public String getTrustStorePath() {
-		return trustStorePath;
-	}
-
-	public void setTrustStorePath(String trustStorePath) {
-		this.trustStorePath = trustStorePath;
-	}
-
-	public String getTrustStorePassword() {
-		return trustStorePassword;
-	}
-
-	public void setTrustStorePassword(String trustStorePassword) {
-		this.trustStorePassword = trustStorePassword;
-	}
-
-	public String getJreTrustStorePassword() {
-		return jreTrustStorePassword;
-	}
-
-	public void setJreTrustStorePassword(String jreTrustStorePassword) {
-		this.jreTrustStorePassword = jreTrustStorePassword;
+		setKeyStorePassword(manualKeyStorePassword);
 	}
 
 	public void setMessageSource(MessageSource messageSource) {
