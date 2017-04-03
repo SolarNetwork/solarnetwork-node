@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import javax.net.ssl.SSLSocketFactory;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.Handler;
@@ -59,6 +60,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 import ocpp.v15.cs.BootNotificationRequest;
 import ocpp.v15.cs.BootNotificationResponse;
@@ -73,7 +75,7 @@ import ocpp.v15.support.WSAddressingFromHandler;
  * the service.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ConfigurableCentralSystemServiceFactory
 		implements CentralSystemServiceFactory, SettingSpecifierProvider, EventHandler {
@@ -87,6 +89,12 @@ public class ConfigurableCentralSystemServiceFactory
 	 */
 	public static final String SCHEDULER_GROUP = "OCPP";
 
+	/**
+	 * The default value for the {@code sslSocketFactoryRequestContextKey}
+	 * property.
+	 */
+	public static final String DEFAULT_SSL_SOCKET_FACTORY_REQUEST_CONTEXT_KEY = "com.sun.xml.internal.ws.transport.https.client.SSLSocketFactory";
+
 	private String url = "http://localhost:9000/";
 	private String uid = "OCPP Central System";
 	private String groupUID;
@@ -97,6 +105,8 @@ public class ConfigurableCentralSystemServiceFactory
 	private MessageSource messageSource;
 	private ChargeConfigurationDao chargeConfigurationDao;
 	private OptionalService<IdentityService> identityService;
+	private OptionalService<SSLService> sslService;
+	private String sslSocketFactoryRequestContextKey = DEFAULT_SSL_SOCKET_FACTORY_REQUEST_CONTEXT_KEY;
 	private Scheduler scheduler;
 
 	private CentralSystemService service;
@@ -168,11 +178,25 @@ public class ConfigurableCentralSystemServiceFactory
 					.getCentralSystemServiceSoap12(new AddressingFeature());
 			((BindingProvider) client).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY,
 					this.url);
+
+			SSLSocketFactory sslSocketFactory = getSslSocketFactory();
+			if ( sslSocketFactory != null ) {
+				log.info("Using custom SSLSocketFactory {} for OCPP CentralSystemService",
+						sslSocketFactory);
+				((BindingProvider) client).getRequestContext().put(sslSocketFactoryRequestContextKey,
+						sslSocketFactory);
+			}
+
 			result = client;
 			setupFromHandler(client, useFromAddress);
 			service = client;
 		}
 		return result;
+	}
+
+	private SSLSocketFactory getSslSocketFactory() {
+		SSLService service = (sslService != null ? sslService.service() : null);
+		return (service != null ? service.getSSLSocketFactory() : null);
 	}
 
 	private void setupFromHandler(final CentralSystemService client, final boolean use) {
@@ -624,6 +648,38 @@ public class ConfigurableCentralSystemServiceFactory
 
 	public void setChargeConfigurationDao(ChargeConfigurationDao chargeConfigurationDao) {
 		this.chargeConfigurationDao = chargeConfigurationDao;
+	}
+
+	/**
+	 * Set a {@link SSLService} to use. If configured then the
+	 * {@code SSLSocketFactory} returned by
+	 * {@link SSLService#getSSLSocketFactory()} will be configured for use by
+	 * the returned {@code CentralSystemService}.
+	 * 
+	 * @param sslService
+	 *        the sslService to set
+	 * @since 1.2
+	 */
+	public void setSslService(OptionalService<SSLService> sslService) {
+		this.sslService = sslService;
+	}
+
+	/**
+	 * Set the {@link BindingProvider#getRequestContext()} key to use for the
+	 * {@code SSLSocketFactory} obtained from the configured {@code SSLService}.
+	 * 
+	 * This defaults to {@link #DEFAULT_SSL_SOCKET_FACTORY_REQUEST_CONTEXT_KEY}
+	 * which is good for the JAX-WS included with the JRE. If using a different
+	 * JAX-WS provider, this key most likely would need to change.
+	 * 
+	 * @param key
+	 *        the sslSocketFactoryBindingProviderKey to set (must not be
+	 *        {@code null})
+	 * @since 1.2
+	 */
+	public void setSslSocketFactoryRequestContextKey(String key) {
+		assert key != null;
+		this.sslSocketFactoryRequestContextKey = key;
 	}
 
 }

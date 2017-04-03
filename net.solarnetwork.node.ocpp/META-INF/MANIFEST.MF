@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP Core Support
 Bundle-SymbolicName: net.solarnetwork.node.ocpp
 Bundle-Description: Provides core Open Charge Point Protocol (OCPP) support.
-Bundle-Version: 0.7.0
+Bundle-Version: 0.8.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
@@ -23,6 +23,7 @@ Import-Package:
  net.solarnetwork.node.settings;version="1.6.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
  net.solarnetwork.node.support;version="1.13.1",
+ net.solarnetwork.support;version="1.4.0",
  net.solarnetwork.util;version="1.19.0",
  ocpp.v15.cs;version="1.5.0",
  ocpp.v15.support;version="1.6.0",
