@@ -39,4 +39,16 @@ public interface WeatherUndergroundClient {
 	 */
 	Collection<WeatherUndergroundLocation> findLocationsForIpAddress();
 
+	/**
+	 * Query for locations based on name.
+	 * 
+	 * @param name
+	 *        The name to look for, which can be a substring.
+	 * @param country
+	 *        An optional 2-character country code to limit the search to. Pass
+	 *        {@code null} for any country.
+	 * @return A collection of matching results, never {@code null}.
+	 */
+	Collection<WeatherUndergroundLocation> findLocations(String name, String country);
+
 }

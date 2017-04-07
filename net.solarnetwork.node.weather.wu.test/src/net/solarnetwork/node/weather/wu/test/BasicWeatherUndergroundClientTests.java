@@ -51,6 +51,7 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 	public void setupClient() {
 		client = new BasicWeatherUndergoundClient();
 		client.setBaseUrl(getHttpServerBaseUrl());
+		client.setBaseAutocompleteUrl(getHttpServerBaseUrl());
 		client.setApiKey(TEST_API_KEY);
 	}
 
@@ -79,6 +80,7 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 
 		WeatherUndergroundLocation loc = results.iterator().next();
 		assertEquals("Identifier", "/q/zmw:00000.113.93546", loc.getIdentifier());
+		assertNull("Name", loc.getName());
 		assertEquals("Country", "NZ", loc.getCountry());
 		assertEquals("StateOrProvince", "MBH", loc.getStateOrProvince());
 		assertEquals("Locality", "Whakatahuri", loc.getLocality());
@@ -86,6 +88,41 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 		assertEquals("TimeZoneId", "Pacific/Auckland", loc.getTimeZoneId());
 		assertEquals("Latitude", new BigDecimal("-41.000000"), loc.getLatitude());
 		assertEquals("Longitude", new BigDecimal("174.000000"), loc.getLongitude());
+	}
+
+	@Test
+	public void queryForNameAndCountry() throws Exception {
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertEquals("GET", request.getMethod());
+				assertEquals("Request path", "/", request.getPathInfo());
+				assertEquals("Request query", "query=test&c=NZ", request.getQueryString());
+				respondWithJsonResource(response, "autocomplete-1.json");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		Collection<WeatherUndergroundLocation> results = client.findLocations("test", "NZ");
+		assertTrue("Request handled", handler.isHandled());
+		assertNotNull("Results available", results);
+		assertEquals("Result count", 20, results.size());
+
+		WeatherUndergroundLocation loc = results.iterator().next();
+		assertEquals("Identifier", "/q/zmw:00000.2.93436", loc.getIdentifier());
+		assertEquals("Name", "Wellington, New Zealand", loc.getName());
+		assertEquals("Country", "NZ", loc.getCountry());
+		assertNull("StateOrProvince", loc.getStateOrProvince());
+		assertNull("Locality", loc.getLocality());
+		assertNull("PostalCode", loc.getPostalCode());
+		assertEquals("TimeZoneId", "Pacific/Auckland", loc.getTimeZoneId());
+		assertEquals("Latitude", new BigDecimal("-41.290001"), loc.getLatitude());
+		assertEquals("Longitude", new BigDecimal("174.779999"), loc.getLongitude());
 	}
 
 }

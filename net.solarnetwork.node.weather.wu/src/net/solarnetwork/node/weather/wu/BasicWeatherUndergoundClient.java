@@ -25,7 +25,9 @@ package net.solarnetwork.node.weather.wu;
 import static net.solarnetwork.util.JsonNodeUtils.parseBigDecimalAttribute;
 import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,10 +43,14 @@ import net.solarnetwork.support.HttpClientSupport;
 public class BasicWeatherUndergoundClient extends HttpClientSupport implements WeatherUndergroundClient {
 
 	/** The default value for the {@code baseUrl} property. */
-	public static final String DEFAULT_API_BASE_URL = "http://api.wunderground.com/api/";
+	public static final String DEFAULT_API_BASE_URL = "http://api.wunderground.com/api";
+
+	/** The default value for the {@code baseAutocompleteUrl} property. */
+	public static final String DEFAULT_AUTOCOMPLETE_BASE_URL = "http://autocomplete.wunderground.com/aq";
 
 	private String apiKey;
 	private String baseUrl = DEFAULT_API_BASE_URL;
+	private String baseAutocompleteUrl = DEFAULT_AUTOCOMPLETE_BASE_URL;
 	private ObjectMapper objectMapper = new ObjectMapper();
 
 	public BasicWeatherUndergoundClient() {
@@ -53,6 +59,22 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	private String urlForActionPath(String action, String path) {
 		return baseUrl + '/' + apiKey + action + path;
+	}
+
+	private String urlForAutocomplete(String query, String country) {
+		StringBuilder buf = new StringBuilder(baseAutocompleteUrl);
+		buf.append("?query=");
+		try {
+			if ( query != null ) {
+				buf.append(URLEncoder.encode(query, "UTF-8"));
+			}
+			if ( country != null && country.length() > 0 ) {
+				buf.append("&c=").append(URLEncoder.encode(country, "UTF-8"));
+			}
+		} catch ( UnsupportedEncodingException e ) {
+			// should not get here ever
+		}
+		return buf.toString();
 	}
 
 	@Override
@@ -67,6 +89,28 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 				BasicWeatherUndergroundLocation loc = parseLocation(locNode);
 				if ( loc != null ) {
 					results.add(loc);
+				}
+			}
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return results;
+	}
+
+	@Override
+	public Collection<WeatherUndergroundLocation> findLocations(String name, String country) {
+		final String url = urlForAutocomplete(name, country);
+		Collection<WeatherUndergroundLocation> results = new ArrayList<WeatherUndergroundLocation>();
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			JsonNode locArrayNode = data.get("RESULTS");
+			if ( locArrayNode != null && locArrayNode.isArray() ) {
+				for ( JsonNode locNode : locArrayNode ) {
+					BasicWeatherUndergroundLocation loc = parseLocation(locNode);
+					if ( loc != null ) {
+						results.add(loc);
+					}
 				}
 			}
 		} catch ( IOException e ) {
@@ -109,6 +153,16 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 		loc.setLatitude(parseBigDecimalAttribute(node, "lat"));
 		loc.setLongitude(parseBigDecimalAttribute(node, "lon"));
+
+		// the autocomplete endpoint has the following
+		loc.setName(parseStringAttribute(node, "name")); // from autocomplete endpoint
+		if ( loc.getCountry() == null ) {
+			loc.setCountry(parseStringAttribute(node, "c"));
+		}
+		if ( loc.getTimeZoneId() == null ) {
+			loc.setTimeZoneId(parseStringAttribute(node, "tz"));
+		}
+
 		return loc;
 	}
 
@@ -131,6 +185,18 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 	 */
 	public void setBaseUrl(String baseUrl) {
 		this.baseUrl = baseUrl;
+	}
+
+	/**
+	 * Set the base autocomplete URL to use. This defaults to
+	 * {@link #DEFAULT_AUTOCOMPLETE_BASE_URL} which should be sufficient for
+	 * most cases.
+	 * 
+	 * @param baseAutocompleteUrl
+	 *        the baseAutocompleteUrl to set
+	 */
+	public void setBaseAutocompleteUrl(String baseAutocompleteUrl) {
+		this.baseAutocompleteUrl = baseAutocompleteUrl;
 	}
 
 	/**
