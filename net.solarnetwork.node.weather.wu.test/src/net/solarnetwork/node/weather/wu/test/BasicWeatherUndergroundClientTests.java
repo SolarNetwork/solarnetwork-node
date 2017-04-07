@@ -28,10 +28,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.weather.wu.BasicWeatherUndergoundClient;
 import net.solarnetwork.node.weather.wu.WeatherUndergroundLocation;
 
@@ -123,6 +125,37 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 		assertEquals("TimeZoneId", "Pacific/Auckland", loc.getTimeZoneId());
 		assertEquals("Latitude", new BigDecimal("-41.290001"), loc.getLatitude());
 		assertEquals("Longitude", new BigDecimal("174.779999"), loc.getLongitude());
+	}
+
+	@Test
+	public void readConditions() throws Exception {
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertEquals("GET", request.getMethod());
+				assertEquals("Request path", "/TEST_API_KEY/conditions/q/foobar.json",
+						request.getPathInfo());
+				respondWithJsonResource(response, "conditions-1.json");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		AtmosphericDatum datum = client.getCurrentConditions("/q/foobar");
+		assertTrue("Request handled", handler.isHandled());
+		assertNotNull("Result available", datum);
+
+		assertEquals("AtmosphericPressure", Integer.valueOf(102100), datum.getAtmosphericPressure());
+		assertEquals("Created", new Date(1491542701000L), datum.getCreated());
+		assertEquals("DewPoint", new BigDecimal("8.0"), datum.getDewPoint());
+		assertEquals("Humidity", Integer.valueOf(72), datum.getHumidity());
+		assertEquals("SkyConditions", "Clear", datum.getSkyConditions());
+		assertEquals("Temperature", new BigDecimal("13.2"), datum.getTemperature());
+		assertEquals("Visibility", Integer.valueOf(10000), datum.getVisibility());
 	}
 
 }

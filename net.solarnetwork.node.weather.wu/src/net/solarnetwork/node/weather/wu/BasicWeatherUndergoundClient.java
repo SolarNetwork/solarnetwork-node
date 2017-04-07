@@ -23,15 +23,21 @@
 package net.solarnetwork.node.weather.wu;
 
 import static net.solarnetwork.util.JsonNodeUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.util.JsonNodeUtils.parseIntegerAttribute;
+import static net.solarnetwork.util.JsonNodeUtils.parseLongAttribute;
 import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.support.HttpClientSupport;
 
 /**
@@ -117,6 +123,64 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
 		}
 		return results;
+	}
+
+	@Override
+	public AtmosphericDatum getCurrentConditions(String identifier) {
+		final String url = urlForActionPath("/conditions", identifier + ".json");
+		GeneralAtmosphericDatum result = null;
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			JsonNode conditionsNode = data.get("current_observation");
+			result = parseConditions(conditionsNode);
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return result;
+	}
+
+	private GeneralAtmosphericDatum parseConditions(JsonNode node) {
+		GeneralAtmosphericDatum datum = new GeneralAtmosphericDatum();
+
+		Long ts = parseLongAttribute(node, "observation_epoch");
+		if ( ts != null ) {
+			datum.setCreated(new Date(ts.longValue() * 1000));
+		}
+
+		Integer mb = parseIntegerAttribute(node, "pressure_mb");
+		if ( mb != null ) {
+			// convert millibar to pascals
+			datum.setAtmosphericPressure(mb.intValue() * 100);
+		}
+
+		BigDecimal dp = parseBigDecimalAttribute(node, "dewpoint_c");
+		if ( dp != null ) {
+			datum.setDewPoint(dp);
+		}
+
+		String hum = parseStringAttribute(node, "relative_humidity");
+		if ( hum != null ) {
+			if ( hum.endsWith("%") ) {
+				hum = hum.substring(0, hum.length() - 1);
+			}
+			try {
+				datum.setHumidity(Integer.valueOf(hum));
+			} catch ( NumberFormatException e ) {
+				log.warn("Unable to parse 'relative_humidity' attribute [{}]", hum);
+			}
+		}
+
+		datum.setSkyConditions(parseStringAttribute(node, "weather"));
+		datum.setTemperature(parseBigDecimalAttribute(node, "temp_c"));
+
+		BigDecimal vis = parseBigDecimalAttribute(node, "visibility_km");
+		if ( vis != null ) {
+			// convert km to meters
+			datum.setVisibility(vis.multiply(new BigDecimal(1000)).intValue());
+		}
+
+		return datum;
 	}
 
 	/*-

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.weather.wu;
 
 import java.util.Collection;
+import net.solarnetwork.node.domain.AtmosphericDatum;
 
 /**
  * API for accessing Weather Underground information.
@@ -50,5 +51,15 @@ public interface WeatherUndergroundClient {
 	 * @return A collection of matching results, never {@code null}.
 	 */
 	Collection<WeatherUndergroundLocation> findLocations(String name, String country);
+
+	/**
+	 * Lookup the current conditions for a specific Weather Underground location
+	 * identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup conditions for.
+	 * @return The conditions, or {@code null} if not available
+	 */
+	AtmosphericDatum getCurrentConditions(String identifier);
 
 }
