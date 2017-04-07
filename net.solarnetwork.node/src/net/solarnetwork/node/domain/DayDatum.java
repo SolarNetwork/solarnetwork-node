@@ -29,9 +29,9 @@ import org.joda.time.LocalTime;
  * Solar day related datum.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public interface DayDatum {
+public interface DayDatum extends Datum {
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous

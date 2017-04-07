@@ -23,8 +23,8 @@
 package net.solarnetwork.node.domain;
 
 import java.math.BigDecimal;
-import net.solarnetwork.util.SerializeIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.util.SerializeIgnore;
 
 /**
  * GeneralLocationDatum that also implements {@link AtmosphericDatum}.
@@ -52,7 +52,7 @@ public class GeneralAtmosphericDatum extends GeneralLocationDatum implements Atm
 		return getInstantaneousSampleBigDecimal(DEW_POINT_KEY);
 	}
 
-	public void setDewPoint(Float value) {
+	public void setDewPoint(BigDecimal value) {
 		putInstantaneousSampleValue(DEW_POINT_KEY, value);
 	}
 

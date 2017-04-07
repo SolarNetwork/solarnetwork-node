@@ -28,9 +28,9 @@ import java.math.BigDecimal;
  * Standardized API for atmospheric related datum to implement.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public interface AtmosphericDatum {
+public interface AtmosphericDatum extends Datum {
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
