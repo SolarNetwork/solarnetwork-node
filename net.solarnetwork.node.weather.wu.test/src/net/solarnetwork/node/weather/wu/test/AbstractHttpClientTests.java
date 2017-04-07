@@ -50,9 +50,9 @@ public abstract class AbstractHttpClientTests extends AbstractNodeTest {
 		httpServer.start();
 
 		Connector c = httpServer.getConnectors()[0];
-		httpServerPort = c.getPort();
+		httpServerPort = c.getLocalPort();
 
-		httpServerBaseUrl = "http://localhost:" + c.getPort();
+		httpServerBaseUrl = "http://localhost:" + c.getLocalPort();
 	}
 
 	@After

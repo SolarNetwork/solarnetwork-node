@@ -43,6 +43,7 @@ import org.springframework.util.FileCopyUtils;
 public abstract class TestHttpHandler extends AbstractHandler {
 
 	private boolean handled = false;
+	private Throwable exception;
 
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -58,12 +59,17 @@ public abstract class TestHttpHandler extends AbstractHandler {
 		try {
 			handled = handleInternal(request, response);
 			((Request) request).setHandled(handled);
-		} catch ( IOException e ) {
-			throw e;
-		} catch ( ServletException e ) {
-			throw e;
-		} catch ( Exception e ) {
-			throw new RuntimeException(e);
+		} catch ( Throwable e ) {
+			exception = e;
+			if ( e instanceof IOException ) {
+				throw (IOException) e;
+			} else if ( e instanceof ServletException ) {
+				throw (ServletException) e;
+			} else if ( e instanceof Error ) {
+				throw (Error) e;
+			} else {
+				throw new RuntimeException(e);
+			}
 		}
 	}
 
@@ -98,8 +104,18 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	 * Test if the handler was called.
 	 * 
 	 * @return boolean
+	 * @throws Throwable
+	 *         if the handler threw an exception or JUnit assertion
 	 */
-	public boolean isHandled() {
+	public boolean isHandled() throws Exception {
+		if ( exception != null ) {
+			if ( exception instanceof Error ) {
+				throw (Error) exception;
+			} else if ( exception instanceof Exception ) {
+				throw (Exception) exception;
+			}
+			throw new RuntimeException(exception);
+		}
 		return handled;
 	}
 

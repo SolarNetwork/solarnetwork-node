@@ -23,11 +23,13 @@
 package net.solarnetwork.node.weather.wu.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
 import java.util.Collection;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.weather.wu.BasicWeatherUndergoundClient;
@@ -53,13 +55,15 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 	}
 
 	@Test
-	public void geolookupForIpAddress() {
+	public void geolookupForIpAddress() throws Exception {
 		TestHttpHandler handler = new TestHttpHandler() {
 
 			@Override
 			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
 					throws Exception {
 				assertEquals("GET", request.getMethod());
+				assertEquals("Request path", "/TEST_API_KEY/geolookup/q/autoip.json",
+						request.getPathInfo());
 				respondWithJsonResource(response, "geolookup-1.json");
 				response.flushBuffer();
 				return true;
@@ -69,14 +73,16 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 		getHttpServer().addHandler(handler);
 
 		Collection<WeatherUndergroundLocation> results = client.findLocationsForIpAddress();
-		Assert.assertNotNull("Results available", results);
-		Assert.assertEquals("Result count", 1, results.size());
+		assertTrue("Request handled", handler.isHandled());
+		assertNotNull("Results available", results);
+		assertEquals("Result count", 1, results.size());
+
 		WeatherUndergroundLocation loc = results.iterator().next();
 		assertEquals("Identifier", "/q/zmw:00000.113.93546", loc.getIdentifier());
 		assertEquals("Country", "NZ", loc.getCountry());
 		assertEquals("StateOrProvince", "MBH", loc.getStateOrProvince());
 		assertEquals("Locality", "Whakatahuri", loc.getLocality());
-		Assert.assertNull("PostalCode", loc.getPostalCode());
+		assertNull("PostalCode", loc.getPostalCode());
 		assertEquals("TimeZoneId", "Pacific/Auckland", loc.getTimeZoneId());
 		assertEquals("Latitude", new BigDecimal("-41.000000"), loc.getLatitude());
 		assertEquals("Longitude", new BigDecimal("174.000000"), loc.getLongitude());
