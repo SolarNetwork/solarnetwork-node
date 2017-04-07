@@ -108,7 +108,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		loc.setTimeZoneId(parseStringAttribute(node, "tz_long"));
 
 		loc.setLatitude(parseBigDecimalAttribute(node, "lat"));
-		loc.setLatitude(parseBigDecimalAttribute(node, "lon"));
+		loc.setLongitude(parseBigDecimalAttribute(node, "lon"));
 		return loc;
 	}
 
