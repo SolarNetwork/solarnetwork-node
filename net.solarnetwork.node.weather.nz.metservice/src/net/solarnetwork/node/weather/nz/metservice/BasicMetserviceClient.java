@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import static net.solarnetwork.util.JsonNodeUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.util.JsonNodeUtils.parseDateAttribute;
+import static net.solarnetwork.util.JsonNodeUtils.parseIntegerAttribute;
+import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -34,21 +38,21 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import org.joda.time.LocalTime;
+import org.springframework.util.FileCopyUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.support.HttpClientSupport;
 import net.solarnetwork.node.support.UnicodeReader;
-import org.joda.time.LocalTime;
-import org.springframework.util.FileCopyUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
@@ -70,7 +74,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	/** The default value for the {@code riseSetTemplate} property. */
 	public static final String DEFAULT_RISE_SET_TEMPLATE = "riseSet_%s";
 
-	/** The default value for the {@code hourlyObsAndForecastTemplate} property. */
+	/**
+	 * The default value for the {@code hourlyObsAndForecastTemplate} property.
+	 */
 	public static final String DEFAULT_HOURLY_OBS_AND_FORECAST_TEMPLATE = "hourlyObsAndForecast_%s";
 
 	/** The default value for the {@code dayDateFormat} property. */
@@ -151,11 +157,11 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 			return null;
 		}
 		GeneralDayDatum result = null;
-		Date day = parseDateAttribute("day", data, dayFormat);
-		Date sunrise = parseDateAttribute("sunRise", data, timeFormat);
-		Date sunset = parseDateAttribute("sunSet", data, timeFormat);
-		Date moonrise = parseDateAttribute("moonRise", data, timeFormat);
-		Date moonset = parseDateAttribute("moonSet", data, timeFormat);
+		Date day = parseDateAttribute(data, "day", dayFormat);
+		Date sunrise = parseDateAttribute(data, "sunRise", timeFormat);
+		Date sunset = parseDateAttribute(data, "sunSet", timeFormat);
+		Date moonrise = parseDateAttribute(data, "moonRise", timeFormat);
+		Date moonset = parseDateAttribute(data, "moonSet", timeFormat);
 		if ( day != null && sunrise != null && sunset != null ) {
 			result = new GeneralDayDatum();
 			result.setCreated(day);
@@ -195,8 +201,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'threeHour' not found in {}", url);
 		} else {
-			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
-			BigDecimal temp = parseBigDecimalAttribute("temp", data);
+			Date infoDate = parseDateAttribute(data, "dateTime", tsFormat);
+			BigDecimal temp = parseBigDecimalAttribute(data, "temp");
 
 			if ( infoDate == null || temp == null ) {
 				log.debug("Date and/or temperature missing from key 'threeHour' in {}", url);
@@ -205,9 +211,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 				weather.setCreated(infoDate);
 				weather.setTemperature(temp);
 
-				weather.setHumidity(parseIntegerAttribute("humidity", data));
+				weather.setHumidity(parseIntegerAttribute(data, "humidity"));
 
-				BigDecimal millibar = parseBigDecimalAttribute("pressure", data);
+				BigDecimal millibar = parseBigDecimalAttribute(data, "pressure");
 				if ( millibar != null ) {
 					int pascals = (millibar.multiply(new BigDecimal(100))).intValue();
 					weather.setAtmosphericPressure(pascals);
@@ -221,9 +227,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'twentyFourHour' not found in {}", url);
 		} else {
-			Date infoDate = parseDateAttribute("dateTime", data, tsFormat);
-			BigDecimal maxTemp = parseBigDecimalAttribute("maxTemp", data);
-			BigDecimal minTemp = parseBigDecimalAttribute("minTemp", data);
+			Date infoDate = parseDateAttribute(data, "dateTime", tsFormat);
+			BigDecimal maxTemp = parseBigDecimalAttribute(data, "maxTemp");
+			BigDecimal minTemp = parseBigDecimalAttribute(data, "minTemp");
 			if ( infoDate == null || minTemp == null || maxTemp == null ) {
 				log.debug("Date and/or temperature extremes missing from key 'twentyFourHour' in {}",
 						url);
@@ -263,9 +269,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 			for ( JsonNode dayNode : days ) {
 				GeneralDayDatum day = parseRiseSet(dayNode.get("riseSet"), dayFormat, timeFormat);
 				if ( day != null ) {
-					day.setSkyConditions(parseStringAttribute("forecastWord", dayNode));
-					day.setTemperatureMinimum(parseBigDecimalAttribute("min", dayNode));
-					day.setTemperatureMaximum(parseBigDecimalAttribute("max", dayNode));
+					day.setSkyConditions(parseStringAttribute(dayNode, "forecastWord"));
+					day.setTemperatureMinimum(parseBigDecimalAttribute(dayNode, "min"));
+					day.setTemperatureMaximum(parseBigDecimalAttribute(dayNode, "max"));
 					result.add(day);
 				}
 			}
@@ -293,9 +299,9 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		JsonNode hours = root.get("forecastData");
 		if ( hours.isArray() ) {
 			for ( JsonNode hourNode : hours ) {
-				String time = parseStringAttribute("timeFrom", hourNode);
-				String date = parseStringAttribute("date", hourNode);
-				BigDecimal temp = parseBigDecimalAttribute("temperature", hourNode);
+				String time = parseStringAttribute(hourNode, "timeFrom");
+				String date = parseStringAttribute(hourNode, "date");
+				BigDecimal temp = parseBigDecimalAttribute(hourNode, "temperature");
 				Date infoDate = null;
 				if ( time != null && date != null ) {
 					String dateString = time + " " + date;
@@ -340,140 +346,6 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		String data = FileCopyUtils.copyToString(reader);
 		reader.close();
 		return data;
-	}
-
-	/**
-	 * Parse a Date from an attribute value.
-	 * 
-	 * <p>
-	 * If the date cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} Map
-	 * @param data
-	 *        the attributes
-	 * @param dateFormat
-	 *        the date format to use to parse the date string
-	 * @return the parsed {@link Date} instance, or <em>null</em> if an error
-	 *         occurs or the specified attribute {@code key} is not available
-	 */
-	protected Date parseDateAttribute(String key, JsonNode data, SimpleDateFormat dateFormat) {
-		Date result = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					String dateString = node.asText();
-
-					// replace "midnight" with 12:00am
-					dateString = dateString.replaceAll("(?i)midnight", "12:00am");
-
-					// replace "noon" with 12:00pm
-					dateString = dateString.replaceAll("(?i)noon", "12:00pm");
-
-					result = dateFormat.parse(dateString);
-				} catch ( ParseException e ) {
-					log.debug("Error parsing date attribute [{}] value [{}] using pattern {}: {}",
-							new Object[] { key, data.get(key), dateFormat.toPattern(), e.getMessage() });
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Parse a BigDecimal from an attribute value.
-	 * 
-	 * <p>
-	 * If the BigDecimal cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} Map
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link BigDecimal}, or <em>null</em> if an error
-	 *         occurs or the specified attribute {@code key} is not available
-	 */
-	protected BigDecimal parseBigDecimalAttribute(String key, JsonNode data) {
-		BigDecimal num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				String txt = node.asText();
-				if ( txt.indexOf('.') < 0 ) {
-					txt += ".0"; // force to decimal notation, so round-trip into samples doesn't result in int
-				}
-				try {
-					num = new BigDecimal(txt);
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing decimal attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
-				}
-			}
-		}
-		return num;
-	}
-
-	/**
-	 * Parse a Integer from an attribute value.
-	 * 
-	 * <p>
-	 * If the Integer cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} node
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link Integer}, or <em>null</em> if an error occurs
-	 *         or the specified attribute {@code key} is not available
-	 */
-	protected Integer parseIntegerAttribute(String key, JsonNode data) {
-		Integer num = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					num = Integer.valueOf(node.asText());
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing integer attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
-				}
-			}
-		}
-		return num;
-	}
-
-	/**
-	 * Parse a String from an attribute value.
-	 * 
-	 * <p>
-	 * If the String cannot be parsed, <em>null</em> will be returned.
-	 * </p>
-	 * 
-	 * @param key
-	 *        the attribute key to obtain from the {@code data} node
-	 * @param data
-	 *        the attributes
-	 * @return the parsed {@link String}, or <em>null</em> if an error occurs or
-	 *         the specified attribute {@code key} is not available
-	 */
-	protected String parseStringAttribute(String key, JsonNode data) {
-		String s = null;
-		if ( data != null ) {
-			JsonNode node = data.get(key);
-			if ( node != null ) {
-				try {
-					s = node.asText();
-				} catch ( NumberFormatException e ) {
-					log.debug("Error parsing string attribute [{}] value [{}]: {}", new Object[] { key,
-							data.get(key), e.getMessage() });
-				}
-			}
-		}
-		return s;
 	}
 
 	/**
