@@ -132,10 +132,8 @@ public final class ClassUtils {
 	 * @param values
 	 *        A Map of JavaBean property names and their corresponding values to
 	 *        set.
-	 * @param ignoreUnknown
-	 *        Flag to ignore unknown properties.
-	 * @param ignoreInvalid
-	 *        Flag to ignore invalid properties.
+	 * @param ignoreErrors
+	 *        Flag to ignore unknown and invalid properties.
 	 * @since 1.2
 	 */
 	public static void setBeanProperties(Object o, Map<String, ?> values, boolean ignoreErrors) {
@@ -212,11 +210,11 @@ public final class ClassUtils {
 				continue;
 			}
 			Class<?> propType = bean.getPropertyType(propName);
-			if ( !(propType.isPrimitive() || propType.isEnum()
-					|| String.class.isAssignableFrom(propType)
+			if ( !(propType.isPrimitive() || propType.isEnum() || String.class.isAssignableFrom(propType)
 					|| Number.class.isAssignableFrom(propType)
 					|| Character.class.isAssignableFrom(propType)
-					|| Byte.class.isAssignableFrom(propType) || Date.class.isAssignableFrom(propType)) ) {
+					|| Byte.class.isAssignableFrom(propType)
+					|| Date.class.isAssignableFrom(propType)) ) {
 				continue;
 			}
 			Object propValue = bean.getPropertyValue(propName);

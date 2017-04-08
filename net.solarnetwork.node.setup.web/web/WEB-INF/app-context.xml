@@ -29,49 +29,15 @@
 		<property name="service" ref="pluginServiceRef"/>
 	</bean>
 
+	<bean id="systemService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="systemServiceRef"/>
+	</bean>
+
 	<bean id="tzGMT" class="java.util.TimeZone" factory-method="getTimeZone">
 		<constructor-arg value="GMT"/>
 	</bean>
 	
 	<bean id="periodFormatter" class="net.solarnetwork.util.JodaPeriodPropertySerializer"/>
-
-	<bean id="propertySerializerRegistrar"
-		class="net.solarnetwork.util.PropertySerializerRegistrar">
-		<property name="classSerializers">
-			<map>
-				<!-- Using ISO 8601 format for dates/times -->
-				<entry key="org.joda.time.DateTime">
-					<bean class="net.solarnetwork.util.JodaDatePropertySerializer">
-						<constructor-arg value="yyyy-MM-dd'T'HH:mm:ss'Z'"/>
-						<constructor-arg ref="tzGMT"/>
-					</bean>
-				</entry>
-				<entry key="org.joda.time.Duration" value-ref="periodFormatter"/>
-				<entry key="org.joda.time.LocalDateTime">
-					<bean class="net.solarnetwork.util.JodaDatePropertySerializer">
-						<constructor-arg value="yyyy-MM-dd'T'HH:mm"/>
-					</bean>
-				</entry>
-				<entry key="org.joda.time.LocalTime">
-					<bean class="net.solarnetwork.util.JodaDatePropertySerializer">
-						<constructor-arg value="HH:mm"/>
-					</bean>
-				</entry>
-				<entry key="org.joda.time.LocalDate">
-					<bean class="net.solarnetwork.util.JodaDatePropertySerializer">
-						<constructor-arg value="yyyy-MM-dd"/>
-					</bean>
-				</entry>
-				<entry key="org.joda.time.Period" value-ref="periodFormatter"/>
-				<entry key="sun.util.calendar.ZoneInfo">
-					<bean class="net.solarnetwork.util.TimeZonePropertySerializer"/>
-				</entry>
-				<entry key="org.springframework.validation.BeanPropertyBindingResult">
-					<bean class="net.solarnetwork.util.BindingResultSerializer"/>
-				</entry>
-			</map>
-		</property>
-	</bean>
 
 	<!--bean id="mailService" class="net.solarnetwork.central.mail.support.DefaultMailService">
 		<constructor-arg ref="mailSender"/>

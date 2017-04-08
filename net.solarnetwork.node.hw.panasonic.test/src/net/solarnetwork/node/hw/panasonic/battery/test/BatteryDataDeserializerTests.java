@@ -24,15 +24,15 @@ package net.solarnetwork.node.hw.panasonic.battery.test;
 
 import java.io.InputStream;
 import java.util.Arrays;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
+import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link BatteryDataDeserializer} class.
@@ -45,8 +45,8 @@ public class BatteryDataDeserializerTests {
 	@Test
 	public void parseBatteryDataJSON() throws Exception {
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
-		factory.setDeserializers(Arrays
-				.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
+		factory.setDeserializers(
+				Arrays.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
 		ObjectMapper om = factory.getObject();
 		InputStream in = getClass().getResourceAsStream("battery-data-01.json");
 		BatteryData bd = om.readValue(in, BatteryData.class);
@@ -61,14 +61,16 @@ public class BatteryDataDeserializerTests {
 	@Test
 	public void parseInvalidDate() throws Exception {
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
-		factory.setDeserializers(Arrays
-				.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
+		factory.setDeserializers(
+				Arrays.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
 		ObjectMapper om = factory.getObject();
 		InputStream in = getClass().getResourceAsStream("battery-data-02.json");
 		BatteryData bd = om.readValue(in, BatteryData.class);
 		Assert.assertNotNull(bd);
 		Assert.assertEquals("1666729", bd.getDeviceID());
-		Assert.assertNull(bd.getDate());
+		Assert.assertNotNull(bd.getDate());
+		Assert.assertTrue("Date should be set to now",
+				(System.currentTimeMillis() - bd.getDate().getMillis()) < 1000);
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());

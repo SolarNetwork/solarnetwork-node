@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
  * Encapsulates raw Modbus register data from SDM 120 meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SDM120Data extends BaseSDMData {
 
@@ -75,6 +75,15 @@ public class SDM120Data extends BaseSDMData {
 	 */
 	public SDM120Data(SDM120Data other) {
 		super(other);
+	}
+
+	/**
+	 * Construct with backwards setting.
+	 * 
+	 * @since 1.2
+	 */
+	public SDM120Data(boolean backwards) {
+		super(backwards);
 	}
 
 	@Override
@@ -144,8 +153,17 @@ public class SDM120Data extends BaseSDMData {
 
 	private void populateTotalMeasurements(SDMData sample, GeneralNodeACEnergyDatum datum) {
 		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
-		datum.setWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
-		datum.setReverseWattHourReading(sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
+
+		Long whImport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL);
+		Long whExport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL);
+
+		if ( isBackwards() ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
 
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER));
 		datum.setCurrent(sample.getCurrent(ADDR_DATA_I));
@@ -153,7 +171,7 @@ public class SDM120Data extends BaseSDMData {
 		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER));
 		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR));
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL));
-		datum.setWatts(sample.getPower(ADDR_DATA_ACTIVE_POWER));
+		datum.setWatts((isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER));
 	}
 
 }

@@ -23,28 +23,28 @@
 package net.solarnetwork.node.setup.web;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import net.solarnetwork.node.setup.web.support.SettingsUserService;
-import net.solarnetwork.node.setup.web.support.UserProfile;
+import net.solarnetwork.node.setup.UserProfile;
+import net.solarnetwork.node.setup.UserService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller for user related tasks.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/user")
 public class UserController extends BaseSetupWebServiceController {
 
 	@Autowired
-	private SettingsUserService userService;
+	private UserService userService;
 
 	/**
 	 * Render the change password form.
@@ -82,6 +82,31 @@ public class UserController extends BaseSetupWebServiceController {
 	public Response<Object> changePassword(UserProfile userProfile) {
 		userService.changePassword(userProfile.getOldPassword(), userProfile.getPassword(),
 				userProfile.getPasswordAgain());
+		return Response.response(null);
+	}
+
+	/**
+	 * Render the change username form.
+	 * 
+	 * @return The view name to render.
+	 */
+	@RequestMapping(value = "/change-username", method = RequestMethod.GET)
+	public String changeUsernameForm() {
+		return "user/change-username";
+	}
+
+	/**
+	 * Change the active user's password.
+	 * 
+	 * @param userProfile
+	 *        The new profile to set.
+	 * @return An empty response on success.
+	 */
+	@RequestMapping(value = "/change-username", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Object> changeUsername(@RequestParam("username") String username,
+			@RequestParam("usernameAgain") String usernameAgain) {
+		userService.changeUsername(username, usernameAgain);
 		return Response.response(null);
 	}
 

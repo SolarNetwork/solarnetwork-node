@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -35,7 +36,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,15 +50,17 @@ import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.web.domain.Response;
 
 /**
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/settings")
 public class SettingsController {
 
@@ -125,36 +127,37 @@ public class SettingsController {
 	}
 
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
-	public String addConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
-			ModelMap model) {
+	@ResponseBody
+	public Response<String> addConfiguration(
+			@RequestParam(value = "uid", required = true) String factoryUID) {
 		final SettingsService service = settingsServiceTracker.service();
+		String result = null;
 		if ( service != null ) {
-			String result = service.addProviderFactoryInstance(factoryUID);
-			model.put("result", result);
+			result = service.addProviderFactoryInstance(factoryUID);
 		}
-		model.put("success", Boolean.TRUE);
-		return "json";
+		return response(result);
 	}
 
 	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
-	public String deleteConfiguration(@RequestParam(value = "uid", required = true) String factoryUID,
-			@RequestParam(value = "instance", required = true) String instanceUID, ModelMap model) {
+	@ResponseBody
+	public Response<Object> deleteConfiguration(
+			@RequestParam(value = "uid", required = true) String factoryUID,
+			@RequestParam(value = "instance", required = true) String instanceUID) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
 			service.deleteProviderFactoryInstance(factoryUID, instanceUID);
 		}
-		model.put("success", Boolean.TRUE);
-		return "json";
+		return response(null);
 	}
 
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
-	public String saveSettings(SettingsCommand command, ModelMap model) {
+	@ResponseBody
+	public Response<Object> saveSettings(SettingsCommand command, ModelMap model) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
 			service.updateSettings(command);
 		}
-		model.put("success", Boolean.TRUE);
-		return "json";
+		return response(null);
 	}
 
 	@RequestMapping(value = "/export", method = RequestMethod.GET)
@@ -188,16 +191,15 @@ public class SettingsController {
 	}
 
 	@RequestMapping(value = "/backupNow", method = RequestMethod.POST)
-	public String initiateBackup(ModelMap model) {
+	@ResponseBody
+	public Response<Object> initiateBackup(ModelMap model) {
 		final BackupManager manager = backupManagerTracker.service();
 		boolean result = false;
 		if ( manager != null ) {
 			manager.createBackup();
 			result = true;
 		}
-		model.put("success", result);
-		return "json";
-
+		return new Response<Object>(result, null, null, null);
 	}
 
 	@RequestMapping(value = "/exportBackup", method = RequestMethod.GET)

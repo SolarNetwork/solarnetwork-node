@@ -31,6 +31,10 @@ lyall-bay
 porirua
 upper-hutt
 wainuiomata
+whakatane
+whanganui
+whangarei
+whitianga
 alexandra
 ashburton
 blenheim
@@ -54,7 +58,3 @@ reefton
 timaru
 wanaka
 westport
-whakatane
-whanganui
-whangarei
-whitianga

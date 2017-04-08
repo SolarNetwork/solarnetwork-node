@@ -32,7 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -42,6 +41,7 @@ import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 
 /**
  * Controller to act as a local Instructor to the local node.
@@ -49,7 +49,7 @@ import net.solarnetwork.node.reactor.support.BasicInstruction;
  * @author matt
  * @version 1.0
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/controls")
 public class InstructorController {
 

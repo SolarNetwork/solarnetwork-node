@@ -35,7 +35,7 @@ import org.springframework.util.ClassUtils;
  * Abstract Quartz job to handle exceptions in consistent fashion.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class AbstractJob implements Job {
 
@@ -44,12 +44,23 @@ public abstract class AbstractJob implements Job {
 
 	private String name = ClassUtils.getShortName(getClass());
 
+	private boolean throwExceptions = false;
+
 	@Override
 	public final void execute(JobExecutionContext jobContext) throws JobExecutionException {
 		try {
 			executeInternal(jobContext);
 		} catch ( Throwable e ) {
 			logThrowable(e);
+			if ( throwExceptions ) {
+				if ( e instanceof JobExecutionException ) {
+					throw (JobExecutionException) e;
+				} else if ( e instanceof RuntimeException ) {
+					throw (RuntimeException) e;
+				} else if ( e instanceof Error ) {
+					throw (Error) e;
+				}
+			}
 		}
 	}
 
@@ -98,6 +109,28 @@ public abstract class AbstractJob implements Job {
 	 */
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	/**
+	 * Get the {@code throwExceptions} property value.
+	 * 
+	 * @return the value
+	 * @since 1.2
+	 */
+	public boolean isThrowExceptions() {
+		return throwExceptions;
+	}
+
+	/**
+	 * Control if captured exceptions should be re-thrown or simply logged.
+	 * 
+	 * @param throwExceptions
+	 *        if {@code false} (the default) then simply log exceptions,
+	 *        otherwise re-throw exceptions after logging them
+	 * @since 1.2
+	 */
+	public void setThrowExceptions(boolean throwExceptions) {
+		this.throwExceptions = throwExceptions;
 	}
 
 }

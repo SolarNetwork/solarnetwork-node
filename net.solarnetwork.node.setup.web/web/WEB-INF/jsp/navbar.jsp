@@ -22,20 +22,47 @@
 			<ul class="nav pull-right">
 				<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-						<fmt:message key='nav.label.principal'>
-							<fmt:param><sec:authentication property="principal.username" /></fmt:param>
-						</fmt:message>
+						<span class="active-user-display">
+							<fmt:message key='nav.label.principal'>
+								<fmt:param><sec:authentication property="principal.username" /></fmt:param>
+							</fmt:message>
+						</span>
 						<b class="caret"></b>
 					</a>
 					<ul class="dropdown-menu">
-						<li  ${navloc == 'profile' ? 'class="active"' : ''}>
-							<a href="<c:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a>
-						</li>
+						<li><a href="<c:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
+						<li><a href="<c:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
 						<li><a class="logout" href="#"><fmt:message key='link.logout'/></a></li>
+						<c:if test="${not empty systemService}">
+							<li role="separator" class="divider"></li>
+							<li><a class="restart" href="#"><fmt:message key='link.restart'/></a></li>
+						</c:if>
 					</ul>
 				</li>
 			</ul>
 			<form id="logout-form" method="post" action="<c:url value='/logout'/>">
+				<sec:csrfInput/>
+			</form>
+			<form id="restart-modal" class="modal hide fade" action="<c:url value='/a/home/restart'/>" method="post">
+				<div class="modal-header">
+					<button type="button" class="close start" data-dismiss="modal">&times;</button>
+					<h3><fmt:message key='restart.title'/></h3>
+				</div>
+				<div class="modal-body start">
+					<p><fmt:message key='restart.intro'/></p>
+				</div>
+				<div class="modal-body success" style="display: none;">
+					<div class="progress progress-info progress-striped active">
+						<div class="bar" style="width:100%"></div>
+					</div>
+					<p><fmt:message key='restart.underway'/></p>
+				</div>
+				<div class="modal-footer start">
+					<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+					<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
+					<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
+				</div>
+				<input type="hidden" name="reboot" value="false"/>
 				<sec:csrfInput/>
 			</form>
 		</sec:authorize>

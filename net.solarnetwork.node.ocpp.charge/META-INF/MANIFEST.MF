@@ -2,15 +2,15 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP Charge
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge
-Bundle-Version: 0.4.0
+Bundle-Version: 0.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.node;version="1.19.0",
  net.solarnetwork.node.domain;version="1.4.0",
  net.solarnetwork.node.job;version="1.12.0",
- net.solarnetwork.node.ocpp;version="0.3.0",
- net.solarnetwork.node.ocpp.support;version="0.1.0",
+ net.solarnetwork.node.ocpp;version="0.4.0",
+ net.solarnetwork.node.ocpp.support;version="0.3.0",
  net.solarnetwork.node.settings;version="1.6.0",
  net.solarnetwork.node.settings.support;version="1.4.0",
  net.solarnetwork.node.util;version="1.6.0",
@@ -26,6 +26,7 @@ Import-Package:
  org.springframework.aop.framework;version="[4.2,5.0)",
  org.springframework.context;version="[4.2,5.0)",
  org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core;version="[4.2,5.0)",
  org.springframework.scheduling.quartz;version="[4.2,5.0)",
  org.springframework.transaction;version="[4.2,5.0)",
  org.springframework.transaction.annotation;version="[4.2,5.0)",

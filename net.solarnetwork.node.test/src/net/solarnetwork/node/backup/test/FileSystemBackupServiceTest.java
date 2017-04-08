@@ -69,8 +69,6 @@ public class FileSystemBackupServiceTest {
 		service = new FileSystemBackupService();
 		service.setBackupDir(new File(System.getProperty("java.io.tmpdir")));
 		service.setAdditionalBackupCount(0);
-		service.removeAllBackups();
-
 		service.setIdentityService(new StaticOptionalService<IdentityService>(new IdentityService() {
 
 			@Override
@@ -104,6 +102,7 @@ public class FileSystemBackupServiceTest {
 			}
 
 		}));
+		service.removeAllBackups();
 	}
 
 	@After

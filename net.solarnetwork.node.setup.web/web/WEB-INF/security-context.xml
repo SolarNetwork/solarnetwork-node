@@ -15,7 +15,7 @@
 		<intercept-url pattern='/*.do' access="permitAll" />
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')" />
 	    <custom-filter ref="associationFilter" before="FIRST"/>
-		<form-login login-page="/login.do" default-target-url="/a/home.do"
+		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
 		<logout logout-url="/logout" logout-success-url="/loggedout.do"/>
 	</http>
@@ -23,19 +23,11 @@
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
 
 	<authentication-manager alias="authenticationManager">
-		<authentication-provider user-service-ref="settingsUserService">			
+		<authentication-provider user-service-ref="userDetailsService">			
 			<password-encoder ref="passwordEncoder"/>
 		</authentication-provider>
 	</authentication-manager>
 	
-	<beans:bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
-
-	<beans:bean id="settingsUserService" class="net.solarnetwork.node.setup.web.support.SettingsUserService">
-		<beans:constructor-arg ref="settingDao"/>
-		<beans:constructor-arg ref="identityService"/>
-		<beans:constructor-arg ref="passwordEncoder"/>
-	</beans:bean>
-
 	<websocket-message-broker>
 		<intercept-message type="CONNECT" access="permitAll" />
 	    <intercept-message type="UNSUBSCRIBE" access="permitAll" />
