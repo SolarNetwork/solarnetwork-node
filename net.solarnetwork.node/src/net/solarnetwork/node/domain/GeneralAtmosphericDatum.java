@@ -30,7 +30,7 @@ import net.solarnetwork.util.SerializeIgnore;
  * GeneralLocationDatum that also implements {@link AtmosphericDatum}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GeneralAtmosphericDatum extends GeneralLocationDatum implements AtmosphericDatum {
 
@@ -98,6 +98,50 @@ public class GeneralAtmosphericDatum extends GeneralLocationDatum implements Atm
 
 	public void setSkyConditions(String value) {
 		putStatusSampleValue(SKY_CONDITIONS_KEY, value);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public BigDecimal getWindSpeed() {
+		return getInstantaneousSampleBigDecimal(WIND_SPEED_KEY);
+	}
+
+	public void setWindSpeed(BigDecimal value) {
+		putInstantaneousSampleValue(WIND_SPEED_KEY, value);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Integer getWindDirection() {
+		return getInstantaneousSampleInteger(WIND_DIRECTION_KEY);
+	}
+
+	public void setWindDirection(Integer value) {
+		putInstantaneousSampleValue(WIND_DIRECTION_KEY, value);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Integer getRain() {
+		return getInstantaneousSampleInteger(RAIN_KEY);
+	}
+
+	public void setRain(Integer value) {
+		putInstantaneousSampleValue(RAIN_KEY, value);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Integer getSnow() {
+		return getInstantaneousSampleInteger(SNOW_KEY);
+	}
+
+	public void setSnow(Integer value) {
+		putInstantaneousSampleValue(SNOW_KEY, value);
 	}
 
 }

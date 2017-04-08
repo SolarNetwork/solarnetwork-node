@@ -68,11 +68,51 @@ public interface AtmosphericDatum extends Datum {
 	 */
 	static final String SKY_CONDITIONS_KEY = "sky";
 
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getWindSpeed()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String WIND_SPEED_KEY = "wspeed";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getWindDirection()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String WIND_DIRECTION_KEY = "wdir";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getRain()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String RAIN_KEY = "rain";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getSnow()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String SNOW_KEY = "snow";
+
 	/** A tag for an "indoor" atmosphere sample. */
 	static final String TAG_ATMOSPHERE_INDOOR = "indoor";
 
 	/** A tag for an "outdoor" atmosphere sample. */
 	static final String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
+
+	/**
+	 * A tag for a forecast atmosphere sample, as opposed to an actual
+	 * measurement.
+	 * 
+	 * @since 1.2
+	 */
+	static final String TAG_FORECAST = "forecast";
 
 	/**
 	 * Get the instantaneous temperature, in degrees Celsius.
@@ -117,5 +157,37 @@ public interface AtmosphericDatum extends Datum {
 	 * @return general sky conditions
 	 */
 	String getSkyConditions();
+
+	/**
+	 * Get the wind speed, in meters / second.
+	 * 
+	 * @return wind speed
+	 * @since 1.2
+	 */
+	BigDecimal getWindSpeed();
+
+	/**
+	 * Get the wind direction, in degrees.
+	 * 
+	 * @return wind direction
+	 * @since 1.2
+	 */
+	Integer getWindDirection();
+
+	/**
+	 * Get the rain accumulation, in millimeters.
+	 * 
+	 * @return rain accumulation
+	 * @since 1.2
+	 */
+	Integer getRain();
+
+	/**
+	 * Get the snow accumulation, in millimeters.
+	 * 
+	 * @return snow accumulation
+	 * @since 1.2
+	 */
+	Integer getSnow();
 
 }
