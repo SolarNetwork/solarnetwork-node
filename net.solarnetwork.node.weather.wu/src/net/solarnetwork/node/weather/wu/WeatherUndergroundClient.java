@@ -62,4 +62,14 @@ public interface WeatherUndergroundClient {
 	 */
 	AtmosphericDatum getCurrentConditions(String identifier);
 
+	/**
+	 * Lookup 24-hour forecast conditions for a specific Weather Underground
+	 * location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup the hourly forecast for.
+	 * @return The forecast data, or {@code null} if not available
+	 */
+	Collection<AtmosphericDatum> getHourlyForecast(String identifier);
+
 }

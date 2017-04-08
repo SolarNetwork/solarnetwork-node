@@ -29,6 +29,7 @@ import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -140,7 +141,85 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		return result;
 	}
 
+	@Override
+	public Collection<AtmosphericDatum> getHourlyForecast(String identifier) {
+		final String url = urlForActionPath("/hourly", identifier + ".json");
+		Collection<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			JsonNode datumArrayNode = data.get("hourly_forecast");
+			if ( datumArrayNode != null && datumArrayNode.isArray() ) {
+				for ( JsonNode datumNode : datumArrayNode ) {
+					GeneralAtmosphericDatum datum = parseHourlyForecast(datumNode);
+					if ( datum != null ) {
+						results.add(datum);
+					}
+				}
+			}
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return results;
+	}
+
+	private GeneralAtmosphericDatum parseHourlyForecast(JsonNode node) {
+		if ( node == null ) {
+			return null;
+		}
+		JsonNode objNode = node.get("FCTTIME");
+		if ( objNode == null ) {
+			return null;
+		}
+		GeneralAtmosphericDatum datum = new GeneralAtmosphericDatum();
+
+		Long ts = parseLongAttribute(objNode, "epoch");
+		if ( ts != null ) {
+			datum.setCreated(new Date(ts.longValue() * 1000));
+		}
+		datum.addTag(AtmosphericDatum.TAG_FORECAST);
+
+		objNode = node.get("mslp");
+		Integer pres = parseIntegerAttribute(objNode, "metric");
+		if ( pres != null ) {
+			// convert to pascals
+			datum.setAtmosphericPressure(pres.intValue() * 100);
+		}
+
+		objNode = node.get("dewpoint");
+		datum.setDewPoint(parseBigDecimalAttribute(objNode, "metric"));
+
+		datum.setHumidity(parseIntegerAttribute(node, "humidity"));
+
+		objNode = node.get("qpf");
+		datum.setRain(parseIntegerAttribute(objNode, "metric"));
+
+		datum.setSkyConditions(parseStringAttribute(node, "condition"));
+
+		objNode = node.get("snow");
+		datum.setSnow(parseIntegerAttribute(objNode, "metric"));
+
+		objNode = node.get("temp");
+		datum.setTemperature(parseBigDecimalAttribute(objNode, "metric"));
+
+		objNode = node.get("wdir");
+		datum.setWindDirection(parseIntegerAttribute(objNode, "degrees"));
+
+		objNode = node.get("wspd");
+		BigDecimal wspeed = parseBigDecimalAttribute(objNode, "metric");
+		if ( wspeed != null ) {
+			// convert kph to mps
+			datum.setWindSpeed(wspeed.multiply(new BigDecimal(10)).divide(new BigDecimal(36), 3,
+					RoundingMode.HALF_UP));
+		}
+
+		return datum;
+	}
+
 	private GeneralAtmosphericDatum parseConditions(JsonNode node) {
+		if ( node == null ) {
+			return null;
+		}
 		GeneralAtmosphericDatum datum = new GeneralAtmosphericDatum();
 
 		Long ts = parseLongAttribute(node, "observation_epoch");
@@ -171,6 +250,8 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 			}
 		}
 
+		datum.setRain(parseIntegerAttribute(node, "precip_1hr_metric"));
+
 		datum.setSkyConditions(parseStringAttribute(node, "weather"));
 		datum.setTemperature(parseBigDecimalAttribute(node, "temp_c"));
 
@@ -180,29 +261,21 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 			datum.setVisibility(vis.multiply(new BigDecimal(1000)).intValue());
 		}
 
+		datum.setWindDirection(parseIntegerAttribute(node, "wind_degrees"));
+		BigDecimal wspeed = parseBigDecimalAttribute(node, "wind_kph");
+		if ( wspeed != null ) {
+			// convert kph to mps
+			datum.setWindSpeed(wspeed.multiply(new BigDecimal(10)).divide(new BigDecimal(36), 3,
+					RoundingMode.HALF_UP));
+		}
+
 		return datum;
 	}
 
-	/*-
-	 * Parse a node like:
-	 * {
-	    "type": "INTLCITY",
-	    "country": "NZ",
-	    "country_iso3166": "NZ",
-	    "country_name": "New Zealand",
-	    "state": "WGN",
-	    "city": "Wellington",
-	    "tz_short": "NZST",
-	    "tz_long": "Pacific/Auckland",
-	    "lat": "-41.29000092",
-	    "lon": "174.77999878",
-	    "zip": "00000",
-	    "magic": "2",
-	    "wmo": "93436",
-	    "l": "/q/zmw:00000.2.93436"
-	   }
-	 */
 	private BasicWeatherUndergroundLocation parseLocation(JsonNode node) {
+		if ( node == null ) {
+			return null;
+		}
 		BasicWeatherUndergroundLocation loc = new BasicWeatherUndergroundLocation();
 		loc.setIdentifier(parseStringAttribute(node, "l"));
 
