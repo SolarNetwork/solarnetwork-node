@@ -14,7 +14,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
-	<bean id="settingResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+	<bean id="setupResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
 		<property name="basenames">
 			<list>
 				<value>META-INF/settings/wu-setting-console</value>
@@ -22,4 +22,82 @@
 		</property>
 	</bean>
 
+	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.weather.wu.ConfigurableWeatherUndergroundClientService</value>
+				<value>net.solarnetwork.node.weather.wu.WeatherUndergroundDayDatumDataSource</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="parentMessageSource" ref="dayMessageSource"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Weather Underground day information"/>
+			<property name="factoryUID" value="net.solarnetwork.node.weather.wu.day"/>
+			<property name="messageSource" ref="dayMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.wu.day" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.wu.day"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="wuDayDatumLoggerTrigger"/>
+					<property name="cronExpression" value="0 15 2,12,22 * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="wuDayDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+							<entry key="multiDatumDataSource">
+								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+									<property name="messageSource" ref="dayJobMessageSource"/>
+									<property name="delegate">
+										<bean class="net.solarnetwork.node.weather.wu.WeatherUndergroundDayDatumDataSource">
+											<property name="messageSource" ref="dayMessageSource"/>
+											<property name="setupResourceProvider" ref="setupResourceProvider"/>
+										</bean>
+									</property>
+									<property name="locationService" ref="locationService"/>
+									<property name="requireLocationService" value="true"/>
+									<property name="locationType" value="day"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+	
 </blueprint>

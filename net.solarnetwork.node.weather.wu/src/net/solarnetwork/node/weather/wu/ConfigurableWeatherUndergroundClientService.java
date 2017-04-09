@@ -23,14 +23,19 @@
 package net.solarnetwork.node.weather.wu;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SetupResourceSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.setup.SetupResourceProvider;
 
 /**
  * Support class for configurable Weather Underground based services.
@@ -51,6 +56,7 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 	private String locationIdentifier;
 	private WeatherUndergroundClient client;
 	private MessageSource messageSource;
+	private SetupResourceProvider setupResourceProvider;
 
 	/** A map to be used for caching datum data. */
 	protected final ConcurrentMap<String, T> datumCache;
@@ -58,6 +64,7 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 	public ConfigurableWeatherUndergroundClientService() {
 		super();
 		datumCache = new ConcurrentHashMap<String, T>(4);
+		setClient(new BasicWeatherUndergoundClient());
 	}
 
 	/**
@@ -67,11 +74,16 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 	 * @return List of setting specifiers.
 	 */
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
-		result.add(new BasicTextFieldSettingSpecifier("uid", null));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		result.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
-		return result;
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
+		results.add(new BasicTextFieldSettingSpecifier("client.apiKey", null));
+		if ( setupResourceProvider != null ) {
+			Map<String, Object> setupProps = Collections.singletonMap("uid", (Object) getUID());
+			results.add(new BasicSetupResourceSettingSpecifier(setupResourceProvider, setupProps));
+		}
+		return results;
 	}
 
 	@Override
@@ -168,6 +180,28 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 	 */
 	public void setLocationIdentifier(String locationIdentifier) {
 		this.locationIdentifier = locationIdentifier;
+	}
+
+	/**
+	 * Get the setup resource provider.
+	 * 
+	 * @return the setup resource provider, or {@code null}
+	 */
+	public SetupResourceProvider getSetupResourceProvider() {
+		return setupResourceProvider;
+	}
+
+	/**
+	 * Set a setup resource provider.
+	 * 
+	 * If configured, a {@link SetupResourceSettingSpecifier} will be included
+	 * in the setting specifier returned by {@link #getSettingSpecifiers()}.
+	 * 
+	 * @param setupResourceProvider
+	 *        The setup resource provider to use.
+	 */
+	public void setSetupResourceProvider(SetupResourceProvider setupResourceProvider) {
+		this.setupResourceProvider = setupResourceProvider;
 	}
 
 }
