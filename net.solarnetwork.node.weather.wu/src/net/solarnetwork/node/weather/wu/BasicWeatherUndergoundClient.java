@@ -205,7 +205,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<DayDatum> getTenDayForecast(String identifier) {
-		final String url = urlForActionPath("/forecast10day", identifier + ".json");
+		final String url = urlForActionPath("forecast10day", identifier + ".json");
 		Collection<DayDatum> results = new ArrayList<DayDatum>();
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);

@@ -301,7 +301,7 @@
                 "pop": 10,
                 "qpf_allday": {
                     "in": 0,
-                    "mm": 0
+                    "mm": 3
                 },
                 "qpf_day": {
                     "in": 0,
@@ -313,7 +313,7 @@
                 },
                 "snow_allday": {
                     "in": 0,
-                    "cm": 0
+                    "cm": 5
                 },
                 "snow_day": {
                     "in": 0,

@@ -279,7 +279,7 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 		assertTrue("Request handled", handler.isHandled());
 		assertNotNull("Result available", results);
 
-		assertEquals("3 days of forecast", 3, results.size());
+		assertEquals("Days of forecast", 3, results.size());
 
 		Iterator<DayDatum> days = results.iterator();
 		DayDatum datum = days.next();
@@ -305,4 +305,54 @@ public class BasicWeatherUndergroundClientTests extends AbstractHttpClientTests 
 		assertTrue("GeneralDayDatum", datum instanceof GeneralDayDatum);
 		assertTrue("Forecast tag", ((GeneralDayDatum) datum).hasTag(DayDatum.TAG_FORECAST));
 	}
+
+	@Test
+	public void read10DayForecast() throws Exception {
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertEquals("GET", request.getMethod());
+				assertEquals("Request path", "/TEST_API_KEY/forecast10day/q/foobar.json",
+						request.getPathInfo());
+				respondWithJsonResource(response, "forecast10day-1.json");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		Collection<DayDatum> results = client.getTenDayForecast("/q/foobar");
+		assertTrue("Request handled", handler.isHandled());
+		assertNotNull("Result available", results);
+
+		assertEquals("Days of forecast", 9, results.size());
+
+		Iterator<DayDatum> days = results.iterator();
+		DayDatum datum = days.next();
+
+		assertEquals("BriefOverview",
+				"Generally sunny despite a few afternoon clouds. High 17C. Winds S at 10 to 15 km/h.",
+				datum.getBriefOverview());
+		assertEquals("Created",
+				new DateTime(2017, 4, 9, 0, 0, DateTimeZone.forID("Pacific/Auckland")).toDate(),
+				datum.getCreated());
+		assertNull("Moonrise", datum.getMoonrise());
+		assertNull("Moonset", datum.getMoonset());
+		assertEquals("Rain", Integer.valueOf(3), datum.getRain());
+		assertEquals("SkyConditions", "Clear", datum.getSkyConditions());
+		assertEquals("Snow", Integer.valueOf(50), datum.getSnow());
+		assertNull("Sunrise", datum.getSunrise());
+		assertNull("Sunset", datum.getSunset());
+		assertEquals("TemperatureMaximum", new BigDecimal("17.0"), datum.getTemperatureMaximum());
+		assertEquals("TemperatureMinimum", new BigDecimal("9.0"), datum.getTemperatureMinimum());
+		assertEquals("WindDirection", Integer.valueOf(178), datum.getWindDirection());
+		assertEquals("WindSpeed", new BigDecimal("2.778"), datum.getWindSpeed());
+
+		assertTrue("GeneralDayDatum", datum instanceof GeneralDayDatum);
+		assertTrue("Forecast tag", ((GeneralDayDatum) datum).hasTag(DayDatum.TAG_FORECAST));
+	}
+
 }
