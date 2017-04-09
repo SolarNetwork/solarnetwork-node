@@ -34,11 +34,18 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
+import org.springframework.util.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
+import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.support.HttpClientSupport;
 
 /**
@@ -65,7 +72,11 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 	}
 
 	private String urlForActionPath(String action, String path) {
-		return baseUrl + '/' + apiKey + action + path;
+		return baseUrl + '/' + apiKey + '/' + action + path;
+	}
+
+	private String urlForActionsPath(String[] actions, String path) {
+		return baseUrl + '/' + apiKey + '/' + StringUtils.arrayToDelimitedString(actions, "/") + path;
 	}
 
 	private String urlForAutocomplete(String query, String country) {
@@ -86,7 +97,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<WeatherUndergroundLocation> findLocationsForIpAddress() {
-		final String url = urlForActionPath("/geolookup", "/q/autoip.json");
+		final String url = urlForActionPath("geolookup", "/q/autoip.json");
 		Collection<WeatherUndergroundLocation> results = new ArrayList<WeatherUndergroundLocation>();
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
@@ -128,7 +139,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public AtmosphericDatum getCurrentConditions(String identifier) {
-		final String url = urlForActionPath("/conditions", identifier + ".json");
+		final String url = urlForActionPath("conditions", identifier + ".json");
 		GeneralAtmosphericDatum result = null;
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
@@ -143,7 +154,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<AtmosphericDatum> getHourlyForecast(String identifier) {
-		final String url = urlForActionPath("/hourly", identifier + ".json");
+		final String url = urlForActionPath("hourly", identifier + ".json");
 		Collection<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
@@ -161,6 +172,181 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
 		}
 		return results;
+	}
+
+	@Override
+	public DayDatum getCurrentDay(String identifier) {
+		final String url = urlForActionsPath(new String[] { "astronomy", "forecast" },
+				identifier + ".json");
+		GeneralDayDatum result = null;
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			result = parseDay(data);
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return result;
+	}
+
+	@Override
+	public Collection<DayDatum> getThreeDayForecast(String identifier) {
+		final String url = urlForActionPath("forecast", identifier + ".json");
+		Collection<DayDatum> results = Collections.emptyList();
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			results = parseForecasts(data.get("forecast"));
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return results;
+	}
+
+	@Override
+	public Collection<DayDatum> getTenDayForecast(String identifier) {
+		final String url = urlForActionPath("/forecast10day", identifier + ".json");
+		Collection<DayDatum> results = new ArrayList<DayDatum>();
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			JsonNode data = objectMapper.readTree(getInputStreamFromURLConnection(conn));
+			results = parseForecasts(data.get("forecast"));
+		} catch ( IOException e ) {
+			log.warn("Error reading Weather Underground URL [{}]: {}", url, e.getMessage());
+		}
+		return results;
+	}
+
+	private Collection<DayDatum> parseForecasts(JsonNode node) {
+		if ( node == null ) {
+			return Collections.emptyList();
+		}
+		JsonNode simpleForecast = node.get("simpleforecast");
+		if ( simpleForecast == null ) {
+			return Collections.emptyList();
+		}
+		JsonNode dayArrayNode = simpleForecast.get("forecastday");
+		if ( dayArrayNode == null || !dayArrayNode.isArray() ) {
+			return Collections.emptyList();
+		}
+		Collection<DayDatum> results = new ArrayList<DayDatum>();
+		final int dayCount = dayArrayNode.size();
+		for ( int i = 0; i < dayCount; i++ ) {
+			GeneralDayDatum day = parseForecast(node, i);
+			if ( day != null ) {
+				results.add(day);
+			}
+		}
+		return results;
+	}
+
+	private GeneralDayDatum parseDay(JsonNode node) {
+		if ( node == null ) {
+			return null;
+		}
+		GeneralDayDatum datum = parseForecast(node.get("forecast"), 0);
+		if ( datum == null ) {
+			return null;
+		}
+
+		JsonNode moonNode = node.get("moon_phase");
+		datum.setMoonrise(parseHourMinuteNode(moonNode.get("moonrise")));
+		datum.setMoonset(parseHourMinuteNode(moonNode.get("moonset")));
+		datum.setSunrise(parseHourMinuteNode(moonNode.get("sunrise")));
+		datum.setSunset(parseHourMinuteNode(moonNode.get("sunset")));
+
+		return datum;
+	}
+
+	private LocalTime parseHourMinuteNode(JsonNode node) {
+		if ( node == null ) {
+			return null;
+		}
+		Integer hour = parseIntegerAttribute(node, "hour");
+		Integer min = parseIntegerAttribute(node, "minute");
+		return (hour != null && min != null ? new LocalTime(hour.intValue(), min.intValue()) : null);
+	}
+
+	private GeneralDayDatum parseForecast(final JsonNode node, final int dayOffset) {
+		if ( node == null ) {
+			return null;
+		}
+		GeneralDayDatum datum = new GeneralDayDatum();
+
+		JsonNode forecastNode = node.get("simpleforecast");
+		if ( forecastNode == null ) {
+			return null;
+		}
+
+		JsonNode dayArrayNode = forecastNode.get("forecastday");
+		if ( dayArrayNode == null || !dayArrayNode.isArray() ) {
+			return null;
+		}
+		JsonNode dayNode = dayArrayNode.get(dayOffset);
+
+		JsonNode dateNode = dayNode.get("date");
+		String tz = parseStringAttribute(dateNode, "tz_long");
+		Long epoch = parseLongAttribute(dateNode, "epoch");
+		if ( tz != null && epoch != null ) {
+			LocalDate date = new LocalDate(epoch.longValue() * 1000, DateTimeZone.forID(tz));
+			datum.setCreated(date.toDate());
+		}
+
+		datum.setRain(parseIntegerAttribute(dayNode.get("qpf_allday"), "mm"));
+
+		datum.setSkyConditions(parseStringAttribute(dayNode, "conditions"));
+
+		JsonNode snowNode = dayNode.get("snow_allday");
+		if ( snowNode != null ) {
+			Integer snowCm = parseIntegerAttribute(snowNode, "cm");
+			if ( snowCm != null ) {
+				// convert snow to mm
+				datum.setSnow(snowCm.intValue() * 10);
+			}
+		}
+
+		JsonNode tempNode = dayNode.get("high");
+		if ( tempNode != null ) {
+			datum.setTemperatureMaximum(parseBigDecimalAttribute(tempNode, "celsius"));
+		}
+
+		tempNode = dayNode.get("low");
+		if ( tempNode != null ) {
+			datum.setTemperatureMinimum(parseBigDecimalAttribute(tempNode, "celsius"));
+		}
+
+		JsonNode windNode = dayNode.get("avewind");
+		if ( windNode != null ) {
+			datum.setWindDirection(parseIntegerAttribute(windNode, "degrees"));
+			datum.setWindSpeed(parseWindSpeed(windNode, "kph"));
+		}
+
+		JsonNode txtNode = node.get("txt_forecast");
+		if ( txtNode != null ) {
+			JsonNode txtDayArrayNode = txtNode.get("forecastday");
+			if ( txtDayArrayNode != null && txtDayArrayNode.isArray() ) {
+				// txt day nodes come in pairs, one for day one for night; we only get day values
+				JsonNode txtDayNode = txtDayArrayNode.get(dayOffset * 2);
+				if ( txtDayNode != null ) {
+					// TODO: support imperial description gathering via class property
+					datum.setBriefOverview(parseStringAttribute(txtDayNode, "fcttext_metric"));
+				}
+			}
+		}
+
+		return datum;
+	}
+
+	private BigDecimal parseWindSpeed(JsonNode windNode, String key) {
+		if ( windNode == null ) {
+			return null;
+		}
+		BigDecimal wspeed = parseBigDecimalAttribute(windNode, key);
+		if ( wspeed == null ) {
+			return null;
+		}
+		// convert kph to mps
+		return wspeed.multiply(new BigDecimal(10)).divide(new BigDecimal(36), 3, RoundingMode.HALF_UP);
 	}
 
 	private GeneralAtmosphericDatum parseHourlyForecast(JsonNode node) {
@@ -206,12 +392,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		datum.setWindDirection(parseIntegerAttribute(objNode, "degrees"));
 
 		objNode = node.get("wspd");
-		BigDecimal wspeed = parseBigDecimalAttribute(objNode, "metric");
-		if ( wspeed != null ) {
-			// convert kph to mps
-			datum.setWindSpeed(wspeed.multiply(new BigDecimal(10)).divide(new BigDecimal(36), 3,
-					RoundingMode.HALF_UP));
-		}
+		datum.setWindSpeed(parseWindSpeed(objNode, "metric"));
 
 		return datum;
 	}
@@ -262,12 +443,7 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		}
 
 		datum.setWindDirection(parseIntegerAttribute(node, "wind_degrees"));
-		BigDecimal wspeed = parseBigDecimalAttribute(node, "wind_kph");
-		if ( wspeed != null ) {
-			// convert kph to mps
-			datum.setWindSpeed(wspeed.multiply(new BigDecimal(10)).divide(new BigDecimal(36), 3,
-					RoundingMode.HALF_UP));
-		}
+		datum.setWindSpeed(parseWindSpeed(node, "wind_kph"));
 
 		return datum;
 	}

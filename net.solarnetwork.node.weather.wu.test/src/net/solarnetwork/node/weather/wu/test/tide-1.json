@@ -1,0 +1,855 @@
+{
+    "response": {
+        "version": "0.1",
+        "termsofService": "http://www.wunderground.com/weather/api/d/terms.html",
+        "features": {"tide": 1}
+    },
+    "tide": {
+        "tideInfo": [{
+            "tideSite": "Newport Beach, Newport Bay Entrance, Corona del Mar, California",
+            "lat": "33.6033",
+            "lon": "-117.883",
+            "units": "feet",
+            "type": "tide",
+            "tzname": "America/Los_Angeles"
+        }],
+        "tideSummary": [
+            {
+                "date": {
+                    "pretty": "2:51 PM EDT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "14",
+                    "min": "51",
+                    "tzname": "America/New_York",
+                    "epoch": "1341341506"
+                },
+                "utcdate": {
+                    "pretty": "6:51 PM GMT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "18",
+                    "min": "51",
+                    "tzname": "UTC",
+                    "epoch": "1341341506"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Full Moon"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "6:13 PM EDT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "18",
+                    "min": "13",
+                    "tzname": "America/New_York",
+                    "epoch": "1341353605"
+                },
+                "utcdate": {
+                    "pretty": "10:13 PM GMT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "22",
+                    "min": "13",
+                    "tzname": "UTC",
+                    "epoch": "1341353605"
+                },
+                "data": {
+                    "height": "1.76 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:05 PM EDT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "23",
+                    "min": "05",
+                    "tzname": "America/New_York",
+                    "epoch": "1341371130"
+                },
+                "utcdate": {
+                    "pretty": "3:05 AM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "03",
+                    "min": "05",
+                    "tzname": "UTC",
+                    "epoch": "1341371130"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:07 PM EDT on July 03, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "03",
+                    "hour": "23",
+                    "min": "07",
+                    "tzname": "America/New_York",
+                    "epoch": "1341371264"
+                },
+                "utcdate": {
+                    "pretty": "3:07 AM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "03",
+                    "min": "07",
+                    "tzname": "UTC",
+                    "epoch": "1341371264"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "12:30 AM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "00",
+                    "min": "30",
+                    "tzname": "America/New_York",
+                    "epoch": "1341376227"
+                },
+                "utcdate": {
+                    "pretty": "4:30 AM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "04",
+                    "min": "30",
+                    "tzname": "UTC",
+                    "epoch": "1341376227"
+                },
+                "data": {
+                    "height": "6.87 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "7:40 AM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "07",
+                    "min": "40",
+                    "tzname": "America/New_York",
+                    "epoch": "1341402005"
+                },
+                "utcdate": {
+                    "pretty": "11:40 AM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "11",
+                    "min": "40",
+                    "tzname": "UTC",
+                    "epoch": "1341402005"
+                },
+                "data": {
+                    "height": "-1.45 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:46 AM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "08",
+                    "min": "46",
+                    "tzname": "America/New_York",
+                    "epoch": "1341405996"
+                },
+                "utcdate": {
+                    "pretty": "12:46 PM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "12",
+                    "min": "46",
+                    "tzname": "UTC",
+                    "epoch": "1341405996"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "9:49 AM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "09",
+                    "min": "49",
+                    "tzname": "America/New_York",
+                    "epoch": "1341409784"
+                },
+                "utcdate": {
+                    "pretty": "1:49 PM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "13",
+                    "min": "49",
+                    "tzname": "UTC",
+                    "epoch": "1341409784"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "2:05 PM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "14",
+                    "min": "05",
+                    "tzname": "America/New_York",
+                    "epoch": "1341425125"
+                },
+                "utcdate": {
+                    "pretty": "6:05 PM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "18",
+                    "min": "05",
+                    "tzname": "UTC",
+                    "epoch": "1341425125"
+                },
+                "data": {
+                    "height": "4.31 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "7:03 PM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "19",
+                    "min": "03",
+                    "tzname": "America/New_York",
+                    "epoch": "1341443003"
+                },
+                "utcdate": {
+                    "pretty": "11:03 PM GMT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "23",
+                    "min": "03",
+                    "tzname": "UTC",
+                    "epoch": "1341443003"
+                },
+                "data": {
+                    "height": "1.72 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:05 PM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "23",
+                    "min": "05",
+                    "tzname": "America/New_York",
+                    "epoch": "1341457523"
+                },
+                "utcdate": {
+                    "pretty": "3:05 AM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "03",
+                    "min": "05",
+                    "tzname": "UTC",
+                    "epoch": "1341457523"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:53 PM EDT on July 04, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "04",
+                    "hour": "23",
+                    "min": "53",
+                    "tzname": "America/New_York",
+                    "epoch": "1341460416"
+                },
+                "utcdate": {
+                    "pretty": "3:53 AM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "03",
+                    "min": "53",
+                    "tzname": "UTC",
+                    "epoch": "1341460416"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "1:16 AM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "01",
+                    "min": "16",
+                    "tzname": "America/New_York",
+                    "epoch": "1341465365"
+                },
+                "utcdate": {
+                    "pretty": "5:16 AM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "05",
+                    "min": "16",
+                    "tzname": "UTC",
+                    "epoch": "1341465365"
+                },
+                "data": {
+                    "height": "6.61 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:21 AM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "08",
+                    "min": "21",
+                    "tzname": "America/New_York",
+                    "epoch": "1341490875"
+                },
+                "utcdate": {
+                    "pretty": "12:21 PM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "12",
+                    "min": "21",
+                    "tzname": "UTC",
+                    "epoch": "1341490875"
+                },
+                "data": {
+                    "height": "-1.20 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:47 AM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "08",
+                    "min": "47",
+                    "tzname": "America/New_York",
+                    "epoch": "1341492425"
+                },
+                "utcdate": {
+                    "pretty": "12:47 PM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "12",
+                    "min": "47",
+                    "tzname": "UTC",
+                    "epoch": "1341492425"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "10:56 AM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "10",
+                    "min": "56",
+                    "tzname": "America/New_York",
+                    "epoch": "1341500192"
+                },
+                "utcdate": {
+                    "pretty": "2:56 PM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "14",
+                    "min": "56",
+                    "tzname": "UTC",
+                    "epoch": "1341500192"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "2:47 PM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "14",
+                    "min": "47",
+                    "tzname": "America/New_York",
+                    "epoch": "1341514059"
+                },
+                "utcdate": {
+                    "pretty": "6:47 PM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "18",
+                    "min": "47",
+                    "tzname": "UTC",
+                    "epoch": "1341514059"
+                },
+                "data": {
+                    "height": "4.42 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "7:53 PM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "19",
+                    "min": "53",
+                    "tzname": "America/New_York",
+                    "epoch": "1341532428"
+                },
+                "utcdate": {
+                    "pretty": "11:53 PM GMT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "23",
+                    "min": "53",
+                    "tzname": "UTC",
+                    "epoch": "1341532428"
+                },
+                "data": {
+                    "height": "1.75 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:05 PM EDT on July 05, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "05",
+                    "hour": "23",
+                    "min": "05",
+                    "tzname": "America/New_York",
+                    "epoch": "1341543913"
+                },
+                "utcdate": {
+                    "pretty": "3:05 AM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "03",
+                    "min": "05",
+                    "tzname": "UTC",
+                    "epoch": "1341543913"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "12:33 AM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "00",
+                    "min": "33",
+                    "tzname": "America/New_York",
+                    "epoch": "1341549215"
+                },
+                "utcdate": {
+                    "pretty": "4:33 AM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "04",
+                    "min": "33",
+                    "tzname": "UTC",
+                    "epoch": "1341549215"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "2:01 AM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "02",
+                    "min": "01",
+                    "tzname": "America/New_York",
+                    "epoch": "1341554471"
+                },
+                "utcdate": {
+                    "pretty": "6:01 AM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "06",
+                    "min": "01",
+                    "tzname": "UTC",
+                    "epoch": "1341554471"
+                },
+                "data": {
+                    "height": "6.14 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:47 AM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "08",
+                    "min": "47",
+                    "tzname": "America/New_York",
+                    "epoch": "1341578855"
+                },
+                "utcdate": {
+                    "pretty": "12:47 PM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "12",
+                    "min": "47",
+                    "tzname": "UTC",
+                    "epoch": "1341578855"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "9:00 AM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "09",
+                    "min": "00",
+                    "tzname": "America/New_York",
+                    "epoch": "1341579657"
+                },
+                "utcdate": {
+                    "pretty": "1:00 PM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "13",
+                    "min": "00",
+                    "tzname": "UTC",
+                    "epoch": "1341579657"
+                },
+                "data": {
+                    "height": "-0.79 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "12:00 PM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "12",
+                    "min": "00",
+                    "tzname": "America/New_York",
+                    "epoch": "1341590458"
+                },
+                "utcdate": {
+                    "pretty": "4:00 PM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "16",
+                    "min": "00",
+                    "tzname": "UTC",
+                    "epoch": "1341590458"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "3:30 PM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "15",
+                    "min": "30",
+                    "tzname": "America/New_York",
+                    "epoch": "1341603035"
+                },
+                "utcdate": {
+                    "pretty": "7:30 PM GMT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "19",
+                    "min": "30",
+                    "tzname": "UTC",
+                    "epoch": "1341603035"
+                },
+                "data": {
+                    "height": "4.49 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:46 PM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "20",
+                    "min": "46",
+                    "tzname": "America/New_York",
+                    "epoch": "1341622000"
+                },
+                "utcdate": {
+                    "pretty": "12:46 AM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "00",
+                    "min": "46",
+                    "tzname": "UTC",
+                    "epoch": "1341622000"
+                },
+                "data": {
+                    "height": "1.85 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "11:05 PM EDT on July 06, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "06",
+                    "hour": "23",
+                    "min": "05",
+                    "tzname": "America/New_York",
+                    "epoch": "1341630302"
+                },
+                "utcdate": {
+                    "pretty": "3:05 AM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "03",
+                    "min": "05",
+                    "tzname": "UTC",
+                    "epoch": "1341630302"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunset"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "1:09 AM EDT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "01",
+                    "min": "09",
+                    "tzname": "America/New_York",
+                    "epoch": "1341637789"
+                },
+                "utcdate": {
+                    "pretty": "5:09 AM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "05",
+                    "min": "09",
+                    "tzname": "UTC",
+                    "epoch": "1341637789"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "2:46 AM EDT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "02",
+                    "min": "46",
+                    "tzname": "America/New_York",
+                    "epoch": "1341643592"
+                },
+                "utcdate": {
+                    "pretty": "6:46 AM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "06",
+                    "min": "46",
+                    "tzname": "UTC",
+                    "epoch": "1341643592"
+                },
+                "data": {
+                    "height": "5.52 ft",
+                    "type": "High Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "8:48 AM EDT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "08",
+                    "min": "48",
+                    "tzname": "America/New_York",
+                    "epoch": "1341665286"
+                },
+                "utcdate": {
+                    "pretty": "12:48 PM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "12",
+                    "min": "48",
+                    "tzname": "UTC",
+                    "epoch": "1341665286"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Sunrise"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "9:40 AM EDT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "09",
+                    "min": "40",
+                    "tzname": "America/New_York",
+                    "epoch": "1341668402"
+                },
+                "utcdate": {
+                    "pretty": "1:40 PM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "13",
+                    "min": "40",
+                    "tzname": "UTC",
+                    "epoch": "1341668402"
+                },
+                "data": {
+                    "height": "-0.27 ft",
+                    "type": "Low Tide"
+                }
+            },
+            {
+                "date": {
+                    "pretty": "1:02 PM EDT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "13",
+                    "min": "02",
+                    "tzname": "America/New_York",
+                    "epoch": "1341680558"
+                },
+                "utcdate": {
+                    "pretty": "5:02 PM GMT on July 07, 2012",
+                    "year": "2012",
+                    "mon": "07",
+                    "mday": "07",
+                    "hour": "17",
+                    "min": "02",
+                    "tzname": "UTC",
+                    "epoch": "1341680558"
+                },
+                "data": {
+                    "height": "",
+                    "type": "Moonset"
+                }
+            }
+        ],
+        "tideSummaryStats": [{
+            "maxheight": 6.87,
+            "minheight": -1.45
+        }]
+    }
+}

@@ -24,6 +24,7 @@ package net.solarnetwork.node.weather.wu;
 
 import java.util.Collection;
 import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
 
 /**
  * API for accessing Weather Underground information.
@@ -63,13 +64,43 @@ public interface WeatherUndergroundClient {
 	AtmosphericDatum getCurrentConditions(String identifier);
 
 	/**
-	 * Lookup 24-hour forecast conditions for a specific Weather Underground
+	 * Query for 24-hour forecast conditions for a specific Weather Underground
 	 * location identifier.
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup the hourly forecast for.
-	 * @return The forecast data, or {@code null} if not available
+	 * @return The forecast data, never {@code null}
 	 */
 	Collection<AtmosphericDatum> getHourlyForecast(String identifier);
+
+	/**
+	 * Lookup the current day information for a specific Weather Underground
+	 * location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup day information for.
+	 * @return The day information, or {@code null} if not available
+	 */
+	DayDatum getCurrentDay(String identifier);
+
+	/**
+	 * Lookup 3-day forecast conditions for a specific Weather Underground
+	 * location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup the hourly forecast for.
+	 * @return The forecast data, never {@code null}
+	 */
+	Collection<DayDatum> getThreeDayForecast(String identifier);
+
+	/**
+	 * Lookup 10-day forecast conditions for a specific Weather Underground
+	 * location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup the hourly forecast for.
+	 * @return The forecast data, never {@code null}
+	 */
+	Collection<DayDatum> getTenDayForecast(String identifier);
 
 }
