@@ -231,9 +231,10 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		}
 		Collection<DayDatum> results = new ArrayList<DayDatum>();
 		final int dayCount = dayArrayNode.size();
-		for ( int i = 0; i < dayCount; i++ ) {
+		for ( int i = 1; i < dayCount; i++ ) {
 			GeneralDayDatum day = parseForecast(node, i);
 			if ( day != null ) {
+				day.addTag(DayDatum.TAG_FORECAST);
 				results.add(day);
 			}
 		}

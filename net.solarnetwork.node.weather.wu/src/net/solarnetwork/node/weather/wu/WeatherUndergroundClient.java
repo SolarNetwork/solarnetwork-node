@@ -84,8 +84,8 @@ public interface WeatherUndergroundClient {
 	DayDatum getCurrentDay(String identifier);
 
 	/**
-	 * Lookup 3-day forecast conditions for a specific Weather Underground
-	 * location identifier.
+	 * Lookup 3-day forecast conditions (starting tomorrow) for a specific
+	 * Weather Underground location identifier.
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup the hourly forecast for.
@@ -94,8 +94,8 @@ public interface WeatherUndergroundClient {
 	Collection<DayDatum> getThreeDayForecast(String identifier);
 
 	/**
-	 * Lookup 10-day forecast conditions for a specific Weather Underground
-	 * location identifier.
+	 * Lookup 10-day forecast conditions (starting tomorrow) for a specific
+	 * Weather Underground location identifier.
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup the hourly forecast for.
