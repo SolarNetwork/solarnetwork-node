@@ -17,10 +17,39 @@
 	<bean id="setupResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
 		<property name="basenames">
 			<list>
-				<value>META-INF/settings/wu-setting-console</value>
+				<value>META-INF/settings/wu-setting-loc-search</value>
 			</list>
 		</property>
 	</bean>
+	
+	<service ref="setupResourceProvider" interface="net.solarnetwork.node.setup.SetupResourceProvider"/>
+	
+	<!-- Add an Application scoped setup resource for singleton JavaScript resource -->
+	<service interface="net.solarnetwork.node.setup.SetupResourceProvider">
+		<bean class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+			<property name="basenames">
+				<list>
+					<value>META-INF/settings/weather-underground</value>
+				</list>
+			</property>
+			<property name="scope" value="Application"/>
+		</bean>
+	</service>
+
+	<bean id="generalLocationDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum)"/>
+	</bean>	
+
+	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+	</bean>	
+
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+
+	<!-- Day logging support -->
 
 	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
