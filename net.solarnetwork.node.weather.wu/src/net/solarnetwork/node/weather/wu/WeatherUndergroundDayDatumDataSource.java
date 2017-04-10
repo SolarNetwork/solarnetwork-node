@@ -57,7 +57,7 @@ public class WeatherUndergroundDayDatumDataSource
 	public DayDatum readCurrentDatum() {
 		// first see if we have cached data
 		DayDatum result = datumCache.get(LAST_DATUM_CACHE_KEY);
-		if ( result != null ) {
+		if ( result != null && result.getCreated() != null ) {
 			Calendar now = Calendar.getInstance();
 			Calendar datumCal = Calendar.getInstance();
 			datumCal.setTime(result.getCreated());
@@ -90,7 +90,8 @@ public class WeatherUndergroundDayDatumDataSource
 		Collection<DayDatum> forecast = getClient().getTenDayForecast(getLocationIdentifier());
 		if ( forecast != null ) {
 			for ( DayDatum day : forecast ) {
-				if ( day.getCreated().equals(today.getCreated()) ) {
+				if ( day.getCreated() != null && today.getCreated() != null
+						&& day.getCreated().equals(today.getCreated()) ) {
 					// skip today
 					continue;
 				}
