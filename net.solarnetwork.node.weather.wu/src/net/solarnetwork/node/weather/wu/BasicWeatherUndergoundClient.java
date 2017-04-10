@@ -139,6 +139,9 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public AtmosphericDatum getCurrentConditions(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
 		final String url = urlForActionPath("conditions", identifier + ".json");
 		GeneralAtmosphericDatum result = null;
 		try {
@@ -154,6 +157,9 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<AtmosphericDatum> getHourlyForecast(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
 		final String url = urlForActionPath("hourly", identifier + ".json");
 		Collection<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
 		try {
@@ -176,6 +182,9 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public DayDatum getCurrentDay(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
 		final String url = urlForActionsPath(new String[] { "astronomy", "forecast" },
 				identifier + ".json");
 		GeneralDayDatum result = null;
@@ -191,6 +200,9 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<DayDatum> getThreeDayForecast(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
 		final String url = urlForActionPath("forecast", identifier + ".json");
 		Collection<DayDatum> results = Collections.emptyList();
 		try {
@@ -205,6 +217,9 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 
 	@Override
 	public Collection<DayDatum> getTenDayForecast(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
 		final String url = urlForActionPath("forecast10day", identifier + ".json");
 		Collection<DayDatum> results = new ArrayList<DayDatum>();
 		try {
