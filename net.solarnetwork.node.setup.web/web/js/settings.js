@@ -532,7 +532,7 @@ $(document).ready(function() {
 		var firstInput = $(this).find('input').first();
 		firstInput.focus().select();
 	});
-	$('.lookup-modal button.choose').on('click', function() {
+	$('.sn-loc-lookup-modal button.choose').on('click', function() {
 		var me = $(this);
 		var modal = me.closest('.modal');
 		var selectedLocation = me.data('locationMeta');

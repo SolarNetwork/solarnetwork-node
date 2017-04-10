@@ -41,5 +41,8 @@
 			</c:if>
 			<tiles:insertAttribute name="body" />
 		</div>
+		
+		<%-- Application scoped setup resource integration support  --%>
+		<setup:resources role="USER" type="text/html" inline="true" scope="Application"/>
 	</body>
 </html>
