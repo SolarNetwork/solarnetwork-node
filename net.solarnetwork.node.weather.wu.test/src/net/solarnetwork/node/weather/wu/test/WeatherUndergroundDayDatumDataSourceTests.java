@@ -42,7 +42,7 @@ import net.solarnetwork.node.weather.wu.WeatherUndergroundClient;
 import net.solarnetwork.node.weather.wu.WeatherUndergroundDayDatumDataSource;
 
 /**
- * test cases for the {@link WeatherUndergroundDayDatumDataSource} class.
+ * Test cases for the {@link WeatherUndergroundDayDatumDataSource} class.
  * 
  * @author matt
  * @version 1.0
