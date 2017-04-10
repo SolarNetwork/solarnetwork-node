@@ -77,8 +77,8 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
 		results.add(new BasicTextFieldSettingSpecifier("client.apiKey", null));
+		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
 		if ( setupResourceProvider != null ) {
 			Map<String, Object> setupProps = Collections.singletonMap("uid", (Object) getUID());
 			results.add(new BasicSetupResourceSettingSpecifier(setupResourceProvider, setupProps));
