@@ -37,6 +37,7 @@ import org.springframework.web.servlet.tags.form.TagWriter;
 import org.springframework.web.util.UriUtils;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
+import net.solarnetwork.node.setup.SetupResourceScope;
 import net.solarnetwork.node.setup.SetupResourceService;
 
 /**
@@ -49,7 +50,7 @@ import net.solarnetwork.node.setup.SetupResourceService;
  * {@code data-} attributes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SetupResourcesTag extends HtmlEscapingAwareTag {
 
@@ -60,6 +61,7 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 	private String role;
 	private String type = SetupResource.JAVASCRIPT_CONTENT_TYPE;
 	private SetupResourceProvider provider;
+	private SetupResourceScope scope;
 	private boolean inline = false;
 	private Map<String, ?> properties;
 	private String wrapperElement = "div";
@@ -104,6 +106,9 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 				continue;
 			}
 			if ( !hasRequiredyRole(rsrc) ) {
+				continue;
+			}
+			if ( !hasRequiredScope(rsrc) ) {
 				continue;
 			}
 			if ( inline ) {
@@ -173,6 +178,16 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 		return false;
 	}
 
+	private boolean hasRequiredScope(SetupResource rsrc) {
+		SetupResourceScope rsrcScope = rsrc.getScope();
+		if ( scope == null && (rsrcScope == null || rsrcScope.equals(SetupResourceScope.Default)) ) {
+			return true;
+		} else if ( scope != null && scope.equals(rsrcScope) ) {
+			return true;
+		}
+		return false;
+	}
+
 	public void setSetupResourceService(SetupResourceService setupResourceService) {
 		this.setupResourceService = setupResourceService;
 	}
@@ -203,6 +218,17 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 
 	public void setWrapperClass(String wrapperClass) {
 		this.wrapperClass = wrapperClass;
+	}
+
+	/**
+	 * Set a scope to restrict resolved resources to.
+	 * 
+	 * @param scope
+	 *        the scope to set
+	 * @since 1.1
+	 */
+	public void setScope(SetupResourceScope scope) {
+		this.scope = scope;
 	}
 
 }

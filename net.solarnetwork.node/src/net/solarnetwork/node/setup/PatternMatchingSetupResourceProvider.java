@@ -49,7 +49,7 @@ import org.springframework.util.StringUtils;
  * {@link SimpleSetupResourceProvider}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PatternMatchingSetupResourceProvider
 		implements SetupResourceProvider, ApplicationContextAware {
@@ -63,6 +63,7 @@ public class PatternMatchingSetupResourceProvider
 	private Locale defaultLocale = Locale.US;
 	private Set<String> consumerTypes = SetupResource.WEB_CONSUMER_TYPES;
 	private Set<String> roles = SetupResource.USER_ROLES;
+	private SetupResourceScope scope = SetupResourceScope.Default;
 	private String[] basenames;
 	private ResourcePatternResolver resourcePatternResolver;
 	private int cacheSeconds = 86400;
@@ -141,7 +142,7 @@ public class PatternMatchingSetupResourceProvider
 						contentType = UNKNOWN_CONTENT_TYPE;
 					}
 					result.add(new ResourceSetupResource(r, baseFilenameForPath(filename), contentType,
-							cacheSeconds, consumerTypes, roles));
+							cacheSeconds, consumerTypes, roles, scope));
 				}
 			}
 		} catch ( IOException e ) {
@@ -225,6 +226,17 @@ public class PatternMatchingSetupResourceProvider
 	 */
 	public void setDefaultLocale(Locale defaultLocale) {
 		this.defaultLocale = defaultLocale;
+	}
+
+	/**
+	 * Set a scope to use for all resolved resources.
+	 * 
+	 * @param scope
+	 *        the scope to set
+	 * @since 1.1
+	 */
+	public void setScope(SetupResourceScope scope) {
+		this.scope = scope;
 	}
 
 }

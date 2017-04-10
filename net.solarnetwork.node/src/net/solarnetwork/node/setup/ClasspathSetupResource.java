@@ -33,7 +33,7 @@ import org.springframework.core.io.ClassPathResource;
  * Static classpath based implementation of {@link SetupResource}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ClasspathSetupResource extends BaseStaticSetupResource {
 
@@ -130,7 +130,7 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	}
 
 	/**
-	 * Full constructor.
+	 * Constructor.
 	 * 
 	 * @param uid
 	 *        the {@code resourceUID} value
@@ -154,8 +154,40 @@ public class ClasspathSetupResource extends BaseStaticSetupResource {
 	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
 			Locale locale, int cacheSeconds, Set<String> consumerTypes, Set<String> roles)
 			throws IOException {
+		this(uid, path, clazz, contentType, locale, cacheSeconds, consumerTypes, roles,
+				SetupResourceScope.Default);
+	}
+
+	/**
+	 * Full constructor.
+	 * 
+	 * @param uid
+	 *        the {@code resourceUID} value
+	 * @param path
+	 *        the classpath resource path
+	 * @param clazz
+	 *        the class to load the resource relative to
+	 * @param contentType
+	 *        the content type
+	 * @param locale
+	 *        the locale
+	 * @param cacheSeconds
+	 *        the maximum cache seconds
+	 * @param consumerTypes
+	 *        the optional consumer types
+	 * @param roles
+	 *        the optional required roles
+	 * @param scope
+	 *        the scope to use
+	 * @throws IOException
+	 *         if an error occurs accessing the resource
+	 * @since 1.1
+	 */
+	public ClasspathSetupResource(String uid, String path, Class<?> clazz, String contentType,
+			Locale locale, int cacheSeconds, Set<String> consumerTypes, Set<String> roles,
+			SetupResourceScope scope) throws IOException {
 		super(uid, contentType, locale, cacheSeconds, consumerTypes, roles,
-				new ClassPathResource(path, clazz));
+				new ClassPathResource(path, clazz), scope);
 		this.path = path;
 		this.clazz = clazz;
 	}

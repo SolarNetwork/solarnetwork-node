@@ -31,7 +31,7 @@ import org.springframework.core.io.Resource;
  * Abstract base class for static {@link SetupResource} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class BaseStaticSetupResource implements SetupResource {
 
@@ -43,6 +43,7 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	private final long contentLength;
 	private final long lastModified;
 	private final Locale locale;
+	private final SetupResourceScope scope;
 
 	/**
 	 * Construct with values. Caching will be disabled and the content length
@@ -60,37 +61,6 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	public BaseStaticSetupResource(String uid, String contentType, Set<String> consumerTypes,
 			Set<String> roles) {
 		this(uid, contentType, null, CACHE_DISABLED, -1, -1, roles, consumerTypes);
-	}
-
-	/**
-	 * Construct with values.
-	 * 
-	 * @param uid
-	 *        the {@code resourceUID}
-	 * @param contentType
-	 *        the content type
-	 * @param cacheSeconds
-	 *        the maximum cache seconds
-	 * @param contentLength
-	 *        the content length
-	 * @param lastModified
-	 *        the last modified date
-	 * @param consumerTypes
-	 *        the optional consumer types
-	 * @param roles
-	 *        the optional required roles
-	 */
-	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
-			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles) {
-		super();
-		this.uid = uid;
-		this.contentType = contentType;
-		this.locale = locale;
-		this.cacheSeconds = cacheSeconds;
-		this.roles = roles;
-		this.contentLength = contentLength;
-		this.lastModified = lastModified;
-		this.consumerTypes = consumerTypes;
 	}
 
 	/**
@@ -119,6 +89,96 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 			Set<String> roles, Set<String> consumerTypes, Resource resource) throws IOException {
 		this(uid, contentType, locale, cacheSeconds, resource.contentLength(), resource.lastModified(),
 				roles, consumerTypes);
+	}
+
+	/**
+	 * Construct with values. Caching will be disabled and the content length
+	 * and last modified timestamp will be set to {@code -1}.
+	 * 
+	 * @param uid
+	 *        the {@code resourceUID}
+	 * @param contentType
+	 *        the content type
+	 * @param locale
+	 *        the locale
+	 * @param cacheSeconds
+	 *        the maximum cache seconds
+	 * @param consumerTypes
+	 *        the optional consumer types
+	 * @param roles
+	 *        the optional required roles
+	 * @param resource
+	 *        A {@link Resource} to get {@code contentLength} and
+	 *        {@code lastModified} values from.
+	 * @throws IOException
+	 *         if the {@link Resource} throws one when accessed
+	 * @since 1.1
+	 */
+	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
+			Set<String> roles, Set<String> consumerTypes, Resource resource, SetupResourceScope scope)
+			throws IOException {
+		this(uid, contentType, locale, cacheSeconds, resource.contentLength(), resource.lastModified(),
+				roles, consumerTypes, scope);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param uid
+	 *        the {@code resourceUID}
+	 * @param contentType
+	 *        the content type
+	 * @param cacheSeconds
+	 *        the maximum cache seconds
+	 * @param contentLength
+	 *        the content length
+	 * @param lastModified
+	 *        the last modified date
+	 * @param consumerTypes
+	 *        the optional consumer types
+	 * @param roles
+	 *        the optional required roles
+	 */
+	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
+			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles) {
+		this(uid, contentType, locale, cacheSeconds, contentLength, lastModified, consumerTypes, roles,
+				null);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param uid
+	 *        the {@code resourceUID}
+	 * @param contentType
+	 *        the content type
+	 * @param cacheSeconds
+	 *        the maximum cache seconds
+	 * @param contentLength
+	 *        the content length
+	 * @param lastModified
+	 *        the last modified date
+	 * @param consumerTypes
+	 *        the optional consumer types
+	 * @param roles
+	 *        the optional required roles
+	 * @param scope
+	 *        the scope
+	 * @since 1.1
+	 */
+	public BaseStaticSetupResource(String uid, String contentType, Locale locale, int cacheSeconds,
+			long contentLength, long lastModified, Set<String> consumerTypes, Set<String> roles,
+			SetupResourceScope scope) {
+		super();
+		this.uid = uid;
+		this.contentType = contentType;
+		this.locale = locale;
+		this.cacheSeconds = cacheSeconds;
+		this.roles = roles;
+		this.contentLength = contentLength;
+		this.lastModified = lastModified;
+		this.consumerTypes = consumerTypes;
+		this.scope = scope;
 	}
 
 	@Override
@@ -159,6 +219,11 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	@Override
 	public Locale getLocale() {
 		return locale;
+	}
+
+	@Override
+	public SetupResourceScope getScope() {
+		return scope;
 	}
 
 }
