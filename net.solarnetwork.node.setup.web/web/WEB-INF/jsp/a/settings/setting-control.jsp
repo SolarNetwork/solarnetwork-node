@@ -16,6 +16,7 @@
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}">
 		<div class="control-group setup-resource-container" id="cg-${settingId}" 
+				data-provider-id="${provider.settingUID}"
 				data-setting-id="${settingId}" 
 				data-instance-id="${instanceId}" 
 				data-group-index="${groupIndex}">

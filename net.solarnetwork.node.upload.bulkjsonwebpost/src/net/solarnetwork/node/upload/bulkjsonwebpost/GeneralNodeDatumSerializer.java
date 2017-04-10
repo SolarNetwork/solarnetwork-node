@@ -23,6 +23,7 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -38,9 +39,12 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * is also supported.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum> {
+public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum>
+		implements Serializable {
+
+	private static final long serialVersionUID = 4147284403831089758L;
 
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
 

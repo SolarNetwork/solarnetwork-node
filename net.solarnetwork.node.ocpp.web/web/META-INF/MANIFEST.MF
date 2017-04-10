@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP ChargePoint Web Service
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.web
-Bundle-Version: 0.3.0
+Bundle-Version: 0.5.0
 Bundle-ClassPath: WEB-INF/classes/
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
@@ -22,7 +22,9 @@ Import-Package:
  javax.xml.ws,
  javax.xml.ws.handler.soap,
  net.solarnetwork.node;version="1.16",
- net.solarnetwork.node.ocpp;version="0.1.0",
+ net.solarnetwork.node.ocpp;version="0.4.0",
+ net.solarnetwork.node.ocpp.support;version="0.3.0",
+ net.solarnetwork.node.ocpp.web.config;resolution:="optional",
  net.solarnetwork.node.settings;version="1.5",
  net.solarnetwork.node.settings.support;version="1.4.0",
  net.solarnetwork.node.util;version="1.6.0",
@@ -31,7 +33,7 @@ Import-Package:
  net.solarnetwork.web.gemini;version="1.0.0",
  net.solarnetwork.web.support;version="1.7",
  ocpp.v15.cp;version="1.5.0",
- ocpp.v15.support;version="1.5.1",
+ ocpp.v15.support;version="1.6.0",
  org.aopalliance.aop;version="1.0",
  org.apache.cxf.bus.extension;version="[3.0,4.0)",
  org.apache.cxf.bus.spring;version="[3.0,4.0)",
@@ -74,6 +76,7 @@ Import-Package:
  org.springframework.stereotype;version="[4.2,5.0)",
  org.springframework.transaction;version="[4.2,5.0)",
  org.springframework.transaction.annotation;version="[4.2,5.0)",
+ org.springframework.transaction.support;version="[4.2,5.0)",
  org.springframework.ui;version="[4.2,5.0)",
  org.springframework.util;version="[4.2,5.0)",
  org.springframework.validation;version="[4.2,5.0)",

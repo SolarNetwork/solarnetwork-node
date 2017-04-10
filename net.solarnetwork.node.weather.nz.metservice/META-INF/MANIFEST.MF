@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: New Zealand MetService Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.nz.metservice
 Bundle-Description: Collect weather data from the New Zealand MetService.
-Bundle-Version: 3.1.0
+Bundle-Version: 3.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -17,7 +17,7 @@ Import-Package:
  net.solarnetwork.node.settings.support;version="1.6.0",
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.node.util;version="1.5.0",
- net.solarnetwork.util;version="1.18.0",
+ net.solarnetwork.util;version="1.23.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",

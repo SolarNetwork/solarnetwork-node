@@ -58,13 +58,18 @@ import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 import ocpp.v15.cs.AuthorizationStatus;
 import ocpp.v15.cs.CentralSystemService;
+import ocpp.v15.cs.ChargePointStatus;
 import ocpp.v15.cs.IdTagInfo;
 import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.MeterValue;
 import ocpp.v15.cs.MeterValue.Value;
+import ocpp.v15.cs.MeterValuesRequest;
+import ocpp.v15.cs.MeterValuesResponse;
 import ocpp.v15.cs.ReadingContext;
 import ocpp.v15.cs.StartTransactionRequest;
 import ocpp.v15.cs.StartTransactionResponse;
+import ocpp.v15.cs.StatusNotificationRequest;
+import ocpp.v15.cs.StatusNotificationResponse;
 import ocpp.v15.cs.StopTransactionRequest;
 import ocpp.v15.cs.StopTransactionResponse;
 import ocpp.v15.cs.TransactionData;
@@ -233,6 +238,12 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		// request authorization for IdTag
 		expect(authManager.authorize(TEST_ID_TAG)).andReturn(AuthorizationStatus.ACCEPTED);
 
+		// post OCCUPIED status notification
+		Capture<StatusNotificationRequest> statusNotificationReqCapture = new Capture<StatusNotificationRequest>();
+		final StatusNotificationResponse statusNotificationResp = new StatusNotificationResponse();
+		expect(client.statusNotification(capture(statusNotificationReqCapture),
+				eq(TEST_CHARGE_BOX_IDENTITY))).andReturn(statusNotificationResp);
+
 		// get meter reading
 		final GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setCreated(new Date());
@@ -263,16 +274,27 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		String sessionId = manager.initiateChargeSession(TEST_ID_TAG, TEST_SOCKET_ID, null);
 		Assert.assertEquals("Session ID", TEST_SESSION_ID, sessionId);
 
-		// verify StartTransactionRequest
-		StartTransactionRequest req = startTransactionReqCapture.getValue();
-		Assert.assertNotNull("Request", req);
+		// verify StatusNotificationRequest
+		StatusNotificationRequest statusNotificationReq = statusNotificationReqCapture.getValue();
+		Assert.assertNotNull("StatusNotificationRequest", statusNotificationReq);
 		Assert.assertEquals("StartTransactionRequest connectorId", TEST_CONNECTOR_ID.intValue(),
-				req.getConnectorId());
-		Assert.assertEquals("StartTransactionRequest idTag", TEST_ID_TAG, req.getIdTag());
+				statusNotificationReq.getConnectorId());
+		Assert.assertEquals("StartTransactionRequest idTag", ChargePointStatus.OCCUPIED,
+				statusNotificationReq.getStatus());
+		Assert.assertNotNull("StartTransactionRequest timestamp", statusNotificationReq.getTimestamp());
+
+		// verify StartTransactionRequest
+		StartTransactionRequest startTransactionReq = startTransactionReqCapture.getValue();
+		Assert.assertNotNull("Request", startTransactionReq);
+		Assert.assertEquals("StartTransactionRequest connectorId", TEST_CONNECTOR_ID.intValue(),
+				startTransactionReq.getConnectorId());
+		Assert.assertEquals("StartTransactionRequest idTag", TEST_ID_TAG,
+				startTransactionReq.getIdTag());
 		Assert.assertEquals("StartTransactionRequest meterStart", datum.getWattHourReading().intValue(),
-				req.getMeterStart());
-		Assert.assertNull("StartTransactionRequest reservationId", req.getReservationId());
-		Assert.assertNotNull("StartTransactionRequest timestamp", req.getTimestamp());
+				startTransactionReq.getMeterStart());
+		Assert.assertNull("StartTransactionRequest reservationId",
+				startTransactionReq.getReservationId());
+		Assert.assertNotNull("StartTransactionRequest timestamp", startTransactionReq.getTimestamp());
 
 		// verify ChargeSession entity
 		ChargeSession session = sessionCapture.getValue();
@@ -432,6 +454,12 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		// save the ChargeSession end date
 		expect(chargeSessionDao.storeChargeSession(existingSession)).andReturn(TEST_SESSION_ID);
 
+		// post AVAILABLE status notification
+		Capture<StatusNotificationRequest> statusNotificationReqCapture = new Capture<StatusNotificationRequest>();
+		final StatusNotificationResponse statusNotificationResp = new StatusNotificationResponse();
+		expect(client.statusNotification(capture(statusNotificationReqCapture),
+				eq(TEST_CHARGE_BOX_IDENTITY))).andReturn(statusNotificationResp);
+
 		replayAll();
 		manager.completeChargeSession(TEST_ID_TAG, TEST_SESSION_ID);
 
@@ -456,6 +484,15 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 					meterValue.getTimestamp().toGregorianCalendar().getTime());
 			cal.add(Calendar.MINUTE, 1);
 		}
+
+		// verify StatusNotificationRequest
+		StatusNotificationRequest statusNotificationReq = statusNotificationReqCapture.getValue();
+		Assert.assertNotNull("StatusNotificationRequest", statusNotificationReq);
+		Assert.assertEquals("StartTransactionRequest connectorId", TEST_CONNECTOR_ID.intValue(),
+				statusNotificationReq.getConnectorId());
+		Assert.assertEquals("StartTransactionRequest idTag", ChargePointStatus.AVAILABLE,
+				statusNotificationReq.getStatus());
+		Assert.assertNotNull("StartTransactionRequest timestamp", statusNotificationReq.getTimestamp());
 
 		// verify ChargeSession entity
 		Assert.assertNotNull("ChargeSession ended", existingSession.getEnded());
@@ -502,5 +539,91 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		} catch ( OCPPException e ) {
 			Assert.assertEquals("Status", AuthorizationStatus.INVALID, e.getStatus());
 		}
+	}
+
+	@Test
+	public void postActiveSessionMeterValuesOneSession() {
+		// get active session
+		final ChargeSession existingSession = new ChargeSession();
+		existingSession.setIdTag(TEST_ID_TAG);
+		existingSession.setSessionId(TEST_SESSION_ID);
+		existingSession.setSocketId(TEST_SOCKET_ID);
+		existingSession.setTransactionId(TEST_TRANSACTION_ID);
+		expect(chargeSessionDao.getIncompleteChargeSessionForSocket(TEST_SOCKET_ID))
+				.andReturn(existingSession);
+
+		// get all meter readings
+		final GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
+		datum.setCreated(new Date());
+		datum.setWatts(123);
+		datum.setWattHourReading(1110L);
+		List<ChargeSessionMeterReading> readings = new ArrayList<ChargeSessionMeterReading>(8);
+		int wh = datum.getWattHourReading().intValue() - (3 * 10);
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.MINUTE, -3);
+		for ( int i = 0; i < 3; i++ ) {
+			ChargeSessionMeterReading r = new ChargeSessionMeterReading();
+			r.setContext(i == 0 ? ReadingContext.TRANSACTION_BEGIN
+					: i == 1 ? ReadingContext.SAMPLE_PERIODIC : ReadingContext.TRANSACTION_END);
+			r.setMeasurand(Measurand.ENERGY_ACTIVE_IMPORT_REGISTER);
+			r.setSessionId(TEST_SESSION_ID);
+			r.setTs(cal.getTime());
+			r.setUnit(UnitOfMeasure.WH);
+			r.setValue(String.valueOf(wh));
+			readings.add(r);
+
+			r = new ChargeSessionMeterReading();
+			r.setContext(i == 0 ? ReadingContext.TRANSACTION_BEGIN
+					: i == 1 ? ReadingContext.SAMPLE_PERIODIC : ReadingContext.TRANSACTION_END);
+			r.setMeasurand(Measurand.POWER_ACTIVE_IMPORT);
+			r.setSessionId(TEST_SESSION_ID);
+			r.setTs(cal.getTime());
+			r.setUnit(UnitOfMeasure.W);
+			r.setValue(datum.getWatts().toString());
+			readings.add(r);
+
+			wh += 10;
+			cal.add(Calendar.MINUTE, 1);
+		}
+		expect(chargeSessionDao.findMeterReadingsForSession(TEST_SESSION_ID)).andReturn(readings);
+
+		Capture<MeterValuesRequest> meterValuesRequestCapture = new Capture<MeterValuesRequest>();
+		final MeterValuesResponse meterValuesResp = new MeterValuesResponse();
+		expect(client.meterValues(capture(meterValuesRequestCapture), eq(TEST_CHARGE_BOX_IDENTITY)))
+				.andReturn(meterValuesResp);
+
+		replayAll();
+		manager.postActiveChargeSessionsMeterValues();
+
+		// verify MeterValuesRequest
+		MeterValuesRequest meterValuesReq = meterValuesRequestCapture.getValue();
+		Assert.assertNotNull("MeterValuesRequest", meterValuesReq);
+		Assert.assertEquals("MeterValuesRequest connectorId", TEST_CONNECTOR_ID.intValue(),
+				meterValuesReq.getConnectorId());
+		Assert.assertEquals("MeterValuesRequest idTag", TEST_TRANSACTION_ID,
+				meterValuesReq.getTransactionId());
+
+		// verify meter values posted
+		Assert.assertNotNull("MeterValuesRequest values", meterValuesReq.getValues());
+		Assert.assertEquals("MeterValuesRequest values only most recent", 1,
+				meterValuesReq.getValues().size());
+
+		cal.add(Calendar.MINUTE, -1);
+		MeterValue meterValue = meterValuesReq.getValues().get(0);
+		Assert.assertNotNull("MeterValue timestamp", meterValue.getTimestamp());
+		Assert.assertEquals("MeterValue timestamp", cal.getTime(),
+				meterValue.getTimestamp().toGregorianCalendar().getTime());
+
+		Assert.assertEquals("MeterValue values", 2, meterValue.getValue().size());
+		Value v = meterValue.getValue().get(0);
+		Assert.assertEquals("MeterValue measurand", Measurand.ENERGY_ACTIVE_IMPORT_REGISTER,
+				v.getMeasurand());
+		Assert.assertEquals("MeterValue unit", UnitOfMeasure.WH, v.getUnit());
+		v = meterValue.getValue().get(1);
+		Assert.assertEquals("MeterValue measurand", Measurand.POWER_ACTIVE_IMPORT, v.getMeasurand());
+		Assert.assertEquals("MeterValue unit", UnitOfMeasure.W, v.getUnit());
+
+		cal.add(Calendar.MINUTE, 1);
+
 	}
 }

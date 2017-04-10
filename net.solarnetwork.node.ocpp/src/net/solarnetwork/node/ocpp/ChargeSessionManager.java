@@ -34,7 +34,7 @@ import net.solarnetwork.node.Identifiable;
  * and finally confirming that charging is complete.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface ChargeSessionManager extends Identifiable {
 
@@ -215,5 +215,12 @@ public interface ChargeSessionManager extends Identifiable {
 	 * @return The number of sessions posted.
 	 */
 	int postCompleteOfflineSessions(int max);
+
+	/**
+	 * Attempt to post collected meter values for all active charge sessions.
+	 * 
+	 * @since 1.2
+	 */
+	void postActiveChargeSessionsMeterValues();
 
 }

@@ -112,7 +112,7 @@ $(function() {
 		<fmt:message key="delete.label"/>
 	</button>
 </div>
-<form class="modal dynamic hide fade lookup-modal price-lookup-modal" 
+<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal" 
 		action="<c:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
@@ -161,7 +161,7 @@ $(function() {
 		</button>
 	</div>
 </form>
-<form class="modal dynamic hide fade lookup-modal weather-lookup-modal day-lookup-modal" 
+<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal" 
 		action="<c:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>

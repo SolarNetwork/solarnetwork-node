@@ -23,19 +23,22 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
-import net.solarnetwork.node.reactor.Instruction;
+import java.io.Serializable;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
+import net.solarnetwork.node.reactor.Instruction;
 
 /**
  * Serialize {@link Instruction} to JSON.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class InstructionSerializer extends StdScalarSerializer<Instruction> {
+public class InstructionSerializer extends StdScalarSerializer<Instruction> implements Serializable {
+
+	private static final long serialVersionUID = 1968483113822863563L;
 
 	/**
 	 * Default constructor.

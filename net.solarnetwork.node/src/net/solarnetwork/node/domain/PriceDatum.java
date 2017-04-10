@@ -28,9 +28,9 @@ import java.math.BigDecimal;
  * API for price data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface PriceDatum {
+public interface PriceDatum extends Datum {
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous

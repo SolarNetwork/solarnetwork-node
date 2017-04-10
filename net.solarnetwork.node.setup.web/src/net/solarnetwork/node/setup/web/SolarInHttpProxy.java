@@ -25,20 +25,23 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
-import net.solarnetwork.node.support.HttpClientSupport;
-import net.solarnetwork.util.OptionalServiceTracker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.SSLService;
+import net.solarnetwork.node.support.HttpClientSupport;
+import net.solarnetwork.util.OptionalServiceTracker;
 
 /**
  * Proxy HTTP requests to SolarIn.
@@ -50,10 +53,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Controller
 public class SolarInHttpProxy extends HttpClientSupport {
+
+	private static final String[] DEFAULT_PROXY_HEADERS_IGNORE = new String[] {
+			"strict-transport-security", "transfer-encoding" };
+
+	private Set<String> proxyHeadersIgnore = new LinkedHashSet<String>(
+			Arrays.asList(DEFAULT_PROXY_HEADERS_IGNORE));
 
 	@Autowired
 	public SolarInHttpProxy(@Qualifier("identityService") IdentityService identityService,
@@ -95,21 +104,19 @@ public class SolarInHttpProxy extends HttpClientSupport {
 			URLConnection conn = getURLConnection(url, request.getMethod(), accept);
 			if ( conn instanceof HttpURLConnection ) {
 				final HttpURLConnection httpConn = (HttpURLConnection) conn;
-				for ( Map.Entry<String, List<String>> me : httpConn.getHeaderFields().entrySet() ) {
+				final Map<String, List<String>> headers = httpConn.getHeaderFields();
+				log.debug("Proxying SolarIn headers: {}", headers);
+				for ( Map.Entry<String, List<String>> me : headers.entrySet() ) {
 					final String headerName = me.getKey();
-					if ( headerName == null ) {
+					if ( headerName == null || proxyHeadersIgnore.contains(headerName.toLowerCase()) ) {
+						log.debug("Not proxying header {}", headerName);
 						continue;
 					}
 					for ( String val : me.getValue() ) {
 						response.addHeader(headerName, val);
 					}
 				}
-				final String msg = httpConn.getResponseMessage();
-				if ( msg != null && !msg.equalsIgnoreCase("OK") ) {
-					response.sendError(httpConn.getResponseCode(), msg);
-				} else {
-					response.setStatus(httpConn.getResponseCode());
-				}
+				response.setStatus(httpConn.getResponseCode());
 			}
 			FileCopyUtils.copy(conn.getInputStream(), response.getOutputStream());
 			response.flushBuffer();
@@ -118,4 +125,24 @@ public class SolarInHttpProxy extends HttpClientSupport {
 			response.sendError(502, "Problem communicating with SolarIn: " + e.getMessage());
 		}
 	}
+
+	/**
+	 * Configure a set of HTTP headers to <b>not</b> proxy.
+	 * 
+	 * @param proxyHeadersIgnore
+	 */
+	public void setProxyHeadersIgnore(Set<String> proxyHeadersIgnore) {
+		Set<String> ignores = null;
+		if ( proxyHeadersIgnore != null ) {
+			ignores = new LinkedHashSet<String>(proxyHeadersIgnore.size());
+			for ( String ignore : proxyHeadersIgnore ) {
+				if ( ignore == null ) {
+					continue;
+				}
+				ignores.add(ignore.toLowerCase());
+			}
+		}
+		this.proxyHeadersIgnore = proxyHeadersIgnore;
+	}
+
 }

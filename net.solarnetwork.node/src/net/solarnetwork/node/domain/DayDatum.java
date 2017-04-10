@@ -29,9 +29,9 @@ import org.joda.time.LocalTime;
  * Solar day related datum.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public interface DayDatum {
+public interface DayDatum extends Datum {
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
@@ -82,6 +82,53 @@ public interface DayDatum {
 	 * for {@link DayDatum#getSkyConditions()} values.
 	 */
 	static final String SKY_CONDITIONS_KEY = "sky";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link DayDatum#getBriefOverview()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String BRIEF_OVERVIEW_KEY = "brief";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getWindSpeed()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String WIND_SPEED_KEY = "wspeed";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getWindDirection()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String WIND_DIRECTION_KEY = "wdir";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getRain()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String RAIN_KEY = "rain";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getSnow()} values.
+	 * 
+	 * @since 1.2
+	 */
+	static final String SNOW_KEY = "snow";
+
+	/**
+	 * A tag for a forecast day sample, as opposed to an actual measurement.
+	 * 
+	 * @since 1.2
+	 */
+	static final String TAG_FORECAST = "forecast";
 
 	/**
 	 * Get the sunrise time.
@@ -137,4 +184,46 @@ public interface DayDatum {
 	 * @since 1.1
 	 */
 	String getSkyConditions();
+
+	/**
+	 * Get a brief textual description of the overall conditions, e.g. "Sunshine
+	 * and some clouds. High 18C. Winds N at 10 to 15 km/h."
+	 * 
+	 * @return general overall conditions description
+	 * @since 1.2
+	 */
+	String getBriefOverview();
+
+	/**
+	 * Get the wind speed, in meters / second.
+	 * 
+	 * @return wind speed
+	 * @since 1.2
+	 */
+	BigDecimal getWindSpeed();
+
+	/**
+	 * Get the wind direction, in degrees.
+	 * 
+	 * @return wind direction
+	 * @since 1.2
+	 */
+	Integer getWindDirection();
+
+	/**
+	 * Get the rain accumulation, in millimeters.
+	 * 
+	 * @return rain accumulation
+	 * @since 1.2
+	 */
+	Integer getRain();
+
+	/**
+	 * Get the snow accumulation, in millimeters.
+	 * 
+	 * @return snow accumulation
+	 * @since 1.2
+	 */
+	Integer getSnow();
+
 }

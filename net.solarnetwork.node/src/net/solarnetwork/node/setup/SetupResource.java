@@ -32,7 +32,7 @@ import java.util.Set;
  * API for a setting resource.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface SetupResource {
 
@@ -147,5 +147,13 @@ public interface SetupResource {
 	 *         if the stream could not be opened
 	 */
 	InputStream getInputStream() throws IOException;
+
+	/**
+	 * Get the scope of the resource, or {@code null} if undefined.
+	 * 
+	 * @return the resource scope
+	 * @since 1.1
+	 */
+	SetupResourceScope getScope();
 
 }

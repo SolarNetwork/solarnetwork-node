@@ -23,23 +23,26 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.util.ClassUtils;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.util.ClassUtils;
 
 /**
  * Serialize {@link Datum} to JSON.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class DatumSerializer extends StdScalarSerializer<Datum> {
+public class DatumSerializer extends StdScalarSerializer<Datum> implements Serializable {
+
+	private static final long serialVersionUID = -523673923281012956L;
 
 	/**
 	 * Default constructor.
