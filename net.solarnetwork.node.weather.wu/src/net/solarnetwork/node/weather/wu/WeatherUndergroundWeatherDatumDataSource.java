@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.weather.wu;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.AtmosphericDatum;
@@ -68,7 +70,14 @@ public class WeatherUndergroundWeatherDatumDataSource
 
 	@Override
 	public Collection<AtmosphericDatum> readMultipleDatum() {
-		return getClient().getHourlyForecast(getLocationIdentifier());
+		AtmosphericDatum curr = readCurrentDatum();
+		Collection<AtmosphericDatum> forecast = getClient().getHourlyForecast(getLocationIdentifier());
+		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>(forecast.size() + 1);
+		if ( curr != null ) {
+			results.add(curr);
+		}
+		results.addAll(forecast);
+		return results;
 	}
 
 }

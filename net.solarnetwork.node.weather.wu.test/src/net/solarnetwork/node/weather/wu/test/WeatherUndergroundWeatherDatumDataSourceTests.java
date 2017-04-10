@@ -103,10 +103,12 @@ public class WeatherUndergroundWeatherDatumDataSourceTests extends AbstractNodeT
 		final GeneralAtmosphericDatum datum2 = new GeneralAtmosphericDatum();
 		datum2.setCreated(new Date(System.currentTimeMillis() + MS_PER_DAY));
 		datum2.setSourceId(TEST_SOURCE_ID);
-		final List<AtmosphericDatum> datumList = Arrays.asList((AtmosphericDatum) datum,
-				(AtmosphericDatum) datum2);
+		final List<AtmosphericDatum> datumList = Arrays.asList((AtmosphericDatum) datum2);
 
-		// get hourly forecast
+		// get current conditions first
+		expect(client.getCurrentConditions(TEST_WU_LOCATION)).andReturn(datum);
+
+		// followed by hourly forecast
 		expect(client.getHourlyForecast(TEST_WU_LOCATION)).andReturn(datumList);
 
 		replayAll();
