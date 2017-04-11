@@ -113,7 +113,7 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -275,9 +275,11 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 				Configuration config = ca.getConfiguration(pid, null);
 				@SuppressWarnings("unchecked")
 				Dictionary<String, ?> props = config.getProperties();
+
+				// first look for expression on common attribute names
 				String propCronExpression = (String) props.get("trigger.cronExpression");
-				if ( propCronExpression != null ) {
-					newCronExpression = propCronExpression;
+				if ( propCronExpression == null ) {
+					propCronExpression = (String) props.get("triggerCronExpression");
 				}
 
 				// get JobDataMap
@@ -289,6 +291,17 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 					if ( m.matches() ) {
 						newJobDataMap.put(m.group(1), props.get(key));
 					}
+
+					// if cron expression not already found, search for any key containing "cronexpression"
+					if ( propCronExpression == null ) {
+						if ( key.toLowerCase().contains("cronexpression") ) {
+							propCronExpression = (String) props.get(key);
+						}
+					}
+				}
+
+				if ( propCronExpression != null ) {
+					newCronExpression = propCronExpression;
 				}
 			} catch ( IOException e ) {
 				log.warn("Exception processing configuration update event", e);
