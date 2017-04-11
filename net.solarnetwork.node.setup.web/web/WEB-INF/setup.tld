@@ -6,7 +6,7 @@
 	version="2.1">
 
 	<description>SolarNetwork Setup Taglib</description>
-	<tlib-version>1.4</tlib-version>
+	<tlib-version>1.5</tlib-version>
 	<short-name>setup</short-name>
 	<uri>http://solarnetwork.net/taglib/setup</uri>
 
@@ -128,8 +128,8 @@
 		</attribute>
 		<attribute>
 			<description>
-				A Map of additional properties to render as data attributes on a wrapper element, only if inline
-				is also set to true.
+				A Map of additional properties to render as data attributes on the configured
+				wrapper element, if ""inline is also set to true.
 			</description>
 			<name>properties</name>
 			<required>false</required>
@@ -146,7 +146,7 @@
 		</attribute>
 		<attribute>
 			<description>
-				The wrapper element to use if properties are provided. Defaults to "div".
+				A wrapper element to use if "inline" is also set to true.
 			</description>
 			<name>wrapperElement</name>
 			<required>false</required>
@@ -160,6 +160,7 @@
 			<required>false</required>
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
+		<dynamic-attributes>true</dynamic-attributes>
 	</tag>
 
 	<function>

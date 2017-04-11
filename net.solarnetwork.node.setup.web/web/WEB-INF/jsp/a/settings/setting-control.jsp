@@ -15,18 +15,17 @@
 </c:set>
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}">
-		<div class="control-group setup-resource-container" id="cg-${settingId}" 
-				data-provider-id="${provider.settingUID}"
-				data-setting-id="${settingId}" 
-				data-instance-id="${instanceId}" 
-				data-group-index="${groupIndex}">
-			<setup:resources role="USER" type="text/html" inline="true"
-				provider="${setting.setupResourceProvider}" 
-				properties="${setting.setupResourceProperties}"
-				wrapperElement="div"
-				wrapperClass="controls"
-				/>
-		</div>
+		<setup:resources role="USER" type="text/html" inline="true"
+			provider="${setting.setupResourceProvider}" 
+			properties="${setting.setupResourceProperties}"
+			wrapperElement="div"
+			wrapperClass="control-group setup-resource-container"
+			id="cg-${settingId}" 
+			data-provider-id="${provider.settingUID}"
+			data-setting-id="${settingId}"
+			data-instance-id="${instanceId}"
+			data-group-index="${groupIndex}"
+			/>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">

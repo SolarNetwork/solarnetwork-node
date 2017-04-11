@@ -28,10 +28,12 @@ import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
+import javax.servlet.jsp.tagext.DynamicAttributes;
 import org.springframework.web.servlet.tags.HtmlEscapingAwareTag;
 import org.springframework.web.servlet.tags.form.TagWriter;
 import org.springframework.web.util.UriUtils;
@@ -43,18 +45,18 @@ import net.solarnetwork.node.setup.SetupResourceService;
 /**
  * Tag to generate HTML tags for supported {@link SetupResource} values.
  * 
- * When rendering inline content, if any properties are provided via
- * {@link #setProperties(Map)} then the content will be wrapped in a
- * {@code &lt;div&gt;} element (or whatever is configured via
- * {@link #setPropertiesWrapperElement(String)}) and all properties added as
- * {@code data-} attributes.
+ * When rendering inline content, all properties provided via
+ * {@link #setProperties(Map)} will be added as {@code data-} attributes to
+ * whatever element name is configured via {@link #setWrapperElement(String)}).
+ * Similarly, any {@code data-} attributes added directly to the tag will be
+ * added as well, as will any {@code id} attribute.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class SetupResourcesTag extends HtmlEscapingAwareTag {
+public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAttributes {
 
-	private static final long serialVersionUID = 6291858407097698593L;
+	private static final long serialVersionUID = 5353893185255879473L;
 
 	private SetupResourceService setupResourceService;
 
@@ -64,8 +66,22 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 	private SetupResourceScope scope;
 	private boolean inline = false;
 	private Map<String, ?> properties;
-	private String wrapperElement = "div";
+	private String wrapperElement;
 	private String wrapperClass;
+
+	private Map<String, Object> dynamicAttributes;
+
+	@Override
+	public void setDynamicAttribute(String uri, String localName, Object value) throws JspException {
+		// we accept all data- attributes and id
+		if ( !(localName.startsWith("data-") || localName.equals("id")) ) {
+			throw new JspException("Unsupported attribute [" + uri + ":" + localName + "]");
+		}
+		if ( dynamicAttributes == null ) {
+			dynamicAttributes = new LinkedHashMap<String, Object>();
+		}
+		dynamicAttributes.put(localName, value);
+	}
 
 	@Override
 	protected int doStartTagInternal() throws Exception {
@@ -90,15 +106,28 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 			return;
 		}
 		String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
-		if ( inline && properties != null && wrapperElement != null ) {
+		if ( inline && wrapperElement != null ) {
 			tagWriter.startTag(wrapperElement);
 			if ( wrapperClass != null ) {
 				tagWriter.writeAttribute("class", htmlEscape(wrapperClass));
 			}
-			for ( Map.Entry<String, ?> me : properties.entrySet() ) {
-				String value = (me.getValue() == null ? "" : me.getValue().toString());
-				tagWriter.writeAttribute("data-" + htmlEscape(me.getKey()), htmlEscape(value));
+			if ( properties != null ) {
+				for ( Map.Entry<String, ?> me : properties.entrySet() ) {
+					String value = (me.getValue() == null ? "" : me.getValue().toString());
+					tagWriter.writeAttribute("data-" + htmlEscape(me.getKey()), htmlEscape(value));
+				}
 			}
+			if ( dynamicAttributes != null ) {
+				for ( Map.Entry<String, ?> me : dynamicAttributes.entrySet() ) {
+					if ( properties != null && me.getKey().startsWith("data-")
+							&& properties.containsKey(me.getKey().substring(5)) ) {
+						continue;
+					}
+					String value = (me.getValue() == null ? "" : me.getValue().toString());
+					tagWriter.writeAttribute(htmlEscape(me.getKey()), htmlEscape(value));
+				}
+			}
+
 			tagWriter.forceBlock();
 		}
 		for ( SetupResource rsrc : resources ) {
@@ -141,7 +170,7 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag {
 				}
 			}
 		}
-		if ( inline && properties != null && wrapperElement != null ) {
+		if ( inline && wrapperElement != null ) {
 			tagWriter.endTag(true);
 		}
 	}
