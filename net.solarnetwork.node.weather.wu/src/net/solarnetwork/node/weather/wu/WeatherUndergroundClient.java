@@ -30,9 +30,17 @@ import net.solarnetwork.node.domain.DayDatum;
  * API for accessing Weather Underground information.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface WeatherUndergroundClient {
+
+	/**
+	 * Get the API key used by the client.
+	 * 
+	 * @return the API key
+	 * @since 1.1
+	 */
+	String getApiKey();
 
 	/**
 	 * Query for locations based on the IP address of the requester.

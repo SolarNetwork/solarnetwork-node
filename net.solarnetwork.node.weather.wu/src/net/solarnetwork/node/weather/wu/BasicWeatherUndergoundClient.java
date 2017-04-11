@@ -52,7 +52,7 @@ import net.solarnetwork.support.HttpClientSupport;
  * Basic implementation of {@link WeatherUndergroundClient}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BasicWeatherUndergoundClient extends HttpClientSupport implements WeatherUndergroundClient {
 
@@ -493,6 +493,11 @@ public class BasicWeatherUndergoundClient extends HttpClientSupport implements W
 		}
 
 		return loc;
+	}
+
+	@Override
+	public String getApiKey() {
+		return apiKey;
 	}
 
 	/**
