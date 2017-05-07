@@ -3,10 +3,10 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Deson Electric SDM Power Meter
 Bundle-Description: Collect AC electricity data from Deson Electric SDM series meter devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.deson.sdm
-Bundle-Version: 1.2.0
+Bundle-Version: 1.2.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Import-Package: 
+Import-Package:
  net.solarnetwork.domain;version="1.6.1",
  net.solarnetwork.node;version="1.16.0",
  net.solarnetwork.node.domain;version="1.3.0",
