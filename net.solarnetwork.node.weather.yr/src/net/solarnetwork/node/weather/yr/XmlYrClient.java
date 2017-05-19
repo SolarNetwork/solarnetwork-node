@@ -27,9 +27,9 @@ import java.net.URLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import javax.xml.parsers.ParserConfigurationException;
@@ -139,12 +139,12 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 	}
 
 	@Override
-	public Collection<AtmosphericDatum> getHourlyForecast(String identifier) {
+	public List<AtmosphericDatum> getHourlyForecast(String identifier) {
 		if ( identifier == null ) {
 			return null;
 		}
 		final String url = urlForPlacePath(identifier, "forecast_hour_by_hour.xml");
-		Collection<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
+		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
 			InputSource is = getInputSourceFromURLConnection(conn);

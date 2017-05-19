@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
-import java.util.Collection;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
@@ -71,7 +71,7 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 		};
 		getHttpServer().addHandler(handler);
 
-		Collection<AtmosphericDatum> results = client.getHourlyForecast(TEST_YR_LOC_IDENTIFIER);
+		List<AtmosphericDatum> results = client.getHourlyForecast(TEST_YR_LOC_IDENTIFIER);
 		assertThat("Request handled", handler.isHandled(), equalTo(true));
 		assertThat("Result count", results, hasSize(48));
 	}

@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.weather.yr;
 
-import java.util.Collection;
+import java.util.List;
 import net.solarnetwork.node.domain.AtmosphericDatum;
 
 /**
@@ -46,6 +46,6 @@ public interface YrClient {
 	 *        The location identifier value to lookup the hourly forecast for.
 	 * @return The forecast data, never {@code null}
 	 */
-	Collection<AtmosphericDatum> getHourlyForecast(String identifier);
+	List<AtmosphericDatum> getHourlyForecast(String identifier);
 
 }
