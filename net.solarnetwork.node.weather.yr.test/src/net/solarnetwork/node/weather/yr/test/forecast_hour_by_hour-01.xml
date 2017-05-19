@@ -31,7 +31,7 @@ link to the specified URL.-->
       <time from="2017-05-10T11:00:00" to="2017-05-10T12:00:00">
         <!-- Valid from 2017-05-10T11:00:00 to 2017-05-10T12:00:00 -->
         <symbol number="3" numberEx="3" name="Partly cloudy" var="03d"/>
-        <precipitation value="0"/>
+        <precipitation value="0.7"/>
         <!-- Valid at 2017-05-10T11:00:00 -->
         <windDirection deg="151.0" code="SSE" name="South-southeast"/>
         <windSpeed mps="0.6" name="Light air"/>

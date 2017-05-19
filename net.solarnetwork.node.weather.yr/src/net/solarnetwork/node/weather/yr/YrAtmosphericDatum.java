@@ -23,7 +23,7 @@
 package net.solarnetwork.node.weather.yr;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -136,7 +136,7 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	 *        the wind direction to set
 	 */
 	public void setWindDirectionDecimal(BigDecimal value) {
-		setWindDirection(value.round(MathContext.DECIMAL32).intValue());
+		setWindDirection(value.setScale(0, RoundingMode.HALF_UP).intValue());
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	 *        the rain to set
 	 */
 	public void setRainDecimal(BigDecimal value) {
-		setRain(value.round(MathContext.DECIMAL32).intValue());
+		setRain(value.setScale(0, RoundingMode.HALF_UP).intValue());
 	}
 
 	/**
@@ -162,7 +162,7 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	 */
 	public void setAtmosphericPressureHectopascal(BigDecimal value) {
 		setAtmosphericPressure(
-				value.multiply(new BigDecimal(100)).round(MathContext.DECIMAL32).intValue());
+				value.multiply(new BigDecimal(100)).setScale(0, RoundingMode.HALF_UP).intValue());
 	}
 
 }
