@@ -63,7 +63,7 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 				assertEquals("GET", request.getMethod());
 				assertEquals("Request path", "/place/test/identifier/forecast_hour_by_hour.xml",
 						request.getPathInfo());
-				respondWithXmlResource(response, "forecast_hour_by_Hour-01.xml");
+				respondWithXmlResource(response, "forecast_hour_by_hour-01.xml");
 				response.flushBuffer();
 				return true;
 			}

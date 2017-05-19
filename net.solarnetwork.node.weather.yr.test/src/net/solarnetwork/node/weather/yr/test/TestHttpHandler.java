@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.weather.yr.test;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
@@ -97,6 +98,10 @@ public abstract class TestHttpHandler extends AbstractHandler {
 			throws IOException {
 		response.setContentType(contentType);
 		InputStream in = getClass().getResourceAsStream(resource);
+		if ( in == null ) {
+			throw new FileNotFoundException(
+					"Resource [" + resource + "] not found from class " + getClass().getName());
+		}
 		FileCopyUtils.copy(in, response.getOutputStream());
 	}
 
