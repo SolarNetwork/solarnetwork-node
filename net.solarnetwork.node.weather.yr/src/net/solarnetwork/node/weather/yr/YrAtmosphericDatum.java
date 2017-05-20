@@ -32,10 +32,6 @@ import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 /**
  * Extension of {@link GeneralAtmosphericDatum} to support Yr data.
  * 
- * <p>
- * TODO
- * </p>
- * 
  * @author matt
  * @version 1.0
  */
