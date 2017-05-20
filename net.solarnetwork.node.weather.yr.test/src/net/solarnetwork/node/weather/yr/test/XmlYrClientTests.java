@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.weather.yr.test;
 
+import static net.solarnetwork.node.domain.AtmosphericDatum.TAG_FORECAST;
 import static net.solarnetwork.node.weather.yr.YrAtmosphericDatum.SYMBOL_VAR_KEY;
 import static net.solarnetwork.node.weather.yr.YrAtmosphericDatum.VALID_TO_KEY;
 import static org.hamcrest.Matchers.equalTo;
@@ -39,8 +40,10 @@ import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
 import net.solarnetwork.node.weather.yr.XmlYrClient;
 import net.solarnetwork.node.weather.yr.YrAtmosphericDatum;
+import net.solarnetwork.node.weather.yr.YrDayDatum;
 
 /**
  * Test cases for the {@link XmlYrClient} class.
@@ -94,6 +97,7 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 				equalTo(new DateTime(2017, 05, 10, 11, 00, 00, DateTimeZone.forID(NZ_TZ_ID)).toDate()));
 		assertThat("Location ID", data.getLocationId(), nullValue());
 		assertThat("Source ID", data.getSourceId(), nullValue());
+		assertThat("Forecast tag", data.hasTag(TAG_FORECAST), equalTo(true));
 		assertThat("Atmospheric pressure", data.getAtmosphericPressure(), equalTo(102660));
 		assertThat("Rain", data.getRain(), equalTo(1));
 		assertThat("Sky conditions", data.getSkyConditions(), equalTo("Partly cloudy"));
@@ -107,6 +111,53 @@ public class XmlYrClientTests extends AbstractHttpClientTests {
 		// verify rounding wind direction
 		data = (YrAtmosphericDatum) results.get(4);
 		assertThat("Wind direction", data.getWindDirection(), equalTo(139));
+	}
+
+	@Test
+	public void getTenDayForecast() throws Exception {
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertEquals("GET", request.getMethod());
+				assertEquals("Request path", "/place/test/identifier/forecast.xml",
+						request.getPathInfo());
+				respondWithXmlResource(response, "forecast-01.xml");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<DayDatum> results = client.getTenDayForecast(TEST_YR_LOC_IDENTIFIER);
+		assertThat("Request handled", handler.isHandled(), equalTo(true));
+		assertThat("Result count", results, hasSize(9));
+
+		YrDayDatum data = (YrDayDatum) results.get(0);
+		assertThat("Location", data.getLocation(), notNullValue());
+		assertThat("Location identifier", data.getLocation().getIdentifier(),
+				equalTo(TEST_YR_LOC_IDENTIFIER));
+		assertThat("Location tz", data.getLocation().getTimeZoneId(), equalTo(NZ_TZ_ID));
+		assertThat("Creation date", data.getCreated(),
+				equalTo(new DateTime(2017, 05, 11, 00, 00, 00, DateTimeZone.forID(NZ_TZ_ID)).toDate()));
+		assertThat("Location ID", data.getLocationId(), nullValue());
+		assertThat("Source ID", data.getSourceId(), nullValue());
+		assertThat("Forecast tag", data.hasTag(DayDatum.TAG_FORECAST), equalTo(true));
+		assertThat("Rain", data.getRain(), equalTo(15));
+		assertThat("Sky conditions", data.getSkyConditions(), equalTo("Heavy rain"));
+		assertThat("Symbol vr", data.getStatusSampleString(YrDayDatum.SYMBOL_VAR_KEY), equalTo("10"));
+		assertThat("Temperature max", data.getTemperatureMaximum(), equalTo(new BigDecimal("10")));
+		assertThat("Temperature min", data.getTemperatureMinimum(), equalTo(new BigDecimal("8")));
+		assertThat("Wind direction", data.getWindDirection(), equalTo(225));
+		assertThat("Wind speed", data.getWindSpeed(), equalTo(new BigDecimal("1.0")));
+
+		// verify most frequent wins for sky conditions
+		data = (YrDayDatum) results.get(3);
+		assertThat("Creation date", data.getCreated(),
+				equalTo(new DateTime(2017, 05, 14, 00, 00, 00, DateTimeZone.forID(NZ_TZ_ID)).toDate()));
+		assertThat("Sky conditions", data.getSkyConditions(), equalTo("Partly cloudy"));
 	}
 
 }

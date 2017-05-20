@@ -92,7 +92,7 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	}
 
 	/**
-	 * Set the created date via a string.
+	 * Set the valid to date via a string.
 	 * 
 	 * <p>
 	 * The configured {@code dateParseFormat} will be used to parse the date

@@ -23,11 +23,14 @@
 package net.solarnetwork.node.weather.yr;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLConnection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +49,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
 import net.solarnetwork.node.support.XmlServiceSupport;
 
 /**
@@ -144,6 +148,127 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 			return null;
 		}
 		final String url = urlForPlacePath(identifier, "forecast_hour_by_hour.xml");
+		List<AtmosphericDatum> results = getAtmosphericDatumList(identifier, url);
+		for ( AtmosphericDatum datum : results ) {
+			YrAtmosphericDatum d = (YrAtmosphericDatum) datum;
+			d.addTag(AtmosphericDatum.TAG_FORECAST);
+		}
+		return results;
+	}
+
+	@Override
+	public List<DayDatum> getTenDayForecast(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
+		final String url = urlForPlacePath(identifier, "forecast.xml");
+		List<AtmosphericDatum> forecast = getAtmosphericDatumList(identifier, url);
+
+		// construct 2d array of atmos; grouped by day, to average out values for single DayDatum
+		SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+		boolean tzNeeded = true;
+		List<List<YrAtmosphericDatum>> dayRangeForecasts = new ArrayList<List<YrAtmosphericDatum>>(
+				forecast.size() / 4 + 1);
+		List<YrAtmosphericDatum> currDays = null;
+		for ( AtmosphericDatum ad : forecast ) {
+			YrAtmosphericDatum atmo = (YrAtmosphericDatum) ad;
+			if ( tzNeeded ) {
+				TimeZone tz = TimeZone.getTimeZone(atmo.getLocation().getTimeZoneId());
+				timeFormat.setTimeZone(tz);
+				tzNeeded = false;
+			}
+			String hourMinute = timeFormat.format(atmo.getCreated());
+			if ( "00:00".equals(hourMinute) ) {
+				if ( currDays != null ) {
+					dayRangeForecasts.add(currDays);
+				}
+				// start new day
+				currDays = new ArrayList<YrAtmosphericDatum>(4);
+			}
+			if ( currDays != null ) {
+				currDays.add(atmo);
+			}
+		}
+		if ( currDays != null ) {
+			dayRangeForecasts.add(currDays);
+		}
+
+		// average out into days now
+		List<DayDatum> result = new ArrayList<DayDatum>(dayRangeForecasts.size());
+		for ( List<YrAtmosphericDatum> dayRange : dayRangeForecasts ) {
+			Map<String, DayAggregateValue> dayValues = new HashMap<String, DayAggregateValue>(8);
+
+			for ( YrAtmosphericDatum atmo : dayRange ) {
+				if ( atmo.getSamples().getInstantaneous() != null ) {
+					for ( Map.Entry<String, Number> me : atmo.getSamples().getInstantaneous()
+							.entrySet() ) {
+						DayAggregateValue dayValue = dayValues.get(me.getKey());
+						if ( dayValue == null ) {
+							dayValue = new DayAggregateValue(me.getKey());
+							dayValues.put(me.getKey(), dayValue);
+						}
+						dayValue.addValue(me.getValue());
+					}
+				}
+				if ( atmo.getSamples().getAccumulating() != null ) {
+					for ( Map.Entry<String, Number> me : atmo.getSamples().getAccumulating()
+							.entrySet() ) {
+						DayAggregateValue dayValue = dayValues.get(me.getKey());
+						if ( dayValue == null ) {
+							dayValue = new DayAggregateValue(me.getKey());
+							dayValues.put(me.getKey(), dayValue);
+						}
+						dayValue.addValue(me.getValue());
+					}
+				}
+				if ( atmo.getSamples().getStatus() != null ) {
+					for ( Map.Entry<String, Object> me : atmo.getSamples().getStatus().entrySet() ) {
+						DayAggregateValue dayValue = dayValues.get(me.getKey());
+						if ( dayValue == null ) {
+							dayValue = new DayAggregateValue(me.getKey());
+							dayValues.put(me.getKey(), dayValue);
+						}
+						dayValue.addStatus(me.getValue().toString());
+					}
+				}
+			}
+
+			YrAtmosphericDatum first = dayRange.get(0);
+			YrDayDatum dayDatum = new YrDayDatum(first.getLocation());
+			dayDatum.setCreated(first.getCreated());
+			dayDatum.addTag(DayDatum.TAG_FORECAST);
+
+			if ( dayValues.containsKey(AtmosphericDatum.RAIN_KEY) ) {
+				// total rain accumulation for the day
+				dayDatum.setRain(dayValues.get(AtmosphericDatum.RAIN_KEY).tot.intValue());
+			}
+			if ( dayValues.containsKey(AtmosphericDatum.TEMPERATURE_KEY) ) {
+				DayAggregateValue dv = dayValues.get(AtmosphericDatum.TEMPERATURE_KEY);
+				dayDatum.setTemperatureMinimum(dv.min);
+				dayDatum.setTemperatureMaximum(dv.max);
+			}
+			if ( dayValues.containsKey(AtmosphericDatum.WIND_DIRECTION_KEY) ) {
+				dayDatum.setWindDirection(dayValues.get(AtmosphericDatum.WIND_DIRECTION_KEY).average()
+						.setScale(0, RoundingMode.HALF_UP).intValue());
+			}
+			if ( dayValues.containsKey(AtmosphericDatum.WIND_SPEED_KEY) ) {
+				dayDatum.setWindSpeed(dayValues.get(AtmosphericDatum.WIND_SPEED_KEY).max);
+			}
+			if ( dayValues.containsKey(AtmosphericDatum.SKY_CONDITIONS_KEY) ) {
+				dayDatum.setSkyConditions(
+						dayValues.get(AtmosphericDatum.SKY_CONDITIONS_KEY).mostFrequentStatus());
+			}
+			if ( dayValues.containsKey(YrAtmosphericDatum.SYMBOL_VAR_KEY) ) {
+				dayDatum.putStatusSampleValue(YrDayDatum.SYMBOL_VAR_KEY,
+						dayValues.get(YrAtmosphericDatum.SYMBOL_VAR_KEY).mostFrequentStatus());
+			}
+			result.add(dayDatum);
+		}
+
+		return result;
+	}
+
+	private List<AtmosphericDatum> getAtmosphericDatumList(String identifier, final String url) {
 		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>();
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
@@ -183,6 +308,17 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 		return results;
 	}
 
+	private static final BigDecimal getBigDecimal(Number n) {
+		if ( n instanceof BigDecimal ) {
+			return (BigDecimal) n;
+		}
+		try {
+			return new BigDecimal(n.toString());
+		} catch ( NumberFormatException e ) {
+			return null;
+		}
+	}
+
 	private DateFormat xmlTimestampParseDateFormat(String timeZoneId) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 		sdf.setTimeZone(TimeZone.getTimeZone(timeZoneId));
@@ -197,6 +333,82 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	private String urlForPlacePath(String identifier, String resource) {
 		return (baseUrl + "/place" + identifier + '/' + resource);
+	}
+
+	/**
+	 * Helper class for aggregating forecast values over a day.
+	 */
+	private static class DayAggregateValue {
+
+		@SuppressWarnings("unused")
+		private final String key;
+
+		private BigDecimal min = null;
+		private BigDecimal max = null;
+		private BigDecimal tot = null;
+		private int count = 0;
+
+		private BigDecimal prev = null;
+		private BigDecimal acc = new BigDecimal(0);
+
+		private final Map<String, Integer> statusValues = new LinkedHashMap<String, Integer>();
+
+		private DayAggregateValue(String key) {
+			super();
+			this.key = key;
+		}
+
+		private void addValue(Number n) {
+			count += 1;
+			BigDecimal bd = getBigDecimal(n);
+			if ( min == null ) {
+				min = bd;
+			} else if ( min.compareTo(bd) > 0 ) {
+				min = bd;
+			}
+			if ( max == null ) {
+				max = bd;
+			} else if ( max.compareTo(bd) < 0 ) {
+				max = bd;
+			}
+			if ( tot == null ) {
+				tot = bd;
+			} else {
+				tot = tot.add(bd);
+			}
+			if ( prev == null ) {
+				prev = bd;
+			} else {
+				acc = acc.add(bd.subtract(prev));
+			}
+			prev = bd;
+		}
+
+		private void addStatus(String s) {
+			Integer count = statusValues.get(s);
+			if ( count == null ) {
+				count = new Integer(1);
+			} else {
+				count = count.intValue() + 1;
+			}
+			statusValues.put(s, count);
+		}
+
+		private BigDecimal average() {
+			return tot.divide(new BigDecimal(count));
+		}
+
+		private String mostFrequentStatus() {
+			String result = null;
+			int max = 0;
+			for ( Map.Entry<String, Integer> me : statusValues.entrySet() ) {
+				if ( me.getValue() > max ) {
+					max = me.getValue();
+					result = me.getKey();
+				}
+			}
+			return result;
+		}
 	}
 
 	/**

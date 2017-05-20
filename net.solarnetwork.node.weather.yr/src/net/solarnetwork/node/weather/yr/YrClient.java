@@ -24,6 +24,7 @@ package net.solarnetwork.node.weather.yr;
 
 import java.util.List;
 import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
 
 /**
  * API for accessing Yr information.
@@ -47,5 +48,15 @@ public interface YrClient {
 	 * @return The forecast data, never {@code null}
 	 */
 	List<AtmosphericDatum> getHourlyForecast(String identifier);
+
+	/**
+	 * Lookup 10-day forecast conditions (starting tomorrow) for a specific
+	 * Weather Underground location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup the forecast for.
+	 * @return The forecast data, never {@code null}
+	 */
+	List<DayDatum> getTenDayForecast(String identifier);
 
 }
