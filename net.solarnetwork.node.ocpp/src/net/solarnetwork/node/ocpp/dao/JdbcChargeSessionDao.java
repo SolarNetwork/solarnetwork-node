@@ -32,6 +32,14 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.PreparedStatementCallback;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionDao;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
@@ -41,14 +49,6 @@ import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.MeterValue.Value;
 import ocpp.v15.cs.ReadingContext;
 import ocpp.v15.cs.UnitOfMeasure;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.PreparedStatementCallback;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.PreparedStatementSetter;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * JDBC implementation of {@link ChargeSessionDao}.
@@ -56,7 +56,8 @@ import org.springframework.transaction.annotation.Transactional;
  * @author matt
  * @version 1.0
  */
-public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> implements ChargeSessionDao {
+public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession>
+		implements ChargeSessionDao {
 
 	/** The default tables version. */
 	public static final int TABLES_VERSION = 1;
@@ -232,8 +233,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 
 				PreparedStatement stmt = con.prepareStatement(
-						getSqlResource(SQL_GET_INCOMPLETE_BY_TRANSACTIONID),
-						ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+						getSqlResource(SQL_GET_INCOMPLETE_BY_TRANSACTIONID), ResultSet.TYPE_FORWARD_ONLY,
+						ResultSet.CONCUR_READ_ONLY);
 				stmt.setMaxRows(1);
 				stmt.setInt(1, transactionId);
 				return stmt;
@@ -270,7 +271,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void addMeterReadings(final String sessionId, final Date date, final Iterable<Value> readings) {
+	public void addMeterReadings(final String sessionId, final Date date,
+			final Iterable<Value> readings) {
 		if ( readings == null ) {
 			return;
 		}
@@ -281,8 +283,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 				new PreparedStatementCallback<Object>() {
 
 					@Override
-					public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
-							DataAccessException {
+					public Object doInPreparedStatement(PreparedStatement ps)
+							throws SQLException, DataAccessException {
 						// cols: (created, sessid_hi, sessid_lo, measurand, reading, context, location, unit)
 						ps.setTimestamp(1, ts, cal);
 						ps.setLong(2, pk.getMostSignificantBits());
@@ -379,8 +381,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 		}
 	}
 
-	private final class ChargeSessionMeterReadingRowMapper implements
-			RowMapper<ChargeSessionMeterReading> {
+	private final class ChargeSessionMeterReadingRowMapper
+			implements RowMapper<ChargeSessionMeterReading> {
 
 		private final String sessionId;
 
