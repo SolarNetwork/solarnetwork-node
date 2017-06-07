@@ -275,7 +275,8 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 			return;
 		}
 		final UUID pk = UUID.fromString(sessionId);
-		final Timestamp ts = new Timestamp(date != null ? date.getTime() : System.currentTimeMillis());
+		final Calendar cal = calendarForDate(date != null ? date : new Date());
+		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
 		getJdbcTemplate().execute(getSqlResource(SQL_INSERT_READING),
 				new PreparedStatementCallback<Object>() {
 
@@ -283,7 +284,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession> imp
 					public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
 							DataAccessException {
 						// cols: (created, sessid_hi, sessid_lo, measurand, reading, context, location, unit)
-						ps.setTimestamp(1, ts);
+						ps.setTimestamp(1, ts, cal);
 						ps.setLong(2, pk.getMostSignificantBits());
 						ps.setLong(3, pk.getLeastSignificantBits());
 						for ( Value v : readings ) {
