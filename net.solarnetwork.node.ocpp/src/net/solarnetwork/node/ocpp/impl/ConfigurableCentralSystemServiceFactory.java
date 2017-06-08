@@ -317,7 +317,7 @@ public class ConfigurableCentralSystemServiceFactory
 				response.getHeartbeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY) ) {
 			bootNotificationResponse = response;
 		} else {
-			bootNotificationResponse = response;
+			bootNotificationResponse = null;
 		}
 	}
 
