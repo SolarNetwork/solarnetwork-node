@@ -22,7 +22,7 @@ line arguments, followed by an action verb:
 After the arguments, the program must accept the following action verbs:
 
  * `list` to print on STDOUT one line for each active SSH connection,
-   as a comma-delimited list in the form `user,host,port,report_port`.
+   as a comma-delimited list in the form `user,host,port,reverse_port`.
    This action requires no command line arguments.
  * `start` to establish the SSH connection based on the command line
    arguments.

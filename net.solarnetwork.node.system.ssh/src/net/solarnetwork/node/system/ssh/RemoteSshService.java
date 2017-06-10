@@ -68,7 +68,7 @@ import net.solarnetwork.util.StringUtils;
  * <dl>
  * <dt>{@literal list}</dt>
  * <dd>list all known active connections, as a comma-delimited list of
- * {@literal user,host,port,report_port} values</dd>
+ * {@literal user,host,port,reverse_port} values</dd>
  * 
  * <dt>{@literal status}</dt>
  * <dd>get the status of a specific connection; must return {@literal active} if
