@@ -30,6 +30,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -42,6 +44,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -215,7 +218,7 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 
 	private boolean startRemoteSsh(RemoteSshConfig config) {
 		String[] cmd = commandForAction(config, "start");
-		log.debug("Starring SSH connection {}", config);
+		log.debug("Starting SSH connection {}", config);
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		try {
 			Process pr = pb.start();
@@ -237,6 +240,7 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 
 	private boolean stopRemoteSsh(RemoteSshConfig config) {
 		String[] cmd = commandForAction(config, "stop");
+		log.debug("Stopping SSH connection {}", config);
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		try {
 			Process pr = pb.start();
@@ -354,11 +358,33 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 
 		RemoteSshService defaults = new RemoteSshService();
 
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(Locale.getDefault()), true));
 		results.add(new BasicTextFieldSettingSpecifier("command", defaults.command));
 		results.add(new BasicTextFieldSettingSpecifier("allowedHostsValue",
 				StringUtils.commaDelimitedStringFromCollection(defaults.allowedHosts)));
 
 		return results;
+	}
+
+	private String getInfoMessage(Locale locale) {
+		StringBuilder buf = new StringBuilder();
+		int count = 0;
+		for ( Map.Entry<RemoteSshConfig, Boolean> me : statusMap.entrySet() ) {
+			if ( !me.getValue().booleanValue() ) {
+				continue;
+			}
+			if ( count > 0 ) {
+				buf.append("; ");
+			}
+			RemoteSshConfig config = me.getKey();
+			buf.append(config.getUser()).append('@').append(config.getHost()).append(':')
+					.append(config.getPort()).append(" \u2190 ").append(config.getReversePort());
+			count += 1;
+		}
+		if ( count > 0 ) {
+			return messageSource.getMessage("info.connections", new Object[] { count, buf }, locale);
+		}
+		return messageSource.getMessage("info.noconnections", null, locale);
 	}
 
 	@Override
