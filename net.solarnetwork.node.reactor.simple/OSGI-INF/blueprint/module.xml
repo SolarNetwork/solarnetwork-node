@@ -44,6 +44,9 @@
 	<reference-list id="instructionHandlers" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
 	
+	<reference-list id="feedbackInstructionHandlers" availability="optional"
+		interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
+	
 	<!-- Published Services -->
 
 	<service ref="simpleReactorService" ranking="1"
@@ -122,6 +125,7 @@
 			<map>
 				<entry key="instructionDao" value-ref="instructionDao"/>
 				<entry key="handlers" value-ref="instructionHandlers"/>
+				<entry key="feedbackHandlers" value-ref="feedbackInstructionHandlers"/>
 				<entry key="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
 			</map>
 		</property>
