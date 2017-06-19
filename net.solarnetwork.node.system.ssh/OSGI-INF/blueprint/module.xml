@@ -17,7 +17,7 @@
 	
 	<service>
 		<interfaces>
-			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<bean class="net.solarnetwork.node.system.ssh.RemoteSshService" init-method="init">

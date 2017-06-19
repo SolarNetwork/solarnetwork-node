@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -38,8 +39,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -84,7 +86,7 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.0
  */
-public class RemoteSshService implements InstructionHandler, SettingSpecifierProvider {
+public class RemoteSshService implements FeedbackInstructionHandler, SettingSpecifierProvider {
 
 	/**
 	 * The instruction topic for starting a remote SSH connection with a reverse
@@ -135,8 +137,12 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 	 * Call after all properties are configured to initialize the service.
 	 */
 	public void init() {
-		for ( RemoteSshConfig config : listActive() ) {
-			statusMap.put(config, Boolean.TRUE);
+		try {
+			for ( RemoteSshConfig config : listActive() ) {
+				statusMap.put(config, Boolean.TRUE);
+			}
+		} catch ( RuntimeException e ) {
+			log.error("Error listing active SSH connections", e);
 		}
 	}
 
@@ -148,7 +154,13 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 
 	@Override
 	public InstructionState processInstruction(Instruction instruction) {
-		InstructionState result = null;
+		InstructionStatus result = processInstructionWithFeedback(instruction);
+		return (result != null ? result.getInstructionState() : null);
+	}
+
+	@Override
+	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+		InstructionStatus result = null;
 		if ( instruction != null ) {
 			if ( TOPIC_START_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				result = handleStartRemoteSsh(instruction);
@@ -159,34 +171,59 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 		return result;
 	}
 
-	private InstructionState handleStartRemoteSsh(Instruction instruction) {
+	private InstructionStatus statusWithError(Instruction instruction, String code, String message) {
+		Map<String, Object> resultParams = new LinkedHashMap<String, Object>();
+		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
+		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
+		return instruction.getStatus().newCopyWithState(InstructionState.Declined, resultParams);
+	}
+
+	private InstructionStatus handleStartRemoteSsh(Instruction instruction) {
 		RemoteSshConfig config;
 		try {
 			config = configForInstruction(instruction);
 		} catch ( IllegalArgumentException e ) {
-			return InstructionState.Declined;
+			return statusWithError(instruction, "5001", e.getMessage());
 		}
-		boolean started = startRemoteSsh(config);
+
+		Map<String, Object> resultParams = new LinkedHashMap<String, Object>();
+		boolean started = startRemoteSsh(config, resultParams);
 		if ( started ) {
 			statusMap.put(config, Boolean.TRUE);
 		} else {
 			statusMap.remove(config);
 		}
-		return (started ? InstructionState.Completed : InstructionState.Declined);
+
+		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
+		InstructionStatus result;
+		if ( resultParams.isEmpty() ) {
+			result = instruction.getStatus().newCopyWithAcknowledgedState(newState);
+		} else {
+			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+		}
+		return result;
 	}
 
-	private InstructionState handleStopRemoteSsh(Instruction instruction) {
+	private InstructionStatus handleStopRemoteSsh(Instruction instruction) {
 		RemoteSshConfig config;
 		try {
 			config = configForInstruction(instruction);
 		} catch ( IllegalArgumentException e ) {
-			return InstructionState.Declined;
+			return statusWithError(instruction, "5001", e.getMessage());
 		}
-		boolean stopped = stopRemoteSsh(config);
+		Map<String, Object> resultParams = new LinkedHashMap<String, Object>();
+		boolean stopped = stopRemoteSsh(config, resultParams);
 		if ( stopped ) {
 			statusMap.remove(config);
 		}
-		return (stopped ? InstructionState.Completed : InstructionState.Declined);
+		InstructionState newState = (stopped ? InstructionState.Completed : InstructionState.Declined);
+		InstructionStatus result;
+		if ( resultParams.isEmpty() ) {
+			result = instruction.getStatus().newCopyWithAcknowledgedState(newState);
+		} else {
+			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+		}
+		return result;
 	}
 
 	private RemoteSshConfig configForInstruction(Instruction instruction) {
@@ -216,7 +253,7 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 		return cmd;
 	}
 
-	private boolean startRemoteSsh(RemoteSshConfig config) {
+	private boolean startRemoteSsh(RemoteSshConfig config, Map<String, Object> resultParameters) {
 		String[] cmd = commandForAction(config, "start");
 		log.debug("Starting SSH connection {}", config);
 		ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -224,21 +261,30 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 			Process pr = pb.start();
 			int status = pr.waitFor();
 			if ( status != 0 ) {
-				log.error("Error starting SSH connection {} (process returned {})", config, status);
+				log.error("Error starting SSH connection {} (process returned {})", config, "5002");
+				resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, status);
+				resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+						"Error starting SSH connection; result code " + status);
 				return false;
 			}
 			log.info("Started SSH connection {}", config);
 			return true;
 		} catch ( IOException e ) {
 			log.warn("IOException waiting for SSH connection {} to start: {}", config, e.getMessage());
+			resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "5003");
+			resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+					"Communication problem starting SSH connection: " + e.getMessage());
 			return false;
 		} catch ( InterruptedException e ) {
 			log.warn("Interrupted waiting for SSH connection {} to start", config);
+			resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "5004");
+			resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+					"Interrupted while starting SSH connection: " + e.getMessage());
 			return false;
 		}
 	}
 
-	private boolean stopRemoteSsh(RemoteSshConfig config) {
+	private boolean stopRemoteSsh(RemoteSshConfig config, Map<String, Object> resultParameters) {
 		String[] cmd = commandForAction(config, "stop");
 		log.debug("Stopping SSH connection {}", config);
 		ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -247,15 +293,24 @@ public class RemoteSshService implements InstructionHandler, SettingSpecifierPro
 			int status = pr.waitFor();
 			if ( status != 0 ) {
 				log.error("Error stopping SSH connection {} (process returned {})", config, status);
+				resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, status);
+				resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+						"Error stopping SSH connection; result code " + status);
 				return false;
 			}
 			log.info("Stopped SSH connection {}", config);
 			return true;
 		} catch ( IOException e ) {
 			log.warn("IOException waiting for SSH connection {} to stop: {}", config, e.getMessage());
+			resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "5003");
+			resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+					"Communication problem stopping SSH connection: " + e.getMessage());
 			return false;
 		} catch ( InterruptedException e ) {
 			log.warn("Interrupted waiting for SSH connection {} to stop", config);
+			resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "5004");
+			resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+					"Interrupted while stopping SSH connection: " + e.getMessage());
 			return false;
 		}
 	}
