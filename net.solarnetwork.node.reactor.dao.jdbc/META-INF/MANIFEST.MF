@@ -8,7 +8,7 @@ Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
- com.fasterxml.jackson.core.type;version="2.8.7",
+ com.fasterxml.jackson.core.type;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
