@@ -73,6 +73,7 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	public XmlYrClient() {
 		super();
+		setBaseUrl(DEFAULT_API_BASE_URL);
 	}
 
 	/**
