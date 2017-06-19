@@ -24,22 +24,24 @@ package net.solarnetwork.node.reactor.support;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 import net.solarnetwork.node.reactor.InstructionStatus;
 
 /**
  * Basic implementation of {@link InstructionStatus}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicInstructionStatus implements InstructionStatus, Serializable {
 
-	private static final long serialVersionUID = -2397174943316242336L;
+	private static final long serialVersionUID = 4584466858414350595L;
 
 	private final Long instructionId;
 	private final InstructionState instructionState;
 	private final InstructionState acknowledgedInstructionState;
 	private final Date statusDate;
+	private final Map<String, ?> resultParameters;
 
 	/**
 	 * Constructor.
@@ -51,8 +53,9 @@ public class BasicInstructionStatus implements InstructionStatus, Serializable {
 	 * @param statusDate
 	 *        the status date
 	 */
-	public BasicInstructionStatus(Long instructionId, InstructionState instructionState, Date statusDate) {
-		this(instructionId, instructionState, statusDate, null);
+	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
+			Date statusDate) {
+		this(instructionId, instructionState, statusDate, null, null);
 	}
 
 	/**
@@ -67,12 +70,33 @@ public class BasicInstructionStatus implements InstructionStatus, Serializable {
 	 * @param ackInstructionState
 	 *        the acknowledged state
 	 */
-	public BasicInstructionStatus(Long instructionId, InstructionState instructionState,
-			Date statusDate, InstructionState ackInstructionState) {
+	public BasicInstructionStatus(Long instructionId, InstructionState instructionState, Date statusDate,
+			InstructionState ackInstructionState) {
+		this(instructionId, instructionState, statusDate, ackInstructionState, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param instructionId
+	 *        the instruction ID
+	 * @param instructionState
+	 *        the instruction state
+	 * @param statusDate
+	 *        the status date
+	 * @param ackInstructionState
+	 *        the acknowledged state
+	 * @param resultParameters
+	 *        the result parameters
+	 * @since 1.2
+	 */
+	public BasicInstructionStatus(Long instructionId, InstructionState instructionState, Date statusDate,
+			InstructionState ackInstructionState, Map<String, ?> resultParameters) {
 		this.instructionId = instructionId;
 		this.instructionState = instructionState;
 		this.statusDate = (statusDate == null ? new Date() : statusDate);
 		this.acknowledgedInstructionState = ackInstructionState;
+		this.resultParameters = resultParameters;
 	}
 
 	@Override
@@ -105,13 +129,27 @@ public class BasicInstructionStatus implements InstructionStatus, Serializable {
 	@Override
 	public InstructionStatus newCopyWithState(InstructionState newState) {
 		return new BasicInstructionStatus(this.instructionId, newState, this.statusDate,
-				this.acknowledgedInstructionState);
+				this.acknowledgedInstructionState, this.resultParameters);
 	}
 
 	@Override
 	public InstructionStatus newCopyWithAcknowledgedState(InstructionState newState) {
 		return new BasicInstructionStatus(this.instructionId, this.instructionState, this.statusDate,
-				newState);
+				newState, this.resultParameters);
+	}
+
+	@Override
+	public InstructionStatus newCopyWithState(InstructionState newState,
+			Map<String, ?> resultParameters) {
+		return new BasicInstructionStatus(this.instructionId, newState, this.statusDate,
+				this.acknowledgedInstructionState, resultParameters);
+	}
+
+	@Override
+	public InstructionStatus newCopyWithAcknowledgedState(InstructionState newState,
+			Map<String, ?> resultParameters) {
+		return new BasicInstructionStatus(this.instructionId, this.instructionState, this.statusDate,
+				newState, resultParameters);
 	}
 
 	@Override
@@ -132,6 +170,11 @@ public class BasicInstructionStatus implements InstructionStatus, Serializable {
 	@Override
 	public InstructionState getAcknowledgedInstructionState() {
 		return acknowledgedInstructionState;
+	}
+
+	@Override
+	public Map<String, ?> getResultParameters() {
+		return resultParameters;
 	}
 
 }

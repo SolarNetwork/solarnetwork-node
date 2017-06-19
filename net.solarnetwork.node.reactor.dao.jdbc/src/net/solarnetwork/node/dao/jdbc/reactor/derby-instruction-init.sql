@@ -24,6 +24,7 @@ CREATE TABLE solarnode.sn_instruction_status (
 	instruction_id		BIGINT NOT NULL,
 	modified			TIMESTAMP NOT NULL,
 	state				VARCHAR(64) NOT NULL,
+	jparams				VARCHAR(4096),
 	ack_state			VARCHAR(64),
 	CONSTRAINT sn_instruction_status_pkey PRIMARY KEY (instruction_id),
 	CONSTRAINT sn_instruction_status_instruction_fk 
@@ -31,4 +32,4 @@ CREATE TABLE solarnode.sn_instruction_status (
 );
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_instruction.version', '1');
+VALUES ('solarnode.sn_instruction.version', '2');
