@@ -29,15 +29,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ScheduledFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -47,6 +50,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.CloseableService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -86,7 +90,8 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.0
  */
-public class RemoteSshService implements FeedbackInstructionHandler, SettingSpecifierProvider {
+public class RemoteSshService
+		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
 
 	/**
 	 * The instruction topic for starting a remote SSH connection with a reverse
@@ -127,10 +132,25 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 	private Set<String> allowedHosts = Collections
 			.unmodifiableSet(new HashSet<String>(Arrays.asList("data.solarnetwork.net")));
 	private MessageSource messageSource;
+	private TaskScheduler taskScheduler;
+	private ScheduledFuture<?> maintenanceFuture;
 
 	private final Set<RemoteSshConfig> configs = new ConcurrentSkipListSet<RemoteSshConfig>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	private class ConnectionMaintenanceTask implements Runnable {
+
+		@Override
+		public void run() {
+			try {
+				performConnectionMaintenance();
+			} catch ( RuntimeException e ) {
+				log.error("Error performing SSH connection maintenance", e);
+			}
+		}
+
+	}
 
 	/**
 	 * Call after all properties are configured to initialize the service.
@@ -143,6 +163,43 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		} catch ( RuntimeException e ) {
 			log.error("Error listing active SSH connections", e);
 		}
+		scheduleConnectionMaintenanceIfNeeded();
+	}
+
+	/**
+	 * Call when this service is no longer needed to free internal resources.
+	 */
+	@Override
+	public void closeService() {
+		if ( maintenanceFuture != null ) {
+			maintenanceFuture.cancel(false);
+		}
+	}
+
+	private void scheduleConnectionMaintenanceIfNeeded() {
+		if ( taskScheduler == null || maintenanceFuture != null ) {
+			return;
+		}
+		maintenanceFuture = taskScheduler.scheduleWithFixedDelay(new ConnectionMaintenanceTask(),
+				120000);
+	}
+
+	private void performConnectionMaintenance() {
+		log.trace("Starting SSH connection maintenance");
+
+		// list active from OS so our internal data consistent; removing any not returned
+		Set<RemoteSshConfig> osConfigs = listActive();
+		for ( Iterator<RemoteSshConfig> itr = configs.iterator(); itr.hasNext(); ) {
+			RemoteSshConfig config = itr.next();
+			if ( !osConfigs.contains(config) ) {
+				log.info("Removing SSH connection {} that is no longer available",
+						config.toDisplayInfo());
+				itr.remove();
+			}
+		}
+
+		// now replace all configs with OS ones, to pick up any error messages
+		configs.addAll(osConfigs);
 	}
 
 	@Override
@@ -467,6 +524,16 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set a task scheduler to help with monitoring connections.
+	 * 
+	 * @param taskScheduler
+	 *        the taskScheduler to set
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
 	}
 
 }
