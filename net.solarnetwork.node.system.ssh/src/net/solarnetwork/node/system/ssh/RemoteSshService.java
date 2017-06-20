@@ -196,7 +196,7 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
-			result = instruction.getStatus().newCopyWithAcknowledgedState(newState);
+			result = instruction.getStatus().newCopyWithState(newState);
 		} else {
 			result = instruction.getStatus().newCopyWithState(newState, resultParams);
 		}
