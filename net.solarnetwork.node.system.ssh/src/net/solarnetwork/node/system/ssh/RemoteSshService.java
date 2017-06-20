@@ -34,8 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -45,6 +44,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
@@ -128,8 +128,7 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 			.unmodifiableSet(new HashSet<String>(Arrays.asList("data.solarnetwork.net")));
 	private MessageSource messageSource;
 
-	private final ConcurrentMap<RemoteSshConfig, Boolean> statusMap = new ConcurrentHashMap<RemoteSshConfig, Boolean>(
-			4);
+	private final Set<RemoteSshConfig> configs = new ConcurrentSkipListSet<RemoteSshConfig>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -139,7 +138,7 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 	public void init() {
 		try {
 			for ( RemoteSshConfig config : listActive() ) {
-				statusMap.put(config, Boolean.TRUE);
+				configs.add(config);
 			}
 		} catch ( RuntimeException e ) {
 			log.error("Error listing active SSH connections", e);
@@ -189,9 +188,9 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		Map<String, Object> resultParams = new LinkedHashMap<String, Object>();
 		boolean started = startRemoteSsh(config, resultParams);
 		if ( started ) {
-			statusMap.put(config, Boolean.TRUE);
+			configs.add(config);
 		} else {
-			statusMap.remove(config);
+			configs.remove(config);
 		}
 
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
@@ -214,7 +213,7 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		Map<String, Object> resultParams = new LinkedHashMap<String, Object>();
 		boolean stopped = stopRemoteSsh(config, resultParams);
 		if ( stopped ) {
-			statusMap.remove(config);
+			configs.remove(config);
 		}
 		InstructionState newState = (stopped ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
@@ -412,8 +411,26 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 
 		RemoteSshService defaults = new RemoteSshService();
+		Locale locale = Locale.getDefault();
 
-		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(Locale.getDefault()), true));
+		List<String> infos = new ArrayList<String>();
+		for ( RemoteSshConfig config : configs ) {
+			infos.add(getInfoMessage(config, locale));
+		}
+		if ( infos.size() > 0 ) {
+			List<SettingSpecifier> groupSettings = new ArrayList<SettingSpecifier>(infos.size() + 1);
+			groupSettings.add(new BasicTitleSettingSpecifier("info",
+					messageSource.getMessage("info.connections", new Object[] { infos.size() }, locale),
+					true));
+			for ( String info : infos ) {
+				groupSettings.add(new BasicTitleSettingSpecifier("connInfo", info, true));
+			}
+			results.add(new BasicGroupSettingSpecifier(groupSettings));
+		} else {
+			results.add(new BasicTitleSettingSpecifier("info",
+					messageSource.getMessage("info.noconnections", null, locale), true));
+		}
+
 		results.add(new BasicTextFieldSettingSpecifier("command", defaults.command));
 		results.add(new BasicTextFieldSettingSpecifier("allowedHostsValue",
 				StringUtils.commaDelimitedStringFromCollection(defaults.allowedHosts)));
@@ -421,25 +438,20 @@ public class RemoteSshService implements FeedbackInstructionHandler, SettingSpec
 		return results;
 	}
 
-	private String getInfoMessage(Locale locale) {
+	private String getInfoMessage(RemoteSshConfig config, Locale locale) {
 		StringBuilder buf = new StringBuilder();
-		int count = 0;
-		for ( Map.Entry<RemoteSshConfig, Boolean> me : statusMap.entrySet() ) {
-			if ( !me.getValue().booleanValue() ) {
-				continue;
-			}
-			if ( count > 0 ) {
-				buf.append("; ");
-			}
-			RemoteSshConfig config = me.getKey();
-			buf.append(config.getUser()).append('@').append(config.getHost()).append(':')
-					.append(config.getPort()).append(" \u2190 ").append(config.getReversePort());
-			count += 1;
+		buf.append(config.getUser()).append('@').append(config.getHost()).append(':')
+				.append(config.getPort()).append(" \u2190 ").append(config.getReversePort());
+		if ( config.getError() ) {
+			buf.append("\nERROR:");
 		}
-		if ( count > 0 ) {
-			return messageSource.getMessage("info.connections", new Object[] { count, buf }, locale);
+		List<String> msgs = config.getMessages();
+		if ( msgs != null && !msgs.isEmpty() ) {
+			for ( String s : msgs ) {
+				buf.append(" ").append(s);
+			}
 		}
-		return messageSource.getMessage("info.noconnections", null, locale);
+		return buf.toString();
 	}
 
 	@Override

@@ -22,22 +22,35 @@
 
 package net.solarnetwork.node.system.ssh;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Remote SSH configuration model object.
  * 
  * @author matt
  * @version 1.0
  */
-public class RemoteSshConfig {
+public class RemoteSshConfig implements Comparable<RemoteSshConfig> {
 
 	private final String user;
 	private final String host;
 	private final Integer port;
 	private final Integer reversePort;
+	private final Boolean error;
+	private final List<String> messages;
 
 	/**
 	 * Parse a configuration key, in the form returned by
 	 * {@link #toConfigKey()}.
+	 * 
+	 * <p>
+	 * Messages are supported as well, as additional list items after the
+	 * required configuration items. If an additional message is provided with
+	 * the value {@literal error} then
 	 * 
 	 * @param key
 	 *        the key to parse
@@ -51,8 +64,22 @@ public class RemoteSshConfig {
 			throw new IllegalArgumentException("The config key does not appear valid.");
 		}
 		try {
+			Boolean error = false;
+			List<String> messages = null;
+			if ( components.length > 4 ) {
+				int msgStart = 4;
+				if ( "error".equalsIgnoreCase(components[4]) ) {
+					msgStart = 5;
+					error = true;
+				}
+				if ( msgStart < components.length ) {
+					String[] msgs = new String[components.length - msgStart];
+					System.arraycopy(components, msgStart, msgs, 0, msgs.length);
+					messages = Arrays.asList(msgs);
+				}
+			}
 			return new RemoteSshConfig(components[0], components[1], Integer.valueOf(components[2]),
-					Integer.valueOf(components[3]));
+					Integer.valueOf(components[3]), error, messages);
 		} catch ( NumberFormatException e ) {
 			throw new IllegalArgumentException("Invalid port value in key [" + key + "]", e);
 		}
@@ -71,11 +98,36 @@ public class RemoteSshConfig {
 	 *        the reverse port
 	 */
 	public RemoteSshConfig(String user, String host, Integer port, Integer reversePort) {
+		this(user, host, port, reversePort, Boolean.FALSE, null);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param user
+	 *        the user
+	 * @param host
+	 *        the host
+	 * @param port
+	 *        the port
+	 * @param reversePort
+	 *        the reverse port
+	 * @param error
+	 *        an error flag ({@literal true} if the configuration is in an error
+	 *        state)
+	 * @param messages
+	 *        any additional messages associated with the configuration
+	 */
+	public RemoteSshConfig(String user, String host, Integer port, Integer reversePort, Boolean error,
+			Collection<String> messages) {
 		super();
 		this.user = user;
 		this.host = host;
 		this.port = port;
 		this.reversePort = reversePort;
+		this.error = error;
+		this.messages = (messages == null || messages.isEmpty() ? Collections.<String> emptyList()
+				: Collections.unmodifiableList(new ArrayList<String>(messages)));
 	}
 
 	/**
@@ -157,6 +209,20 @@ public class RemoteSshConfig {
 		return true;
 	}
 
+	@Override
+	public int compareTo(RemoteSshConfig o) {
+		if ( !host.equals(o.host) ) {
+			return host.compareToIgnoreCase(o.host);
+		}
+		if ( !user.equals(o.user) ) {
+			return user.compareToIgnoreCase(o.user);
+		}
+		if ( !port.equals(o.port) ) {
+			return port.compareTo(o.port);
+		}
+		return reversePort.compareTo(o.reversePort);
+	}
+
 	/**
 	 * Get the connection user.
 	 * 
@@ -191,6 +257,24 @@ public class RemoteSshConfig {
 	 */
 	public Integer getReversePort() {
 		return reversePort;
+	}
+
+	/**
+	 * Get the error flag.
+	 * 
+	 * @return {@literal true} if the configuration represents an error state
+	 */
+	public Boolean getError() {
+		return error;
+	}
+
+	/**
+	 * Any additional messages, such as error information.
+	 * 
+	 * @return the messages
+	 */
+	public List<String> getMessages() {
+		return messages;
 	}
 
 }

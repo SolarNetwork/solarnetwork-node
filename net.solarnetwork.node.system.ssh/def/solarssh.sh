@@ -150,18 +150,44 @@ do_stop() {
 }
 
 do_status() {
+	service=$1
 	if [ -n "${VERBOSE}" ]; then
-		systemctl status ${serviceInstanceName}
+		systemctl status ${service}
+	elif systemctl -q is-active ${service}; then
+		echo active
 	else
-		systemctl is-active ${serviceInstanceName}
+		systemdStatus="$?"
+		regex="status=([[:digit:]]+)"
+		statusLine=`systemctl status ${service} |grep 'Main PID'`
+		statusVal=""
+		if [[ $statusLine =~ $regex ]]; then
+			statusVal="${BASH_REMATCH[1]}"
+		fi
+		regex="code=([[:alnum:]]+)"
+		codeVal=""
+		if [[ $statusLine =~ $regex ]]; then
+			codeVal="${BASH_REMATCH[1]}"
+		fi
+		if [ -n "${statusVal}" ]; then
+			echo "error,code=$codeVal,status=$statusVal"
+		else
+			echo "error,code="`systemctl is-active ${service}`
+		fi
 	fi
 }
 
 do_list() {
 	regex="^${SERVICE_NAME}@(.*).service"
-	systemctl list-units --state=active "${SERVICE_NAME}@*.service" -l |grep ${SERVICE_NAME} |while read -r line ; do
+	systemctl list-units "${SERVICE_NAME}@*.service" -l |grep ${SERVICE_NAME} |while read -r line ; do
 		if [[ $line =~ $regex ]]; then
-			echo `systemd-escape -u ${BASH_REMATCH[1]}`
+			service="${BASH_REMATCH[1]}"
+			statusVal=`do_status "${SERVICE_NAME}@${service}.service"`
+			if [ $statusVal == "active" ]; then
+				statusVal=""
+			else
+				statusVal=",${statusVal}"
+			fi
+			echo `systemd-escape -u ${service}`${statusVal}
 		fi
 	done
 }
@@ -177,7 +203,7 @@ case $ACTION in
 		;;
 
 	status)
-		do_status
+		do_status ${serviceInstanceName}
 		;;
 
 	stop)
