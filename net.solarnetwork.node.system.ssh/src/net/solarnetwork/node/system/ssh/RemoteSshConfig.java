@@ -148,6 +148,18 @@ public class RemoteSshConfig implements Comparable<RemoteSshConfig> {
 	}
 
 	/**
+	 * Encode the configuration as a display-friendly info value.
+	 * 
+	 * @return the display info
+	 */
+	public String toDisplayInfo() {
+		StringBuilder buf = new StringBuilder();
+		buf.append(user).append('@').append(host).append(':').append(port).append(":")
+				.append(reversePort);
+		return buf.toString();
+	}
+
+	/**
 	 * Returns the same value as {@link #toConfigKey()}.
 	 */
 	@Override
