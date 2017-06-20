@@ -27,7 +27,7 @@ HOST="data.solarnetwork.net"
 PORT="22"
 RPORT="17777"
 VERBOSE=""
-ENV_DIR="/run/solar/tmp"
+ENV_DIR="/home/solar/var/ssh"
 SERVICE_NAME="solarssh"
 SERVICE_TEMPLATE="${SERVICE_NAME}@.service"
 
@@ -104,6 +104,9 @@ serviceInstanceName=`systemd-escape --template=${SERVICE_TEMPLATE} ${serviceInst
 envFile="${ENV_DIR}/${serviceInstanceKey}.env"
 
 write_env() {
+	if [ ! -d ${ENV_DIR} ]; then
+		mkdir -p ${ENV_DIR}
+	fi
 	echo "SSHREMOTE_USER=${SUSER}" >${envFile}
 	echo "SSHREMOTE_HOST=${HOST}" >>${envFile}
 	echo "SSHREMOTE_PORT=${PORT}" >>${envFile}

@@ -250,6 +250,7 @@ public class RemoteSshService
 			configs.remove(config);
 		}
 
+		// TODO: use Executing state when connection hasn't been confirmed as connected!
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
