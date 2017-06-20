@@ -83,6 +83,10 @@ form fieldset fieldset fieldset:nth-child(even) {
     padding-top: 3px;
 }
 
+.controls.static .title {
+	white-space: pre-line;
+}
+
 .cert {
 	font-size: 11px;
 	line-height: 13px;
