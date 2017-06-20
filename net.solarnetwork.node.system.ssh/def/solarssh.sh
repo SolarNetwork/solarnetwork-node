@@ -133,19 +133,13 @@ do_start() {
 }
 
 do_stop() {
-	if ! systemctl -q is-active ${serviceInstanceName}; then
-		if [ -n "${VERBOSE}" ]; then
-			echo "SSH connection ${connDescription} is already stopped." 1>&2;
-		fi
-	else
-		del_env
-		if [ -n "${VERBOSE}" ]; then
-			echo "Stopping SSH connection ${connDescription}..."
-		fi
-		if ! sudo systemctl stop ${serviceInstanceName}; then
-			echo "Error stopping ${connDescription}" 1>&2
-			exit 1
-		fi
+	del_env
+	if [ -n "${VERBOSE}" ]; then
+		echo "Stopping SSH connection ${connDescription}..."
+	fi
+	if ! sudo systemctl stop ${serviceInstanceName}; then
+		echo "Error stopping ${connDescription}" 1>&2
+		exit 1
 	fi
 }
 
