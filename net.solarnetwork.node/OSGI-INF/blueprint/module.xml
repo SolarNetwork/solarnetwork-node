@@ -51,6 +51,19 @@
 	<reference-list id="backupResourceProviders" availability="optional"
 		interface="net.solarnetwork.node.backup.BackupResourceProvider"/>
 	
+	<!-- 
+		Track CloseableService instances so they can be released automatically;
+		this is useful because the destroy-method Blueprint property is not 
+		available on nested bean elements (e.g. prototype beans). To work around
+		that for services that would like to have a "destroy" hook, they can
+		publish themselves as a net.solarnetwork.util.CloseableService. 
+	 -->
+	<reference-list availability="optional" interface="net.solarnetwork.util.CloseableService">
+		<reference-listener unbind-method="onReleased">
+			<bean class="net.solarnetwork.util.CloseableServiceTracker"/>
+		</reference-listener>
+	</reference-list>
+	
 	<!-- Published Services -->
 
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
