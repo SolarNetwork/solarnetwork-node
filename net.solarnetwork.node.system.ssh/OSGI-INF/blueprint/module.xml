@@ -13,22 +13,28 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler"
 		filter="(function=node)"/>
-
+		
+	<service ref="sshService">
+		<interfaces>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basename" value="net.solarnetwork.node.system.ssh.RemoteSshService"/>
 	</bean>
 	
-	<service>
-		<interfaces>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-			<value>net.solarnetwork.util.CloseableService</value>
-		</interfaces>
-		<bean class="net.solarnetwork.node.system.ssh.RemoteSshService" init-method="init">
-			<osgix:managed-properties persistent-id="net.solarnetwork.node.system.ssh.RemoteSshService" autowire-on-update="true"/>
-			<property name="messageSource" ref="messageSource"/>
-			<property name="taskScheduler" ref="taskScheduler"/>
-		</bean>
-	</service>
+	<bean id="sshService" class="net.solarnetwork.node.system.ssh.RemoteSshService" init-method="init" destroy-method="closeService">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.system.ssh.RemoteSshService" autowire-on-update="true"/>
+		<property name="messageSource" ref="messageSource"/>
+		<property name="taskScheduler" ref="taskScheduler"/>
+		<property name="nodeMetadataService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+			</bean>
+		</property>
+	</bean>
 	
 </blueprint>

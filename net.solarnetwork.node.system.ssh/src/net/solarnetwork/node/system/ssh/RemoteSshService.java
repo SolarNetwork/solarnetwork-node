@@ -41,6 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -51,6 +54,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CloseableService;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -75,6 +79,9 @@ import net.solarnetwork.util.StringUtils;
  * <dt>{@literal list}</dt>
  * <dd>list all known active connections, as a comma-delimited list of
  * {@literal user,host,port,reverse_port} values</dd>
+ * 
+ * <dt>{@literal showkey}</dt>
+ * <dd>get the public SSH key to use</dd>
  * 
  * <dt>{@literal status}</dt>
  * <dd>get the status of a specific connection; must return {@literal active} if
@@ -128,12 +135,16 @@ public class RemoteSshService
 	/** The default value for the {@code command} property. */
 	public static final String DEFAULT_COMMAND = "solarssh";
 
+	/** The node metadata info key to publish the SSH public key to. */
+	public static final String METADATA_SSH_PUBLIC_KEY = "ssh-public-key";
+
 	private String command = DEFAULT_COMMAND;
 	private Set<String> allowedHosts = Collections
 			.unmodifiableSet(new HashSet<String>(Arrays.asList("data.solarnetwork.net")));
 	private MessageSource messageSource;
 	private TaskScheduler taskScheduler;
 	private ScheduledFuture<?> maintenanceFuture;
+	private OptionalService<NodeMetadataService> nodeMetadataService;
 
 	private final Set<RemoteSshConfig> configs = new ConcurrentSkipListSet<RemoteSshConfig>();
 
@@ -156,6 +167,7 @@ public class RemoteSshService
 	 * Call after all properties are configured to initialize the service.
 	 */
 	public void init() {
+		publishSshPublicKey();
 		try {
 			for ( RemoteSshConfig config : listActive() ) {
 				configs.add(config);
@@ -202,6 +214,22 @@ public class RemoteSshService
 		configs.addAll(osConfigs);
 	}
 
+	private void publishSshPublicKey() {
+		String publicKey = getSshPublicKey();
+		if ( publicKey == null || publicKey.length() < 1 ) {
+			return;
+		}
+		NodeMetadataService service = (nodeMetadataService != null ? nodeMetadataService.service()
+				: null);
+		if ( service == null ) {
+			log.debug("Cannot publish SSH public key because no NodeMetadataService available.");
+			return;
+		}
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.putInfoValue(METADATA_SSH_PUBLIC_KEY, publicKey);
+		service.addNodeMetadata(meta);
+	}
+
 	@Override
 	public boolean handlesTopic(String topic) {
 		return (TOPIC_START_REMOTE_SSH.equalsIgnoreCase(topic)
@@ -219,6 +247,9 @@ public class RemoteSshService
 		InstructionStatus result = null;
 		if ( instruction != null ) {
 			if ( TOPIC_START_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
+				// make sure current public key is published, in case it has changed
+				publishSshPublicKey();
+
 				result = handleStartRemoteSsh(instruction);
 			} else if ( TOPIC_STOP_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				result = handleStopRemoteSsh(instruction);
@@ -369,6 +400,28 @@ public class RemoteSshService
 			resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
 					"Interrupted while stopping SSH connection: " + e.getMessage());
 			return false;
+		}
+	}
+
+	private String getSshPublicKey() {
+		String[] cmd = new String[] { command, "showkey" };
+		log.debug("Getting SSH public key with {} showkey...", command);
+		ProcessBuilder pb = new ProcessBuilder(cmd);
+		try {
+			Process pr = pb.start();
+
+			String key = FileCopyUtils.copyToString(new InputStreamReader(pr.getInputStream()));
+			if ( key != null ) {
+				key = key.trim(); // remove trailing newline
+			}
+			String err = FileCopyUtils.copyToString(new InputStreamReader(pr.getErrorStream()));
+			if ( err.length() > 0 ) {
+				log.error("Error getting SSH public key: {}", err);
+			}
+			log.debug("Public SSH key: {}", key);
+			return key;
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -535,6 +588,16 @@ public class RemoteSshService
 	 */
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Set the optional node metadata service to use.
+	 * 
+	 * @param nodeMetadataService
+	 *        the nodeMetadataService to set
+	 */
+	public void setNodeMetadataService(OptionalService<NodeMetadataService> nodeMetadataService) {
+		this.nodeMetadataService = nodeMetadataService;
 	}
 
 }
