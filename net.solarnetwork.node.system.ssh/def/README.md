@@ -21,11 +21,14 @@ line arguments, followed by an action verb:
 
 After the arguments, the program must accept the following action verbs:
 
+ * `showkey` to print on STDUOUT the public SSH key of the node.
  * `list` to print on STDOUT one line for each active SSH connection,
    as a comma-delimited list in the form `user,host,port,reverse_port(,error)`.
    This action requires no command line arguments. The `error` value
    represents any number of additional error status values that can 
    be conveyed to the calling program.
+ * `status` to print on STDOUT either `active` for an active, successful
+   connection, or anything else for an error condition.
  * `start` to establish the SSH connection based on the command line
    arguments.
  * `stop` to disconnect an active SSH connection based on the command

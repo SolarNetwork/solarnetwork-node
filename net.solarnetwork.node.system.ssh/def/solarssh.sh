@@ -23,6 +23,7 @@
 
 TEST=""
 SUSER="solar"
+PUBKEY="$HOME/.ssh/id_ed25519.pub"
 HOST="data.solarnetwork.net"
 PORT="22"
 RPORT="17777"
@@ -34,11 +35,33 @@ SERVICE_TEMPLATE="${SERVICE_NAME}@.service"
 do_help () {
 	echo "Usage: $0 -u <user> -h <host> -p <port> -r <reverse port> <action>" 1>&2
 	echo 1>&2
-	echo "<action> is one of list, status, start, stop" 1>&2
+	echo "<action> is one of list, showkey, status, start, stop" 1>&2
+	echo 1>&2
+	echo "Alternatively all values can be specified as a comma-delimited string" 1>&2
+	echo "with the -c argument, e.g. -c user,host,port,rport" 1>&2
 }
 
-while getopts ":h:p:r:tu:v" opt; do
+parse_config() {
+	local IFS=","
+	local data=($1)
+	if [ ${#data[@]} -ge 4 ]; then
+		SUSER=${data[0]}
+		HOST=${data[1]}
+		PORT=${data[2]}
+		RPORT=${data[3]}
+	else
+		echo "Config string must be comma-delimited value with 4 values: user,host,port,rport."  1>&2
+		echo "Use -? for help."  1>&2
+		exit 1
+	fi
+}
+
+while getopts ":c:h:p:r:tu:v" opt; do
 	case $opt in
+		c)
+			parse_config "${OPTARG}"
+			;;
+
 		h)
 			HOST="${OPTARG}"
 			;;
@@ -74,27 +97,27 @@ shift $(($OPTIND - 1))
 ACTION="$1"
 
 if [ $# -lt 1 ]; then
-	echo "Must provide action (list, status, start, stop), use -? for help."
+	echo "Must provide action (list, status, start, stop), use -? for help."  1>&2
 	exit 1
 fi
 
 if [ -z "${HOST}" -a "${ACTION}" != "list" ]; then
-	echo "Destination host not provided (-h), use -? for help."
+	echo "Destination host not provided (-h), use -? for help." 1>&2
 	exit 1
 fi
 
 if [ -z "${PORT}" -a "${ACTION}" != "list" ]; then
-	echo "Destination port not provided (-p), use -? for help."
+	echo "Destination port not provided (-p), use -? for help." 1>&2
 	exit 1
 fi
 
 if [ -z "${RPORT}" -a "${ACTION}" != "list" ]; then
-	echo "Reverse port not provided (-r), use -? for help."
+	echo "Reverse port not provided (-r), use -? for help." 1>&2
 	exit 1
 fi
 
 if [ -z "${SUSER}" -a "${ACTION}" != "list" ]; then
-	echo "User not provided (-u), use -? for help."
+	echo "User not provided (-u), use -? for help." 1>&2
 	exit 1
 fi
 
@@ -148,7 +171,8 @@ do_stop() {
 
 do_status() {
 	service=$1
-	if [ -n "${VERBOSE}" ]; then
+	verbose=$2
+	if [ -n "${verbose}" ]; then
 		systemctl status ${service}
 	elif systemctl -q is-active ${service}; then
 		echo active
@@ -179,7 +203,7 @@ do_list() {
 		if [[ $line =~ $regex ]]; then
 			service="${BASH_REMATCH[1]}"
 			statusVal=`do_status "${SERVICE_NAME}@${service}.service"`
-			if [ $statusVal == "active" ]; then
+			if [ "$statusVal" == "active" ]; then
 				statusVal=""
 			else
 				statusVal=",${statusVal}"
@@ -189,10 +213,18 @@ do_list() {
 	done
 }
 
+do_showkey() {
+	cat ${PUBKEY}
+}
+
 
 case $ACTION in
 	list)
 		do_list
+		;;
+
+	showkey)
+		do_showkey
 		;;
 
 	start)
@@ -200,7 +232,7 @@ case $ACTION in
 		;;
 
 	status)
-		do_status ${serviceInstanceName}
+		do_status ${serviceInstanceName} ${VERBOSE}
 		;;
 
 	stop)
