@@ -13,7 +13,7 @@ Import-Package:
  com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
  net.solarnetwork.domain;version="1.7.0",
- net.solarnetwork.node;version="1.16.0",
+ net.solarnetwork.node;version="1.21.0",
  net.solarnetwork.node.dao;version="1.6.0",
  net.solarnetwork.node.domain;version="1.8.0",
  net.solarnetwork.node.job;version="1.12.0",
