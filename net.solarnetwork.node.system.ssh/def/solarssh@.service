@@ -32,7 +32,7 @@ ExecStart=/usr/bin/ssh -NT \
 	-o ServerAliveCountMax=3 \
 	-o ServerAliveInterval=30 \
 	-p ${SSHREMOTE_PORT} \
-	-R ${SSHREMOTE_RPORT}:localhost:22 \
+	-R 127.0.0.1:${SSHREMOTE_RPORT}:localhost:22 \
 	${SSHREMOTE_USER}@${SSHREMOTE_HOST}
 Restart=always
 RestartSec=5
