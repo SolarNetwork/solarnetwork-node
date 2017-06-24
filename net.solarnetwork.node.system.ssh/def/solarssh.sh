@@ -9,7 +9,7 @@
 #
 # Typical use looks like this to create the SSH connection:
 #
-# solarssh.sh -u solar -h sshserver.example.com -r 18932 start
+# solarssh.sh -u solar -h sshserver.example.com -p 8022 -r 18932 start
 #
 # Some assumptions are made for this to work:
 #
@@ -133,7 +133,8 @@ write_env() {
 	echo "SSHREMOTE_USER=${SUSER}" >${envFile}
 	echo "SSHREMOTE_HOST=${HOST}" >>${envFile}
 	echo "SSHREMOTE_PORT=${PORT}" >>${envFile}
-	echo "SSHREMOTE_RPORT=${RPORT}" >>${envFile}
+	echo "SSHREMOTE_RPORT_SSH=${RPORT}" >>${envFile}
+	echo "SSHREMOTE_RPORT_HTTP=$((RPORT+1))" >>${envFile}
 	if [ -n "${VERBOSE}" ]; then
 		echo "SSH environment ${envFile} generated..."
 	fi
