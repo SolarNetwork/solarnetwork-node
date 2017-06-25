@@ -1,7 +1,7 @@
 <p class="lead"><fmt:message key="preview-invitation.lead"/></p>
 <p><fmt:message key="preview-invitation.intro"/></p>
 
-<c:url value="/associate/verify" var="action"/>
+<setup:url value="/associate/verify" var="action"/>
 <form:form modelAttribute="details" action="${action}" cssClass="form-horizontal" method="post">
 	<fieldset>
 		<div class="control-group">
@@ -23,7 +23,7 @@
 			</div>
 		</div>
 		<div class="form-actions">
-			<a href="<c:url value='/associate'/>" class="btn"><fmt:message key='cancel.label'/></a>
+			<a href="<setup:url value='/associate'/>" class="btn"><fmt:message key='cancel.label'/></a>
 			<button type="submit" class="btn btn-primary"><fmt:message key='continue.label'/></button>
 		</div>
 	</fieldset>

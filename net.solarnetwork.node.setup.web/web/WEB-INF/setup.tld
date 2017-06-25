@@ -6,7 +6,7 @@
 	version="2.1">
 
 	<description>SolarNetwork Setup Taglib</description>
-	<tlib-version>1.5</tlib-version>
+	<tlib-version>1.6</tlib-version>
 	<short-name>setup</short-name>
 	<uri>http://solarnetwork.net/taglib/setup</uri>
 
@@ -161,6 +161,60 @@
 			<rtexprvalue>true</rtexprvalue>
 		</attribute>
 		<dynamic-attributes>true</dynamic-attributes>
+	</tag>
+
+	<tag>
+		<description>URL tag based on the JSTL c:url tag. This variant is fully
+		backwards compatible with the standard tag. Enhancements include support
+		for URL template parameters and reverse proxy context support via the
+		X-Forwarded-Path header.</description>
+		<name>url</name>
+		<tag-class>net.solarnetwork.node.setup.web.support.ForwardedPathUrlTag</tag-class>
+		<body-content>JSP</body-content>
+		<attribute>
+			<description>The URL to build. This value can include template place holders
+			that are replaced with the URL encoded value of the named parameter. Parameters
+			must be defined using the param tag inside the body of this tag.</description>
+			<name>value</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>Specifies a remote application context path. The default is the
+			current application context path. This will be automatically populated with
+			the value of the X-ForwardedPath HTTP header, if available.</description>
+			<name>context</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>The name of the variable to export the URL value to.</description>
+			<name>var</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>The scope for the var. 'application', 'session', 'request' and
+			'page' scopes are supported. Defaults to page scope. This attribute has no
+			effect unless the var attribute is also defined.</description>
+			<name>scope</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>Set HTML escaping for this tag, as a boolean value. Overrides the
+			default HTML escaping setting for the current page.</description>
+			<name>htmlEscape</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
+		<attribute>
+			<description>Set JavaScript escaping for this tag, as a boolean value.
+			Default is 'false'.</description>
+			<name>javaScriptEscape</name>
+			<required>false</required>
+			<rtexprvalue>true</rtexprvalue>
+		</attribute>
 	</tag>
 
 	<function>

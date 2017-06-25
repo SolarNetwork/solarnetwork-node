@@ -27,7 +27,7 @@
 <p>
 	<fmt:message key="node.setup.identity.end"/>
 </p>
-<c:url value="/associate/confirm" var="action"/>
+<setup:url value="/associate/confirm" var="action"/>
 <form:form action="${action}" method="post" class="form-horizontal" id="associate-confirm-form">
 	<fieldset>
 		<form:errors cssClass="alert alert-error" element="div"/>
@@ -48,7 +48,7 @@
 		</div>
 	</fieldset>
 	<div class="form-actions">
-		<a class="btn" href="<c:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
+		<a class="btn" href="<setup:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
 		<button type="submit" class="btn btn-primary" name="confirm"><fmt:message key='node.setup.identity.confirm'/></button>
 		<div class="alert alert-error hidden" id="invitation-certpass-reiterate">
 	 		<strong><fmt:message key='node.setup.associate.certpass.reiterate.title'/></strong>

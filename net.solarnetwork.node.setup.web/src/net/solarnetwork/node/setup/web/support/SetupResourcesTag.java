@@ -105,6 +105,7 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 		if ( resources == null || resources.isEmpty() ) {
 			return;
 		}
+
 		String baseUrl = (role == null ? "/rsrc/" : "/a/rsrc/");
 		if ( inline && wrapperElement != null ) {
 			tagWriter.startTag(wrapperElement);
@@ -130,6 +131,10 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 
 			tagWriter.forceBlock();
 		}
+
+		HttpServletRequest request = (HttpServletRequest) this.pageContext.getRequest();
+		String forwardedPath = request.getHeader("X-Forwarded-Path");
+
 		for ( SetupResource rsrc : resources ) {
 			if ( !type.equals(rsrc.getContentType()) ) {
 				continue;
@@ -154,6 +159,16 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 				} catch ( UnsupportedEncodingException e ) {
 					// should not be here ever
 				}
+
+				if ( forwardedPath != null && forwardedPath.startsWith("/") ) {
+					StringBuilder buf = new StringBuilder(forwardedPath);
+					if ( !(forwardedPath.endsWith("/") || url.startsWith("/")) ) {
+						buf.append('/');
+					}
+					buf.append(url);
+					url = buf.toString();
+				}
+
 				if ( SetupResource.JAVASCRIPT_CONTENT_TYPE.equals(rsrc.getContentType()) ) {
 					tagWriter.startTag("script");
 					tagWriter.writeAttribute("type", rsrc.getContentType());

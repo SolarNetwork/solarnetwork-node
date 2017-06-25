@@ -15,7 +15,7 @@
 				<tr>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn" href="<c:url value='/a/settings/manage?uid=${factory.factoryUID}'/>">
+						<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUID}'/>">
 							<i class="icon-edit icon-large"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
@@ -32,7 +32,7 @@
 		<h2><fmt:message key="settings.providers.title"/></h2>
 		<p><fmt:message key="settings.providers.intro"/></p>	
 
-		<form class="form-horizontal" action="<c:url value='/a/settings/save'/>" method="post">
+		<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
 		<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 			<!--  ${provider.settingUID} -->
 			<c:set var="provider" value="${provider}" scope="request"/>
@@ -102,7 +102,7 @@
 				<label class="control-label" for="backup-backups">
 					<fmt:message key="backup.now.label"/>
 				</label>
-				<form class="controls form-inline" id="create-backup-form" action="<c:url value='/a/backups/create'/>" method="post">
+				<form class="controls form-inline" id="create-backup-form" action="<setup:url value='/a/backups/create'/>" method="post">
 	 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
 	 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
  					<button type="button" class="help-popover help-icon" tabindex="-1"
@@ -118,7 +118,7 @@
 				<label class="control-label" for="backup-backups">
 					<fmt:message key="backup.backups.label"/>
 				</label>
-				<form class="controls form-inline" id="backup-list-form" action="<c:url value='/a/settings/exportBackup'/>">
+				<form class="controls form-inline" id="backup-list-form" action="<setup:url value='/a/settings/exportBackup'/>">
 					<select name="backup" class="span3" id="backup-backups">
 						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
 							<option value="${backup.key}"><fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/></option>
@@ -143,7 +143,7 @@
 				<label class="control-label" for="backup-import-field">
 					<fmt:message key="backup.import.label"/>
 				</label>
-				<form class="controls form-inline" action="<c:url value='/a/settings/importBackup'/>" method="post" enctype="multipart/form-data">
+				<form class="controls form-inline" action="<setup:url value='/a/settings/importBackup'/>" method="post" enctype="multipart/form-data">
   					<input class="span3" id="backup-import-field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="backup.import.button"/></button>
 					<button type="button" class="help-popover help-icon" tabindex="-1"
@@ -169,7 +169,7 @@
 					<fmt:message key="settings.io.export.label"/>
 				</label>
 				<div class="controls">
-					<a class="btn btn-primary" id="export.btn" href="<c:url value='/a/settings/export'/>">
+					<a class="btn btn-primary" id="export.btn" href="<setup:url value='/a/settings/export'/>">
 						<fmt:message key="settings.io.export.button"/>
 					</a>
 				</div>
@@ -178,7 +178,7 @@
 				<label class="control-label" for="import.field">
 					<fmt:message key="settings.io.import.label"/>
 				</label>
-				<form class="controls form-inline" action="<c:url value='/a/settings/import'/>" method="post" enctype="multipart/form-data">
+				<form class="controls form-inline" action="<setup:url value='/a/settings/import'/>" method="post" enctype="multipart/form-data">
   					<input class="span3" id="import.field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="settings.io.import.button"/></button>
 					<sec:csrfInput/>
@@ -193,7 +193,7 @@
 						<ul id="auto-backups">
 							<c:forEach items="${settingsBackups}" var="backup" varStatus="backupStatus">
 								<li>
-				  					<a class="btn btn-small" id="export.btn" href="<c:url value='/a/settings/export'/>?backup=${backup.backupKey}">
+				  					<a class="btn btn-small" id="export.btn" href="<setup:url value='/a/settings/export'/>?backup=${backup.backupKey}">
 										<fmt:message key="settings.autobackup.download.button">
 											<fmt:param value="${backup.standardDateString}"/>
 										</fmt:message>
@@ -215,7 +215,7 @@
 	</div>
 </section>
 
-<form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<c:url value='/a/backups/restore'/>" method="post">
+<form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/backups/restore'/>" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='backup.restore.title'/></h3>

@@ -1,22 +1,22 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <div class="navbar">
 	<div class="navbar-inner">
-		<a class="brand" href="<c:url value='/index.do'/>">
-			<img src="<c:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="159" height="30"/>	
+		<a class="brand" href="<setup:url value='/index.do'/>">
+			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="159" height="30"/>	
 		</a>
 		<ul class="nav">
 			<li ${navloc == 'home' ? 'class="active"' : ''}>
 				<sec:authorize access="!hasRole('ROLE_USER')">
-					<a href="<c:url value='/hello'/>"><fmt:message key='link.home'/></a>
+					<a href="<setup:url value='/hello'/>"><fmt:message key='link.home'/></a>
 				</sec:authorize>
 				<sec:authorize access="hasRole('ROLE_USER')">
-					<a href="<c:url value='/a/home.do'/>"><fmt:message key='link.home'/></a>
+					<a href="<setup:url value='/a/home.do'/>"><fmt:message key='link.home'/></a>
 				</sec:authorize>
 			</li>
-			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<c:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
-			<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<c:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
-			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<c:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
-			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<c:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
+			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
+			<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
+			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<setup:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
+			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
  		</ul>
 		<sec:authorize access="hasRole('ROLE_USER')">
 			<ul class="nav pull-right">
@@ -30,8 +30,8 @@
 						<b class="caret"></b>
 					</a>
 					<ul class="dropdown-menu">
-						<li><a href="<c:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
-						<li><a href="<c:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
+						<li><a href="<setup:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
+						<li><a href="<setup:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
 						<li><a class="logout" href="#"><fmt:message key='link.logout'/></a></li>
 						<c:if test="${not empty systemService}">
 							<li role="separator" class="divider"></li>
@@ -40,10 +40,10 @@
 					</ul>
 				</li>
 			</ul>
-			<form id="logout-form" method="post" action="<c:url value='/logout'/>">
+			<form id="logout-form" method="post" action="<setup:url value='/logout'/>">
 				<sec:csrfInput/>
 			</form>
-			<form id="restart-modal" class="modal hide fade" action="<c:url value='/a/home/restart'/>" method="post">
+			<form id="restart-modal" class="modal hide fade" action="<setup:url value='/a/home/restart'/>" method="post">
 				<div class="modal-header">
 					<button type="button" class="close start" data-dismiss="modal">&times;</button>
 					<h3><fmt:message key='restart.title'/></h3>

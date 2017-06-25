@@ -8,7 +8,8 @@
 	</p>
 </section>
 
-<form:form commandName="user" cssClass="form-horizontal" id="change-username-form" action="/a/user/change-username" method="post" >
+<setup:url value="/a/user/change-username" var="action"/>
+<form:form commandName="user" cssClass="form-horizontal" id="change-username-form" action="${action}" method="post" >
 	<fieldset>
 		<div class="control-group">
 			<label class="control-label" for="old-username"><fmt:message key="user.username.label"/></label>

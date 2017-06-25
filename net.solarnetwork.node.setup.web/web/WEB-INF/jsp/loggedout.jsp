@@ -6,5 +6,5 @@
 </p>
 
 <p class="span9">
-	<a href="<c:url value='/login.do'/>"><fmt:message key="login.label"/></a>
+	<a href="<setup:url value='/login.do'/>"><fmt:message key="login.label"/></a>
 </p>
