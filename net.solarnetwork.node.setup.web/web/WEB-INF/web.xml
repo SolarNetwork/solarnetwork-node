@@ -87,10 +87,6 @@
 		<display-name>PackServlet</display-name>
 		<servlet-name>PackServlet</servlet-name>
 		<servlet-class>net.sf.packtag.servlet.PackServlet</servlet-class>
-		<init-param>
-			<param-name>Context-Path-Header</param-name>
-			<param-value>X-Forwarded-Path</param-value>
-		</init-param>
 	</servlet>
 
 	<servlet-mapping>
