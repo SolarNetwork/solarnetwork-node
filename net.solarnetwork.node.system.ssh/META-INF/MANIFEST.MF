@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode System SSH Support
 Bundle-SymbolicName: net.solarnetwork.node.system.ssh
 Bundle-Description: Provides core system remote administration support via SSH.
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
