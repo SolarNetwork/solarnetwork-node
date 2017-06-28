@@ -1,6 +1,6 @@
 <p><fmt:message key="node.setup.restore.intro"/></p>
 
-<c:url value="/associate/importBackup" var="action"/>
+<setup:url value="/associate/importBackup" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal" enctype="multipart/form-data" id="associate-import-backup-form">
 	<fieldset>
 		<div class="control-group">

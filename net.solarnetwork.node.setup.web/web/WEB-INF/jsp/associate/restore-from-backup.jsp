@@ -1,4 +1,4 @@
-<c:url value="/associate/restoreBackup" var="action"/>
+<setup:url value="/associate/restoreBackup" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal span8" id="associate-restore-backup-form">
 	<p><fmt:message key="node.setup.restore.imported.intro"/></p>	
 	<fieldset id="associate-restore-list-container" class="menu-list noselect"

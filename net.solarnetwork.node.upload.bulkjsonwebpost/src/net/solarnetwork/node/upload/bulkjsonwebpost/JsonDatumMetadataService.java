@@ -24,11 +24,11 @@ package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
 import java.io.InputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * JSON based web service implementation of {@link DatumMetadataService}.
@@ -83,7 +83,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException querying for source metadata at " + url, e);
 			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " + e.getMessage());
+				log.debug("Unable to get source metadata: " + e.getMessage());
 			}
 			throw new RuntimeException(e);
 		}
@@ -141,7 +141,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			cacheMetadata(sourceId, meta);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
-				log.trace("IOException querying for source metadata at " + url, e);
+				log.trace("IOException posting source metadata at " + url, e);
 			} else if ( log.isDebugEnabled() ) {
 				log.debug("Unable to post data: " + e.getMessage());
 			}

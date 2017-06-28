@@ -10,7 +10,7 @@
 		</fmt:message>
 	</p>
 	<p>
-		<a href="<c:url value='/a/settings'/>" class="btn">
+		<a href="<setup:url value='/a/settings'/>" class="btn">
 			<i class="icon-arrow-left"></i>
 			<fmt:message key="back.label"/>
 		</a>
@@ -24,7 +24,7 @@
 </section>
 
 <section id="settings">
-	<form class="form-horizontal" action="<c:url value='/a/settings/save'/>" method="post">
+	<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
 		<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
 			<c:set var="instance" value="${instance}" scope="request"/>
 			<c:forEach items="${instance.value}" var="provider" varStatus="providerStatus">
@@ -65,7 +65,7 @@
 								$('#del${instance.key}').click(function() {
 									SolarNode.Settings.deleteFactoryConfiguration({
 										button: this,
-										url: '<c:url value="/a/settings/manage/delete"/>',
+										url: '<setup:url value="/a/settings/manage/delete"/>',
 										factoryUID: '${factory.factoryUID}',
 										instanceUID: '${instance.key}'
 									});
@@ -95,7 +95,7 @@ $(function() {
 	$('#add').click(function() {
 		SolarNode.Settings.addFactoryConfiguration({
 			button: this,
-			url: '<c:url value="/a/settings/manage/add"/>',
+			url: '<setup:url value="/a/settings/manage/add"/>',
 			factoryUID: '${factory.factoryUID}'
 		});
 	});
@@ -113,7 +113,7 @@ $(function() {
 	</button>
 </div>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal" 
-		action="<c:url value='/api/v1/sec/location'/>" method="get">
+		action="<setup:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.price.title'/></h3>
@@ -162,7 +162,7 @@ $(function() {
 	</div>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal" 
-		action="<c:url value='/api/v1/sec/location'/>" method="get">
+		action="<setup:url value='/api/v1/sec/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.weather.title'/></h3>

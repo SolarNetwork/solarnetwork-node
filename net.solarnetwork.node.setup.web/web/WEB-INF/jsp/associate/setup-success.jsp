@@ -11,9 +11,9 @@
 				<p class="text-error"><code>${user.password}</code></p>
 				<div class="alert">
 					<fmt:message key='node.setup.success.user.intro'>
-						<fmt:param><c:url value="/a/user/change-password">
+						<fmt:param><setup:url value="/a/user/change-password">
 							<c:param name="old" value="${user.password}"/>
-						</c:url></fmt:param>
+						</setup:url></fmt:param>
 					</fmt:message>
 				</div>
 			</td>
@@ -27,7 +27,7 @@
 		<p>
 			<fmt:message key="node.setup.success.visit">
 				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><c:url value='/a/certs'/></fmt:param>
+				<fmt:param><setup:url value='/a/certs'/></fmt:param>
 			</fmt:message>
 		</p>
 	</c:when>
@@ -42,7 +42,7 @@
 		<p>
 			<fmt:message key="node.setup.success.requested">
 				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><c:url value='/a/certs'/></fmt:param>
+				<fmt:param><setup:url value='/a/certs'/></fmt:param>
 			</fmt:message>
 		</p>
 	</c:when>

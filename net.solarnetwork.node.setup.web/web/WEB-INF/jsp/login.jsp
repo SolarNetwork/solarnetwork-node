@@ -12,12 +12,12 @@
 <div class="row">
 	<p class="intro span9">
 		<fmt:message key="login.intro">
-			<fmt:param><c:url value="/associate"/></fmt:param>
+			<fmt:param><setup:url value="/associate"/></fmt:param>
 		</fmt:message>
 	</p>
 </div>
 
-<form class="form-horizontal" name="f" action="<c:url value='/login'/>" class="login-form" method="post">
+<form class="form-horizontal" name="f" action="<setup:url value='/login'/>" class="login-form" method="post">
 	<fieldset>
 		<div class="control-group">
 			<label class="control-label" for="login-username"><fmt:message key="user.username.label"/></label>

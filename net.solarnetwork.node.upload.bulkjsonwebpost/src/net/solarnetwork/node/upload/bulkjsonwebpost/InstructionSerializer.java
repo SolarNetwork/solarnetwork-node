@@ -24,6 +24,7 @@ package net.solarnetwork.node.upload.bulkjsonwebpost;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -34,7 +35,7 @@ import net.solarnetwork.node.reactor.Instruction;
  * Serialize {@link Instruction} to JSON.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class InstructionSerializer extends StdScalarSerializer<Instruction> implements Serializable {
 
@@ -61,6 +62,10 @@ public class InstructionSerializer extends StdScalarSerializer<Instruction> impl
 		generator.writeStringField("instructionId", instruction.getRemoteInstructionId());
 		generator.writeStringField("topic", instruction.getTopic());
 		generator.writeStringField("status", instruction.getStatus().getInstructionState().toString());
+		Map<String, ?> resultParams = instruction.getStatus().getResultParameters();
+		if ( resultParams != null && !resultParams.isEmpty() ) {
+			generator.writeObjectField("resultParameters", resultParams);
+		}
 		generator.writeEndObject();
 	}
 

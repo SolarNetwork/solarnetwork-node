@@ -10,6 +10,8 @@ $(function() {
 		searchBtn = modal.find('button[type=submit]'),
 		chooseBtn = modal.find('button.choose');
 	
+	var activeContainer;
+	
 	SolarNode.WeatherUnderground.showLocationSearchResults = function(json) {
 		//searchBtn.removeAttr('disabled');
 		if ( Array.isArray(json.RESULTS) !== true ) {
@@ -68,18 +70,63 @@ $(function() {
 		var selectedLocation = me.data('locationMeta');
 		var currParams = me.data('params');
 		if ( selectedLocation !== undefined ) {
-			var settingId = currParams.settingId;
-			// the location ID text field comes immediately before this ID, so subtract one
-			var match = settingId.match(/^(.*i)(\d+)$/);
-			var locSettingId = match[1] + String(Number(match[2]) - 1);
+			var locNameEl = activeContainer.find('.wu-loc-id'),
+				settingId = currParams.settingId,
+				// the location ID text field comes immediately before this ID, so subtract one
+				match = settingId.match(/^(.*i)(\d+)$/),
+				locSettingId = match[1] + String(Number(match[2]) - 1);
+			locNameEl.text(selectedLocation.name);
 			$('input#'+locSettingId).val(selectedLocation.l).trigger('change');
 		}
 		modal.modal('hide');
 	});
+	
+	function wuContainer(el) {
+		return $(el).parents('.setup-resource-container');
+	}
+	
+	function showLocationNameResult(json, el) {
+		if ( !json || !json.location ) {
+			return;
+		}
+		var c = json.location.country,
+			cName = json.location.country_name,
+			st = json.location.state,
+			l = json.location.city,
+			name;
+		if ( c == 'US' ) {
+			name = l +', ' +st;
+		} else {
+			name = l + ', ' +cName;
+		}
+		$(el).text(name);
+	}
+	
+	function lookupLocationName(apiKey, locationId) {
+		$.getJSON(url);
+	}
 
 	$('button.wu-loc-search-open').on('click', function() {
-		var container = $(this).parents('.setup-resource-container');
+		var container = wuContainer(this);
+		
+		// stash for when selection is made
+		activeContainer = container;
+
 		chooseBtn.data('params', container.data());
 		$('#wu-location-lookup-modal').modal('show');
+	});
+	
+	$('.wu-loc-id').text(function(i, el) {
+		var me = this,
+			container = wuContainer(this),
+			apiKey = container.data().apikey,
+			locId = container.data().lid,
+			url ='http://api.wunderground.com/api/' +apiKey +'/geolookup' +locId +'.json';	
+		if ( apiKey && locId ) {
+			$.getJSON(url, function(json) {
+				showLocationNameResult(json, me);
+			});
+		}
+		return locId;
 	});
 });

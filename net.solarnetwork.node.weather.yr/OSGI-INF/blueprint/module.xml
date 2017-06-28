@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+	
+	<bean id="generalLocationDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum)"/>
+	</bean>	
+
+	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+	</bean>	
+
+	<!-- Day logging support -->
+
+	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.weather.yr.ConfigurableYrClientService</value>
+				<value>net.solarnetwork.node.weather.yr.YrDayDatumDataSource</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="parentMessageSource" ref="dayMessageSource"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Yr day information"/>
+			<property name="factoryUID" value="net.solarnetwork.node.weather.yr.day"/>
+			<property name="messageSource" ref="dayMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.yr.day" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.yr.day"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="yrDayDatumLoggerTrigger"/>
+					<property name="cronExpression" value="0 15 2,12,22 * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="yrDayDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+							<entry key="multiDatumDataSource">
+								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+									<property name="messageSource" ref="dayJobMessageSource"/>
+									<property name="delegate">
+										<bean class="net.solarnetwork.node.weather.yr.YrDayDatumDataSource">
+											<property name="messageSource" ref="dayMessageSource"/>
+										</bean>
+									</property>
+									<property name="locationService" ref="locationService"/>
+									<property name="requireLocationService" value="true"/>
+									<property name="locationType" value="day"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+	
+	<!-- Weather logging support -->
+
+	<bean id="weatherMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.weather.yr.ConfigurableYrClientService</value>
+				<value>net.solarnetwork.node.weather.yr.YrWeatherDatumDataSource</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="weatherJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="parentMessageSource" ref="weatherMessageSource"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Yr weather information"/>
+			<property name="factoryUID" value="net.solarnetwork.node.weather.yr.weather"/>
+			<property name="messageSource" ref="weatherMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.yr.weather" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.yr.weather"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="yrWeatherDatumLoggerTrigger"/>
+					<property name="cronExpression" value="0 10/20 * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="yrWeatherDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+							<entry key="multiDatumDataSource">
+								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+									<property name="messageSource" ref="weatherJobMessageSource"/>
+									<property name="delegate">
+										<bean class="net.solarnetwork.node.weather.yr.YrWeatherDatumDataSource">
+											<property name="messageSource" ref="weatherMessageSource"/>
+										</bean>
+									</property>
+									<property name="locationService" ref="locationService"/>
+									<property name="requireLocationService" value="true"/>
+									<property name="locationType" value="weather"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

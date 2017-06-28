@@ -23,7 +23,7 @@
 package net.solarnetwork.node.weather.wu;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,7 +80,11 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 		results.add(new BasicTextFieldSettingSpecifier("client.apiKey", null));
 		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
 		if ( setupResourceProvider != null ) {
-			Map<String, Object> setupProps = Collections.singletonMap("uid", (Object) getUID());
+			Map<String, Object> setupProps = new HashMap<String, Object>();
+			setupProps.put("lid", getLocationIdentifier());
+			if ( client != null ) {
+				setupProps.put("apikey", client.getApiKey());
+			}
 			results.add(new BasicSetupResourceSettingSpecifier(setupResourceProvider, setupProps));
 		}
 		return results;

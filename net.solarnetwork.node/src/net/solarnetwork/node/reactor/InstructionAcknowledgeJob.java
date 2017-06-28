@@ -22,17 +22,19 @@
 
 package net.solarnetwork.node.reactor;
 
+import java.io.IOException;
 import java.util.List;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.setup.SetupException;
 
 /**
  * Job to look for instructions to update the acknowledgment status for.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -43,12 +45,32 @@ public class InstructionAcknowledgeJob extends AbstractJob {
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		List<Instruction> instructions = instructionDao.findInstructionsForAcknowledgement();
-		if ( instructions.size() > 0 ) {
-			instructionAcknowledgementService.acknowledgeInstructions(instructions);
-			for ( Instruction instruction : instructions ) {
-				instructionDao.storeInstructionStatus(instruction.getId(), instruction.getStatus()
-						.newCopyWithAcknowledgedState(instruction.getStatus().getInstructionState()));
+		try {
+			List<Instruction> instructions = instructionDao.findInstructionsForAcknowledgement();
+			if ( instructions.size() > 0 ) {
+				instructionAcknowledgementService.acknowledgeInstructions(instructions);
+				for ( Instruction instruction : instructions ) {
+					instructionDao.storeInstructionStatus(instruction.getId(),
+							instruction.getStatus().newCopyWithAcknowledgedState(
+									instruction.getStatus().getInstructionState()));
+				}
+			}
+		} catch ( RuntimeException e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			if ( root instanceof IOException ) {
+				if ( log.isWarnEnabled() ) {
+					log.warn("Network problem posting instruction acknowledgement ({}): {}",
+							root.getClass().getSimpleName(), root.getMessage());
+				}
+			} else if ( root instanceof SetupException ) {
+				log.warn("Unable to post instruction acknowledgement: {}", root.getMessage());
+			} else {
+				if ( log.isErrorEnabled() ) {
+					log.error("Exception posting instruction acknowledgement", root);
+				}
 			}
 		}
 	}

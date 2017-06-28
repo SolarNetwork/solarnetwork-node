@@ -2,9 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Weather Underground Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.wu
-Bundle-Version: 1.0.0
+Bundle-Description: Collect weather data from the Weather Underground.
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: 
+ net.solarnetwork.node.weather.wu;version="1.1.0"
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",

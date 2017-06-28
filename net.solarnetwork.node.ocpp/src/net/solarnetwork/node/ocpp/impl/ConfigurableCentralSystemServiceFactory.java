@@ -317,7 +317,7 @@ public class ConfigurableCentralSystemServiceFactory
 				response.getHeartbeatInterval(), SimpleTrigger.REPEAT_INDEFINITELY) ) {
 			bootNotificationResponse = response;
 		} else {
-			bootNotificationResponse = response;
+			bootNotificationResponse = null;
 		}
 	}
 
@@ -341,6 +341,7 @@ public class ConfigurableCentralSystemServiceFactory
 			if ( heartbeatInterval == 0 ) {
 				try {
 					sched.unscheduleJob(trigger.getKey());
+					log.info("Unscheduled OCPP heartbeat job");
 				} catch ( SchedulerException e ) {
 					log.error("Error unscheduling OCPP heartbeat job", e);
 				} finally {
@@ -356,6 +357,7 @@ public class ConfigurableCentralSystemServiceFactory
 						.build();
 				try {
 					sched.rescheduleJob(trigger.getKey(), trigger);
+					log.info("Rescheduled OCPP heartbeat job for {}s", heartbeatInterval);
 				} catch ( SchedulerException e ) {
 					log.error("Error rescheduling OCPP heartbeat job", e);
 				} finally {
@@ -387,6 +389,7 @@ public class ConfigurableCentralSystemServiceFactory
 												.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
 				sched.scheduleJob(trigger);
+				log.info("Scheduled OCPP heartbeat job for {}s", heartbeatInterval);
 				heartbeatTrigger = trigger;
 				return true;
 			} catch ( Exception e ) {

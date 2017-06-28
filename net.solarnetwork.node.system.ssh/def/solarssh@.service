@@ -1,0 +1,45 @@
+# SSH reverse tunnel systemd template service unit
+#
+# A systemd environment file matching the instance name + .env must exist
+# in /run/solar/tmp, which must define the following environment variables:
+# 
+# - SSHREMOTE_USER: the SSH user to use
+# - SSHREMOTE_HOST: the remote host to connect to via SSH
+# - SSHREMOTE_PORT: the SSH connection port
+# - SSHREMOTE_RPORT_SSH: the reverse listening port to open on the remote 
+#                        server to the local SSH port (22)
+# - SSHREMOTE_RPORT_HTTP: the reverse listening port to open on the remote 
+#                         server to the local HTTP port (8080)
+#
+# Note that the service name should be escaped via systemd-escape, if it
+# contains special characters; the environment file will use the un-escaped
+# value. For example:
+#
+#  systemd-escape --template=solarssh@.service foo,ssh.example.org,22,17000
+# 
+# For this service to work, SSH must have already been configured to use
+# password-less logins for each instance, e.g. through keys or certificates.
+
+[Unit]
+Description=SSH reverse tunnel %I
+
+[Service]
+Type=simple
+User=solar
+Group=solar
+WorkingDirectory=/home/solar
+EnvironmentFile=/home/solar/var/ssh/%I.env
+ExecStart=/usr/bin/ssh -NT \
+	-o ExitOnForwardFailure=yes \
+	-o PasswordAuthentication=no \
+	-o ServerAliveCountMax=3 \
+	-o ServerAliveInterval=30 \
+	-p ${SSHREMOTE_PORT} \
+	-R 127.0.0.1:${SSHREMOTE_RPORT_SSH}:localhost:22 \
+	-R 127.0.0.1:${SSHREMOTE_RPORT_HTTP}:localhost:8080 \
+	${SSHREMOTE_USER}@${SSHREMOTE_HOST}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

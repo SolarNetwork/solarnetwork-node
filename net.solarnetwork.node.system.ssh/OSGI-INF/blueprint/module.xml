@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler"
+		filter="(function=node)"/>
+		
+	<service ref="sshService">
+		<interfaces>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basename" value="net.solarnetwork.node.system.ssh.RemoteSshService"/>
+	</bean>
+	
+	<bean id="sshService" class="net.solarnetwork.node.system.ssh.RemoteSshService" init-method="init" destroy-method="closeService">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.system.ssh.RemoteSshService" autowire-on-update="true"/>
+		<property name="messageSource" ref="messageSource"/>
+		<property name="taskScheduler" ref="taskScheduler"/>
+		<property name="nodeMetadataService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+			</bean>
+		</property>
+	</bean>
+	
+</blueprint>

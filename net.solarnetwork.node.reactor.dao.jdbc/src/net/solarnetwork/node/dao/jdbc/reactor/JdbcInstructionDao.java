@@ -25,6 +25,7 @@
 package net.solarnetwork.node.dao.jdbc.reactor;
 
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -34,20 +35,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
-import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import org.springframework.core.io.ByteArrayResource;
+import java.util.Map;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 
 /**
  * JDBC implementation of {@link JdbcInstructionDao}.
@@ -55,11 +61,11 @@ import org.springframework.transaction.annotation.Transactional;
  * @author matt
  * @version $Revision$
  */
-public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
-		net.solarnetwork.node.reactor.InstructionDao {
+public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
+		implements net.solarnetwork.node.reactor.InstructionDao {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 1;
+	public static final int DEFAULT_TABLES_VERSION = 2;
 
 	/** The table name for {@link Instruction} data. */
 	public static final String TABLE_INSTRUCTION = "sn_instruction";
@@ -130,6 +136,19 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 	 */
 	public static final String RESOURCE_SQL_DELETE_OLD = "delete-old";
 
+	private static final class StringMapTypeReference
+			extends TypeReference<LinkedHashMap<String, Object>> {
+
+		public StringMapTypeReference() {
+			super();
+		}
+
+	}
+
+	private static final StringMapTypeReference STRING_MAP_TYPE = new StringMapTypeReference();
+
+	private ObjectMapper objectMapper;
+
 	/**
 	 * Default constructor.
 	 */
@@ -139,7 +158,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 		setTablesVersion(DEFAULT_TABLES_VERSION);
 		setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
 		setSqlResourcePrefix("derby-instruction");
-		setInitSqlResource(new ByteArrayResource(getSqlResource("init").getBytes()));
+		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
+		objectMapper = new ObjectMapper();
 	}
 
 	@Override
@@ -154,8 +174,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 				new Object[] { instructionId }, new ResultSetExtractor<Instruction>() {
 
 					@Override
-					public Instruction extractData(ResultSet rs) throws SQLException,
-							DataAccessException {
+					public Instruction extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
 						List<Instruction> results = extractInstructions(rs);
 						if ( results.size() > 0 ) {
 							return results.get(0);
@@ -176,14 +196,15 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement ps = con.prepareStatement(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_PARAM));
+				PreparedStatement ps = con
+						.prepareStatement(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_PARAM));
 				return ps;
 			}
 		}, new PreparedStatementCallback<Object>() {
 
 			@Override
-			public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
-					DataAccessException {
+			public Object doInPreparedStatement(PreparedStatement ps)
+					throws SQLException, DataAccessException {
 				int pos = 0;
 				for ( String paramName : instruction.getParameterNames() ) {
 					String[] paramValues = instruction.getAllParameterValues(paramName);
@@ -233,8 +254,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 				new Object[] { instructionId, instructorId }, new ResultSetExtractor<Instruction>() {
 
 					@Override
-					public Instruction extractData(ResultSet rs) throws SQLException,
-							DataAccessException {
+					public Instruction extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
 						List<Instruction> results = extractInstructions(rs);
 						if ( results.size() > 0 ) {
 							return results.get(0);
@@ -250,15 +271,26 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 		while ( rs.next() ) {
 			long currId = rs.getLong(1);
 			if ( bi == null || bi.getId().longValue() != currId ) {
+				Map<String, Object> rParams = null;
+				try {
+					String jparams = rs.getString(8);
+					if ( jparams != null && jparams.length() > 0 ) {
+						rParams = objectMapper.readValue(rs.getString(8), STRING_MAP_TYPE);
+					}
+				} catch ( IOException e ) {
+					// report but move on
+					log.warn("Error deserializing reulst parameter JSON: {}", e.getMessage());
+				}
 				InstructionStatus status = new BasicInstructionStatus(currId,
 						InstructionState.valueOf(rs.getString(6)), rs.getTimestamp(7),
-						(rs.getString(8) == null ? null : InstructionState.valueOf(rs.getString(8))));
+						(rs.getString(9) == null ? null : InstructionState.valueOf(rs.getString(9))),
+						rParams);
 				bi = new BasicInstruction(currId, rs.getString(2), rs.getTimestamp(3), rs.getString(4),
 						rs.getString(5), status);
 				results.add(bi);
 			}
-			String pName = rs.getString(9);
-			String pValue = rs.getString(10);
+			String pName = rs.getString(10);
+			String pValue = rs.getString(11);
 			if ( pName != null ) {
 				bi.addParameter(pName, pValue);
 			}
@@ -269,11 +301,22 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public void storeInstructionStatus(Long instructionId, InstructionStatus status) {
-		getJdbcTemplate().update(
-				getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
-				status.getInstructionState().toString(),
-				(status.getAcknowledgedInstructionState() == null ? null : status
-						.getAcknowledgedInstructionState().toString()), instructionId);
+		String jparams = null;
+		Map<String, ?> resultParameters = status.getResultParameters();
+		if ( resultParameters != null && !resultParameters.isEmpty() ) {
+			try {
+				jparams = objectMapper.writeValueAsString(resultParameters);
+			} catch ( JsonProcessingException e ) {
+				// report and move on
+				log.warn("Error serializing result parameters {} to JSON: {}", resultParameters,
+						e.getMessage());
+			}
+		}
+		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
+				status.getInstructionState().toString(), jparams,
+				(status.getAcknowledgedInstructionState() == null ? null
+						: status.getAcknowledgedInstructionState().toString()),
+				instructionId);
 
 	}
 
@@ -284,8 +327,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 				new Object[] { state.toString() }, new ResultSetExtractor<List<Instruction>>() {
 
 					@Override
-					public List<Instruction> extractData(ResultSet rs) throws SQLException,
-							DataAccessException {
+					public List<Instruction> extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
 						return extractInstructions(rs);
 					}
 				});
@@ -299,8 +342,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 				new ResultSetExtractor<List<Instruction>>() {
 
 					@Override
-					public List<Instruction> extractData(ResultSet rs) throws SQLException,
-							DataAccessException {
+					public List<Instruction> extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
 						return extractInstructions(rs);
 					}
 				});
@@ -322,6 +365,16 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements
 				return ps;
 			}
 		});
+	}
+
+	/**
+	 * Set the ObjectMapper to use for serializing result parameters.
+	 * 
+	 * @param objectMapper
+	 *        the objectMapper to set
+	 */
+	public void setObjectMapper(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
 	}
 
 }

@@ -1,0 +1,3 @@
+solar ALL = (root) NOPASSWD: /bin/systemctl start solarssh@*, \
+	/bin/systemctl stop solarssh@*
+
