@@ -167,7 +167,6 @@ public class RemoteSshService
 	 * Call after all properties are configured to initialize the service.
 	 */
 	public void init() {
-		publishSshPublicKey();
 		try {
 			for ( RemoteSshConfig config : listActive() ) {
 				configs.add(config);
