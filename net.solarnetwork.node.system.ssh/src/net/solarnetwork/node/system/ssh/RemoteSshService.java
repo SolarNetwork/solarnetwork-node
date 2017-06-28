@@ -167,7 +167,6 @@ public class RemoteSshService
 	 * Call after all properties are configured to initialize the service.
 	 */
 	public void init() {
-		publishSshPublicKey();
 		try {
 			for ( RemoteSshConfig config : listActive() ) {
 				configs.add(config);
@@ -349,8 +348,8 @@ public class RemoteSshService
 			Process pr = pb.start();
 			int status = pr.waitFor();
 			if ( status != 0 ) {
-				log.error("Error starting SSH connection {} (process returned {})", config, "5002");
-				resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, status);
+				log.error("Error starting SSH connection {} (process returned {})", config, status);
+				resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "5002");
 				resultParameters.put(InstructionStatus.MESSAGE_RESULT_PARAM,
 						"Error starting SSH connection; result code " + status);
 				return false;
