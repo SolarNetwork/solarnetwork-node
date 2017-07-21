@@ -27,6 +27,7 @@ package net.solarnetwork.node.dao.jdbc;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.TABLE_SETTINGS;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -70,7 +71,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -139,9 +140,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement queryStmt = con.prepareStatement(sqlGet,
-						ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE,
-						ResultSet.CLOSE_CURSORS_AT_COMMIT);
+				DatabaseMetaData meta = con.getMetaData();
+				int scrollMode = (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
+						? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE);
+				PreparedStatement queryStmt = con.prepareStatement(sqlGet, scrollMode,
+						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 				queryStmt.setString(1, key);
 				queryStmt.setString(2, type);
 				return queryStmt;
@@ -366,7 +369,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		if ( ea == null ) {
 			return;
 		}
-		Map<String, Object> props = new HashMap<String, Object>();
+		Map<String, Object> props = new HashMap<>();
 		if ( key != null ) {
 			props.put(SETTING_KEY, key);
 		}
