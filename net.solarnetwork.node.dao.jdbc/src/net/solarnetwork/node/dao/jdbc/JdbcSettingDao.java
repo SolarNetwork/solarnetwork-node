@@ -246,9 +246,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement queryStmt = con.prepareStatement(sqlGet,
-						ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE,
-						ResultSet.CLOSE_CURSORS_AT_COMMIT);
+				DatabaseMetaData meta = con.getMetaData();
+				int scrollMode = (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
+						? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE);
+				PreparedStatement queryStmt = con.prepareStatement(sqlGet, scrollMode,
+						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 				queryStmt.setString(1, key);
 				queryStmt.setString(2, type);
 				return queryStmt;
