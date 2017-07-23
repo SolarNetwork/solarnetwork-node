@@ -40,7 +40,7 @@
 		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
 		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
-		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementFinalizer</beans:prop>
+		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementCache(prepared=true,callable=true,max=50)</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql
 		</beans:prop>
