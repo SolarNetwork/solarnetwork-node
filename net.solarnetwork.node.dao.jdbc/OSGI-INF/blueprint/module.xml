@@ -2,10 +2,8 @@
 <blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
-	xmlns:beans="http://www.springframework.org/schema/beans"
-	xmlns:ctx="http://www.springframework.org/schema/context"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
 	xsi:schemaLocation="
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
@@ -19,16 +17,21 @@
 		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
 	<!-- Configuration -->
-	
-	<osgix:cm-properties id="dao.jdbc.cfg" persistent-id="net.solarnetwork.node.dao.jdbc">
-		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql</beans:prop>
+
+	<osgix:cm-properties id="dao.jdbc.cfg"
+		persistent-id="net.solarnetwork.node.dao.jdbc">
+		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql
+		</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
-		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
+		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService
+		</beans:prop>
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
-		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
-		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
+		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver
+		</beans:prop>
+		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true
+		</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
 		<beans:prop key="jdbc.pass">solarnode</beans:prop>
 		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
@@ -37,46 +40,51 @@
 		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
 		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
+		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementDecoratorInterceptor;StatementCache(prepared=true,callable=true,max=100);StatementFinalizer</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql
+		</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
-		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql
+		</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 0/2 ? * *</beans:prop>
 	</osgix:cm-properties>
-	
+
 	<!-- Service References -->
-	
-	<reference id="dataSourceFactory"
-		interface="org.osgi.service.jdbc.DataSourceFactory"
-        filter="(osgi.jdbc.driver.class=${jdbc.driver})"/>
-	
+
+	<reference id="dataSourceFactory" interface="org.osgi.service.jdbc.DataSourceFactory"
+		filter="(osgi.jdbc.driver.class=${jdbc.driver})" />
+
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
 	</bean>
 
 	<!-- Published Services -->
-	
-	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao" depends-on="databaseSetup"/>
-	
-	<service ref="dataSource" interface="javax.sql.DataSource" depends-on="databaseSetup">
+
+	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"
+		depends-on="databaseSetup" />
+
+	<service ref="dataSource" interface="javax.sql.DataSource"
+		depends-on="databaseSetup">
 		<service-properties>
-			<entry key="db" value="node"/>
+			<entry key="db" value="node" />
 		</service-properties>
 	</service>
 
 	<service ref="jdbcTemplate" interface="org.springframework.jdbc.core.JdbcOperations">
 		<service-properties>
-			<entry key="db" value="node"/>
+			<entry key="db" value="node" />
 		</service-properties>
 	</service>
 
-	<service ref="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
+	<service ref="txManager"
+		interface="org.springframework.transaction.PlatformTransactionManager"
 		depends-on="databaseSetup">
 		<service-properties>
-			<entry key="db" value="node"/>
+			<entry key="db" value="node" />
 		</service-properties>
 	</service>
 
@@ -86,11 +94,12 @@
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
 		</interfaces>
 		<service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
+			<beans:entry key="datumClassName"
+				value="net.solarnetwork.node.domain.GeneralNodeDatum" />
 		</service-properties>
 	</service>
-	
-	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+
+	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
 
 	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
 		<interfaces>
@@ -98,39 +107,41 @@
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
 		</interfaces>
 		<service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+			<beans:entry key="datumClassName"
+				value="net.solarnetwork.node.domain.GeneralLocationDatum" />
 		</service-properties>
 	</service>
-	
-	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 
-	<!--  Supporting Services -->
+	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
 
-	<ctx:property-placeholder properties-ref="dao.jdbc.cfg"/>
-	
-	<bean id="dataSource" class="net.solarnetwork.dao.jdbc.TomcatJdbcPoolDataSourceFactoryBean">
+	<!-- Supporting Services -->
+
+	<ctx:property-placeholder properties-ref="dao.jdbc.cfg" />
+
+	<bean id="dataSource"
+		class="net.solarnetwork.dao.jdbc.TomcatJdbcPoolDataSourceFactoryBean">
 		<property name="poolProperties">
 			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties">
-				<property name="jmxEnabled" value="true"/>
-				<property name="testWhileIdle" value="false"/>
-				<property name="testOnBorrow" value="true"/>
-				<property name="testOnConnect" value="true"/>
-				<property name="validationQuery" value="${jdbc.pool.validationQuery}"/>
-				<property name="testOnReturn" value="false"/>
-				<property name="validationInterval" value="30000"/>
-				<property name="timeBetweenEvictionRunsMillis" value="${jdbc.pool.timeBetweenEvictionRunsMillis}"/>
-				<property name="maxActive" value="${jdbc.pool.maxActive}"/>
-				<property name="initialSize" value="0"/>
-				<property name="maxWait" value="${jdbc.pool.maxWait}"/>
-				<property name="removeAbandonedTimeout" value="60"/>
-				<property name="minEvictableIdleTimeMillis" value="${jdbc.pool.minEvictableIdleTimeMillis}"/>
-				<property name="minIdle" value="0"/>
-				<property name="maxIdle" value="${jdbc.pool.maxActive}"/>
-				<property name="logAbandoned" value="true"/>
-				<property name="jdbcInterceptors" value="org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer"/>
+				<property name="jmxEnabled" value="true" />
+				<property name="testWhileIdle" value="false" />
+				<property name="testOnBorrow" value="true" />
+				<property name="testOnConnect" value="true" />
+				<property name="validationQuery" value="${jdbc.pool.validationQuery}" />
+				<property name="testOnReturn" value="false" />
+				<property name="validationInterval" value="30000" />
+				<property name="timeBetweenEvictionRunsMillis" value="${jdbc.pool.timeBetweenEvictionRunsMillis}" />
+				<property name="maxActive" value="${jdbc.pool.maxActive}" />
+				<property name="initialSize" value="0" />
+				<property name="maxWait" value="${jdbc.pool.maxWait}" />
+				<property name="removeAbandonedTimeout" value="60" />
+				<property name="minEvictableIdleTimeMillis" value="${jdbc.pool.minEvictableIdleTimeMillis}" />
+				<property name="minIdle" value="0" />
+				<property name="maxIdle" value="${jdbc.pool.maxActive}" />
+				<property name="logAbandoned" value="true" />
+				<property name="jdbcInterceptors" value="${jdbc.pool.interceptors}" />
 			</bean>
 		</property>
-		<property name="dataSourceFactory" ref="dataSourceFactory"/>
+		<property name="dataSourceFactory" ref="dataSourceFactory" />
 		<property name="dataSourceProperties">
 			<props>
 				<prop key="url">${jdbc.url}</prop>
@@ -138,47 +149,49 @@
 				<prop key="password">${jdbc.pass}</prop>
 			</props>
 		</property>
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="sqlExceptionHandlerSupport" value="true"/>
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="sqlExceptionHandlerSupport" value="true" />
 	</bean>
 
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
-		<property name="dataSource" ref="dataSource"/>
+		<property name="dataSource" ref="dataSource" />
 	</bean>
-	
+
 	<!-- PlatformTransactionManager: local JDBC transaction manager. -->
-	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
-		<property name="dataSource" ref="dataSource"/>
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
 	</bean>
-	
+
 	<service id="restoreFromBackupHandler" interface="net.solarnetwork.dao.jdbc.SQLExceptionHandler">
-		<bean class="net.solarnetwork.node.dao.jdbc.RestoreFromBackupSQLExceptionHandler">
-			<argument ref="bundleContext"/>
-			<argument value="${restoreFromBackup.exceptionThreshold}"/>
-			<property name="restoreDelaySeconds" value="${restoreFromBackup.secondsDelay}"/>
-			<property name="backupResourceProviderFilter" value="${restoreFromBackup.resourceProviderFilter}"/>
-			<property name="sqlStateRegex" value="${restoreFromBackup.sqlStateRegex}"/>
+		<bean
+			class="net.solarnetwork.node.dao.jdbc.RestoreFromBackupSQLExceptionHandler">
+			<argument ref="bundleContext" />
+			<argument value="${restoreFromBackup.exceptionThreshold}" />
+			<property name="restoreDelaySeconds" value="${restoreFromBackup.secondsDelay}" />
+			<property name="backupResourceProviderFilter" value="${restoreFromBackup.resourceProviderFilter}" />
+			<property name="sqlStateRegex" value="${restoreFromBackup.sqlStateRegex}" />
 		</bean>
 	</service>
-	
+
 	<service id="shutdownHandler" interface="net.solarnetwork.dao.jdbc.SQLExceptionHandler">
 		<bean class="net.solarnetwork.node.dao.jdbc.ShutdownSQLExceptionHandler">
-			<property name="sqlStateRegex" value="${shutdown.sqlStateRegex}"/>
+			<property name="sqlStateRegex" value="${shutdown.sqlStateRegex}" />
 		</bean>
 	</service>
-	
+
 	<bean id="databaseSetup" class="net.solarnetwork.node.dao.jdbc.DatabaseSetup"
-			init-method="init" depends-on="restoreFromBackupHandler shutdownHandler">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="initSqlResource" value="${DatabaseSetup.initSqlResource}"/>
+		init-method="init" depends-on="restoreFromBackupHandler shutdownHandler">
+		<property name="dataSource" ref="dataSource" />
+		<property name="initSqlResource" value="${DatabaseSetup.initSqlResource}" />
 	</bean>
-	
+
 	<bean id="settingDao" class="net.solarnetwork.node.dao.jdbc.JdbcSettingDao">
-		<property name="dataSource" ref="dataSource"/>
-		<property name="eventAdmin" ref="eventAdmin"/>
+		<property name="dataSource" ref="dataSource" />
+		<property name="eventAdmin" ref="eventAdmin" />
 		<property name="transactionTemplate">
 			<bean class="org.springframework.transaction.support.TransactionTemplate">
-				<argument ref="txManager"/>
+				<argument ref="txManager" />
 			</bean>
 		</property>
 	</bean>
@@ -186,76 +199,86 @@
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="featuresToEnable">
 			<list>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}</value>
+				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}
+				</value>
 			</list>
 		</property>
 	</bean>
 
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
+	<bean id="generalNodeDatumDao"
+		class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
-		<property name="objectMapper" ref="objectMapper"/>
-		<property name="dataSource" ref="dataSource"/>
-		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}"/>
-		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}"/>
-		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}"/>
+		<property name="objectMapper" ref="objectMapper" />
+		<property name="dataSource" ref="dataSource" />
+		<property name="initSqlResource" value="${JdbcGeneralNodeDatumDao.initSqlResource}" />
+		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}" />
+		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 
-	<bean id="generalLocationDatumDao" class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
+	<bean id="generalLocationDatumDao"
+		class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
 		init-method="init">
-		<property name="objectMapper" ref="objectMapper"/>
-		<property name="dataSource" ref="dataSource"/>
-		<property name="initSqlResource" value="${JdbcGeneralLocationDatumDao.initSqlResource}"/>
-		<property name="sqlResourcePrefix" value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}"/>
-		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}"/>
+		<property name="objectMapper" ref="objectMapper" />
+		<property name="dataSource" ref="dataSource" />
+		<property name="initSqlResource"
+			value="${JdbcGeneralLocationDatumDao.initSqlResource}" />
+		<property name="sqlResourcePrefix"
+			value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}" />
+		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->
-	<tx:annotation-driven transaction-manager="txManager"/>
+	<tx:annotation-driven transaction-manager="txManager" />
 
-	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS"/>
+	<bean id="jobMessageSource"
+		class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS" />
 	</bean>
-	
+
 	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
-		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
+		<property name="trigger" ref="generalNodeDatumCleanerTrigger" />
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob" />
+		<property name="messageSource" ref="jobMessageSource" />
 	</bean>
 
-	<bean id="generalNodeDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
-		<property name="cronExpression" value="${job.generalNodeDatumCleaner.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	<bean id="generalNodeDatumCleanerTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob" />
+		<property name="cronExpression" value="${job.generalNodeDatumCleaner.cron}" />
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
 	</bean>
 
-	<bean id="generalNodeDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+	<bean id="generalNodeDatumCleanerJob"
+		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob" />
 		<property name="jobDataAsMap">
 			<map>
-				<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+				<entry key="datumDao" value-ref="generalNodeDatumDao" />
 			</map>
 		</property>
 	</bean>
-	
+
 	<bean id="generalLocationDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="generalLocationDatumCleanerTrigger"/>
-		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
+		<property name="trigger" ref="generalLocationDatumCleanerTrigger" />
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob" />
+		<property name="messageSource" ref="jobMessageSource" />
 	</bean>
 
-	<bean id="generalLocationDatumCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="generalLocationDatumCleanerJob"/>
-		<property name="cronExpression" value="${job.generalLocationDatumCleaner.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+	<bean id="generalLocationDatumCleanerTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="generalLocationDatumCleanerJob" />
+		<property name="cronExpression" value="${job.generalLocationDatumCleaner.cron}" />
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
 	</bean>
 
-	<bean id="generalLocationDatumCleanerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob"/>
+	<bean id="generalLocationDatumCleanerJob"
+		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob" />
 		<property name="jobDataAsMap">
 			<map>
-				<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+				<entry key="datumDao" value-ref="generalLocationDatumDao" />
 			</map>
 		</property>
 	</bean>
-	
+
 </blueprint>
