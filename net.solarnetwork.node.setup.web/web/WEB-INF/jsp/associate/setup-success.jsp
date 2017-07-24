@@ -1,3 +1,4 @@
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <p class="lead"><fmt:message key="node.setup.success.intro"/></p>
 
 <table class="table">
@@ -12,7 +13,7 @@
 				<div class="alert">
 					<fmt:message key='node.setup.success.user.intro'>
 						<fmt:param><setup:url value="/a/user/change-password">
-							<c:param name="old" value="${user.password}"/>
+							<spring:param name="old" value="${user.password}"/>
 						</setup:url></fmt:param>
 					</fmt:message>
 				</div>
