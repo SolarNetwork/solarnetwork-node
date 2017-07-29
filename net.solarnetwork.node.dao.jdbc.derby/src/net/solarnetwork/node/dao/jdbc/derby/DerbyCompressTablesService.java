@@ -40,13 +40,15 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
 /**
- * A service to inspect avaialble tables and perform a Derby in-place compress
+ * A service to inspect available tables and perform a Derby in-place compress
  * on them to free up disk space.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @see DerbyFullCompressTablesService for a more agressive alternative to this
+ *      service
  */
-public class DerbyCompressTablesService {
+public class DerbyCompressTablesService implements TablesMaintenanceService {
 
 	private static final String COMPRESS_CALL = "CALL SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE(?, ?, ?, ?, ?)";
 
@@ -76,6 +78,7 @@ public class DerbyCompressTablesService {
 	 * @return A {@code key} for the last table processed, or {@code null} if
 	 *         all tables were processed.
 	 */
+	@Override
 	public String processTables(final String startAfterKey) {
 		return jdbcOperations.execute(new ConnectionCallback<String>() {
 
@@ -154,7 +157,7 @@ public class DerbyCompressTablesService {
 	}
 
 	private Map<String, Set<String>> candidateTableMap(Connection con) throws SQLException {
-		Map<String, Set<String>> candidateMap = new LinkedHashMap<String, Set<String>>(16);
+		Map<String, Set<String>> candidateMap = new LinkedHashMap<>(16);
 		DatabaseMetaData dbMeta = con.getMetaData();
 		ResultSet rs = null;
 		try {
@@ -175,7 +178,7 @@ public class DerbyCompressTablesService {
 				log.debug("Found table compress candidate {}.{}", schema, table);
 				Set<String> tables = candidateMap.get(schema);
 				if ( tables == null ) {
-					tables = new LinkedHashSet<String>(16);
+					tables = new LinkedHashSet<>(16);
 					candidateMap.put(schema, tables);
 				}
 				tables.add(table);
@@ -210,7 +213,7 @@ public class DerbyCompressTablesService {
 
 	public void setSchemas(Set<String> schemas) {
 		if ( schemas != null && !schemas.isEmpty() ) {
-			Set<String> lcSchemas = new LinkedHashSet<String>(schemas.size());
+			Set<String> lcSchemas = new LinkedHashSet<>(schemas.size());
 			for ( String s : schemas ) {
 				lcSchemas.add(s.toLowerCase());
 			}

@@ -1,7 +1,7 @@
 /* ==================================================================
- * DerbyCompressTablesJob.java - 30/09/2016 7:25:29 AM
+ * TablesMaintenanceJob.java - Jul 29, 2017 2:09:24 PM
  * 
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -29,30 +29,29 @@ import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 
 /**
- * Job to compress Derby tables using the
- * {@code SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE} procedure.
+ * Job to execute the {@link TablesMaintenanceService#processTables(String)}
+ * method.
  * 
  * @author matt
- * @version 1.1
- * @deprecated use {@link TablesMaintenanceJob} instead
+ * @version 1.0
+ * @since 1.8
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-@Deprecated
-public class DerbyCompressTablesJob extends AbstractJob {
+public class TablesMaintenanceJob extends AbstractJob {
 
-	private DerbyCompressTablesService compressService;
+	private TablesMaintenanceService maintenanceService;
 
-	public static final String JOB_KEY_LAST_TABLE_KEY = "CompressTablesLastKey";
+	public static final String JOB_KEY_LAST_TABLE_KEY = "TablesMaintenanceLastKey";
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		if ( compressService == null ) {
+		if ( maintenanceService == null ) {
 			return;
 		}
 		JobDataMap jd = jobContext.getJobDetail().getJobDataMap();
 		String startAfterKey = (String) jd.get(JOB_KEY_LAST_TABLE_KEY);
-		startAfterKey = compressService.processTables(startAfterKey);
+		startAfterKey = maintenanceService.processTables(startAfterKey);
 		if ( startAfterKey == null ) {
 			jd.remove(JOB_KEY_LAST_TABLE_KEY);
 		} else {
@@ -63,11 +62,11 @@ public class DerbyCompressTablesJob extends AbstractJob {
 	/**
 	 * Set the service to use.
 	 * 
-	 * @param compressService
-	 *        The compress service.
+	 * @param maintenanceService
+	 *        The maintenance service.
 	 */
-	public void setCompressService(DerbyCompressTablesService compressService) {
-		this.compressService = compressService;
+	public void setMaintenanceService(TablesMaintenanceService maintenanceService) {
+		this.maintenanceService = maintenanceService;
 	}
 
 }

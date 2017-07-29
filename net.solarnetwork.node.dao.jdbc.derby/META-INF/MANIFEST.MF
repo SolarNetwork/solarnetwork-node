@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Derby Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby
 Bundle-Description: Provides automated maintenance tasks for the Apache Derby database.
-Bundle-Version: 1.7.0
+Bundle-Version: 1.8.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -28,4 +28,5 @@ Import-Package:
  org.springframework.core;version="[4.2,5.0)",
  org.springframework.dao;version="[4.2,5.0)",
  org.springframework.jdbc.core;version="[4.2,5.0)",
- org.springframework.scheduling.quartz;version="[4.2,5.0)"
+ org.springframework.scheduling.quartz;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"
