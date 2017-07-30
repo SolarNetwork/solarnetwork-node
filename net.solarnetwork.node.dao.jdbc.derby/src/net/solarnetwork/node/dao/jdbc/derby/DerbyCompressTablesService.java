@@ -157,7 +157,7 @@ public class DerbyCompressTablesService implements TablesMaintenanceService {
 	}
 
 	private Map<String, Set<String>> candidateTableMap(Connection con) throws SQLException {
-		Map<String, Set<String>> candidateMap = new LinkedHashMap<>(16);
+		Map<String, Set<String>> candidateMap = new LinkedHashMap<String, Set<String>>(16);
 		DatabaseMetaData dbMeta = con.getMetaData();
 		ResultSet rs = null;
 		try {

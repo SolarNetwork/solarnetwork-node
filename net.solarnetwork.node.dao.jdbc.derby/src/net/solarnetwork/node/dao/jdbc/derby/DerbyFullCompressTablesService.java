@@ -107,7 +107,7 @@ public class DerbyFullCompressTablesService implements TablesMaintenanceService 
 	}
 
 	private Map<String, Set<String>> findCandidateTables(Connection con) throws SQLException {
-		Map<String, Set<String>> candidateMap = new LinkedHashMap<>();
+		Map<String, Set<String>> candidateMap = new LinkedHashMap<String, Set<String>>();
 
 		PreparedStatement findTablesStmt = findTablesStatement(con);
 		ResultSet rs = null;
