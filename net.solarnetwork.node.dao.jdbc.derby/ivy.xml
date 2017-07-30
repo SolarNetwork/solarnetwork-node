@@ -13,7 +13,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.2.3" />
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.44,2.0)"/>
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[1.9,2.0)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc" rev="[1.19,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.dao.jdbc.derby.ext" rev="[1.1,2.0)"/>
 		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
