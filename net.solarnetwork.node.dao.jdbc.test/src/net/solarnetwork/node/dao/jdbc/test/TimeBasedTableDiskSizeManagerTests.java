@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.test;
 
+import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -33,7 +34,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
@@ -53,6 +53,9 @@ import net.solarnetwork.util.StaticOptionalService;
  * @version 1.0
  */
 public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactionalTest {
+
+	private static int ROW_COUNT = 60 * 24 * 30;
+	private static int TRIM_MINUTES = 60 * 24;
 
 	@Resource(name = "dataSource")
 	private DataSource dataSource;
@@ -80,6 +83,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 		manager.setMinTableSizeThreshold(1024);
 		manager.setSchemaName("SOLARNODE");
 		manager.setTableName("TEST_TIME_BASED");
+		manager.setTrimMinutes(TRIM_MINUTES);
 
 		dbDir = jdbcTemplate.execute(new ConnectionCallback<File>() {
 
@@ -91,7 +95,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 		});
 		long usableSpace = dbDir.getUsableSpace();
 		long totalSpace = dbDir.getTotalSpace();
-		manager.setMaxFilesystemUseThreshold(
+		manager.setMaxFileSystemUseThreshold(
 				(float) (100 * (1.0 - (usableSpace / (double) totalSpace))));
 	}
 
@@ -163,7 +167,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 
 			@Override
 			public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
-				insertRows(conn, cal, 60 * 24);
+				insertRows(conn, cal, ROW_COUNT);
 				return null;
 			}
 		});
@@ -174,7 +178,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 
 		int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SOLARNODE.TEST_TIME_BASED",
 				Integer.class);
-		Assert.assertEquals(60 * 24 - 90, count);
+		assertEquals(ROW_COUNT - TRIM_MINUTES, count);
 
 		long diskSizeAfter = totalDiskSize(dbDir);
 

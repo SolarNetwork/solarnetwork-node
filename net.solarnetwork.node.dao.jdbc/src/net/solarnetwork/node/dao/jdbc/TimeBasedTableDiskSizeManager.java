@@ -51,7 +51,9 @@ import net.solarnetwork.util.OptionalService;
  * low.
  * 
  * <p>
- * TODO
+ * This service is designed so that {@link #performMaintenance()} can be called
+ * periodically to check if rows need to be deleted, based on the thresholds
+ * configured.
  * </p>
  * 
  * @author matt
@@ -65,7 +67,7 @@ public class TimeBasedTableDiskSizeManager {
 	private String schemaName = "SOLARNODE";
 	private String tableName = "SN_GENERAL_NODE_DATUM";
 	private String dateColumnName = "CREATED";
-	private float maxFilesystemUseThreshold = 90.0f;
+	private float maxFileSystemUseThreshold = 90.0f;
 	private long minTableSizeThreshold = (1024 * 1024); // 1MB
 	private int trimMinutes = 90;
 
@@ -107,9 +109,14 @@ public class TimeBasedTableDiskSizeManager {
 				float percentFull = (float) (100 * (1.0 - (usableSpace / (double) totalSpace)));
 				log.debug("Database filesystem {} {}% capacity ({} available out of {})", store.name(),
 						percentFull, usableSpace, totalSpace);
-				if ( percentFull >= maxFilesystemUseThreshold ) {
-					deleteDataIfPossible(dbService);
-					return; // only execute once per table, assuming all file systems will be impacted
+				if ( percentFull >= maxFileSystemUseThreshold ) {
+					long diskSize = dbService.tableFileSystemSize(schemaName, tableName);
+					log.debug("Database table {}.{} consumes {} on disk", schemaName, tableName,
+							diskSize);
+					if ( diskSize >= minTableSizeThreshold ) {
+						deleteOldestData(dbService);
+						return; // only execute once per call, assuming all file systems will be impacted
+					}
 				}
 
 			} catch ( IOException e ) {
@@ -118,12 +125,7 @@ public class TimeBasedTableDiskSizeManager {
 		}
 	}
 
-	private void deleteDataIfPossible(DatabaseSystemService dbService) {
-		long diskSize = dbService.tableFileSystemSize(schemaName, tableName);
-		log.debug("Database table {}.{} consumes {} on disk", schemaName, tableName, diskSize);
-		if ( diskSize < minTableSizeThreshold ) {
-			return;
-		}
+	private void deleteOldestData(DatabaseSystemService dbService) {
 		jdbcOperations.execute(new ConnectionCallback<Object>() {
 
 			@Override
@@ -214,34 +216,120 @@ public class TimeBasedTableDiskSizeManager {
 		}
 	}
 
+	/**
+	 * Set the operations to use for connecting to the database.
+	 * 
+	 * <p>
+	 * The operations is assumed to be configured with a
+	 * {@link javax.sql.DataSource} configured for the database to manage.
+	 * </p>
+	 * 
+	 * @param jdbcOperations
+	 *        the operations
+	 */
 	public void setJdbcOperations(JdbcOperations jdbcOperations) {
 		this.jdbcOperations = jdbcOperations;
 	}
 
+	/**
+	 * Set the database system service to use.
+	 * 
+	 * <p>
+	 * This service is assumed to be configured to manage the same database as
+	 * provided by {@link #setJdbcOperations(JdbcOperations)}.
+	 * 
+	 * @param dbSystemService
+	 *        the database system service
+	 */
 	public void setDbSystemService(OptionalService<DatabaseSystemService> dbSystemService) {
 		this.dbSystemService = dbSystemService;
 	}
 
+	/**
+	 * Set the name of the schema of the database table to manage.
+	 * 
+	 * <p>
+	 * This defaults to {@literal SOLARNODE}.
+	 * </p>
+	 * 
+	 * @param schemaName
+	 *        the database schema name of the table to manage
+	 */
 	public void setSchemaName(String schemaName) {
 		this.schemaName = schemaName;
 	}
 
+	/**
+	 * Set the name of the database table to manage.
+	 * 
+	 * <p>
+	 * This defaults to {@literal SN_GENERAL_NODE_DATUM}.
+	 * </p>
+	 * 
+	 * @param tableName
+	 *        the name of the database table to manage
+	 */
 	public void setTableName(String tableName) {
 		this.tableName = tableName;
 	}
 
+	/**
+	 * Set the name of the date column to manage.
+	 * 
+	 * <p>
+	 * This column is referenced when executing time-based queries on the
+	 * managed database table, and should contain a timestamp data type. It
+	 * defaults to {@literal CREATED}.
+	 * </p>
+	 * 
+	 * @param dateColumnName
+	 *        the name of the date column on the database table to manage
+	 */
 	public void setDateColumnName(String dateColumnName) {
 		this.dateColumnName = dateColumnName;
 	}
 
-	public void setMaxFilesystemUseThreshold(float maxFilesystemUseThreshold) {
-		this.maxFilesystemUseThreshold = maxFilesystemUseThreshold;
+	/**
+	 * Set the maximum file system use percentage allowed before trimming data
+	 * is permitted.
+	 * 
+	 * <p>
+	 * This value should be expressed as a percentage, for example
+	 * {@literal 92.5}. Defaults to {@literal 90}.
+	 * </p>
+	 * 
+	 * @param maxFilesystemUseThreshold
+	 */
+	public void setMaxFileSystemUseThreshold(float maxFileSystemUseThreshold) {
+		this.maxFileSystemUseThreshold = maxFileSystemUseThreshold;
 	}
 
+	/**
+	 * Set a minimum size, in bytes, for a table to consume before allowing the
+	 * oldest data to be trimmed.
+	 * 
+	 * <p>
+	 * This defaults to {@literal 1048576} (1MB).
+	 * </p>
+	 * 
+	 * @param minTableSizeThreshold
+	 *        the minimum table size threshold
+	 */
 	public void setMinTableSizeThreshold(long minTableSizeThreshold) {
 		this.minTableSizeThreshold = minTableSizeThreshold;
 	}
 
+	/**
+	 * Set the number of minutes of oldest data to trim.
+	 * 
+	 * <p>
+	 * When trimming data, the oldest available date plus this many minutes will
+	 * be deleted. Defaults to {@literal 90}.
+	 * </p>
+	 * 
+	 * @param trimMinutes
+	 *        the number of minutes to to trim
+	 */
 	public void setTrimMinutes(int trimMinutes) {
 		this.trimMinutes = trimMinutes;
 	}
