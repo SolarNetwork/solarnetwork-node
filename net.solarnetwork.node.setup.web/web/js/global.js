@@ -334,7 +334,7 @@ SolarNode.extractJSONPath = function(root, path) {
 
 SolarNode.tryGotoURL = function(destURL) {
 	function tryLoadUrl(url) {
-		SolarNode.info('Trying to refresh URL ' + url);
+		console.log('Trying to refresh URL ' + url);
 		$.getJSON(url).then(function() {
 			window.location = destURL;
 		}, function(error) {
