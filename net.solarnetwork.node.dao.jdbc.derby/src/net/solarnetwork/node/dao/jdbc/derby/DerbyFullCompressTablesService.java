@@ -126,7 +126,7 @@ public class DerbyFullCompressTablesService implements TablesMaintenanceService 
 							savings);
 					Set<String> tables = candidateMap.get(schemaName);
 					if ( tables == null ) {
-						tables = new LinkedHashSet<>();
+						tables = new LinkedHashSet<String>();
 						candidateMap.put(schemaName, tables);
 					}
 					tables.add(table);
@@ -191,7 +191,7 @@ public class DerbyFullCompressTablesService implements TablesMaintenanceService 
 	 */
 	public void setSchemas(Set<String> schemas) {
 		if ( schemas != null && !schemas.isEmpty() ) {
-			Set<String> ciSchemas = new LinkedHashSet<>(schemas.size());
+			Set<String> ciSchemas = new LinkedHashSet<String>(schemas.size());
 			for ( String s : schemas ) {
 				ciSchemas.add(s.toUpperCase());
 			}

@@ -178,7 +178,7 @@ public class DerbyCompressTablesService implements TablesMaintenanceService {
 				log.debug("Found table compress candidate {}.{}", schema, table);
 				Set<String> tables = candidateMap.get(schema);
 				if ( tables == null ) {
-					tables = new LinkedHashSet<>(16);
+					tables = new LinkedHashSet<String>(16);
 					candidateMap.put(schema, tables);
 				}
 				tables.add(table);
@@ -213,7 +213,7 @@ public class DerbyCompressTablesService implements TablesMaintenanceService {
 
 	public void setSchemas(Set<String> schemas) {
 		if ( schemas != null && !schemas.isEmpty() ) {
-			Set<String> lcSchemas = new LinkedHashSet<>(schemas.size());
+			Set<String> lcSchemas = new LinkedHashSet<String>(schemas.size());
 			for ( String s : schemas ) {
 				lcSchemas.add(s.toLowerCase());
 			}
