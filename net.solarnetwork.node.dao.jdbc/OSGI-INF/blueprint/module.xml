@@ -49,7 +49,11 @@
 		</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
+		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
+		<beans:prop key="job.generalNodeDatumTrimmer.trimMinutes">120</beans:prop>
 		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 0/2 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumTrimmer.cron">35 30 1/2 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumTrimmer.trimMinutes">120</beans:prop>
 	</osgix:cm-properties>
 
 	<!-- Service References -->
@@ -60,6 +64,12 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext" />
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
+	</bean>
+	
+	<bean id="databaseSystemService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.jdbc.DatabaseSystemService" />
+		<property name="serviceFilter" value="(db=node)"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -101,6 +111,8 @@
 
 	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
 
+	<service ref="generalNodeDatumTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
+
 	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
 		<interfaces>
 			<value>net.solarnetwork.node.dao.DatumDao</value>
@@ -113,6 +125,8 @@
 	</service>
 
 	<service ref="generalLocationDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
+
+	<service ref="generalLocationDatumTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
 
 	<!-- Supporting Services -->
 
@@ -205,6 +219,16 @@
 		</property>
 	</bean>
 
+	<!-- Use Java @Transactional annotations to declare transactions. -->
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<bean id="jobMessageSource"
+		class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS" />
+	</bean>
+	
+	<!-- General Node Datum -->
+
 	<bean id="generalNodeDatumDao"
 		class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao"
 		init-method="init">
@@ -215,30 +239,10 @@
 		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 
-	<bean id="generalLocationDatumDao"
-		class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
-		init-method="init">
-		<property name="objectMapper" ref="objectMapper" />
-		<property name="dataSource" ref="dataSource" />
-		<property name="initSqlResource"
-			value="${JdbcGeneralLocationDatumDao.initSqlResource}" />
-		<property name="sqlResourcePrefix"
-			value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}" />
-		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
-	</bean>
-
-	<!-- Use Java @Transactional annotations to declare transactions. -->
-	<tx:annotation-driven transaction-manager="txManager" />
-
-	<bean id="jobMessageSource"
-		class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS" />
-	</bean>
-
 	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="generalNodeDatumCleanerTrigger" />
-		<property name="jobDetail" ref="generalNodeDatumCleanerJob" />
-		<property name="messageSource" ref="jobMessageSource" />
+		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
+		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
 
 	<bean id="generalNodeDatumCleanerTrigger"
@@ -256,6 +260,47 @@
 				<entry key="datumDao" value-ref="generalNodeDatumDao" />
 			</map>
 		</property>
+	</bean>
+	
+	<bean id="generalNodeDatumTrimManager" class="net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager">
+		<property name="jdbcOperations" ref="jdbcTemplate"/>
+		<property name="dbSystemService" ref="databaseSystemService"/>
+		<property name="tableName" value="SN_GENERAL_NODE_DATUM"/>
+		<property name="trimMinutes" value="${job.generalNodeDatumTrimmer.trimMinutes}"/>
+	</bean>
+
+	<bean id="generalNodeDatumTrimmer" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalNodeDatumTrimmerTrigger"/>
+		<property name="jobDetail" ref="generalNodeDatumTrimmerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="generalNodeDatumTrimmerTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="generalNodeDatumTrimmerJob" />
+		<property name="cronExpression" value="${job.generalNodeDatumTrimmer.cron}" />
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
+	</bean>
+
+	<bean id="generalNodeDatumTrimmerJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false"/>
+		<property name="targetObject" ref="generalNodeDatumTrimManager"/>
+		<property name="targetMethod" value="performMaintenance"/>
+	</bean>
+	
+	<!-- General Location Datum -->
+
+	<bean id="generalLocationDatumDao"
+		class="net.solarnetwork.node.dao.jdbc.general.JdbcGeneralLocationDatumDao"
+		init-method="init">
+		<property name="objectMapper" ref="objectMapper" />
+		<property name="dataSource" ref="dataSource" />
+		<property name="initSqlResource"
+			value="${JdbcGeneralLocationDatumDao.initSqlResource}" />
+		<property name="sqlResourcePrefix"
+			value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}" />
+		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 
 	<bean id="generalLocationDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
@@ -280,5 +325,32 @@
 			</map>
 		</property>
 	</bean>
+	
+	<bean id="generalLocationDatumTrimManager" class="net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager">
+		<property name="jdbcOperations" ref="jdbcTemplate"/>
+		<property name="dbSystemService" ref="databaseSystemService"/>
+		<property name="tableName" value="SN_GENERAL_LOC_DATUM"/>
+		<property name="trimMinutes" value="${job.generalLocationDatumTrimmer.trimMinutes}"/>
+	</bean>
 
+	<bean id="generalLocationDatumTrimmer" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="generalLocationDatumTrimmerTrigger" />
+		<property name="jobDetail" ref="generalLocationDatumTrimmerJob" />
+		<property name="messageSource" ref="jobMessageSource" />
+	</bean>
+
+	<bean id="generalLocationDatumTrimmerTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="generalLocationDatumTrimmerJob" />
+		<property name="cronExpression" value="${job.generalLocationDatumTrimmer.cron}" />
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
+	</bean>
+
+	<bean id="generalLocationDatumTrimmerJob"
+		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="concurrent" value="false"/>
+		<property name="targetObject" ref="generalLocationDatumTrimManager"/>
+		<property name="targetMethod" value="performMaintenance"/>
+	</bean>
+	
 </blueprint>

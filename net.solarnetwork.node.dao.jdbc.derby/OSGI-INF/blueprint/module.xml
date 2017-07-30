@@ -38,8 +38,19 @@
 	
 	<service ref="compress" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	<service ref="syncBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+	<service ref="dbSystemService" interface="net.solarnetwork.node.dao.jdbc.DatabaseSystemService">
+		<service-properties>
+			<entry key="db" value="node"/>
+		</service-properties>
+	</service>
 
 	<!-- Supporting services -->
+
+	<bean id="dbSystemService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService">
+		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="compressTablesService" ref="compressService"/>
+	</bean>
 	
 	<bean class="net.solarnetwork.node.dao.jdbc.derby.DerbyCustomFunctionsInitializer" init-method="init">
 		<property name="jdbcOperations" ref="jdbcOps"/>
