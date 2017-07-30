@@ -30,7 +30,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.TimeZone;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
@@ -43,6 +42,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import net.solarnetwork.node.dao.jdbc.DatabaseSystemService;
 import net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService;
+import net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import net.solarnetwork.util.StaticOptionalService;
 
@@ -60,6 +60,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 	private JdbcTemplate jdbcTemplate;
 	private DerbyDatabaseSystemService dbService;
 	private TimeBasedTableDiskSizeManager manager;
+	private File dbDir;
 
 	private int serialNum = 0;
 
@@ -69,13 +70,18 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 		manager = new TimeBasedTableDiskSizeManager();
 		dbService = new DerbyDatabaseSystemService();
 		dbService.setJdbcOperations(jdbcTemplate);
+
+		DerbyFullCompressTablesService compressService = new DerbyFullCompressTablesService();
+		compressService.setJdbcOperations(jdbcTemplate);
+		dbService.setCompressTablesService(compressService);
+
 		manager.setJdbcOperations(jdbcTemplate);
 		manager.setDbSystemService(new StaticOptionalService<DatabaseSystemService>(dbService));
 		manager.setMinTableSizeThreshold(1024);
 		manager.setSchemaName("SOLARNODE");
 		manager.setTableName("TEST_TIME_BASED");
 
-		File dbDir = jdbcTemplate.execute(new ConnectionCallback<File>() {
+		dbDir = jdbcTemplate.execute(new ConnectionCallback<File>() {
 
 			@Override
 			public File doInConnection(Connection conn) throws SQLException, DataAccessException {
@@ -135,12 +141,24 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 		}
 	}
 
+	private static long totalDiskSize(File file) {
+		long fileSize = 0;
+		if ( file.isDirectory() ) {
+			for ( File f : file.listFiles() ) {
+				fileSize += totalDiskSize(f);
+			}
+		} else {
+			fileSize += file.length();
+		}
+		return fileSize;
+	}
+
 	@Test
 	public void test() {
 		final Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(Calendar.MILLISECOND, 0);
 		cal.set(Calendar.SECOND, 0);
-		final Date start = cal.getTime();
+
 		jdbcTemplate.execute(new ConnectionCallback<Object>() {
 
 			@Override
@@ -150,11 +168,17 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 			}
 		});
 
+		long diskSizeBefore = totalDiskSize(dbDir);
+
 		manager.performMaintenance();
 
 		int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SOLARNODE.TEST_TIME_BASED",
 				Integer.class);
 		Assert.assertEquals(60 * 24 - 90, count);
+
+		long diskSizeAfter = totalDiskSize(dbDir);
+
+		log.debug("Disk size diff: {}", diskSizeAfter - diskSizeBefore);
 	}
 
 }

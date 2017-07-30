@@ -49,6 +49,7 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSystemService;
 public class DerbyDatabaseSystemService implements DatabaseSystemService {
 
 	private JdbcOperations jdbcOperations;
+	private TablesMaintenanceService compressTablesService;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -109,8 +110,22 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 		});
 	}
 
+	@Override
+	public void vacuumTable(String schemaName, String tableName) {
+		// we ignore the schema / table name and simply try to compress all potential tables
+		TablesMaintenanceService service = compressTablesService;
+		if ( service == null ) {
+			return;
+		}
+		service.processTables(null);
+	}
+
 	public void setJdbcOperations(JdbcOperations jdbcOperations) {
 		this.jdbcOperations = jdbcOperations;
+	}
+
+	public void setCompressTablesService(TablesMaintenanceService compressTablesService) {
+		this.compressTablesService = compressTablesService;
 	}
 
 }

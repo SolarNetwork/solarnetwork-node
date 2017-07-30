@@ -58,4 +58,15 @@ public interface DatabaseSystemService {
 	 */
 	long tableFileSystemSize(String schemaName, String tableName);
 
+	/**
+	 * Perform maintenance on a table, with the goal of freeing up resources
+	 * that can be returned to the system.
+	 * 
+	 * @param schemaName
+	 *        the schema of the table
+	 * @param tableName
+	 *        the table name
+	 */
+	void vacuumTable(String schemaName, String tableName);
+
 }

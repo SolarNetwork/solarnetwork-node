@@ -164,6 +164,9 @@ public class TimeBasedTableDiskSizeManager {
 			}
 
 		});
+
+		// now that we've deleted data, perform a vacuum to reclaim space if possible
+		dbService.vacuumTable(schemaName, tableName);
 	}
 
 	private Timestamp findOldestDate(final Connection conn, final String fullTableName)
