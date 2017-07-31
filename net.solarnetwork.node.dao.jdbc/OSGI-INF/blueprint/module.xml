@@ -51,9 +51,13 @@
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.trimMinutes">120</beans:prop>
+		<beans:prop key="job.generalNodeDatumTrimmer.fileSystemUseThreshold">90</beans:prop>
+		<beans:prop key="job.generalNodeDatumTrimmer.tableSizeThreshold">1048576</beans:prop>
 		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalLocationDatumTrimmer.cron">35 30 1/2 ? * *</beans:prop>
 		<beans:prop key="job.generalLocationDatumTrimmer.trimMinutes">120</beans:prop>
+		<beans:prop key="job.generalLocationDatumTrimmer.fileSystemUseThreshold">90</beans:prop>
+		<beans:prop key="job.generalLocationDatumTrimmer.tableSizeThreshold">1048576</beans:prop>
 	</osgix:cm-properties>
 
 	<!-- Service References -->
@@ -267,6 +271,8 @@
 		<property name="dbSystemService" ref="databaseSystemService"/>
 		<property name="tableName" value="SN_GENERAL_NODE_DATUM"/>
 		<property name="trimMinutes" value="${job.generalNodeDatumTrimmer.trimMinutes}"/>
+		<property name="maxFileSystemUseThreshold" value="${job.generalNodeDatumTrimmer.fileSystemUseThreshold}"/>
+		<property name="minTableSizeThreshold" value="${job.generalNodeDatumTrimmer.tableSizeThreshold}"/>
 	</bean>
 
 	<bean id="generalNodeDatumTrimmer" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
@@ -331,6 +337,8 @@
 		<property name="dbSystemService" ref="databaseSystemService"/>
 		<property name="tableName" value="SN_GENERAL_LOC_DATUM"/>
 		<property name="trimMinutes" value="${job.generalLocationDatumTrimmer.trimMinutes}"/>
+		<property name="maxFileSystemUseThreshold" value="${job.generalLocationDatumTrimmer.fileSystemUseThreshold}"/>
+		<property name="minTableSizeThreshold" value="${job.generalLocationDatumTrimmer.tableSizeThreshold}"/>
 	</bean>
 
 	<bean id="generalLocationDatumTrimmer" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
