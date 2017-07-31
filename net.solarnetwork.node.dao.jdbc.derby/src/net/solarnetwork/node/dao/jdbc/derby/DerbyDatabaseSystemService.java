@@ -48,11 +48,27 @@ import net.solarnetwork.node.dao.jdbc.DatabaseSystemService;
  */
 public class DerbyDatabaseSystemService implements DatabaseSystemService {
 
+	private static final String EMBEDDED_DERBY_JDBC_PREFIX = "jdbc:derby:";
+
 	private JdbcOperations jdbcOperations;
 	private TablesMaintenanceService compressTablesService;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Get the file system the Derby database is located on.
+	 * 
+	 * <p>
+	 * This method extracts the path provided on the configured JDBC
+	 * connection's URL. The URL is assumed to take the form
+	 * <code>jdbc:derby:<em>path</em></code> where <em>path</em> is the path to
+	 * the database files. The {@literal derby.system.home} system property is
+	 * supported, and if defined serves as a path prefix for the URL
+	 * <em>path</em>.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
 	@Override
 	public File[] getFileSystemRoots() {
 		File root = jdbcOperations.execute(new ConnectionCallback<File>() {
@@ -68,8 +84,8 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 	private File dbDir(Connection conn) throws SQLException {
 		DatabaseMetaData meta = conn.getMetaData();
 		String url = meta.getURL();
-		assert url.startsWith("jdbc:derby:");
-		url = url.substring(11, url.length());
+		assert url.startsWith(EMBEDDED_DERBY_JDBC_PREFIX);
+		url = url.substring(EMBEDDED_DERBY_JDBC_PREFIX.length(), url.length());
 
 		// look for system.home prop
 		String dbHome = System.getProperty("derby.system.home");
@@ -81,6 +97,19 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 		return dir;
 	}
 
+	/**
+	 * Get the SQL query that returns the size of a single database table on
+	 * disk.
+	 * 
+	 * <p>
+	 * This method returns the contents of the
+	 * {@literal find-table-disk-size.sql} resource, which is expected to accept
+	 * schema and table name parameters, returning a integer column that
+	 * contains the size that table occupies on disk, in bytes.
+	 * </p>
+	 * 
+	 * @return the SQL
+	 */
 	private String tableFileSystemSizeQuery() {
 		try {
 			String sql = FileCopyUtils.copyToString(new InputStreamReader(
@@ -117,6 +146,21 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 		});
 	}
 
+	/**
+	 * Compress Derby database tables via a configured
+	 * {@link TablesMaintenanceService}.
+	 * 
+	 * <p>
+	 * This method simply calls
+	 * {@link TablesMaintenanceService#processTables(String)} on the configured
+	 * {@code compressTablesService}. It assumes that service will examine the
+	 * tables and compress those that need it.
+	 * 
+	 * {@inheritDoc}
+	 * 
+	 * @see DerbyFullCompressTablesService as an example service that can be
+	 *      configured
+	 */
 	@Override
 	public void vacuumTable(String schemaName, String tableName) {
 		// we ignore the schema / table name and simply try to compress all potential tables
@@ -127,10 +171,35 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 		service.processTables(null);
 	}
 
+	/**
+	 * Set the JDBC operations to use for accessing the Derby database.
+	 * 
+	 * <p>
+	 * This operations must be configured with a connection to the Derby
+	 * database that is to be managed.
+	 * </p>
+	 * 
+	 * @param jdbcOperations
+	 *        the JDBC operations to use
+	 */
 	public void setJdbcOperations(JdbcOperations jdbcOperations) {
 		this.jdbcOperations = jdbcOperations;
 	}
 
+	/**
+	 * Set a service to use to help reclaim disk space from Derby.
+	 * 
+	 * <p>
+	 * This service is used by the {@link #vacuumTable(String, String)} method,
+	 * and is assumed to compress database tables in the same database as
+	 * configured via {@link #setJdbcOperations(JdbcOperations)}.
+	 * </p>
+	 * 
+	 * @param compressTablesService
+	 *        the service to use
+	 * @see DerbyFullCompressTablesService as an example service that can be
+	 *      configured
+	 */
 	public void setCompressTablesService(TablesMaintenanceService compressTablesService) {
 		this.compressTablesService = compressTablesService;
 	}

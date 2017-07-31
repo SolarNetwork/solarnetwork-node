@@ -53,7 +53,18 @@ import net.solarnetwork.util.OptionalService;
  * <p>
  * This service is designed so that {@link #performMaintenance()} can be called
  * periodically to check if rows need to be deleted, based on the thresholds
- * configured.
+ * configured. The main threshold is the file system available capacity. When
+ * the file system use exceeds {@code maxFileSystemUseThreshold} then this
+ * service will attempt to delete a subset of the oldest available data from a
+ * single configured table. After deleting data,
+ * {@link DatabaseSystemService#vacuumTable(String, String)} will be called so
+ * that the database can attempt to release file system space back to the
+ * operating system.
+ * </p>
+ * 
+ * <p>
+ * <b>Note</b> that the {@code dateColumnName} time stamp column is assumed to
+ * store dates in the {@literal UTC} time zone.
  * </p>
  * 
  * @author matt
@@ -132,6 +143,7 @@ public class TimeBasedTableDiskSizeManager {
 			public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
 				DatabaseMetaData meta = conn.getMetaData();
 
+				// verify the configured dateColumnName actually exists on the configured table
 				ResultSet dateColRs = null;
 				try {
 					dateColRs = meta.getColumns(null, schemaName, tableName, dateColumnName);
@@ -171,6 +183,20 @@ public class TimeBasedTableDiskSizeManager {
 		dbService.vacuumTable(schemaName, tableName);
 	}
 
+	/**
+	 * Find the oldest available date in the configured table.
+	 * 
+	 * <p>
+	 * This method will execute the {@link #OLDEST_DATE_QUERY_TEMPLATE} SQL
+	 * template, after substituting {@code dateColumnName} and
+	 * {@code fullTableName}.
+	 * </p>
+	 * 
+	 * @param conn
+	 * @param fullTableName
+	 * @return
+	 * @throws SQLException
+	 */
 	private Timestamp findOldestDate(final Connection conn, final String fullTableName)
 			throws SQLException {
 		String oldestDateSql = String.format(OLDEST_DATE_QUERY_TEMPLATE, dateColumnName, fullTableName);
@@ -196,6 +222,25 @@ public class TimeBasedTableDiskSizeManager {
 		return oldestDate;
 	}
 
+	/**
+	 * Delete rows in the configured database table older than a specific date.
+	 * 
+	 * <p>
+	 * This method will execute the {@link #DELETE_BY_DATE_QUERY_TEMPLATE} SQL
+	 * template, after substituting {@code fullTableName} and
+	 * {@code dateColumnName}, setting the given {@code date} parameter.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the database connection
+	 * @param fullTableName
+	 *        the full table name (schema + name) to delete from
+	 * @param date
+	 *        the date to delete older than
+	 * @return the number of deleted rows
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
 	private int deleteOlderThan(final Connection conn, final String fullTableName, final Timestamp date)
 			throws SQLException {
 		log.debug("Trimming rows from {} older than {} to free space", fullTableName, date);
