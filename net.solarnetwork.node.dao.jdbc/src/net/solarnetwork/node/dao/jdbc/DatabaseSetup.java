@@ -117,7 +117,7 @@ public class DatabaseSetup {
 			return null;
 		}
 
-		private static final String CREATE_SCHEMA_SQL = "CREATE SCHEMA ?";
+		private static final String CREATE_SCHEMA_SQL_TEMPLATE = "CREATE SCHEMA %s";
 
 		@Override
 		protected void verifyDatabaseExists(String schema, String table, Resource initSql) {
@@ -129,8 +129,8 @@ public class DatabaseSetup {
 					if ( !schemaExists(con, schema) ) {
 						PreparedStatement stmt = null;
 						try {
-							stmt = con.prepareStatement(CREATE_SCHEMA_SQL);
-							stmt.setString(1, schema);
+							stmt = con
+									.prepareStatement(String.format(CREATE_SCHEMA_SQL_TEMPLATE, schema));
 							log.info("Initializing database schema [{}]", schema);
 							stmt.executeUpdate();
 						} finally {
