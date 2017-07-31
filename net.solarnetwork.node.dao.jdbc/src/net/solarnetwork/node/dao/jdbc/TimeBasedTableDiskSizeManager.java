@@ -125,8 +125,17 @@ public class TimeBasedTableDiskSizeManager {
 					log.debug("Database table {}.{} consumes {} on disk", schemaName, tableName,
 							diskSize);
 					if ( diskSize >= minTableSizeThreshold ) {
-						deleteOldestData(dbService);
+						int deleted = deleteOldestData(dbService);
+						if ( deleted > 0 ) {
+							long newDiskSize = dbService.tableFileSystemSize(schemaName, tableName);
+							log.info("Trimmed {} oldest rows from {}.{} to free space; size diff is {}",
+									deleted, schemaName, tableName, newDiskSize - diskSize);
+						}
 						return; // only execute once per call, assuming all file systems will be impacted
+					} else {
+						log.info(
+								"Database table {}.{} consumes {} on disk but not deleting data because of configured minimum size threshold {}",
+								schemaName, tableName, diskSize, minTableSizeThreshold);
 					}
 				}
 
@@ -136,11 +145,11 @@ public class TimeBasedTableDiskSizeManager {
 		}
 	}
 
-	private void deleteOldestData(DatabaseSystemService dbService) {
-		jdbcOperations.execute(new ConnectionCallback<Object>() {
+	private int deleteOldestData(DatabaseSystemService dbService) {
+		int deleted = jdbcOperations.execute(new ConnectionCallback<Integer>() {
 
 			@Override
-			public Object doInConnection(Connection conn) throws SQLException, DataAccessException {
+			public Integer doInConnection(Connection conn) throws SQLException, DataAccessException {
 				DatabaseMetaData meta = conn.getMetaData();
 
 				// verify the configured dateColumnName actually exists on the configured table
@@ -150,7 +159,7 @@ public class TimeBasedTableDiskSizeManager {
 					if ( !dateColRs.next() ) {
 						log.error("Date column {} not found on table {}.{}; cannot trim data",
 								dateColumnName, schemaName, tableName);
-						return null;
+						return 0;
 					}
 				} finally {
 					if ( dateColRs != null ) {
@@ -166,21 +175,25 @@ public class TimeBasedTableDiskSizeManager {
 				if ( oldestDate == null ) {
 					log.debug("Oldest date not found on table {}.{}; cannot trim data", schemaName,
 							tableName);
-					return null;
+					return 0;
 				}
 
 				Timestamp deleteDate = new Timestamp(
 						oldestDate.getTime() + TimeUnit.MINUTES.toMillis(trimMinutes));
 				int deleted = deleteOlderThan(conn, fullTableName, deleteDate);
-				log.info("Trimmed {} rows from {} older than {} to free space", deleted, fullTableName,
+				log.debug("Trimmed {} rows from {} older than {} to free space", deleted, fullTableName,
 						deleteDate);
-				return null;
+				return deleted;
 			}
 
 		});
 
-		// now that we've deleted data, perform a vacuum to reclaim space if possible
-		dbService.vacuumTable(schemaName, tableName);
+		if ( deleted > 0 ) {
+			// now that we've deleted data, perform a vacuum to reclaim space if possible
+			dbService.vacuumTable(schemaName, tableName);
+		}
+
+		return deleted;
 	}
 
 	/**
