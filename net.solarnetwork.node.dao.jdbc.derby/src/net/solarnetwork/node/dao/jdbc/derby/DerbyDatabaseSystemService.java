@@ -70,6 +70,13 @@ public class DerbyDatabaseSystemService implements DatabaseSystemService {
 		String url = meta.getURL();
 		assert url.startsWith("jdbc:derby:");
 		url = url.substring(11, url.length());
+
+		// look for system.home prop
+		String dbHome = System.getProperty("derby.system.home");
+		if ( dbHome != null ) {
+			url = dbHome + File.separatorChar + url;
+		}
+
 		File dir = new File(url);
 		return dir;
 	}
