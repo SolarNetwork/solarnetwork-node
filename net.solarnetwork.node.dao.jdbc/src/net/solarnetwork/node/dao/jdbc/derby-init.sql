@@ -1,5 +1,3 @@
-CREATE SCHEMA solarnode;
-
 CREATE TABLE solarnode.sn_settings (
 	skey	  VARCHAR(255) NOT NULL,
 	tkey	  VARCHAR(255) NOT NULL WITH DEFAULT '',

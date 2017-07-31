@@ -62,7 +62,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -255,8 +255,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 		}, new PreparedStatementCallback<Object>() {
 
 			@Override
-			public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
-					DataAccessException {
+			public Object doInPreparedStatement(PreparedStatement ps)
+					throws SQLException, DataAccessException {
 				ps.execute();
 				int count = ps.getUpdateCount();
 				if ( count == 1 && ps.getMoreResults() ) {
@@ -290,7 +290,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @param initSql
 	 *        the init SQL resource
 	 */
-	protected void verifyDatabaseExists(final String schema, final String table, final Resource initSql) {
+	protected void verifyDatabaseExists(final String schema, final String table,
+			final Resource initSql) {
 		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
 
 			@Override
@@ -307,6 +308,44 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 				return null;
 			}
 		});
+	}
+
+	/**
+	 * Test if a schema exists in the database.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param aSchemaName
+	 *        the schema name to look for
+	 * @return {@literal true} if the schema is found
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	protected boolean schemaExists(Connection conn, final String aSchemaName) throws SQLException {
+		DatabaseMetaData dbMeta = conn.getMetaData();
+		ResultSet rs = null;
+		try {
+			rs = dbMeta.getSchemas();
+			while ( rs.next() ) {
+				String schema = rs.getString(1);
+				if ( (aSchemaName == null || (aSchemaName.equalsIgnoreCase(schema))) ) {
+					if ( log.isDebugEnabled() ) {
+						log.debug("Found schema " + schema);
+					}
+					return true;
+				}
+			}
+			return false;
+		} finally {
+			if ( rs != null ) {
+				try {
+					rs.close();
+				} catch ( SQLException e ) {
+					// ignore this
+				}
+			}
+		}
 	}
 
 	/**
@@ -404,8 +443,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 			if ( log.isInfoEnabled() ) {
 				log.info("Updating database tables version from " + curr + " to " + (curr + 1));
 			}
-			Resource sql = this.initSqlResource.createRelative(this.sqlResourcePrefix + "-update-"
-					+ (curr + 1) + ".sql");
+			Resource sql = this.initSqlResource
+					.createRelative(this.sqlResourcePrefix + "-update-" + (curr + 1) + ".sql");
 			String[] batch = getBatchSqlResource(sql);
 			int[] result = getJdbcTemplate().batchUpdate(batch);
 			if ( log.isDebugEnabled() ) {
