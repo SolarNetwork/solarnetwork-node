@@ -64,7 +64,7 @@
 	
 	<bean id="compressService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService">
 		<property name="jdbcOperations" ref="jdbcOps"/>
-		<property name="schemas" value="${derby.maintenance.compress.schemas}"/>
+		<property name="schemaList" value="${derby.maintenance.compress.schemas}"/>
 		<property name="maxSeconds" value="${derby.maintenance.compress.timeout}"/>
 	</bean>
 

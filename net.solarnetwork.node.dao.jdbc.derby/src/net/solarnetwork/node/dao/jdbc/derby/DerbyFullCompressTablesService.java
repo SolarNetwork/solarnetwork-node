@@ -41,13 +41,14 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A service to inspect available tables and perform a Derby compress on them to
  * free up disk space.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.8
  */
 public class DerbyFullCompressTablesService implements TablesMaintenanceService {
@@ -198,6 +199,19 @@ public class DerbyFullCompressTablesService implements TablesMaintenanceService 
 			schemas = Collections.unmodifiableSet(ciSchemas);
 		}
 		this.schemas = schemas;
+	}
+
+	/**
+	 * Set the database schema names to limit compressing tables within, as a
+	 * comma-delimited string.
+	 * 
+	 * @param schemas
+	 *        the schemas to set
+	 * @see #setSchemas(Set)
+	 * @since 1.1
+	 */
+	public void setSchemaList(String schemas) {
+		setSchemas(StringUtils.commaDelimitedStringToSet(schemas));
 	}
 
 	/**
