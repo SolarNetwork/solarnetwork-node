@@ -23,7 +23,7 @@
 package net.solarnetwork.node.settings;
 
 /**
- * Specialiezd text settings for cron expressions.
+ * Specialized text settings for cron expressions.
  * 
  * @author matt
  * @version 1.0
