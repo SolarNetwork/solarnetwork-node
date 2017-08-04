@@ -30,6 +30,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -45,11 +47,18 @@ import net.solarnetwork.node.dao.BatchableDao;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
 	private TransactionTemplate transactionTemplate;
+
+	/**
+	 * A class-level logger.
+	 *
+	 * @since 1.3
+	 */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Get the SQL statement to use for batch processing.
