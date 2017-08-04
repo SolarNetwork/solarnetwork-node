@@ -27,10 +27,10 @@ package net.solarnetwork.node.dao.jdbc;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.TABLE_SETTINGS;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.EnumSet;
@@ -40,6 +40,7 @@ import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
@@ -71,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -100,6 +101,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
 	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
 	private final String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
+
+	private String sqlGetForUpdateSuffix = " FOR UPDATE";
 
 	private OptionalService<EventAdmin> eventAdmin;
 
@@ -134,16 +137,18 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		}
 	}
 
+	private String sqlForUpdate(String sql) {
+		return (sqlGetForUpdateSuffix != null ? sql + sqlGetForUpdateSuffix : sql);
+	}
+
 	private boolean deleteSettingInternal(final String key, final String type) {
 		// check if will delete, to emit change event
+		final String sql = sqlForUpdate(sqlGet);
 		Setting setting = getJdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				DatabaseMetaData meta = con.getMetaData();
-				int scrollMode = (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
-						? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE);
-				PreparedStatement queryStmt = con.prepareStatement(sqlGet, scrollMode,
+				PreparedStatement queryStmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
 						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 				queryStmt.setString(1, key);
 				queryStmt.setString(2, type);
@@ -249,49 +254,61 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			final int flags) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
+		final String sql = sqlForUpdate(sqlGet);
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
-		getJdbcTemplate().query(new PreparedStatementCreator() {
+		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
 
 			@Override
-			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				DatabaseMetaData meta = con.getMetaData();
-				int scrollMode = (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
-						? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE);
-				PreparedStatement queryStmt = con.prepareStatement(sqlGet, scrollMode,
-						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
-				queryStmt.setString(1, key);
-				queryStmt.setString(2, type);
-				return queryStmt;
-			}
-		}, new ResultSetExtractor<Object>() {
-
-			@Override
-			public Object extractData(ResultSet rs) throws SQLException, DataAccessException {
+			public Boolean doInConnection(Connection con) throws SQLException, DataAccessException {
+				PreparedStatement stmt = null;
+				ResultSet rs = null;
 				boolean updated = false;
-				if ( rs.next() ) {
-					String oldValue = rs.getString(1);
-					if ( !value.equals(oldValue) ) {
-						rs.updateString(1, value);
-						rs.updateTimestamp(2, now);
-						rs.updateRow();
-						updated = true;
-					}
-				} else {
-					rs.moveToInsertRow();
-					rs.updateString(1, value);
-					rs.updateTimestamp(2, now);
-					rs.updateString(3, key);
-					rs.updateString(4, type);
-					rs.updateInt(5, flags);
-					rs.insertRow();
-					updated = true;
-				}
 
+				try {
+					stmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
+							ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
+					stmt.setString(1, key);
+					stmt.setString(2, type);
+
+					if ( stmt.execute() ) {
+						rs = stmt.getResultSet();
+						if ( rs.next() ) {
+							String oldValue = rs.getString(1);
+							if ( !value.equals(oldValue) ) {
+								rs.updateString(1, value);
+								rs.updateTimestamp(2, now);
+								rs.updateRow();
+								updated = true;
+							}
+						} else {
+							rs.moveToInsertRow();
+							rs.updateString(1, value);
+							rs.updateTimestamp(2, now);
+							rs.updateString(3, key);
+							rs.updateString(4, type);
+							rs.updateInt(5, flags);
+							rs.insertRow();
+							updated = true;
+						}
+					}
+				} finally {
+					if ( stmt != null ) {
+						SQLWarning warning = stmt.getWarnings();
+						if ( warning != null ) {
+							log.warn("SQL warning saving setting {}.{} to {}", key, type, value,
+									warning);
+						}
+						stmt.close();
+					}
+					if ( rs != null ) {
+						rs.close();
+					}
+				}
 				if ( updated && !SettingFlag.setForMask(flags).contains(SettingFlag.Volatile) ) {
 					postSettingUpdatedEvent(key, type, value);
 				}
-				return null;
+				return updated;
 			}
 		});
 	}
@@ -349,7 +366,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	protected String getBatchJdbcStatement(BatchOptions options) {
-		return (options != null && options.isUpdatable() ? sqlBatchGetForUpdate : sqlBatchGet);
+		return (options != null && options.isUpdatable() ? sqlForUpdate(sqlBatchGetForUpdate)
+				: sqlBatchGet);
 	}
 
 	@Override
@@ -406,6 +424,23 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	/**
+	 * A suffix to add to the {@code sqlGet} SQL statement when wanting an
+	 * updatable result set.
+	 * 
+	 * <p>
+	 * Defaults to {@literal FOR UPDATE}. <b>Note</b> if specified, it should
+	 * include a leading space character. Set to {@literal null} to omit.
+	 * </p>
+	 * 
+	 * @param sqlGetForUpdateSuffix
+	 *        the suffix to set
+	 * @since 1.4
+	 */
+	public void setSqlGetForUpdateSuffix(String sqlGetForUpdateSuffix) {
+		this.sqlGetForUpdateSuffix = sqlGetForUpdateSuffix;
 	}
 
 }
