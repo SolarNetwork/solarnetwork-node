@@ -232,7 +232,16 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public Setting readSetting(String key, String type) {
-		// TODO Auto-generated method stub
+		List<Setting> res = getJdbcTemplate().query(this.sqlGet, new RowMapper<Setting>() {
+
+			@Override
+			public Setting mapRow(ResultSet rs, int rowNum) throws SQLException {
+				return getBatchRowEntity(null, rs, rowNum);
+			}
+		}, key, type);
+		if ( res != null && res.size() > 0 ) {
+			return res.get(0);
+		}
 		return null;
 	}
 
