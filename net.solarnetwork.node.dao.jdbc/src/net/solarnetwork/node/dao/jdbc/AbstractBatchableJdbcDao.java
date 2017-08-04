@@ -47,11 +47,12 @@ import net.solarnetwork.node.dao.BatchableDao;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
 	private TransactionTemplate transactionTemplate;
+	private String sqlForUpdateSuffix = " FOR UPDATE";
 
 	/**
 	 * A class-level logger.
@@ -187,6 +188,34 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * @return the SQL suffix, or {@literal null} if not desired
+	 * @since 1.4
+	 */
+	public String getSqlForUpdateSuffix() {
+		return sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * <p>
+	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
+	 * included at the beginning. Set to {@literal null} to disable.
+	 * </p>
+	 * 
+	 * @param sqlForUpdateSuffix
+	 *        the suffix to set
+	 * @since 1.4
+	 */
+	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
+		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
 	}
 
 }

@@ -238,19 +238,18 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 			@Override
 			public BatchCallbackResult handle(Setting domainObject) {
 				Assert.assertNotNull(domainObject);
-				if ( TEST_TYPE.equals(domainObject.getType()) ) { // skip other stuff
-					assertEquals(TEST_KEY + processed.intValue(), domainObject.getKey());
-					assertEquals(TEST_VALUE, domainObject.getValue());
+				if ( !TEST_TYPE.equals(domainObject.getType()) ) { // skip other stuff
+					return BatchCallbackResult.CONTINUE;
 				}
 				BatchCallbackResult action;
-				if ( processed.intValue() == 0 ) {
+				if ( (TEST_KEY + "0").equals(domainObject.getKey()) ) {
 					action = BatchCallbackResult.DELETE;
-				} else if ( processed.intValue() == 1 ) {
+				} else if ( (TEST_KEY + "1").equals(domainObject.getKey()) ) {
 					domainObject.setValue(TEST_VALUE + ".UPDATED");
 					action = BatchCallbackResult.UPDATE;
-				} else if ( processed.intValue() == 3 ) {
+				} else if ( (TEST_KEY + "3").equals(domainObject.getKey()) ) {
 					domainObject.setValue(TEST_VALUE + ".UPDATED");
-					action = BatchCallbackResult.UPDATE_STOP;
+					action = BatchCallbackResult.UPDATE;
 				} else {
 					action = BatchCallbackResult.CONTINUE;
 				}
@@ -258,7 +257,11 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				return action;
 			}
 		}, new BasicBatchOptions("Test", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
-		assertEquals(count - 1, processed.intValue());
+		assertEquals(count, processed.intValue());
+
+		Assert.assertNull(settingDao.getSetting(TEST_KEY + "0", TEST_TYPE));
+		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 1, TEST_TYPE));
+		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 3, TEST_TYPE));
 	}
 
 	@Test

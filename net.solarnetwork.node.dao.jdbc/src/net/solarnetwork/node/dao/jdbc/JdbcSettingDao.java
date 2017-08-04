@@ -102,8 +102,6 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
 	private final String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
 
-	private String sqlGetForUpdateSuffix = " FOR UPDATE";
-
 	private OptionalService<EventAdmin> eventAdmin;
 
 	@Override
@@ -138,7 +136,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	}
 
 	private String sqlForUpdate(String sql) {
-		return (sqlGetForUpdateSuffix != null ? sql + sqlGetForUpdateSuffix : sql);
+		return (getSqlForUpdateSuffix() != null ? sql + getSqlForUpdateSuffix() : sql);
 	}
 
 	private boolean deleteSettingInternal(final String key, final String type) {
@@ -424,23 +422,6 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * A suffix to add to the {@code sqlGet} SQL statement when wanting an
-	 * updatable result set.
-	 * 
-	 * <p>
-	 * Defaults to {@literal FOR UPDATE}. <b>Note</b> if specified, it should
-	 * include a leading space character. Set to {@literal null} to omit.
-	 * </p>
-	 * 
-	 * @param sqlGetForUpdateSuffix
-	 *        the suffix to set
-	 * @since 1.4
-	 */
-	public void setSqlGetForUpdateSuffix(String sqlGetForUpdateSuffix) {
-		this.sqlGetForUpdateSuffix = sqlGetForUpdateSuffix;
 	}
 
 }

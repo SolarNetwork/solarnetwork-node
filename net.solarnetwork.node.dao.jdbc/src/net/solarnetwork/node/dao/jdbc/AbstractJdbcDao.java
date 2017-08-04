@@ -62,7 +62,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -79,6 +79,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	private String schemaName = SCHEMA_NAME;
 	private String tableName = TABLE_SETTINGS;
 	private MessageSource messageSource = null;
+	private String sqlForUpdateSuffix = " FOR UPDATE";
 
 	private final Map<String, String> sqlResourceCache = new HashMap<String, String>(10);
 
@@ -646,6 +647,34 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * @return the SQL suffix, or {@literal null} if not desired
+	 * @since 1.4
+	 */
+	public String getSqlForUpdateSuffix() {
+		return sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * <p>
+	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
+	 * included at the beginning. Set to {@literal null} to disable.
+	 * </p>
+	 * 
+	 * @param sqlForUpdateSuffix
+	 *        the suffix to set
+	 * @since 1.4
+	 */
+	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
+		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
 	}
 
 }
