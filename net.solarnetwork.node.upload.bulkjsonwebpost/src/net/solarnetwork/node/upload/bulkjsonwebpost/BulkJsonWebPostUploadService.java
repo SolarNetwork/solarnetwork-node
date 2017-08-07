@@ -77,6 +77,18 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 	private boolean uploadEmptyDataset = false;
 	private MessageSource messageSource;
 
+	/**
+	 * Default constructor.
+	 * 
+	 * <p>
+	 * This sets the {@code compress} flag to {@literal true}.
+	 * </p>
+	 */
+	public BulkJsonWebPostUploadService() {
+		super();
+		setCompress(true);
+	}
+
 	@Override
 	public String getKey() {
 		return "BulkJsonWebPostUploadService:" + getIdentityService().getSolarNetHostName();
