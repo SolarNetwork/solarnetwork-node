@@ -29,6 +29,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import org.springframework.context.MessageSource;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.domain.Datum;
@@ -41,10 +45,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 import net.solarnetwork.util.OptionalServiceTracker;
-import org.springframework.context.MessageSource;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * {@link BulkUploadService} that uses an HTTP POST with body content formed as
@@ -67,10 +67,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implements BulkUploadService,
-		InstructionAcknowledgementService, SettingSpecifierProvider {
+public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
+		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
 
 	private String url = "/bulkUpload.do";
 	private OptionalServiceTracker<ReactorService> reactorService;
@@ -179,20 +179,20 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 							}
 						}
 						JsonNode instrArray = child.get("instructions");
-						ReactorService reactor = (reactorService == null ? null : reactorService
-								.service());
+						ReactorService reactor = (reactorService == null ? null
+								: reactorService.service());
 						if ( instrArray != null && instrArray.isArray() && reactor != null ) {
 							List<InstructionStatus> status = reactor.processInstruction(
-									getIdentityService().getSolarInBaseUrl(), instrArray,
-									JSON_MIME_TYPE, null);
+									getIdentityService().getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE,
+									null);
 							log.debug("Instructions processed: {}", status);
 						}
 					} else {
 						log.debug("Upload returned no data.");
 					}
 				} else {
-					log.warn("Upload not successful: {}", root.get("message") == null ? "(no message)"
-							: root.get("message").asText());
+					log.warn("Upload not successful: {}",
+							root.get("message") == null ? "(no message)" : root.get("message").asText());
 				}
 			}
 		} finally {
@@ -238,7 +238,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport implemen
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		BulkJsonWebPostUploadService defaults = new BulkJsonWebPostUploadService();
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(new BasicToggleSettingSpecifier("uploadEmptyDataset", defaults.isUploadEmptyDataset()));
+		result.add(
+				new BasicToggleSettingSpecifier("uploadEmptyDataset", defaults.isUploadEmptyDataset()));
 		return result;
 	}
 
