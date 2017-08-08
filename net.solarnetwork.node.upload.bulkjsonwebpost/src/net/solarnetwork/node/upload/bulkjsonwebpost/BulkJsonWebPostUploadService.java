@@ -101,7 +101,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		}
 		List<UploadResult> uploadResults;
 		try {
-			uploadResults = upload(data);
+			uploadResults = upload(data, false);
 		} catch ( JsonParseException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
@@ -122,7 +122,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	@Override
 	public void acknowledgeInstructions(Collection<Instruction> instructions) {
 		try {
-			upload(instructions);
+			upload(instructions, true);
 		} catch ( JsonParseException e ) {
 			throw new RuntimeException(e);
 		} catch ( IOException e ) {
@@ -144,7 +144,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *  "message" : "some message",
 	 * 	"data" : {
 	 * 		"datum" : [
-	 * 			{ "id" : "abc" ... },
+	 * 			{ "created": 123, sourceId: "abc" ... },
 	 * 			...
 	 * 		],
 	 * 		"instructions" : [
@@ -154,11 +154,15 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * </pre>
 	 * 
 	 * @param data
+	 *        Datum or Instruction objects to upload
+	 * @param instructions
+	 *        {@literal true} if instructions are getting uploaded
 	 * @return
 	 * @throws IOException
 	 * @throws JsonParseException
 	 */
-	private List<UploadResult> upload(Collection<?> data) throws IOException, JsonParseException {
+	private List<UploadResult> upload(Collection<?> data, boolean instructions)
+			throws IOException, JsonParseException {
 		InputStream response = handlePost(data);
 		List<UploadResult> result = new ArrayList<UploadResult>(data.size());
 		try {
@@ -170,10 +174,38 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 					if ( child != null && child.isObject() ) {
 						JsonNode datumArray = child.get("datum");
 						if ( datumArray != null && datumArray.isArray() ) {
+
+							// Some datum may have been filtered out from upload; so check for matching IDs
+							// and pad the returned results so it effectively appears to have been uploaded.
+							// The returned results will be in the same order as the posted data, so we
+							// can simply do a parallel iteration over the results and posted data, adding
+							// padding response objects when the current two objects don't have matching IDs
+
+							Iterator<?> dataItr = (instructions ? null : data.iterator());
+							Object dataObj = null;
+
 							for ( JsonNode element : datumArray ) {
 								UploadResult r = new UploadResult();
-								if ( element.has("id") ) {
-									r.setId(element.get("id").asText());
+								if ( dataItr == null ) {
+									if ( element.has("id") ) {
+										r.setId(element.get("id").asText());
+									}
+								} else {
+									dataObj = dataItr.next();
+									long created = element.path("created").longValue();
+									String sourceId = element.path("sourceId").textValue();
+									while ( (dataObj instanceof Datum)
+											&& !(created == ((Datum) dataObj).getCreated().getTime()
+													&& sourceId
+															.equals(((Datum) dataObj).getSourceId())) ) {
+										// pad with effectively uploaded result
+										result.add(new UploadResult());
+										if ( dataItr.hasNext() ) {
+											dataObj = dataItr.next();
+										} else {
+											dataObj = null;
+										}
+									}
 								}
 								result.add(r);
 							}
