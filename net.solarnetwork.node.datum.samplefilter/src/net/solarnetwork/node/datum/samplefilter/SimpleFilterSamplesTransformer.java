@@ -26,15 +26,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
@@ -48,29 +42,25 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
  * based on simple matching rules.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SimpleFilterSamplesTransformer
+public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider {
 
-	private Pattern sourceId;
 	private String[] includes;
 	private String[] excludes;
-	private MessageSource messageSource;
 
 	private Pattern[] includePatterns;
 	private Pattern[] excludePatterns;
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
-
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
-		Pattern sourceIdPat = sourceId;
+		Pattern sourceIdPat = getSourceIdPattern();
 		if ( sourceIdPat != null ) {
 			if ( datum == null || datum.getSourceId() == null
 					|| !sourceIdPat.matcher(datum.getSourceId()).find() ) {
 				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
-						sourceId);
+						sourceIdPat);
 				return samples;
 			}
 		}
@@ -171,37 +161,6 @@ public class SimpleFilterSamplesTransformer
 		return (copy != null ? copy : samples);
 	}
 
-	private boolean matchesAny(final Pattern[] pats, final String value,
-			final boolean emptyPatternMatches) {
-		if ( pats == null || pats.length < 1 || value == null ) {
-			return true;
-		}
-		for ( Pattern pat : pats ) {
-			if ( pat == null ) {
-				if ( emptyPatternMatches ) {
-					return true;
-				}
-				continue;
-			}
-			if ( pat.matcher(value).find() ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static GeneralDatumSamples copy(GeneralDatumSamples samples) {
-		GeneralDatumSamples copy = new GeneralDatumSamples(
-				samples.getInstantaneous() != null
-						? new LinkedHashMap<String, Number>(samples.getInstantaneous()) : null,
-				samples.getAccumulating() != null
-						? new LinkedHashMap<String, Number>(samples.getAccumulating()) : null,
-				samples.getStatus() != null ? new LinkedHashMap<String, Object>(samples.getStatus())
-						: null);
-		copy.setTags(samples.getTags() != null ? new LinkedHashSet<String>(samples.getTags()) : null);
-		return copy;
-	}
-
 	/**
 	 * Call to initialize the instance after properties are configured.
 	 */
@@ -263,60 +222,6 @@ public class SimpleFilterSamplesTransformer
 		return results;
 	}
 
-	private Pattern[] patterns(String[] expressions) {
-		Pattern[] pats = null;
-		if ( expressions != null ) {
-			final int len = expressions.length;
-			pats = new Pattern[len];
-			for ( int i = 0; i < len; i++ ) {
-				if ( expressions[i] == null || expressions[i].length() < 1 ) {
-					continue;
-				}
-				try {
-					pats[i] = Pattern.compile(expressions[i], Pattern.CASE_INSENSITIVE);
-				} catch ( PatternSyntaxException e ) {
-					log.warn("Error compiling includePatterns regex [{}]", expressions[i], e);
-				}
-			}
-		}
-		return pats;
-	}
-
-	/**
-	 * Get the source ID pattern.
-	 * 
-	 * @return The pattern.
-	 */
-	public String getSourceId() {
-		return (sourceId != null ? sourceId.pattern() : null);
-	}
-
-	/**
-	 * Set a source ID pattern to match samples against.
-	 * 
-	 * Samples will only be considered for filtering if
-	 * {@link Datum#getSourceId()} matches this pattern.
-	 * 
-	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
-	 * expression. The expression will be allowed to match anywhere in
-	 * {@link Datum#getSourceId()} values, so if the pattern must match the full
-	 * value only then use pattern positional expressions like {@code ^} and
-	 * {@code $}.
-	 * 
-	 * @param sourceIdPattern
-	 *        The source ID regex to match. Syntax errors in the pattern will be
-	 *        ignored and a {@code null} value will be set instead.
-	 */
-	public void setSourceId(String sourceIdPattern) {
-		try {
-			this.sourceId = (sourceIdPattern != null
-					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE) : null);
-		} catch ( PatternSyntaxException e ) {
-			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
-			this.sourceId = null;
-		}
-	}
-
 	/**
 	 * Get the property include expressions.
 	 * 
@@ -366,21 +271,6 @@ public class SimpleFilterSamplesTransformer
 			}
 			this.includes = newPats;
 		}
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a {@link MessageSource} to use for settings.
-	 * 
-	 * @param messageSource
-	 *        The message source.
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	/**

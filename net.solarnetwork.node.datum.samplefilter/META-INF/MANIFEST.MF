@@ -8,6 +8,8 @@ Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.domain;version="1.10.0",
+ net.solarnetwork.node;version="1.21.0",
+ net.solarnetwork.node.dao;version="1.7.0",
  net.solarnetwork.node.domain;version="1.8.0",
  net.solarnetwork.node.settings;version="1.8.0",
  net.solarnetwork.node.settings.support;version="1.6.0",
