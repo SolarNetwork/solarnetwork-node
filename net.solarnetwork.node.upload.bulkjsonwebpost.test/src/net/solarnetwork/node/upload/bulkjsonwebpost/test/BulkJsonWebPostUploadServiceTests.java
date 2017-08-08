@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.upload.bulkjsonwebpost.test;
 
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,12 +35,17 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.junit.Assert;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
+import org.springframework.util.DigestUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -44,12 +53,19 @@ import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.ReactorService;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService;
 import net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer;
 import net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer;
 import net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer;
 import net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
+import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Unit tests for the {@link BulkJsonWebPostUploadService} class.
@@ -65,10 +81,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	private GeneralNodeDatumSerializer generalNodeDatumSerializer;
 	private BulkJsonWebPostUploadService service;
 
+	private ReactorService reactorService;
 	private TestIdentityService identityService;
 
 	@Before
 	public void setupService() throws Exception {
+		reactorService = EasyMock.createMock(ReactorService.class);
 		generalNodeDatumSerializer = new GeneralNodeDatumSerializer();
 
 		@SuppressWarnings("unchecked")
@@ -86,6 +104,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		service.setObjectMapper(objectMapper);
 		service.setIdentityService(identityService);
 		service.setUrl("/bulkupload");
+		service.setReactorService(new StaticOptionalService<ReactorService>(reactorService));
+	}
+
+	@After
+	public void finish() {
+		EasyMock.verify(reactorService);
 	}
 
 	@Test
@@ -100,6 +124,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 		};
 		getHttpServer().addHandler(handler);
+
+		replay(reactorService);
 
 		List<Datum> data = new ArrayList<Datum>();
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
@@ -157,14 +183,21 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWattHourReading(2L);
 		data.add(d);
 
+		replay(reactorService);
+
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
 
 		BulkUploadResult datumResult = result.get(0);
-		Assert.assertNull(datumResult.getId());
+		assertEquals(datumResult.getId(), tid(d));
 		assertEquals(d, datumResult.getDatum());
+	}
+
+	private String tid(Datum datum) {
+		return DigestUtils.md5DigestAsHex(
+				String.format("%tQ;%s", datum.getCreated(), datum.getSourceId()).getBytes());
 	}
 
 	@Test
@@ -200,13 +233,15 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWattHourReading(2L);
 		data.add(d);
 
+		replay(reactorService);
+
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
 		assertNotNull(result);
 		assertEquals(1, result.size());
 
 		BulkUploadResult datumResult = result.get(0);
-		Assert.assertNull(datumResult.getId());
+		assertEquals(datumResult.getId(), tid(d));
 		assertEquals(data.get(0), datumResult.getDatum());
 
 		assertTrue("Network request made", handler.isHandled());
@@ -269,6 +304,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
+		replay(reactorService);
+
 		// when we upload datum that get filtered out, we still want to treat the filtered out
 		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
 
@@ -278,9 +315,94 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 		for ( int i = 0; i < 3; i++ ) {
 			BulkUploadResult datumResult = result.get(i);
-			Assert.assertNull(datumResult.getId());
+			assertEquals(datumResult.getId(), tid(datumResult.getDatum()));
 			assertEquals(data.get(i), datumResult.getDatum());
 		}
+	}
+
+	@Test
+	public void acknowledgeSingleInstruction() throws Exception {
+		final Date now = new Date();
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals(
+						"[{\"__type__\":\"InstructionStatus\",\"id\":\"123\",\"instructionId\":\"abc\",\"topic\":\"test\",\"status\":\"Completed\"}]",
+						json, true);
+
+				respondWithJsonString(response, true,
+						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"abc\"}]}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		replay(reactorService);
+
+		List<Instruction> data = new ArrayList<Instruction>();
+		BasicInstruction instr = new BasicInstruction(123L, "test", now, "abc", "def",
+				new BasicInstructionStatus(123L, InstructionState.Completed, now));
+		data.add(instr);
+
+		service.acknowledgeInstructions(data);
+	}
+
+	@Test
+	public void processInstruction() throws Exception {
+		final Date now = new Date();
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals("[{\"created\":" + now.getTime() + ",\"sourceId\":\""
+						+ TEST_SOURCE_ID + "\",\"samples\":{\"i\":{\"watts\":1}}}]", json, true);
+
+				respondWithJsonString(response, true,
+						"{\"success\":true,\"data\":{\"datum\":[{\"created\":" + now.getTime()
+								+ ",\"sourceId\":\"" + TEST_SOURCE_ID + "\"}],\"instructions\":"
+								+ "[{\"foo\":\"bar\"},{\"bim\":\"bam\"}]}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<Datum> data = new ArrayList<Datum>();
+		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
+		d.setCreated(now);
+		d.setSourceId(TEST_SOURCE_ID);
+		d.setWatts(1);
+		data.add(d);
+
+		List<InstructionStatus> statusResult = new ArrayList<InstructionStatus>(2);
+		statusResult
+				.add(new BasicInstructionStatus(123L, InstructionStatus.InstructionState.Received, now));
+		statusResult
+				.add(new BasicInstructionStatus(124L, InstructionStatus.InstructionState.Received, now));
+		Capture<Object> instructionDataCapture = new Capture<Object>();
+		expect(reactorService.processInstruction(eq(identityService.getSolarInBaseUrl()),
+				capture(instructionDataCapture), eq(BulkJsonWebPostUploadService.JSON_MIME_TYPE),
+				EasyMock.<Map<String, ?>> isNull())).andReturn(statusResult);
+
+		replay(reactorService);
+
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+
+		assertNotNull(result);
+		assertEquals(1, result.size());
+
+		BulkUploadResult datumResult = result.get(0);
+		assertEquals(datumResult.getId(), tid(d));
+		assertEquals(d, datumResult.getDatum());
+
+		Object instructionData = instructionDataCapture.getValue();
+		assertTrue("Instruction data is JsonNode", instructionData instanceof JsonNode);
+		JSONAssert.assertEquals("[{\"foo\":\"bar\"},{\"bim\":\"bam\"}]",
+				service.getObjectMapper().writeValueAsString(instructionData), true);
 	}
 
 }

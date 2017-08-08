@@ -29,9 +29,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.springframework.context.MessageSource;
-import com.fasterxml.jackson.core.JsonParseException;
+import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.domain.Datum;
@@ -43,27 +42,11 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
-import net.solarnetwork.util.OptionalServiceTracker;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * {@link BulkUploadService} that uses an HTTP POST with body content formed as
  * a JSON document containing all data to upload.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>objectMapper</dt>
- * <dd>The {@link ObjectMapper} to marshall objects to JSON with and parse the
- * response with.</dd>
- * 
- * <dt>uploadEmptyDataset</dt>
- * <dd>If <em>true</em> then make a POST request to SolarIn even if there isn't
- * any datum data to upload. This can be useful in situations where we want to
- * be able to receive instructions in the HTTP response even if the node has not
- * produced any data to upload. Defaults to <em>false</em>.</dd>
- * </dl>
  * 
  * @author matt
  * @version 1.4
@@ -72,7 +55,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
 
 	private String url = "/bulkUpload.do";
-	private OptionalServiceTracker<ReactorService> reactorService;
+	private OptionalService<ReactorService> reactorService;
 	private boolean uploadEmptyDataset = false;
 	private MessageSource messageSource;
 
@@ -98,18 +81,17 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		if ( (data == null || data.size() < 1) && uploadEmptyDataset == false ) {
 			return Collections.emptyList();
 		}
-		List<UploadResult> uploadResults;
+		boolean success = false;
 		try {
-			uploadResults = upload(data, false);
-		} catch ( JsonParseException e ) {
-			throw new RuntimeException(e);
+			success = upload(data);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
-		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(uploadResults.size());
-		if ( uploadResults != null ) {
+		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(data.size());
+		if ( success ) {
 			for ( Datum datum : data ) {
-				results.add(new BulkUploadResult(datum, null));
+				results.add(new BulkUploadResult(datum, DigestUtils.md5DigestAsHex(
+						String.format("%tQ;%s", datum.getCreated(), datum.getSourceId()).getBytes())));
 			}
 		}
 		return results;
@@ -118,9 +100,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	@Override
 	public void acknowledgeInstructions(Collection<Instruction> instructions) {
 		try {
-			upload(instructions, true);
-		} catch ( JsonParseException e ) {
-			throw new RuntimeException(e);
+			upload(instructions);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -153,36 +133,26 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *        Datum or Instruction objects to upload
 	 * @param instructions
 	 *        {@literal true} if instructions are getting uploaded
-	 * @return if the result returns an error, {@literal null}; for
-	 *         instructions, the parsed instruction IDs; otherwise an empty list
+	 * @return true if the data is uploaded successfully
 	 * @throws IOException
-	 * @throws JsonParseException
+	 *         if any processing error occurs
 	 */
-	private List<UploadResult> upload(Collection<?> data, boolean instructions)
-			throws IOException, JsonParseException {
+	private boolean upload(Collection<?> data) throws IOException {
 		InputStream response = handlePost(data);
-		List<UploadResult> result = null;
+		boolean result = false;
 		try {
 			JsonNode root = getObjectMapper().readTree(response);
+			if ( log.isDebugEnabled() ) {
+				log.debug("Got JSON response: {}",
+						getObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(root));
+			}
 			if ( root.isObject() ) {
 				JsonNode child = root.path("success");
-				if ( child.asBoolean() ) {
-					result = new ArrayList<UploadResult>(data.size());
+				result = child.asBoolean();
+				if ( result ) {
 					child = root.path("data");
 					if ( child.isObject() ) {
-						if ( instructions ) {
-							// pick out returned instruction IDs
-							JsonNode datumArray = child.path("datum");
-							if ( datumArray.isArray() ) {
-								for ( JsonNode element : datumArray ) {
-									UploadResult r = new UploadResult();
-									if ( element.has("id") ) {
-										r.setId(element.get("id").asText());
-									}
-									result.add(r);
-								}
-							}
-						}
+						// look for instructions to process
 						JsonNode instrArray = child.path("instructions");
 						ReactorService reactor = (reactorService == null ? null
 								: reactorService.service());
@@ -254,15 +224,32 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		return url;
 	}
 
+	/**
+	 * The SolarIn relative URL path to post data to.
+	 * 
+	 * <p>
+	 * Defaults to {@literal /bulkUpload.do}.
+	 * </p>
+	 * 
+	 * @param url
+	 *        the path
+	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 
-	public OptionalServiceTracker<ReactorService> getReactorService() {
+	public OptionalService<ReactorService> getReactorService() {
 		return reactorService;
 	}
 
-	public void setReactorService(OptionalServiceTracker<ReactorService> reactorService) {
+	/**
+	 * Set the optional {@link ReactorService} to use for processing
+	 * instructions.
+	 * 
+	 * @param reactorService
+	 *        the service to use
+	 */
+	public void setReactorService(OptionalService<ReactorService> reactorService) {
 		this.reactorService = reactorService;
 	}
 
