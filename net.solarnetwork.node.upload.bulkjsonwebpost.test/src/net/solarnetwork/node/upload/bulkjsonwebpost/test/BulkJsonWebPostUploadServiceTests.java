@@ -203,7 +203,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
 		assertNotNull(result);
-		assertEquals(0, result.size());
+		assertEquals(1, result.size());
+
+		BulkUploadResult datumResult = result.get(0);
+		Assert.assertNull(datumResult.getId());
+		assertEquals(data.get(0), datumResult.getDatum());
+
 		assertTrue("Network request made", handler.isHandled());
 	}
 

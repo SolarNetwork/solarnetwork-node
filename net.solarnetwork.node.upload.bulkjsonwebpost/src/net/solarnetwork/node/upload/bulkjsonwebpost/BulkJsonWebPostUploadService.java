@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -108,13 +107,10 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 			throw new RuntimeException(e);
 		}
 		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(uploadResults.size());
-		Iterator<Datum> dataIterator = data.iterator();
-		for ( UploadResult r : uploadResults ) {
-			if ( !dataIterator.hasNext() ) {
-				break;
+		if ( uploadResults != null ) {
+			for ( Datum datum : data ) {
+				results.add(new BulkUploadResult(datum, null));
 			}
-			Datum datum = dataIterator.next();
-			results.add(new BulkUploadResult(datum, r.getId()));
 		}
 		return results;
 	}
@@ -157,63 +153,40 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *        Datum or Instruction objects to upload
 	 * @param instructions
 	 *        {@literal true} if instructions are getting uploaded
-	 * @return
+	 * @return if the result returns an error, {@literal null}; for
+	 *         instructions, the parsed instruction IDs; otherwise an empty list
 	 * @throws IOException
 	 * @throws JsonParseException
 	 */
 	private List<UploadResult> upload(Collection<?> data, boolean instructions)
 			throws IOException, JsonParseException {
 		InputStream response = handlePost(data);
-		List<UploadResult> result = new ArrayList<UploadResult>(data.size());
+		List<UploadResult> result = null;
 		try {
 			JsonNode root = getObjectMapper().readTree(response);
 			if ( root.isObject() ) {
-				JsonNode child = root.get("success");
-				if ( child != null && child.asBoolean() ) {
-					child = root.get("data");
-					if ( child != null && child.isObject() ) {
-						JsonNode datumArray = child.get("datum");
-						if ( datumArray != null && datumArray.isArray() ) {
-
-							// Some datum may have been filtered out from upload; so check for matching IDs
-							// and pad the returned results so it effectively appears to have been uploaded.
-							// The returned results will be in the same order as the posted data, so we
-							// can simply do a parallel iteration over the results and posted data, adding
-							// padding response objects when the current two objects don't have matching IDs
-
-							Iterator<?> dataItr = (instructions ? null : data.iterator());
-							Object dataObj = null;
-
-							for ( JsonNode element : datumArray ) {
-								UploadResult r = new UploadResult();
-								if ( dataItr == null ) {
+				JsonNode child = root.path("success");
+				if ( child.asBoolean() ) {
+					result = new ArrayList<UploadResult>(data.size());
+					child = root.path("data");
+					if ( child.isObject() ) {
+						if ( instructions ) {
+							// pick out returned instruction IDs
+							JsonNode datumArray = child.path("datum");
+							if ( datumArray.isArray() ) {
+								for ( JsonNode element : datumArray ) {
+									UploadResult r = new UploadResult();
 									if ( element.has("id") ) {
 										r.setId(element.get("id").asText());
 									}
-								} else {
-									dataObj = dataItr.next();
-									long created = element.path("created").longValue();
-									String sourceId = element.path("sourceId").textValue();
-									while ( (dataObj instanceof Datum)
-											&& !(created == ((Datum) dataObj).getCreated().getTime()
-													&& sourceId
-															.equals(((Datum) dataObj).getSourceId())) ) {
-										// pad with effectively uploaded result
-										result.add(new UploadResult());
-										if ( dataItr.hasNext() ) {
-											dataObj = dataItr.next();
-										} else {
-											dataObj = null;
-										}
-									}
+									result.add(r);
 								}
-								result.add(r);
 							}
 						}
-						JsonNode instrArray = child.get("instructions");
+						JsonNode instrArray = child.path("instructions");
 						ReactorService reactor = (reactorService == null ? null
 								: reactorService.service());
-						if ( instrArray != null && instrArray.isArray() && reactor != null ) {
+						if ( reactor != null && instrArray.isArray() ) {
 							List<InstructionStatus> status = reactor.processInstruction(
 									getIdentityService().getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE,
 									null);
