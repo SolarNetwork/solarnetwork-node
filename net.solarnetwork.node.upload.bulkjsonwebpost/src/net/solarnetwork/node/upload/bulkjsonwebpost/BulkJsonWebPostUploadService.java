@@ -138,6 +138,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *         if any processing error occurs
 	 */
 	private boolean upload(Collection<?> data) throws IOException {
+		// serialize JSON manually here
 		InputStream response = handlePost(data);
 		boolean result = false;
 		try {
@@ -181,7 +182,11 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	private InputStream handlePost(Collection<?> data) {
 		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
-			return doJson(postUrl, HTTP_METHOD_POST, data);
+			// NOTE: serializing JSON into intermediate tree, because of possibility of
+			// datum filtering during serialization, to prevent logging of tree from
+			// inadvertently triggering serialization changes
+			JsonNode jsonData = getObjectMapper().valueToTree(data);
+			return doJson(postUrl, HTTP_METHOD_POST, jsonData);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException bulk posting data to " + postUrl, e);
