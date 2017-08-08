@@ -16,7 +16,7 @@
 
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer"/>
+		<property name="basenames" value="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer"/>
 	</bean>
 	
 	<!-- publish a "component factory" so our service appears in the settings GUI -->
@@ -39,7 +39,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer" init-method="init">
+		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer" init-method="init">
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</osgix:managed-service-factory>

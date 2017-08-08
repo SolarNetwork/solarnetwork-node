@@ -28,11 +28,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer;
+import net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
- * Test cases for the {@link SimpleFilterSampleTransformer} class.
+ * Test cases for the {@link SimpleFilterSamplesTransformer} class.
  * 
  * @author matt
  * @version 1.0
@@ -59,7 +59,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testInclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.init();
@@ -76,7 +76,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testIncludeMultiplePatterns() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt", "^phase$" });
 		xform.init();
@@ -94,7 +94,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testExclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt" });
 		xform.init();
@@ -111,7 +111,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testExcludeMultiplePatterns() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt", "^phase$" });
 		xform.init();
@@ -127,7 +127,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testIncludeAndExclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.setExcludes(new String[] { "^watts$" });
@@ -144,7 +144,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testNonMatchingSourceId() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum("other.source");
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.setExcludes(new String[] { "^watts$" });
@@ -156,7 +156,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testNoMatchingIncludes() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^foo" });
 		xform.init();
@@ -170,7 +170,7 @@ public class SimpleFilterSampleTransformerTests {
 	@Test
 	public void testNoMatchingExcludes() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		SimpleFilterSampleTransformer xform = new SimpleFilterSampleTransformer();
+		SimpleFilterSamplesTransformer xform = new SimpleFilterSamplesTransformer();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^foo" });
 		xform.init();

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SimpleFilterSampleTransformer.java - 28/10/2016 3:00:56 PM
+ * SimpleFilterSamplesTransformer.java - 28/10/2016 3:00:56 PM
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -50,7 +50,7 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
  * @author matt
  * @version 1.0
  */
-public class SimpleFilterSampleTransformer
+public class SimpleFilterSamplesTransformer
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider {
 
 	private Pattern sourceId;
