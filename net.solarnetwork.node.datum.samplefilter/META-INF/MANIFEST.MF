@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Datum Sample Property Filter
+Bundle-Name: Datum Sample Property Filter
 Bundle-SymbolicName: net.solarnetwork.node.datum.samplefilter
-Bundle-Description: A service to filter out unwanted properties from collected datum samples.
+Bundle-Description: Services to filter out unwanted datum, or datum properties, from collected datum samples.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
