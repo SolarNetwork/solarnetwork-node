@@ -35,7 +35,7 @@ import net.solarnetwork.node.ocpp.ChargeSessionManager;
  * Job to periodically post charge session meter values.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -63,7 +63,7 @@ public class PostActiveChargeSessionsMeterValuesJob extends AbstractJob {
 		} else {
 			service.postActiveChargeSessionsMeterValues();
 		}
-		log.info("Completed posting active charge sessions meter values to OCPP central system");
+		log.debug("Completed posting active charge sessions meter values to OCPP central system");
 	}
 
 	/**
