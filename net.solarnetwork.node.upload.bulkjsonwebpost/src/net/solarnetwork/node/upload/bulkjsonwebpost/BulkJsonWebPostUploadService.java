@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import org.springframework.context.MessageSource;
 import org.springframework.util.DigestUtils;
@@ -81,18 +82,11 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		if ( (data == null || data.size() < 1) && uploadEmptyDataset == false ) {
 			return Collections.emptyList();
 		}
-		boolean success = false;
+		List<BulkUploadResult> results = null;
 		try {
-			success = upload(data);
+			results = upload(data);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
-		}
-		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(data.size());
-		if ( success ) {
-			for ( Datum datum : data ) {
-				results.add(new BulkUploadResult(datum, DigestUtils.md5DigestAsHex(
-						String.format("%tQ;%s", datum.getCreated(), datum.getSourceId()).getBytes())));
-			}
 		}
 		return results;
 	}
@@ -120,7 +114,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *  "message" : "some message",
 	 * 	"data" : {
 	 * 		"datum" : [
-	 * 			{ "created": 123, sourceId: "abc" ... },
+	 * 			{ "id": "123abc", "created": 123, sourceId: "abc" ... },
 	 * 			...
 	 * 		],
 	 * 		"instructions" : [
@@ -137,10 +131,15 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * @throws IOException
 	 *         if any processing error occurs
 	 */
-	private boolean upload(Collection<?> data) throws IOException {
-		// serialize JSON manually here
-		InputStream response = handlePost(data);
-		boolean result = false;
+	private List<BulkUploadResult> upload(Collection<?> data) throws IOException {
+		// NOTE: serializing JSON into intermediate tree, because of possibility of
+		// datum filtering during serialization, to prevent logging of tree from
+		// inadvertently triggering serialization changes. This also allows us
+		// to verify how many datum we actually upload (i.e. after filtering).
+		JsonNode jsonData = getObjectMapper().valueToTree(data);
+		InputStream response = handlePost(jsonData);
+
+		List<BulkUploadResult> result = null;
 		try {
 			JsonNode root = getObjectMapper().readTree(response);
 			if ( log.isDebugEnabled() ) {
@@ -149,10 +148,55 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 			}
 			if ( root.isObject() ) {
 				JsonNode child = root.path("success");
-				result = child.asBoolean();
-				if ( result ) {
+				if ( child.asBoolean() ) {
+					result = new ArrayList<BulkUploadResult>(data.size());
 					child = root.path("data");
 					if ( child.isObject() ) {
+						JsonNode datumArray = child.get("datum");
+						Iterator<JsonNode> jsonItr = null;
+						JsonNode currJsonNode = null;
+						if ( datumArray != null && datumArray.isArray() ) {
+							assert datumArray.size() == jsonData.size();
+							jsonItr = datumArray.iterator();
+							currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
+						}
+
+						for ( Object obj : data ) {
+							String id = null;
+							Datum datum = null;
+							if ( obj instanceof Instruction ) {
+								Instruction instr = (Instruction) obj;
+								if ( currJsonNode != null ) {
+									id = currJsonNode.path("id").textValue();
+									if ( instr.getRemoteInstructionId().equals(id) ) {
+										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
+									}
+								}
+								if ( id == null ) {
+									id = instr.getRemoteInstructionId();
+								}
+							} else {
+								// assume Datum here
+								datum = (Datum) obj;
+								if ( currJsonNode != null ) {
+									long created = currJsonNode.path("created").longValue();
+									String sourceId = currJsonNode.path("sourceId").textValue();
+									if ( datum.getCreated().getTime() == created
+											&& datum.getSourceId().equals(sourceId) ) {
+										id = currJsonNode.path("id").textValue();
+										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
+									}
+								}
+								if ( id == null ) {
+									// generate a synthetic ID string
+									id = DigestUtils.md5DigestAsHex(String
+											.format("%tQ;%s", datum.getCreated(), datum.getSourceId())
+											.getBytes());
+								}
+							}
+							result.add(new BulkUploadResult(datum, id));
+						}
+
 						// look for instructions to process
 						JsonNode instrArray = child.path("instructions");
 						ReactorService reactor = (reactorService == null ? null
@@ -179,14 +223,10 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		return result;
 	}
 
-	private InputStream handlePost(Collection<?> data) {
+	private InputStream handlePost(Object data) {
 		final String postUrl = getIdentityService().getSolarInBaseUrl() + url;
 		try {
-			// NOTE: serializing JSON into intermediate tree, because of possibility of
-			// datum filtering during serialization, to prevent logging of tree from
-			// inadvertently triggering serialization changes
-			JsonNode jsonData = getObjectMapper().valueToTree(data);
-			return doJson(postUrl, HTTP_METHOD_POST, jsonData);
+			return doJson(postUrl, HTTP_METHOD_POST, data);
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException bulk posting data to " + postUrl, e);

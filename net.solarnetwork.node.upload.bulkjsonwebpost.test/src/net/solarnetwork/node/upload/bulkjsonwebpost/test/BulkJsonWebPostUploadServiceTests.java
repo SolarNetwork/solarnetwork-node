@@ -168,8 +168,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[{\"created\":" + now.getTime()
-								+ ",\"sourceId\":\"" + TEST_SOURCE_ID + "\"" + "}]}}");
+						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"abc123\",\"created\":"
+								+ now.getTime() + ",\"sourceId\":\"" + TEST_SOURCE_ID + "\"" + "}]}}");
 			}
 
 		};
@@ -191,7 +191,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		assertEquals(1, result.size());
 
 		BulkUploadResult datumResult = result.get(0);
-		assertEquals(datumResult.getId(), tid(d));
+		assertEquals(datumResult.getId(), "abc123");
 		assertEquals(d, datumResult.getDatum());
 	}
 
@@ -248,7 +248,83 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	}
 
 	@Test
-	public void uploadMultiDatumSampleFilteredOut() throws Exception {
+	public void uploadMultiDatumFirstSampleFilteredOut() throws Exception {
+		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+
+			@Override
+			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+				return ("A".equals(datum.getSourceId()) ? null : samples);
+			}
+		};
+
+		generalNodeDatumSerializer.setSampleTransformers(Collections.singletonList(xform));
+
+		final Date now = new Date();
+		final Date datumDate = new Date(now.getTime() - 1000);
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			// we expect to receive just 2 datum in request, and respond with 2 datum results
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals(
+						"[" + "{\"created\":" + datumDate.getTime()
+								+ ",\"sourceId\":\"B\",\"samples\":{\"i\":{\"watts\":1}}},"
+								+ "{\"created\":" + datumDate.getTime()
+								+ ",\"sourceId\":\"C\",\"samples\":{\"i\":{\"watts\":1}}}" + "]",
+						json, true);
+
+				respondWithJsonString(response, true,
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
+								+ datumDate.getTime()
+								+ ",\"sourceId\":\"B\"},{\"id\":\"def123\",\"created\":"
+								+ datumDate.getTime() + ",\"sourceId\":\"C\"}]}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<Datum> data = new ArrayList<Datum>();
+		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("A");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("B");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("C");
+		d.setWatts(1);
+		data.add(d);
+
+		replay(reactorService);
+
+		// when we upload datum that get filtered out, we still want to treat the filtered out
+		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
+
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+		assertNotNull(result);
+		assertEquals("All 3 datum uploaded, even though A skipped", 3, result.size());
+
+		String[] expectedTids = new String[] { tid(data.get(0)), "abc123", "def123" };
+
+		for ( int i = 0; i < 3; i++ ) {
+			BulkUploadResult datumResult = result.get(i);
+			assertEquals(datumResult.getId(), expectedTids[i]);
+			assertEquals(data.get(i), datumResult.getDatum());
+		}
+	}
+
+	@Test
+	public void uploadMultiDatumMiddleSampleFilteredOut() throws Exception {
 		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
 
 			@Override
@@ -277,9 +353,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[" + "{\"created\":" + datumDate.getTime()
-								+ ",\"sourceId\":\"A\"}," + "{\"created\":" + datumDate.getTime()
-								+ ",\"sourceId\":\"C\"}" + "]}}");
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
+								+ datumDate.getTime()
+								+ ",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":"
+								+ datumDate.getTime() + ",\"sourceId\":\"C\"}]}}");
 			}
 
 		};
@@ -313,9 +390,152 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		assertNotNull(result);
 		assertEquals("All 3 datum uploaded, even though B skipped", 3, result.size());
 
+		String[] expectedTids = new String[] { "abc123", tid(data.get(1)), "def123" };
+
 		for ( int i = 0; i < 3; i++ ) {
 			BulkUploadResult datumResult = result.get(i);
-			assertEquals(datumResult.getId(), tid(datumResult.getDatum()));
+			assertEquals(datumResult.getId(), expectedTids[i]);
+			assertEquals(data.get(i), datumResult.getDatum());
+		}
+	}
+
+	@Test
+	public void uploadMultiDatumLastSampleFilteredOut() throws Exception {
+		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+
+			@Override
+			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+				return ("C".equals(datum.getSourceId()) ? null : samples);
+			}
+		};
+
+		generalNodeDatumSerializer.setSampleTransformers(Collections.singletonList(xform));
+
+		final Date now = new Date();
+		final Date datumDate = new Date(now.getTime() - 1000);
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			// we expect to receive just 2 datum in request, and respond with 2 datum results
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals(
+						"[" + "{\"created\":" + datumDate.getTime()
+								+ ",\"sourceId\":\"A\",\"samples\":{\"i\":{\"watts\":1}}},"
+								+ "{\"created\":" + datumDate.getTime()
+								+ ",\"sourceId\":\"B\",\"samples\":{\"i\":{\"watts\":1}}}" + "]",
+						json, true);
+
+				respondWithJsonString(response, true,
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
+								+ datumDate.getTime()
+								+ ",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":"
+								+ datumDate.getTime() + ",\"sourceId\":\"B\"}]}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<Datum> data = new ArrayList<Datum>();
+		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("A");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("B");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("C");
+		d.setWatts(1);
+		data.add(d);
+
+		replay(reactorService);
+
+		// when we upload datum that get filtered out, we still want to treat the filtered out
+		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
+
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+		assertNotNull(result);
+		assertEquals("All 3 datum uploaded, even though B skipped", 3, result.size());
+
+		String[] expectedTids = new String[] { "abc123", "def123", tid(data.get(2)) };
+
+		for ( int i = 0; i < 3; i++ ) {
+			BulkUploadResult datumResult = result.get(i);
+			assertEquals(datumResult.getId(), expectedTids[i]);
+			assertEquals(data.get(i), datumResult.getDatum());
+		}
+	}
+
+	@Test
+	public void uploadMultiDatumSampleAllFilteredOut() throws Exception {
+		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+
+			@Override
+			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+				return null;
+			}
+		};
+
+		generalNodeDatumSerializer.setSampleTransformers(Collections.singletonList(xform));
+
+		final Date now = new Date();
+		final Date datumDate = new Date(now.getTime() - 1000);
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			// we expect to receive just 2 datum in request, and respond with 2 datum results
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals("[]", json, true);
+
+				respondWithJsonString(response, true, "{\"success\":true,\"data\":{}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<Datum> data = new ArrayList<Datum>();
+		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("A");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("B");
+		d.setWatts(1);
+		data.add(d);
+
+		d = new GeneralNodeEnergyDatum();
+		d.setCreated(datumDate);
+		d.setSourceId("C");
+		d.setWatts(1);
+		data.add(d);
+
+		replay(reactorService);
+
+		// when we upload datum that get filtered out, we still want to treat the filtered out
+		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
+
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+		assertNotNull(result);
+		assertEquals("All 3 datum uploaded, even though all skipped", 3, result.size());
+
+		for ( int i = 0; i < 3; i++ ) {
+			BulkUploadResult datumResult = result.get(i);
+			assertEquals(datumResult.getId(), tid(data.get(i)));
 			assertEquals(data.get(i), datumResult.getDatum());
 		}
 	}
