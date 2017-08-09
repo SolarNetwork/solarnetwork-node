@@ -64,7 +64,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -106,15 +106,16 @@ public class InstructionExecutionJob extends AbstractJob {
 						InstructionStatus status = ((FeedbackInstructionHandler) handler)
 								.processInstructionWithFeedback(instruction);
 						if ( status != null && (currStatus == null || !currStatus.equals(status)) ) {
-							log.info("Instruction {} status changed to {}", instruction.getId(),
-									status.getInstructionState());
+							log.info("Instruction {} {} status changed to {}", instruction.getId(),
+									instruction.getTopic(), status.getInstructionState());
 							instructionDao.storeInstructionStatus(instruction.getId(), status);
 							handled = true;
 						}
 					} else {
 						InstructionState state = handler.processInstruction(instruction);
 						if ( state != null && !InstructionState.Received.equals(state) ) {
-							log.info("Instruction {} state changed to {}", instruction.getId(), state);
+							log.info("Instruction {} {} state changed to {}", instruction.getId(),
+									instruction.getTopic(), state);
 							instructionDao.storeInstructionStatus(instruction.getId(),
 									instruction.getStatus().newCopyWithState(state));
 							handled = true;
@@ -125,8 +126,8 @@ public class InstructionExecutionJob extends AbstractJob {
 			if ( !handled && instruction.getInstructionDate() != null ) {
 				long diffMs = now - instruction.getInstructionDate().getTime();
 				if ( diffMs > timeLimitMs ) {
-					log.info("Instruction {} not handled within {} hours; declining",
-							instruction.getId(), executionReceivedHourLimit);
+					log.info("Instruction {} {} not handled within {} hours; declining",
+							instruction.getId(), instruction.getTopic(), executionReceivedHourLimit);
 					instructionDao.storeInstructionStatus(instruction.getId(),
 							instruction.getStatus().newCopyWithState(InstructionState.Declined));
 				}
