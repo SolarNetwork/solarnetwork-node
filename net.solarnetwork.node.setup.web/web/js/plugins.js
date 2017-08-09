@@ -274,6 +274,29 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 	});
 };
 
+SolarNode.Plugins.renderInstallPreview = function(data) {
+	if ( data === undefined || data.success !== true || data.data === undefined ) {
+		// TODO: l10n
+		SolarNode.warn('Error!', 'An error occured loading plugin information.', list);
+		return;
+	}
+	var form = $('#plugin-preview-install-modal');
+	var container = $('#plugin-preview-install-list').empty();
+	var installBtn = form.find('button[type=submit]');
+	var i, len;
+	var pluginToInstall;
+	var list = $('<ul/>');
+	var version;
+	for ( i = 0, len = data.data.pluginsToInstall.length; i < len; i++ ) {
+		pluginToInstall = data.data.pluginsToInstall[i];
+		version = SolarNode.Plugins.versionLabel(pluginToInstall);
+		$('<li/>').html('<b>' +pluginToInstall.info.name  
+				+'</b> <span class="label">' +version +'</span>').appendTo(list);
+	}
+	container.append(list);
+	installBtn.removeAttr('disabled');
+};
+
 SolarNode.Plugins.previewInstall = function(plugin) {
 	var form = $('#plugin-preview-install-modal');
 	var previewURL = form.attr('action') + '?uid=' +encodeURIComponent(plugin.uid);
@@ -282,27 +305,21 @@ SolarNode.Plugins.previewInstall = function(plugin) {
 	var installBtn = form.find('button[type=submit]');
 	installBtn.attr('disabled', 'disabled');
 	title.text(title.data('msg-install') +' ' +plugin.info.name);
-	form.find('input[name=uid]').val(plugin.uid);
+	form.find('input[name=uid]').prop('disabled', false).val(plugin.uid);
 	form.modal('show');
-	$.getJSON(previewURL, function(data) {
-		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			// TODO: l10n
-			SolarNode.warn('Error!', 'An error occured loading plugin information.', list);
-			return;
-		}
-		var i, len;
-		var pluginToInstall;
-		var list = $('<ul/>');
-		var version;
-		for ( i = 0, len = data.data.pluginsToInstall.length; i < len; i++ ) {
-			pluginToInstall = data.data.pluginsToInstall[i];
-			version = SolarNode.Plugins.versionLabel(pluginToInstall);
-			$('<li/>').html('<b>' +pluginToInstall.info.name  
-					+'</b> <span class="label">' +version +'</span>').appendTo(list);
-		}
-		container.append(list);
-		installBtn.removeAttr('disabled');
-	});
+	$.getJSON(previewURL, SolarNode.Plugins.renderInstallPreview);
+};
+
+SolarNode.Plugins.previewUpgradeAll = function(previewURL) {
+	var form = $('#plugin-preview-install-modal');
+	var container = $('#plugin-preview-install-list').empty();
+	var title = form.find('h3');
+	var installBtn = form.find('button[type=submit]');
+	installBtn.attr('disabled', 'disabled');
+	title.text(title.data('msg-install'));
+	form.find('input[name=uid]').val('').prop('disabled', true);
+	form.modal('show');
+	$.getJSON(previewURL, SolarNode.Plugins.renderInstallPreview);
 };
 
 SolarNode.Plugins.previewRemove = function(plugin) {
@@ -420,6 +437,10 @@ $(document).ready(function() {
 	$('#plugins-refresh').click(function(event) {
 		event.preventDefault();
 		SolarNode.Plugins.refreshPluginList($(this).attr('href'), pluginsSection, upgradeSection, installedSection);
+	});
+	$('#plugins-upgrade-all').click(function(event) {
+		event.preventDefault();
+		SolarNode.Plugins.previewUpgradeAll($(this).attr('href'));
 	});
 	$('#plugin-preview-install-modal').first().each(function() {
 		SolarNode.Plugins.handleInstall($(this));

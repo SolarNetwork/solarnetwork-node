@@ -23,10 +23,15 @@
 package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.web.domain.Response.response;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +54,7 @@ import net.solarnetwork.web.domain.Response;
  * Controller to manage the installed bundles via an OBR.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @ServiceAwareController
 @RequestMapping("/a/plugins")
@@ -138,22 +143,27 @@ public class PluginController {
 		}
 	}
 
-	@RequestMapping(value = "/list", method = RequestMethod.GET)
-	@ResponseBody
-	public Response<PluginDetails> list(
-			@RequestParam(value = "filter", required = false) final String filter,
-			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
+	private PluginDetails pluginDetails(final String filter, final Boolean latestOnly,
 			final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
-			return response(new PluginDetails());
+			return new PluginDetails();
 		}
 		SimplePluginQuery query = new SimplePluginQuery();
 		query.setSimpleQuery(filter);
 		query.setLatestVersionOnly(latestOnly == null ? true : latestOnly.booleanValue());
 		List<Plugin> available = service.availablePlugins(query, locale);
 		List<Plugin> installed = service.installedPlugins(locale);
-		return response(new PluginDetails(available, installed));
+		return new PluginDetails(available, installed);
+	}
+
+	@RequestMapping(value = "/list", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<PluginDetails> list(
+			@RequestParam(value = "filter", required = false) final String filter,
+			@RequestParam(value = "latestOnly", required = false) final Boolean latestOnly,
+			final Locale locale) {
+		return response(pluginDetails(filter, latestOnly, locale));
 	}
 
 	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
@@ -169,26 +179,90 @@ public class PluginController {
 
 	@RequestMapping(value = "/install", method = RequestMethod.GET)
 	@ResponseBody
-	public Response<PluginProvisionStatus> previewInstall(@RequestParam(value = "uid") final String uid,
-			final Locale locale) {
+	public Response<PluginProvisionStatus> previewInstall(
+			@RequestParam(value = "uid") final String[] uid, final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
 			throw new UnsupportedOperationException("PluginService not available");
 		}
-		Collection<String> uids = Collections.singleton(uid);
+		List<String> uids = Arrays.asList(uid);
 		return response(service.previewInstallPlugins(uids, locale));
 	}
 
+	/**
+	 * Install the latest available version of one or more plugins.
+	 * 
+	 * @param uid
+	 *        the UIDs of the plugins to install or upgrade to the latest
+	 *        version; if not provided then upgrade all installed plugins to
+	 *        their latest versions
+	 * @param locale
+	 *        the active locale
+	 * @return the provision status
+	 */
 	@RequestMapping(value = "/install", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<PluginProvisionStatus> install(@RequestParam(value = "uid") final String uid,
-			final Locale locale) {
+	public Response<PluginProvisionStatus> install(
+			@RequestParam(value = "uid", required = false) final String[] uid, final Locale locale) {
 		PluginService service = pluginService.service();
 		if ( service == null ) {
 			throw new UnsupportedOperationException("PluginService not available");
 		}
-		Collection<String> uids = Collections.singleton(uid);
+		Collection<String> uids;
+		if ( uid != null && uid.length > 0 && !"".equals(uid[0]) ) {
+			uids = Arrays.asList(uid);
+		} else {
+			uids = upgradablePluginUids(locale);
+		}
 		return response(service.installPlugins(uids, locale));
+	}
+
+	private Set<String> upgradablePluginUids(Locale locale) {
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+		PluginDetails plugins = pluginDetails(null, true, locale);
+
+		// extract all upgradable plugins
+		Set<String> upgradableUids = new LinkedHashSet<String>();
+		if ( plugins != null && plugins.getInstalledPlugins() != null ) {
+			Map<String, Plugin> availablePlugins = new HashMap<String, Plugin>(
+					plugins.getAvailablePlugins().size());
+			for ( Plugin plugin : plugins.getAvailablePlugins() ) {
+				availablePlugins.put(plugin.getUID(), plugin);
+			}
+			for ( Plugin plugin : plugins.getInstalledPlugins() ) {
+				Plugin candidate = availablePlugins.get(plugin.getUID());
+				if ( candidate != null && candidate.getVersion().compareTo(plugin.getVersion()) > 0 ) {
+					upgradableUids.add(plugin.getUID());
+				}
+			}
+		}
+		return upgradableUids;
+	}
+
+	/**
+	 * Preview an "upgrade all" operation, where all installed plugins are
+	 * updated to their latest available version.
+	 * 
+	 * @param locale
+	 *        the active locale
+	 * @return the provision status
+	 * @since 1.1
+	 */
+	@RequestMapping(value = "/upgradeAll", method = RequestMethod.GET)
+	@ResponseBody
+	public Response<PluginProvisionStatus> previewUpgradeAll(final Locale locale) {
+		// extract all upgradable plugins
+		Set<String> upgradableUids = upgradablePluginUids(locale);
+
+		PluginService service = pluginService.service();
+		if ( service == null ) {
+			throw new UnsupportedOperationException("PluginService not available");
+		}
+
+		return response(service.previewInstallPlugins(upgradableUids, locale));
 	}
 
 	@RequestMapping(value = "/remove", method = RequestMethod.POST)

@@ -180,6 +180,10 @@ pre.pre-scrollable {
 	margin-top: 1em;
 }
 
+#plugins-upgrade-all {
+	width: auto;
+}
+
 #plugin-upgrades button,
 #plugins button {
 	width: 7em;
