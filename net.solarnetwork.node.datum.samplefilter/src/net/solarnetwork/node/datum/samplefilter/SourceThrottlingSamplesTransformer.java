@@ -60,13 +60,6 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 		setFrequencySeconds(DEFAULT_FREQUENCY_SECONDS);
 	}
 
-	/**
-	 * Clear the internal setting cache.
-	 */
-	public static void clearSettingCache() {
-		SETTING_CACHE.clear();
-	}
-
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
 		final String sourceId = datum.getSourceId();
@@ -83,7 +76,8 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 		final String settingKey = settingKey();
 		final ConcurrentMap<String, String> createdSettings = loadSettings(settingKey);
 
-		final long now = System.currentTimeMillis();
+		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
+				: System.currentTimeMillis());
 		final long offset = frequencySeconds * 1000L;
 
 		boolean filter = false;

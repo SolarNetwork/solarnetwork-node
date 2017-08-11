@@ -46,6 +46,12 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
  * {@link GeneralDatumSamplesTransformer} that can filter out sample properties
  * based on simple matching rules.
  * 
+ * <p>
+ * If all properties of a datum are filtered out of a datum then
+ * {@link #transformSamples(Datum, GeneralDatumSamples)} will return
+ * {@literal null}.
+ * </p>
+ * 
  * @author matt
  * @version 1.1
  */
@@ -73,7 +79,10 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		final String settingKey = settingKey();
 		final ConcurrentMap<String, String> lastSeenMap = loadSettings(settingKey);
 
-		final long now = System.currentTimeMillis();
+		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
+				: System.currentTimeMillis());
+		log.trace("Examining datum {} @ {}", datum, now);
+
 		GeneralDatumSamples copy = null;
 
 		// handle property inclusion rules
@@ -181,6 +190,11 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 			if ( copy.getStatus() != null && copy.getStatus().isEmpty() ) {
 				copy.setStatus(null);
 			}
+			if ( copy.getAccumulating() == null && copy.getInstantaneous() == null
+					&& copy.getStatus() == null ) {
+				// all properties removed!
+				return null;
+			}
 		}
 
 		return (copy != null ? copy : samples);
@@ -197,7 +211,7 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		if ( (oldLastSeenValue == null && lastSeenMap.putIfAbsent(lastSeenKey, newLastSeenValue) == null)
 				|| (oldLastSeenValue != null
 						&& lastSeenMap.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
-
+			log.debug("Saving {} last seen date: {}", lastSeenKey, now);
 			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(now, 16),
 					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
 			getSettingDao().storeSetting(s);

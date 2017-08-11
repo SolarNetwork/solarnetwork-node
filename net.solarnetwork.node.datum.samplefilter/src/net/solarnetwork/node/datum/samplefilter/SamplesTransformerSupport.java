@@ -78,6 +78,13 @@ public class SamplesTransformerSupport {
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Clear the internal setting cache.
+	 */
+	public static void clearSettingCache() {
+		SETTING_CACHE.clear();
+	}
+
 	public SamplesTransformerSupport() {
 		super();
 		setUid(DEFAULT_UID);
@@ -183,30 +190,42 @@ public class SamplesTransformerSupport {
 	}
 
 	/**
+	 * Test if a property should be limited based on a configuration test.
 	 * 
 	 * @param config
+	 *        the configuration to test
 	 * @param lastSeenKey
 	 *        the key to use for the last seen date
 	 * @param lastSeenMap
 	 *        a map of string keys to string values, where the values are
 	 *        hex-encoded epoch date values (long)
 	 * @param now
-	 * @return
+	 *        the date of the property
+	 * @return {@literal true} if the property should be limited
 	 */
-	public static boolean shouldLimitByFrequency(DatumPropertyFilterConfig config,
-			final String lastSeenKey, final ConcurrentMap<String, String> lastSeenMap, final long now) {
+	protected boolean shouldLimitByFrequency(DatumPropertyFilterConfig config, final String lastSeenKey,
+			final ConcurrentMap<String, String> lastSeenMap, final long now) {
 		boolean limit = false;
 		if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
 			final long offset = config.getFrequency() * 1000L;
 			String lastSaveSetting = lastSeenMap.get(lastSeenKey);
 			long lastSaveTime = (lastSaveSetting != null ? Long.valueOf(lastSaveSetting, 16) : 0);
 			if ( lastSaveTime > 0 && lastSaveTime + offset > now ) {
+				if ( log.isDebugEnabled() ) {
+					log.debug("Property {} was seen in the past {}s ({}s ago); filtering", lastSeenKey,
+							offset, (now - lastSaveTime) / 1000.0);
+				}
 				limit = true;
 			}
 		}
 		return limit;
 	}
 
+	/**
+	 * Get a setting key value based on the configured {@code uid}.
+	 * 
+	 * @return a setting key to use, never {@literal null}
+	 */
 	protected String settingKey() {
 		final String uid = getUid();
 		return String.format(SETTING_KEY_TEMPLATE, (uid == null ? DEFAULT_UID : uid));

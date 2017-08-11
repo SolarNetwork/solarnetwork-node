@@ -48,6 +48,27 @@ public class DatumPropertyFilterConfig {
 	private Pattern namePattern;
 
 	/**
+	 * Default constructor.
+	 */
+	public DatumPropertyFilterConfig() {
+		super();
+	}
+
+	/**
+	 * Construct with properties.
+	 * 
+	 * @param name
+	 *        the name regular expression
+	 * @param frequencySeconds
+	 *        the limit frequency, or {@literal null}
+	 */
+	public DatumPropertyFilterConfig(String name, Integer frequencySeconds) {
+		super();
+		setName(name);
+		setFrequencySeconds(frequencySeconds);
+	}
+
+	/**
 	 * Get setting specifiers for this class.
 	 * 
 	 * @param prefix
@@ -59,6 +80,11 @@ public class DatumPropertyFilterConfig {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "frequency", ""));
 		return results;
+	}
+
+	@Override
+	public String toString() {
+		return "DatumPropertyFilterConfig{name=" + name + ", frequency=" + frequencySeconds + "}";
 	}
 
 	/**
@@ -79,7 +105,7 @@ public class DatumPropertyFilterConfig {
 	public void setName(String name) {
 		this.name = name;
 		try {
-			namePattern = Pattern.compile(name, Pattern.CASE_INSENSITIVE);
+			this.namePattern = Pattern.compile(name, Pattern.CASE_INSENSITIVE);
 		} catch ( PatternSyntaxException e ) {
 			LOG.warn("Error compiling includePatterns regex [{}]", name, e);
 		}

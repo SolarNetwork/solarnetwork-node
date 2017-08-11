@@ -51,6 +51,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer" init-method="init">
+			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
