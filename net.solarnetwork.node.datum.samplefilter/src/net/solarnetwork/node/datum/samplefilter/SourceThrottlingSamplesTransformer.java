@@ -25,21 +25,17 @@ package net.solarnetwork.node.datum.samplefilter;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.KeyValuePair;
 
 /**
  * {@link GeneralDatumSamplesTransformer} that can filter out samples based on a
@@ -57,33 +53,11 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 	 */
 	public static final int DEFAULT_FREQUENCY_SECONDS = 60;
 
-	/**
-	 * A setting key template, takes a single string parameter (the datum source
-	 * ID).
-	 */
-	public static final String SETTING_KEY_TEMPLATE = "%s/valueCaptured";
-
-	/**
-	 * The default value for the UID property.
-	 */
-	public static final String DEFAULT_UID = "Default";
-
-	/** The default value for the {@code settingCacheSecs} property. */
-	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
-
-	private static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
-			4);
-
-	private SettingDao settingDao;
 	private int frequencySeconds;
-	private int settingCacheSecs;
-	private final AtomicLong settingCacheExpiry = new AtomicLong(0);
 
 	public SourceThrottlingSamplesTransformer() {
 		super();
-		setUid(DEFAULT_UID);
 		setFrequencySeconds(DEFAULT_FREQUENCY_SECONDS);
-		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
 	}
 
 	/**
@@ -107,7 +81,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 		// load all Datum "last created" settings
 		final String settingKey = settingKey();
-		final ConcurrentMap<String, String> createdSettings = loadCreationSettings(settingKey);
+		final ConcurrentMap<String, String> createdSettings = loadSettings(settingKey);
 
 		final long now = System.currentTimeMillis();
 		final long offset = frequencySeconds * 1000L;
@@ -137,7 +111,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 			Setting s = new Setting(settingKey, sourceId, Long.toString(now, 16),
 					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
-			settingDao.storeSetting(s);
+			getSettingDao().storeSetting(s);
 		}
 
 		return samples;
@@ -165,42 +139,6 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 		return results;
 	}
 
-	private String settingKey() {
-		final String uid = getUid();
-		return String.format(SETTING_KEY_TEMPLATE, (uid == null ? DEFAULT_UID : uid));
-	}
-
-	private ConcurrentMap<String, String> loadCreationSettings(String key) {
-		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
-		if ( result == null ) {
-			SETTING_CACHE.putIfAbsent(key, new ConcurrentHashMap<String, String>(16));
-			result = SETTING_CACHE.get(key);
-		}
-		final long expiry = settingCacheExpiry.get();
-		if ( expiry > System.currentTimeMillis() ) {
-			return result;
-		}
-		List<KeyValuePair> pairs = settingDao.getSettings(key);
-		if ( pairs != null && !pairs.isEmpty() ) {
-			for ( KeyValuePair pair : pairs ) {
-				result.put(pair.getKey(), pair.getValue());
-			}
-		}
-		settingCacheExpiry.compareAndSet(expiry, System.currentTimeMillis() + settingCacheSecs * 1000L);
-		return result;
-	}
-
-	/**
-	 * Set the {@link SettingDao} to use to persist "last seen" time stamps
-	 * with.
-	 * 
-	 * @param settingDao
-	 *        the DAO to set
-	 */
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
 	/**
 	 * Set the frequency seconds to limit samples to.
 	 * 
@@ -209,23 +147,6 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 	 */
 	public void setFrequencySeconds(int frequencySeconds) {
 		this.frequencySeconds = frequencySeconds;
-	}
-
-	/**
-	 * The maximum number of seconds to use cached {@link SettingDao} data when
-	 * filtering datum.
-	 * 
-	 * <p>
-	 * An internal cache is used so that when iterating over sets of datum the
-	 * settings don't need to be loaded from the database each time over a very
-	 * short amount of time.
-	 * </p>
-	 * 
-	 * @param settingCacheSecs
-	 *        the settingCacheSecs to set
-	 */
-	public void setSettingCacheSecs(int settingCacheSecs) {
-		this.settingCacheSecs = settingCacheSecs;
 	}
 
 }

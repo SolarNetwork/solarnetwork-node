@@ -26,14 +26,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 
@@ -47,10 +52,9 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
 public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider {
 
-	private String[] includes;
+	private DatumPropertyFilterConfig[] propIncludes;
 	private String[] excludes;
 
-	private Pattern[] includePatterns;
 	private Pattern[] excludePatterns;
 
 	@Override
@@ -65,41 +69,64 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 			}
 		}
 
+		// load all Datum "last created" settings
+		final String settingKey = settingKey();
+		final ConcurrentMap<String, String> lastSeenMap = loadSettings(settingKey);
+
+		final long now = System.currentTimeMillis();
 		GeneralDatumSamples copy = null;
 
 		// handle property inclusion rules
-		Pattern[] incs = this.includePatterns;
+		DatumPropertyFilterConfig[] incs = this.propIncludes;
 		if ( incs != null && incs.length > 0 ) {
 			Map<String, ?> map = samples.getAccumulating();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					if ( !matchesAny(incs, propName, true) ) {
+					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					if ( match == null
+							|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getAccumulating().remove(propName);
+					} else if ( match != null ) {
+						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
+								lastSeenMap);
 					}
 				}
 			}
 			map = samples.getInstantaneous();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					if ( !matchesAny(incs, propName, true) ) {
+					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					if ( match == null || shouldLimitByFrequency(match,
+							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getInstantaneous().remove(propName);
+					} else if ( match != null ) {
+						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
+								lastSeenMap);
 					}
 				}
 			}
 			map = samples.getStatus();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					if ( !matchesAny(incs, propName, true) ) {
+					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					if ( match == null || shouldLimitByFrequency(match,
+							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getStatus().remove(propName);
+					} else if ( match != null ) {
+						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
+								lastSeenMap);
 					}
 				}
 			}
@@ -144,9 +171,7 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		}
 
 		// tidy up any empty maps we created during filtering
-		if ( copy != null )
-
-		{
+		if ( copy != null ) {
 			if ( copy.getAccumulating() != null && copy.getAccumulating().isEmpty() ) {
 				copy.setAccumulating(null);
 			}
@@ -161,6 +186,24 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		return (copy != null ? copy : samples);
 	}
 
+	private void saveLastSeenSetting(final Integer limit, final long now, final String settingKey,
+			final String lastSeenKey, ConcurrentMap<String, String> lastSeenMap) {
+		if ( limit == null || limit.intValue() < 1 ) {
+			return;
+		}
+		// save the new setting date
+		final String oldLastSeenValue = lastSeenMap.get(lastSeenKey);
+		final String newLastSeenValue = Long.toString(now, 16);
+		if ( (oldLastSeenValue == null && lastSeenMap.putIfAbsent(lastSeenKey, newLastSeenValue) == null)
+				|| (oldLastSeenValue != null
+						&& lastSeenMap.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
+
+			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(now, 16),
+					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
+			getSettingDao().storeSetting(s);
+		}
+	}
+
 	/**
 	 * Call to initialize the instance after properties are configured.
 	 */
@@ -172,7 +215,24 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 	 * Call after any of the include/exclude values are modified.
 	 */
 	public void configurationChanged(Map<String, ?> props) {
-		this.includePatterns = patterns(getIncludes());
+		// backwards compatibility support for the old String[] includes configuration
+		if ( props != null && props.containsKey("includesCount") ) {
+			final int includeCount = Integer.parseInt(props.get("includesCount").toString());
+			if ( includeCount > 0 && propIncludes != null && propIncludes.length >= includeCount ) {
+				for ( int i = 0; i < includeCount; i++ ) {
+					String inc = (String) props.get("includes[" + i + "]");
+					DatumPropertyFilterConfig config = propIncludes[i];
+					if ( config == null ) {
+						config = new DatumPropertyFilterConfig();
+						propIncludes[i] = config;
+					}
+					if ( (config.getName() == null || config.getName().length() < 1) && inc != null
+							&& inc.length() > 0 ) {
+						config.setName(inc);
+					}
+				}
+			}
+		}
 		this.excludePatterns = patterns(getExcludes());
 	}
 
@@ -192,22 +252,24 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
-		String[] incs = getIncludes();
-		Collection<String> listStrings = (incs != null ? Arrays.asList(incs)
-				: Collections.<String> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("includes", listStrings,
-				new SettingsUtil.KeyedListCallback<String>() {
+		DatumPropertyFilterConfig[] incs = getPropIncludes();
+		List<DatumPropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)
+				: Collections.<DatumPropertyFilterConfig> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("propIncludes", incsList,
+				new SettingsUtil.KeyedListCallback<DatumPropertyFilterConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
-							String key) {
-						return Collections.<SettingSpecifier> singletonList(
-								new BasicTextFieldSettingSpecifier(key, ""));
+					public Collection<SettingSpecifier> mapListSettingKey(
+							DatumPropertyFilterConfig value, int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								DatumPropertyFilterConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
 
 		String[] excs = getExcludes();
-		listStrings = (excs != null ? Arrays.asList(excs) : Collections.<String> emptyList());
+		List<String> listStrings = (excs != null ? Arrays.asList(excs)
+				: Collections.<String> emptyList());
 		results.add(SettingsUtil.dynamicListSettingSpecifier("excludes", listStrings,
 				new SettingsUtil.KeyedListCallback<String>() {
 
@@ -226,9 +288,19 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 	 * Get the property include expressions.
 	 * 
 	 * @return The property include expressions.
+	 * @deprecated use {@link #getPropIncludes()}
 	 */
+	@Deprecated
 	public String[] getIncludes() {
-		return this.includes;
+		DatumPropertyFilterConfig[] configurations = getPropIncludes();
+		String[] includes = null;
+		if ( configurations != null ) {
+			includes = new String[configurations.length];
+			for ( int i = 0; i < configurations.length; i++ ) {
+				includes[i] = configurations[i].getName();
+			}
+		}
+		return includes;
 	}
 
 	/**
@@ -236,19 +308,31 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 	 * 
 	 * @param includeExpressions
 	 *        The property include expressions.
+	 * @deprecated use {@link #setPropIncludes(DatumPropertyFilterConfig[])}
 	 */
+	@Deprecated
 	public void setIncludes(String[] includeExpressions) {
-		this.includes = includeExpressions;
+		DatumPropertyFilterConfig[] configurations = null;
+		if ( includeExpressions != null ) {
+			configurations = new DatumPropertyFilterConfig[includeExpressions.length];
+			for ( int i = 0; i < includeExpressions.length; i++ ) {
+				DatumPropertyFilterConfig config = new DatumPropertyFilterConfig();
+				config.setName(includeExpressions[i]);
+				configurations[i] = config;
+			}
+		}
+		setPropIncludes(configurations);
 	}
 
 	/**
 	 * Get the number of configured {@code includes} elements.
 	 * 
 	 * @return The number of {@code includes} elements.
+	 * @deprecated use {@link #getPropIncludesCount()}
 	 */
+	@Deprecated
 	public int getIncludesCount() {
-		String[] pats = this.includes;
-		return (pats == null ? 0 : pats.length);
+		return getPropIncludesCount();
 	}
 
 	/**
@@ -257,19 +341,70 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 	 * 
 	 * @param count
 	 *        The desired number of {@code includes} elements.
+	 * @deprecated use {@link #setPropIncludesCount(int)}
 	 */
+	@Deprecated
 	public void setIncludesCount(int count) {
+		setPropIncludesCount(count);
+	}
+
+	/**
+	 * Get the property include configurations.
+	 * 
+	 * @return The property include configurations.
+	 */
+	public DatumPropertyFilterConfig[] getPropIncludes() {
+		return this.propIncludes;
+	}
+
+	/**
+	 * Set an array of property include configurations.
+	 * 
+	 * @param propIncludes
+	 *        The property include configurations.
+	 */
+	public void setPropIncludes(DatumPropertyFilterConfig[] propIncludes) {
+		this.propIncludes = propIncludes;
+	}
+
+	/**
+	 * Get the number of configured {@code propIncludes} elements.
+	 * 
+	 * @return The number of {@code propIncludes} elements.
+	 */
+	public int getPropIncludesCount() {
+		DatumPropertyFilterConfig[] incs = this.propIncludes;
+		return (incs == null ? 0 : incs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propIncludes} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link DatumPropertyFilterConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propIncludes} elements.
+	 */
+	public void setPropIncludesCount(int count) {
 		if ( count < 0 ) {
 			count = 0;
 		}
-		String[] pats = this.includes;
-		int lCount = (pats == null ? 0 : pats.length);
+		DatumPropertyFilterConfig[] incs = this.propIncludes;
+		int lCount = (incs == null ? 0 : incs.length);
 		if ( lCount != count ) {
-			String[] newPats = new String[count];
-			if ( pats != null ) {
-				System.arraycopy(pats, 0, newPats, 0, Math.min(count, pats.length));
+			DatumPropertyFilterConfig[] newIncs = new DatumPropertyFilterConfig[count];
+			if ( incs != null ) {
+				System.arraycopy(incs, 0, newIncs, 0, Math.min(count, incs.length));
 			}
-			this.includes = newPats;
+			for ( int i = 0; i < count; i++ ) {
+				if ( newIncs[i] == null ) {
+					newIncs[i] = new DatumPropertyFilterConfig();
+				}
+			}
+			this.propIncludes = newIncs;
 		}
 	}
 

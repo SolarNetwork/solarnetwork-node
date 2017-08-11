@@ -24,13 +24,19 @@ package net.solarnetwork.node.datum.samplefilter;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.support.KeyValuePair;
 
 /**
  * Support class for sample transformers.
@@ -40,13 +46,43 @@ import net.solarnetwork.node.domain.Datum;
  */
 public class SamplesTransformerSupport {
 
+	/** The default value for the {@code settingCacheSecs} property. */
+	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
+
+	/**
+	 * A setting key template, takes a single string parameter (the datum source
+	 * ID).
+	 */
+	public static final String SETTING_KEY_TEMPLATE = "%s/valueCaptured";
+
+	/**
+	 * The default value for the UID property.
+	 */
+	public static final String DEFAULT_UID = "Default";
+
+	/**
+	 * A global cache for helping with transformers that require persistence.
+	 */
+	protected static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
+			4);
+
 	private String uid;
 	private String groupUID;
 	private Pattern sourceId;
+	private SettingDao settingDao;
 	private MessageSource messageSource;
+	private int settingCacheSecs;
+
+	private final AtomicLong settingCacheExpiry = new AtomicLong(0);
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	public SamplesTransformerSupport() {
+		super();
+		setUid(DEFAULT_UID);
+		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
+	}
 
 	/**
 	 * Get the source ID regex.
@@ -112,6 +148,105 @@ public class SamplesTransformerSupport {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Test if any configuration in a set matches a string value.
+	 * 
+	 * @param pats
+	 *        the regular expressions to use
+	 * @param value
+	 *        the value to test
+	 * @param emptyPatternMatches
+	 *        {@literal true} if a {@literal null} regular expression is treated
+	 *        as a match (thus matching any value)
+	 * @return the first config that matches, or {@literal null} if none do
+	 */
+	public static DatumPropertyFilterConfig findMatch(final DatumPropertyFilterConfig[] configs,
+			final String value, final boolean emptyPatternMatches) {
+		if ( configs == null || configs.length < 1 || value == null ) {
+			return null;
+		}
+		for ( DatumPropertyFilterConfig config : configs ) {
+			final Pattern pat = (config != null ? config.getNamePattern() : null);
+			if ( pat == null ) {
+				if ( emptyPatternMatches ) {
+					return config;
+				}
+				continue;
+			}
+			if ( pat.matcher(value).find() ) {
+				return config;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param config
+	 * @param lastSeenKey
+	 *        the key to use for the last seen date
+	 * @param lastSeenMap
+	 *        a map of string keys to string values, where the values are
+	 *        hex-encoded epoch date values (long)
+	 * @param now
+	 * @return
+	 */
+	public static boolean shouldLimitByFrequency(DatumPropertyFilterConfig config,
+			final String lastSeenKey, final ConcurrentMap<String, String> lastSeenMap, final long now) {
+		boolean limit = false;
+		if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
+			final long offset = config.getFrequency() * 1000L;
+			String lastSaveSetting = lastSeenMap.get(lastSeenKey);
+			long lastSaveTime = (lastSaveSetting != null ? Long.valueOf(lastSaveSetting, 16) : 0);
+			if ( lastSaveTime > 0 && lastSaveTime + offset > now ) {
+				limit = true;
+			}
+		}
+		return limit;
+	}
+
+	protected String settingKey() {
+		final String uid = getUid();
+		return String.format(SETTING_KEY_TEMPLATE, (uid == null ? DEFAULT_UID : uid));
+	}
+
+	/**
+	 * Load all available settings for a given key.
+	 * 
+	 * <p>
+	 * This method caches the results for at most {@code settingCacheSecs}
+	 * seconds.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the key to load
+	 * @return the settings, mapped into a {@code ConcurrentMap} using the
+	 *         setting {@code type} for keys and the setting {@code value} for
+	 *         the associated values
+	 */
+	protected ConcurrentMap<String, String> loadSettings(String key) {
+		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
+		if ( result == null ) {
+			SETTING_CACHE.putIfAbsent(key, new ConcurrentHashMap<String, String>(16));
+			result = SETTING_CACHE.get(key);
+		}
+		final long expiry = settingCacheExpiry.get();
+		if ( expiry > System.currentTimeMillis() ) {
+			return result;
+		}
+		SettingDao dao = getSettingDao();
+		if ( dao != null ) {
+			List<KeyValuePair> pairs = dao.getSettings(key);
+			if ( pairs != null && !pairs.isEmpty() ) {
+				for ( KeyValuePair pair : pairs ) {
+					result.put(pair.getKey(), pair.getValue());
+				}
+			}
+		}
+		settingCacheExpiry.compareAndSet(expiry, System.currentTimeMillis() + settingCacheSecs * 1000L);
+		return result;
 	}
 
 	/**
@@ -246,6 +381,43 @@ public class SamplesTransformerSupport {
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get the SettingDao to use.
+	 * 
+	 * @return the DAO
+	 */
+	public SettingDao getSettingDao() {
+		return this.settingDao;
+	}
+
+	/**
+	 * Set the {@link SettingDao} to use to persist "last seen" time stamps
+	 * with.
+	 * 
+	 * @param settingDao
+	 *        the DAO to set
+	 */
+	public void setSettingDao(SettingDao settingDao) {
+		this.settingDao = settingDao;
+	}
+
+	/**
+	 * The maximum number of seconds to use cached {@link SettingDao} data when
+	 * filtering datum.
+	 * 
+	 * <p>
+	 * An internal cache is used so that when iterating over sets of datum the
+	 * settings don't need to be loaded from the database each time over a very
+	 * short amount of time.
+	 * </p>
+	 * 
+	 * @param settingCacheSecs
+	 *        the settingCacheSecs to set
+	 */
+	public void setSettingCacheSecs(int settingCacheSecs) {
+		this.settingCacheSecs = settingCacheSecs;
 	}
 
 }
