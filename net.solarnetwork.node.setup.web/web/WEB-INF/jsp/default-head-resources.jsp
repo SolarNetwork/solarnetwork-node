@@ -26,6 +26,7 @@
 	/js-lib/stomp.js
 	/js/global.js
 	/js/backups.js
+	/js/datum.js
 	/js/certs.js
 	/js/login.js
 	/js/settings.js
