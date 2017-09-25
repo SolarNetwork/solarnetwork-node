@@ -6,7 +6,7 @@ Bundle-Description: Communication support for the Modbus network protocol.
 Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.solarnetwork.node.io.modbus;version="2.1.1"
+Export-Package: net.solarnetwork.node.io.modbus;version="2.1.0"
 Import-Package: 
  gnu.io,
  net.solarnetwork.node;version="1.22.0",
