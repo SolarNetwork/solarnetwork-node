@@ -861,7 +861,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	protected Event createDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
 		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		props.put(Datum.DATUM_TYPE_PROPERTY, eventDatumType.getName());
 		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}

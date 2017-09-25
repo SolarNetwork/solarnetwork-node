@@ -26,9 +26,20 @@ import net.solarnetwork.node.domain.Datum;
  * API for posting local SolarNode data to a remote server.
  * 
  * @author matt.magoffin
- * @version 1.1
+ * @version 1.2
  */
 public interface UploadService {
+
+	/**
+	 * An event topic for when a {@link Datum} has been uploaded.
+	 * 
+	 * <p>
+	 * The properties of the event shall be {@link Datum#asSimpleMap()}.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	public static final String EVENT_TOPIC_DATUM_UPLOADED = "net/solarnetwork/node/UploadService/DATUM_UPLOADED";
 
 	/**
 	 * Get a unique key for this service.

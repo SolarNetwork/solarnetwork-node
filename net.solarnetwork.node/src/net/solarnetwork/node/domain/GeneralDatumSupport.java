@@ -23,13 +23,15 @@
 package net.solarnetwork.node.domain;
 
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumSamples;
 
 /**
  * Base Datum implementation with {@link GeneralDatumSamples} support.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cloneable {
 
@@ -345,6 +347,36 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 		if ( s != null ) {
 			s.removeTag(tag);
 		}
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @since 1.2
+	 */
+	@Override
+	public Map<String, ?> getSampleData() {
+		return (samples != null ? samples.getSampleData() : null);
+	}
+
+	@Override
+	protected Map<String, Object> createSimpleMap() {
+		Map<String, Object> map = super.createSimpleMap();
+
+		// recreate tags as an array, instead of a Set
+		if ( samples != null ) {
+			Set<String> tags = samples.getTags();
+			if ( tags != null ) {
+				String[] tagArray = tags.toArray(new String[tags.size()]);
+				if ( tagArray.length > 0 ) {
+					map.put("tags", tagArray);
+				} else {
+					map.remove("tags");
+				}
+			}
+		}
+
+		return map;
 	}
 
 	@Override

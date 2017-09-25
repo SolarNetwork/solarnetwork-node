@@ -30,7 +30,7 @@ import net.solarnetwork.node.domain.Datum;
  * API for collecting {@link Datum} objects from some device.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @param <T>
  *        the Datum type
  */
@@ -54,8 +54,10 @@ public interface DatumDataSource<T extends Datum> extends Identifiable {
 	 * the <em>core</em> class of the datum type associated with the event.
 	 * 
 	 * @since 1.2
+	 * @deprecated use {@link Datum#DATUM_TYPE_PROPERTY}
 	 */
-	public static final String EVENT_DATUM_CAPTURED_DATUM_TYPE = "_DatumType";
+	@Deprecated
+	public static final String EVENT_DATUM_CAPTURED_DATUM_TYPE = Datum.DATUM_TYPE_PROPERTY;
 
 	/**
 	 * Get the class supported by this DataSource.

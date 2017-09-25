@@ -39,44 +39,13 @@ import net.solarnetwork.node.domain.Datum;
 public interface DatumDao<T extends Datum> {
 
 	/**
-	 * An {@link org.osgi.service.event.Event} property for the string name of
-	 * the <em>core</em> datum type associated with the event.
-	 * 
-	 * <p>
-	 * The <em>core<em> data type is the most specific interface defined on the
-	 * {@link #getDatumType()} class, which will be the first value in the
-	 * {@link #EVENT_PROP_DATUM_TYPES} property.
-	 * </p>
-	 * 
-	 * @since 1.2
-	 * @see #EVENT_PROP_DATUM_TYPES
-	 */
-	public static final String EVENT_PROP_DATUM_TYPE = "_DatumType";
-
-	/**
-	 * An {@link org.osgi.service.event.Event} property for an array of string
-	 * names of all datum types associated with the event.
-	 * 
-	 * <p>
-	 * Datum types are the fully qualified <em>interfaces</em> defined on the
-	 * {@link #getDatumType()} class, and any superclass. All Java language
-	 * interfaces are ignored, e.g. packages starting with {@literal java.} or
-	 * {@literal javax.} are not included. The array is ordered in reverse class
-	 * hierarchy order.
-	 * </p>
-	 * 
-	 * @since 1.2
-	 */
-	public static final String EVENT_PROP_DATUM_TYPES = "_DatumTypes";
-
-	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}
 	 * has been persisted.
 	 * 
 	 * <p>
 	 * The properties of the event shall be any of the JavaBean properties of
 	 * the Datum supported by events (i.e. any simple Java property such as
-	 * numbers and strings). In addition, the {@link #EVENT_PROP_DATUM_TYPE}
+	 * numbers and strings). In addition, the {@link Datum#DATUM_TYPE_PROPERTY}
 	 * property shall be populated with the name of the <em>core</em> class name
 	 * of the datum type.
 	 * </p>

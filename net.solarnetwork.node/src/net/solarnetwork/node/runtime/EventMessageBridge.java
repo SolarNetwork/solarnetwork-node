@@ -36,6 +36,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.support.GenericMessage;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -63,6 +64,7 @@ public class EventMessageBridge implements EventHandler {
 		Map<String, String> map = new HashMap<String, String>();
 		map.put(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, "datum/captured/{sourceId}");
 		map.put(DatumDao.EVENT_TOPIC_DATUM_STORED, "datum/stored/{sourceId}");
+		map.put(UploadService.EVENT_TOPIC_DATUM_UPLOADED, "datum/uploaded/{sourceId}");
 		return Collections.unmodifiableMap(map);
 	}
 

@@ -25,12 +25,13 @@
 package net.solarnetwork.node.domain;
 
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Basic persistable domain object API.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface Datum {
 
@@ -43,6 +44,37 @@ public interface Datum {
 	 * @since 1.2
 	 */
 	String REVERSE_ACCUMULATING_SUFFIX_KEY = "Reverse";
+
+	/**
+	 * A property name for the string name of the <em>core</em> datum type a
+	 * datum represents.
+	 * 
+	 * <p>
+	 * The <em>core<em> data type is the most specific interface defined on a
+	 * datum class, which will be the first value in the
+	 * {@link #DATUM_TYPES_PROPERTY} property.
+	 * </p>
+	 * 
+	 * @since 1.3
+	 * @see #DATUM_TYPES_PROPERTY
+	 */
+	String DATUM_TYPE_PROPERTY = "_DatumType";
+
+	/**
+	 * A property name for an array of string names of all datum types
+	 * associated with the event.
+	 * 
+	 * <p>
+	 * Datum types are the fully qualified <em>interfaces</em> defined on the
+	 * datum implementation class, and any superclass. All Java language
+	 * interfaces are ignored, e.g. packages starting with {@literal java.} or
+	 * {@literal javax.} are not included. The array is ordered in reverse class
+	 * hierarchy order.
+	 * </p>
+	 * 
+	 * @since 1.3
+	 */
+	String DATUM_TYPES_PROPERTY = "_DatumTypes";
 
 	/**
 	 * Get the date this object was created, which is often equal to either the
@@ -70,5 +102,30 @@ public interface Datum {
 	 * @return the upload date
 	 */
 	Date getUploaded();
+
+	/**
+	 * Get a map of all available data sampled or collected on this datum.
+	 * 
+	 * @return a map with all available sample data
+	 * @since 1.3
+	 */
+	Map<String, ?> getSampleData();
+
+	/**
+	 * Get a simple {@link Map} view of this datum.
+	 * 
+	 * <p>
+	 * The returned map should include all the available properties of this
+	 * datum, in as flat of a structure as possible, i.e. without nested maps.
+	 * The property values should be composed only if simple Java types like
+	 * numbers, strings, and arrays or lists of those types. It should also
+	 * include the {@link #DATUM_TYPE_PROPERTY} and
+	 * {@link #DATUM_TYPES_PROPERTY} values.
+	 * </p>
+	 * 
+	 * @return a Map view of this datum
+	 * @since 1.3
+	 */
+	Map<String, ?> asSimpleMap();
 
 }
