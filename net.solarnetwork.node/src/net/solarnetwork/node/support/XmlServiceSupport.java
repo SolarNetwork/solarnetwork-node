@@ -56,13 +56,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
@@ -74,6 +67,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * An abstract class to support services that use XML.
@@ -86,12 +86,14 @@ import org.xml.sax.SAXException;
  * <dt>docBuilderFactory</dt>
  * <dd>A JAXP {@link DocumentBuilderFactory} to use. If not configured, the
  * {@link DocumentBuilderFactory#newInstance()} method will be used to create a
- * default one.</p>
+ * default one.
+ * </p>
  * 
  * <dt>transformerFactory</dt>
  * <dd>A JAXP {@link TransformerFactory} for handling XSLT transformations with.
  * If not configured, the {@link TransformerFactory#newInstance()} method will
- * be used to create a default one.</p>
+ * be used to create a default one.
+ * </p>
  * 
  * <dt>xpathFactory</dt>
  * <dd>A JAXP {@link XPathFactory} for handling XPath operations with. If not
@@ -109,11 +111,12 @@ import org.xml.sax.SAXException;
  * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
  * 
  * <dt>datumMetadataService</dt>
- * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
+ * <dd>An optional {@link DatumMetadataService} to use for managing
+ * metadata.</dd>
  * </dl>
  * 
  * @author matt.magoffin
- * @version 1.4
+ * @version 1.5
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
 
@@ -707,8 +710,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the mapping of JavaBean property names to XPaths
 	 * @see #webFormGet(BeanWrapper, String, Map)
 	 */
-	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url,
-			Map<String, ?> attributes, Map<String, XPathExpression> xpathMap) {
+	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url, Map<String, ?> attributes,
+			Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormGet(bean, url, attributes);
 		Document doc;
 		try {
