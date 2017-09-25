@@ -1,7 +1,7 @@
 /* ==================================================================
- * SerialDeviceSupport.java - 25/10/2014 7:25:24 AM
+ * SerialDeviceDatumDataSourceSupport.java - 26/09/2017 9:56:36 AM
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -23,70 +23,43 @@
 package net.solarnetwork.node.io.serial;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * A base helper class to support {@link SerialNetwork} based services.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>serialNetwork</dt>
- * <dd>The {@link SerialNetwork} to use.</dd>
- * 
- * <dt>uid</dt>
- * <dd>A service name to use.</dd>
- * 
- * <dt>groupUID</dt>
- * <dd>A service group to use.</dd>
- * </dl>
+ * A base helper class to support {@link SerialNetwork} based
+ * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.3
  */
-public abstract class SerialDeviceSupport {
+public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
 	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
+	public static final String INFO_KEY_DEVICE_NAME = SerialDeviceSupport.INFO_KEY_DEVICE_NAME;
 
 	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
+	public static final String INFO_KEY_DEVICE_MODEL = SerialDeviceSupport.INFO_KEY_DEVICE_MODEL;
 
 	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
+	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = SerialDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER;
 
 	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
+	public static final String INFO_KEY_DEVICE_MANUFACTURER = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
 
 	/**
 	 * Key for the device manufacture date, as a
 	 * {@link org.joda.time.ReadablePartial}.
 	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
+	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
 	private Map<String, Object> deviceInfo;
-	private String uid;
-	private String groupUID;
 	private OptionalService<SerialNetwork> serialNetwork;
-	private MessageSource messageSource;
-	private OptionalService<EventAdmin> eventAdmin;
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
@@ -150,7 +123,7 @@ public abstract class SerialDeviceSupport {
 				});
 				deviceInfo = info;
 			} catch ( Exception e ) {
-				log.warn("Communcation problem with {}: {}", uid, e.getMessage());
+				log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
 			}
 		}
 		return (info == null ? null : Collections.unmodifiableMap(info));
@@ -201,112 +174,22 @@ public abstract class SerialDeviceSupport {
 	}
 
 	/**
-	 * Get setting specifiers for the {@code uid} and {@code groupUID}
-	 * properties.
+	 * Get the configured {@link SerialNetwork}.
 	 * 
-	 * @return list of setting specifiers
-	 * @since 1.1
+	 * @return the serial network
 	 */
-	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		return results;
-	}
-
-	/**
-	 * Post an {@link Event}.
-	 * 
-	 * <p>
-	 * This method only works if a {@link EventAdmin} has been configured via
-	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
-	 * ignored.
-	 * </p>
-	 * 
-	 * @param event
-	 *        the event to post
-	 * @since 1.1
-	 */
-	protected final void postEvent(Event event) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || event == null ) {
-			return;
-		}
-		ea.postEvent(event);
-	}
-
-	/**
-	 * Get a UID value. Returns {@link #getUid()}.
-	 * 
-	 * @return UID
-	 */
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
 	public OptionalService<SerialNetwork> getSerialNetwork() {
 		return serialNetwork;
 	}
 
-	public void setSerialNetwork(OptionalService<SerialNetwork> serialDevice) {
-		this.serialNetwork = serialDevice;
+	/**
+	 * Set the {@link SerialNetwork} to use.
+	 * 
+	 * @param serialNetwork
+	 *        the serial network to use
+	 */
+	public void setSerialNetwork(OptionalService<SerialNetwork> serialNetwork) {
+		this.serialNetwork = serialNetwork;
 	}
 
-	/**
-	 * Get the configured {@link EventAdmin}.
-	 * 
-	 * @return the event admin service
-	 * @since 1.1
-	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	/**
-	 * Set an {@link EventAdmin} to use for posting control provider events.
-	 * 
-	 * @param eventAdmin
-	 *        The service to use.
-	 * @since 1.1
-	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 * @since 1.1
-	 */
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 * @since 1.1
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
 }
