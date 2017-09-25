@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
@@ -40,7 +41,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import org.springframework.context.MessageSource;
 
 /**
  * {@link DatumDataSource} implementation for {@link ConsumptionDatum} with the
@@ -52,7 +52,8 @@ import org.springframework.context.MessageSource;
  * 
  * <dl class="class-properties">
  * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
+ * <dd>The {@link MessageSource} to use with
+ * {@link SettingSpecifierProvider}.</dd>
  * 
  * <dt>sampleCacheMs</dt>
  * <dd>The maximum number of milliseconds to cache data read from the meter,
@@ -67,12 +68,10 @@ import org.springframework.context.MessageSource;
  * @version 1.2
  */
 public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
-		DatumDataSource<GeneralNodeACEnergyDatum>, MultiDatumDataSource<GeneralNodeACEnergyDatum>,
-		SettingSpecifierProvider {
+		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
 
 	private static final long MIN_TIME_READ_ENERGY_RATIOS = 1000L * 60L * 60L; // 1 hour
 
-	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 	private boolean tagConsumption = true;
 	private long energyRatioReadTime = 0;
@@ -106,8 +105,8 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 				}
 				log.debug("Read EM5600 data: {}", currSample);
 			} catch ( IOException e ) {
-				throw new RuntimeException("Communication problem reading from Modbus device "
-						+ modbusNetwork(), e);
+				throw new RuntimeException(
+						"Communication problem reading from Modbus device " + modbusNetwork(), e);
 			}
 		} else {
 			currSample = new EM5600Data(sample);
@@ -136,7 +135,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		d.setSourceId(getSourceMapping().get(ACPhase.Total));
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the meter
-			postDatumCapturedEvent(d, ACEnergyDatum.class);
+			postDatumCapturedEvent(d);
 			addEnergyDatumSourceMetadata(d);
 		}
 		return d;
@@ -148,10 +147,10 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
+	public Collection<ACEnergyDatum> readMultipleDatum() {
 		final long start = System.currentTimeMillis();
 		final EM5600Data currSample = getCurrentSample();
-		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
+		final List<ACEnergyDatum> results = new ArrayList<ACEnergyDatum>(4);
 		final List<EM5600ConsumptionDatum> capturedResults = new ArrayList<EM5600ConsumptionDatum>(4);
 		if ( currSample == null ) {
 			return results;
@@ -162,7 +161,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.Total));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
@@ -176,7 +175,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
@@ -190,7 +189,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
@@ -204,7 +203,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
@@ -245,24 +244,15 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		EM5600ConsumptionDatumDataSource defaults = new EM5600ConsumptionDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
 		SettingSpecifier energyTag = new BasicToggleSettingSpecifier("tagConsumption",
 				Boolean.valueOf(defaults.isTagConsumption()));
 		results.add(energyTag);
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
-				.getSampleCacheMs())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.getSampleCacheMs())));
 		return results;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	public long getSampleCacheMs() {
