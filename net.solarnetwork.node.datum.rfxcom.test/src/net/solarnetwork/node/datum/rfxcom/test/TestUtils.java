@@ -22,7 +22,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.consumption.rfxcom.test;
+package net.solarnetwork.node.datum.rfxcom.test;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;

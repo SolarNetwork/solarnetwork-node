@@ -1,5 +1,5 @@
 /* ==================================================================
- * RFXCOMConsumptionDatumSourceTest.java - Dec 3, 2012 6:50:26 AM
+ * RFXCOMACEnergyDatumSourceTest.java - Dec 3, 2012 6:50:26 AM
  * 
  * Copyright 2007-2012 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.consumption.rfxcom.test;
+package net.solarnetwork.node.datum.rfxcom.test;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -30,28 +30,28 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
-import net.solarnetwork.node.consumption.rfxcom.RFXCOMConsumptionDatumDataSource;
-import net.solarnetwork.node.rfxcom.Message;
-import net.solarnetwork.node.rfxcom.MessageFactory;
-import net.solarnetwork.node.rfxcom.RFXCOM;
-import net.solarnetwork.util.OptionalService;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.ConversationalDataCollector;
+import net.solarnetwork.node.datum.rfxcom.RFXCOMDatumDataSource;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.rfxcom.Message;
+import net.solarnetwork.node.rfxcom.MessageFactory;
+import net.solarnetwork.node.rfxcom.RFXCOM;
+import net.solarnetwork.util.OptionalService;
 
 /**
- * Test cases for the @{link RFXCOMConsumptionDatumDataSource} class.
+ * Test cases for the @{link RFXCOMDatumDataSource} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class RFXCOMConsumptionDatumSourceTest {
+public class RFXCOMDatumDataSourceTests {
 
-	private RFXCOMConsumptionDatumDataSource dataSource;
+	private RFXCOMDatumDataSource dataSource;
 	private OptionalService<RFXCOM> rfxcomTracker;
 	private RFXCOM rfxcom;
 	private ConversationalDataCollector dc;
@@ -68,13 +68,13 @@ public class RFXCOMConsumptionDatumSourceTest {
 
 		dc = EasyMock.createMock(ConversationalDataCollector.class);
 
-		dataSource = new RFXCOMConsumptionDatumDataSource();
+		dataSource = new RFXCOMDatumDataSource();
 		dataSource.setRfxcomTracker(rfxcomTracker);
 
 		messageFactory = new MessageFactory();
 	}
 
-	private Collection<ConsumptionDatum> doReadDatum(String messageString) {
+	private Collection<ACEnergyDatum> doReadDatum(String messageString) {
 		final List<Message> messages = new ArrayList<Message>();
 		messages.add(messageFactory.parseMessage(TestUtils.bytesFromHexString(messageString), 0));
 		expect(rfxcomTracker.service()).andReturn(rfxcom);
@@ -84,48 +84,47 @@ public class RFXCOMConsumptionDatumSourceTest {
 
 		replay(rfxcomTracker, rfxcom, dc);
 
-		Collection<ConsumptionDatum> datum = dataSource.readMultipleDatum();
+		Collection<ACEnergyDatum> datum = dataSource.readMultipleDatum();
 
 		verify(rfxcomTracker, rfxcom, dc);
 
 		return datum;
 	}
 
-	private List<ConsumptionDatum>[] doReadMultipleDatum(String[] messages) {
+	private List<ACEnergyDatum>[] doReadMultipleDatum(String[] messages) {
 		@SuppressWarnings("unchecked")
-		List<ConsumptionDatum>[] results = new List[messages.length];
+		List<ACEnergyDatum>[] results = new List[messages.length];
 		int i = 0;
 		for ( String messageString : messages ) {
-			results[i++] = new ArrayList<ConsumptionDatum>(doReadDatum(messageString));
+			results[i++] = new ArrayList<ACEnergyDatum>(doReadDatum(messageString));
 			EasyMock.reset(rfxcomTracker, rfxcom, dc);
 		}
 		return results;
 	}
 
 	@Test
-	public void getValidConsumptionDatumNoChange() {
-		Collection<ConsumptionDatum>[] results = doReadMultipleDatum(new String[] {
+	public void getValidACEnergyDatumNoChange() {
+		Collection<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
 				"115A010188F200000000000000000036B079", "115A010188F200000000000000000036B079",
 				"115A010188F200000000000000000036B079" });
 		log.debug("Got results: {}", Arrays.asList(results));
 		assertEquals(0, results[0].size());
 		assertEquals(0, results[1].size());
 		assertEquals(3, results[2].size());
-		for ( ConsumptionDatum datum : results[2] ) {
+		for ( ACEnergyDatum datum : results[2] ) {
 			assertEquals("88F2", datum.getSourceId());
 			assertEquals("Use", Long.valueOf(63L), datum.getWattHourReading());
 		}
 	}
 
 	@Test
-	public void getBadConsumptionDatum() {
-		List<ConsumptionDatum>[] results = doReadMultipleDatum(new String[] {
-				"115a011b6b120000000162000000d0666559", "115a011c6b120000000172000000d06bc159",
-				"115a011d6b120000000172000000d0716159",
-				"115a011f6b120000000182000000d0769359",
-				"115a01206b120200000152006b00115a0121", // this should return null
-				"115a01236b120000000152000000d080fc59", "115a01246b120000000152000000d0862059",
-				"115a01256b120100000172000000d08a4459" });
+	public void getBadACEnergyDatum() {
+		List<ACEnergyDatum>[] results = doReadMultipleDatum(
+				new String[] { "115a011b6b120000000162000000d0666559",
+						"115a011c6b120000000172000000d06bc159", "115a011d6b120000000172000000d0716159",
+						"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
+						"115a01236b120000000152000000d080fc59", "115a01246b120000000152000000d0862059",
+						"115a01256b120100000172000000d08a4459" });
 		log.debug("Got results: {}", Arrays.asList(results));
 		// we expect 7 messages to get through out of the 8 sent... the first 2 are buffered automatically,
 		// then the "bad" message should cause it to be buffered and then flushed out
@@ -143,10 +142,9 @@ public class RFXCOMConsumptionDatumSourceTest {
 	}
 
 	@Test
-	public void getBadConsumptionDatumWhileWarmingUp() {
-		List<ConsumptionDatum>[] results = doReadMultipleDatum(new String[] {
-				"115a011f6b120000000182000000d0769359",
-				"115a01206b120200000152006b00115a0121", // this should return null
+	public void getBadACEnergyDatumWhileWarmingUp() {
+		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
 				"115a01236b120000000152000000d080fc59", "115a01246b120000000152000000d0862059",
 				"115a01256b120100000172000000d08a4459" });
 		log.debug("Got results: {}", Arrays.asList(results));
@@ -164,8 +162,8 @@ public class RFXCOMConsumptionDatumSourceTest {
 	}
 
 	@Test
-	public void getBadConsumptionDatumTurnsOutToBeGood() {
-		List<ConsumptionDatum>[] results = doReadMultipleDatum(new String[] {
+	public void getBadACEnergyDatumTurnsOutToBeGood() {
+		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
 				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data

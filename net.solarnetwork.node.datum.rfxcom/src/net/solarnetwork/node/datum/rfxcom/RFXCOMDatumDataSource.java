@@ -1,5 +1,5 @@
 /* ==================================================================
- * RFXCOMConsumptionDatumDataSource.java - Jul 8, 2012 4:44:30 PM
+ * RFXCOMDatumDataSource.java - Jul 8, 2012 4:44:30 PM
  * 
  * Copyright 2007-2012 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.consumption.rfxcom;
+package net.solarnetwork.node.datum.rfxcom;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,10 +32,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.rfxcom.AddressSource;
 import net.solarnetwork.node.rfxcom.CurrentMessage;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
@@ -48,25 +51,22 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
- * {@link MultiDatumDataSource} for {@link ConsumptionDatum} entities read from
- * the supported energy formats of the RFXCOM transceiver.
+ * {@link MultiDatumDataSource} for {@link ACEnergyDatum} entities read from the
+ * supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<ConsumptionDatum>,
-		MultiDatumDataSource<ConsumptionDatum>, ConversationalDataCollector.Moderator<List<Message>>,
-		SettingSpecifierProvider {
+public class RFXCOMDatumDataSource extends DatumDataSourceSupport
+		implements DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>,
+		ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
 
 	/**
 	 * The default value for the {@code maxWattHourSpikeVerificationDiff}
@@ -74,10 +74,14 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	 */
 	private static final long DEFAULT_MAX_WATT_HOUR_SPIKE_VERIFICATION_DIFF = 5000L;
 
-	/** The default value for the {@code maxWattHourVerificationDiff} property. */
+	/**
+	 * The default value for the {@code maxWattHourVerificationDiff} property.
+	 */
 	private static final long DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF = 500L;
 
-	/** The default value for the {@code collectAllSourceIdsTimeout} property. */
+	/**
+	 * The default value for the {@code collectAllSourceIdsTimeout} property.
+	 */
 	public static final int DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT = 55;
 
 	/** The default value for the {@code voltage} property. */
@@ -86,9 +90,6 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	/** The default value for the {@code currentSensorIndexFlags} property. */
 	public static final int DEFAULT_CURRENT_SENSOR_INDEX_FLAGS = 1;
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
 	private OptionalService<RFXCOM> rfxcomTracker;
 	private Map<String, String> addressSourceMapping = null;
 	private Set<String> sourceIdFilter = null;
@@ -96,19 +97,23 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
 	private int currentSensorIndexFlags = DEFAULT_CURRENT_SENSOR_INDEX_FLAGS;
-	private String uid;
-	private String groupUID;
 
 	// some in-memory error correction support, map keys are source IDs
 	private long maxWattHourWarmupVerificationDiff = DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF;
 	private long maxWattHourSpikeVerificationDiff = DEFAULT_MAX_WATT_HOUR_SPIKE_VERIFICATION_DIFF;
 	private final Map<String, Long> previousWattHours = new HashMap<String, Long>();
-	private final Map<String, List<ConsumptionDatum>> datumBuffer = new HashMap<String, List<ConsumptionDatum>>();
+	private final Map<String, List<ACEnergyDatum>> datumBuffer = new HashMap<String, List<ACEnergyDatum>>();
 
 	// in-memory listing of "seen" addresses, to support device discovery
 	private final SortedSet<AddressSource> knownAddresses = new ConcurrentSkipListSet<AddressSource>();
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	/**
+	 * Default constructor.
+	 */
+	public RFXCOMDatumDataSource() {
+		super();
+		setMessageSource(getDefaultMessageSource());
+	}
 
 	/**
 	 * Add a new cached "known" address value.
@@ -127,13 +132,13 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getMultiDatumType() {
-		return ConsumptionDatum.class;
+	public Class<? extends ACEnergyDatum> getMultiDatumType() {
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getDatumType() {
-		return ConsumptionDatum.class;
+	public Class<? extends ACEnergyDatum> getDatumType() {
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	private String getSourceIdForMessageAddress(String addr) {
@@ -143,7 +148,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		return addr;
 	}
 
-	private ConsumptionDatum filterConsumptionDatumInstance(ConsumptionDatum d) {
+	private GeneralNodeACEnergyDatum filterConsumptionDatumInstance(GeneralNodeACEnergyDatum d) {
 		String addr = getSourceIdForMessageAddress(d.getSourceId());
 		if ( getSourceIdFilter() != null && !getSourceIdFilter().contains(addr) ) {
 			if ( log.isInfoEnabled() ) {
@@ -154,20 +159,20 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 		// create a copy, because CurrentMessage might still be using input object for 
 		// other sensors...
-		ConsumptionDatum copy = (ConsumptionDatum) d.clone();
+		GeneralNodeACEnergyDatum copy = (GeneralNodeACEnergyDatum) d.clone();
 		copy.setSourceId(addr);
 		copy.setCreated(new Date());
 		return copy;
 	}
 
-	private List<ConsumptionDatum> getDatumBufferForSource(String source) {
+	private List<ACEnergyDatum> getDatumBufferForSource(String source) {
 		if ( !datumBuffer.containsKey(source) ) {
-			datumBuffer.put(source, new ArrayList<ConsumptionDatum>(5));
+			datumBuffer.put(source, new ArrayList<ACEnergyDatum>(5));
 		}
 		return datumBuffer.get(source);
 	}
 
-	private void addToResultsCheckingData(ConsumptionDatum datum, List<ConsumptionDatum> results) {
+	private void addToResultsCheckingData(GeneralNodeACEnergyDatum datum, List<ACEnergyDatum> results) {
 		if ( datum == null ) {
 			return;
 		}
@@ -179,8 +184,9 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		if ( datum.getWattHourReading() != null ) {
 			// calculate what would be the Wh diff
 			Long prevGoodWh = previousWattHours.get(sourceId);
-			List<ConsumptionDatum> buffer = getDatumBufferForSource(sourceId);
-			if ( (prevGoodWh == null && buffer.size() < 2) || (buffer.size() > 0 && buffer.size() < 2) ) {
+			List<ACEnergyDatum> buffer = getDatumBufferForSource(sourceId);
+			if ( (prevGoodWh == null && buffer.size() < 2)
+					|| (buffer.size() > 0 && buffer.size() < 2) ) {
 				// don't know the Wh diff, or we've buffered one item, so buffer this value so we have
 				// two buffered, because Wh might go back to zero when the transmitter is reset
 				log.info("Buffering datum until enough collected for data verification: {}", datum);
@@ -226,11 +232,11 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		results.add(datum);
 	}
 
-	private void addConsumptionDatumFromMessage(Message msg, List<ConsumptionDatum> results) {
+	private void addConsumptionDatumFromMessage(Message msg, List<ACEnergyDatum> results) {
 		final String address = ((AddressSource) msg).getAddress();
 		if ( msg instanceof EnergyMessage ) {
 			EnergyMessage emsg = (EnergyMessage) msg;
-			ConsumptionDatum d = new ConsumptionDatum();
+			GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
 			d.setSourceId(address);
 			final double wh = emsg.getUsageWattHours();
 			final double w = emsg.getInstantWatts();
@@ -243,7 +249,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		} else {
 			// assume CurrentMessage
 			CurrentMessage cmsg = (CurrentMessage) msg;
-			ConsumptionDatum d = new ConsumptionDatum();
+			GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
 
 			// we turn each sensor into its own ConsumptionDatum, the sensors we collect
 			// from are specified by the currentSensorIndexFlags property
@@ -263,15 +269,15 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading3()));
 						break;
 				}
-				ConsumptionDatum filtered = filterConsumptionDatumInstance(d);
+				GeneralNodeACEnergyDatum filtered = filterConsumptionDatumInstance(d);
 				addToResultsCheckingData(filtered, results);
 			}
 		}
 	}
 
 	@Override
-	public ConsumptionDatum readCurrentDatum() {
-		final Collection<ConsumptionDatum> results = readMultipleDatum();
+	public ACEnergyDatum readCurrentDatum() {
+		final Collection<ACEnergyDatum> results = readMultipleDatum();
 		if ( results != null && results.size() > 0 ) {
 			return results.iterator().next();
 		}
@@ -279,7 +285,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	}
 
 	@Override
-	public Collection<ConsumptionDatum> readMultipleDatum() {
+	public Collection<ACEnergyDatum> readMultipleDatum() {
 		final RFXCOM r = getRfxcomTracker().service();
 		if ( r == null ) {
 			return null;
@@ -302,7 +308,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 			return null;
 		}
 
-		final List<ConsumptionDatum> results = new ArrayList<ConsumptionDatum>(messages.size());
+		final List<ACEnergyDatum> results = new ArrayList<ACEnergyDatum>(messages.size());
 		for ( Message msg : messages ) {
 			addConsumptionDatumFromMessage(msg, results);
 		}
@@ -313,10 +319,11 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 	public List<Message> conductConversation(ConversationalDataCollector dc) {
 		final List<Message> result = new ArrayList<Message>(3);
 		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
-				&& getSourceIdFilter().size() > 1 ? System.currentTimeMillis()
-				+ (getCollectAllSourceIdsTimeout() * 1000) : 0);
-		final Set<String> sourceIdSet = new HashSet<String>(getSourceIdFilter() == null ? 0
-				: getSourceIdFilter().size());
+				&& getSourceIdFilter().size() > 1
+						? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000)
+						: 0);
+		final Set<String> sourceIdSet = new HashSet<String>(
+				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
 
 		final MessageFactory mf = new MessageFactory();
 		final MessageListener listener = new MessageListener();
@@ -348,7 +355,7 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.consumption.rfxcom";
+		return "net.solarnetwork.node.datum.rfxcom";
 	}
 
 	@Override
@@ -356,35 +363,28 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 		return "RFXCOM energy consumption meter";
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
-				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-				serial.setBasename(SerialPortBeanParameters.class.getName());
+	private MessageSource getDefaultMessageSource() {
+		ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
+		serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
+		serial.setBasename(SerialPortBeanParameters.class.getName());
 
-				PrefixedMessageSource serialSource = new PrefixedMessageSource();
-				serialSource.setDelegate(serial);
-				serialSource.setPrefix("serialParams.");
+		PrefixedMessageSource serialSource = new PrefixedMessageSource();
+		serialSource.setDelegate(serial);
+		serialSource.setPrefix("serialParams.");
 
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(RFXCOMConsumptionDatumDataSource.class.getClassLoader());
-				source.setBasename(RFXCOMConsumptionDatumDataSource.class.getName());
-				source.setParentMessageSource(serialSource);
-				MESSAGE_SOURCE = source;
-			}
-		}
-		return MESSAGE_SOURCE;
+		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+		source.setBundleClassLoader(RFXCOMDatumDataSource.class.getClassLoader());
+		source.setBasename(RFXCOMDatumDataSource.class.getName());
+		source.setParentMessageSource(serialSource);
+		return source;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		RFXCOMConsumptionDatumDataSource defaults = new RFXCOMConsumptionDatumDataSource();
+		RFXCOMDatumDataSource defaults = new RFXCOMDatumDataSource();
 
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(21);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['UID']",
 				"/dev/ttyUSB0"));
 
@@ -399,15 +399,16 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
-		results.add(new BasicToggleSettingSpecifier("collectAllSourceIds", defaults.collectAllSourceIds));
-		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout", String
-				.valueOf(defaults.collectAllSourceIdsTimeout)));
-		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags", String
-				.valueOf(defaults.currentSensorIndexFlags)));
-		results.add(new BasicTextFieldSettingSpecifier("maxWattHourWarmupVerificationDiff", String
-				.valueOf(defaults.getMaxWattHourWarmupVerificationDiff())));
-		results.add(new BasicTextFieldSettingSpecifier("maxWattHourSpikeVerificationDiff", String
-				.valueOf(defaults.getMaxWattHourSpikeVerificationDiff())));
+		results.add(
+				new BasicToggleSettingSpecifier("collectAllSourceIds", defaults.collectAllSourceIds));
+		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout",
+				String.valueOf(defaults.collectAllSourceIdsTimeout)));
+		results.add(new BasicTextFieldSettingSpecifier("currentSensorIndexFlags",
+				String.valueOf(defaults.currentSensorIndexFlags)));
+		results.add(new BasicTextFieldSettingSpecifier("maxWattHourWarmupVerificationDiff",
+				String.valueOf(defaults.getMaxWattHourWarmupVerificationDiff())));
+		results.add(new BasicTextFieldSettingSpecifier("maxWattHourSpikeVerificationDiff",
+				String.valueOf(defaults.getMaxWattHourSpikeVerificationDiff())));
 
 		return results;
 	}
@@ -519,28 +520,6 @@ public class RFXCOMConsumptionDatumDataSource implements DatumDataSource<Consump
 
 	public void setMaxWattHourSpikeVerificationDiff(long maxWattHourSpikeVerificationDiff) {
 		this.maxWattHourSpikeVerificationDiff = maxWattHourSpikeVerificationDiff;
-	}
-
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }

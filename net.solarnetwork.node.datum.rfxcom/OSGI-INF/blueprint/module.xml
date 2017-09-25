@@ -25,10 +25,10 @@
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="RFXCOM energy consumption meter"/>
-		<property name="factoryUID" value="net.solarnetwork.node.consumption.rfxcom"/>
+		<property name="factoryUID" value="net.solarnetwork.node.datum.rfxcom"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.consumption.rfxcom.RFXCOMConsumptionDatumDataSource"/>
+				<property name="basenames" value="net.solarnetwork.node.datum.rfxcom.RFXCOMDatumDataSource"/>
 			</bean>
 		</property>
 	</bean>
@@ -37,7 +37,7 @@
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.consumption.rfxcom" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.rfxcom" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
 			<beans:value>net.solarnetwork.node.MultiDatumDataSource</beans:value>
@@ -45,11 +45,11 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.consumption.rfxcom"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.rfxcom"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
-				<bean class="net.solarnetwork.node.consumption.rfxcom.RFXCOMConsumptionDatumDataSource">
+				<bean class="net.solarnetwork.node.datum.rfxcom.RFXCOMDatumDataSource">
 					<property name="rfxcomTracker">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>

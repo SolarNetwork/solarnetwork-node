@@ -3,7 +3,7 @@
 	<property name="unittest" value="true"/>
 	<property name="bundle.deps" value="true"/>
 	<dirset id="bundle.deps" dir="${basedir}/..">
-		<include name="net.solarnetwork.node.consumption.rfxcom"/>
+		<include name="net.solarnetwork.node.datum.rfxcom"/>
 	</dirset>
 	
 	<property name="dir.env.input" value="../net.solarnetwork.node.test"/>
