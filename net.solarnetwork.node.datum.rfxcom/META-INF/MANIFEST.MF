@@ -4,7 +4,7 @@ Bundle-Name: RFXCOM Energy Meter Consumption Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.rfxcom
 Bundle-Description: Collect consumption data from energy meter devices via 
  the RFXCOM RFXtrx433 wireless transceiver.
-Bundle-Version: 2.0.0
+Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

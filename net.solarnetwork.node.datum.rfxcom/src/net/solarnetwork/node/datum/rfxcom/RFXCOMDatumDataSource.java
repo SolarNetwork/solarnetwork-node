@@ -62,7 +62,7 @@ import net.solarnetwork.util.StringUtils;
  * supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.0
  */
 public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>,
