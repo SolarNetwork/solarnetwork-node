@@ -27,19 +27,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.consumption.ConsumptionDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.springframework.context.MessageSource;
 
 /**
- * {@link DatumDataSource} implementation for {@link ConsumptionDatum} with the
- * DTS series watt meter.
+ * {@link DatumDataSource} implementation for {@link ACEnergyDatum} with the DTS
+ * series watt meter.
  * 
  * <p>
  * The DTS series watt-hour meter supports the following serial port
@@ -54,25 +54,15 @@ import org.springframework.context.MessageSource;
  * <li><b>Stop bit</b> - 1</li>
  * </ul>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>sourceId</dt>
- * <dd>The {@code sourceId} to assign to captured {@link ConsumptionDatum}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class DTSConsumptionDatumDataSource extends ModbusDeviceSupport implements
-		DatumDataSource<ConsumptionDatum>, SettingSpecifierProvider {
+public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSupport
+		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
 
 	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 40001;
 
 	private String sourceId = "Main";
-	private MessageSource messageSource;
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
@@ -80,27 +70,31 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceSupport implement
 	}
 
 	@Override
-	public Class<? extends ConsumptionDatum> getDatumType() {
-		return ConsumptionDatum.class;
+	public Class<? extends ACEnergyDatum> getDatumType() {
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	@Override
-	public ConsumptionDatum readCurrentDatum() {
+	public ACEnergyDatum readCurrentDatum() {
 		try {
-			return performAction(new ModbusConnectionAction<ConsumptionDatum>() {
+			GeneralNodeACEnergyDatum datum = performAction(
+					new ModbusConnectionAction<GeneralNodeACEnergyDatum>() {
 
-				@Override
-				public ConsumptionDatum doWithConnection(ModbusConnection conn) throws IOException {
-					ConsumptionDatum d = new ConsumptionDatum();
-					int[] data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
-					Long hectoWh = ModbusHelper.parseInt32(data, 0);
-					if ( hectoWh != null ) {
-						d.setWattHourReading(hectoWh * 100L);
-					}
-					d.setSourceId(sourceId);
-					return (d.getWattHourReading() != null ? d : null);
-				}
-			});
+						@Override
+						public GeneralNodeACEnergyDatum doWithConnection(ModbusConnection conn)
+								throws IOException {
+							GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
+							int[] data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
+							Long hectoWh = ModbusHelper.parseInt32(data, 0);
+							if ( hectoWh != null ) {
+								d.setWattHourReading(hectoWh * 100L);
+							}
+							d.setSourceId(sourceId);
+							return (d.getWattHourReading() != null ? d : null);
+						}
+					});
+			postDatumCapturedEvent(datum);
+			return datum;
 		} catch ( IOException e ) {
 			log.error("Error communicating with meter: {}", e.getMessage());
 			throw new RuntimeException(e);
@@ -123,9 +117,7 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceSupport implement
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		DTSConsumptionDatumDataSource defaults = new DTSConsumptionDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
-
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
 				"Serial Port"));
@@ -134,19 +126,21 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceSupport implement
 		return results;
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
+	/**
+	 * Get the configured source ID.
+	 * 
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return sourceId;
 	}
 
+	/**
+	 * Set the {@code sourceId} to assign to captured datum.
+	 * 
+	 * @param sourceId
+	 *        the source ID to use
+	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
