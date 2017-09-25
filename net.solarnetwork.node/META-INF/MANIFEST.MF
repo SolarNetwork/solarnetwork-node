@@ -4,13 +4,13 @@ Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.50.0
+Bundle-Version: 1.51.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
  net.solarnetwork.node;version="1.21.0",
  net.solarnetwork.node.backup;version="1.4.1",
- net.solarnetwork.node.dao;version="1.7.0",
+ net.solarnetwork.node.dao;version="1.8.0",
  net.solarnetwork.node.domain;version="1.9.1",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.reactor;version="1.3.0",
@@ -61,6 +61,10 @@ Import-Package:
  org.springframework.core.io.support;version="[4.2,5.0)",
  org.springframework.core.task;version="[4.2,5.0)",
  org.springframework.dao;version="[4.2,5.0)",
+ org.springframework.messaging;version="[4.2,5.0)",
+ org.springframework.messaging.core;version="[4.2,5.0)",
+ org.springframework.messaging.simp;version="[4.2,5.0)",
+ org.springframework.messaging.support;version="[4.2,5.0)",
  org.springframework.scheduling;version="[4.2,5.0)",
  org.springframework.scheduling.concurrent;version="[4.2,5.0)",
  org.springframework.scheduling.quartz;version="[4.2,5.0)",

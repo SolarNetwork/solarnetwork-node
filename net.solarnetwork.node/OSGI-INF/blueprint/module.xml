@@ -230,5 +230,26 @@
 		</property>
 		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
+	
+	<!-- Messaging -->
+
+	<bean id="messageSendingOperations" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.messaging.simp.SimpMessageSendingOperations"/>
+		<property name="serviceFilter" value="(channel=broker)"/>
+	</bean>
+
+	<service interface="org.osgi.service.event.EventHandler">
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>net/solarnetwork/node/*</beans:value>
+				</beans:array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.EventMessageBridge">
+			<argument ref="messageSendingOperations"/>
+		</bean>
+	</service>
 
 </blueprint>

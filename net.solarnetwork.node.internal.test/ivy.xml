@@ -2,7 +2,7 @@
     <info organisation="net.solarnetwork.node.test" module="${bundle.name}">
     	<extends organisation="net.solarnetwork.node"
     		module="${bundle.name}" revision="[1.0,2)"
-    		location="../${test.bundle.name}/ivy.xml"/>
+    		location="../net.solarnetwork.node/ivy.xml"/>
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Logging -->
@@ -22,6 +22,5 @@
 		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
 		
 		<!-- SolarNetwork -->
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.pki.bc" rev="latest.release"/>
     </dependencies>
 </ivy-module>
