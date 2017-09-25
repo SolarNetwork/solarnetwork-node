@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Carrel-Electrade Meter Consumption Datum DataSource
-Bundle-SymbolicName: net.solarnetwork.node.consumption.carrel.dts.dts
+Bundle-SymbolicName: net.solarnetwork.node.datum.carrel.dts.dts
 Bundle-Description: Collect consumption data from Carrel-Electrade watt meters.
-Bundle-Version: 2.2.0
+Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

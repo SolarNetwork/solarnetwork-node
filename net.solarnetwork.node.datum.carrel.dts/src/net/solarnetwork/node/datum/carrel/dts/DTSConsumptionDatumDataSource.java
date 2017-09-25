@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.consumption.carrel.dts;
+package net.solarnetwork.node.datum.carrel.dts;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,7 +55,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 2.1
+ * @version 1.0
  */
 public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -105,7 +105,7 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.consumption.carrel.dts";
+		return "net.solarnetwork.node.datum.carrel.dts";
 	}
 
 	@Override

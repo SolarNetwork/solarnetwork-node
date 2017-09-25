@@ -25,7 +25,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.consumption.carrel.dts.DTSConsumptionDatumDataSource</value>
+				<value>net.solarnetwork.node.datum.carrel.dts.DTSConsumptionDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>
@@ -34,7 +34,7 @@
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="DTS series watt meter"/>
-		<property name="factoryUID" value="net.solarnetwork.node.consumption.carrel.dts"/>
+		<property name="factoryUID" value="net.solarnetwork.node.datum.carrel.dts"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
@@ -42,18 +42,18 @@
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.consumption.carrel.dts" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.carrel.dts" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="datumClassName" value="net.solarnetwork.node.consumption.ConsumptionDatum"/>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.consumption.carrel.dts"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.carrel.dts"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
-				<bean class="net.solarnetwork.node.consumption.carrel.dts.DTSConsumptionDatumDataSource">
+				<bean class="net.solarnetwork.node.datum.carrel.dts.DTSConsumptionDatumDataSource">
 					<property name="messageSource" ref="messageSource"/>
 					<property name="modbusNetwork">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
