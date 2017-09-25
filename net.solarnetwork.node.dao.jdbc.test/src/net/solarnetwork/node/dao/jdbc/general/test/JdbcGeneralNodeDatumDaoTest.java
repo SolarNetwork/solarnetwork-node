@@ -48,6 +48,7 @@ import org.osgi.service.event.EventAdmin;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
+import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
@@ -149,20 +150,21 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		assertThat("Event captured", captor.hasCaptured(), equalTo(true));
 		Event event = captor.getValue();
-		assertDatumStoredEventEqualsDatum(event, datum, new String[] { ACEnergyDatum.class.getName(),
-				EnergyDatum.class.getName(), Datum.class.getName() });
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum, new String[] {
+				ACEnergyDatum.class.getName(), EnergyDatum.class.getName(), Datum.class.getName() });
 	}
 
 	private void assertDatumStoredEventEqualsDatum(Event event, GeneralNodeDatum datum) {
-		assertDatumStoredEventEqualsDatum(event, datum, new String[] { Datum.class.getName() });
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
+				new String[] { Datum.class.getName() });
 	}
 
-	private void assertDatumStoredEventEqualsDatum(Event event, GeneralNodeDatum datum,
+	private void assertDatumEventEqualsDatum(Event event, String topic, GeneralNodeDatum datum,
 			String[] datumTypes) {
-		assertThat("Topic", event.getTopic(), equalTo(DatumDao.EVENT_TOPIC_DATUM_STORED));
-		assertThat("Datum type", (String) event.getProperty(DatumDao.EVENT_PROP_DATUM_TYPE),
+		assertThat("Topic", event.getTopic(), equalTo(topic));
+		assertThat("Datum type", (String) event.getProperty(Datum.DATUM_TYPE_PROPERTY),
 				equalTo(datumTypes[0]));
-		assertThat("Datum types", (String[]) event.getProperty(DatumDao.EVENT_PROP_DATUM_TYPES),
+		assertThat("Datum types", (String[]) event.getProperty(Datum.DATUM_TYPES_PROPERTY),
 				arrayContaining(datumTypes));
 		assertThat("Source ID", (String) event.getProperty("sourceId"), equalTo(datum.getSourceId()));
 		assertThat("Created", (Long) event.getProperty("created"),
@@ -175,6 +177,11 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			String[] expectedTags = tags.toArray(new String[tags.size()]);
 			assertThat("Tags", (String[]) event.getProperty("tags"), arrayContaining(expectedTags));
 		}
+	}
+
+	private void assertDatumUploadedEventEqualsDatum(Event event, GeneralNodeDatum datum) {
+		assertDatumEventEqualsDatum(event, UploadService.EVENT_TOPIC_DATUM_UPLOADED, datum,
+				new String[] { Datum.class.getName() });
 	}
 
 	@Test
@@ -214,12 +221,13 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	@Test
 	public void markUploaded() {
 		final int numDatum = 5;
+		final int numUploaded = 3;
 		final long now = System.currentTimeMillis();
 		final GeneralNodeDatumSamples samples = samplesInstance();
 
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		EasyMock.expectLastCall().times(numDatum);
+		EasyMock.expectLastCall().times(numDatum + numUploaded); // stored + uploaded
 
 		replayAll();
 
@@ -235,7 +243,6 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
-		final int numUploaded = 3;
 		final Date uploadDate = new Date(System.currentTimeMillis() + 1000L);
 		for ( int i = 0; i < numUploaded; i++ ) {
 			GeneralNodeDatum datum = results.get(i);
@@ -254,20 +261,26 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			Assert.assertNull(datum.getUploaded());
 		}
 
-		for ( int i = 0; i < numDatum; i++ ) {
-			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
+		assertThat(captor.getValues(), hasSize(numDatum + numUploaded));
+		for ( int i = 0; i < numDatum + numUploaded; i++ ) {
+			if ( i < numDatum ) {
+				assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
+			} else {
+				assertDatumUploadedEventEqualsDatum(captor.getValues().get(i), stored.get(i - numDatum));
+			}
 		}
 	}
 
 	@Test
 	public void deleteOld() {
 		final int numDatum = 5;
+		final int numUploaded = 3;
 		final long start = System.currentTimeMillis() - (1000 * 60 * 60 * numDatum);
 		final GeneralNodeDatumSamples samples = samplesInstance();
 
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		EasyMock.expectLastCall().times(numDatum);
+		EasyMock.expectLastCall().times(numDatum + numUploaded); // stored + uploaded
 
 		replayAll();
 
@@ -285,7 +298,6 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
 		Assert.assertNotNull(results);
 		Assert.assertEquals(numDatum, results.size());
-		final int numUploaded = 3;
 		for ( int i = 0; i < numUploaded; i++ ) {
 			GeneralNodeDatum datum = results.get(i);
 			Date uploadDate = new Date(datum.getCreated().getTime() + 1000L);
@@ -306,8 +318,13 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			Assert.assertNull(datum.getUploaded());
 		}
 
-		for ( int i = 0; i < numDatum; i++ ) {
-			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
+		assertThat(captor.getValues(), hasSize(numDatum + numUploaded));
+		for ( int i = 0; i < numDatum + numUploaded; i++ ) {
+			if ( i < numDatum ) {
+				assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
+			} else {
+				assertDatumUploadedEventEqualsDatum(captor.getValues().get(i), stored.get(i - numDatum));
+			}
 		}
 	}
 
@@ -315,7 +332,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	public void update() {
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		expectLastCall().times(2);
+		expectLastCall().times(3); // two store, one upload
 
 		replayAll();
 
@@ -349,15 +366,17 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		assertThat(local, hasSize(1));
 		assertThat(local.get(0), equalTo(update));
 
-		assertThat("Event captured", captor.getValues(), hasSize(2));
+		assertThat("Event captured", captor.getValues(), hasSize(3));
 		assertDatumStoredEventEqualsDatum(captor.getValues().get(0), datum);
-		assertDatumStoredEventEqualsDatum(captor.getValues().get(1), update);
+		assertDatumUploadedEventEqualsDatum(captor.getValues().get(1), datum);
+		assertDatumStoredEventEqualsDatum(captor.getValues().get(2), update);
 	}
 
 	@Test
 	public void updateUnchangedSamples() {
-		Capture<Event> captor = new Capture<Event>();
+		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
+		EasyMock.expectLastCall().times(2);
 
 		replayAll();
 
@@ -384,8 +403,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
 		assertThat(local, hasSize(0));
 
-		assertThat("Event captured", captor.getValues(), hasSize(1));
+		assertThat("Event captured", captor.getValues(), hasSize(2));
 		assertDatumStoredEventEqualsDatum(captor.getValues().get(0), datum);
+		assertDatumUploadedEventEqualsDatum(captor.getValues().get(1), datum);
 	}
 
 }

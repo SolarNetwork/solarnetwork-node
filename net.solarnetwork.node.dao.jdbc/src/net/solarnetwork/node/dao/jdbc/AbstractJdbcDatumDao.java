@@ -33,48 +33,18 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.node.Mock;
+import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.util.ClassUtils;
 
 /**
  * Abstract DAO implementation with support for DAOs that need to manage
  * "upload" tasks.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>sqlDeleteOld</dt>
- * <dd>SQL statement for deleting "old" datum rows that have already been
- * "uploaded" to a central server, thus freeing up space in the local node's
- * database. See the {@link #deleteUploadedDataOlderThanHours(int)} for info.
- * </p>
- * 
- * <dt>maxFetchForUpload</dt>
- * <dd>The maximum number of rows to return in the
- * {@link #findDatumNotUploaded(String, RowMapper)} method. Defaults to
- * {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.</dd>
- * 
- * <dt>sqlInsertDatum</dt>
- * <dd>The SQL to use for inserting a new datum. This is used by the
- * {@link #storeDatum(Datum)} method.</dd>
- * 
- * <dt>ignoreMockData</dt>
- * <dd>If <em>true</em> then do not actually store any domain object that
- * implements the {@link Mock} interface. This defaults to <em>true</em>, but
- * during development it can be useful to configure this as <em>false</em> for
- * testing.</dd>
- * </dl>
  * 
  * @author matt
  * @version 1.3
@@ -96,8 +66,6 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
-
-	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
 
 	/**
 	 * Execute a SQL update to delete data that has already been "uploaded" and
@@ -282,7 +250,10 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * <p>
 	 * This method will call {@link #updateDatumUpload(long, Object, long)}
 	 * passing in {@link T#getCreated()}, {@link T#getSourceId()}, and
-	 * {@code timestamp}.
+	 * {@code timestamp}. As long as
+	 * {@link #updateDatumUpload(long, Object, long)} returns a value greater
+	 * than {@literal 0} then {@link #postDatumUploadedEvent(Datum)} will be
+	 * called.
 	 * </p>
 	 * 
 	 * @param datum
@@ -291,7 +262,10 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        the date the upload happened
 	 */
 	protected void updateDatumUpload(final T datum, final long timestamp) {
-		updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
+		int updated = updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
+		if ( updated > 0 ) {
+			postDatumUploadedEvent(datum);
+		}
 	}
 
 	/**
@@ -314,9 +288,10 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        the object's source or location ID
 	 * @param timestamp
 	 *        the date the upload happened
+	 * @return the number of updated rows
 	 */
-	protected void updateDatumUpload(final long created, final Object id, final long timestamp) {
-		getJdbcTemplate().update(new PreparedStatementCreator() {
+	protected int updateDatumUpload(final long created, final Object id, final long timestamp) {
+		return getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -340,7 +315,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @since 1.3
 	 */
 	protected final void postDatumStoredEvent(T datum) {
-		Event event = createDatumStoredEvent(datum, datum.getClass());
+		Event event = createDatumStoredEvent(datum);
 		postEvent(event);
 	}
 
@@ -349,86 +324,99 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * object out of a {@link Datum}.
 	 * 
 	 * <p>
-	 * Extending classes may want to override
-	 * {@link #createDatumStoredEventProperties(Datum, Class)} to populate other
-	 * properties in the generated event.
+	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
+	 * properties.
 	 * </p>
 	 * 
 	 * @param datum
 	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDao#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @return the new Event instance
-	 * @see #createDatumStoredEventProperties(Datum, Class)
 	 * @since 1.3
 	 */
-	protected Event createDatumStoredEvent(final T datum, final Class<?> datumClass) {
-		Map<String, Object> props = createDatumStoredEventProperties(datum, datumClass);
+	protected Event createDatumStoredEvent(final T datum) {
+		Map<String, ?> props = datum.asSimpleMap();
 		log.debug("Created {} event with props {}", EVENT_TOPIC_DATUM_STORED, props);
 		return new Event(EVENT_TOPIC_DATUM_STORED, props);
 	}
 
 	/**
-	 * Create a new map of properties suitable for using as {@link Event}
-	 * properties out of a {@link Datum}.
+	 * Post an {@link Event} for the
+	 * {@link UploadService#EVENT_TOPIC_DATUM_UPLOADED} topic.
+	 * 
+	 * @param datum
+	 *        the datum that was uploaded
+	 * @since 1.3
+	 */
+	protected final void postDatumUploadedEvent(T datum) {
+		Event event = createDatumUploadedEvent(datum);
+		postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link UploadService#EVENT_TOPIC_DATUM_UPLOADED}
+	 * {@link Event} object out of a {@link Datum}.
 	 * 
 	 * <p>
-	 * This method will populate all <b>simple</b> properties of the given
-	 * {@link Datum} into the event properties, along with
-	 * {@link DatumDao#EVENT_PROP_DATUM_TYPE} and
-	 * {@link DatumDao#EVENT_PROP_DATUM_TYPES}.
+	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
+	 * properties.
 	 * </p>
 	 * 
 	 * @param datum
 	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDao#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @return the new Event instance
-	 * @see ClassUtils#getSimpleBeanProperties(Object, Set)
-	 * @see #createDatumStoredEventProperties(Datum, Class)
 	 * @since 1.3
 	 */
-	protected Map<String, Object> createDatumStoredEventProperties(final T datum,
-			final Class<?> datumClass) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		String[] datumTypes = getDatumTypes(datumClass);
-		if ( datumTypes != null && datumTypes.length > 0 ) {
-			props.put(EVENT_PROP_DATUM_TYPE, datumTypes[0]);
-			props.put(EVENT_PROP_DATUM_TYPES, datumTypes);
-		}
-		return props;
+	protected Event createDatumUploadedEvent(final T datum) {
+		Map<String, ?> props = datum.asSimpleMap();
+		log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
+		return new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
 	}
 
-	private static String[] getDatumTypes(Class<?> clazz) {
-		String[] result = DATUM_TYPE_CACHE.get(clazz);
-		if ( result != null ) {
-			return result;
-		}
-		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
-		result = new String[interfaces.size()];
-		int i = 0;
-		for ( Class<?> intf : interfaces ) {
-			result[i] = intf.getName();
-			i++;
-		}
-		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
-		return result;
-	}
-
+	/**
+	 * Get the maximum number of datum to fetch for upload at one time.
+	 * 
+	 * @return the maximum number of datum rows to fetch
+	 */
 	public int getMaxFetchForUpload() {
 		return maxFetchForUpload;
 	}
 
+	/**
+	 * The maximum number of rows to return in the
+	 * {@link #findDatumNotUploaded(String, RowMapper)} method.
+	 * 
+	 * <p>
+	 * Defaults to {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.
+	 * </p>
+	 * 
+	 * @param maxFetchForUpload
+	 *        the maximum upload value
+	 */
 	public void setMaxFetchForUpload(int maxFetchForUpload) {
 		this.maxFetchForUpload = maxFetchForUpload;
 	}
 
+	/**
+	 * Get the flag to ignore mock data.
+	 * 
+	 * @return <em>true</em> to not store any mock data
+	 */
 	public boolean isIgnoreMockData() {
 		return ignoreMockData;
 	}
 
+	/**
+	 * Set a flag to not actually store any domain object that implements the
+	 * {@link Mock} interface.
+	 * 
+	 * <p>
+	 * This defaults to <em>true</em>, but during development it can be useful
+	 * to configure this as <em>false</em> for testing.
+	 * </p>
+	 * 
+	 * @param ignoreMockData
+	 *        the ignore mock data value
+	 */
 	public void setIgnoreMockData(boolean ignoreMockData) {
 		this.ignoreMockData = ignoreMockData;
 	}

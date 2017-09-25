@@ -30,8 +30,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -122,7 +120,7 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 	public void setDatumUploaded(final GeneralLocationDatum datum, Date date, String destination,
 			String trackingId) {
 		final long timestamp = (date == null ? System.currentTimeMillis() : date.getTime());
-		getJdbcTemplate().update(new PreparedStatementCreator() {
+		int updated = getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -136,6 +134,9 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 				return ps;
 			}
 		});
+		if ( updated > 0 ) {
+			postDatumUploadedEvent(datum);
+		}
 	}
 
 	@Override
@@ -202,28 +203,6 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 
 		String json = jsonForSamples(datum);
 		ps.setString(++col, json);
-	}
-
-	@Override
-	protected Map<String, Object> createDatumStoredEventProperties(GeneralLocationDatum datum,
-			Class<?> datumClass) {
-		Map<String, Object> props = super.createDatumStoredEventProperties(datum, datumClass);
-
-		// add in sample data
-		if ( datum != null ) {
-			GeneralDatumSamples samples = datum.getSamples();
-			if ( samples != null ) {
-				Map<String, ?> sampleProps = samples.getSampleData();
-				if ( sampleProps != null ) {
-					props.putAll(sampleProps);
-				}
-				Set<String> tags = samples.getTags();
-				if ( tags != null && !tags.isEmpty() ) {
-					props.put("tags", tags.toArray(new String[tags.size()]));
-				}
-			}
-		}
-		return props;
 	}
 
 	public ObjectMapper getObjectMapper() {
