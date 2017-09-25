@@ -43,7 +43,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} implementation for {@link ConsumptionDatum} with the
+ * {@link DatumDataSource} implementation for {@link ACEnergyDatum} with the
  * EM5600 series watt meter.
  * 
  * <p>
