@@ -32,12 +32,18 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Mock;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.osgi.service.event.Event;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
+import net.solarnetwork.node.Mock;
+import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.util.ClassUtils;
 
 /**
  * Abstract DAO implementation with support for DAOs that need to manage
@@ -51,8 +57,8 @@ import org.springframework.jdbc.core.RowMapper;
  * <dt>sqlDeleteOld</dt>
  * <dd>SQL statement for deleting "old" datum rows that have already been
  * "uploaded" to a central server, thus freeing up space in the local node's
- * database. See the {@link #deleteUploadedDataOlderThanHours(int)} for
- * info.</p>
+ * database. See the {@link #deleteUploadedDataOlderThanHours(int)} for info.
+ * </p>
  * 
  * <dt>maxFetchForUpload</dt>
  * <dd>The maximum number of rows to return in the
@@ -71,12 +77,12 @@ import org.springframework.jdbc.core.RowMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @param <T>
  *        the domain object type managed by this DAO
  */
-public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbcDao<T> implements
-		DatumDao<T> {
+public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbcDao<T>
+		implements DatumDao<T> {
 
 	/** The default value for the {@code maxFetchForUpload} property. */
 	public static final int DEFAULT_MAX_FETCH_FOR_UPLOAD = 60;
@@ -90,6 +96,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
+
+	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
 
 	/**
 	 * Execute a SQL update to delete data that has already been "uploaded" and
@@ -251,6 +259,21 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
+		postDatumStoredEvent(datum);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @since 1.3
+	 */
+	@Override
+	protected int updateDomainObject(T datum, String sqlUpdate) {
+		int result = super.updateDomainObject(datum, sqlUpdate);
+		if ( result > 0 ) {
+			postDatumStoredEvent(datum);
+		}
+		return result;
 	}
 
 	/**
@@ -306,6 +329,92 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 				return ps;
 			}
 		});
+	}
+
+	/**
+	 * Post an {@link Event} for the {@link DatumDao#EVENT_TOPIC_DATUM_STORED}
+	 * topic.
+	 * 
+	 * @param datum
+	 *        the datum that was stored
+	 * @since 1.3
+	 */
+	protected final void postDatumStoredEvent(T datum) {
+		Event event = createDatumStoredEvent(datum, datum.getClass());
+		postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDao#EVENT_TOPIC_DATUM_STORED} {@link Event}
+	 * object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * Extending classes may want to override
+	 * {@link #createDatumStoredEventProperties(Datum, Class)} to populate other
+	 * properties in the generated event.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDao#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @see #createDatumStoredEventProperties(Datum, Class)
+	 * @since 1.3
+	 */
+	protected Event createDatumStoredEvent(final T datum, final Class<?> datumClass) {
+		Map<String, Object> props = createDatumStoredEventProperties(datum, datumClass);
+		log.debug("Created {} event with props {}", EVENT_TOPIC_DATUM_STORED, props);
+		return new Event(EVENT_TOPIC_DATUM_STORED, props);
+	}
+
+	/**
+	 * Create a new map of properties suitable for using as {@link Event}
+	 * properties out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method will populate all <b>simple</b> properties of the given
+	 * {@link Datum} into the event properties, along with
+	 * {@link DatumDao#EVENT_PROP_DATUM_TYPE} and
+	 * {@link DatumDao#EVENT_PROP_DATUM_TYPES}.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @param eventDatumType
+	 *        the Datum class to use for the
+	 *        {@link DatumDao#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 * @return the new Event instance
+	 * @see ClassUtils#getSimpleBeanProperties(Object, Set)
+	 * @see #createDatumStoredEventProperties(Datum, Class)
+	 * @since 1.3
+	 */
+	protected Map<String, Object> createDatumStoredEventProperties(final T datum,
+			final Class<?> datumClass) {
+		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
+		String[] datumTypes = getDatumTypes(datumClass);
+		if ( datumTypes != null && datumTypes.length > 0 ) {
+			props.put(EVENT_PROP_DATUM_TYPE, datumTypes[0]);
+			props.put(EVENT_PROP_DATUM_TYPES, datumTypes);
+		}
+		return props;
+	}
+
+	private static String[] getDatumTypes(Class<?> clazz) {
+		String[] result = DATUM_TYPE_CACHE.get(clazz);
+		if ( result != null ) {
+			return result;
+		}
+		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
+		result = new String[interfaces.size()];
+		int i = 0;
+		for ( Class<?> intf : interfaces ) {
+			result[i] = intf.getName();
+			i++;
+		}
+		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
+		return result;
 	}
 
 	public int getMaxFetchForUpload() {

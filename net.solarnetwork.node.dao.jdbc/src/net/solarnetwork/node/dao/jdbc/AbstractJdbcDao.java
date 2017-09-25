@@ -35,6 +35,8 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -50,6 +52,7 @@ import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Base class for JDBC based DAO implementations.
@@ -62,7 +65,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -80,6 +83,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	private String tableName = TABLE_SETTINGS;
 	private MessageSource messageSource = null;
 	private String sqlForUpdateSuffix = " FOR UPDATE";
+	private OptionalService<EventAdmin> eventAdmin;
 
 	private final Map<String, String> sqlResourceCache = new HashMap<String, String>(10);
 
@@ -549,6 +553,27 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	}
 
 	/**
+	 * Post an {@link Event}.
+	 * 
+	 * <p>
+	 * This method only works if a {@link EventAdmin} has been configured via
+	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
+	 * ignored.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event to post
+	 * @since 1.5
+	 */
+	protected final void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
+	}
+
+	/**
 	 * This implementation simply returns a new array with a single value:
 	 * {@link #getTableName()}.
 	 * 
@@ -675,6 +700,27 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 */
 	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
 		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Get the {@link EventAdmin} service.
+	 * 
+	 * @return the EventAdmin service
+	 * @since 1.5
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        the EventAdmin to use
+	 * @since 1.5
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

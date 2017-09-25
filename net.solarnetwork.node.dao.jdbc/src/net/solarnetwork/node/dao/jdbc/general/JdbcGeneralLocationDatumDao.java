@@ -30,10 +30,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralLocationDatumSamples;
-import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
@@ -41,13 +39,17 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralLocationDatumSamples;
+import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
  * {@link GeneralLocationDatum} domain objects.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLocationDatum> {
 
@@ -193,14 +195,35 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 	protected void setStoreStatementValues(GeneralLocationDatum datum, PreparedStatement ps)
 			throws SQLException {
 		int col = 0;
-		ps.setTimestamp(++col,
-				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
-						.getCreated().getTime()));
+		ps.setTimestamp(++col, new java.sql.Timestamp(
+				datum.getCreated() == null ? System.currentTimeMillis() : datum.getCreated().getTime()));
 		ps.setLong(++col, datum.getLocationId());
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
 
 		String json = jsonForSamples(datum);
 		ps.setString(++col, json);
+	}
+
+	@Override
+	protected Map<String, Object> createDatumStoredEventProperties(GeneralLocationDatum datum,
+			Class<?> datumClass) {
+		Map<String, Object> props = super.createDatumStoredEventProperties(datum, datumClass);
+
+		// add in sample data
+		if ( datum != null ) {
+			GeneralDatumSamples samples = datum.getSamples();
+			if ( samples != null ) {
+				Map<String, ?> sampleProps = samples.getSampleData();
+				if ( sampleProps != null ) {
+					props.putAll(sampleProps);
+				}
+				Set<String> tags = samples.getTags();
+				if ( tags != null && !tags.isEmpty() ) {
+					props.put("tags", tags.toArray(new String[tags.size()]));
+				}
+			}
+		}
+		return props;
 	}
 
 	public ObjectMapper getObjectMapper() {
