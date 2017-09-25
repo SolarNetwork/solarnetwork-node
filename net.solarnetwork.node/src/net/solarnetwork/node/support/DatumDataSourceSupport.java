@@ -74,6 +74,9 @@ public class DatumDataSourceSupport implements Identifiable {
 	 *        the datum that was stored
 	 */
 	protected final void postDatumCapturedEvent(Datum datum) {
+		if ( datum == null ) {
+			return;
+		}
 		Event event = createDatumCapturedEvent(datum);
 		postEvent(event);
 	}
