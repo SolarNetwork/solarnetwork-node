@@ -30,7 +30,7 @@ import java.util.Date;
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
@@ -91,7 +91,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 			if ( other.created != null ) {
 				return false;
 			}
-		} else if ( !created.equals(other.created) ) {
+		} else if ( !(created.getTime() == other.created.getTime()) ) {
 			return false;
 		}
 		if ( sourceId == null ) {
