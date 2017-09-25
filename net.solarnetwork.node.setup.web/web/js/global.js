@@ -272,6 +272,10 @@ SolarNode.context = (function() {
 	return helper;
 })();
 
+SolarNode.isAuthenticated = function() {
+	return !!$('meta[name=authenticated]').attr('content');
+}
+
 SolarNode.showLoading = function(button) {
 	SolarNode.showSpinner(button, true);
 };
