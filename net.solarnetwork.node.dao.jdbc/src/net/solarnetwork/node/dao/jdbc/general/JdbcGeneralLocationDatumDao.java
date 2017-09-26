@@ -120,7 +120,7 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 	public void setDatumUploaded(final GeneralLocationDatum datum, Date date, String destination,
 			String trackingId) {
 		final long timestamp = (date == null ? System.currentTimeMillis() : date.getTime());
-		int updated = getJdbcTemplate().update(new PreparedStatementCreator() {
+		getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -134,9 +134,6 @@ public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLoc
 				return ps;
 			}
 		});
-		if ( updated > 0 ) {
-			postDatumUploadedEvent(datum);
-		}
 	}
 
 	@Override

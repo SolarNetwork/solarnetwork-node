@@ -38,7 +38,6 @@ import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.node.Mock;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
 
@@ -262,10 +261,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        the date the upload happened
 	 */
 	protected void updateDatumUpload(final T datum, final long timestamp) {
-		int updated = updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
-		if ( updated > 0 ) {
-			postDatumUploadedEvent(datum);
-		}
+		updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
 	}
 
 	/**
@@ -337,39 +333,6 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 		Map<String, ?> props = datum.asSimpleMap();
 		log.debug("Created {} event with props {}", EVENT_TOPIC_DATUM_STORED, props);
 		return new Event(EVENT_TOPIC_DATUM_STORED, props);
-	}
-
-	/**
-	 * Post an {@link Event} for the
-	 * {@link UploadService#EVENT_TOPIC_DATUM_UPLOADED} topic.
-	 * 
-	 * @param datum
-	 *        the datum that was uploaded
-	 * @since 1.3
-	 */
-	protected final void postDatumUploadedEvent(T datum) {
-		Event event = createDatumUploadedEvent(datum);
-		postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link UploadService#EVENT_TOPIC_DATUM_UPLOADED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
-	 * properties.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @return the new Event instance
-	 * @since 1.3
-	 */
-	protected Event createDatumUploadedEvent(final T datum) {
-		Map<String, ?> props = datum.asSimpleMap();
-		log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
-		return new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
 	}
 
 	/**

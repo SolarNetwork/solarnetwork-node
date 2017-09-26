@@ -48,7 +48,6 @@ import org.osgi.service.event.EventAdmin;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
@@ -179,11 +178,6 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		}
 	}
 
-	private void assertDatumUploadedEventEqualsDatum(Event event, GeneralNodeDatum datum) {
-		assertDatumEventEqualsDatum(event, UploadService.EVENT_TOPIC_DATUM_UPLOADED, datum,
-				new String[] { Datum.class.getName() });
-	}
-
 	@Test
 	public void findForUpload() {
 		final int numDatum = 5;
@@ -227,7 +221,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		EasyMock.expectLastCall().times(numDatum + numUploaded); // stored + uploaded
+		EasyMock.expectLastCall().times(numDatum);
 
 		replayAll();
 
@@ -261,13 +255,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			Assert.assertNull(datum.getUploaded());
 		}
 
-		assertThat(captor.getValues(), hasSize(numDatum + numUploaded));
-		for ( int i = 0; i < numDatum + numUploaded; i++ ) {
-			if ( i < numDatum ) {
-				assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
-			} else {
-				assertDatumUploadedEventEqualsDatum(captor.getValues().get(i), stored.get(i - numDatum));
-			}
+		assertThat(captor.getValues(), hasSize(numDatum));
+		for ( int i = 0; i < numDatum; i++ ) {
+			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
 		}
 	}
 
@@ -280,7 +270,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		EasyMock.expectLastCall().times(numDatum + numUploaded); // stored + uploaded
+		EasyMock.expectLastCall().times(numDatum);
 
 		replayAll();
 
@@ -318,13 +308,9 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 			Assert.assertNull(datum.getUploaded());
 		}
 
-		assertThat(captor.getValues(), hasSize(numDatum + numUploaded));
-		for ( int i = 0; i < numDatum + numUploaded; i++ ) {
-			if ( i < numDatum ) {
-				assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
-			} else {
-				assertDatumUploadedEventEqualsDatum(captor.getValues().get(i), stored.get(i - numDatum));
-			}
+		assertThat(captor.getValues(), hasSize(numDatum));
+		for ( int i = 0; i < numDatum; i++ ) {
+			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
 		}
 	}
 
@@ -332,7 +318,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 	public void update() {
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		expectLastCall().times(3); // two store, one upload
+		expectLastCall().times(2); // two store, one upload
 
 		replayAll();
 
@@ -366,17 +352,15 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		assertThat(local, hasSize(1));
 		assertThat(local.get(0), equalTo(update));
 
-		assertThat("Event captured", captor.getValues(), hasSize(3));
+		assertThat("Event captured", captor.getValues(), hasSize(2));
 		assertDatumStoredEventEqualsDatum(captor.getValues().get(0), datum);
-		assertDatumUploadedEventEqualsDatum(captor.getValues().get(1), datum);
-		assertDatumStoredEventEqualsDatum(captor.getValues().get(2), update);
+		assertDatumStoredEventEqualsDatum(captor.getValues().get(1), update);
 	}
 
 	@Test
 	public void updateUnchangedSamples() {
 		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
-		EasyMock.expectLastCall().times(2);
 
 		replayAll();
 
@@ -403,9 +387,8 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
 		assertThat(local, hasSize(0));
 
-		assertThat("Event captured", captor.getValues(), hasSize(2));
+		assertThat("Event captured", captor.getValues(), hasSize(1));
 		assertDatumStoredEventEqualsDatum(captor.getValues().get(0), datum);
-		assertDatumUploadedEventEqualsDatum(captor.getValues().get(1), datum);
 	}
 
 }
