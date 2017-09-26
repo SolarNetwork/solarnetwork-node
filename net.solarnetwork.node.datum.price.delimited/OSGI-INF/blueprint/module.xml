@@ -17,10 +17,10 @@
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="Delimited energy price lookup"/>
-		<property name="factoryUID" value="net.solarnetwork.node.price.delimited"/>
+		<property name="factoryUID" value="net.solarnetwork.node.datum.price.delimited"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource"/>
+				<property name="basenames" value="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource"/>
 			</bean>
 		</property>
 	</bean>
@@ -39,7 +39,7 @@
 	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource"/>
+		<property name="basenames" value="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource"/>
 	</bean>
 
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
@@ -61,13 +61,13 @@
 	
 	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.price.delimited" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.price.delimited" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.price.delimited"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.price.delimited"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
@@ -89,7 +89,7 @@
 								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="delegate">
-										<bean id="priceDataSource" class="net.solarnetwork.node.price.delimited.DelimitedPriceDatumDataSource">
+										<bean id="priceDataSource" class="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource">
 											<property name="messageSource" ref="messageSource"/>
 										</bean>
 									</property>

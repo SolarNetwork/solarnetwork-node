@@ -22,7 +22,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.price.delimited;
+package net.solarnetwork.node.datum.price.delimited;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,19 +34,25 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralPriceDatum;
 import net.solarnetwork.node.domain.PriceDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.util.LimitedSizeDeque;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Implementation of {@link DatumDataSource} that parses a delimited text
@@ -105,10 +111,10 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class DelimitedPriceDatumDataSource
-		implements DatumDataSource<GeneralLocationDatum>, SettingSpecifierProvider {
+public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
+		implements DatumDataSource<PriceDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code delimiter} property. */
 	public static final String DEFAULT_DELIMITER = ",";
@@ -117,18 +123,40 @@ public class DelimitedPriceDatumDataSource
 	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
 
 	/** The default value for the {@code dateFormat} property. */
-	public static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy HH:mm";
+	public static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
 	/** The default value for the {@code url} property. */
-	public static final String DEFAULT_URL = "https://www.electricityinfo.co.nz/comitFta/five_min_prices.download?INchoice=HAY&INdate=%1$td/%1$tm/%1$tY&INgip=ABY0111&INperiodfrom=1&INperiodto=50&INtype=Price";
+	public static final String DEFAULT_URL = "https://www2.electricityinfo.co.nz/download/prices?search_form%5Brun_types%5D%5B%5D=I&search_form%5Bmarket_types%5D%5B%5D=E&search_form%5Bnodes%5D%5B%5D={stationId}&search_form%5Bdate_from%5D={date}&search_form%5Btp_from%5D=1&search_form%5Bdate_to%5D={date}&search_form%5Btp_to%5D=48&search_form%5Btp_roll_back%5D=2&search_form%5Btp_roll_fwd%5D=1";
 
 	/** The default value for the {@code priceColumn} property. */
-	public static final int DEFAULT_PRICE_COLUMN = 4;
+	public static final int DEFAULT_PRICE_COLUMN = 3;
 
 	/** The default value for the {@code skipLines} property. */
-	public static final int DEFAULT_SKIP_LINES = 1;
+	public static final int DEFAULT_SKIP_LINES = -1;
 
-	private static final int[] DEFAULT_DATE_TIME_COLUMNS = new int[] { 1, 3 };
+	/**
+	 * The default value for the {@code stationId} property.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String DEFAULT_STATION_ID = "HAY2201";
+
+	/**
+	 * The default value for the {@link timeZoneId} property.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String DEFAULT_TIME_ZONE_ID = TimeZone.getDefault().getID();
+
+	/**
+	 * The default value for the {@code urlDateFormat} property.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String DEFAULT_URL_DATE_FORMAT = "yyyy-MM-dd";
+
+	/** The default date time columns. */
+	public static final int[] DEFAULT_DATE_TIME_COLUMNS = new int[] { 6 };
 
 	private final Logger log = LoggerFactory.getLogger(DelimitedPriceDatumDataSource.class);
 
@@ -140,11 +168,12 @@ public class DelimitedPriceDatumDataSource
 	private int[] dateTimeColumns = DEFAULT_DATE_TIME_COLUMNS;
 	private int priceColumn = DEFAULT_PRICE_COLUMN;
 	private String dateFormat = DEFAULT_DATE_FORMAT;
-	private String uid = null;
-	private String groupUID = null;
+	private String urlDateFormat = DEFAULT_URL_DATE_FORMAT;
+	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
+	private String stationId = DEFAULT_STATION_ID;
 
 	@Override
-	public Class<? extends GeneralLocationDatum> getDatumType() {
+	public Class<? extends PriceDatum> getDatumType() {
 		return GeneralPriceDatum.class;
 	}
 
@@ -161,7 +190,7 @@ public class DelimitedPriceDatumDataSource
 	}
 
 	@Override
-	public GeneralLocationDatum readCurrentDatum() {
+	public PriceDatum readCurrentDatum() {
 		URL theUrl = getFormattedUrl();
 		String dataRow = readDataRow(theUrl);
 		if ( dataRow == null ) {
@@ -204,7 +233,13 @@ public class DelimitedPriceDatumDataSource
 	}
 
 	private URL getFormattedUrl() {
-		String theUrl = String.format(this.url, new Date());
+		SimpleDateFormat sdf = new SimpleDateFormat(urlDateFormat);
+		sdf.setTimeZone(TimeZone.getTimeZone(timeZoneId));
+		String today = sdf.format(new Date());
+		Map<String, Object> variables = new HashMap<String, Object>();
+		variables.put("stationId", this.stationId);
+		variables.put("date", today);
+		String theUrl = StringUtils.expandTemplateString(this.url, variables);
 		try {
 			return new URL(theUrl);
 		} catch ( MalformedURLException e ) {
@@ -235,14 +270,26 @@ public class DelimitedPriceDatumDataSource
 				}
 			}
 
-			String str;
-			int skipCount = this.skipLines;
+			String str = null;
+			Deque<String> lineBuffer = null;
+			int skipCount = 0;
+			if ( skipLines > 0 ) {
+				skipCount = this.skipLines;
+			} else if ( skipLines < 0 ) {
+				lineBuffer = new LimitedSizeDeque<String>(-skipLines);
+			}
 			while ( (str = resp.readLine()) != null ) {
 				if ( skipCount > 0 ) {
 					skipCount--;
 					continue;
+				} else if ( skipLines < 0 ) {
+					lineBuffer.add(str);
+				} else {
+					break;
 				}
-				break;
+			}
+			if ( lineBuffer != null ) {
+				str = lineBuffer.getFirst();
 			}
 			if ( log.isTraceEnabled() ) {
 				log.trace("Found price data: {}", str);
@@ -264,7 +311,7 @@ public class DelimitedPriceDatumDataSource
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.price.delimited";
+		return "net.solarnetwork.node.datum.price.delimited";
 	}
 
 	@Override
@@ -277,23 +324,26 @@ public class DelimitedPriceDatumDataSource
 		return messageSource;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-
-		return Arrays.asList((SettingSpecifier) new BasicTextFieldSettingSpecifier("url", DEFAULT_URL),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("uid", null),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("groupUID", null),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("delimiter", DEFAULT_DELIMITER),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("priceColumn",
-						String.valueOf(DEFAULT_PRICE_COLUMN)),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateTimeColumns", "1,3"),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("dateFormat", DEFAULT_DATE_FORMAT),
-				(SettingSpecifier) new BasicTextFieldSettingSpecifier("skipLines",
-						String.valueOf(DEFAULT_SKIP_LINES)));
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		result.addAll(getIdentifiableSettingSpecifiers());
+		result.add(new BasicTextFieldSettingSpecifier("url", DEFAULT_URL));
+		result.add(new BasicTextFieldSettingSpecifier("stationId", DEFAULT_STATION_ID));
+		result.add(new BasicTextFieldSettingSpecifier("timeZoneId", DEFAULT_TIME_ZONE_ID));
+		result.add(new BasicTextFieldSettingSpecifier("urlDateFormat", DEFAULT_URL_DATE_FORMAT));
+		result.add(new BasicTextFieldSettingSpecifier("delimiter", DEFAULT_DELIMITER));
+		result.add(
+				new BasicTextFieldSettingSpecifier("priceColumn", String.valueOf(DEFAULT_PRICE_COLUMN)));
+		result.add(new BasicTextFieldSettingSpecifier("dateTimeColumns", "1,3"));
+		result.add(new BasicTextFieldSettingSpecifier("dateFormat", DEFAULT_DATE_FORMAT));
+		result.add(new BasicTextFieldSettingSpecifier("skipLines", String.valueOf(DEFAULT_SKIP_LINES)));
+		return result;
 	}
 
 	public String getUrl() {
@@ -352,26 +402,65 @@ public class DelimitedPriceDatumDataSource
 		this.dateFormat = dateFormat;
 	}
 
-	@Override
-	public String getUID() {
-		return getUid();
+	/**
+	 * Get the electricity market station ID.
+	 * 
+	 * @return the stationId; defaults to {@link #DEFAULT_STATION_ID}
+	 * @since 1.3
+	 */
+	public String getStationId() {
+		return stationId;
 	}
 
-	public String getUid() {
-		return uid;
+	/**
+	 * Set the electricity market station ID to download data for.
+	 * 
+	 * @param stationId
+	 *        the stationId to set
+	 * @since 1.3
+	 */
+	public void setStationId(String stationId) {
+		this.stationId = stationId;
 	}
 
-	public void setUid(String uid) {
-		this.uid = uid;
+	/**
+	 * Get the time zone to use for dates.
+	 * 
+	 * @return the time zone; defaults to the system default time zone
+	 * @since 1.3
+	 */
+	public String getTimeZoneId() {
+		return timeZoneId;
 	}
 
-	@Override
-	public String getGroupUID() {
-		return groupUID;
+	/**
+	 * Get the time zone to use for dates.
+	 * 
+	 * @param timeZone
+	 *        the timeZone to set
+	 * @sine 1.3
+	 */
+	public void setTimeZoneId(String timeZoneId) {
+		this.timeZoneId = timeZoneId;
 	}
 
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+	/**
+	 * Get the date format to use for URL parameters.
+	 * 
+	 * @return the date format; defaults to {@link #DEFAULT_URL_DATE_FORMAT}
+	 */
+	public String getUrlDateFormat() {
+		return urlDateFormat;
+	}
+
+	/**
+	 * Set the date format to use for URL parameters.
+	 * 
+	 * @param urlDateFormat
+	 *        the urlDateFormat to set
+	 */
+	public void setUrlDateFormat(String urlDateFormat) {
+		this.urlDateFormat = urlDateFormat;
 	}
 
 }
