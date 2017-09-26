@@ -47,6 +47,7 @@ import net.solarnetwork.util.OptionalService;
  * 
  * @author matt
  * @version 1.0
+ * @since 1.51
  */
 public class DatumDataSourceSupport implements Identifiable {
 
