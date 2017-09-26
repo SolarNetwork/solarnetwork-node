@@ -29,11 +29,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
+import net.solarnetwork.node.UploadService;
+import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
@@ -43,6 +48,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
+import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -50,7 +56,7 @@ import net.solarnetwork.util.OptionalService;
  * a JSON document containing all data to upload.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
@@ -59,6 +65,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	private OptionalService<ReactorService> reactorService;
 	private boolean uploadEmptyDataset = false;
 	private MessageSource messageSource;
+	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Default constructor.
@@ -75,6 +82,15 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	@Override
 	public String getKey() {
 		return "BulkJsonWebPostUploadService:" + getIdentityService().getSolarNetHostName();
+	}
+
+	@Override
+	public String uploadDatum(Datum data) {
+		List<BulkUploadResult> results = uploadBulkDatum(Collections.singleton(data));
+		if ( results != null && !results.isEmpty() ) {
+			return results.get(0).getId();
+		}
+		return null;
 	}
 
 	@Override
@@ -153,10 +169,14 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 					child = root.path("data");
 					if ( child.isObject() ) {
 						JsonNode datumArray = child.get("datum");
+						Iterator<JsonNode> reqJsonItr = null;
+						JsonNode currReqJsonNode = null;
 						Iterator<JsonNode> jsonItr = null;
 						JsonNode currJsonNode = null;
 						if ( datumArray != null && datumArray.isArray() ) {
 							assert datumArray.size() == jsonData.size();
+							reqJsonItr = jsonData.iterator();
+							currReqJsonNode = reqJsonItr.hasNext() ? reqJsonItr.next() : null;
 							jsonItr = datumArray.iterator();
 							currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
 						}
@@ -169,6 +189,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 								if ( currJsonNode != null ) {
 									id = currJsonNode.path("id").textValue();
 									if ( instr.getRemoteInstructionId().equals(id) ) {
+										currReqJsonNode = reqJsonItr.hasNext() ? reqJsonItr.next()
+												: null;
 										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
 									}
 								}
@@ -184,6 +206,9 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 									if ( datum.getCreated().getTime() == created
 											&& datum.getSourceId().equals(sourceId) ) {
 										id = currJsonNode.path("id").textValue();
+										postDatumUploadedEvent(datum, currReqJsonNode);
+										currReqJsonNode = reqJsonItr.hasNext() ? reqJsonItr.next()
+												: null;
 										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
 									}
 								}
@@ -220,7 +245,51 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 				response.close();
 			}
 		}
+
 		return result;
+	}
+
+	// post DATUM_UPLOADED events; but with the (possibly transformed) uploaded data so we show just
+	// what was actually uploaded
+	private void postDatumUploadedEvent(Datum datum, JsonNode node) {
+		Map<String, Object> props = JsonUtils.getStringMapFromTree(node);
+		if ( props != null && !props.isEmpty() ) {
+			if ( !(props.get("samples") instanceof Map<?, ?>) ) {
+				// no sample data; this must have been filtered out via transform
+				return;
+			}
+
+			// convert samples, which can contain nested maps for a/i/s 
+			@SuppressWarnings("unchecked")
+			Map<String, ?> samples = (Map<String, ?>) props.get("samples");
+			props.remove("samples");
+			for ( Map.Entry<String, ?> me : samples.entrySet() ) {
+				Object val = me.getValue();
+				if ( val instanceof Map<?, ?> ) {
+					@SuppressWarnings("unchecked")
+					Map<String, ?> subMap = (Map<String, ?>) val;
+					props.putAll(subMap);
+				} else {
+					props.put(me.getKey(), val);
+				}
+			}
+
+			String[] types = BaseDatum.getDatumTypes(datum.getClass());
+			if ( types != null && types.length > 0 ) {
+				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
+				props.put(Datum.DATUM_TYPES_PROPERTY, types);
+			}
+			log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
+			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
+		}
+	}
+
+	private void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
 	}
 
 	private InputStream handlePost(Object data) {
@@ -320,4 +389,24 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Get the {@link EventAdmin} service.
+	 * 
+	 * @return the EventAdmin service
+	 * @since 1.5
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        the EventAdmin to use
+	 * @since 1.5
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
 }

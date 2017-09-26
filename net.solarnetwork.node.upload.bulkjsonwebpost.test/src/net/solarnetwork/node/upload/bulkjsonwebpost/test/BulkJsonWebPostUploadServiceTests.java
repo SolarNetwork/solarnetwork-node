@@ -25,10 +25,13 @@ package net.solarnetwork.node.upload.bulkjsonwebpost.test;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,13 +39,17 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,8 +57,11 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.BulkUploadResult;
+import net.solarnetwork.node.UploadService;
+import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -81,11 +91,13 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	private GeneralNodeDatumSerializer generalNodeDatumSerializer;
 	private BulkJsonWebPostUploadService service;
 
+	private EventAdmin eventAdmin;
 	private ReactorService reactorService;
 	private TestIdentityService identityService;
 
 	@Before
 	public void setupService() throws Exception {
+		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		reactorService = EasyMock.createMock(ReactorService.class);
 		generalNodeDatumSerializer = new GeneralNodeDatumSerializer();
 
@@ -105,11 +117,16 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		service.setIdentityService(identityService);
 		service.setUrl("/bulkupload");
 		service.setReactorService(new StaticOptionalService<ReactorService>(reactorService));
+		service.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
 	}
 
 	@After
 	public void finish() {
-		EasyMock.verify(reactorService);
+		EasyMock.verify(eventAdmin, reactorService);
+	}
+
+	private void replayAll() {
+		EasyMock.replay(eventAdmin, reactorService);
 	}
 
 	@Test
@@ -125,7 +142,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		};
 		getHttpServer().addHandler(handler);
 
-		replay(reactorService);
+		replayAll();
 
 		List<Datum> data = new ArrayList<Datum>();
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
@@ -183,7 +200,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWattHourReading(2L);
 		data.add(d);
 
-		replay(reactorService);
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+
+		replayAll();
 
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
@@ -193,6 +213,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		BulkUploadResult datumResult = result.get(0);
 		assertEquals(datumResult.getId(), "abc123");
 		assertEquals(d, datumResult.getDatum());
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
+		Event event = eventCaptor.getValue();
+		assertDatumUploadEventEqualsDatum(event, d);
 	}
 
 	private String tid(Datum datum) {
@@ -233,7 +257,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWattHourReading(2L);
 		data.add(d);
 
-		replay(reactorService);
+		replayAll();
 
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
@@ -305,7 +329,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
-		replay(reactorService);
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+		EasyMock.expectLastCall().times(2);
+
+		replayAll();
 
 		// when we upload datum that get filtered out, we still want to treat the filtered out
 		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
@@ -321,6 +349,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 			assertEquals(datumResult.getId(), expectedTids[i]);
 			assertEquals(data.get(i), datumResult.getDatum());
 		}
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(2));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(0),
+				(GeneralNodeEnergyDatum) data.get(1));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(1),
+				(GeneralNodeEnergyDatum) data.get(2));
 	}
 
 	@Test
@@ -381,7 +415,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
-		replay(reactorService);
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+		EasyMock.expectLastCall().times(2);
+
+		replayAll();
 
 		// when we upload datum that get filtered out, we still want to treat the filtered out
 		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
@@ -397,6 +435,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 			assertEquals(datumResult.getId(), expectedTids[i]);
 			assertEquals(data.get(i), datumResult.getDatum());
 		}
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(2));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(0),
+				(GeneralNodeEnergyDatum) data.get(0));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(1),
+				(GeneralNodeEnergyDatum) data.get(2));
 	}
 
 	@Test
@@ -457,22 +501,32 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
-		replay(reactorService);
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+		EasyMock.expectLastCall().times(2);
+
+		replayAll();
 
 		// when we upload datum that get filtered out, we still want to treat the filtered out
 		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
 
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 		assertNotNull(result);
-		assertEquals("All 3 datum uploaded, even though B skipped", 3, result.size());
+		assertEquals("All 3 datum uploaded, even though C skipped", 3, result.size());
 
 		String[] expectedTids = new String[] { "abc123", "def123", tid(data.get(2)) };
 
 		for ( int i = 0; i < 3; i++ ) {
 			BulkUploadResult datumResult = result.get(i);
-			assertEquals(datumResult.getId(), expectedTids[i]);
-			assertEquals(data.get(i), datumResult.getDatum());
+			assertThat(datumResult.getId(), equalTo(expectedTids[i]));
+			assertThat(data.get(i), equalTo(datumResult.getDatum()));
 		}
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(2));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(0),
+				(GeneralNodeEnergyDatum) data.get(0));
+		assertDatumUploadEventEqualsDatum(eventCaptor.getValues().get(1),
+				(GeneralNodeEnergyDatum) data.get(1));
 	}
 
 	@Test
@@ -524,7 +578,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
-		replay(reactorService);
+		replayAll();
 
 		// when we upload datum that get filtered out, we still want to treat the filtered out
 		// datum as "uploaded" so it is marked as such and eventually deleted from the local db
@@ -537,6 +591,26 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 			BulkUploadResult datumResult = result.get(i);
 			assertEquals(datumResult.getId(), tid(data.get(i)));
 			assertEquals(data.get(i), datumResult.getDatum());
+		}
+	}
+
+	private void assertDatumUploadEventEqualsDatum(Event event, GeneralNodeDatum datum) {
+		String[] datumTypes = BaseDatum.getDatumTypes(datum.getClass());
+		assertThat("Topic", event.getTopic(), equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Datum type", (String) event.getProperty(Datum.DATUM_TYPE_PROPERTY),
+				equalTo(datumTypes[0]));
+		assertThat("Datum types", (String[]) event.getProperty(Datum.DATUM_TYPES_PROPERTY),
+				arrayContaining(datumTypes));
+		assertThat("Source ID", (String) event.getProperty("sourceId"), equalTo(datum.getSourceId()));
+		assertThat("Created", (Long) event.getProperty("created"),
+				equalTo(datum.getCreated().getTime()));
+		for ( Map.Entry<String, ?> me : datum.getSamples().getSampleData().entrySet() ) {
+			assertThat(me.getKey(), event.getProperty(me.getKey()), equalTo((Object) me.getValue()));
+		}
+		Set<String> tags = datum.getSamples().getTags();
+		if ( tags != null && !tags.isEmpty() ) {
+			String[] expectedTags = tags.toArray(new String[tags.size()]);
+			assertThat("Tags", (String[]) event.getProperty("tags"), arrayContaining(expectedTags));
 		}
 	}
 
@@ -560,7 +634,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		};
 		getHttpServer().addHandler(handler);
 
-		replay(reactorService);
+		replayAll();
 
 		List<Instruction> data = new ArrayList<Instruction>();
 		BasicInstruction instr = new BasicInstruction(123L, "test", now, "abc", "def",
@@ -608,7 +682,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 				capture(instructionDataCapture), eq(BulkJsonWebPostUploadService.JSON_MIME_TYPE),
 				EasyMock.<Map<String, ?>> isNull())).andReturn(statusResult);
 
-		replay(reactorService);
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+
+		replayAll();
 
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
@@ -623,6 +700,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		assertTrue("Instruction data is JsonNode", instructionData instanceof JsonNode);
 		JSONAssert.assertEquals("[{\"foo\":\"bar\"},{\"bim\":\"bam\"}]",
 				service.getObjectMapper().writeValueAsString(instructionData), true);
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
+		Event event = eventCaptor.getValue();
+		assertDatumUploadEventEqualsDatum(event, d);
 	}
 
 }

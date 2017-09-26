@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Bulk JSON Datum Upload Test
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkjsonwebpost.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.upload.bulkjsonwebpost
+Fragment-Host: net.solarnetwork.node.upload.bulkjsonwebpost;bundle-version="1.8.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  javax.servlet;version="3.0.0",
@@ -12,6 +12,7 @@ Import-Package:
  net.solarnetwork.node.reactor.support;version="1.3.0",
  net.solarnetwork.node.test;version="[1.0.0,2.0.0]",
  org.easymock;version="[3.1,4.0)",
+ org.hamcrest;version="[1.3,2.0)",
  org.json,
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
