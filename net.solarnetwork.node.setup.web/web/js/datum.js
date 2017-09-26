@@ -114,7 +114,7 @@ SolarNode.Datum = (function() {
 		}
 		return activity;
 	}
-
+	
 	function addDatumActivityTableRow(tbody, templateRow, activity) {
 		var tr = templateRow.clone(true),
 			propList,
@@ -138,6 +138,46 @@ SolarNode.Datum = (function() {
 		tbody.prepend(tr);
 	}
 	
+	function updateDatumActivitySeenPropsTableRow(tbody, templateRow, activity) {
+		var tr = tbody.find('tr').filter(function() {
+				var d = $(this).data('activity');
+				return (d && d.sourceId === activity.sourceId);
+			}),
+			propList,
+			propListTemplateRow,
+			propLi;
+
+		if ( tr.length < 1 ) {
+			tr = templateRow.clone(true);
+			tr.removeClass('template');
+			tr.data('activity', activity);
+		}
+		replaceTemplateProperties(tr, activity);
+		if ( activity.props.length > 0 ) {
+			propList = tr.find('.datum-props');
+			propListTemplateRow = propList.find('.datum-prop.template');
+			activity.props.forEach(function(datumProp) {
+				propLi = propList.find('.datum-prop').filter(function() {
+					var n = $(this).data('prop-name');
+					return (n === datumProp.propName);
+				});
+				if ( propLi.length < 1 ) {
+					propLi = propListTemplateRow.clone(true);
+					propLi.removeClass('template');
+					propLi.data('prop-name', datumProp.propName);
+				}
+				replaceTemplateProperties(propLi, datumProp);
+				if ( !$.contains(document.documentElement, propLi.get(0)) ) {
+					propList.append(propLi);
+				}
+			});
+			propList.removeClass('hide');
+		}
+		if ( !$.contains(document.documentElement, tr.get(0)) ) {
+			tbody.append(tr);
+		}
+	}
+	
 	return Object.defineProperties(self, {
 		subscribeDatum : { value : subscribeDatum },
 		subscribeDatumCreated : { value : subscribeDatumCreated },
@@ -145,6 +185,7 @@ SolarNode.Datum = (function() {
 		
 		datumActivityForDatum : { value : datumActivityForDatum },
 		addDatumActivityTableRow : { value : addDatumActivityTableRow },
+		updateDatumActivitySeenPropsTableRow : { value : updateDatumActivitySeenPropsTableRow },
 	});
 }());
 
@@ -155,14 +196,18 @@ $(document).ready(function() {
 	
 	$('#datum-activity').first().each(function() {
 		$(this).removeClass('hide');
-		var tbody = $(this).find('table.datum-activity tbody'),
-			templateRow = $(this).find('table.datum-activity tr.template');
+		var activityTableBody = $(this).find('table.datum-activity tbody'),
+			activityTableTemplateRow = $(this).find('table.datum-activity tr.template'),
+			seenPropsTableBody = $(this).find('table.datum-activity-seenprops tbody'),
+			seenPropsTableTemplateRow = $(this).find('table.datum-activity-seenprops tr.template');
 		SolarNode.Datum.subscribeDatum(null, function(msg) {
 			var datum = JSON.parse(msg.body).data,
 				activity = SolarNode.Datum.datumActivityForDatum(datum);
 			console.info('Got %o message: %o', activity.event, activity);
-			SolarNode.Datum.addDatumActivityTableRow(tbody, templateRow, activity);
-			tbody.find('tr:gt(9)').remove();
+			SolarNode.Datum.addDatumActivityTableRow(activityTableBody, activityTableTemplateRow, activity);
+			activityTableBody.find('tr:gt(9)').remove();
+
+			SolarNode.Datum.updateDatumActivitySeenPropsTableRow(seenPropsTableBody, seenPropsTableTemplateRow, activity);
 		});
 	});
 });
