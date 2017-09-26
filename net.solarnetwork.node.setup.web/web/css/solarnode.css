@@ -39,6 +39,11 @@ button.help-icon {
 	padding: 4px;
 }
 
+td dl {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
 .row.form-horizontal label {
 	text-align: right;
 }
