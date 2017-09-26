@@ -29,6 +29,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
@@ -44,11 +47,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 
 /**
  * Control a Modbus "coil" type register to turn a switch on or off.
@@ -69,10 +68,10 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler {
+public class ModbusToggler extends ModbusDeviceSupport
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	private Integer address = 0x4008;
 
@@ -157,12 +156,12 @@ public class ModbusToggler extends ModbusDeviceSupport implements SettingSpecifi
 		return info;
 	}
 
-	private void postControlEvent(NodeControlInfo info, String topic) {
+	private void postControlEvent(NodeControlInfoDatum info, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+		Map<String, ?> props = info.asSimpleMap();
 		admin.postEvent(new Event(topic, props));
 	}
 

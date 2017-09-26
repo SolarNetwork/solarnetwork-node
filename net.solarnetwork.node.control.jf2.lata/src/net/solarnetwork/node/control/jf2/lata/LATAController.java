@@ -51,7 +51,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.ClassUtils;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -63,7 +62,7 @@ import net.solarnetwork.util.ClassUtils;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class LATAController extends SerialDeviceSupport
 		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
@@ -199,7 +198,7 @@ public class LATAController extends SerialDeviceSupport
 					String status = m.group(2);
 					Boolean switchOn = ToggleMode.ON.hexString().equals(status);
 					log.trace("Address {} status is {}", address, switchOn);
-					NodeControlInfo info = newNodeControlInfoDatum(controlId, switchOn);
+					NodeControlInfoDatum info = newNodeControlInfoDatum(controlId, switchOn);
 					postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 					return info;
 
@@ -222,8 +221,8 @@ public class LATAController extends SerialDeviceSupport
 		return info;
 	}
 
-	private void postControlEvent(NodeControlInfo info, String topic) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+		Map<String, ?> props = info.asSimpleMap();
 		postEvent(new Event(topic, props));
 	}
 

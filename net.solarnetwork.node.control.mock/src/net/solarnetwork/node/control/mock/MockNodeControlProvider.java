@@ -36,7 +36,6 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -101,7 +100,7 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		NodeControlInfo info = getNodeControlInfoDatum(controlId);
+		NodeControlInfoDatum info = getNodeControlInfoDatum(controlId);
 		postControlEvent(info, null, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 		return info;
 	}
@@ -186,15 +185,12 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 		return false;
 	}
 
-	private void postControlEvent(NodeControlInfo info, String oldValue, String topic) {
+	private void postControlEvent(NodeControlInfoDatum info, String oldValue, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
-		if ( oldValue != null ) {
-			props.put("oldValue", oldValue);
-		}
+		Map<String, ?> props = info.asSimpleMap();
 		admin.postEvent(new Event(topic, props));
 	}
 
