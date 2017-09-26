@@ -98,6 +98,15 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	}
 
 	@Override
+	protected Map<String, Object> createSimpleMap() {
+		Map<String, Object> map = super.createSimpleMap();
+		if ( getSourceId() != null ) {
+			map.put("controlId", getSourceId());
+		}
+		return map;
+	}
+
+	@Override
 	public String toString() {
 		return "NodeControlInfoDatum{controlId=" + (getSourceId() == null ? "" : getSourceId())
 				+ ",type=" + (type == null ? "" : type.toString()) + ",property="
