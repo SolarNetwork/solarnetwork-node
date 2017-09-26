@@ -30,6 +30,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
@@ -60,6 +62,8 @@ import net.solarnetwork.util.OptionalService;
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
+
+	private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = ISODateTimeFormat.dateTime();
 
 	private String url = "/bulkUpload.do";
 	private OptionalService<ReactorService> reactorService;
@@ -201,7 +205,21 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 								// assume Datum here
 								datum = (Datum) obj;
 								if ( currJsonNode != null ) {
-									long created = currJsonNode.path("created").longValue();
+									JsonNode createdObj = currJsonNode.path("created");
+									long created = 0;
+									if ( createdObj.isNumber() ) {
+										created = createdObj.longValue();
+									} else if ( createdObj.isTextual() ) {
+										try {
+											// parse as strict ISO8601 (SN returns space date/time delimiter)
+											created = ISO_DATE_TIME_FORMATTER
+													.parseDateTime(
+															createdObj.textValue().replace(' ', 'T'))
+													.getMillis();
+										} catch ( IllegalArgumentException e ) {
+											log.debug("Unexpected created date format: {}", createdObj);
+										}
+									}
 									String sourceId = currJsonNode.path("sourceId").textValue();
 									if ( datum.getCreated().getTime() == created
 											&& datum.getSourceId().equals(sourceId) ) {

@@ -45,6 +45,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,6 +86,9 @@ import net.solarnetwork.util.StaticOptionalService;
  * @version 1.0
  */
 public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
+
+	private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = ISODateTimeFormat.dateTime()
+			.withZoneUTC();
 
 	private static final Long TEST_NODE_ID = 123L;
 	private static final String TEST_SOURCE_ID = "test-source";
@@ -170,6 +175,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	 
 	 */
 
+	private static String snTimestampString(Date date) {
+		return ISO_DATE_TIME_FORMATTER.print(date.getTime()).replace('T', ' ');
+	}
+
 	@Test
 	public void uploadSingleDatum() throws Exception {
 		final Date now = new Date();
@@ -185,8 +194,9 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"abc123\",\"created\":"
-								+ now.getTime() + ",\"sourceId\":\"" + TEST_SOURCE_ID + "\"" + "}]}}");
+						"{\"success\":true,\"data\":{\"datum\":[{\"id\":\"abc123\",\"created\":\""
+								+ snTimestampString(now) + "\",\"sourceId\":\"" + TEST_SOURCE_ID + "\""
+								+ "}]}}");
 			}
 
 		};
@@ -301,10 +311,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
-								+ datumDate.getTime()
-								+ ",\"sourceId\":\"B\"},{\"id\":\"def123\",\"created\":"
-								+ datumDate.getTime() + ",\"sourceId\":\"C\"}]}}");
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":\""
+								+ snTimestampString(datumDate)
+								+ "\",\"sourceId\":\"B\"},{\"id\":\"def123\",\"created\":\""
+								+ snTimestampString(datumDate) + "\",\"sourceId\":\"C\"}]}}");
 			}
 
 		};
@@ -387,10 +397,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
-								+ datumDate.getTime()
-								+ ",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":"
-								+ datumDate.getTime() + ",\"sourceId\":\"C\"}]}}");
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":\""
+								+ snTimestampString(datumDate)
+								+ "\",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":\""
+								+ snTimestampString(datumDate) + "\",\"sourceId\":\"C\"}]}}");
 			}
 
 		};
@@ -473,10 +483,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":"
-								+ datumDate.getTime()
-								+ ",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":"
-								+ datumDate.getTime() + ",\"sourceId\":\"B\"}]}}");
+						"{\"success\":true,\"data\":{\"datum\":[" + "{\"id\":\"abc123\",\"created\":\""
+								+ snTimestampString(datumDate)
+								+ "\",\"sourceId\":\"A\"},{\"id\":\"def123\",\"created\":\""
+								+ snTimestampString(datumDate) + "\",\"sourceId\":\"B\"}]}}");
 			}
 
 		};
@@ -657,8 +667,8 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 						+ TEST_SOURCE_ID + "\",\"samples\":{\"i\":{\"watts\":1}}}]", json, true);
 
 				respondWithJsonString(response, true,
-						"{\"success\":true,\"data\":{\"datum\":[{\"created\":" + now.getTime()
-								+ ",\"sourceId\":\"" + TEST_SOURCE_ID + "\"}],\"instructions\":"
+						"{\"success\":true,\"data\":{\"datum\":[{\"created\":\"" + snTimestampString(now)
+								+ "\",\"sourceId\":\"" + TEST_SOURCE_ID + "\"}],\"instructions\":"
 								+ "[{\"foo\":\"bar\"},{\"bim\":\"bam\"}]}}");
 			}
 
