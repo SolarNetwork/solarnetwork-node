@@ -259,6 +259,32 @@ div.plugin .desc {
             user-select: none;
 }
 
+.datum-activity dl.datum-props dt,
+.datum-activity dl.datum-props dd {
+	display: inline;
+}
+
+.datum-activity dl.datum-props dd + dt:before {
+	content: ', ';
+	font-weight: normal;
+	margin-left: 0;
+}
+
+@-webkit-keyframes yellow-fade {   
+   0% {background: #fef0a3;}
+   100% {background: none;}
+}
+
+@keyframes yellow-fade {
+   0% {background: #fef0a3;}
+   100% {background: none;}
+}
+
+.brief-showcase {
+   -webkit-animation: yellow-fade 2s ease-in 1;
+   animation: yellow-fade 2s ease-in 1;
+}
+
 @media (max-width: 767px) {
 	div.plugin {
 		border-top: 1px solid #ccc;
