@@ -36,6 +36,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.support.GenericMessage;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.util.OptionalService;
@@ -65,6 +66,8 @@ public class EventMessageBridge implements EventHandler {
 		map.put(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, "datum/captured/{sourceId}");
 		map.put(DatumDao.EVENT_TOPIC_DATUM_STORED, "datum/stored/{sourceId}");
 		map.put(UploadService.EVENT_TOPIC_DATUM_UPLOADED, "datum/uploaded/{sourceId}");
+		map.put(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, "control/captured/{controlId}");
+		map.put(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, "control/changed/{controlId}");
 		return Collections.unmodifiableMap(map);
 	}
 
@@ -103,6 +106,10 @@ public class EventMessageBridge implements EventHandler {
 		if ( topic.startsWith(NODE_EVENT_PREFIX) ) {
 			topic = topic.substring(NODE_EVENT_PREFIX.length());
 		}
+
+		// remove double-slashes
+		topic = topic.replaceAll("\\/\\/", "/");
+
 		return "/topic/" + topic;
 	}
 
