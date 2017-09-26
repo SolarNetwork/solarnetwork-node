@@ -80,7 +80,7 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	public Map<String, ?> getSampleData() {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		if ( type != null ) {
-			map.put("type", type);
+			map.put("type", type.toString());
 		}
 		if ( value != null ) {
 			map.put("value", value);
