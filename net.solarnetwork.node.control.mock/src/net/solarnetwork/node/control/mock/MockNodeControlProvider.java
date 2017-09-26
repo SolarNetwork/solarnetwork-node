@@ -27,6 +27,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
@@ -34,10 +36,8 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.util.ClassUtils;
+import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 
 /**
  * Mock implementation of {@link NodeControlProvider} combined with
@@ -55,7 +55,7 @@ import org.osgi.service.event.EventAdmin;
  * <b>FALSE</b>.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler {
 
@@ -74,8 +74,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 	}
 
 	private void configureControlIds() {
-		List<String> ids = new ArrayList<String>((booleanControlIds == null ? 0
-				: booleanControlIds.length));
+		List<String> ids = new ArrayList<String>(
+				(booleanControlIds == null ? 0 : booleanControlIds.length));
 		if ( booleanControlIds != null ) {
 			for ( String id : booleanControlIds ) {
 				ids.add(id);
@@ -116,8 +116,9 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 					for ( int i = 0; i < booleanControlIds.length; i++ ) {
 						String id = booleanControlIds[i];
 						if ( id.equals(controlId) ) {
-							info = newNodeControlInfoDatum(controlId, (i == 0 ? null : "Boolean Mock "
-									+ i), NodeControlPropertyType.Boolean, false, null);
+							info = newNodeControlInfoDatum(controlId,
+									(i == 0 ? null : "Boolean Mock " + i),
+									NodeControlPropertyType.Boolean, false, null);
 							controlValues.put(controlId, info);
 							break;
 						}
@@ -130,8 +131,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic) || InstructionHandler.TOPIC_SHED_LOAD
-				.equals(topic));
+		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
+				|| InstructionHandler.TOPIC_SHED_LOAD.equals(topic));
 	}
 
 	@Override
@@ -174,7 +175,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 			}
 			String oldValue = datum.getValue();
 			String newValue = ("false".equalsIgnoreCase(value) || "0".equals(value)
-					|| "no".equalsIgnoreCase(value) ? Boolean.FALSE.toString() : Boolean.TRUE.toString());
+					|| "no".equalsIgnoreCase(value) ? Boolean.FALSE.toString()
+							: Boolean.TRUE.toString());
 			if ( !newValue.equals(oldValue) ) {
 				datum.setValue(newValue);
 				postControlEvent(datum, oldValue, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
