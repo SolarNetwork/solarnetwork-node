@@ -43,8 +43,8 @@ import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.DataCollectorFactory;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelParam;
@@ -159,8 +159,8 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.0
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
-		implements DatumDataSource<PVEnergyDatum>, ConversationalDataCollector.Moderator<PVEnergyDatum>,
-		SettingSpecifierProvider {
+		implements DatumDataSource<ACEnergyDatum>,
+		ConversationalDataCollector.Moderator<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -234,8 +234,8 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public Class<? extends PVEnergyDatum> getDatumType() {
-		return PVEnergyDatum.class;
+	public Class<? extends ACEnergyDatum> getDatumType() {
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	private ConversationalDataCollector getDataCollectorInstance() {
@@ -258,12 +258,15 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public PVEnergyDatum readCurrentDatum() {
+	public ACEnergyDatum readCurrentDatum() {
 		ConversationalDataCollector dataCollector = null;
 		try {
 			dataCollector = getDataCollectorInstance();
 			if ( dataCollector != null ) {
-				return dataCollector.collectData(this);
+				GeneralNodeACEnergyDatum datum = dataCollector.collectData(this);
+				postDatumCapturedEvent(datum);
+				addEnergyDatumSourceMetadata(datum);
+				return datum;
 			}
 		} finally {
 			if ( dataCollector != null ) {
@@ -274,7 +277,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public PVEnergyDatum conductConversation(ConversationalDataCollector dataCollector) {
+	public GeneralNodeACEnergyDatum conductConversation(ConversationalDataCollector dataCollector) {
 		SmaPacket req = null;
 		SmaPacket resp = null;
 		if ( this.smaAddress < 0 || this.channelMap == null ) {
@@ -322,7 +325,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 			// ignore this one
 		}
 
-		GeneralNodePVEnergyDatum datum = new GeneralNodePVEnergyDatum();
+		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setSourceId(this.sourceId);
 
 		// Issue GetData command for each channel we're interested in

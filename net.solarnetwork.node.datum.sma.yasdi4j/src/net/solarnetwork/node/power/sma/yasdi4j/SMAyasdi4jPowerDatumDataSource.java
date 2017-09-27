@@ -32,11 +32,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
+import de.michaeldenk.yasdi4j.YasdiChannel;
+import de.michaeldenk.yasdi4j.YasdiDevice;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.io.yasdi4j.YasdiMaster;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -45,10 +46,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
-import org.springframework.beans.factory.ObjectFactory;
-import org.springframework.context.MessageSource;
-import de.michaeldenk.yasdi4j.YasdiChannel;
-import de.michaeldenk.yasdi4j.YasdiDevice;
 
 /**
  * SMA {@link DatumDataSource} for {@link PowerDatum}, using the {@code yasdi4j}
@@ -59,24 +56,11 @@ import de.michaeldenk.yasdi4j.YasdiDevice;
  * {@link #readCurrentDatum()} at a time.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>yasdi</dt>
- * <dd>The dynamic service for the {@link YasdiMaster} instance to use.</dd>
- * 
- * <dt>settingDao</dt>
- * <dd>The {@link SettingDao} to use, required by the
- * {@code channelNamesToResetDaily} property.</dd>
- * </dl>
- * 
  * @author matt
- * @version 2.0
+ * @version 1.0
  */
-public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport implements
-		DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
+		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
 
 	/** The default value for the {@code sourceId} property. */
 	public static final String DEFAULT_SOURCE_ID = "Main";
@@ -104,8 +88,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 * </p>
 	 */
 	public static final Set<String> DEFAULT_CHANNEL_NAMES_TO_MONITOR = Collections
-			.unmodifiableSet(new LinkedHashSet<String>(Arrays.asList(CHANNEL_NAME_PV_AMPS,
-					CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
+			.unmodifiableSet(new LinkedHashSet<String>(
+					Arrays.asList(CHANNEL_NAME_PV_AMPS, CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
 
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
@@ -125,7 +109,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
+	public Class<? extends ACEnergyDatum> getDatumType() {
 		return SMAPowerDatum.class;
 	}
 
@@ -157,7 +141,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	public ACEnergyDatum readCurrentDatum() {
 		YasdiDevice device = null;
 		final SMAPowerDatum datum = new SMAPowerDatum();
 		datum.setCreated(new Date());
@@ -213,17 +197,10 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			return null;
 		}
 
-		postDatumCapturedEvent(datum, ACEnergyDatum.class);
+		postDatumCapturedEvent(datum);
 		addEnergyDatumSourceMetadata(datum);
 
 		return datum;
-	}
-
-	private void addEnergyDatumSourceMetadata(SMAPowerDatum d) {
-		// associate generation tags with this source
-		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
-		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
-		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
 
 	private boolean isValidDatum(SMAPowerDatum d) {
@@ -324,26 +301,26 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		}
 		results.add(new BasicTitleSettingSpecifier("address", yasdiDeviceName, true));
 
-		results.add(new BasicTextFieldSettingSpecifier("deviceSerialNumber", String
-				.valueOf(defaults.deviceSerialNumber)));
+		results.add(new BasicTextFieldSettingSpecifier("deviceSerialNumber",
+				String.valueOf(defaults.deviceSerialNumber)));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 
-		results.add(new BasicTextFieldSettingSpecifier("channelMaxAgeSeconds", String.valueOf(defaults
-				.getChannelMaxAgeSeconds())));
-		results.add(new BasicTextFieldSettingSpecifier("deviceLockTimeoutSeconds", String
-				.valueOf(defaults.getDeviceLockTimeoutSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("channelMaxAgeSeconds",
+				String.valueOf(defaults.getChannelMaxAgeSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("deviceLockTimeoutSeconds",
+				String.valueOf(defaults.getDeviceLockTimeoutSeconds())));
 
-		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue", defaults
-				.getPvWattsChannelNamesValue()));
-		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", defaults
-				.getPvVoltsChannelName()));
-		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", defaults
-				.getPvAmpsChannelName()));
+		results.add(new BasicTextFieldSettingSpecifier("pvWattsChannelNamesValue",
+				defaults.getPvWattsChannelNamesValue()));
+		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName",
+				defaults.getPvVoltsChannelName()));
+		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName",
+				defaults.getPvAmpsChannelName()));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", defaults.getkWhChannelName()));
-		results.add(new BasicTextFieldSettingSpecifier("otherChannelNamesValue", defaults
-				.getOtherChannelNamesValue()));
+		results.add(new BasicTextFieldSettingSpecifier("otherChannelNamesValue",
+				defaults.getOtherChannelNamesValue()));
 
 		return results;
 	}
@@ -397,10 +374,21 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		setupChannelNamesToMonitor();
 	}
 
+	/**
+	 * Get the configured {@link YasdiMaster} service.
+	 * 
+	 * @return the service
+	 */
 	public DynamicServiceTracker<ObjectFactory<YasdiMaster>> getYasdi() {
 		return yasdi;
 	}
 
+	/**
+	 * Set the dynamic service for the {@link YasdiMaster} instance to use.
+	 * 
+	 * @param yasdi
+	 *        the service to use
+	 */
 	public void setYasdi(DynamicServiceTracker<ObjectFactory<YasdiMaster>> yasdi) {
 		this.yasdi = yasdi;
 	}
@@ -415,8 +403,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 * @return the channel names, as a delimited string
 	 */
 	public String getPvWattsChannelNamesValue() {
-		return (pvWattsChannelNames == null ? null : StringUtils
-				.commaDelimitedStringFromCollection(pvWattsChannelNames));
+		return (pvWattsChannelNames == null ? null
+				: StringUtils.commaDelimitedStringFromCollection(pvWattsChannelNames));
 	}
 
 	/**
@@ -442,6 +430,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		this.deviceSerialNumber = deviceSerialNumber;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -460,8 +449,8 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 	 * @return the other channel names, as a delimited string
 	 */
 	public String getOtherChannelNamesValue() {
-		return (otherChannelNames == null ? null : StringUtils
-				.commaDelimitedStringFromCollection(otherChannelNames));
+		return (otherChannelNames == null ? null
+				: StringUtils.commaDelimitedStringFromCollection(otherChannelNames));
 	}
 
 	/**
