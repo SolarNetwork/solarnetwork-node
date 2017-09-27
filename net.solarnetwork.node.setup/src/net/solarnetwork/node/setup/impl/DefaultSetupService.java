@@ -46,7 +46,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -109,7 +108,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -422,15 +421,6 @@ public class DefaultSetupService extends XmlServiceSupport
 			// Runtime errors can come from webFormGetForBean
 			throw new SetupException("Error while confirming server details: " + details, e);
 		}
-	}
-
-	private void postEvent(Event event) {
-		OptionalService<EventAdmin> eventAdmin = getEventAdmin();
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || event == null ) {
-			return;
-		}
-		ea.postEvent(event);
 	}
 
 	private void makeBackup() {
