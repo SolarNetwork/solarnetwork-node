@@ -24,17 +24,18 @@
 
 package net.solarnetwork.node.power.impl;
 
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.power.PowerDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
+import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.DataCollectorFactory;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.PVEnergyDatum;
 
 /**
  * Implementation of {@link net.solarnetwork.node.DatumDataSource} for
- * {@link PowerDatum} the Outback MX60, communicating via the
+ * {@link PVEnergyDatum} the Outback MX60, communicating via the
  * {@code DataCollector} serial API.
  * 
  * <p>
@@ -66,9 +67,21 @@ import org.springframework.beans.factory.ObjectFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PowerDatum> {
+public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergyDatum> {
+
+	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for DC output amp values.
+	 */
+	public static final String DC_OUTPUT_AMPS_KEY = "dcOutputAmps";
+
+	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for battery voltage values.
+	 */
+	public static final String BATTERY_VOLTAGE_KEY = "batteryVoltage";
 
 	private static final int FRAME_IDX_DC_AMPS = 2;
 	private static final int FRAME_IDX_PV_AMPS = 3;
@@ -84,12 +97,12 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PowerDat
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public Class<? extends PowerDatum> getDatumType() {
-		return PowerDatum.class;
+	public Class<? extends PVEnergyDatum> getDatumType() {
+		return GeneralNodePVEnergyDatum.class;
 	}
 
 	@Override
-	public PowerDatum readCurrentDatum() {
+	public PVEnergyDatum readCurrentDatum() {
 		DataCollector dataCollector = null;
 		String data = null;
 		try {
@@ -119,16 +132,15 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PowerDat
 	 * 
 	 * <p>
 	 * The string data format looks like
-	 * {@code D,00,00,00,016,129,00,00,000,00,511,000,000,046}. See the
-	 * <em>Mate Serial Communications Guide</em> for details.
+	 * {@code D,00,00,00,016,129,00,00,000,00,511,000,000,046}. See the <em>Mate
+	 * Serial Communications Guide</em> for details.
 	 * </p>
 	 * 
 	 * @param data
 	 *        the serial data string
 	 * @return a PowerDatum instance
 	 */
-	@SuppressWarnings("deprecation")
-	private PowerDatum getPowerDatumInstance(String data) {
+	private GeneralNodePVEnergyDatum getPowerDatumInstance(String data) {
 
 		// split data on comma
 		String[] frame = data.split(",");
@@ -139,31 +151,31 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PowerDat
 			return null;
 		}
 
-		PowerDatum pd = new PowerDatum();
+		GeneralNodePVEnergyDatum pd = new GeneralNodePVEnergyDatum();
 
-		Double d = getFrameDouble(frame, FRAME_IDX_PV_AMPS);
-		if ( d != null ) {
-			pd.setPvAmps(d.floatValue());
+		Double pvAmps = getFrameDouble(frame, FRAME_IDX_PV_AMPS);
+
+		Double pvVolts = getFrameDouble(frame, FRAME_IDX_PV_VOLTS);
+		if ( pvVolts != null ) {
+			pd.setDCVoltage(pvVolts.floatValue());
+			if ( pvAmps != null ) {
+				pd.setDCPower((int) Math.round(pvAmps.doubleValue() * pvVolts.doubleValue()));
+			}
 		}
 
-		d = getFrameDouble(frame, FRAME_IDX_PV_VOLTS);
+		Double d = getFrameDouble(frame, FRAME_IDX_DC_AMPS);
 		if ( d != null ) {
-			pd.setPvVolts(d.floatValue());
-		}
-
-		d = getFrameDouble(frame, FRAME_IDX_DC_AMPS);
-		if ( d != null ) {
-			pd.setDcOutputAmps(d.floatValue());
+			pd.putInstantaneousSampleValue("dcOutputAmps", d.floatValue());
 		}
 
 		d = getFrameDouble(frame, FRAME_IDX_BAT_VOLTS);
 		if ( d != null ) {
-			pd.setBatteryVolts(d.floatValue() * BAT_VOLTS_MULTIPLIER);
+			pd.putInstantaneousSampleValue("batteryVoltage", d.floatValue() * BAT_VOLTS_MULTIPLIER);
 		}
 
 		d = getFrameDouble(frame, FRAME_IDX_KWATT_HOURS);
 		if ( d != null ) {
-			pd.setKWattHoursToday(d * KWATT_HOURS_MULTIPLIER);
+			pd.setWattHourReading(Math.round(d * KWATT_HOURS_MULTIPLIER * 1000));
 		}
 
 		return pd;

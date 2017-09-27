@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>net.solarnetwork.node.power.outback.mx60</name>
+	<name>net.solarnetwork.node.datum.outback.mx60</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -20,14 +20,8 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
-		<buildCommand>
-			<name>org.springframework.ide.eclipse.core.springbuilder</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
 	</buildSpec>
 	<natures>
-		<nature>org.springframework.ide.eclipse.core.springnature</nature>
 		<nature>org.eclipse.pde.PluginNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
