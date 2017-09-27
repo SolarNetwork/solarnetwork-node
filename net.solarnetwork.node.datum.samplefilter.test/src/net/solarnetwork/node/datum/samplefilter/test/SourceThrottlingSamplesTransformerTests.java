@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.datum.samplefilter.test;
 
-import static net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer.SETTING_KEY_TEMPLATE;
+import static net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -90,6 +90,11 @@ public class SourceThrottlingSamplesTransformerTests {
 			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
 			assertSame("Not filtered sample " + count, datum.getSamples(), result);
 			count++;
+			try {
+				Thread.sleep(200);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
 		}
 		assertTrue("More than 1 cycle examined", count > 1);
 	}
@@ -116,6 +121,11 @@ public class SourceThrottlingSamplesTransformerTests {
 				assertNull("Filtered sample " + count, result);
 			}
 			count++;
+			try {
+				Thread.sleep(200);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
 		}
 		assertTrue("More than 1 cycle examined", count > 1);
 
@@ -157,6 +167,11 @@ public class SourceThrottlingSamplesTransformerTests {
 				assertNull("Filtered sample " + count, result);
 			}
 			count++;
+			try {
+				Thread.sleep(200);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
 		}
 		assertTrue("More than 1 cycle examined", count > 1);
 
@@ -200,6 +215,11 @@ public class SourceThrottlingSamplesTransformerTests {
 				nonFilterCount += 1;
 			}
 			count++;
+			try {
+				Thread.sleep(200);
+			} catch ( InterruptedException e ) {
+				// ignore
+			}
 		}
 		assertTrue("More than 1 cycle examined", count > 1);
 		assertEquals("Non filter count", 1, nonFilterCount);
