@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode EnaSolar Power Web Service Test
-Bundle-SymbolicName: net.solarnetwork.node.power.enasolar.ws.test
-Bundle-Version: 1.2.0
+Bundle-SymbolicName: net.solarnetwork.node.datum.enasolar.ws.test
+Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.power.enasolar.ws;bundle-version="2.2.0"
+Fragment-Host: net.solarnetwork.node.datum.enasolar.ws;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  javax.sql,
