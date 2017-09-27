@@ -48,12 +48,13 @@
 
 package net.solarnetwork.node.power.impl;
 
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.power.PowerDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
+import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.PVEnergyDatum;
 
 /**
  * Implementation of {@link GenerationDataSource} for the Xantrex series of
@@ -80,10 +81,9 @@ import org.springframework.beans.factory.ObjectFactory;
  * @author matt, mike
  * @version 1.2
  */
-public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerDatum> {
+public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEnergyDatum> {
 
 	private static final int FRAME_IDX_PV_VOLTS = 2;
-	private static final int FRAME_IDX_PV_AMPS = 3;
 	private static final int FRAME_IDX_PV_WATTS = 5;
 	private static final int FRAME_IDX_AC_WATTS = 6;
 	private static final int FRAME_IDX_AC_VOLTS = 8;
@@ -104,12 +104,12 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 	}
 
 	@Override
-	public Class<? extends PowerDatum> getDatumType() {
-		return PowerDatum.class;
+	public Class<? extends PVEnergyDatum> getDatumType() {
+		return GeneralNodePVEnergyDatum.class;
 	}
 
 	@Override
-	public PowerDatum readCurrentDatum() {
+	public PVEnergyDatum readCurrentDatum() {
 		DataCollector dataCollector = null;
 		String data = null;
 		try {
@@ -131,8 +131,7 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 
 	}
 
-	@SuppressWarnings("deprecation")
-	private PowerDatum getPowerDatumInstance(String data) {
+	private GeneralNodePVEnergyDatum getPowerDatumInstance(String data) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Raw last sample data in file: " + data);
 		}
@@ -147,68 +146,51 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PowerD
 			return null;
 		}
 
-		PowerDatum datum = new PowerDatum();
+		GeneralNodePVEnergyDatum datum = new GeneralNodePVEnergyDatum();
+		datum.setDCPower(d.intValue());
 
 		// Field 0: Date: unused
 
 		// Field 1: Time: unused
 
 		// Field 2: DC Volts
-		d = getFrameDouble(tokens, FRAME_IDX_PV_VOLTS);
-		if ( d != null ) {
-			datum.setPvVolts(d.floatValue());
-			if ( log.isDebugEnabled() ) {
-				log.debug("DC Volts: " + d);
-			}
+		Double pvVolts = getFrameDouble(tokens, FRAME_IDX_PV_VOLTS);
+		if ( pvVolts != null ) {
+			datum.setDCVoltage(pvVolts.floatValue());
+			log.debug("DC Volts: {}", pvVolts);
 		}
 
-		// Field 3: DC Amps
-		d = getFrameDouble(tokens, FRAME_IDX_PV_AMPS);
-		if ( d != null ) {
-			datum.setPvAmps(d.floatValue());
-			if ( log.isDebugEnabled() ) {
-				log.debug("DC Amps: " + d);
-			}
-		}
+		// Field 3: DC Amps: unused
 
 		// Field 4: MPPT: unused
 
 		// Field 5: DC Watts: already parsed above
 
-		// Field 7: Efficiency: unused
-
-		// Field 8: AC Volts: unused
-		d = getFrameDouble(tokens, FRAME_IDX_AC_VOLTS);
-		if ( d != null ) {
-			datum.setAcOutputVolts(d.floatValue());
-			if ( log.isDebugEnabled() ) {
-				log.debug("AC Volts: " + d);
-			}
-		}
-
-		// Field 6: AC Watts: used to set AC amps
+		// Field 6: AC Watts
 		d = getFrameDouble(tokens, FRAME_IDX_AC_WATTS);
 		if ( d != null ) {
-			if ( datum.getAcOutputVolts() > 0 ) {
-				datum.setAcOutputAmps(d.floatValue() / datum.getAcOutputVolts());
-			}
-			if ( log.isDebugEnabled() ) {
-				log.debug("AC Amps: " + d);
-			}
+			datum.setWatts(Math.round(d.floatValue()));
+			log.debug("AC Watts: {}", d);
 		}
 
-		// Field 9: Cumulative AC Watts
+		// Field 7: Efficiency: unused
+
+		// Field 8: AC Volts
+		d = getFrameDouble(tokens, FRAME_IDX_AC_VOLTS);
+		if ( d != null ) {
+			datum.setVoltage(d.floatValue());
+			log.debug("AC Volts: {}", d);
+		}
+
+		// Field 9: Cumulative AC Wh
 		d = getFrameDouble(tokens, FRAME_IDX_WH);
 		if ( d != null ) {
 			// store Wh as kWh
-			datum.setKWattHoursToday(d.doubleValue() / 1000);
-			if ( log.isDebugEnabled() ) {
-				log.debug("WH: " + d);
-			}
+			datum.setWattHourReading(d.longValue());
+			log.debug("WH: {}", d);
 		}
 
 		return datum;
-
 	}
 
 	private Double getFrameDouble(String[] frame, int idx) {
