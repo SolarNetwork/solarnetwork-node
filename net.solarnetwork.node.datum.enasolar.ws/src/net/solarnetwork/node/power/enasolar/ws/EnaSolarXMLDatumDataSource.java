@@ -39,21 +39,19 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.StringUtils;
-import org.springframework.context.MessageSource;
 
 /**
  * Web service based support for EnaSolar inverters.
  * 
  * This service can read from two different XML services provided by EnaSolar
- * inverters. First is the {@bold deviceinfo.xml} form. This expects to
- * access a URL that returns XML in the following form:
+ * inverters. First is the {@bold deviceinfo.xml} form. This expects to access a
+ * URL that returns XML in the following form:
  * 
  * <pre>
  * &lt;info time="16180F57">
@@ -68,8 +66,8 @@ import org.springframework.context.MessageSource;
  * &lt;/info>
  * </pre>
  * 
- * The second is the {@bold data.xml} and {@bold meters.xml} form.
- * The first URL should return XML in the following form:
+ * The second is the {@bold data.xml} and {@bold meters.xml} form. The first URL
+ * should return XML in the following form:
  * 
  * <pre>
  * &lt;response>
@@ -94,37 +92,11 @@ import org.springframework.context.MessageSource;
  * &lt;/response>
  * </pre>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>urls</dt>
- * <dd>A comma-delimited list of URLs for accessing the XML data from (more than
- * one in case the {@code data.xml} and {@code meters.xml} URLs are used).</dd>
- * 
- * <dt>sourceId</dt>
- * <dd>The source ID value to assign to the collected data.</dd>
- * 
- * <dt>xpathMapping</dt>
- * <dd>A mapping of PowerDatum JavaBean property names to corresponding XPath
- * expressions for extracting the data from the XML response. This property can
- * also be configured via {@link #setXpathMap(Map)} using String values, which
- * is useful when using Spring. Defaults to a sensible value, so this should
- * only be configured in special cases.</dd>
- * 
- * <dt>groupUID</dt>
- * <dd>The service group ID to use.</dd>
- * 
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.3
+ * @version 1.0
  */
-public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
-		DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
+		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
 	/** The {@link SettingDao} key for a Long counter of 0 watt readings. */
 	public static final String SETTING_ZERO_WATT_COUNT = "EnaSolarXMLDatumDataSource:0W";
@@ -141,7 +113,6 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 	private String sourceId;
 	private Map<String, XPathExpression> xpathMapping;
 	private Map<String, String> xpathMap;
-	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 
 	private EnaSolarPowerDatum sample;
@@ -182,7 +153,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 			if ( datum != null ) {
 				sample = datum;
 				addEnergyDatumSourceMetadata(datum);
-				postDatumCapturedEvent(datum, PVEnergyDatum.class);
+				postDatumCapturedEvent(datum);
 			}
 		} else {
 			datum = sample;
@@ -241,8 +212,9 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 	}
 
 	private Long zeroWattCount() {
-		return (validationCache.containsKey(SETTING_ZERO_WATT_COUNT) ? validationCache
-				.get(SETTING_ZERO_WATT_COUNT) : 0L);
+		return (validationCache.containsKey(SETTING_ZERO_WATT_COUNT)
+				? validationCache.get(SETTING_ZERO_WATT_COUNT)
+				: 0L);
 	}
 
 	private Long lastKnownValue() {
@@ -263,8 +235,8 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		sampleCal.setTime(sampleDate);
 		final Calendar lastKnownCal = Calendar.getInstance();
 		lastKnownCal.setTime(lastKnownDate);
-		return (sampleCal.get(Calendar.DAY_OF_YEAR) == lastKnownCal.get(Calendar.DAY_OF_YEAR) && sampleCal
-				.get(Calendar.YEAR) == lastKnownCal.get(Calendar.YEAR));
+		return (sampleCal.get(Calendar.DAY_OF_YEAR) == lastKnownCal.get(Calendar.DAY_OF_YEAR)
+				&& sampleCal.get(Calendar.YEAR) == lastKnownCal.get(Calendar.YEAR));
 	}
 
 	private EnaSolarPowerDatum validateDatum(EnaSolarPowerDatum datum) {
@@ -404,8 +376,8 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String
-				.valueOf(defaults.sampleCacheMs)));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.sampleCacheMs)));
 		return results;
 	}
 
@@ -437,11 +409,6 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		return (buf.length() < 1 ? "N/A" : buf.toString());
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
 	public String getUrl() {
 		return (urls == null || urls.length < 1 ? null : urls[0]);
 	}
@@ -458,6 +425,13 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		return urls;
 	}
 
+	/**
+	 * Set an array of URLs for accessing the XML data from (more than one in
+	 * case the {@code data.xml} and {@code meters.xml} URLs are used).
+	 * 
+	 * @param urls
+	 *        the urls to set
+	 */
 	public void setUrls(String[] urls) {
 		this.urls = urls;
 	}
@@ -482,22 +456,42 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport implements
 		setUrls(set.toArray(new String[set.size()]));
 	}
 
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
 	public Map<String, XPathExpression> getXpathMapping() {
 		return xpathMapping;
 	}
 
+	/**
+	 * Set a mapping of PowerDatum JavaBean property names to corresponding
+	 * XPath expressions for extracting the data from the XML response.
+	 * 
+	 * <p>
+	 * This property can also be configured via {@link #setXpathMap(Map)} using
+	 * String values, which is useful when using Spring. Defaults to a sensible
+	 * value, so this should only be configured in special cases.
+	 * </p>
+	 * 
+	 * @param xpathMapping
+	 *        the mapping to set
+	 */
 	public void setXpathMapping(Map<String, XPathExpression> xpathMapping) {
 		this.xpathMapping = xpathMapping;
 	}
 
+	/**
+	 * Get the configured source ID.
+	 * 
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return sourceId;
 	}
 
+	/**
+	 * Set the source ID value to assign to the collected data.
+	 * 
+	 * @param sourceId
+	 *        the source ID to set
+	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 		validationCache.clear();
