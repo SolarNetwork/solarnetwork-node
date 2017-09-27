@@ -51,7 +51,6 @@ public class NodeControlInfoDatumTests {
 		datum.setValue("true");
 
 		Map<String, ?> map = datum.asSimpleMap();
-		assertThat("Map size", map.keySet(), hasSize(8));
 		assertThat(map, hasEntry("_DatumType", (Object) "net.solarnetwork.domain.NodeControlInfo"));
 		assertThat((String[]) map.get("_DatumTypes"), arrayContaining(
 				"net.solarnetwork.domain.NodeControlInfo", "net.solarnetwork.node.domain.Datum"));
@@ -61,6 +60,8 @@ public class NodeControlInfoDatumTests {
 		assertThat(map, hasEntry("sourceId", (Object) "test-source"));
 		assertThat(map, hasEntry("type", (Object) "Boolean"));
 		assertThat(map, hasEntry("value", (Object) "true"));
+		assertThat(map, hasEntry("controlId", (Object) "test-source"));
+		assertThat("Map size", map.keySet(), hasSize(9));
 	}
 
 }
