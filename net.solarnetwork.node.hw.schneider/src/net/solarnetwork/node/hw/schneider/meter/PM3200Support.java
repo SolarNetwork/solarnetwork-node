@@ -27,23 +27,21 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Supporting class for the PM3200 series power meter.
@@ -62,9 +60,9 @@ import org.osgi.service.event.EventAdmin;
  * </dl>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
-public class PM3200Support extends ModbusDeviceSupport {
+public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 
 	public static final Integer ADDR_SYSTEM_METER_NAME = 29;
 	public static final Integer ADDR_SYSTEM_METER_MODEL = 49;
@@ -76,8 +74,6 @@ public class PM3200Support extends ModbusDeviceSupport {
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
-
-	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * An instance of {@link PM3200Data} to support keeping the last-read values
@@ -322,8 +318,8 @@ public class PM3200Support extends ModbusDeviceSupport {
 		buf.append(", VA = ").append(sample.getPower(PM3200Data.ADDR_DATA_APPARENT_POWER_TOTAL));
 		buf.append(", Wh = ").append(sample.getEnergy(PM3200Data.ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
 		buf.append(", cos \ud835\udf11 = ").append(sample.getEffectiveTotalPowerFactor());
-		buf.append("; sampled at ").append(
-				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ")
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
 		return buf.toString();
 	}
 
@@ -339,8 +335,8 @@ public class PM3200Support extends ModbusDeviceSupport {
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
-				.getSourceMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue",
+				defaults.getSourceMappingValue()));
 
 		return results;
 	}
@@ -359,15 +355,13 @@ public class PM3200Support extends ModbusDeviceSupport {
 	 *        the Datum class to use for the
 	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @since 1.3
+	 * @deprecated use
+	 *             {@link ModbusDeviceDatumDataSourceSupport#postDatumCapturedEvent(Datum)
 	 */
+	@Deprecated
 	protected final void postDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
-		ea.postEvent(event);
+		postDatumCapturedEvent(datum);
 	}
 
 	/**
@@ -386,13 +380,13 @@ public class PM3200Support extends ModbusDeviceSupport {
 	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @return the new Event instance
 	 * @since 1.3
+	 * @deprecated use
+	 *             {@link ModbusDeviceDatumDataSourceSupport#createDatumCapturedEvent(Datum)
 	 */
+	@Deprecated
 	protected Event createDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		return createDatumCapturedEvent(datum);
 	}
 
 	public boolean isCaptureTotal() {
@@ -417,14 +411,6 @@ public class PM3200Support extends ModbusDeviceSupport {
 
 	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
-	}
-
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 }
