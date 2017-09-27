@@ -10,7 +10,14 @@ SolarNode.Datum = (function() {
 		
 	var self = {};
 	var stompClient;
+	var pingTask;
 	var subscriptions = [];
+	
+	function executePing(url) {
+		$.getJSON(SolarNode.context.path('/csrf')).then(function() {
+			
+		});
+	}
 	
 	function doWithConnection(callback) {
 		if ( stompClient != null ) {
@@ -26,6 +33,11 @@ SolarNode.Datum = (function() {
 		client.connect(headers, function(frame) {
 			stompClient = client;
 			console.info('Connected to node WebSocket');
+			
+			if ( !pingTask ) {
+				pingTask = setInterval(executePing, 60000);
+			}
+			
 			callback(null, client);
 		}, function (error) {
 			console.error('STOMP protocol error %s', error);
