@@ -39,6 +39,7 @@ import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -59,18 +60,8 @@ import net.solarnetwork.util.StringUtils;
  * <li><b>Error checking</b> - CRC</li>
  * </ul>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>sourceMapping</dt>
- * <dd></dd>
- * 
- * </dl>
- * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class EM5600Support extends ModbusDeviceDatumDataSourceSupport {
 
@@ -197,6 +188,8 @@ public class EM5600Support extends ModbusDeviceDatumDataSourceSupport {
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue",
 				defaults.getSourceMappingValue()));
+
+		results.add(new BasicToggleSettingSpecifier("backwards", Boolean.FALSE));
 
 		return results;
 	}
@@ -366,4 +359,14 @@ public class EM5600Support extends ModbusDeviceDatumDataSourceSupport {
 		this.sample.setUnitFactor(unitFactor);
 	}
 
+	/**
+	 * Set the backwards setting.
+	 * 
+	 * @param backwards
+	 *        the backwards setting
+	 * @since 2.3
+	 */
+	public void setBackwards(boolean backwards) {
+		sample.setBackwards(backwards);
+	}
 }
