@@ -34,7 +34,7 @@ import net.solarnetwork.node.setup.PluginProvisionStatus;
  * OBR implementation of {@link PluginProvisionStatus}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 
@@ -49,6 +49,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	private List<Plugin> pluginsToRemove = Collections.emptyList();
 	private Set<Plugin> pluginsRemoved = Collections.emptySet();
 	private Boolean backupComplete;
+	private boolean restartRequired;
 
 	/**
 	 * Construct with an ID.
@@ -86,6 +87,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		pluginsToRemove = new ArrayList<Plugin>(other.pluginsToRemove);
 		pluginsRemoved = new HashSet<Plugin>(other.pluginsRemoved);
 		backupComplete = other.backupComplete;
+		restartRequired = other.restartRequired;
 	}
 
 	@Override
@@ -185,12 +187,16 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		if ( overallDownloadSize != null && overallDownloadSize.longValue() > 0
 				&& overallDownloadedSize != null ) {
 			steps++;
-			progress += (float) (overallDownloadedSize.doubleValue() / overallDownloadSize.doubleValue());
+			progress += (float) (overallDownloadedSize.doubleValue()
+					/ overallDownloadSize.doubleValue());
 		}
 		if ( pluginsToInstall != null && pluginsToInstall.size() > 0 && pluginsInstalled != null ) {
-			steps += 2;
+			steps++;
 			progress += (float) ((double) pluginsInstalled.size() / (double) pluginsToInstall.size());
-			progress += (float) ((double) pluginsStarted.size() / (double) pluginsToInstall.size());
+			if ( !restartRequired ) {
+				steps++;
+				progress += (float) ((double) pluginsStarted.size() / (double) pluginsToInstall.size());
+			}
 		}
 		if ( pluginsToRemove != null && pluginsToRemove.size() > 0 && pluginsRemoved != null ) {
 			steps++;
@@ -257,6 +263,23 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 
 	public void setBackupComplete(Boolean backupComplete) {
 		this.backupComplete = backupComplete;
+	}
+
+	@Override
+	public boolean isRestartRequired() {
+		return restartRequired;
+	}
+
+	/**
+	 * Set the restart required flag.
+	 * 
+	 * @param restartRequired
+	 *        {@literal true} if a restart is required after the provision task
+	 *        completes
+	 * @since 1.1
+	 */
+	public void setRestartRequired(boolean restartRequired) {
+		this.restartRequired = restartRequired;
 	}
 
 }

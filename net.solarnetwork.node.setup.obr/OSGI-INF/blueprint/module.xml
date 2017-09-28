@@ -27,11 +27,19 @@
 	<reference id="backupManagerRef" interface="net.solarnetwork.node.backup.BackupManager" availability="optional">
 		<reference-listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference>
+	
+	<reference id="systemServiceRef" interface="net.solarnetwork.node.SystemService" availability="optional">
+		<reference-listener ref="systemService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference>
 		
 	<!-- Supporting Services -->
 	
 	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
 		<property name="service" ref="backupManagerRef"/>
+	</bean>
+
+	<bean id="systemService" class="net.solarnetwork.util.OptionalServiceTracker">
+		<property name="service" ref="systemServiceRef"/>
 	</bean>
 
 	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" 
@@ -42,6 +50,7 @@
 		<property name="repositoryAdmin" ref="repositoryAdmin"/>
 		<property name="repositories" ref="obrRepos"/>
 		<property name="backupManager" ref="backupManager"/>
+		<property name="systemService" ref="systemService"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames" value="net.solarnetwork.node.setup.obr.OBRPluginService"/>

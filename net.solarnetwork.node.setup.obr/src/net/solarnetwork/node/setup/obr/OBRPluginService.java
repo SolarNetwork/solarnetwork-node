@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Version;
+import org.osgi.service.obr.Capability;
 import org.osgi.service.obr.Repository;
 import org.osgi.service.obr.RepositoryAdmin;
 import org.osgi.service.obr.Requirement;
@@ -57,6 +58,7 @@ import org.osgi.service.obr.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -78,54 +80,12 @@ import net.solarnetwork.util.StringUtils;
  * OBR implementation of {@link PluginService}, using the Apache Felix OBR
  * implementation.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>bundleContext</dt>
- * <dd>The OSGi {@link BundleContext} to enable installing/removing
- * plugins.</dd>
- * 
- * <dt>repositoryAdmin</dt>
- * <dd>The {@link RepositoryAdmin} to manage all OBR actions with.</dd>
- * 
- * <dt>repositories</dt>
- * <dd>The collection of {@link OBRRepository} instances managed by SolarNode.
- * For each configured {@link OBRRepository} this service will register an
- * associated {@code org.osgi.service.obr.Repository} instance with the
- * {@code repositoryAdmin} service.</dd>
- * 
- * <dt>restrictingSymbolicNameFilters</dt>
- * <dd>An optional list of filters to include when
- * {@link #availablePlugins(PluginQuery, Locale)} or
- * {@link #installedPlugins(Locale)} are called that restricts the results to
- * those <em>starting with</em> this value. The idea here is to provide a way to
- * focus the results on just a core subset of all plugins so the results are
- * more relevant to users. The filters are <b>or-ed</b> together, so any filter
- * that matches allows the matching bundle to be used.</dd>
- * 
- * <dt>exclusionSymbolicNameFilters</dt>
- * <dd>An optional list of symbolic bundle name <em>substrings</em> to exclude
- * from the results of {@link #availablePlugins(PluginQuery, Locale)}. The idea
- * here is to hide low-level plugins that would automatically be included by
- * user-facing plugins, making the results more relevant to users.</dd>
- * 
- * <dt>backupManager</dt>
- * <dd>An optional {@link BackupManager} service. If configured, then automatic
- * backups will be initiated before any provisioning operation.</dd>
- * </dl>
- * 
- * <dt>provisionTaskStatusMinimumKeepSeconds</dt>
- * <dd>The minimum number of seconds to hold provision tasks in memory after the
- * task has completed, to support the
- * {@link #statusForProvisioningOperation(String, Locale)} method. Defaults to
- * 10 minutes.</dd>
- * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OBRPluginService implements PluginService, SettingSpecifierProvider {
+
+	private static final String FRAGMENT_CAPABILITY = "fragment";
 
 	private static final String PREVIEW_PROVISION_ID = "preview";
 
@@ -147,6 +107,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	private Pattern[] coreFeatureSymbolicNamePatterns = StringUtils
 			.patterns(DEFAULT_CORE_FEATURE_EXPRESSIONS, 0);
 	private OptionalService<BackupManager> backupManager;
+	private OptionalService<SystemService> systemService;
 	private long provisionTaskStatusMinimumKeepSeconds = 60L * 10L; // 10min
 
 	private MessageSource messageSource;
@@ -420,8 +381,10 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		}
 		OBRPluginProvisionStatus status = new OBRPluginProvisionStatus(generateProvisionID());
 		status.setPluginsToRemove(pluginsToRemove);
+		status.setRestartRequired(true);
 		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath),
-				(backupManager != null ? backupManager.service() : null));
+				(backupManager != null ? backupManager.service() : null),
+				(systemService != null ? systemService.service() : null));
 		saveProvisionTask(task);
 
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
@@ -436,7 +399,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	public synchronized PluginProvisionStatus installPlugins(Collection<String> uids, Locale locale) {
 		OBRPluginProvisionStatus status = resolveInstall(uids, locale, generateProvisionID());
 		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath),
-				(backupManager != null ? backupManager.service() : null));
+				(backupManager != null ? backupManager.service() : null),
+				(systemService != null ? systemService.service() : null));
 		saveProvisionTask(task);
 
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);
@@ -541,18 +505,41 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 			}
 			throw new PluginProvisionException(buf.toString());
 		}
+
+		// require a restart if we're upgrading anything, or installing any core feature,
+		// or installing a fragment
+		Set<String> installed = installedBundles().keySet();
+		boolean requireRestart = false;
+
 		Resource[] requiredResources = resolver.getRequiredResources();
-		List<Plugin> toInstall = new ArrayList<Plugin>(resources.length + requiredResources.length);
-		for ( Resource r : resources ) {
-			toInstall.add(new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
-					r.getSymbolicName()) != null)));
-		}
-		for ( Resource r : requiredResources ) {
-			toInstall.add(new OBRResourcePlugin(r, (StringUtils.matches(coreFeatureSymbolicNamePatterns,
-					r.getSymbolicName()) != null)));
+
+		// combine requested resources with required resources
+		Resource[] installResources = new Resource[resources.length + requiredResources.length];
+		System.arraycopy(resources, 0, installResources, 0, resources.length);
+		System.arraycopy(requiredResources, 0, installResources, resources.length,
+				requiredResources.length);
+
+		List<Plugin> toInstall = new ArrayList<Plugin>(installResources.length);
+		for ( Resource r : installResources ) {
+			boolean coreFeature = StringUtils.matches(coreFeatureSymbolicNamePatterns,
+					r.getSymbolicName()) != null;
+			if ( !requireRestart && r.getCapabilities() != null ) {
+				// look for a fragment capability, which will force a restart
+				for ( Capability capibility : r.getCapabilities() ) {
+					if ( FRAGMENT_CAPABILITY.equals(capibility.getName()) ) {
+						requireRestart = true;
+						break;
+					}
+				}
+			}
+			toInstall.add(new OBRResourcePlugin(r, coreFeature));
+			if ( !requireRestart && (coreFeature || installed.contains(r.getSymbolicName())) ) {
+				requireRestart = true;
+			}
 		}
 		OBRPluginProvisionStatus result = new OBRPluginProvisionStatus(provisionID);
 		result.setPluginsToInstall(toInstall);
+		result.setRestartRequired(requireRestart);
 		return result;
 	}
 
@@ -614,10 +601,29 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 
 	// Accessors
 
+	/**
+	 * Set the {@link RepositoryAdmin} to manage all OBR actions with.
+	 * 
+	 * @param repositoryAdmin
+	 *        the admin to use
+	 */
 	public void setRepositoryAdmin(RepositoryAdmin repositoryAdmin) {
 		this.repositoryAdmin = repositoryAdmin;
 	}
 
+	/**
+	 * Set the collection of {@link OBRRepository} instances managed by
+	 * SolarNode.
+	 * 
+	 * <p>
+	 * For each configured {@link OBRRepository} this service will register an
+	 * associated {@code org.osgi.service.obr.Repository} instance with the
+	 * {@code repositoryAdmin} service.
+	 * </p>
+	 * 
+	 * @param repositories
+	 *        the repositories to use
+	 */
 	public void setRepositories(List<OBRRepository> repositories) {
 		this.repositories = repositories;
 	}
@@ -630,16 +636,51 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 				.commaDelimitedStringFromCollection(Arrays.asList(this.restrictingSymbolicNameFilters));
 	}
 
+	/**
+	 * Set an optional comma-delimited list of filters to include when
+	 * {@link #availablePlugins(PluginQuery, Locale)} or
+	 * {@link #installedPlugins(Locale)} are called that restricts the results
+	 * to those <em>starting with</em> this value.
+	 * 
+	 * <p>
+	 * The idea here is to provide a way to focus the results on just a core
+	 * subset of all plugins so the results are more relevant to users. The
+	 * filters are <b>or-ed</b> together, so any filter that matches allows the
+	 * matching bundle to be used.
+	 * </p>
+	 * 
+	 * @param restrictingSymbolicNameFilter
+	 *        the comma-delimited list of filters to use
+	 */
 	public void setRestrictingSymbolicNameFilter(String restrictingSymbolicNameFilter) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(restrictingSymbolicNameFilter);
 		this.restrictingSymbolicNameFilters = (set.size() > 0 ? set.toArray(new String[set.size()])
 				: null);
 	}
 
+	/**
+	 * An optional list of symbolic bundle name <em>substrings</em> to exclude
+	 * from the results of {@link #availablePlugins(PluginQuery, Locale)}.
+	 * 
+	 * <p>
+	 * The idea here is to hide low-level plugins that would automatically be
+	 * included by user-facing plugins, making the results more relevant to
+	 * users.
+	 * </p>
+	 * 
+	 * @param exclusionSymbolicNameFilters
+	 *        the list of filters to use
+	 */
 	public void setExclusionSymbolicNameFilters(String[] exclusionSymbolicNameFilters) {
 		this.exclusionSymbolicNameFilters = exclusionSymbolicNameFilters;
 	}
 
+	/**
+	 * Set the OSGi {@link BundleContext} to enable installing/removing plugins.
+	 * 
+	 * @param bundleContext
+	 *        the context to use
+	 */
 	public void setBundleContext(BundleContext bundleContext) {
 		this.bundleContext = bundleContext;
 	}
@@ -648,10 +689,29 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		this.downloadPath = downloadPath;
 	}
 
+	/**
+	 * set the minimum number of seconds to hold provision tasks in memory after
+	 * the task has completed, to support the
+	 * {@link #statusForProvisioningOperation(String, Locale)} method.
+	 * 
+	 * @param provisionTaskStatusMinimumKeepSeconds
+	 *        the seconds to use; defaults to 10 minutes
+	 */
 	public void setProvisionTaskStatusMinimumKeepSeconds(long provisionTaskStatusMinimumKeepSeconds) {
 		this.provisionTaskStatusMinimumKeepSeconds = provisionTaskStatusMinimumKeepSeconds;
 	}
 
+	/**
+	 * Set an optional {@link BackupManager} service.
+	 * 
+	 * <p>
+	 * If configured, then automatic backups will be initiated before any
+	 * provisioning operation.
+	 * </p>
+	 * 
+	 * @param backupManager
+	 *        the manager to use
+	 */
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
 	}
@@ -692,8 +752,26 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		this.coreFeatureSymbolicNamePatterns = coreFeatureSymbolicNamePatterns;
 	}
 
+	/**
+	 * Set a message source for resolving status messages with.
+	 * 
+	 * @param messageSource
+	 *        the msessage source
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set a system service to use for restarting the platform after
+	 * provisioning tasks that require a restart.
+	 * 
+	 * @param systemService
+	 *        the service to set
+	 * @since 1.1
+	 */
+	public void setSystemService(OptionalService<SystemService> systemService) {
+		this.systemService = systemService;
 	}
 
 }

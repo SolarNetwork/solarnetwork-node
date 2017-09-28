@@ -57,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.setup.BundlePlugin;
@@ -77,6 +78,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	private Future<OBRPluginProvisionStatus> future;
 	private final File directory;
 	private final BackupManager backupManager;
+	private final SystemService systemService;
 
 	/**
 	 * Construct with a status.
@@ -90,14 +92,20 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	 * @param backupManager
 	 *        if provided, then a backup will be performed before provisioning
 	 *        any bundles
+	 * @param systemService
+	 *        if provided and
+	 *        {@link OBRPluginProvisionStatus#isRestartRequired()} is
+	 *        {@literal true} then perform a restart after the provision task
+	 *        completes
 	 */
 	public OBRProvisionTask(BundleContext bundleContext, OBRPluginProvisionStatus status, File directory,
-			BackupManager backupManager) {
+			BackupManager backupManager, SystemService systemService) {
 		super();
 		this.bundleContext = bundleContext;
 		this.status = status;
 		this.directory = directory;
 		this.backupManager = backupManager;
+		this.systemService = systemService;
 		this.status.setBackupComplete(backupManager == null);
 	}
 
@@ -247,8 +255,38 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 				}
 			}
 		}
-		LOG.debug("Install of {} plugins complete", plugins.size());
-		status.setStatusMessage("Install of " + plugins.size() + " plugins complete");
+		if ( status.isRestartRequired() && systemService == null ) {
+			LOG.debug("Install of {} plugins complete; manual restart required", plugins.size());
+			status.setStatusMessage(
+					"Install of " + plugins.size() + " plugins complete; manual restart required");
+		} else if ( status.isRestartRequired() ) {
+			LOG.debug("Install of {} plugins complete; restarting now", plugins.size());
+			status.setStatusMessage(
+					"Install of " + plugins.size() + " plugins complete; restarting now");
+			performRestart();
+		} else {
+			LOG.debug("Install of {} plugins complete", plugins.size());
+			status.setStatusMessage("Install of " + plugins.size() + " plugins complete");
+		}
+	}
+
+	private void performRestart() {
+		if ( systemService == null ) {
+			return;
+		}
+		// restart after a delay, to give time for status query
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(1000);
+				} catch ( InterruptedException e ) {
+					// ignore
+				}
+				systemService.exit(true);
+			}
+		}).start();
 	}
 
 	private boolean isFragment(Bundle b) {
@@ -365,12 +403,15 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 				LOG.debug("Skipping install of plugin {} as version is unchanged at {}",
 						bundleSymbolicName, oldVersion);
 			} else if ( oldVersion != null ) {
-				LOG.debug("Upgrading plugin {} from {} to {}", bundleSymbolicName, oldVersion,
-						resource.getVersion());
 				InputStream in = null;
 				try {
-					in = new BufferedInputStream(new FileInputStream(outputFile));
-					oldBundle.update(in);
+					// only update bundles in runtime if restartRequired flag not set
+					if ( !status.isRestartRequired() ) {
+						LOG.debug("Upgrading plugin {} from {} to {}", bundleSymbolicName, oldVersion,
+								resource.getVersion());
+						in = new BufferedInputStream(new FileInputStream(outputFile));
+						oldBundle.update(in);
+					}
 
 					// try to delete the old version
 					File oldJar = new File(directory, bundleSymbolicName + "-" + oldVersion + ".jar");
@@ -378,10 +419,15 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 						LOG.warn("Error deleting old plugin " + oldJar.getName());
 					}
 
-					installedBundles.add(oldBundle);
-					LOG.info("Upgraded plugin {} from version {} to {}", bundleSymbolicName, oldVersion,
-							resource.getVersion());
-					refreshNeeded = true;
+					if ( status.isRestartRequired() ) {
+						LOG.debug("Upgraded plugin {} {} will be available after restart",
+								bundleSymbolicName, resource.getVersion());
+					} else {
+						installedBundles.add(oldBundle);
+						LOG.info("Upgraded plugin {} from version {} to {}", bundleSymbolicName,
+								oldVersion, resource.getVersion());
+						refreshNeeded = true;
+					}
 				} catch ( BundleException e ) {
 					throw new RuntimeException("Unable to upgrade plugin " + bundleSymbolicName, e);
 				} catch ( FileNotFoundException e ) {
@@ -396,11 +442,16 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 					}
 				}
 			} else {
-				LOG.debug("Installing plugin {} version {}", newBundleURL, resource.getVersion());
-				Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
-				LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
-						newBundle.getVersion());
-				installedBundles.add(newBundle);
+				if ( status.isRestartRequired() ) {
+					LOG.debug("Downloaded plugin {} version {} will be installed after restart",
+							newBundleURL, resource.getVersion());
+				} else {
+					LOG.debug("Installing plugin {} version {}", newBundleURL, resource.getVersion());
+					Bundle newBundle = bundleContext.installBundle(newBundleURL.toString());
+					LOG.info("Installed plugin {} version {}", newBundle.getSymbolicName(),
+							newBundle.getVersion());
+					installedBundles.add(newBundle);
+				}
 			}
 		} catch ( BundleException e ) {
 			throw new RuntimeException("Unable to install plugin " + bundleSymbolicName, e);
@@ -414,6 +465,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		assert plugins != null;
 		LOG.debug("Starting removal of {} plugins", plugins.size());
 
+		final boolean restartRequired = status.isRestartRequired();
 		boolean refreshNeeded = false;
 		for ( Plugin plugin : plugins ) {
 			assert plugin instanceof BundlePlugin;
@@ -423,13 +475,15 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			Bundle oldBundle = bundlePlugin.getBundle();
 			if ( oldBundle != null ) {
 				Version oldVersion = oldBundle.getVersion();
-				LOG.debug("Removing plugin {} version {}", oldBundle.getSymbolicName(), oldVersion);
-				try {
-					oldBundle.uninstall();
-					refreshNeeded = true;
-				} catch ( BundleException e ) {
-					throw new RuntimeException(
-							"Unable to uninstall plugin " + oldBundle.getSymbolicName(), e);
+				if ( !restartRequired ) {
+					LOG.debug("Removing plugin {} version {}", oldBundle.getSymbolicName(), oldVersion);
+					try {
+						oldBundle.uninstall();
+						refreshNeeded = true;
+					} catch ( BundleException e ) {
+						throw new RuntimeException(
+								"Unable to uninstall plugin " + oldBundle.getSymbolicName(), e);
+					}
 				}
 				File oldJar = new File(directory,
 						oldBundle.getSymbolicName() + "-" + oldVersion + ".jar");
@@ -448,6 +502,9 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 			fw.refreshBundles(null);
 		}
 		LOG.debug("Removal of {} plugins complete", plugins.size());
+		if ( restartRequired ) {
+			performRestart();
+		}
 	}
 
 	public OBRPluginProvisionStatus getStatus() {
