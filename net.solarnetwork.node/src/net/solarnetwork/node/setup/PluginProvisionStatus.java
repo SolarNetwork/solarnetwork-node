@@ -29,7 +29,7 @@ import java.util.List;
  * operations, that is, installing or removing plugins.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface PluginProvisionStatus {
 
@@ -88,5 +88,15 @@ public interface PluginProvisionStatus {
 	 * @return a list of plugins to remove, or an empty list if none
 	 */
 	List<Plugin> getPluginsToRemove();
+
+	/**
+	 * Flag indicating a restart will be required after the provision task
+	 * completes.
+	 * 
+	 * @return {@literal true} if a restart is required after the provision task
+	 *         completes
+	 * @since 1.1
+	 */
+	boolean isRestartRequired();
 
 }

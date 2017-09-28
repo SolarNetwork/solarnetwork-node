@@ -37,24 +37,30 @@
 <setup:url value="/a/plugins/install" var="urlPluginInstall"/>
 <form id="plugin-preview-install-modal" class="modal dynamic hide fade" action="${urlPluginInstall}" method="post">
 	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<button type="button" class="close without-restart" data-dismiss="modal">&times;</button>
 		<h3 data-msg-install="${msgInstall}"><fmt:message key="plugin.install.title"/></h3>
 	</div>
 	<div class="modal-body">
-		<p><fmt:message key="plugin.install.intro"/></p>
-		<div id="plugin-preview-install-list"></div>
+		<p class="hide-while-restarting"><fmt:message key="plugin.install.intro"/></p>
+		<div class="hide-while-restarting" id="plugin-preview-install-list"></div>
+		<div class="restart-required hide-while-restarting hide alert">
+			<fmt:message key='plugin.install.restartRequired.warning'/>
+		</div>
+		<div class="restarting hide alert alert-info">
+			<fmt:message key="plugin.install.success"/><span> </span><fmt:message key="restart.underway"/>
+		</div>
 		<div class="progress progress-striped active hide">
 			<div class="bar"></div>
 	    </div>
-	    <div class="message-container"></div>
+	    <div class="message-container hide-while-restarting"></div>
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="uid" value=""/>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn without-restart" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<fmt:message key="plugin.installing.message" var="msgInstalling"/>
 		<fmt:message key="plugin.install.error" var="msgInstallError"/>
 		<fmt:message key="plugin.install.success" var="msgInstallSuccess"/>
-		<button type="submit" class="btn btn-primary ladda-button expand-right"
+		<button type="submit" class="btn btn-primary ladda-button expand-right hide-while-restarting"
 			data-msg-error="${msgInstallError}"
 			data-msg-success="${msgInstallSuccess}"
 			data-loading-text="${msgInstalling}">${msgInstall}</button>
@@ -65,24 +71,30 @@
 <setup:url value="/a/plugins/remove" var="urlPluginRemove"/>
 <form id="plugin-preview-remove-modal" class="modal dynamic hide fade" action="${urlPluginRemove}" method="post">
 	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<button type="button" class="close without-restart" data-dismiss="modal">&times;</button>
 		<h3 data-msg-remove="${msgRemove}"><fmt:message key="plugin.remove.title"/></h3>
 	</div>
 	<div class="modal-body">
-		<p><fmt:message key="plugin.remove.intro"/></p>
-		<div id="plugin-preview-remove-list"></div>
+		<p class="hide-while-restarting"><fmt:message key="plugin.remove.intro"/></p>
+		<div class="hide-while-restarting" id="plugin-preview-remove-list"></div>
+		<div class="restart-required hide-while-restarting hide alert">
+			<fmt:message key='plugin.install.restartRequired.warning'/>
+		</div>
+		<div class="restarting hide alert alert-info">
+			<fmt:message key="plugin.remove.success"/><span> </span><fmt:message key="restart.underway"/>
+		</div>
 		<div class="progress progress-striped active hide">
 			<div class="bar"></div>
 	    </div>
-	    <div class="message-container"></div>
+	    <div class="message-container hide-while-restarting"></div>
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="uid" value=""/>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn without-restart" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<fmt:message key="plugin.removing.message" var="msgRemoving"/>
 		<fmt:message key="plugin.remove.error" var="msgRemoveError"/>
 		<fmt:message key="plugin.remove.success" var="msgRemoveSuccess"/>
-		<button type="submit" class="btn btn-danger ladda-button expand-right"
+		<button type="submit" class="btn btn-danger ladda-button expand-right hide-while-restarting"
 			data-msg-error="${msgRemoveError}"
 			data-msg-success="${msgRemoveSuccess}"
 			data-loading-text="${msgRemoving}">${msgRemove}</button>

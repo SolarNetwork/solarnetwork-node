@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.hc;
 
 import java.util.Arrays;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 
@@ -30,7 +32,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EM5600Data {
 
@@ -97,6 +99,7 @@ public class EM5600Data {
 	private int energyFactor;
 	private UnitFactor unitFactor = UnitFactor.EM5610;
 	private long dataTimestamp = 0;
+	private boolean backwards;
 
 	/**
 	 * Default constructor.
@@ -106,6 +109,18 @@ public class EM5600Data {
 		setEnergyUnit(0);
 		inputRegisters = new int[ADDR_INPUT_REG_END - ADDR_INPUT_REG_START + 1];
 		Arrays.fill(inputRegisters, 0);
+		this.backwards = false;
+	}
+
+	/**
+	 * Default constructor.
+	 */
+	public EM5600Data(boolean backwards) {
+		super();
+		setEnergyUnit(0);
+		inputRegisters = new int[ADDR_INPUT_REG_END - ADDR_INPUT_REG_START + 1];
+		Arrays.fill(inputRegisters, 0);
+		this.backwards = backwards;
 	}
 
 	/**
@@ -123,18 +138,19 @@ public class EM5600Data {
 		energyFactor = other.energyFactor;
 		unitFactor = other.unitFactor;
 		dataTimestamp = other.dataTimestamp;
+		backwards = other.backwards;
 	}
 
 	@Override
 	public String toString() {
-		return "EM5600Data{U=" + unitFactor + ",PTR=" + ptRatio + ",CTR=" + ctRatio + ",EU="
-				+ energyUnit + ",EF=" + energyFactor + ",V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL)
-				+ ",V2=" + getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3="
-				+ getVoltage(ADDR_DATA_V_L3_NEUTRAL) + ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2="
-				+ getCurrent(ADDR_DATA_I2) + ",A3=" + getCurrent(ADDR_DATA_I3) + ",PF="
-				+ getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL) + ",Hz="
-				+ getFrequency(ADDR_DATA_FREQUENCY) + ",W=" + getPower(ADDR_DATA_ACTIVE_POWER_TOTAL)
-				+ ",var=" + getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
+		return "EM5600Data{U=" + unitFactor + ",PTR=" + ptRatio + ",CTR=" + ctRatio + ",EU=" + energyUnit
+				+ ",EF=" + energyFactor + ",V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL) + ",V2="
+				+ getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3=" + getVoltage(ADDR_DATA_V_L3_NEUTRAL)
+				+ ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2=" + getCurrent(ADDR_DATA_I2) + ",A3="
+				+ getCurrent(ADDR_DATA_I3) + ",PF=" + getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL)
+				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
+				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
+				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
 				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
 				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT) + ",varh-I="
 				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT) + ",Wh-E="
@@ -178,8 +194,8 @@ public class EM5600Data {
 		}
 		setCurrentVoltagePower(data);
 
-		data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, (ADDR_DATA_ENERGY_UNIT
-				- ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1));
+		data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
+				(ADDR_DATA_ENERGY_UNIT - ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1));
 		setEnergy(data);
 		dataTimestamp = System.currentTimeMillis();
 	}
@@ -419,8 +435,8 @@ public class EM5600Data {
 	 * Get a string of data values, useful for debugging. The generated string
 	 * will contain a register address followed by two register values per line,
 	 * printed as hexidecimal integers, with a prefix and suffix line. The
-	 * register addresses will be printed as {@bold 1-based} values, to
-	 * match Schneider's documentation. For example:
+	 * register addresses will be printed as {@bold 1-based} values, to match
+	 * Schneider's documentation. For example:
 	 * 
 	 * <pre>
 	 * EM5600Data{
@@ -457,4 +473,116 @@ public class EM5600Data {
 		return buf.toString();
 	}
 
+	/**
+	 * Populate measurements into a {@link GeneralNodeACEnergyDatum} instance.
+	 * 
+	 * @param phase
+	 *        the phase to populate data for
+	 * @param datum
+	 *        the datum to populate data into
+	 * @since 1.2
+	 */
+	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
+		switch (phase) {
+			case Total:
+				populateTotalMeasurements(this, datum);
+				break;
+
+			case PhaseA:
+				populatePhaseAMeasurements(this, datum);
+				break;
+
+			case PhaseB:
+				populatePhaseBMeasurements(this, datum);
+				break;
+
+			case PhaseC:
+				populatePhaseCMeasurements(this, datum);
+				break;
+		}
+	}
+
+	private static void populateTotalMeasurements(final EM5600Data sample,
+			final GeneralNodeACEnergyDatum datum) {
+		final boolean backwards = sample.isBackwards();
+
+		datum.setEffectivePowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
+		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
+
+		Long whImport = sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT);
+		Long whExport = sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT);
+
+		if ( backwards ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
+
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L_L_AVERAGE));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_TOTAL));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE));
+		datum.setWatts((backwards ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
+	}
+
+	private static void populatePhaseAMeasurements(final EM5600Data sample,
+			final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P1));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I1));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L1_L2));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P1));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P1));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
+		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
+	}
+
+	private static void populatePhaseBMeasurements(final EM5600Data sample,
+			final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P2));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I2));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L2_L3));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P2));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P2));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L2_NEUTRAL));
+		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
+	}
+
+	private static void populatePhaseCMeasurements(final EM5600Data sample,
+			final GeneralNodeACEnergyDatum datum) {
+		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P3));
+		datum.setCurrent(sample.getCurrent(ADDR_DATA_I3));
+		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L3_L1));
+		datum.setReactivePower(sample.getPower(ADDR_DATA_REACTIVE_POWER_P3));
+		datum.setRealPower(sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
+		datum.setPowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_P3));
+		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L3_NEUTRAL));
+		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
+	}
+
+	/**
+	 * Toggle the backwards flag.
+	 * 
+	 * @param backwards
+	 *        {@literal true} to set into "installed backwards" mode
+	 */
+	public void setBackwards(boolean backwards) {
+		this.backwards = backwards;
+	}
+
+	/**
+	 * Get the backwards flag.
+	 * 
+	 * @return backwards flag
+	 * @since 1.2
+	 */
+	public boolean isBackwards() {
+		return backwards;
+	}
 }

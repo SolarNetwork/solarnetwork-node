@@ -12,7 +12,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.51,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.hc" rev="[2.2,3.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.hc" rev="[2.4,3.0)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.2.6.RELEASE"/>
 	</dependencies>

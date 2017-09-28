@@ -294,6 +294,7 @@ SolarNode.Plugins.renderInstallPreview = function(data) {
 				+'</b> <span class="label">' +version +'</span>').appendTo(list);
 	}
 	container.append(list);
+	form.find('.restart-required').toggleClass('hide', !data.data.restartRequired);
 	installBtn.removeAttr('disabled');
 };
 
@@ -328,6 +329,7 @@ SolarNode.Plugins.previewRemove = function(plugin) {
 	var title = form.find('h3');
 	title.text(title.data('msg-remove') +' ' +plugin.info.name);
 	form.find('input[name=uid]').val(plugin.uid);
+	form.find('.restart-required').toggleClass('hide', false);
 	form.modal('show');
 	var list = $('<ul/>');
 	var	version = SolarNode.Plugins.versionLabel(plugin);
@@ -387,36 +389,61 @@ SolarNode.Plugins.handleInstall = function(form) {
 			var progress = Math.round(json.data.overallProgress * 100);
 			var pollURL = SolarNode.context.path('/a/plugins/provisionStatus') +'?id=' 
 					+encodeURIComponent(json.data.provisionID) +'&p=';
+			var restartRequired = json.data.restartRequired;
+			
+			if ( restartRequired ) {
+				form.find('.without-restart').addClass('hide');
+			}
+			
+			function handleRestart() {
+				SolarNode.hideLoading(installBtn);
+    				progressFill.css('width', '100%');
+				form.find('.restarting').removeClass('hide');
+				form.find('.hide-while-restarting').addClass('hide');
+				setTimeout(function() {
+					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+				}, 10000);
+			}
+			
 			(function poll() {
 			    $.ajax({ 
-			    	url: (pollURL + progress),
-			    	dataType: "json",
-			    	success: function(json) {
-			    		if ( json.success === true && json.data !== undefined ) {
-			    			progress = Math.round(json.data.overallProgress * 100);
-			    			progressFill.css('width', progress +'%');
-			    		} else {
-			    			if ( json.message !== undefined ) {
-			    				showAlert(json.message);
-			    			}
-			    			keepPollingForStatus = false;
-			    		}
-			    	}, 
-			    	complete: function(xhr, status) {
-			    		if ( status === 'error' ) {
-			    			showAlert(xhr.statusText);
-			    		} else if ( !(progress < 100) ) {
+				    	url: (pollURL + progress),
+				    	dataType: "json",
+				    	success: function(json) {
+				    		if ( json.success === true && json.data !== undefined ) {
+				    			progress = Math.round(json.data.overallProgress * 100);
+				    			progressFill.css('width', progress +'%');
+				    		} else {
+				    			if ( json.message !== undefined ) {
+				    				showAlert(json.message);
+				    			}
+				    			keepPollingForStatus = false;
+				    		}
+				    	}, 
+				    	complete: function(xhr, status) {
+				    		if ( status === 'error' ) {
+				    			if ( handleRestart ) {
+				    				// lets assume we're restarting
+				    				handleRestart();
+				    			} else {
+				    				showAlert(xhr.statusText);
+				    			}
+				    		} else if ( !(progress < 100) ) {
 							SolarNode.hideLoading(installBtn);
-			    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
-			    			progressBar.addClass('hide');
-			    			installBtn.addClass('hide');
-			    			errorContainer.removeClass('hide');
-			    			refreshPluginListOnModalClose = true;
-			    		} else if ( keepPollingForStatus ) {
-			    			poll();
-			    		}
-			    	}, 
-			    	timeout: 20000,
+				    			installBtn.addClass('hide');
+				    			if ( restartRequired ) {
+				    				handleRestart();
+				    			} else {
+					    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
+					    			errorContainer.removeClass('hide');
+				    				progressBar.addClass('hide');
+					    			refreshPluginListOnModalClose = true;
+				    			}
+				    		} else if ( keepPollingForStatus ) {
+				    			poll();
+				    		}
+				    	}, 
+				    	timeout: 20000,
 			    });
 			})();
 		},
