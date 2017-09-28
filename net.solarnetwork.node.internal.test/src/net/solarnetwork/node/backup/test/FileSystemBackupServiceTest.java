@@ -25,6 +25,7 @@ package net.solarnetwork.node.backup.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -62,6 +64,7 @@ public class FileSystemBackupServiceTest {
 
 	private static final Long TEST_NODE_ID = 12345L;
 
+	private Long identityNodeId = TEST_NODE_ID;
 	private FileSystemBackupService service;
 
 	@Before
@@ -73,7 +76,7 @@ public class FileSystemBackupServiceTest {
 
 			@Override
 			public Long getNodeId() {
-				return TEST_NODE_ID;
+				return identityNodeId;
 			}
 
 			@Override
@@ -230,5 +233,31 @@ public class FileSystemBackupServiceTest {
 			backupResources.close();
 		}
 		assertEquals("Should have 2 backup resources", 2, count);
+	}
+
+	@Test
+	public void availableBackupsNoIdentityOrderedByDateDescending() throws IOException {
+		// change the node ID to null (not associated yet, i.e. simulate a restore)
+		// see NODE-123
+		identityNodeId = null;
+
+		File backupFromOtherNode = new File(service.getBackupDir(),
+				"node-" + TEST_NODE_ID + "-backup-20170101T000000.zip");
+		backupFromOtherNode.createNewFile();
+		backupFromOtherNode.deleteOnExit();
+
+		File backupFromThisNode = new File(service.getBackupDir(), "node-0-backup-20070101T000000.zip");
+		backupFromThisNode.createNewFile();
+		backupFromThisNode.deleteOnExit();
+
+		File backupFromThisNode2 = new File(service.getBackupDir(), "node-0-backup-20070101T010000.zip");
+		backupFromThisNode2.createNewFile();
+		backupFromThisNode2.deleteOnExit();
+
+		List<Backup> result = new ArrayList<Backup>(service.getAvailableBackups());
+
+		assertThat(result, Matchers.hasSize(2));
+		assertThat(result.get(0).getKey(), Matchers.equalTo("20070101T010000"));
+		assertThat(result.get(1).getKey(), Matchers.equalTo("20070101T000000"));
 	}
 }
