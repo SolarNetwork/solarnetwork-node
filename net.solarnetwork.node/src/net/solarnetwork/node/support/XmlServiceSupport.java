@@ -56,17 +56,11 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.w3c.dom.Document;
@@ -74,48 +68,32 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * An abstract class to support services that use XML.
  * 
  * <p>
- * The configurable properties of this class are:
+ * This class provides similar support as {@link DatumDataSourceSupport}, but
+ * with additional HTTP client and XML support.
  * </p>
  * 
- * <dl class="class-properties">
- * <dt>docBuilderFactory</dt>
- * <dd>A JAXP {@link DocumentBuilderFactory} to use. If not configured, the
- * {@link DocumentBuilderFactory#newInstance()} method will be used to create a
- * default one.</p>
- * 
- * <dt>transformerFactory</dt>
- * <dd>A JAXP {@link TransformerFactory} for handling XSLT transformations with.
- * If not configured, the {@link TransformerFactory#newInstance()} method will
- * be used to create a default one.</p>
- * 
- * <dt>xpathFactory</dt>
- * <dd>A JAXP {@link XPathFactory} for handling XPath operations with. If not
- * configured the {@link XPathFactory#newInstance()} method will be used to
- * create a default one.</dd>
- * 
- * <dt>nsContext</dt>
- * <dd>An optional {@link NamespaceContext} to use for proper XML namespace
- * handling in some contexts, such as XPath.</dd>
- * 
- * <dt>identityService</dt>
- * <dd>The {@link IdentityService} for identifying node details.</dd>
- * 
- * <dt>eventAdmin</dt>
- * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
- * 
- * <dt>datumMetadataService</dt>
- * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
- * </dl>
- * 
- * @author matt.magoffin
- * @version 1.4
+ * @author matt
+ * @version 1.5
  */
 public abstract class XmlServiceSupport extends HttpClientSupport {
+
+	/**
+	 * A global cache of source-based metadata, so only changes to metadata need
+	 * be posted.
+	 */
+	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
+			4);
 
 	/** Special attribute key for a node ID value. */
 	public static final String ATTR_NODE_ID = "node-id";
@@ -124,11 +102,10 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	private DocumentBuilderFactory docBuilderFactory = null;
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
+
+	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 	private OptionalService<DatumMetadataService> datumMetadataService;
-
-	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
 
 	/**
 	 * Initialize this class after properties are set.
@@ -707,8 +684,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the mapping of JavaBean property names to XPaths
 	 * @see #webFormGet(BeanWrapper, String, Map)
 	 */
-	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url,
-			Map<String, ?> attributes, Map<String, XPathExpression> xpathMap) {
+	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url, Map<String, ?> attributes,
+			Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormGet(bean, url, attributes);
 		Document doc;
 		try {
@@ -774,7 +751,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 
 	/**
 	 * Add source metadata using the configured {@link DatumMetadataService} (if
-	 * available). The metadata will be cached so that subseqent calls to this
+	 * available). The metadata will be cached so that subsequent calls to this
 	 * method with the same metadata value will not try to re-save the unchanged
 	 * value. This method will catch all exceptions and silently discard them.
 	 * 
@@ -790,7 +767,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		if ( sourceId == null ) {
 			return false;
 		}
-		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
+		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(sourceId);
 		if ( cached != null && meta.equals(cached) ) {
 			// we've already posted this metadata... don't bother doing it again
 			log.debug("Source {} metadata already added, not posting again", sourceId);
@@ -805,7 +782,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		}
 		try {
 			service.addSourceMetadata(sourceId, meta);
-			sourceMetadataCache.put(sourceId, meta);
+			SOURCE_METADATA_CACHE.put(sourceId, meta);
 			return true;
 		} catch ( Exception e ) {
 			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
@@ -826,16 +803,13 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * @param eventDatumType
 	 *        the Datum class to use for the
 	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @since 2.1
+	 * @since 1.4
+	 * @deprecated use {@link #postDatumCapturedEvent(Datum)}
 	 */
+	@Deprecated
 	protected final void postDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
-		ea.postEvent(event);
+		postDatumCapturedEvent(datum);
 	}
 
 	/**
@@ -853,24 +827,103 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the Datum class to use for the
 	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @return the new Event instance
-	 * @since 2.1
+	 * @since 1.4
+	 * @deprecated use {@link #createDatumCapturedEvent(Datum)}
 	 */
+	@Deprecated
 	protected Event createDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		return createDatumCapturedEvent(datum);
+	}
+
+	/**
+	 * Post an {@link Event}.
+	 * 
+	 * <p>
+	 * This method only works if a {@link EventAdmin} has been configured via
+	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
+	 * ignored.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event to post
+	 * @since 1.5
+	 */
+	protected final void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
+	}
+
+	/**
+	 * Post an {@link Event} for the
+	 * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic.
+	 * 
+	 * @param datum
+	 *        the datum that was stored
+	 * @since 1.5
+	 */
+	protected final void postDatumCapturedEvent(Datum datum) {
+		if ( datum == null ) {
+			return;
+		}
+		Event event = createDatumCapturedEvent(datum);
+		postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
+	 * {@link Event} object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
+	 * properties.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @return the new Event instance
+	 * @since 1.5
+	 */
+	protected Event createDatumCapturedEvent(Datum datum) {
+		Map<String, ?> props = datum.asSimpleMap();
 		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
+	/**
+	 * Get the configured namespace context.
+	 * 
+	 * @return the context
+	 */
 	public NamespaceContext getNsContext() {
 		return nsContext;
 	}
 
+	/**
+	 * Set an optional {@link NamespaceContext} to use for proper XML namespace
+	 * handling in some contexts, such as XPath.
+	 * 
+	 * @param nsContext
+	 *        the context to use
+	 */
 	public void setNsContext(NamespaceContext nsContext) {
 		this.nsContext = nsContext;
 	}
 
+	/**
+	 * Get the DOM factory.
+	 * 
+	 * <p>
+	 * If an explicit one has not been configured via
+	 * {@link #setDocBuilderFactory(DocumentBuilderFactory)} then a default one
+	 * will be instantiated and cached when this method is called.
+	 * </p>
+	 * 
+	 * @return the DOM factory
+	 */
 	public DocumentBuilderFactory getDocBuilderFactory() {
 		DocumentBuilderFactory f = docBuilderFactory;
 		if ( f == null ) {
@@ -881,10 +934,27 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		return f;
 	}
 
+	/**
+	 * Set a JAXP {@link DocumentBuilderFactory} to use.
+	 * 
+	 * @param docBuilderFactory
+	 *        the DOM factory to use
+	 */
 	public void setDocBuilderFactory(DocumentBuilderFactory docBuilderFactory) {
 		this.docBuilderFactory = docBuilderFactory;
 	}
 
+	/**
+	 * Get the XPath factory.
+	 * 
+	 * <p>
+	 * If not explicit factory has been configured via
+	 * {@link #setXpathFactory(XPathFactory)} then a default one will be
+	 * instantiated and cached when this method is called.
+	 * </p>
+	 * 
+	 * @return the factory
+	 */
 	public XPathFactory getXpathFactory() {
 		XPathFactory f = xpathFactory;
 		if ( f == null ) {
@@ -907,10 +977,27 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		return f;
 	}
 
+	/**
+	 * Set a JAXP {@link XPathFactory} for handling XPath operations with.
+	 * 
+	 * @param xpathFactory
+	 *        the factory to use
+	 */
 	public void setXpathFactory(XPathFactory xpathFactory) {
 		this.xpathFactory = xpathFactory;
 	}
 
+	/**
+	 * Get the XSLT factory to use.
+	 * 
+	 * <p>
+	 * If an expliciy one has not been configured via
+	 * {@link #setTransformerFactory(TransformerFactory)} then a default one
+	 * will be created and cached when this method is called.
+	 * </p>
+	 * 
+	 * @return the XSLT factory
+	 */
 	public TransformerFactory getTransformerFactory() {
 		TransformerFactory f = transformerFactory;
 		if ( f == null ) {
@@ -920,22 +1007,72 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		return f;
 	}
 
+	/**
+	 * Set a JAXP {@link TransformerFactory} for handling XSLT transformations
+	 * with.
+	 * 
+	 * @param transformerFactory
+	 *        the factory
+	 */
 	public void setTransformerFactory(TransformerFactory transformerFactory) {
 		this.transformerFactory = transformerFactory;
 	}
 
+	/**
+	 * Get the {@link EventAdmin} service.
+	 * 
+	 * @return the EventAdmin service
+	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
+	/**
+	 * Set an {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        the EventAdmin to use
+	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
 
+	/**
+	 * Get the configured {@link MessageSource}.
+	 * 
+	 * @return the message source, or {@literal null}
+	 * @since 1.5
+	 */
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set a {@link MessageSource} to use for resolving localized messages.
+	 * 
+	 * @param messageSource
+	 *        the message source to use
+	 * @since 1.5
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get the configured {@link DatumMetadataService}.
+	 * 
+	 * @return the service to use
+	 */
 	public OptionalService<DatumMetadataService> getDatumMetadataService() {
 		return datumMetadataService;
 	}
 
+	/**
+	 * Set a {@link DatumMetadataService} to use for managing datum metadata.
+	 * 
+	 * @param datumMetadataService
+	 *        the service to use
+	 */
 	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
 	}

@@ -40,13 +40,15 @@ import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
 
 /**
- * A service to inspect avaialble tables and perform a Derby in-place compress
+ * A service to inspect available tables and perform a Derby in-place compress
  * on them to free up disk space.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @see DerbyFullCompressTablesService for a more agressive alternative to this
+ *      service
  */
-public class DerbyCompressTablesService {
+public class DerbyCompressTablesService implements TablesMaintenanceService {
 
 	private static final String COMPRESS_CALL = "CALL SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE(?, ?, ?, ?, ?)";
 
@@ -76,6 +78,7 @@ public class DerbyCompressTablesService {
 	 * @return A {@code key} for the last table processed, or {@code null} if
 	 *         all tables were processed.
 	 */
+	@Override
 	public String processTables(final String startAfterKey) {
 		return jdbcOperations.execute(new ConnectionCallback<String>() {
 

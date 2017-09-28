@@ -32,51 +32,26 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Mock;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import java.util.Map;
+import org.osgi.service.event.Event;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
+import net.solarnetwork.node.Mock;
+import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 
 /**
  * Abstract DAO implementation with support for DAOs that need to manage
  * "upload" tasks.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>sqlDeleteOld</dt>
- * <dd>SQL statement for deleting "old" datum rows that have already been
- * "uploaded" to a central server, thus freeing up space in the local node's
- * database. See the {@link #deleteUploadedDataOlderThanHours(int)} for
- * info.</p>
- * 
- * <dt>maxFetchForUpload</dt>
- * <dd>The maximum number of rows to return in the
- * {@link #findDatumNotUploaded(String, RowMapper)} method. Defaults to
- * {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.</dd>
- * 
- * <dt>sqlInsertDatum</dt>
- * <dd>The SQL to use for inserting a new datum. This is used by the
- * {@link #storeDatum(Datum)} method.</dd>
- * 
- * <dt>ignoreMockData</dt>
- * <dd>If <em>true</em> then do not actually store any domain object that
- * implements the {@link Mock} interface. This defaults to <em>true</em>, but
- * during development it can be useful to configure this as <em>false</em> for
- * testing.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @param <T>
  *        the domain object type managed by this DAO
  */
-public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbcDao<T> implements
-		DatumDao<T> {
+public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbcDao<T>
+		implements DatumDao<T> {
 
 	/** The default value for the {@code maxFetchForUpload} property. */
 	public static final int DEFAULT_MAX_FETCH_FOR_UPLOAD = 60;
@@ -251,6 +226,21 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
+		postDatumStoredEvent(datum);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @since 1.3
+	 */
+	@Override
+	protected int updateDomainObject(T datum, String sqlUpdate) {
+		int result = super.updateDomainObject(datum, sqlUpdate);
+		if ( result > 0 ) {
+			postDatumStoredEvent(datum);
+		}
+		return result;
 	}
 
 	/**
@@ -259,7 +249,10 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * <p>
 	 * This method will call {@link #updateDatumUpload(long, Object, long)}
 	 * passing in {@link T#getCreated()}, {@link T#getSourceId()}, and
-	 * {@code timestamp}.
+	 * {@code timestamp}. As long as
+	 * {@link #updateDatumUpload(long, Object, long)} returns a value greater
+	 * than {@literal 0} then {@link #postDatumUploadedEvent(Datum)} will be
+	 * called.
 	 * </p>
 	 * 
 	 * @param datum
@@ -291,9 +284,10 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        the object's source or location ID
 	 * @param timestamp
 	 *        the date the upload happened
+	 * @return the number of updated rows
 	 */
-	protected void updateDatumUpload(final long created, final Object id, final long timestamp) {
-		getJdbcTemplate().update(new PreparedStatementCreator() {
+	protected int updateDatumUpload(final long created, final Object id, final long timestamp) {
+		return getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -308,18 +302,84 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 		});
 	}
 
+	/**
+	 * Post an {@link Event} for the {@link DatumDao#EVENT_TOPIC_DATUM_STORED}
+	 * topic.
+	 * 
+	 * @param datum
+	 *        the datum that was stored
+	 * @since 1.3
+	 */
+	protected final void postDatumStoredEvent(T datum) {
+		Event event = createDatumStoredEvent(datum);
+		postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDao#EVENT_TOPIC_DATUM_STORED} {@link Event}
+	 * object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
+	 * properties.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @return the new Event instance
+	 * @since 1.3
+	 */
+	protected Event createDatumStoredEvent(final T datum) {
+		Map<String, ?> props = datum.asSimpleMap();
+		log.debug("Created {} event with props {}", EVENT_TOPIC_DATUM_STORED, props);
+		return new Event(EVENT_TOPIC_DATUM_STORED, props);
+	}
+
+	/**
+	 * Get the maximum number of datum to fetch for upload at one time.
+	 * 
+	 * @return the maximum number of datum rows to fetch
+	 */
 	public int getMaxFetchForUpload() {
 		return maxFetchForUpload;
 	}
 
+	/**
+	 * The maximum number of rows to return in the
+	 * {@link #findDatumNotUploaded(String, RowMapper)} method.
+	 * 
+	 * <p>
+	 * Defaults to {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.
+	 * </p>
+	 * 
+	 * @param maxFetchForUpload
+	 *        the maximum upload value
+	 */
 	public void setMaxFetchForUpload(int maxFetchForUpload) {
 		this.maxFetchForUpload = maxFetchForUpload;
 	}
 
+	/**
+	 * Get the flag to ignore mock data.
+	 * 
+	 * @return <em>true</em> to not store any mock data
+	 */
 	public boolean isIgnoreMockData() {
 		return ignoreMockData;
 	}
 
+	/**
+	 * Set a flag to not actually store any domain object that implements the
+	 * {@link Mock} interface.
+	 * 
+	 * <p>
+	 * This defaults to <em>true</em>, but during development it can be useful
+	 * to configure this as <em>false</em> for testing.
+	 * </p>
+	 * 
+	 * @param ignoreMockData
+	 *        the ignore mock data value
+	 */
 	public void setIgnoreMockData(boolean ignoreMockData) {
 		this.ignoreMockData = ignoreMockData;
 	}

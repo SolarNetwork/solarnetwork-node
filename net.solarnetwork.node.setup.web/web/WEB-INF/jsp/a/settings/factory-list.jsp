@@ -4,6 +4,12 @@
 			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</h2>
+	<c:set var="serviceDescription">
+		<setup:message key="desc" messageSource="${factory.messageSource}" text=""/>
+	</c:set>
+	<c:if test="${fn:length(serviceDescription) > 0}">
+		<p class="lead">${serviceDescription}</p>
+	</c:if>
 	<p>
 		<fmt:message key="settings.factory.intro">
 			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>

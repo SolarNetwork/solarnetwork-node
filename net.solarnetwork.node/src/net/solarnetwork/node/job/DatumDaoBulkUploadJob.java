@@ -107,21 +107,23 @@ public class DatumDaoBulkUploadJob extends AbstractJob {
 		try {
 			int count = 0;
 			List<BulkUploadResult> results = uploadService.uploadBulkDatum(uploadList);
-			for ( BulkUploadResult result : results ) {
-				String tid = result.getId();
-				if ( log.isTraceEnabled() ) {
-					log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]",
-							new Object[] { result.getDatum().getClass().getSimpleName(),
-									(result.getDatum().getCreated() == null ? null
-											: result.getDatum().getCreated().getTime()),
-									result.getDatum().getSourceId(), tid });
-				}
+			if ( results != null ) {
+				for ( BulkUploadResult result : results ) {
+					String tid = result.getId();
+					if ( log.isTraceEnabled() ) {
+						log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]",
+								new Object[] { result.getDatum().getClass().getSimpleName(),
+										(result.getDatum().getCreated() == null ? null
+												: result.getDatum().getCreated().getTime()),
+										result.getDatum().getSourceId(), tid });
+					}
 
-				if ( tid != null ) {
-					DatumDao<Datum> datumDao = daoMapping.get(result.getDatum().getClass());
-					datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(),
-							tid);
-					count++;
+					if ( tid != null ) {
+						DatumDao<Datum> datumDao = daoMapping.get(result.getDatum().getClass());
+						datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(),
+								tid);
+						count++;
+					}
 				}
 			}
 			if ( log.isInfoEnabled() ) {

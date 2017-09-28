@@ -25,18 +25,21 @@
 package net.solarnetwork.node.dao.jdbc;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.solarnetwork.node.dao.BasicBatchResult;
-import net.solarnetwork.node.dao.BatchableDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.node.dao.BasicBatchResult;
+import net.solarnetwork.node.dao.BatchableDao;
 
 /**
  * Base class for {@link BatchableDao} implementations.
@@ -44,11 +47,19 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 1.1
+ * @version 1.4
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
 	private TransactionTemplate transactionTemplate;
+	private String sqlForUpdateSuffix = " FOR UPDATE";
+
+	/**
+	 * A class-level logger.
+	 *
+	 * @since 1.3
+	 */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Get the SQL statement to use for batch processing.
@@ -94,8 +105,8 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 */
-	protected abstract void updateBatchRowEntity(BatchOptions options, ResultSet resultSet,
-			int rowCount, T entity) throws SQLException;
+	protected abstract void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
+			T entity) throws SQLException;
 
 	@Override
 	public BatchResult batchProcess(final BatchCallback<T> callback, final BatchOptions options) {
@@ -113,7 +124,8 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 		}
 	}
 
-	private BatchResult batchProcessInternal(final BatchCallback<T> callback, final BatchOptions options) {
+	private BatchResult batchProcessInternal(final BatchCallback<T> callback,
+			final BatchOptions options) {
 		final String querySql = getBatchJdbcStatement(options);
 		final AtomicInteger rowCount = new AtomicInteger(0);
 		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
@@ -123,12 +135,16 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 					throws SQLException, DataAccessException {
 				PreparedStatement queryStmt = null;
 				ResultSet queryResult = null;
+				DatabaseMetaData meta = con.getMetaData();
+				int scrollType = (options.isUpdatable()
+						? (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
+								? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE)
+						: ResultSet.TYPE_FORWARD_ONLY);
+				int concurType = (options.isUpdatable() ? ResultSet.CONCUR_UPDATABLE
+						: ResultSet.CONCUR_READ_ONLY);
 				try {
-					queryStmt = con.prepareStatement(querySql,
-							(options.isUpdatable() ? ResultSet.TYPE_SCROLL_SENSITIVE
-									: ResultSet.TYPE_FORWARD_ONLY),
-							(options.isUpdatable() ? ResultSet.CONCUR_UPDATABLE
-									: ResultSet.CONCUR_READ_ONLY), ResultSet.CLOSE_CURSORS_AT_COMMIT);
+					queryStmt = con.prepareStatement(querySql, scrollType, concurType,
+							ResultSet.CLOSE_CURSORS_AT_COMMIT);
 					queryResult = queryStmt.executeQuery();
 					while ( queryResult.next() ) {
 						T entity = getBatchRowEntity(options, queryResult, rowCount.incrementAndGet());
@@ -172,6 +188,34 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * @return the SQL suffix, or {@literal null} if not desired
+	 * @since 1.4
+	 */
+	public String getSqlForUpdateSuffix() {
+		return sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * <p>
+	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
+	 * included at the beginning. Set to {@literal null} to disable.
+	 * </p>
+	 * 
+	 * @param sqlForUpdateSuffix
+	 *        the suffix to set
+	 * @since 1.4
+	 */
+	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
+		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
 	}
 
 }

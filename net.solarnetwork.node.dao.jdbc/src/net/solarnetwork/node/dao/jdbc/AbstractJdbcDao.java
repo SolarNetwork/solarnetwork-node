@@ -35,6 +35,8 @@ import java.sql.Statement;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -50,6 +52,7 @@ import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Base class for JDBC based DAO implementations.
@@ -62,7 +65,7 @@ import org.springframework.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.5
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -79,6 +82,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	private String schemaName = SCHEMA_NAME;
 	private String tableName = TABLE_SETTINGS;
 	private MessageSource messageSource = null;
+	private String sqlForUpdateSuffix = " FOR UPDATE";
+	private OptionalService<EventAdmin> eventAdmin;
 
 	private final Map<String, String> sqlResourceCache = new HashMap<String, String>(10);
 
@@ -255,8 +260,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 		}, new PreparedStatementCallback<Object>() {
 
 			@Override
-			public Object doInPreparedStatement(PreparedStatement ps) throws SQLException,
-					DataAccessException {
+			public Object doInPreparedStatement(PreparedStatement ps)
+					throws SQLException, DataAccessException {
 				ps.execute();
 				int count = ps.getUpdateCount();
 				if ( count == 1 && ps.getMoreResults() ) {
@@ -290,7 +295,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @param initSql
 	 *        the init SQL resource
 	 */
-	protected void verifyDatabaseExists(final String schema, final String table, final Resource initSql) {
+	protected void verifyDatabaseExists(final String schema, final String table,
+			final Resource initSql) {
 		getJdbcTemplate().execute(new ConnectionCallback<Object>() {
 
 			@Override
@@ -307,6 +313,44 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 				return null;
 			}
 		});
+	}
+
+	/**
+	 * Test if a schema exists in the database.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param aSchemaName
+	 *        the schema name to look for
+	 * @return {@literal true} if the schema is found
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 * @since 1.3
+	 */
+	protected boolean schemaExists(Connection conn, final String aSchemaName) throws SQLException {
+		DatabaseMetaData dbMeta = conn.getMetaData();
+		ResultSet rs = null;
+		try {
+			rs = dbMeta.getSchemas();
+			while ( rs.next() ) {
+				String schema = rs.getString(1);
+				if ( (aSchemaName == null || (aSchemaName.equalsIgnoreCase(schema))) ) {
+					if ( log.isDebugEnabled() ) {
+						log.debug("Found schema " + schema);
+					}
+					return true;
+				}
+			}
+			return false;
+		} finally {
+			if ( rs != null ) {
+				try {
+					rs.close();
+				} catch ( SQLException e ) {
+					// ignore this
+				}
+			}
+		}
 	}
 
 	/**
@@ -404,8 +448,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 			if ( log.isInfoEnabled() ) {
 				log.info("Updating database tables version from " + curr + " to " + (curr + 1));
 			}
-			Resource sql = this.initSqlResource.createRelative(this.sqlResourcePrefix + "-update-"
-					+ (curr + 1) + ".sql");
+			Resource sql = this.initSqlResource
+					.createRelative(this.sqlResourcePrefix + "-update-" + (curr + 1) + ".sql");
 			String[] batch = getBatchSqlResource(sql);
 			int[] result = getJdbcTemplate().batchUpdate(batch);
 			if ( log.isDebugEnabled() ) {
@@ -509,6 +553,27 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	}
 
 	/**
+	 * Post an {@link Event}.
+	 * 
+	 * <p>
+	 * This method only works if a {@link EventAdmin} has been configured via
+	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
+	 * ignored.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event to post
+	 * @since 1.5
+	 */
+	protected final void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
+	}
+
+	/**
 	 * This implementation simply returns a new array with a single value:
 	 * {@link #getTableName()}.
 	 * 
@@ -607,6 +672,55 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * @return the SQL suffix, or {@literal null} if not desired
+	 * @since 1.4
+	 */
+	public String getSqlForUpdateSuffix() {
+		return sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Set a SQL fragment to append to SQL statements where an updatable result
+	 * set is desired.
+	 * 
+	 * <p>
+	 * This defaults to {@literal FOR UPDATE}. <b>Note</b> a space must be
+	 * included at the beginning. Set to {@literal null} to disable.
+	 * </p>
+	 * 
+	 * @param sqlForUpdateSuffix
+	 *        the suffix to set
+	 * @since 1.4
+	 */
+	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
+		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Get the {@link EventAdmin} service.
+	 * 
+	 * @return the EventAdmin service
+	 * @since 1.5
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        the EventAdmin to use
+	 * @since 1.5
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

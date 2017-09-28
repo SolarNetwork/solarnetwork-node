@@ -18,7 +18,7 @@
 	<setup:resources type="text/css" role='USER'/>
 </sec:authorize>
 <pack:script context="${basePath}"> 
-	/js-lib/jquery-1.7.1.js
+	/js-lib/jquery-1.12.4.js
 	/js-lib/bootstrap.js
 	/js-lib/ladda.js
 	/js-lib/moment.js
@@ -26,6 +26,7 @@
 	/js-lib/stomp.js
 	/js/global.js
 	/js/backups.js
+	/js/datum.js
 	/js/certs.js
 	/js/login.js
 	/js/settings.js

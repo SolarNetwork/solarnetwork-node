@@ -27,6 +27,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.DatumDataSource;
@@ -36,12 +40,7 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Mock implementation of {@link NodeControlProvider} that acts like a
@@ -65,7 +64,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MockGenerationLimitControl implements NodeControlProvider, InstructionHandler {
 
@@ -115,8 +114,8 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic) || InstructionHandler.TOPIC_DEMAND_BALANCE
-				.equals(topic));
+		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
+				|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(topic));
 	}
 
 	@Override
@@ -150,7 +149,7 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 	 *        the {@link NodeControlInfo} to post the event for
 	 * @since 1.1
 	 */
-	protected final void postControlCapturedEvent(final NodeControlInfo info) {
+	protected final void postControlCapturedEvent(final NodeControlInfoDatum info) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || info == null ) {
 			return;
@@ -174,8 +173,8 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 	 * @return the new Event instance
 	 * @since 1.1
 	 */
-	protected Event createControlCapturedEvent(final NodeControlInfo info) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+	protected Event createControlCapturedEvent(final NodeControlInfoDatum info) {
+		Map<String, ?> props = info.asSimpleMap();
 		log.debug("Created {} event with props {}",
 				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
 		return new Event(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);

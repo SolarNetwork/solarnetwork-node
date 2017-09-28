@@ -29,38 +29,32 @@ import java.util.List;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Supporting class for the SDM series power meters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class SDMSupport extends ModbusDeviceSupport {
+public class SDMSupport extends ModbusDeviceDatumDataSourceSupport {
 
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	// a mapping of AC phase to source ID
 	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
-
-	// an optional EventAdmin service
-	private OptionalService<EventAdmin> eventAdmin;
 
 	// the type of device to use
 	private SDMDeviceType deviceType = SDMDeviceType.SDM120;
@@ -225,40 +219,13 @@ public class SDMSupport extends ModbusDeviceSupport {
 	 *        the Datum class to use for the
 	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @since 1.3
+	 * @deprecated use
+	 *             {@link DatumDataSourceSupport#postDatumCapturedEvent(Datum)
 	 */
+	@Deprecated
 	protected final void postDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
-		ea.postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @return the new Event instance
-	 * @since 1.3
-	 */
-	protected Event createDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
+		postDatumCapturedEvent(datum);
 	}
 
 	/**
@@ -318,25 +285,6 @@ public class SDMSupport extends ModbusDeviceSupport {
 	 */
 	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
-	}
-
-	/**
-	 * Get the configured optional EventAdmin service.
-	 * 
-	 * @return The service.
-	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	/**
-	 * Set an optional {@code EventAdmin} service for posting events with.
-	 * 
-	 * @param eventAdmin
-	 *        The service to use.
-	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 	public SDMDeviceType getDeviceType() {

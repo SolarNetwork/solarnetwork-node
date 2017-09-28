@@ -32,11 +32,27 @@ import net.solarnetwork.node.domain.Datum;
  * Data Access Object (DAO) API for {@link Datum} objects.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @param <T>
  *        the type of Datum this DAO supports
  */
 public interface DatumDao<T extends Datum> {
+
+	/**
+	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}
+	 * has been persisted.
+	 * 
+	 * <p>
+	 * The properties of the event shall be any of the JavaBean properties of
+	 * the Datum supported by events (i.e. any simple Java property such as
+	 * numbers and strings). In addition, the {@link Datum#DATUM_TYPE_PROPERTY}
+	 * property shall be populated with the name of the <em>core</em> class name
+	 * of the datum type.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	public static final String EVENT_TOPIC_DATUM_STORED = "net/solarnetwork/node/dao/DATUM_STORED";
 
 	/**
 	 * Get the class supported by this Dao.

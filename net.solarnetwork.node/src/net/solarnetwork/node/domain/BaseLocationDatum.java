@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.domain;
 
-
 /**
  * Base object for location datum, such as Price or Weather.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @deprecated use {@link GeneralLocationDatum}
  */
+@Deprecated
 public abstract class BaseLocationDatum extends BaseDatum {
 
 	private Long locationId;

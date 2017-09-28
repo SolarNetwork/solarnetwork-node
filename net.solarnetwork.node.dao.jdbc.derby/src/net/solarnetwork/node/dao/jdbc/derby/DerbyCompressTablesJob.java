@@ -33,10 +33,12 @@ import net.solarnetwork.node.job.AbstractJob;
  * {@code SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE} procedure.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @deprecated use {@link TablesMaintenanceJob} instead
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
+@Deprecated
 public class DerbyCompressTablesJob extends AbstractJob {
 
 	private DerbyCompressTablesService compressService;

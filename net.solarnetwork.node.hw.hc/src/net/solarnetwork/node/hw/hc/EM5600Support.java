@@ -30,26 +30,16 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Supporting class for the EM5600 series power meter.
@@ -75,30 +65,19 @@ import org.osgi.service.event.EventAdmin;
  * 
  * <dl class="class-properties">
  * <dt>sourceMapping</dt>
- * <dd>A mapping of {@link ACPhase} to associated Source ID values to assign to
- * collected datum. Defaults to a mapping of {@code Total = Main}.</dd>
+ * <dd></dd>
  * 
- * <dt>eventAdmin</dt>
- * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
- * 
- * <dt>datumMetadataService</dt>
- * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
-public class EM5600Support extends ModbusDeviceSupport {
+public class EM5600Support extends ModbusDeviceDatumDataSourceSupport {
 
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
-	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<DatumMetadataService> datumMetadataService;
-
-	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
 
 	/**
 	 * An instance of {@link EM5600Data} to support keeping the last-read values
@@ -216,8 +195,8 @@ public class EM5600Support extends ModbusDeviceSupport {
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue", defaults
-				.getSourceMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue",
+				defaults.getSourceMappingValue()));
 
 		return results;
 	}
@@ -240,10 +219,10 @@ public class EM5600Support extends ModbusDeviceSupport {
 		buf.append("W = ").append(sample.getPower(EM5600Data.ADDR_DATA_ACTIVE_POWER_TOTAL));
 		buf.append(", VA = ").append(sample.getPower(EM5600Data.ADDR_DATA_APPARENT_POWER_TOTAL));
 		buf.append(", Wh = ").append(sample.getEnergy(EM5600Data.ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT));
-		buf.append(", \ud835\udf11 = ").append(
-				sample.getPowerFactor(EM5600Data.ADDR_DATA_POWER_FACTOR_TOTAL));
-		buf.append("; sampled at ").append(
-				DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append(", \ud835\udf11 = ")
+				.append(sample.getPowerFactor(EM5600Data.ADDR_DATA_POWER_FACTOR_TOTAL));
+		buf.append("; sampled at ")
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
 		return buf.toString();
 	}
 
@@ -341,94 +320,6 @@ public class EM5600Support extends ModbusDeviceSupport {
 		return result;
 	}
 
-	/**
-	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
-	 * 
-	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
-	 * create the actual Event, which may be overridden by extending classes.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the {@link Datum} to post the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @since 2.1
-	 */
-	protected final void postDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
-		ea.postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @return the new Event instance
-	 * @since 2.1
-	 */
-	protected Event createDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-	}
-
-	/**
-	 * Add source metadata using the configured {@link DatumMetadataService} (if
-	 * available). The metadata will be cached so that subseqent calls to this
-	 * method with the same metadata value will not try to re-save the unchanged
-	 * value. This method will catch all exceptions and silently discard them.
-	 * 
-	 * @param sourceId
-	 *        the source ID to add metadata to
-	 * @param meta
-	 *        the metadata to add
-	 * @param returns
-	 *        <em>true</em> if the metadata was saved successfully, or does not
-	 *        need to be updated
-	 */
-	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
-		if ( cached != null && meta.equals(cached) ) {
-			// we've already posted this metadata... don't bother doing it again
-			log.debug("Source {} metadata already added, not posting again", sourceId);
-			return true;
-		}
-		DatumMetadataService service = null;
-		if ( datumMetadataService != null ) {
-			service = datumMetadataService.service();
-		}
-		if ( service == null ) {
-			return false;
-		}
-		try {
-			service.addSourceMetadata(sourceId, meta);
-			sourceMetadataCache.put(sourceId, meta);
-			return true;
-		} catch ( Exception e ) {
-			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
-		}
-		return false;
-	}
-
 	public boolean isCaptureTotal() {
 		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
 	}
@@ -445,10 +336,22 @@ public class EM5600Support extends ModbusDeviceSupport {
 		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
 	}
 
+	/**
+	 * Get the source mapping.
+	 * 
+	 * @return the mapping
+	 */
 	public Map<ACPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
+	/**
+	 * Set a mapping of {@link ACPhase} to associated Source ID values to assign
+	 * to collected datum.
+	 * 
+	 * @param sourceMapping
+	 *        the source mapping; defaults to a mapping of {@code Total = Main}
+	 */
 	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
@@ -461,22 +364,6 @@ public class EM5600Support extends ModbusDeviceSupport {
 		assert unitFactor != null;
 		this.unitFactor = unitFactor;
 		this.sample.setUnitFactor(unitFactor);
-	}
-
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
-	}
-
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
-		return datumMetadataService;
-	}
-
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
-		this.datumMetadataService = datumMetadataService;
 	}
 
 }

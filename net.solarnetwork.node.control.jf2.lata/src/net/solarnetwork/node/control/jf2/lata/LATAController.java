@@ -33,8 +33,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
@@ -53,8 +51,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -65,21 +61,8 @@ import net.solarnetwork.util.OptionalService;
  * configured address, and for those addresses to be toggled on/off.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>controlIdMapping</dt>
- * <dd>A mapping of NodeControlInfo {@code controlId} value keys to associated
- * LATA switch addresses, as hex string values. This can also be configured via
- * the {@link #setControlIdMappingValue(String)} method, for easy configuration
- * via a property placeholder.</dd>
- * 
- * </dl>
- * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class LATAController extends SerialDeviceSupport
 		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
@@ -91,9 +74,6 @@ public class LATAController extends SerialDeviceSupport
 
 	private static final Pattern SWITCH_STATUS_RESULT_PATTERN = Pattern
 			.compile("^T(\\w{8})2\\d{2}(\\w*)");
-
-	private MessageSource messageSource;
-	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Default constructor.
@@ -218,7 +198,7 @@ public class LATAController extends SerialDeviceSupport
 					String status = m.group(2);
 					Boolean switchOn = ToggleMode.ON.hexString().equals(status);
 					log.trace("Address {} status is {}", address, switchOn);
-					NodeControlInfo info = newNodeControlInfoDatum(controlId, switchOn);
+					NodeControlInfoDatum info = newNodeControlInfoDatum(controlId, switchOn);
 					postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 					return info;
 
@@ -241,13 +221,9 @@ public class LATAController extends SerialDeviceSupport
 		return info;
 	}
 
-	private void postControlEvent(NodeControlInfo info, String topic) {
-		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
-		if ( admin == null ) {
-			return;
-		}
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
-		admin.postEvent(new Event(topic, props));
+	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+		Map<String, ?> props = info.asSimpleMap();
+		postEvent(new Event(topic, props));
 	}
 
 	/**
@@ -310,21 +286,10 @@ public class LATAController extends SerialDeviceSupport
 		return getDefaultSettingSpecifiers();
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
 	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		LATAController defaults = new LATAController();
 		results.add(new BasicTitleSettingSpecifier("info", getDeviceInfoMessage(), true));
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(
 				new BasicTextFieldSettingSpecifier("controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
@@ -332,23 +297,26 @@ public class LATAController extends SerialDeviceSupport
 		return results;
 	}
 
+	/**
+	 * Get the control ID mapping.
+	 * 
+	 * @return the mapping of control IDs to LATA switch addresses
+	 */
 	public Map<String, String> getControlIdMapping() {
 		return controlIdMapping;
 	}
 
+	/**
+	 * A mapping of NodeControlInfo {@code controlId} value keys to associated
+	 * LATA switch addresses, as hex string values. This can also be configured
+	 * via the {@link #setControlIdMappingValue(String)} method, for easy
+	 * configuration via a property placeholder.
+	 * 
+	 * @param controlIdMapping
+	 *        the control ID mapping
+	 */
 	public void setControlIdMapping(Map<String, String> controlIdMapping) {
 		this.controlIdMapping = controlIdMapping;
-	}
-
-	/**
-	 * Set an {@link EventAdmin} to use for posting control provider events.
-	 * 
-	 * @param eventAdmin
-	 *        The service to use.
-	 * @since 2.1
-	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 }

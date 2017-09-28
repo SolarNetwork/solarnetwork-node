@@ -33,27 +33,33 @@
 		<p><fmt:message key="settings.providers.intro"/></p>	
 
 		<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
-		<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
-			<!--  ${provider.settingUID} -->
-			<c:set var="provider" value="${provider}" scope="request"/>
-			<fieldset>
-				<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
-				<c:catch var="providerException">
-					<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-						<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}" scope="request"/>
-						<c:set var="setting" value="${setting}" scope="request"/>
-						<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
-					</c:forEach>
-				</c:catch>
-				<c:if test="${not empty providerException}">
-					<div class="alert alert-warning">
-						<fmt:message key="settings.error.provider.exception">
-							<fmt:param value="${providerException.cause.message}"/>
-						</fmt:message>
-					</div>
-				</c:if>
-			</fieldset>
-		</c:forEach>
+			<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
+				<!--  ${provider.settingUID} -->
+				<c:set var="provider" value="${provider}" scope="request"/>
+				<fieldset>
+					<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
+					<c:set var="providerDescription">
+						<setup:message key="desc" messageSource="${provider.messageSource}" text=""/>
+					</c:set>
+					<c:if test="${fn:length(providerDescription) > 0}">
+						<p>${providerDescription}</p>
+					</c:if>
+					<c:catch var="providerException">
+						<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+							<c:set var="settingId" value="s${providerStatus.index}i${settingStatus.index}" scope="request"/>
+							<c:set var="setting" value="${setting}" scope="request"/>
+							<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+						</c:forEach>
+					</c:catch>
+					<c:if test="${not empty providerException}">
+						<div class="alert alert-warning">
+							<fmt:message key="settings.error.provider.exception">
+								<fmt:param value="${providerException.cause.message}"/>
+							</fmt:message>
+						</div>
+					</c:if>
+				</fieldset>
+			</c:forEach>
 			<div class="form-actions">
 				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
 			</div>

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.web;
 
+import java.security.Principal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -29,14 +30,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
  * Default controller.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Controller
 public class DefaultController {
 
 	@RequestMapping({ "/", "/hello" })
-	public String hello() {
-		return "home";
+	public String hello(Principal principal) {
+		return (principal == null ? "home" : "a/home");
 	}
 
 }

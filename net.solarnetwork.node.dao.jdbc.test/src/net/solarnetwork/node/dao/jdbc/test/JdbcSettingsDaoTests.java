@@ -24,18 +24,10 @@ package net.solarnetwork.node.dao.jdbc.test;
 
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
 import java.util.EnumSet;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
-import net.solarnetwork.node.dao.BasicBatchOptions;
-import net.solarnetwork.node.dao.BatchableDao;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
-import net.solarnetwork.node.dao.jdbc.JdbcSettingDao;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -48,6 +40,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
+import net.solarnetwork.node.dao.BasicBatchOptions;
+import net.solarnetwork.node.dao.BatchableDao;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
+import net.solarnetwork.node.dao.jdbc.JdbcSettingDao;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link JdbcSettingDao}.
@@ -214,13 +216,66 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 			public BatchableDao.BatchCallbackResult handle(Setting domainObject) {
 				Assert.assertNotNull(domainObject);
 				if ( TEST_TYPE.equals(domainObject.getType()) ) { // skip other stuff
-					Assert.assertEquals(TEST_KEY + processed.intValue(), domainObject.getKey());
-					Assert.assertEquals(TEST_VALUE, domainObject.getValue());
+					assertEquals(TEST_KEY + processed.intValue(), domainObject.getKey());
+					assertEquals(TEST_VALUE, domainObject.getValue());
 					processed.increment();
 				}
 				return BatchableDao.BatchCallbackResult.CONTINUE;
 			}
 		}, new BasicBatchOptions("Test"));
-		Assert.assertEquals(count, processed.intValue());
+		assertEquals(count, processed.intValue());
+	}
+
+	@Test
+	public void batchUpdate() {
+		final int count = 5;
+		for ( int i = 0; i < count; i += 1 ) {
+			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
+		}
+		final MutableInt processed = new MutableInt(0);
+		settingDao.batchProcess(new BatchableDao.BatchCallback<Setting>() {
+
+			@Override
+			public BatchCallbackResult handle(Setting domainObject) {
+				Assert.assertNotNull(domainObject);
+				if ( !TEST_TYPE.equals(domainObject.getType()) ) { // skip other stuff
+					return BatchCallbackResult.CONTINUE;
+				}
+				BatchCallbackResult action;
+				if ( (TEST_KEY + "0").equals(domainObject.getKey()) ) {
+					action = BatchCallbackResult.DELETE;
+				} else if ( (TEST_KEY + "1").equals(domainObject.getKey()) ) {
+					domainObject.setValue(TEST_VALUE + ".UPDATED");
+					action = BatchCallbackResult.UPDATE;
+				} else if ( (TEST_KEY + "3").equals(domainObject.getKey()) ) {
+					domainObject.setValue(TEST_VALUE + ".UPDATED");
+					action = BatchCallbackResult.UPDATE;
+				} else {
+					action = BatchCallbackResult.CONTINUE;
+				}
+				processed.increment();
+				return action;
+			}
+		}, new BasicBatchOptions("Test", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
+		assertEquals(count, processed.intValue());
+
+		Assert.assertNull(settingDao.getSetting(TEST_KEY + "0", TEST_TYPE));
+		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 1, TEST_TYPE));
+		assertEquals(TEST_VALUE + ".UPDATED", settingDao.getSetting(TEST_KEY + 3, TEST_TYPE));
+	}
+
+	@Test
+	public void readSingle() {
+		Setting in = new Setting(TEST_KEY, TEST_TYPE, TEST_VALUE,
+				EnumSet.of(Setting.SettingFlag.IgnoreModificationDate));
+		settingDao.storeSetting(in);
+		Setting s = settingDao.readSetting(TEST_KEY, TEST_TYPE);
+		Assert.assertNotNull(s);
+		Assert.assertNotSame(in, s);
+		assertEquals(TEST_KEY, s.getKey());
+		assertEquals(TEST_TYPE, s.getType());
+		assertEquals(TEST_VALUE, s.getValue());
+		Assert.assertNotNull(s.getModified());
+		assertEquals(in.getFlags(), s.getFlags());
 	}
 }

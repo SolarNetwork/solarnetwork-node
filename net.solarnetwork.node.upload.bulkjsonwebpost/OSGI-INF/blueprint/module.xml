@@ -64,6 +64,11 @@
 		</property>
 	</bean>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
@@ -113,6 +118,7 @@
 				<property name="basenames" value="net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService"/>
 			</bean>
 		</property>
+		<property name="eventAdmin" ref="eventAdmin"/>
 	</bean>
 	
 	<!-- Upload job -->

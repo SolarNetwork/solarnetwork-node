@@ -21,6 +21,7 @@
 	
 	<osgix:cm-properties id="dao.jdbc.derby.cfg" persistent-id="net.solarnetwork.node.dao.jdbc.derby">
 		<beans:prop key="derby.maintenance.compress.cron">0 30 3 * * ?</beans:prop>
+		<beans:prop key="derby.maintenance.compress.schemas">SOLARNODE</beans:prop>
 		<beans:prop key="derby.maintenance.compress.timeout">300</beans:prop>
 		<beans:prop key="job.syncBackup.cron">3 0 1 ? * WED</beans:prop>
 		<beans:prop key="job.syncBackup.destinationPath">var/db-bak</beans:prop>
@@ -37,8 +38,19 @@
 	
 	<service ref="compress" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	<service ref="syncBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+	<service ref="dbSystemService" interface="net.solarnetwork.node.dao.jdbc.DatabaseSystemService">
+		<service-properties>
+			<entry key="db" value="node"/>
+		</service-properties>
+	</service>
 
 	<!-- Supporting services -->
+
+	<bean id="dbSystemService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService">
+		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="compressTablesService" ref="compressService"/>
+	</bean>
 	
 	<bean class="net.solarnetwork.node.dao.jdbc.derby.DerbyCustomFunctionsInitializer" init-method="init">
 		<property name="jdbcOperations" ref="jdbcOps"/>
@@ -50,8 +62,9 @@
 
 	<!-- Table compression -->
 	
-	<bean id="compressService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyCompressTablesService">
+	<bean id="compressService" class="net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService">
 		<property name="jdbcOperations" ref="jdbcOps"/>
+		<property name="schemaList" value="${derby.maintenance.compress.schemas}"/>
 		<property name="maxSeconds" value="${derby.maintenance.compress.timeout}"/>
 	</bean>
 
@@ -69,10 +82,10 @@
 	</bean>
 
 	<bean id="compressJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.DerbyCompressTablesJob"/>
+		<property name="jobClass" value="net.solarnetwork.node.dao.jdbc.derby.TablesMaintenanceJob"/>
 		<property name="jobDataAsMap">
 			<map>
-				<entry key="compressService" value-ref="compressService"/>
+				<entry key="maintenanceService" value-ref="compressService"/>
 			</map>
 		</property>
 	</bean>

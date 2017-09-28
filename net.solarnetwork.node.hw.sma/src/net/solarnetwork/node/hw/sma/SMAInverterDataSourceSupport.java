@@ -24,22 +24,15 @@ package net.solarnetwork.node.hw.sma;
 
 import java.util.Calendar;
 import java.util.EnumSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.domain.EnergyDatum;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 /**
  * Supporting class for SMA inverter data sources.
@@ -60,28 +53,21 @@ import org.slf4j.LoggerFactory;
  * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
  * 
  * <dt>datumMetadataService</dt>
- * <dd>An optional {@link DatumMetadataService} to use for managing metadata.</dd>
+ * <dd>An optional {@link DatumMetadataService} to use for managing
+ * metadata.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
-public abstract class SMAInverterDataSourceSupport {
+public abstract class SMAInverterDataSourceSupport extends DatumDataSourceSupport {
 
 	/** The default value for the {@code sourceId} property. */
 	public static final String DEFAULT_SOURCE_ID = "Main";
 
-	protected final Logger log = LoggerFactory.getLogger(getClass());
-
 	private Set<String> channelNamesToMonitor = null;
 	private SettingDao settingDao = null;
 	private String sourceId = DEFAULT_SOURCE_ID;
-	private String groupUID = null;
-	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<DatumMetadataService> datumMetadataService;
-
-	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
 
 	protected final String getSettingPrefixDayStartValue() {
 		return getClass().getSimpleName() + "." + sourceId + ".start:";
@@ -291,91 +277,17 @@ public abstract class SMAInverterDataSourceSupport {
 	}
 
 	/**
-	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
+	 * Tag with {@link EnergyDatum#TAG_GENERATION}.
 	 * 
-	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
-	 * create the actual Event, which may be overridden by extending classes.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the {@link Datum} to post the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @since 1.3
+	 * @param d
+	 *        the datum to get the source ID from
+	 * @since 1.5
 	 */
-	protected final void postDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
-		ea.postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @return the new Event instance
-	 * @since 1.3
-	 */
-	protected Event createDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-	}
-
-	/**
-	 * Add source metadata using the configured {@link DatumMetadataService} (if
-	 * available). The metadata will be cached so that subseqent calls to this
-	 * method with the same metadata value will not try to re-save the unchanged
-	 * value. This method will catch all exceptions and silently discard them.
-	 * 
-	 * @param sourceId
-	 *        the source ID to add metadata to
-	 * @param meta
-	 *        the metadata to add
-	 * @param returns
-	 *        <em>true</em> if the metadata was saved successfully, or does not
-	 *        need to be updated
-	 */
-	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
-		if ( cached != null && meta.equals(cached) ) {
-			// we've already posted this metadata... don't bother doing it again
-			log.debug("Source {} metadata already added, not posting again", sourceId);
-			return true;
-		}
-		DatumMetadataService service = null;
-		if ( datumMetadataService != null ) {
-			service = datumMetadataService.service();
-		}
-		if ( service == null ) {
-			return false;
-		}
-		try {
-			service.addSourceMetadata(sourceId, meta);
-			sourceMetadataCache.put(sourceId, meta);
-			return true;
-		} catch ( Exception e ) {
-			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
-		}
-		return false;
+	protected void addEnergyDatumSourceMetadata(Datum d) {
+		// associate generation tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
+		sourceMeta.addTag(EnergyDatum.TAG_GENERATION);
+		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
 
 	public Set<String> getChannelNamesToMonitor() {
@@ -398,32 +310,13 @@ public abstract class SMAInverterDataSourceSupport {
 		this.settingDao = settingDao;
 	}
 
+	@Override
 	public String getUID() {
-		return getSourceId();
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
-	}
-
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
-		return datumMetadataService;
-	}
-
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
-		this.datumMetadataService = datumMetadataService;
+		String uid = getUid();
+		if ( uid == null ) {
+			uid = getSourceId();
+		}
+		return uid;
 	}
 
 }

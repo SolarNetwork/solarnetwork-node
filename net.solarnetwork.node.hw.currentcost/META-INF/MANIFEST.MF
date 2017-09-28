@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CurrentCost Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost
-Bundle-Version: 2.2.0
+Bundle-Version: 2.3.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.hw.currentcost;version="2.1.0"
+ net.solarnetwork.node.hw.currentcost;version="2.2.0"
 Import-Package: 
  javax.xml.namespace,
  javax.xml.parsers,
@@ -15,15 +15,16 @@ Import-Package:
  javax.xml.transform.stream,
  javax.xml.xpath,
  net.solarnetwork.domain;version="1.4.0",
- net.solarnetwork.node;version="1.15.0",
- net.solarnetwork.node.io.serial;version="1.0.0",
+ net.solarnetwork.node;version="1.16.0",
+ net.solarnetwork.node.io.serial;version="1.1.0",
  net.solarnetwork.node.settings;version="1.0.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
- net.solarnetwork.node.support;version="1.6.0",
+ net.solarnetwork.node.support;version="1.14.0",
  net.solarnetwork.node.util;version="1.1.0",
  net.solarnetwork.util;version="1.10.0",
  org.joda.time;version="[2.1.0,3.0.0)",
  org.joda.time.format;version="[2.1.0,3.0.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.2,5.0)",
  org.springframework.beans.factory;version="[4.2,5.0)",

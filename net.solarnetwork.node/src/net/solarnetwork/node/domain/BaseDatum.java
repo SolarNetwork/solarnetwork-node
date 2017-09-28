@@ -25,14 +25,22 @@
 package net.solarnetwork.node.domain;
 
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import net.solarnetwork.util.ClassUtils;
 
 /**
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class BaseDatum implements Datum, Cloneable {
+
+	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
 
 	private String sourceId = null;
 	private Date created = null;
@@ -44,6 +52,84 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	public BaseDatum() {
 		super();
 		setSourceId("");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * <p>
+	 * This method returns the result of {@link #createSimpleMap()}.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	@Override
+	final public Map<String, ?> asSimpleMap() {
+		return createSimpleMap();
+	}
+
+	/**
+	 * Create a map of simple property data out of this object.
+	 * 
+	 * <p>
+	 * This method will populate the properties of this class and the
+	 * {@link Datum#DATUM_TYPE_PROPERTY} and {@link Datum#DATUM_TYPES_PROPERTY}
+	 * properties. It will then call {@link #getSampleData()} and add all those
+	 * values to the returned result.
+	 * </p>
+	 * 
+	 * @return a map of simple property data
+	 * @since 1.2
+	 */
+	protected Map<String, Object> createSimpleMap() {
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
+		if ( created != null ) {
+			map.put("created", created.getTime());
+		}
+		if ( sourceId != null ) {
+			map.put("sourceId", sourceId);
+		}
+		String[] datumTypes = getDatumTypes(getClass());
+		if ( datumTypes != null && datumTypes.length > 0 ) {
+			map.put(DATUM_TYPE_PROPERTY, datumTypes[0]);
+			map.put(DATUM_TYPES_PROPERTY, datumTypes);
+		}
+		if ( uploaded != null ) {
+			map.put("uploaded", uploaded.getTime());
+		}
+		Map<String, ?> sampleData = getSampleData();
+		if ( sampleData != null ) {
+			map.putAll(sampleData);
+		}
+		return map;
+	}
+
+	/**
+	 * Get an array of datum types for a class.
+	 * 
+	 * <p>
+	 * This method caches the results for performance.
+	 * </p>
+	 * 
+	 * @param clazz
+	 *        the datum class to get the types for
+	 * @return the types
+	 * @since 1.2
+	 */
+	public static String[] getDatumTypes(Class<?> clazz) {
+		String[] result = DATUM_TYPE_CACHE.get(clazz);
+		if ( result != null ) {
+			return result;
+		}
+		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
+		result = new String[interfaces.size()];
+		int i = 0;
+		for ( Class<?> intf : interfaces ) {
+			result[i] = intf.getName();
+			i++;
+		}
+		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
+		return result;
 	}
 
 	@Override
@@ -91,7 +177,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 			if ( other.created != null ) {
 				return false;
 			}
-		} else if ( !created.equals(other.created) ) {
+		} else if ( !(created.getTime() == other.created.getTime()) ) {
 			return false;
 		}
 		if ( sourceId == null ) {
@@ -102,6 +188,11 @@ public abstract class BaseDatum implements Datum, Cloneable {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public Map<String, ?> getSampleData() {
+		return null;
 	}
 
 	@Override

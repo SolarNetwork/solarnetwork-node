@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.domain;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 
@@ -29,7 +31,7 @@ import net.solarnetwork.domain.NodeControlPropertyType;
  * Implementation of {@link NodeControlInfo} and {@link Datum}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 
@@ -67,6 +69,41 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	@Override
 	public String getUnit() {
 		return unit;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @since 1.1
+	 */
+	@Override
+	public Map<String, ?> getSampleData() {
+		Map<String, Object> map = new LinkedHashMap<String, Object>();
+		if ( type != null ) {
+			map.put("type", type.toString());
+		}
+		if ( value != null ) {
+			map.put("value", value);
+		}
+		if ( readonly != null ) {
+			map.put("readonly", readonly);
+		}
+		if ( unit != null ) {
+			map.put("unit", unit);
+		}
+		if ( propertyName != null ) {
+			map.put("propertyName", propertyName);
+		}
+		return map;
+	}
+
+	@Override
+	protected Map<String, Object> createSimpleMap() {
+		Map<String, Object> map = super.createSimpleMap();
+		if ( getSourceId() != null ) {
+			map.put("controlId", getSourceId());
+		}
+		return map;
 	}
 
 	@Override

@@ -14,9 +14,20 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+
+	<!-- 
+	 !!! SimpleFilterSamplesTransformer (property filter)
+	 -->
+
 	<!-- support localized strings for the settings in the GUI -->
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer"/>
+	<bean id="simpleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer</value>
+			</list>
+		</property>
 	</bean>
 	
 	<!-- publish a "component factory" so our service appears in the settings GUI -->
@@ -24,7 +35,7 @@
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Sample Property Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.simple"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="simpleFilterMessageSource"/>
 		</bean>
 	</service>
 
@@ -39,8 +50,49 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSampleTransformer" init-method="init">
-			<property name="messageSource" ref="messageSource"/>
+		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer" init-method="init">
+			<property name="settingDao" ref="settingDao"/>
+			<property name="messageSource" ref="simpleFilterMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- 
+	 !!! SourceThrottlingSamplesFilter (source based throttling)
+	 -->
+
+	<!-- support localized strings for the settings in the GUI -->
+	<bean id="sourceThrottleMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- publish a "component factory" so our service appears in the settings GUI -->
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Datum Sample Throttle Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
+			<property name="messageSource" ref="sourceThrottleMessageSource"/>
+		</bean>
+	</service>
+
+	<!-- publish a "service factory" that each filter component instance can be
+	     configured in the GUI -->
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.throttle" 
+		autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.domain.GeneralDatumSamplesTransformer</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer">
+			<property name="settingDao" ref="settingDao"/>
+			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
 

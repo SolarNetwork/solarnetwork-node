@@ -24,7 +24,6 @@ package net.solarnetwork.node.setup.web;
 
 import static net.solarnetwork.web.domain.Response.response;
 import javax.annotation.Resource;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -55,7 +54,7 @@ public class HomeController {
 	 * @return
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
-	public String home(Model model) {
+	public String home() {
 		return "a/home";
 	}
 

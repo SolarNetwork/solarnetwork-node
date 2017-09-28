@@ -29,6 +29,9 @@ import java.util.BitSet;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.DatumDataSource;
@@ -45,11 +48,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 
 /**
  * Toggle four Modbus "coil" type addresses to control the SMA Power Control
@@ -74,10 +73,10 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
-public class ModbusPCMController extends ModbusDeviceSupport implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler {
+public class ModbusPCMController extends ModbusDeviceSupport
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	/**
 	 * The suffix added to the configured control ID to handle percent-based PCM
@@ -128,8 +127,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 
 				@Override
 				public BitSet doWithConnection(ModbusConnection conn) throws IOException {
-					return conn.readDiscreetValues(new Integer[] { d1Address, d2Address, d3Address,
-							d4Address }, 1);
+					return conn.readDiscreetValues(
+							new Integer[] { d1Address, d2Address, d3Address, d4Address }, 1);
 				}
 			});
 			log.debug("Read discreet PCM values: {}", result);
@@ -153,8 +152,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 	 * @return an integer between 0 and 15
 	 */
 	private Integer integerValueForBitSet(BitSet bits) {
-		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2) | ((bits
-				.get(3) ? 1 : 0) << 3));
+		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2)
+				| ((bits.get(3) ? 1 : 0) << 3));
 	}
 
 	private static final int PCM_LEVEL_0 = 0;
@@ -350,8 +349,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic) || InstructionHandler.TOPIC_DEMAND_BALANCE
-				.equals(topic));
+		return (InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(topic)
+				|| InstructionHandler.TOPIC_DEMAND_BALANCE.equals(topic));
 	}
 
 	@Override
@@ -397,7 +396,7 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 	 *        the {@link NodeControlInfo} to post the event for
 	 * @since 1.2
 	 */
-	protected final void postControlCapturedEvent(final NodeControlInfo info) {
+	protected final void postControlCapturedEvent(final NodeControlInfoDatum info) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || info == null ) {
 			return;
@@ -421,8 +420,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 	 * @return the new Event instance
 	 * @since 1.2
 	 */
-	protected Event createControlCapturedEvent(final NodeControlInfo info) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(info, null);
+	protected Event createControlCapturedEvent(final NodeControlInfoDatum info) {
+		Map<String, ?> props = info.asSimpleMap();
 		log.debug("Created {} event with props {}",
 				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
 		return new Event(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
@@ -455,8 +454,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 			if ( binValue.length() < 4 ) {
 				padding = String.format("%0" + (4 - binValue.length()) + "d", 0);
 			}
-			status.setDefaultValue(String.format("%s%s - %d%%", padding, binValue,
-					percentValueForIntegerValue(val)));
+			status.setDefaultValue(
+					String.format("%s%s - %d%%", padding, binValue, percentValueForIntegerValue(val)));
 		} catch ( Exception e ) {
 			log.debug("Error reading PCM status: {}", e.getMessage());
 		}
@@ -472,8 +471,8 @@ public class ModbusPCMController extends ModbusDeviceSupport implements SettingS
 		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("d4Address", defaults.d4Address.toString()));
 
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds", String.valueOf(defaults
-				.getSampleCacheSeconds())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds",
+				String.valueOf(defaults.getSampleCacheSeconds())));
 
 		return results;
 	}

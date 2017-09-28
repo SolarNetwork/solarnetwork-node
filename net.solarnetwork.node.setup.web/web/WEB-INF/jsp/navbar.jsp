@@ -1,7 +1,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <div class="navbar">
 	<div class="navbar-inner">
-		<a class="brand" href="<setup:url value='/index.do'/>">
+		<a class="brand" href="<setup:url value='/'/>">
 			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="159" height="30"/>	
 		</a>
 		<ul class="nav">

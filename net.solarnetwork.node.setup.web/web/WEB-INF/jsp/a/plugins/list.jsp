@@ -14,7 +14,13 @@
 <fmt:message key="plugin.unremovable.message" var="msgUnremovable"/>
 <section id="plugin-upgrades" class="hide" data-msg-upgrade="${msgUpgrade}">
 	<h2><fmt:message key="plugins.upgradable.title"/></h2>
-	<p><fmt:message key="plugins.upgradable.intro"/></p>
+	<div class="row-fluid">
+		<p class="span10"><fmt:message key="plugins.upgradable.intro"/></p>
+		<div class="span2 action">
+			<setup:url value="/a/plugins/upgradeAll" var="urlPluginUpgradeAll"/>
+			<a id="plugins-upgrade-all" class="btn btn-info" href="${urlPluginUpgradeAll}"><fmt:message key="plugins.upgradeAll.button"/></a>
+		</div>
+	</div>
 	<div class="list-content"></div>
 </section>
 <section id="plugin-installed" class="hide" data-msg-remove="${msgRemove}" data-msg-unremovable="${msgUnremovable}">

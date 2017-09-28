@@ -32,22 +32,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialDeviceSupport;
+import net.solarnetwork.node.io.serial.SerialDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Support class for reading CurrentCost watt meter data from a serial
@@ -121,9 +115,9 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
-public class CCSupport extends SerialDeviceSupport {
+public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 
 	/** The data byte index for the device's address ID. */
 	public static final int DEVICE_ADDRESS_IDX = 2;
@@ -168,11 +162,6 @@ public class CCSupport extends SerialDeviceSupport {
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private long sampleCacheMs = 5000;
-	private MessageSource messageSource;
-	private OptionalService<DatumMetadataService> datumMetadataService;
-
-	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetadataCache = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
 
 	/**
 	 * Add a new cached "known" address value.
@@ -341,8 +330,7 @@ public class CCSupport extends SerialDeviceSupport {
 		}
 		CCSupport defaults = new CCSupport();
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
@@ -376,44 +364,6 @@ public class CCSupport extends SerialDeviceSupport {
 	@Override
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) {
 		return Collections.emptyMap();
-	}
-
-	/**
-	 * Add source metadata using the configured {@link DatumMetadataService} (if
-	 * available). The metadata will be cached so that subseqent calls to this
-	 * method with the same metadata value will not try to re-save the unchanged
-	 * value. This method will catch all exceptions and silently discard them.
-	 * 
-	 * @param sourceId
-	 *        the source ID to add metadata to
-	 * @param meta
-	 *        the metadata to add
-	 * @param returns
-	 *        <em>true</em> if the metadata was saved successfully, or does not
-	 *        need to be updated
-	 */
-	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		GeneralDatumMetadata cached = sourceMetadataCache.get(sourceId);
-		if ( cached != null && meta.equals(cached) ) {
-			// we've already posted this metadata... don't bother doing it again
-			log.debug("Source {} metadata already added, not posting again", sourceId);
-			return true;
-		}
-		DatumMetadataService service = null;
-		if ( datumMetadataService != null ) {
-			service = datumMetadataService.service();
-		}
-		if ( service == null ) {
-			return false;
-		}
-		try {
-			service.addSourceMetadata(sourceId, meta);
-			sourceMetadataCache.put(sourceId, meta);
-			return true;
-		} catch ( Exception e ) {
-			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
-		}
-		return false;
 	}
 
 	public float getVoltage() {
@@ -593,22 +543,6 @@ public class CCSupport extends SerialDeviceSupport {
 
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
-	}
-
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
-		return datumMetadataService;
-	}
-
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
-		this.datumMetadataService = datumMetadataService;
 	}
 
 }

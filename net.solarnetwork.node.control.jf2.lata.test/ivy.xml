@@ -22,7 +22,6 @@
 		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
 		
 		<!-- SolarNetwork -->
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.io.serial.test" rev="latest.release"/>
 		
 		<exclude module="commons-logging"/>
 		<exclude module="com.springsource.slf4j.api"/>

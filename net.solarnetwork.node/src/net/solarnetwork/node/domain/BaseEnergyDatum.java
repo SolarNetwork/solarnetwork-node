@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.domain;
 
-
 /**
  * Base class for {@link EnergyDatum} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @deprecated use {@link GeneralNodeEnergyDatum}
  */
+@Deprecated
 public abstract class BaseEnergyDatum extends BaseDatum implements EnergyDatum {
 
 	private Integer watts = null;

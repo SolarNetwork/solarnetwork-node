@@ -29,7 +29,6 @@ import java.util.List;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.deson.meter.SDMData;
@@ -59,7 +58,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -119,7 +118,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 		d.setSourceId(getSourceMapping().get(ACPhase.Total));
 		if ( currSample.getMeterDataTimestamp() >= start ) {
 			// we read from the meter
-			postDatumCapturedEvent(d, ACEnergyDatum.class);
+			postDatumCapturedEvent(d);
 		}
 		return d;
 	}
@@ -143,7 +142,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 			d.setSourceId(getSourceMapping().get(ACPhase.Total));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
@@ -154,7 +153,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
@@ -165,7 +164,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
@@ -176,7 +175,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
 			if ( postCapturedEvent ) {
 				// we read from the meter
-				postDatumCapturedEvent(d, ACEnergyDatum.class);
+				postDatumCapturedEvent(d);
 			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
@@ -197,6 +196,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 		return "Deson SDM Series Meter";
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

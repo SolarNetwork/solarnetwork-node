@@ -39,7 +39,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * is also supported.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum>
 		implements Serializable {
@@ -58,6 +58,21 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 	@Override
 	public void serialize(GeneralNodeDatum datum, JsonGenerator generator, SerializerProvider provider)
 			throws IOException, JsonGenerationException {
+		GeneralDatumSamples samples = datum.getSamples();
+		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
+		if ( samples != null && xforms != null ) {
+			for ( GeneralDatumSamplesTransformer xform : xforms ) {
+				samples = xform.transformSamples(datum, samples);
+				if ( samples == null ) {
+					break;
+				}
+			}
+		}
+
+		if ( samples == null ) {
+			return;
+		}
+
 		generator.writeStartObject();
 		generator.writeNumberField("created", datum.getCreated().getTime());
 		if ( datum instanceof GeneralLocationDatum ) {
@@ -66,14 +81,8 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 		}
 		generator.writeStringField("sourceId", datum.getSourceId());
 
-		GeneralDatumSamples samples = datum.getSamples();
-		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
-		if ( samples != null && xforms != null ) {
-			for ( GeneralDatumSamplesTransformer xform : xforms ) {
-				samples = xform.transformSamples(datum, samples);
-			}
-		}
 		generator.writeObjectField("samples", samples);
+
 		generator.writeEndObject();
 	}
 
@@ -81,7 +90,8 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 	 * Set a list of sample transformers to apply when serializing.
 	 * 
 	 * @param sampleTransformers
-	 *        The sample transformers to apply.
+	 *        The sample transformers to apply. If a transformer returns
+	 *        {@literal null} then the datum will not be serialized.
 	 * @since 1.2
 	 */
 	public void setSampleTransformers(

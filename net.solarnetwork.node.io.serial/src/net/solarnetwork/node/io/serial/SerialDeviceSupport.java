@@ -23,12 +23,19 @@
 package net.solarnetwork.node.io.serial;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StringUtils;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link SerialNetwork} based services.
@@ -49,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class SerialDeviceSupport {
 
@@ -75,6 +82,8 @@ public abstract class SerialDeviceSupport {
 	private String uid;
 	private String groupUID;
 	private OptionalService<SerialNetwork> serialNetwork;
+	private MessageSource messageSource;
+	private OptionalService<EventAdmin> eventAdmin;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -192,6 +201,41 @@ public abstract class SerialDeviceSupport {
 	}
 
 	/**
+	 * Get setting specifiers for the {@code uid} and {@code groupUID}
+	 * properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.1
+	 */
+	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		return results;
+	}
+
+	/**
+	 * Post an {@link Event}.
+	 * 
+	 * <p>
+	 * This method only works if a {@link EventAdmin} has been configured via
+	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
+	 * ignored.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event to post
+	 * @since 1.1
+	 */
+	protected final void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
+	}
+
+	/**
 	 * Get a UID value. Returns {@link #getUid()}.
 	 * 
 	 * @return UID
@@ -224,4 +268,45 @@ public abstract class SerialDeviceSupport {
 		this.serialNetwork = serialDevice;
 	}
 
+	/**
+	 * Get the configured {@link EventAdmin}.
+	 * 
+	 * @return the event admin service
+	 * @since 1.1
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} to use for posting control provider events.
+	 * 
+	 * @param eventAdmin
+	 *        The service to use.
+	 * @since 1.1
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
+	}
+
+	/**
+	 * Get the configured {@link MessageSource}.
+	 * 
+	 * @return the message source, or {@literal null}
+	 * @since 1.1
+	 */
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set a {@link MessageSource} to use for resolving localized messages.
+	 * 
+	 * @param messageSource
+	 *        the message source to use
+	 * @since 1.1
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
 }

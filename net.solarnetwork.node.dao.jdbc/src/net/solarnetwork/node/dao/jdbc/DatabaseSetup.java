@@ -24,12 +24,17 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ConnectionCallback;
 import net.solarnetwork.node.domain.Datum;
 
 /**
@@ -110,6 +115,34 @@ public class DatabaseSetup {
 		@Override
 		public MessageSource getMessageSource() {
 			return null;
+		}
+
+		private static final String CREATE_SCHEMA_SQL_TEMPLATE = "CREATE SCHEMA %s";
+
+		@Override
+		protected void verifyDatabaseExists(String schema, String table, Resource initSql) {
+			// first verify our schema exists
+			getJdbcTemplate().execute(new ConnectionCallback<Object>() {
+
+				@Override
+				public Object doInConnection(Connection con) throws SQLException, DataAccessException {
+					if ( !schemaExists(con, schema) ) {
+						PreparedStatement stmt = null;
+						try {
+							stmt = con
+									.prepareStatement(String.format(CREATE_SCHEMA_SQL_TEMPLATE, schema));
+							log.info("Initializing database schema [{}]", schema);
+							stmt.executeUpdate();
+						} finally {
+							if ( stmt != null ) {
+								stmt.close();
+							}
+						}
+					}
+					return null;
+				}
+			});
+			super.verifyDatabaseExists(schema, table, initSql);
 		}
 
 	}
