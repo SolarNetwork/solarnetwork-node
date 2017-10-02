@@ -6,6 +6,31 @@
 	</fmt:message>
 </p>
 
+<section id="external-node-links" class="hide">
+	<h2><fmt:message key="home.external-links.title"/></h2>	
+	<p><fmt:message key="home.external-links.intro"/></p>
+	<dl class="dl-horizontal">
+		<dt class="node-dashboard hide">
+			<fmt:message key="home.external-links.dashboard.title"/>
+		</dt>
+		<dd class="node-dashboard hide">
+			<fmt:message key="home.external-links.dashboard.info"/>
+		</dd>
+		<dt class="node-dataview hide">
+			<fmt:message key="home.external-links.dataview.title"/>
+		</dt>
+		<dd class="node-dataview hide">
+			<fmt:message key="home.external-links.dataview.info"/>
+		</dd>
+		<dt class="dev-apitool hide">
+			<fmt:message key="home.external-links.apitool.title"/>
+		</dt>
+		<dd class="dev-apitool hide">
+			<fmt:message key="home.external-links.apitool.info"/>
+		</dd>
+	</dl>
+</section>
+
 <section id="datum-activity-seenprops" class="hide">
 	<h2><fmt:message key="datum.activity.seenprops.title"/></h2>	
 	<p><fmt:message key="datum.activity.seenprops.intro"/></p>
