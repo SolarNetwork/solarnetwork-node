@@ -226,6 +226,27 @@ SolarNode.Datum = (function() {
 		}
 	}
 	
+	function updateExternalNodeLinks(container) {
+		$.getJSON(SolarNode.context.path('/a/config')).then(function(json) {
+			var replaced = false; 
+			if ( json && json.data && json.data.networkServiceUrls ) {
+				var urls = json.data.networkServiceUrls;
+				Object.keys(urls).forEach(function(name) {
+					var url = urls[name].replace(/\{nodeId\}/, SolarNode.nodeId);
+					var els = container.find('.'+name);
+					if ( els.length > 0 ) {
+						els.find('a.external-link').attr('href', url);
+						els.removeClass('hide');
+						replaced = true;
+					}
+				});
+			}
+			if ( replaced ) {
+				container.removeClass('hide');
+			}
+		});
+	}
+	
 	return Object.defineProperties(self, {
 		subscribeControl : { value : subscribeControl },
 
@@ -236,6 +257,8 @@ SolarNode.Datum = (function() {
 		datumActivityForDatum : { value : datumActivityForDatum },
 		addDatumActivityTableRow : { value : addDatumActivityTableRow },
 		updateDatumActivitySeenPropsTableRow : { value : updateDatumActivitySeenPropsTableRow },
+		
+		updateExternalNodeLinks : { value : updateExternalNodeLinks },
 	});
 }());
 
@@ -268,5 +291,10 @@ $(document).ready(function() {
 
 		activityContainer.removeClass('hide');
 		seenPropsContainer.removeClass('hide');
+	});
+	
+	$('#external-node-links').first().each(function() {
+		var container = $(this);
+		SolarNode.Datum.updateExternalNodeLinks(container);
 	});
 });

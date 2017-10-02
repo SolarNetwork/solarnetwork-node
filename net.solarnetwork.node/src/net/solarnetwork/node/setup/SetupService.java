@@ -28,12 +28,13 @@ import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.domain.NetworkIdentity;
+import net.solarnetwork.node.domain.NodeAppConfiguration;
 
 /**
  * API for node setup support.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface SetupService {
 
@@ -90,5 +91,18 @@ public interface SetupService {
 	 * @since 1.2
 	 */
 	void renewNetworkCertificate(String password) throws SetupException;
+
+	/**
+	 * Get the application configuration.
+	 * 
+	 * <p>
+	 * The application configuration includes network service URLs returned by
+	 * the SolarUser and SolarQuery applications.
+	 * </p>
+	 * 
+	 * @return the app configuration, never {@code null}
+	 * @since 1.3
+	 */
+	NodeAppConfiguration getAppConfiguration();
 
 }

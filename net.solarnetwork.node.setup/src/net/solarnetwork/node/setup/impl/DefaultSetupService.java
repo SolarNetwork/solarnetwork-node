@@ -33,9 +33,12 @@ import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,6 +54,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -58,6 +62,7 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -68,6 +73,7 @@ import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.util.JavaBeanXmlSerializer;
+import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -108,7 +114,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -138,6 +144,15 @@ public class DefaultSetupService extends XmlServiceSupport
 	 */
 	public static final String INSTRUCTION_PARAM_CERTIFICATE = "Certificate";
 
+	/**
+	 * Get the URL path for the app configuration endpoint.
+	 * 
+	 * @since 1.8
+	 */
+	public static final String NETWORK_APP_CONFIGURATION_URL_PATH = "/api/v1/pub/config";
+
+	private static final long APP_CONFIG_CACHE_MS = 24 * 60 * 60 * 1000L; // 1 day
+
 	// The keys used in the verification code xml
 	private static final String VERIFICATION_CODE_HOST_NAME = "host";
 	private static final String VERIFICATION_CODE_HOST_PORT = "port";
@@ -155,7 +170,8 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String VERIFICATION_URL_SOLARUSER = "solarUserServiceURL";
 	private static final String VERIFICATION_URL_SOLARQUERY = "solarQueryServiceURL";
 
-	private static final String SOLAR_NET_IDENTITY_URL = "/solarin/identity.do";
+	private static final String SOLAR_NET_IDENTITY_PATH = "/identity.do";
+	private static final String SOLAR_NET_IDENTITY_URL = "/solarin" + SOLAR_NET_IDENTITY_PATH;
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
 
@@ -164,6 +180,8 @@ public class DefaultSetupService extends XmlServiceSupport
 	private PlatformTransactionManager transactionManager;
 	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
+
+	private NodeAppConfiguration appConfiguration = new NodeAppConfiguration();
 
 	/**
 	 * Default constructor.
@@ -491,6 +509,76 @@ public class DefaultSetupService extends XmlServiceSupport
 		} catch ( IOException e ) {
 			throw new SetupException("Error communicating with SolarNet: " + e.getMessage());
 		}
+	}
+
+	private Map<String, Object> fetchNetworkConfiguration(String appBaseUrl) throws IOException {
+		if ( appBaseUrl == null ) {
+			return Collections.emptyMap();
+		}
+		String url = appBaseUrl;
+		if ( url.endsWith("/") ) {
+			url = url.substring(0, url.length() - 1);
+		}
+		url += NETWORK_APP_CONFIGURATION_URL_PATH;
+		URLConnection conn = getURLConnection(url, "GET", "application/json");
+		String json = FileCopyUtils.copyToString(getUnicodeReaderFromURLConnection(conn));
+		return JsonUtils.getStringMap(json);
+	}
+
+	private Map<String, String> fetchNetworkServiceUrls(String appBaseUrl) throws IOException {
+		Map<String, Object> result = fetchNetworkConfiguration(appBaseUrl);
+		Object data = result.get("data");
+		if ( data instanceof Map<?, ?> ) {
+			@SuppressWarnings("unchecked")
+			Map<String, Object> appConfig = (Map<String, Object>) data;
+			Object serviceUrls = appConfig.get("serviceUrls");
+			if ( serviceUrls instanceof Map<?, ?> ) {
+				@SuppressWarnings("unchecked")
+				Map<String, String> urls = (Map<String, String>) serviceUrls;
+				return urls;
+			}
+		}
+		return Collections.emptyMap();
+	}
+
+	@Override
+	public NodeAppConfiguration getAppConfiguration() {
+		NodeAppConfiguration config = this.appConfiguration;
+		if ( config.getCreated() + APP_CONFIG_CACHE_MS > System.currentTimeMillis() ) {
+			return config;
+		}
+		// try to refresh from network
+		try {
+			NetworkAssociationDetails association = new NetworkAssociationDetails();
+			webFormGetForBean(null, association, getSolarInBaseUrl() + SOLAR_NET_IDENTITY_PATH, null,
+					getIdentityPropertyMapping());
+
+			Map<String, String> networkServiceUrls = new LinkedHashMap<String, String>();
+			if ( association.getSolarQueryServiceURL() != null ) {
+				try {
+					Map<String, String> urls = fetchNetworkServiceUrls(
+							association.getSolarQueryServiceURL());
+					networkServiceUrls.putAll(urls);
+				} catch ( IOException e ) {
+					log.warn("Network error fetching SolarUser app configuration: " + e.getMessage());
+				}
+			}
+			if ( association.getSolarUserServiceURL() != null ) {
+				try {
+					Map<String, String> urls = fetchNetworkServiceUrls(
+							association.getSolarUserServiceURL());
+					networkServiceUrls.putAll(urls);
+				} catch ( IOException e ) {
+					log.warn("Network error fetching SolarUser app configuration: " + e.getMessage());
+				}
+			}
+			config = new NodeAppConfiguration(networkServiceUrls);
+			this.appConfiguration = config;
+		} catch ( Exception e ) {
+			// don't re-throw from here
+			log.warn("Error retrieving SolarIn identity info: " + e.getMessage());
+		}
+		return config;
 	}
 
 	private String getSetting(String key) {

@@ -120,6 +120,10 @@ var SolarNode = {
 		 return {token:csrf,headerName:header};
 	 }()),
 	 
+	 nodeId : (function() {
+		 return $("meta[name='nodeId']").attr("content");
+	 }()),
+	 
 };
 
 /**
