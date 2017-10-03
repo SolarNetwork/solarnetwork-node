@@ -43,12 +43,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -56,9 +54,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.util.FileCopyUtils;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -87,9 +82,7 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.2
  */
-public class FileSystemBackupService implements BackupService, SettingSpecifierProvider {
-
-	private static final String ARCHIVE_NAME_DATE_FORMAT = "yyyyMMdd'T'HHmmss";
+public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
 	/** The value returned by {@link #getKey()}. */
 	public static final String KEY = FileSystemBackupService.class.getName();
@@ -101,8 +94,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	public static final String ARCHIVE_KEY_NAME_FORMAT = "node-%2$d-backup-%1$s.zip";
 
 	private static final String ARCHIVE_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS.zip";
-	private static final Pattern ARCHIVE_NAME_PAT = Pattern
-			.compile("node-(\\d+)-backup-(\\d{8}T\\d{6})\\.zip");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -111,19 +102,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	private OptionalService<IdentityService> identityService;
 	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
-
-	private static File defaultBackuprDir() {
-		String path = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, null);
-		if ( path == null ) {
-			path = System.getProperty("java.io.tmpdir");
-		} else {
-			if ( !path.endsWith("/") ) {
-				path += "/";
-			}
-			path += "var/backups";
-		}
-		return new File(path);
-	}
 
 	@Override
 	public String getSettingUID() {
@@ -167,8 +145,8 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	}
 
 	private String getArchiveKey(String archiveName) {
-		Matcher m = ARCHIVE_NAME_PAT.matcher(archiveName);
-		if ( m.matches() ) {
+		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(archiveName);
+		if ( m.find() ) {
 			return m.group(2);
 		}
 		return archiveName;
@@ -180,7 +158,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		if ( !archiveFile.canRead() ) {
 			return null;
 		}
-		return createBackupForFile(archiveFile, new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT));
+		return createBackupForFile(archiveFile, new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT));
 	}
 
 	@Override
@@ -332,25 +310,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 		return new CollectionBackupResourceIterable(col);
 	}
 
-	private Date backupDateFromProps(Date date, Map<String, String> props) {
-		if ( date != null ) {
-			return date;
-		}
-		final SimpleDateFormat sdf = new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT);
-		String backupKey = (props == null ? null : props.get(BackupManager.BACKUP_KEY));
-		if ( backupKey != null ) {
-			Matcher m = ARCHIVE_NAME_PAT.matcher(backupKey);
-			if ( m.matches() ) {
-				try {
-					return sdf.parse(m.group(2));
-				} catch ( ParseException e ) {
-					log.warn("Unable to parse backup date from key [{}]", backupKey);
-				}
-			}
-		}
-		return new Date();
-	}
-
 	@Override
 	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
 		final Date backupDate = backupDateFromProps(date, props);
@@ -399,8 +358,8 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 	}
 
 	private SimpleBackup createBackupForFile(File f, SimpleDateFormat sdf) {
-		Matcher m = ARCHIVE_NAME_PAT.matcher(f.getName());
-		if ( m.matches() ) {
+		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(f.getName());
+		if ( m.find() ) {
 			try {
 				Date d = sdf.parse(m.group(2));
 				return new SimpleBackup(d, m.group(2), f.length(), true);
@@ -418,7 +377,7 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			return Collections.emptyList();
 		}
 		List<Backup> result = new ArrayList<Backup>(archives.length);
-		SimpleDateFormat sdf = new SimpleDateFormat(ARCHIVE_NAME_DATE_FORMAT);
+		SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT);
 		for ( File f : archives ) {
 			SimpleBackup b = createBackupForFile(f, sdf);
 			if ( b != null ) {
@@ -426,73 +385,6 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 			}
 		}
 		return result;
-	}
-
-	private File markedBackupForRestoreFile() {
-		// use default backup dir always, as configuration properties might not be available
-		return new File(defaultBackuprDir(), "RESTORE_ON_BOOT");
-	}
-
-	private ObjectMapper objectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		return mapper;
-	}
-
-	private static final String MARKED_BACKUP_PROP_KEY = "key";
-	private static final String MARKED_BACKUP_PROP_PROPS = "props";
-
-	@Override
-	public synchronized boolean markBackupForRestore(Backup backup, Map<String, String> props) {
-		File markFile = markedBackupForRestoreFile();
-		if ( backup == null ) {
-			if ( markFile.exists() ) {
-				log.info("Clearing marked backup.");
-				return markFile.delete();
-			}
-			return true;
-		} else if ( markFile.exists() ) {
-			log.warn("Marked backup exists, will not mark again");
-			return false;
-		} else {
-			Map<String, Object> data = new HashMap<String, Object>();
-			data.put(MARKED_BACKUP_PROP_KEY, backup.getKey());
-			if ( props != null && !props.isEmpty() ) {
-				data.put(MARKED_BACKUP_PROP_PROPS, props);
-			}
-			try {
-				objectMapper().writeValue(markFile, data);
-				return true;
-			} catch ( IOException e ) {
-				log.warn("Failed to create restore mark file {}", markFile, e);
-			}
-			return false;
-		}
-	}
-
-	@Override
-	public synchronized Backup markedBackupForRestore(Map<String, String> props) {
-		File markFile = markedBackupForRestoreFile();
-		if ( markFile.exists() ) {
-			try {
-				@SuppressWarnings("unchecked")
-				Map<String, Object> data = objectMapper().readValue(markFile, Map.class);
-				if ( data == null || !data.containsKey(MARKED_BACKUP_PROP_KEY) ) {
-					return null;
-				}
-				String key = (String) data.get(MARKED_BACKUP_PROP_KEY);
-				if ( props != null && data.get(MARKED_BACKUP_PROP_PROPS) instanceof Map ) {
-					@SuppressWarnings("unchecked")
-					Map<String, String> dataProps = (Map<String, String>) data
-							.get(MARKED_BACKUP_PROP_PROPS);
-					props.putAll(dataProps);
-				}
-				return backupForKey(key);
-			} catch ( IOException e ) {
-				log.warn("Failed to read restore mark file {}", markFile, e);
-			}
-		}
-		return null;
 	}
 
 	@Override
@@ -511,8 +403,9 @@ public class FileSystemBackupService implements BackupService, SettingSpecifierP
 
 		@Override
 		public boolean accept(File dir, String name) {
-			Matcher m = ARCHIVE_NAME_PAT.matcher(name);
-			return (m.matches() && (nodeId == null || nodeId.equals(Long.valueOf(m.group(1)))));
+			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(name);
+			return (m.find() && (nodeId == null || nodeId.equals(Long.valueOf(m.group(1))))
+					&& name.endsWith(".zip"));
 		}
 
 	}
