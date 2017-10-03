@@ -457,12 +457,7 @@ public class DefaultBackupManager implements BackupManager {
 		try {
 			resources = service.getBackupResources(backup);
 			for ( BackupResource r : resources ) {
-				final String path = r.getBackupPath();
-				final int providerIndex = path.indexOf('/');
-				if ( providerIndex == -1 ) {
-					continue;
-				}
-				final String providerKey = path.substring(0, providerIndex);
+				final String providerKey = r.getProviderKey();
 				BackupResourceProvider provider = providerForKey(providerKey);
 				if ( provider == null ) {
 					continue;
@@ -473,8 +468,9 @@ public class DefaultBackupManager implements BackupManager {
 				BackupResourceInfo info = provider.resourceInfo(r, locale);
 				if ( info != null ) {
 					String name = info.getName();
-					if ( name != null && name.equals(path) ) {
-						name = path.substring(providerIndex + 1);
+					if ( name != null && name.startsWith(providerKey) ) {
+						// strip provider key + '/' from name
+						name = name.substring(providerKey.length() + 1);
 					}
 					resourceInfos
 							.add(new SimpleBackupResourceInfo(providerKey, name, info.getDescription()));
