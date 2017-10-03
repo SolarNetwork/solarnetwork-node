@@ -37,19 +37,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.backup.Backup;
@@ -57,12 +54,15 @@ import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceIterable;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceInfo;
+import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.backup.BackupStatus;
+import net.solarnetwork.node.backup.CollectionBackupResourceIterable;
 import net.solarnetwork.node.backup.SimpleBackup;
 import net.solarnetwork.node.backup.SimpleBackupServiceInfo;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.0
  */
-public class S3BackupService implements BackupService, SettingSpecifierProvider {
+public class S3BackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
 	/** The value returned by {@link #getKey()}. */
 	public static final String SERVICE_KEY = S3BackupService.class.getName();
@@ -83,8 +83,6 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 	/** The default value for the {@code objectKeyPrefix} property. */
 	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
 
-	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 	private static final String META_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS";
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
 	private static final String DATA_OBJECT_KEY_PREFIX = "backup-data/";
@@ -96,15 +94,15 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 	private String objectKeyPrefix = DEFAULT_OBJECT_KEY_PREFIX;
 	private MessageSource messageSource;
 	private OptionalService<IdentityService> identityService;
+	private int cacheSeconds = 60 * 60;
 
 	private S3Client s3Client = null;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final AtomicReference<BackupStatus> status = new AtomicReference<>(
 			BackupStatus.Unconfigured);
 
 	private final AtomicReference<S3BackupMetadata> inProgressBackup = new AtomicReference<>();
+	private final AtomicReference<CachedResult<List<Backup>>> cachedBackups = new AtomicReference<>();
 
 	@Override
 	public String getKey() {
@@ -113,8 +111,12 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 
 	@Override
 	public BackupServiceInfo getInfo() {
-		// TODO pass most recent date
-		return new SimpleBackupServiceInfo(null, status.get());
+		Collection<Backup> availableBackups = getAvailableBackups();
+		Date mostRecentDate = null;
+		if ( availableBackups != null && !availableBackups.isEmpty() ) {
+			mostRecentDate = availableBackups.iterator().next().getDate();
+		}
+		return new SimpleBackupServiceInfo(mostRecentDate, status.get());
 	}
 
 	@Override
@@ -161,11 +163,11 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 		try {
 			final Long nodeId = nodeId();
 			final String metaName = String.format(META_NAME_FORMAT, now, nodeId);
-			final String metaObjectKey = objectKeyPrefix(META_OBJECT_KEY_PREFIX + metaName);
+			final String metaObjectKey = objectKeyForPath(META_OBJECT_KEY_PREFIX + metaName);
 			log.info("Starting backup to archive {}", metaObjectKey);
 
 			final Set<S3ObjectReference> allDataObjects = client
-					.listObjects(objectKeyPrefix(DATA_OBJECT_KEY_PREFIX));
+					.listObjects(objectKeyForPath(DATA_OBJECT_KEY_PREFIX));
 
 			S3BackupMetadata meta = new S3BackupMetadata();
 			MessageDigest digest = DigestUtils.getSha256Digest();
@@ -176,7 +178,7 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 					objectMetadata.setLastModified(new Date(rsrc.getModificationDate()));
 				}
 				String sha = calculateContentDigest(rsrc, digest, buf, objectMetadata);
-				String objectKey = objectKeyPrefix(DATA_OBJECT_KEY_PREFIX + sha);
+				String objectKey = objectKeyForPath(DATA_OBJECT_KEY_PREFIX + sha);
 
 				// see if already exists
 				if ( !allDataObjects.contains(new S3ObjectReference(objectKey)) ) {
@@ -201,6 +203,17 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 				S3ObjectReference metaRef = client.putObject(metaObjectKey, in, metaObjectMetadata);
 				result = new S3BackupMetadata(metaRef);
 			}
+
+			// add this backup to the cached data
+			CachedResult<List<Backup>> cached = cachedBackups.get();
+			if ( cached != null ) {
+				List<Backup> list = cached.getResult();
+				List<Backup> newList = new ArrayList<>(list);
+				newList.add(0, result);
+				cachedBackups.compareAndSet(cached, new CachedResult<List<Backup>>(newList,
+						cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			}
+
 		} catch ( IOException e ) {
 			log.error("IO error performing backup", e);
 		} finally {
@@ -218,7 +231,7 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 	@Override
 	public Backup backupForKey(String key) {
 		S3BackupMetadata backup = inProgressBackup.get();
-		if ( key.equals(backup.getKey()) ) {
+		if ( backup != null && key.equals(backup.getKey()) ) {
 			return backup;
 		}
 		S3Client client = getS3Client();
@@ -227,7 +240,7 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 		}
 		try {
 			Set<S3ObjectReference> objs = client
-					.listObjects(objectKeyPrefix(META_OBJECT_KEY_PREFIX + key));
+					.listObjects(objectKeyForPath(META_OBJECT_KEY_PREFIX + key));
 			if ( !objs.isEmpty() ) {
 				S3ObjectReference backupMetaObj = objs.iterator().next();
 				backup = new S3BackupMetadata(backupMetaObj);
@@ -238,7 +251,7 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 		return backup;
 	}
 
-	private String objectKeyPrefix(String path) {
+	private String objectKeyForPath(String path) {
 		String globalPrefix = this.objectKeyPrefix;
 		if ( globalPrefix == null ) {
 			return path;
@@ -246,44 +259,82 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 		return globalPrefix + path;
 	}
 
+	private String pathWithoutPrefix(String objectKey, String prefix) {
+		if ( objectKey.startsWith(prefix) ) {
+			return objectKey.substring(prefix.length());
+		}
+		return objectKey;
+	}
+
 	@Override
 	public Collection<Backup> getAvailableBackups() {
+		CachedResult<List<Backup>> cached = cachedBackups.get();
+		if ( cached != null && cached.isValid() ) {
+			return cached.getResult();
+		}
 		S3Client client = getS3Client();
 		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
 			return Collections.emptyList();
 		}
+		final String objectKeyPrefix = objectKeyForPath(META_OBJECT_KEY_PREFIX);
 		try {
-			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix(META_OBJECT_KEY_PREFIX));
-			return objs.stream().map(o -> new SimpleBackup(o.getModified(), o.getKey(), null, true))
+			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
+			List<Backup> result = objs.stream()
+					.map(o -> new SimpleBackup(o.getModified(),
+							pathWithoutPrefix(o.getKey(), objectKeyPrefix), null, true))
 					.collect(Collectors.toList());
+			cachedBackups.compareAndSet(cached,
+					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
+			return result;
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
 			return Collections.emptyList();
 		}
 	}
 
+	private String objectKeyForBackup(Backup backup) {
+		// support both relative and full paths
+		String prefix = objectKeyForPath(META_OBJECT_KEY_PREFIX);
+		String key = backup.getKey();
+		if ( key.startsWith(prefix) ) {
+			return key;
+		}
+		return prefix + key;
+	}
+
 	@Override
 	public BackupResourceIterable getBackupResources(Backup backup) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public boolean markBackupForRestore(Backup backup, Map<String, String> props) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public Backup markedBackupForRestore(Map<String, String> props) {
-		// TODO Auto-generated method stub
-		return null;
+		S3Client client = getS3Client();
+		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
+			return new CollectionBackupResourceIterable(Collections.emptyList());
+		}
+		try {
+			String metaKey = objectKeyForBackup(backup);
+			String metaJson = client.getObjectAsString(metaKey);
+			S3BackupMetadata meta = OBJECT_MAPPER.readValue(metaJson, S3BackupMetadata.class);
+			List<S3BackupResourceMetadata> resourceMetaList = meta.getResourceMetadata();
+			if ( resourceMetaList == null || resourceMetaList.isEmpty() ) {
+				return new CollectionBackupResourceIterable(Collections.emptyList());
+			}
+			List<BackupResource> resources = resourceMetaList.stream()
+					.map(m -> new S3BackupResource(client, m)).collect(Collectors.toList());
+			return new CollectionBackupResourceIterable(resources);
+		} catch ( IOException e ) {
+			log.warn("Communciation error accessing S3: {}", e.getMessage());
+			return new CollectionBackupResourceIterable(Collections.emptyList());
+		} catch ( RemoteServiceException e ) {
+			log.warn("Error accessing S3: {}", e.getMessage());
+			return new CollectionBackupResourceIterable(Collections.emptyList());
+		}
 	}
 
 	@Override
 	public Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props) {
-		// TODO Auto-generated method stub
-		return null;
+		final Date backupDate = backupDateFromProps(date, props);
+		final Calendar cal = new GregorianCalendar();
+		cal.setTime(backupDate);
+		cal.set(Calendar.MILLISECOND, 0);
+		return performBackupInternal(resources, cal);
 	}
 
 	private synchronized S3Client getS3Client() {
@@ -416,6 +467,16 @@ public class S3BackupService implements BackupService, SettingSpecifierProvider 
 	 */
 	public void setIdentityService(OptionalService<IdentityService> identityService) {
 		this.identityService = identityService;
+	}
+
+	/**
+	 * Set the number of seconds to cache S3 results.
+	 * 
+	 * @param cacheSeconds
+	 *        the seconds to set
+	 */
+	public void setCacheSeconds(int cacheSeconds) {
+		this.cacheSeconds = cacheSeconds;
 	}
 
 }

@@ -1,5 +1,5 @@
 /* ==================================================================
- * S3BackupResourceMetadata.java - 3/10/2017 7:53:06 PM
+ * S3BackupResource.java - 4/10/2017 6:40:35 AM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,49 +22,47 @@
 
 package net.solarnetwork.node.backup.s3;
 
+import java.io.IOException;
+import java.io.InputStream;
+import com.amazonaws.services.s3.model.S3Object;
+import net.solarnetwork.node.backup.BackupResource;
+
 /**
- * Metadata on a single backup resource within a backup.
+ * {@link BackupResource} for S3 object.
  * 
  * @author matt
  * @version 1.0
  */
-public class S3BackupResourceMetadata {
+public class S3BackupResource implements BackupResource {
 
-	private String backupPath;
-	private long modificationDate;
-	private String providerKey;
-	private String objectKey;
+	private final S3Client client;
+	private final S3BackupResourceMetadata metadata;
 
+	public S3BackupResource(S3Client client, S3BackupResourceMetadata metadata) {
+		super();
+		this.client = client;
+		this.metadata = metadata;
+	}
+
+	@Override
 	public String getBackupPath() {
-		return backupPath;
+		return metadata.getBackupPath();
 	}
 
+	@Override
+	public InputStream getInputStream() throws IOException {
+		S3Object obj = client.getObject(metadata.getObjectKey());
+		return obj.getObjectContent();
+	}
+
+	@Override
 	public long getModificationDate() {
-		return modificationDate;
+		return metadata.getModificationDate();
 	}
 
+	@Override
 	public String getProviderKey() {
-		return providerKey;
-	}
-
-	public void setBackupPath(String backupPath) {
-		this.backupPath = backupPath;
-	}
-
-	public void setModificationDate(long modificationDate) {
-		this.modificationDate = modificationDate;
-	}
-
-	public void setProviderKey(String providerKey) {
-		this.providerKey = providerKey;
-	}
-
-	public String getObjectKey() {
-		return objectKey;
-	}
-
-	public void setObjectKey(String objectKey) {
-		this.objectKey = objectKey;
+		return metadata.getProviderKey();
 	}
 
 }

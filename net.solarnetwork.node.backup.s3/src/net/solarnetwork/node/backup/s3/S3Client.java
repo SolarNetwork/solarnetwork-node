@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
 
 /**
  * API for accessing S3.
@@ -44,6 +45,37 @@ public interface S3Client {
 	 */
 	Set<S3ObjectReference> listObjects(String prefix);
 
+	/**
+	 * Get the contents of a S3 object as a string.
+	 * 
+	 * @param key
+	 *        the key of the object to get
+	 * @return the string, or {@literal null} if not found
+	 */
+	String getObjectAsString(String key);
+
+	/**
+	 * Get a S3 object.
+	 * 
+	 * @param key
+	 *        the key of the object to get
+	 * @return the object, or {@literal null} if not found
+	 */
+	S3Object getObject(String key);
+
+	/**
+	 * Put an object onto S3.
+	 * 
+	 * @param key
+	 *        the key of the object to put
+	 * @param in
+	 *        the object contents
+	 * @param objectMetadata
+	 *        the object metadata
+	 * @return a referenece to the put object
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	S3ObjectReference putObject(String key, InputStream in, ObjectMetadata objectMetadata)
 			throws IOException;
 

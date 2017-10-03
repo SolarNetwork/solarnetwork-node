@@ -21,7 +21,7 @@ Import-Package:
  net.solarnetwork.node.backup;version="1.4.1",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.0",
- net.solarnetwork.util;version="1.26.1",
+ net.solarnetwork.util;version="1.27.0",
  org.apache.commons.codec;version="[1.7,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.apache.commons.codec.digest;version="[1.7,2.0)",

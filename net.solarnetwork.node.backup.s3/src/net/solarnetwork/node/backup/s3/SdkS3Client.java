@@ -39,6 +39,7 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import net.solarnetwork.node.RemoteServiceException;
 
@@ -98,6 +99,36 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error communicating with AWS", e);
 		}
 		return result;
+	}
+
+	@Override
+	public String getObjectAsString(String key) {
+		AmazonS3 client = getClient();
+		try {
+			return client.getObjectAsString(bucketName, key);
+		} catch ( AmazonServiceException e ) {
+			log.warn("AWS error: {}; HTTP code {}; AWS code {}; type {}; request ID {}", e.getMessage(),
+					e.getStatusCode(), e.getErrorCode(), e.getErrorType(), e.getRequestId());
+			throw new RemoteServiceException("Error getting S3 object at " + key, e);
+		} catch ( AmazonClientException e ) {
+			log.debug("Error communicating with AWS: {}", e.getMessage());
+			throw new RemoteServiceException("Error communicating with AWS", e);
+		}
+	}
+
+	@Override
+	public S3Object getObject(String key) {
+		AmazonS3 client = getClient();
+		try {
+			return client.getObject(bucketName, key);
+		} catch ( AmazonServiceException e ) {
+			log.warn("AWS error: {}; HTTP code {}; AWS code {}; type {}; request ID {}", e.getMessage(),
+					e.getStatusCode(), e.getErrorCode(), e.getErrorType(), e.getRequestId());
+			throw new RemoteServiceException("Error getting S3 object at " + key, e);
+		} catch ( AmazonClientException e ) {
+			log.debug("Error communicating with AWS: {}", e.getMessage());
+			throw new RemoteServiceException("Error communicating with AWS", e);
+		}
 	}
 
 	@Override
