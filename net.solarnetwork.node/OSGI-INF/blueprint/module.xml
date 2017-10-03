@@ -118,7 +118,12 @@
 	
 	<service ref="fsBackupService" interface="net.solarnetwork.node.backup.BackupService"/>
 	
-	<service ref="backupManager" interface="net.solarnetwork.node.backup.BackupManager"/>
+	<service ref="backupManager">
+		<interfaces>
+			<value>net.solarnetwork.node.backup.BackupManager</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
 	
 	<service ref="backupJob" 
 		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
@@ -175,13 +180,10 @@
 	</bean>
 	
 	<bean id="backupManager" class="net.solarnetwork.node.backup.DefaultBackupManager" init-method="init">
+		<osgix:managed-properties 
+			persistent-id="net.solarnetwork.node.backup.DefaultBackupManager" 
+			autowire-on-update="true"/>
 		<property name="backupServices" ref="backupServices"/>
-		<property name="backupServiceTracker">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupService"/>
-			</bean>	
-		</property>
 		<property name="resourceProviders" ref="backupResourceProviders"/>
 	</bean>
 

@@ -77,17 +77,17 @@ import net.solarnetwork.util.UnionIterator;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class DefaultBackupManager implements BackupManager {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private Collection<BackupService> backupServices;
-	private OptionalService<BackupService> backupServiceTracker;
 	private Collection<BackupResourceProvider> resourceProviders;
 	private ExecutorService executorService = defaultExecutorService();
 	private int backupRestoreDelaySeconds = 15;
+	private String preferredBackupServiceKey = FileSystemBackupService.KEY;
 
 	private static HierarchicalMessageSource getMessageSourceInstance() {
 		ResourceBundleMessageSource source = new ResourceBundleMessageSource();
@@ -123,8 +123,7 @@ public class DefaultBackupManager implements BackupManager {
 					return;
 				}
 				log.debug("Looking to see if there is a marked backup to restore");
-				BackupService backupService = (backupServiceTracker != null
-						? backupServiceTracker.service() : null);
+				BackupService backupService = activeBackupService();
 				if ( backupService != null ) {
 					Map<String, String> props = new HashMap<String, String>();
 					Backup backup = backupService.markedBackupForRestore(props);
@@ -171,7 +170,8 @@ public class DefaultBackupManager implements BackupManager {
 	public MessageSource getMessageSource() {
 		HierarchicalMessageSource source = getMessageSourceInstance();
 		HierarchicalMessageSource child = source;
-		for ( BackupService backupService : backupServices ) {
+		BackupService backupService = activeBackupService();
+		if ( backupService != null ) {
 			PrefixedMessageSource ps = new PrefixedMessageSource();
 			ps.setDelegate(backupService.getSettingSpecifierProvider().getMessageSource());
 			ps.setPrefix(backupService.getKey() + ".");
@@ -186,7 +186,7 @@ public class DefaultBackupManager implements BackupManager {
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		BasicRadioGroupSettingSpecifier serviceSpec = new BasicRadioGroupSettingSpecifier(
-				"backupServiceTracker.propertyFilters['key']", FileSystemBackupService.KEY);
+				"preferredBackupServiceKey", FileSystemBackupService.KEY);
 		Map<String, String> serviceSpecValues = new TreeMap<String, String>();
 		for ( BackupService service : backupServices ) {
 			serviceSpecValues.put(service.getKey(),
@@ -199,7 +199,16 @@ public class DefaultBackupManager implements BackupManager {
 
 	@Override
 	public BackupService activeBackupService() {
-		return backupServiceTracker.service();
+		BackupService fallback = null;
+		for ( BackupService service : backupServices ) {
+			if ( preferredBackupServiceKey.equals(service.getKey()) ) {
+				return service;
+			}
+			if ( FileSystemBackupService.KEY.equals(service.getKey()) ) {
+				fallback = service;
+			}
+		}
+		return fallback;
 	}
 
 	@Override
@@ -328,7 +337,7 @@ public class DefaultBackupManager implements BackupManager {
 	@Override
 	public Future<Backup> importBackupArchive(InputStream archive, final Map<String, String> props)
 			throws IOException {
-		final BackupService service = backupServiceTracker.service();
+		final BackupService service = activeBackupService();
 		if ( service == null ) {
 			throw new DynamicServiceUnavailableException(
 					"No BackupService available to import backup with");
@@ -355,7 +364,7 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	public boolean restoreBackupInternal(Backup backup, Map<String, String> props) {
-		BackupService service = backupServiceTracker.service();
+		BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.warn("No BackupService available to restore backup with");
 			return false;
@@ -497,8 +506,16 @@ public class DefaultBackupManager implements BackupManager {
 		return null;
 	}
 
+	/**
+	 * Set the tracker for the desired backup service to use.
+	 * 
+	 * @param tracker
+	 *        the tracker to use
+	 * @deprecated use {@link #setBackupServices(Collection)}
+	 */
+	@Deprecated
 	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
-		this.backupServiceTracker = backupServiceTracker;
+		// ignore this
 	}
 
 	public void setBackupServices(Collection<BackupService> backupServices) {
@@ -525,6 +542,17 @@ public class DefaultBackupManager implements BackupManager {
 	 */
 	public void setBackupRestoreDelaySeconds(int backupRestoreDelaySeconds) {
 		this.backupRestoreDelaySeconds = backupRestoreDelaySeconds;
+	}
+
+	/**
+	 * Set the key of the preferred backup service to use.
+	 * 
+	 * @param preferredBackupServiceKey
+	 *        the service key to set
+	 * @since 1.4
+	 */
+	public void setPreferredBackupServiceKey(String preferredBackupServiceKey) {
+		this.preferredBackupServiceKey = preferredBackupServiceKey;
 	}
 
 }
