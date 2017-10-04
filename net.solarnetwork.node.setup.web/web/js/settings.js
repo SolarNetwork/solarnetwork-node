@@ -408,8 +408,9 @@ function refreshBackupList() {
 		}
 		if ( Array.isArray(json.data) ) {
 			json.data.forEach(function(backup) {
-				var date = new Date(backup.date);
-				optionEl.add(new Option(formatTimestamp(date), backup.key));
+				var date = new Date(backup.date),
+					nodeId = backup.nodeId;
+				optionEl.add(new Option('Node ' +nodeId + ' @ ' +formatTimestamp(date), backup.key));
 			});
 		}
 		optionEl.selectedIndex = 0;

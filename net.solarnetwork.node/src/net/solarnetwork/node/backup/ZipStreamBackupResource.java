@@ -22,16 +22,22 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipEntry;
+import org.apache.commons.io.input.TeeInputStream;
 
 /**
  * A zip input stream backup resource.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.46
  */
 public class ZipStreamBackupResource implements BackupResource {
@@ -40,6 +46,8 @@ public class ZipStreamBackupResource implements BackupResource {
 	private final ZipEntry entry;
 	private final String providerKey;
 	private final String path;
+
+	private File tempFile;
 
 	/**
 	 * Construct with values.
@@ -50,7 +58,8 @@ public class ZipStreamBackupResource implements BackupResource {
 	 *        the entry previously obtained from the zip archive
 	 * @param providerKey
 	 *        the provider key
-	 * @parm path the path to use
+	 * @param path
+	 *        the path to use
 	 */
 	public ZipStreamBackupResource(InputStream stream, ZipEntry entry, String providerKey, String path) {
 		super();
@@ -72,17 +81,34 @@ public class ZipStreamBackupResource implements BackupResource {
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		return new FilterInputStream(stream) {
+		// to support calling getInputStream() more than once, tee the input to a temp file
+		// the first time, and subsequent times 
+		if ( tempFile != null ) {
+			return new BufferedInputStream(new FileInputStream(tempFile));
+		}
+		tempFile = File.createTempFile(entry.getName(), ".tmp");
+		final BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile));
+		return new TeeInputStream(new FilterInputStream(stream) {
 
 			@Override
 			public void close() throws IOException {
+				out.flush();
+				out.close();
 			}
-		};
+		}, out, false);
 	}
 
 	@Override
 	public long getModificationDate() {
 		return entry.getTime();
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		if ( tempFile != null ) {
+			tempFile.delete();
+		}
+		super.finalize();
 	}
 
 }

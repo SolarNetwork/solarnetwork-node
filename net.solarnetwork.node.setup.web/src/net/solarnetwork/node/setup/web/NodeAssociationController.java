@@ -25,7 +25,11 @@
 package net.solarnetwork.node.setup.web;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -40,6 +44,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.keygen.KeyGenerators;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -56,6 +61,8 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.settings.SettingsCommand;
+import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
@@ -69,7 +76,7 @@ import net.solarnetwork.web.domain.Response;
  * Controller used to associate a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version 1.2
+ * @version 1.3
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -97,6 +104,11 @@ public class NodeAssociationController extends BaseSetupController {
 	 */
 	public static final String KEY_USER = "user";
 
+	private static final String KEY_SETTINGS_SERVICE = "settingsService";
+	private static final String KEY_BACKUP_MANAGER = "backupManager";
+	private static final String KEY_BACKUP_SERVICE = "backupService";
+	private static final String KEY_BACKUPS = "backups";
+
 	@Autowired
 	private MessageSource messageSource;
 
@@ -108,6 +120,9 @@ public class NodeAssociationController extends BaseSetupController {
 
 	@Resource(name = "authenticationManager")
 	private AuthenticationManager authenticationManager;
+
+	@Resource(name = "settingsService")
+	private OptionalService<SettingsService> settingsServiceTracker;
 
 	@Resource(name = "backupManager")
 	private OptionalService<BackupManager> backupManagerTracker;
@@ -122,7 +137,7 @@ public class NodeAssociationController extends BaseSetupController {
 	 *        the model
 	 * @return the view name
 	 */
-	@RequestMapping(value = "", method = RequestMethod.GET)
+	@RequestMapping(value = "", method = { RequestMethod.GET, RequestMethod.HEAD })
 	public String setupForm(Model model) {
 		model.addAttribute("command", new AssociateNodeCommand());
 		model.addAttribute(KEY_NETWORK_URL_MAP, networkURLs);
@@ -261,8 +276,54 @@ public class NodeAssociationController extends BaseSetupController {
 	}
 
 	@RequestMapping(value = "/restore", method = RequestMethod.GET)
-	public String restoreFromBackup() {
+	public String restoreFromBackup(ModelMap model) {
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( settingsService != null ) {
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
+		}
+		final BackupManager backupManager = backupManagerTracker.service();
+		if ( backupManager != null ) {
+			model.put(KEY_BACKUP_MANAGER, backupManager);
+			BackupService service = backupManager.activeBackupService();
+			model.put(KEY_BACKUP_SERVICE, service);
+			if ( service != null ) {
+				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
+				Collections.sort(backups, new Comparator<Backup>() {
+
+					@Override
+					public int compare(Backup o1, Backup o2) {
+						// sort in reverse chronological order (newest to oldest)
+						return o2.getDate().compareTo(o1.getDate());
+					}
+				});
+				model.put(KEY_BACKUPS, backups);
+			}
+		}
 		return PAGE_IMPORT_FROM_BACKUP;
+	}
+
+	@RequestMapping(value = "/configure", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Object> configure(SettingsCommand cmd) {
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( settingsService != null ) {
+			settingsService.updateSettings(cmd);
+		}
+		return Response.response(null);
+	}
+
+	@RequestMapping(value = "/chooseBackup", method = RequestMethod.POST)
+	public String chooseBackup(@RequestParam("backup") String key, HttpServletRequest request) {
+		final BackupManager backupManager = backupManagerTracker.service();
+		BackupService service = backupManager.activeBackupService();
+		Backup backup = service.backupForKey(key);
+		if ( backup != null ) {
+			request.getSession(true).setAttribute(BACKUP_KEY_SESSION_KEY, backup.getKey());
+			return PAGE_RESTORE_FROM_BACKUP;
+		}
+		request.getSession(true).setAttribute("errorMessageKey", "node.setup.restore.error.unknown");
+		request.getSession(true).setAttribute("errorMessageParam0", "Backup not imported");
+		return "redirect:/associate";
 	}
 
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)

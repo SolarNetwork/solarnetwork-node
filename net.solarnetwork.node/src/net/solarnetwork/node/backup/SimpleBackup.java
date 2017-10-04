@@ -28,7 +28,7 @@ import java.util.Date;
  * Simple implementation of {@link Backup}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleBackup implements Backup {
 
@@ -36,6 +36,7 @@ public class SimpleBackup implements Backup {
 	private final String key;
 	private final Long size;
 	private final boolean complete;
+	private final Long nodeId;
 
 	/**
 	 * Construct with values.
@@ -50,11 +51,35 @@ public class SimpleBackup implements Backup {
 	 *        the complete flag
 	 */
 	public SimpleBackup(Date date, String key, Long size, boolean complete) {
+		this(null, date, key, size, complete);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param nodeId
+	 *        the node ID
+	 * @param date
+	 *        the date
+	 * @param key
+	 *        the key
+	 * @param size
+	 *        the size
+	 * @param complete
+	 *        the complete flag
+	 */
+	public SimpleBackup(Long nodeId, Date date, String key, Long size, boolean complete) {
 		super();
+		this.nodeId = nodeId;
 		this.date = date;
 		this.key = key;
 		this.size = size;
 		this.complete = complete;
+	}
+
+	@Override
+	public Long getNodeId() {
+		return nodeId;
 	}
 
 	@Override

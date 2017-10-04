@@ -127,7 +127,14 @@
 				<form class="controls form-inline" id="backup-list-form" action="<setup:url value='/a/settings/exportBackup'/>">
 					<select name="backup" class="span3" id="backup-backups">
 						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
-							<option value="${backup.key}"><fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/></option>
+							<option value="${backup.key}">
+								<fmt:message key="backup.backups.backup.label">
+									<fmt:param value="${backup.nodeId}"/>
+									<fmt:param>
+										<fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/>
+									</fmt:param>
+								</fmt:message>
+							</option>
 						</c:forEach>
 					</select>
 					<button type="submit" class="btn btn-primary">
