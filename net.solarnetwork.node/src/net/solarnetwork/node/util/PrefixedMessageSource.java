@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.util;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
@@ -42,118 +44,221 @@ import org.springframework.context.NoSuchMessageException;
  * <code>url</code>.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>prefix</dt>
- * <dd>The message code prefix to dynamically remove from all message
- * codes.</dd>
- * 
- * <dt>delegate</dt>
- * <dd>The {@link MessageSource} to delegate to. If that object implements
- * {@link HierarchicalMessageSource} then those methods will be supported by
- * instances of this class as well.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PrefixedMessageSource implements MessageSource, HierarchicalMessageSource {
 
-	private String prefix = "";
-	private MessageSource delegate;
+	private String singlePrefix = "";
+	private MessageSource singleDelegate;
+	private Map<String, MessageSource> delegates = new LinkedHashMap<String, MessageSource>(2);
+
+	private MessageSource parent;
 
 	@Override
 	public void setParentMessageSource(MessageSource parent) {
-		if ( delegate instanceof HierarchicalMessageSource ) {
-			((HierarchicalMessageSource) delegate).setParentMessageSource(parent);
-		} else {
-			throw new UnsupportedOperationException(
-					"Delegate does not implement HierarchicalMessageSource");
+		this.parent = parent;
+		setupParentMessageSource(parent);
+	}
+
+	private void setupParentMessageSource(MessageSource parent) {
+		for ( MessageSource delegate : delegates.values() ) {
+			if ( delegate instanceof HierarchicalMessageSource ) {
+				((HierarchicalMessageSource) delegate).setParentMessageSource(parent);
+			}
 		}
 	}
 
 	@Override
 	public MessageSource getParentMessageSource() {
-		if ( delegate instanceof HierarchicalMessageSource ) {
-			return ((HierarchicalMessageSource) delegate).getParentMessageSource();
-		}
-		throw new UnsupportedOperationException("Delegate does not implement HierarchicalMessageSource");
+		return parent;
 	}
 
 	@Override
 	public String getMessage(String code, Object[] args, String defaultMessage, Locale locale) {
-		if ( delegate == null ) {
-			return null;
+		if ( delegates == null || delegates.isEmpty() ) {
+			return defaultMessage;
 		}
-		if ( prefix != null && prefix.length() > 0 && code.startsWith(prefix) ) {
-			// remove prefix
-			code = code.substring(prefix.length());
+		for ( Map.Entry<String, MessageSource> me : delegates.entrySet() ) {
+			String prefix = me.getKey();
+			MessageSource delegate = me.getValue();
+			if ( prefix != null && delegate != null
+					&& (prefix.length() < 1 || code.startsWith(prefix)) ) {
+				// remove prefix
+				if ( prefix.length() > 0 ) {
+					code = code.substring(prefix.length());
+				}
+				String result = delegate.getMessage(code, args, null, locale);
+				if ( result != null ) {
+					return result;
+				}
+			}
 		}
-		return delegate.getMessage(code, args, defaultMessage, locale);
+		if ( parent != null ) {
+			return parent.getMessage(code, args, defaultMessage, locale);
+		}
+		return defaultMessage;
 	}
 
 	@Override
 	public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException {
-		if ( delegate == null ) {
-			return null;
+		if ( delegates == null || delegates.isEmpty() ) {
+			throw new NoSuchMessageException(code, locale);
 		}
-		if ( prefix != null && prefix.length() > 0 && code.startsWith(prefix) ) {
-			// remove prefix
-			code = code.substring(prefix.length());
+		for ( Map.Entry<String, MessageSource> me : delegates.entrySet() ) {
+			String prefix = me.getKey();
+			MessageSource delegate = me.getValue();
+			if ( prefix != null && delegate != null
+					&& (prefix.length() < 1 || code.startsWith(prefix)) ) {
+				// remove prefix
+				if ( prefix.length() > 0 ) {
+					code = code.substring(prefix.length());
+				}
+				String result = delegate.getMessage(code, args, null, locale);
+				if ( result != null ) {
+					return result;
+				}
+			}
 		}
-		return delegate.getMessage(code, args, locale);
+		if ( parent != null ) {
+			return parent.getMessage(code, args, locale);
+		}
+		throw new NoSuchMessageException(code, locale);
 	}
 
 	@Override
 	public String getMessage(final MessageSourceResolvable resolvable, Locale locale)
 			throws NoSuchMessageException {
-		if ( delegate == null ) {
+		if ( delegates == null || delegates.isEmpty() ) {
 			return null;
 		}
-		final String[] codes = resolvable.getCodes();
-		if ( prefix != null && prefix.length() > 0 ) {
+		for ( Map.Entry<String, MessageSource> me : delegates.entrySet() ) {
+			String prefix = me.getKey();
+			MessageSource delegate = me.getValue();
+			final String[] origCodes = resolvable.getCodes();
+			final String[] codes = new String[origCodes != null ? origCodes.length : 0];
 			for ( int i = 0; i < codes.length; i++ ) {
-				if ( codes[i].startsWith(prefix) ) {
-					codes[i] = codes[i].substring(prefix.length());
+				String code = origCodes[i];
+				if ( prefix != null && delegate != null
+						&& (prefix.length() < 1 || code.startsWith(prefix)) ) {
+					// remove prefix
+					if ( prefix.length() > 0 ) {
+						code = code.substring(prefix.length());
+					}
+					codes[i] = code;
 				}
 			}
+			try {
+				String result = delegate.getMessage(new MessageSourceResolvable() {
+
+					@Override
+					public String getDefaultMessage() {
+						return resolvable.getDefaultMessage();
+					}
+
+					@Override
+					public String[] getCodes() {
+						return codes;
+					}
+
+					@Override
+					public Object[] getArguments() {
+						return resolvable.getArguments();
+					}
+				}, locale);
+				if ( result != null ) {
+					return result;
+				}
+			} catch ( NoSuchMessageException e ) {
+				// skip
+			}
 		}
-		return delegate.getMessage(new MessageSourceResolvable() {
-
-			@Override
-			public String getDefaultMessage() {
-				return resolvable.getDefaultMessage();
-			}
-
-			@Override
-			public String[] getCodes() {
-				return codes;
-			}
-
-			@Override
-			public Object[] getArguments() {
-				return resolvable.getArguments();
-			}
-		}, locale);
+		return null;
 	}
 
+	/**
+	 * Get the singular message code prefix to dynamically remove from all
+	 * message codes.
+	 * 
+	 * @return the singular message code prefix
+	 * @see #getDelegate()
+	 */
 	public String getPrefix() {
-		return prefix;
+		return this.singlePrefix;
 	}
 
+	/**
+	 * Set the singular message code prefix to dynamically remove from all
+	 * message codes.
+	 * 
+	 * <p>
+	 * This prefix will only be used with the singular delegate configured via
+	 * {@link #setDelegate(MessageSource)}.
+	 * </p>
+	 * 
+	 * @param prefix
+	 *        the singular message code prefix
+	 * @see #setDelegate(MessageSource)
+	 */
 	public void setPrefix(String prefix) {
-		this.prefix = prefix;
+		this.singlePrefix = prefix;
+		delegates.put(prefix, this.singleDelegate);
 	}
 
+	/**
+	 * Get the singular {@link MessageSource} to use with the singular prefix.
+	 * 
+	 * @return the singular message source delegate
+	 */
 	public MessageSource getDelegate() {
-		return delegate;
+		return singleDelegate;
 	}
 
+	/**
+	 * Set the singular {@link MessageSource} to use with the singular prefix.
+	 * 
+	 * @param delegate
+	 *        the singular delegate to use
+	 */
 	public void setDelegate(MessageSource delegate) {
-		this.delegate = delegate;
+		this.singleDelegate = delegate;
+		delegates.put(this.singlePrefix, delegate);
+		if ( this.parent != null ) {
+			setupParentMessageSource(this.parent);
+		}
+	}
+
+	/**
+	 * Get the multi-prefix delegate mapping.
+	 * 
+	 * @return a mapping of message code prefixes to associated
+	 *         {@link MessageSource} delegates
+	 * @since 1.2
+	 */
+	public Map<String, MessageSource> getDelegates() {
+		return delegates;
+	}
+
+	/**
+	 * Set the multi-prefix delegate mapping.
+	 * 
+	 * <p>
+	 * This configures any number of {@link MessageSource} delegates to handle
+	 * specific message codes with associated prefix values.
+	 * </p>
+	 * 
+	 * @param delegates
+	 *        the message code prefix mapping
+	 * @since 1.2
+	 */
+	public void setDelegates(Map<String, MessageSource> delegates) {
+		this.delegates = new LinkedHashMap<String, MessageSource>(delegates);
+		if ( this.singleDelegate != null ) {
+			this.delegates.put(this.singlePrefix, this.singleDelegate);
+		}
+		if ( this.parent != null ) {
+			setupParentMessageSource(this.parent);
+		}
 	}
 
 }
