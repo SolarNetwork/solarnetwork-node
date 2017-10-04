@@ -187,7 +187,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 *        a regular expression to match a node ID and date from a backup key
 	 * @return the node ID, or {@literal 0} if not available
 	 */
-	private Long backupNodeIdFromProps(Long nodeId, Map<String, String> props,
+	protected Long backupNodeIdFromProps(Long nodeId, Map<String, String> props,
 			Pattern nodeIdAndDatePattern) {
 		if ( nodeId != null ) {
 			return nodeId;
