@@ -28,7 +28,7 @@ import java.util.Date;
  * An individual backup.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface Backup {
 
@@ -42,6 +42,14 @@ public interface Backup {
 	 * @return the backup key
 	 */
 	String getKey();
+
+	/**
+	 * Get the node ID associated with this backup.
+	 * 
+	 * @return the node ID
+	 * @since 1.1
+	 */
+	Long getNodeId();
 
 	/**
 	 * Boolean flag indicating if this backup is complete.

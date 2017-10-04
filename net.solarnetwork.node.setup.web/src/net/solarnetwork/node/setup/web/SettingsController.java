@@ -32,6 +32,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -47,6 +48,7 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
@@ -202,6 +204,23 @@ public class SettingsController {
 		return new Response<Object>(result, null, null, null);
 	}
 
+	private String backupExportFileNameForBackupKey(String backupKey) {
+		// look if already has node ID + date in key
+		Matcher m = BackupServiceSupport.NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(backupKey);
+		String nodeId = null;
+		String key = null;
+		if ( m.find() ) {
+			nodeId = m.group(1);
+			key = m.group(2);
+		} else {
+			Long id = (identityService != null ? identityService.getNodeId() : null);
+			nodeId = (id != null ? id.toString() : null);
+			key = backupKey;
+		}
+		return "node-" + (nodeId != null ? nodeId : "UNKNOWN") + "-backup"
+				+ (key == null ? "" : "-" + key) + ".zip";
+	}
+
 	@RequestMapping(value = "/exportBackup", method = RequestMethod.GET)
 	@ResponseBody
 	public void exportBackup(@RequestParam(required = false, value = "backup") String backupKey,
@@ -211,13 +230,11 @@ public class SettingsController {
 			return;
 		}
 
-		final Long nodeId = (identityService != null ? identityService.getNodeId() : null);
+		final String exportFileName = backupExportFileNameForBackupKey(backupKey);
 
 		// create the zip archive for the backup files
 		response.setContentType("application/zip");
-		response.setHeader("Content-Disposition",
-				"attachment; filename=node-" + (nodeId != null ? nodeId.toString() : "UNKNOWN")
-						+ "-backup" + (backupKey == null ? "" : "-" + backupKey) + ".zip");
+		response.setHeader("Content-Disposition", "attachment; filename=" + exportFileName);
 		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 

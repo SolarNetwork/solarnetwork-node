@@ -31,7 +31,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * API for node backup.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface BackupService {
 
@@ -145,5 +145,14 @@ public interface BackupService {
 	 * @since 1.2
 	 */
 	Backup importBackup(Date date, BackupResourceIterable resources, Map<String, String> props);
+
+	/**
+	 * Get a {@link SettingSpecifierProvider} for this service, when restoring
+	 * from an existing backup.
+	 * 
+	 * @return provider, or {@literal null} if not supported
+	 * @since 1.3
+	 */
+	SettingSpecifierProvider getSettingSpecifierProviderForRestore();
 
 }
