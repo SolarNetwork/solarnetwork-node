@@ -1,6 +1,12 @@
 (function() {
 'use strict';
 
+function delayedReload() {
+	setTimeout(function() {
+		window.location.reload(true);
+	}, 200);
+}
+
 $(document).ready(function() {
 	$('#associate-confirm-form').on('submit', function(event) {
 		var pass = $('#invitation-certpass');
@@ -90,6 +96,24 @@ $(document).ready(function() {
 			}
 			SolarNode.Backups.generateBackupList(json.data, $('#associate-restore-list-container'));
 		});
+	});
+	
+	// auto-save the preferred backup service when changing that option,
+	// and then auto-reload the screen to show the updated settings form
+	$('#associate-choose-backup-form #cg-bmi0 input[type=radio]').on('change', function(event) {
+		var form = this;
+		
+		// delay for settings logic to get applied
+		setTimeout(function() {
+			SolarNode.Settings.saveUpdates(SolarNode.context.path('/associate/configure'), undefined, delayedReload);
+		}, 100);
+
+		event.preventDefault();
+		return false;
+	});
+	
+	$('#associate-choose-backup-apply-settings').on('click', function() {
+		SolarNode.Settings.saveUpdates(SolarNode.context.path('/associate/configure'), undefined, delayedReload);
 	});
 });
 
