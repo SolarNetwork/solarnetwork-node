@@ -28,7 +28,12 @@ import com.amazonaws.services.s3.model.S3Object;
 import net.solarnetwork.node.backup.BackupResource;
 
 /**
- * {@link BackupResource} for S3 object.
+ * {@link BackupResource} for a S3 object.
+ * 
+ * <p>
+ * The {@link #getInputStream()} method will return new InputStream instances
+ * each time, each stream will fetch from S3 anew.
+ * </p>
  * 
  * @author matt
  * @version 1.0

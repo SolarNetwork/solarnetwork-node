@@ -74,6 +74,24 @@ import net.solarnetwork.util.OptionalService;
  * {@link BackupService} implementation using Amazon S3 for storage in the
  * cloud.
  * 
+ * <p>
+ * <b>Note</b> that backups are stored using a <b>shared</b> object structure in
+ * S3, where individual backup resources are named after the SHA256 digest of
+ * their <i>content</i> with a {@code backup-data/} prefix added. Metadata about
+ * each backup (including a listing of the resources included in the backup) is
+ * then stored as an object named with the node ID and backup timestamp with a
+ * `{@code backup-meta/} prefix added.
+ * </p>
+ * 
+ * <p>
+ * This object sharing system means that backup resources are only stored once
+ * in S3, across any number of backups. It also means that multiple nodes can
+ * backup to the same S3 location and the same resources present on different
+ * nodes will only be stored once as well. Keep in mind the security
+ * implications of this approach when using multiple nodes: all nodes
+ * technically have access to all backups.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
