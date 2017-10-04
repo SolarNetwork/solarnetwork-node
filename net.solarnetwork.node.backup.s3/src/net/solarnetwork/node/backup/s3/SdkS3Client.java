@@ -38,7 +38,6 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import net.solarnetwork.node.RemoteServiceException;
@@ -137,9 +136,9 @@ public class SdkS3Client implements S3Client {
 		AmazonS3 client = getClient();
 		try {
 			PutObjectRequest req = new PutObjectRequest(bucketName, key, in, objectMetadata);
-			PutObjectResult putResult = client.putObject(req);
-			return new S3ObjectReference(key, putResult.getMetadata().getContentLength(),
-					putResult.getMetadata().getLastModified());
+			client.putObject(req);
+			return new S3ObjectReference(key, objectMetadata.getContentLength(),
+					objectMetadata.getLastModified());
 		} catch ( AmazonServiceException e ) {
 			log.warn("AWS error: {}; HTTP code {}; AWS code {}; type {}; request ID {}", e.getMessage(),
 					e.getStatusCode(), e.getErrorCode(), e.getErrorType(), e.getRequestId());

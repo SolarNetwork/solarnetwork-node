@@ -50,8 +50,8 @@ public class S3BackupMetadata implements Backup {
 	public S3BackupMetadata(S3ObjectReference objRef) {
 		super();
 		if ( objRef != null ) {
-			setKey(objRef.getKey());
 			this.date = objRef.getModified();
+			setKey(objRef.getKey());
 			this.complete = true;
 		} else {
 			this.nodeId = null;
@@ -70,6 +70,9 @@ public class S3BackupMetadata implements Backup {
 		this.key = key;
 		if ( this.nodeId == null ) {
 			setNodeId(S3BackupService.nodeIdFromBackupKey(key));
+		}
+		if ( this.date == null ) {
+			setDate(S3BackupService.dateFromBackupKey(key));
 		}
 	}
 

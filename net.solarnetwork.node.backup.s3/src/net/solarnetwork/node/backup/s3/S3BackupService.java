@@ -26,6 +26,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -177,6 +179,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 					.listObjects(objectKeyForPath(DATA_OBJECT_KEY_PREFIX));
 
 			S3BackupMetadata meta = new S3BackupMetadata();
+			meta.setNodeId(nodeId);
 			MessageDigest digest = DigestUtils.getSha256Digest();
 			byte[] buf = new byte[4096];
 			for ( BackupResource rsrc : resources ) {
@@ -254,6 +257,21 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			}
 		}
 		return nodeId;
+	}
+
+	public static final Date dateFromBackupKey(String key) {
+		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT);
+		if ( key != null ) {
+			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(key);
+			if ( m.find() ) {
+				try {
+					return sdf.parse(m.group(2));
+				} catch ( ParseException e ) {
+					// ignore
+				}
+			}
+		}
+		return new Date();
 	}
 
 	@Override
