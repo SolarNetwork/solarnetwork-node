@@ -155,6 +155,59 @@ public abstract class BackupServiceSupport implements BackupService {
 		return new Date();
 	}
 
+	/**
+	 * Shortcut for {@link #backupNodeIdFromProps(Long, Map, Pattern)} using
+	 * default values.
+	 * 
+	 * <p>
+	 * The {@link #NODE_AND_DATE_BACKUP_KEY_PATTERN} pattern is used.
+	 * </p>
+	 * 
+	 * @param nodeId
+	 *        if not {@literal null} then return this value
+	 * @param props
+	 *        a mapping of properties, which may include a
+	 *        {@link BackupManager#BACKUP_KEY} value
+	 * @return the node ID, or {@literal 0} if not available
+	 * @see #backupNodeIdFromProps(Long, Map, Pattern)
+	 */
+	protected Long backupNodeIdFromProps(Long nodeId, Map<String, String> props) {
+		return backupNodeIdFromProps(nodeId, props, NODE_AND_DATE_BACKUP_KEY_PATTERN);
+	}
+
+	/**
+	 * Parse a node ID from a backup key.
+	 * 
+	 * @param nodeId
+	 *        if not {@literal null} then return this value
+	 * @param props
+	 *        a mapping of properties, which may include a
+	 *        {@link BackupManager#BACKUP_KEY} value
+	 * @param nodeIdAndDatePattern
+	 *        a regular expression to match a node ID and date from a backup key
+	 * @return the node ID, or {@literal 0} if not available
+	 */
+	private Long backupNodeIdFromProps(Long nodeId, Map<String, String> props,
+			Pattern nodeIdAndDatePattern) {
+		if ( nodeId != null ) {
+			return nodeId;
+		}
+		Long result = 0L;
+		String backupKey = (props == null ? null : props.get(BackupManager.BACKUP_KEY));
+		if ( backupKey != null ) {
+			Matcher m = nodeIdAndDatePattern.matcher(backupKey);
+			if ( m.find() ) {
+
+				try {
+					result = Long.valueOf(m.group(1));
+				} catch ( NumberFormatException e ) {
+					log.warn("Unable to parse node ID from key [{}]", backupKey);
+				}
+			}
+		}
+		return result;
+	}
+
 	@Override
 	public synchronized boolean markBackupForRestore(Backup backup, Map<String, String> props) {
 		File markFile = markedBackupForRestoreFile();

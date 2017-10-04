@@ -169,16 +169,14 @@ public class DefaultBackupManager implements BackupManager {
 	@Override
 	public MessageSource getMessageSource() {
 		HierarchicalMessageSource source = getMessageSourceInstance();
-		HierarchicalMessageSource child = source;
-		BackupService backupService = activeBackupService();
-		if ( backupService != null ) {
-			PrefixedMessageSource ps = new PrefixedMessageSource();
-			ps.setDelegate(backupService.getSettingSpecifierProvider().getMessageSource());
-			ps.setPrefix(backupService.getKey() + ".");
-			child.setParentMessageSource(ps);
-			child = ps;
+		Map<String, MessageSource> delegates = new HashMap<String, MessageSource>();
+		for ( BackupService backupService : backupServices ) {
+			delegates.put(backupService.getKey() + ".",
+					backupService.getSettingSpecifierProvider().getMessageSource());
 		}
-
+		PrefixedMessageSource ps = new PrefixedMessageSource();
+		ps.setDelegates(delegates);
+		source.setParentMessageSource(ps);
 		return source;
 	}
 

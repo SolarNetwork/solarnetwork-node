@@ -36,6 +36,7 @@ import net.solarnetwork.node.backup.BackupResource;
  */
 public class S3BackupMetadata implements Backup {
 
+	private Long nodeId;
 	private String key;
 	private Date date;
 	private boolean complete;
@@ -49,10 +50,11 @@ public class S3BackupMetadata implements Backup {
 	public S3BackupMetadata(S3ObjectReference objRef) {
 		super();
 		if ( objRef != null ) {
-			this.key = objRef.getKey();
+			setKey(objRef.getKey());
 			this.date = objRef.getModified();
 			this.complete = true;
 		} else {
+			this.nodeId = null;
 			this.key = null;
 			this.date = null;
 			this.complete = false;
@@ -66,6 +68,9 @@ public class S3BackupMetadata implements Backup {
 
 	public void setKey(String key) {
 		this.key = key;
+		if ( this.nodeId == null ) {
+			setNodeId(S3BackupService.nodeIdFromBackupKey(key));
+		}
 	}
 
 	@Override
@@ -85,6 +90,15 @@ public class S3BackupMetadata implements Backup {
 	@Override
 	public Long getSize() {
 		return null;
+	}
+
+	@Override
+	public Long getNodeId() {
+		return nodeId;
+	}
+
+	public void setNodeId(Long nodeId) {
+		this.nodeId = nodeId;
 	}
 
 	public void setComplete(boolean complete) {

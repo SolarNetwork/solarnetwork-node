@@ -124,7 +124,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
 		FileSystemBackupService defaults = new FileSystemBackupService();
 		results.add(new BasicTitleSettingSpecifier("status", getStatus().toString(), true));
 		results.add(new BasicTextFieldSettingSpecifier("backupDir",
@@ -165,10 +165,11 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	public Backup performBackup(final Iterable<BackupResource> resources) {
 		final Calendar now = new GregorianCalendar();
 		now.set(Calendar.MILLISECOND, 0);
-		return performBackupInternal(resources, now);
+		return performBackupInternal(resources, now, null);
 	}
 
-	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now) {
+	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now,
+			Map<String, String> props) {
 		if ( resources == null ) {
 			return null;
 		}
@@ -188,7 +189,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		if ( !backupDir.exists() ) {
 			backupDir.mkdirs();
 		}
-		final Long nodeId = nodeIdForArchiveFileName();
+		final Long nodeId = nodeIdForArchiveFileName(props);
 		final String archiveName = String.format(ARCHIVE_NAME_FORMAT, now, nodeId);
 		final File archiveFile = new File(backupDir, archiveName);
 		final String archiveKey = getArchiveKey(archiveName);
@@ -214,7 +215,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			zos.flush();
 			zos.finish();
 			log.info("Backup complete to archive {}", archiveName);
-			backup = new SimpleBackup(now.getTime(), archiveKey, archiveFile.length(), true);
+			backup = new SimpleBackup(nodeId, now.getTime(), archiveKey, archiveFile.length(), true);
 
 			// clean out older backups
 			File[] backupFiles = getAvailableBackupFiles();
@@ -250,6 +251,14 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 			}
 		}
 		return backup;
+	}
+
+	private final Long nodeIdForArchiveFileName(Map<String, String> props) {
+		Long nodeId = backupNodeIdFromProps(null, props);
+		if ( nodeId == 0L ) {
+			nodeId = nodeIdForArchiveFileName();
+		}
+		return nodeId;
 	}
 
 	private final Long nodeIdForArchiveFileName() {
@@ -316,7 +325,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		final Calendar cal = new GregorianCalendar();
 		cal.setTime(backupDate);
 		cal.set(Calendar.MILLISECOND, 0);
-		return performBackupInternal(resources, cal);
+		return performBackupInternal(resources, cal, props);
 	}
 
 	/**
@@ -362,7 +371,13 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		if ( m.find() ) {
 			try {
 				Date d = sdf.parse(m.group(2));
-				return new SimpleBackup(d, m.group(2), f.length(), true);
+				Long nodeId = 0L;
+				try {
+					nodeId = Long.valueOf(m.group(1));
+				} catch ( NumberFormatException e ) {
+					// ignore this
+				}
+				return new SimpleBackup(nodeId, d, m.group(2), f.length(), true);
 			} catch ( ParseException e ) {
 				log.error("Error parsing date from archive " + f.getName() + ": " + e.getMessage());
 			}
@@ -390,6 +405,35 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	@Override
 	public SettingSpecifierProvider getSettingSpecifierProvider() {
 		return this;
+	}
+
+	@Override
+	public SettingSpecifierProvider getSettingSpecifierProviderForRestore() {
+		return new SettingSpecifierProvider() {
+
+			@Override
+			public String getSettingUID() {
+				return FileSystemBackupService.this.getSettingUID();
+			}
+
+			@Override
+			public List<SettingSpecifier> getSettingSpecifiers() {
+				List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
+				results.add(new BasicTextFieldSettingSpecifier("backupDir",
+						defaultBackuprDir().getAbsolutePath()));
+				return results;
+			}
+
+			@Override
+			public MessageSource getMessageSource() {
+				return FileSystemBackupService.this.getMessageSource();
+			}
+
+			@Override
+			public String getDisplayName() {
+				return FileSystemBackupService.this.getDisplayName();
+			}
+		};
 	}
 
 	private static class ArchiveFilter implements FilenameFilter {
