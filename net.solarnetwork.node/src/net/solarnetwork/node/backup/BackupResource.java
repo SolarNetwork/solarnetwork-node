@@ -29,7 +29,7 @@ import java.io.InputStream;
  * API for a resource to take part in the backup system.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface BackupResource {
 
@@ -68,5 +68,19 @@ public interface BackupResource {
 	 * @since 1.1
 	 */
 	String getProviderKey();
+
+	/**
+	 * Get the expected SHA-256 digest of the resource content.
+	 * 
+	 * <p>
+	 * This value is meant to be used to verify the integrity of the content of
+	 * the resource when read from {@link #getInputStream()}.
+	 * </p>
+	 * 
+	 * @return the SHA-256 digest as a hex-encoded string, or {@literal null} if
+	 *         not known
+	 * @since 1.2
+	 */
+	String getSha256Digest();
 
 }

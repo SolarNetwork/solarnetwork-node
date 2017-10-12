@@ -34,6 +34,7 @@ public class S3BackupResourceMetadata {
 	private long modificationDate;
 	private String providerKey;
 	private String objectKey;
+	private String digest;
 
 	public String getBackupPath() {
 		return backupPath;
@@ -65,6 +66,14 @@ public class S3BackupResourceMetadata {
 
 	public void setObjectKey(String objectKey) {
 		this.objectKey = objectKey;
+	}
+
+	public String getDigest() {
+		return digest;
+	}
+
+	public void setDigest(String digest) {
+		this.digest = digest;
 	}
 
 }

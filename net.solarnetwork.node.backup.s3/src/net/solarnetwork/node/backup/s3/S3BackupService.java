@@ -26,8 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -43,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -215,7 +212,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				} else {
 					log.info("Backup resource already saved to S3: {}", rsrc.getBackupPath());
 				}
-				meta.addBackupResource(rsrc, objectKey);
+				meta.addBackupResource(rsrc, objectKey, sha);
 			}
 
 			// now save metadata
@@ -262,34 +259,6 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		IdentityService service = (identityService != null ? identityService.service() : null);
 		final Long nodeId = (service != null ? service.getNodeId() : null);
 		return (nodeId != null ? nodeId : 0L);
-	}
-
-	public static final Long nodeIdFromBackupKey(String key) {
-		Long nodeId = 0L;
-		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(key);
-		if ( m.find() ) {
-			try {
-				return nodeId = Long.valueOf(m.group(1));
-			} catch ( NumberFormatException e ) {
-				// ignore
-			}
-		}
-		return nodeId;
-	}
-
-	public static final Date dateFromBackupKey(String key) {
-		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT);
-		if ( key != null ) {
-			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(key);
-			if ( m.find() ) {
-				try {
-					return sdf.parse(m.group(2));
-				} catch ( ParseException e ) {
-					// ignore
-				}
-			}
-		}
-		return new Date();
 	}
 
 	@Override
@@ -360,8 +329,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		try {
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
-					.map(o -> new SimpleBackup(nodeIdFromBackupKey(o.getKey()), o.getModified(),
-							pathWithoutPrefix(o.getKey(), objectKeyPrefix), null, true))
+					.map(o -> new SimpleBackup(
+							identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null,
+							true))
 					.collect(Collectors.toList());
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));

@@ -30,13 +30,14 @@ import org.springframework.core.io.Resource;
  * {@link BackupResource} implementation using a Spring {@link Resource}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ResourceBackupResource implements BackupResource {
 
 	private final Resource resource;
 	private final String backupPath;
 	private final String providerKey;
+	private final String sha256Digest;
 
 	/**
 	 * Constructor.
@@ -50,7 +51,7 @@ public class ResourceBackupResource implements BackupResource {
 	 *        The backup path.
 	 */
 	public ResourceBackupResource(Resource resource, String backupPath) {
-		this(resource, backupPath, FileBackupResourceProvider.class.getName());
+		this(resource, backupPath, FileBackupResourceProvider.class.getName(), null);
 	}
 
 	/**
@@ -65,10 +66,29 @@ public class ResourceBackupResource implements BackupResource {
 	 * @since 1.1
 	 */
 	public ResourceBackupResource(Resource resource, String backupPath, String providerKey) {
+		this(resource, backupPath, providerKey, null);
+	}
+
+	/**
+	 * Construct with a specific provider key.
+	 * 
+	 * @param resource
+	 *        The resource.
+	 * @param backupPath
+	 *        The backup path.
+	 * @param providerKey
+	 *        The provider key.
+	 * @param sha256Digest
+	 *        The SHA-256 digest, hex encoded
+	 * @since 1.2
+	 */
+	public ResourceBackupResource(Resource resource, String backupPath, String providerKey,
+			String sha256Digest) {
 		super();
 		this.resource = resource;
 		this.backupPath = backupPath;
 		this.providerKey = providerKey;
+		this.sha256Digest = sha256Digest;
 	}
 
 	@Override
@@ -94,6 +114,11 @@ public class ResourceBackupResource implements BackupResource {
 			// ignore
 		}
 		return -1;
+	}
+
+	@Override
+	public String getSha256Digest() {
+		return sha256Digest;
 	}
 
 }

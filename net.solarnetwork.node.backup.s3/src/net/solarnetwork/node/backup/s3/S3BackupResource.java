@@ -70,4 +70,9 @@ public class S3BackupResource implements BackupResource {
 		return metadata.getProviderKey();
 	}
 
+	@Override
+	public String getSha256Digest() {
+		return metadata.getDigest();
+	}
+
 }

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode S3 Backup
 Bundle-SymbolicName: net.solarnetwork.node.backup.s3
 Bundle-Description: SolarNode cloud backup provider using Amazon S3.
-Bundle-Version: 0.1.0
+Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -18,7 +18,7 @@ Import-Package:
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  net.solarnetwork.node;version="1.22.0",
- net.solarnetwork.node.backup;version="1.4.1",
+ net.solarnetwork.node.backup;version="1.6.0",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.0",
  net.solarnetwork.util;version="1.27.0",

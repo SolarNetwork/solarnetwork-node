@@ -1,7 +1,7 @@
 /* ==================================================================
- * BackupInfo.java - 2/11/2016 1:33:07 PM
+ * SimpleBackupIdentity.java - 12/10/2017 5:14:43 PM
  * 
- * Copyright 2007-2016 SolarNetwork.net Dev Team
+ * Copyright 2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,32 +22,59 @@
 
 package net.solarnetwork.node.backup;
 
-import java.util.Collection;
+import java.util.Date;
 
 /**
- * Metadata about a {@link Backup}.
+ * Basic implementation of {@link BackupIdentity}.
  * 
  * @author matt
- * @version 1.1
- * @since 1.46
+ * @version 1.0
  */
-public interface BackupInfo extends BackupIdentity {
+public class SimpleBackupIdentity implements BackupIdentity {
+
+	private final String key;
+	private final Date date;
+	private final Long nodeId;
+	private final String qualifier;
 
 	/**
-	 * Get a list of all providers included in the backup.
+	 * Constructor.
 	 * 
-	 * @return The list of providers, or an empty list.
+	 * @param key
+	 *        the key
+	 * @param date
+	 *        the date
+	 * @param nodeId
+	 *        the node ID
+	 * @param qualifier
+	 *        the qualifier
 	 */
-	Collection<BackupResourceProviderInfo> getProviderInfos();
+	public SimpleBackupIdentity(String key, Date date, Long nodeId, String qualifier) {
+		super();
+		this.key = key;
+		this.date = date;
+		this.nodeId = nodeId;
+		this.qualifier = qualifier;
+	}
 
-	/**
-	 * Get a list of all resources included in the backup.
-	 * 
-	 * The resources should be ordered such that all resources for a given
-	 * provider are together.
-	 * 
-	 * @return The list of resources, or an empty list.
-	 */
-	Collection<BackupResourceInfo> getResourceInfos();
+	@Override
+	public String getKey() {
+		return key;
+	}
+
+	@Override
+	public Date getDate() {
+		return date;
+	}
+
+	@Override
+	public Long getNodeId() {
+		return nodeId;
+	}
+
+	@Override
+	public String getQualifier() {
+		return qualifier;
+	}
 
 }

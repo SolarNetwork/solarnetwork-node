@@ -31,7 +31,7 @@ import java.util.Iterator;
  * resource path.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.46
  */
 public class PrefixedBackupResourceIterator implements Iterator<BackupResource> {
@@ -81,6 +81,11 @@ public class PrefixedBackupResourceIterator implements Iterator<BackupResource> 
 			@Override
 			public long getModificationDate() {
 				return r.getModificationDate();
+			}
+
+			@Override
+			public String getSha256Digest() {
+				return r.getSha256Digest();
 			}
 
 		};

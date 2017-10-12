@@ -63,21 +63,8 @@ import net.solarnetwork.util.UnionIterator;
 /**
  * Default implementation of {@link BackupManager}.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>backupServiceTracker</dt>
- * <dd>A tracker for the desired backup service to use.</dd>
- * 
- * <dt>resourceProviders</dt>
- * <dd>The collection of {@link BackupResourceProvider} instances that provide
- * the resources to be backed up.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -361,7 +348,7 @@ public class DefaultBackupManager implements BackupManager {
 		restoreBackupInternal(backup, props);
 	}
 
-	public boolean restoreBackupInternal(Backup backup, Map<String, String> props) {
+	private boolean restoreBackupInternal(Backup backup, Map<String, String> props) {
 		BackupService service = activeBackupService();
 		if ( service == null ) {
 			log.warn("No BackupService available to restore backup with");
@@ -409,6 +396,11 @@ public class DefaultBackupManager implements BackupManager {
 								@Override
 								public long getModificationDate() {
 									return r.getModificationDate();
+								}
+
+								@Override
+								public String getSha256Digest() {
+									return r.getSha256Digest();
 								}
 
 							});
@@ -512,10 +504,24 @@ public class DefaultBackupManager implements BackupManager {
 		// ignore this
 	}
 
+	/**
+	 * Set a collection of {@link BackupService} instances to allow backing up
+	 * and restoring with.
+	 * 
+	 * @param backupServices
+	 *        the backup services to use
+	 */
 	public void setBackupServices(Collection<BackupService> backupServices) {
 		this.backupServices = backupServices;
 	}
 
+	/**
+	 * Set a collection of {@link BackupResourceProvider} instances that provide
+	 * the resources to be backed up.
+	 * 
+	 * @param resourceProviders
+	 *        the resource providers to backup resources from
+	 */
 	public void setResourceProviders(Collection<BackupResourceProvider> resourceProviders) {
 		this.resourceProviders = resourceProviders;
 	}

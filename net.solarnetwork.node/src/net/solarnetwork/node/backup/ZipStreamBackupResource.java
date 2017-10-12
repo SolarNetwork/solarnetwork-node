@@ -37,7 +37,7 @@ import org.apache.commons.io.input.TeeInputStream;
  * A zip input stream backup resource.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.46
  */
 public class ZipStreamBackupResource implements BackupResource {
@@ -109,6 +109,11 @@ public class ZipStreamBackupResource implements BackupResource {
 			tempFile.delete();
 		}
 		super.finalize();
+	}
+
+	@Override
+	public String getSha256Digest() {
+		return null;
 	}
 
 }
