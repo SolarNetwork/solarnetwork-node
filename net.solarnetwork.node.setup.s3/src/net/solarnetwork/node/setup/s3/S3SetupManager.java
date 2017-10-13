@@ -36,6 +36,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,8 +63,9 @@ import net.solarnetwork.node.backup.s3.S3BackupService;
 import net.solarnetwork.node.backup.s3.S3Client;
 import net.solarnetwork.node.backup.s3.S3ObjectReference;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -74,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.0
  */
-public class S3SetupManager implements InstructionHandler {
+public class S3SetupManager implements FeedbackInstructionHandler {
 
 	private static final String SETTING_KEY_VERSION = "solarnode.s3.version";
 
@@ -190,8 +192,14 @@ public class S3SetupManager implements InstructionHandler {
 
 	@Override
 	public InstructionState processInstruction(Instruction instruction) {
-		if ( !TOPIC_UPDATE_PLATFORM.equals(instruction.getTopic()) ) {
-			return InstructionState.Declined;
+		InstructionStatus status = processInstructionWithFeedback(instruction);
+		return (status != null ? status.getInstructionState() : null);
+	}
+
+	@Override
+	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+		if ( instruction == null || !TOPIC_UPDATE_PLATFORM.equals(instruction.getTopic()) ) {
+			return null;
 		}
 		String instrVersion = instruction.getParameterValue(INSTRUCTION_PARAM_VERSION);
 		String metaKey = null;
@@ -210,13 +218,21 @@ public class S3SetupManager implements InstructionHandler {
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
-			return InstructionState.Completed;
+			return instruction.getStatus().newCopyWithState(InstructionState.Completed);
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
+			return statusWithError(instruction, "S3SM001", e.getMessage());
 		} catch ( IOException e ) {
 			log.warn("Communication error apply S3 setup: {}", e.getMessage());
+			return statusWithError(instruction, "S3SM002", e.getMessage());
 		}
-		return null;
+	}
+
+	private InstructionStatus statusWithError(Instruction instruction, String code, String message) {
+		Map<String, Object> resultParams = new LinkedHashMap<>();
+		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
+		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
+		return instruction.getStatus().newCopyWithState(InstructionState.Declined, resultParams);
 	}
 
 	private boolean isConfigured() {

@@ -20,7 +20,7 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
-	<service ref="s3SetupManager" interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+	<service ref="s3SetupManager" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
 	
 	<!-- Supporting Services -->
 	
