@@ -8,15 +8,28 @@ This project provides a cloud-based backup service to SolarNode.
 
 The service supports the following settings:
 
-| Setting    | Default            | Description                               |
-|------------|--------------------|-------------------------------------------|
-| AWS Token  |                    | AWS access token for authentication.      |
-| AWS Secret |                    | AWS access token secret.                  |
-| AWS Region | us-west-2          | AWS service region.                       |
-| S3 Bucket  |                    | S3 bucket name to save backups to.        |
-| S3 Path    | solarnode-backups/ | A prefix to add to all backup data files. |
+| Setting    | Key             | Default            | Description                               |
+|------------|-----------------|--------------------|-------------------------------------------|
+| AWS Token  | accessToken     |                    | AWS access token for authentication.      |
+| AWS Secret | accessSecret    |                    | AWS access token secret.                  |
+| AWS Region | regionName      | us-west-2          | AWS service region.                       |
+| S3 Bucket  | bucketName      |                    | S3 bucket name to save backups to.        |
+| S3 Path    | objectKeyPrefix | solarnode-backups/ | A prefix to add to all backup data files. |
 
-All values are required. The `S3 Path` value can be empty.
+All values are required. The `S3 Path` value can be empty. The **Key** values
+are Configuration Admin keys for the `net.solarnetwork.node.backup.s3.S3BackupService`
+PID. That means you can configure these in a 
+`conf/services/net.solarnetwork.node.backup.s3.S3BackupService.cfg` file on the
+node if you don't want to manage them via the Setup GUI. For example:
+
+```
+# Sample conf/services/net.solarnetwork.node.backup.s3.S3BackupService.cfg file
+
+accessToken = 123abc
+accessSecret = 234bcd
+regionName = us-east-1
+bucketName = mybucket
+```
 
 # S3 Structure
 
