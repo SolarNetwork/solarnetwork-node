@@ -29,12 +29,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.FileSystemUtils;
 import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,6 +66,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Service for provisioning node resources based on versioned resource sets.
@@ -221,7 +227,90 @@ public class S3SetupManager implements InstructionHandler {
 		if ( config == null || config.getObjects() == null || config.getObjects().length < 1 ) {
 			return;
 		}
-		Set<String> installedFiles = new LinkedHashSet<>();
+		Set<Path> installedFiles = applySetupObjects(config);
+		applySetupSyncPaths(config, installedFiles);
+		applySetupCleanPaths(config);
+		updateNodeMetadataForInstalledVersion(config);
+
+		if ( config.isRestartRequired() ) {
+			SystemService sysService = (systemService != null ? systemService.service() : null);
+			if ( sysService != null ) {
+				sysService.exit(true);
+			}
+		}
+	}
+
+	private Map<String, ?> getPathTemplateVariables() {
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		Map<String, ?> sysProps = (Map) System.getProperties();
+		return sysProps;
+	}
+
+	private Set<File> applySetupCleanPaths(S3SetupConfiguration config) throws IOException {
+		if ( config.getCleanPaths() == null || config.getCleanPaths().length < 1 ) {
+			return Collections.emptySet();
+		}
+
+		Map<String, ?> sysProps = getPathTemplateVariables();
+		Set<File> deleted = new LinkedHashSet<>();
+		for ( String cleanPath : config.getCleanPaths() ) {
+			String path = StringUtils.expandTemplateString(cleanPath, sysProps);
+			if ( path.startsWith("file:") ) {
+				path = path.substring(5);
+			}
+			File cleanFile = new File(path);
+			if ( cleanFile.exists() ) {
+				if ( FileSystemUtils.deleteRecursively(cleanFile) ) {
+					deleted.add(cleanFile);
+				}
+			}
+		}
+		if ( !deleted.isEmpty() ) {
+			log.info("Deleted files from cleanPaths {}: {}", Arrays.asList(config.getCleanPaths()),
+					deleted);
+		}
+		return deleted;
+	}
+
+	private Set<Path> applySetupSyncPaths(S3SetupConfiguration config, Set<Path> installedFiles)
+			throws IOException {
+		if ( config.getSyncPaths() == null || config.getSyncPaths().length < 1 ) {
+			return Collections.emptySet();
+		}
+		Map<String, ?> sysProps = getPathTemplateVariables();
+		Set<Path> deleted = new LinkedHashSet<>();
+		for ( String syncPath : config.getSyncPaths() ) {
+			syncPath = StringUtils.expandTemplateString(syncPath, sysProps);
+			Path path = FileSystems.getDefault().getPath(syncPath);
+			Set<Path> result = applySetupSyncPath(path, installedFiles);
+			deleted.addAll(result);
+		}
+		if ( !deleted.isEmpty() ) {
+			log.info("Deleted files from syncPaths {}: {}", Arrays.asList(config.getSyncPaths()),
+					deleted);
+		}
+		return deleted;
+	}
+
+	private Set<Path> applySetupSyncPath(Path dir, Set<Path> installedFiles) throws IOException {
+		if ( !Files.isDirectory(dir) ) {
+			return Collections.emptySet();
+		}
+		Set<Path> deleted = new LinkedHashSet<>();
+		Files.walk(dir).filter(p -> !Files.isDirectory(p) && !installedFiles.contains(p)).forEach(p -> {
+			try {
+				if ( Files.deleteIfExists(p) ) {
+					deleted.add(p);
+				}
+			} catch ( IOException e ) {
+				log.warn("Error deleting syncPath {} file {}: {}", dir, p, e.getMessage());
+			}
+		});
+		return deleted;
+	}
+
+	private Set<Path> applySetupObjects(S3SetupConfiguration config) throws IOException {
+		Set<Path> installed = new LinkedHashSet<>();
 		for ( String dataObjKey : config.getObjects() ) {
 			if ( !TARBALL_PAT.matcher(dataObjKey).find() ) {
 				log.warn("S3 setup resource {} not a supported type; skipping");
@@ -250,26 +339,19 @@ public class S3SetupManager implements InstructionHandler {
 
 			// extract tarball
 			try {
-				List<String> extractedPaths = extractTarball(dataObjFile);
-				installedFiles.addAll(extractedPaths);
+				List<Path> extractedPaths = extractTarball(dataObjFile);
+				installed.addAll(extractedPaths);
 			} finally {
 				if ( dataObjFile.exists() ) {
 					dataObjFile.delete();
 				}
 			}
 		}
-
-		// for sync style dirs, delete files not installed
-		if ( config.getSyncPaths() != null && config.getSyncPaths().length > 0 ) {
-			// TODO
+		if ( !installed.isEmpty() ) {
+			log.info("Installed files from objects {}: {}", Arrays.asList(config.getObjects()),
+					installed);
 		}
-
-		updateNodeMetadataForInstalledVersion(config);
-
-		SystemService sysService = (systemService != null ? systemService.service() : null);
-		if ( sysService != null ) {
-			sysService.exit(true);
-		}
+		return installed;
 	}
 
 	private void updateNodeMetadataForInstalledVersion(S3SetupConfiguration config) {
@@ -291,7 +373,7 @@ public class S3SetupManager implements InstructionHandler {
 		service.addNodeMetadata(meta);
 	}
 
-	private List<String> extractTarball(File tarball) throws IOException {
+	private List<Path> extractTarball(File tarball) throws IOException {
 		List<String> cmd = new ArrayList<>(tarCommand.size());
 		String tarballPath = tarball.getAbsolutePath();
 		for ( String param : tarCommand ) {
@@ -309,7 +391,7 @@ public class S3SetupManager implements InstructionHandler {
 			}
 			log.debug("Tar command: {}", buf.toString());
 		}
-		List<String> extractedPaths = new ArrayList<>();
+		List<Path> extractedPaths = new ArrayList<>();
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		pb.redirectErrorStream(true); // OS X tar output list to STDERR; Linux GNU tar to STDOUT
 		Process pr = pb.start();
@@ -320,7 +402,8 @@ public class S3SetupManager implements InstructionHandler {
 				if ( m.matches() ) {
 					line = m.group(1);
 				}
-				extractedPaths.add(line);
+				Path path = FileSystems.getDefault().getPath(line);
+				extractedPaths.add(path);
 				log.trace("Installed setup resource: {}", line);
 			}
 		}
@@ -331,7 +414,7 @@ public class S3SetupManager implements InstructionHandler {
 		}
 		if ( pr.exitValue() != 0 ) {
 			log.error("Tar command returned non-zero exit code {}: {}", pr.exitValue(),
-					extractedPaths.stream().collect(Collectors.joining("\n")));
+					extractedPaths.stream().map(p -> p.toString()).collect(Collectors.joining("\n")));
 		}
 		return extractedPaths;
 	}

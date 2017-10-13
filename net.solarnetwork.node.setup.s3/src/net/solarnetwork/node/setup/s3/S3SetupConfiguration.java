@@ -37,6 +37,7 @@ public class S3SetupConfiguration {
 	private String[] syncPaths;
 	private String[] objects;
 	private String[] cleanPaths;
+	private boolean restartRequired;
 
 	public String[] getSyncPaths() {
 		return syncPaths;
@@ -129,6 +130,27 @@ public class S3SetupConfiguration {
 	 */
 	public void setObjectKey(String objectKey) {
 		this.objectKey = objectKey;
+	}
+
+	/**
+	 * Get the flag indicating a restart is required after the setup task
+	 * completes.
+	 * 
+	 * @return {@literal true} to restart after the setup task
+	 */
+	public boolean isRestartRequired() {
+		return restartRequired;
+	}
+
+	/**
+	 * Set a flag that indicates if a restart of the SolarNode process is
+	 * required after the setup task is complete.
+	 * 
+	 * @param restartRequired
+	 *        {@literal true} to restart after the setup task
+	 */
+	public void setRestartRequired(boolean restartRequired) {
+		this.restartRequired = restartRequired;
 	}
 
 }

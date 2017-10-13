@@ -92,6 +92,7 @@ versions sorted lexicographically):
 
 ```json
 {
+    "restartRequired":true,
     "objects":[
         "setup-data/foobar.txz"
     ]
@@ -109,6 +110,77 @@ When the node is instructed to install this package, it will download the
 `foobar.txz` file from S3 and then extract all the files from it, into the
 platform's home directory.
 
+Here are the available properties in the package metadata:
+
+| Key               | Type          | Description                                                       |
+|-------------------|---------------|-------------------------------------------------------------------|
+| `cleanPaths`      | array<string> | Optional node paths to files or directories to delete.            |
+| `objects`         | array<string> | S3 object keys for setup resources to install.                    |
+| `restartRequired` | boolean       | If `true` then restart SolarNode when the setup task is complete. |
+| `syncPaths`       | array<string> | Optional node paths to directories to delete old files from.      |
+
+Here is a fuller example package metadata:
+
+```
+{
+    "syncPaths":[
+        "{sn.home}/app/boot",
+        "{sn.home}/app/core",
+        "{sn.home}/app/main"
+    ],
+    "cleanPaths":[
+        "{osgi.configuration.area}/config.ini"
+    ],
+    "objects":[
+        "solarnode-backups/setup-data/foobar.txz",
+        "solarnode-backups/setup-data/foobar-app.txz"
+    ],
+    "restartRequired":true
+}
+```
+
+
+## Node path variables
+
+Any node path in the package metadata may contain variables in the form
+`{variable}`. All SolarNode system properties will be available for
+substitution. For example, a path like
+
+```
+{osgi.configuration.area}/config.ini
+```
+
+might resolve to `/run/solar/config.ini` so the Equinox startup configuration is
+re-loaded from `/home/solar/conf/config.ini` after SolarNode restarts.
+
+## Synchronized paths
+
+The `syncPaths` list of paths represent directories whose contents you want to
+only contain the files installed from any of the `objects` in the package.
+Essentially this causes this plugin to delete any files **not** installed by the
+package in any of these directories.
+
+Using the [example metadata from above](#package-metadata-structure), if we
+changed it to
+
+```json
+{
+    "restartRequired":true,
+    "objects":[
+        "setup-data/foobar.txz"
+    ],
+    "syncPaths":[
+        "{sn.home}/app/main"
+    ]
+}
+```
+
+Then after the setup task completes the `/home/solar/app/main` directory will
+**only** contain the `super-duper-plugin-1.0.0.jar` (installed from the
+`setup-data/foobar.txz` object). Conversely, if `syncPaths` were not defined and
+there happened to be other files in the `/home/solar/app/main` directory, those
+other files would remain there after the setup task completed.
+
 
 # UpdatePlatform Instruction
 
@@ -118,6 +190,24 @@ instruction parameters are supported:
 | Parameter    | Description                                              |
 |--------------|----------------------------------------------------------|
 | `Version`    | The _full_ version to install (including leading zeros). |
+
+If `Version` is not specified, then the _latest_ package will be installed.
+
+Using the SolarUser API's [Queue Instruction][queue-instr] endpoint you can
+trigger this instruction to install the latest package with a `POST` request
+like
+
+```
+/solaruser/api/v1/sec/instr/add?topic=UpdatePlatform&nodeId=123
+```
+
+To install a specific version, you'd use a `POST` request like
+
+```
+/solaruser/api/v1/sec/instr/add?topic=UpdatePlatform&nodeId=123&parameters%5B0%5D.name=Version&parameters%5B0%5D.value=000001
+```
+
+**Note** how the _full_ version value `000001` is passed.
 
 
 # Node Metadata
@@ -140,3 +230,4 @@ configuration file to ensure this service works from the start.
 
 
  [s3-backup]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.backup.s3
+ [queue-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
