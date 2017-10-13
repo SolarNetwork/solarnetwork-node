@@ -70,6 +70,12 @@ public class SdkS3Client implements S3Client {
 	}
 
 	@Override
+	public boolean isConfigured() {
+		return (bucketName != null && bucketName.length() > 0 && regionName != null
+				&& regionName.length() > 0 && credentialsProvider != null);
+	}
+
+	@Override
 	public Set<S3ObjectReference> listObjects(String prefix) {
 		AmazonS3 client = getClient();
 		Set<S3ObjectReference> result = new LinkedHashSet<>(100);

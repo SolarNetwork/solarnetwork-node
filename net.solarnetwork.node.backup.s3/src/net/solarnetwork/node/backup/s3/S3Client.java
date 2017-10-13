@@ -32,9 +32,17 @@ import com.amazonaws.services.s3.model.S3Object;
  * API for accessing S3.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface S3Client {
+
+	/**
+	 * Test if the client is fully configured.
+	 * 
+	 * @return {@literal true} if the client is configured
+	 * @since 1.1
+	 */
+	boolean isConfigured();
 
 	/**
 	 * List all available objects matching a prefix.
