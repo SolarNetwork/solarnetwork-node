@@ -34,6 +34,12 @@
 				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
 			</bean>	
 		</property>
+		<property name="systemService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.SystemService"/>
+			</bean>	
+		</property>
 	</bean>
 
 </blueprint>

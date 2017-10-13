@@ -52,6 +52,7 @@ import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.SetupSettings;
+import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.backup.s3.S3BackupService;
 import net.solarnetwork.node.backup.s3.S3Client;
 import net.solarnetwork.node.backup.s3.S3ObjectReference;
@@ -62,11 +63,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
  * @version 1.0
@@ -156,6 +153,7 @@ public class S3SetupManager implements InstructionHandler {
 	private List<String> tarCommand = DEFAULT_TAR_COMMAND;
 	private String destinationPath = defaultDestinationPath();
 	private OptionalService<NodeMetadataService> nodeMetadataService;
+	private OptionalService<SystemService> systemService;
 	private TaskExecutor taskExecutor;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -206,6 +204,7 @@ public class S3SetupManager implements InstructionHandler {
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
+			return InstructionState.Completed;
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
 		} catch ( IOException e ) {
@@ -266,6 +265,11 @@ public class S3SetupManager implements InstructionHandler {
 		}
 
 		updateNodeMetadataForInstalledVersion(config);
+
+		SystemService sysService = (systemService != null ? systemService.service() : null);
+		if ( sysService != null ) {
+			sysService.exit(true);
+		}
 	}
 
 	private void updateNodeMetadataForInstalledVersion(S3SetupConfiguration config) {
@@ -530,6 +534,17 @@ public class S3SetupManager implements InstructionHandler {
 	 */
 	public void setTaskExecutor(TaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
+	}
+
+	/**
+	 * Set the {@link SystemService} to use for restarting after updates are
+	 * applied.
+	 * 
+	 * @param systemService
+	 *        the system service
+	 */
+	public void setSystemService(OptionalService<SystemService> systemService) {
+		this.systemService = systemService;
 	}
 
 }
