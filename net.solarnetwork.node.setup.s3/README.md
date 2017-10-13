@@ -10,6 +10,11 @@ this, versioned package metadata and associated data files are stored on Amazon
 S3, and the node can be instructed to download and install the files for a
 specific version (or the _latest_ version).
 
+Another use case for this plugin is to provide a way to update the base
+platform of the node. The node's Plugin GUI allows managing only the
+_application_ plugins (in the `app/main` directory), not the base platform
+(primarily the `app/boot` and `app/core` directories).
+
 In other words, this provides a basic managed "update" mechanism for a set
 of nodes with similar configuration needs.
 
