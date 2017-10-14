@@ -29,15 +29,25 @@ install files within the platform's home directory (e.g. `/home/solar`).
 
 The service supports the following settings:
 
-| Setting    | Key             | Default            | Description                         |
-|------------|-----------------|--------------------|-------------------------------------|
-| S3 Path    | objectKeyPrefix | solarnode-backups/ | A prefix to add to all object keys. |
+| Setting    | Key                      | Default            | Description                           |
+|------------|--------------------------|--------------------|---------------------------------------|
+| S3 Path    | `objectKeyPrefix`        | solarnode-backups/ | A prefix to add to all object keys.   |
+| TODO       | `performFirstTimeUpdate` | true               | Install latest backup on first start. |
 
-The `S3 Path` value can be empty. The **Key** values
+The **S3 Path** value can be empty.
+
+The **performFirstTimeUpdate** value, when `true`, causes the plugin to install
+the _latest_ available package when the node platform starts up for the first
+time. For this to work as expected, the S3 settings must already be configured
+-- see the information on the `S3SetupManager.cfg` file at the end of this
+section.
+
+The **Key** values
 are Configuration Admin keys for the `net.solarnetwork.node.setup.s3.S3SetupManager`
 PID. That means you can configure these in a
 `conf/services/net.solarnetwork.node.setup.s3.S3SetupManager.cfg` file on the
 node if you don't want to manage them via the Setup GUI.
+
 
 # S3 Structure
 
