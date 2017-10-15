@@ -27,6 +27,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.FileSystems;
@@ -67,6 +68,7 @@ import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -126,7 +128,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	public static final List<String> DEFAULT_TAR_COMMAND = Collections.unmodifiableList(Arrays
 			.asList("tar", "xvf", SOURCE_FILE_PLACEHOLDER, "-C", DESTINATION_DIRECTORY_PLACEHOLDER));
 
-	private static final Pattern VERSION_NUM_PAT = Pattern.compile(".*/(\\d+)");
+	private static final Pattern VERSION_PAT = Pattern.compile(".*/(\\d+)");
 	private static final Pattern TARBALL_PAT = Pattern.compile("\\.(tar|tgz|tbz2|txz)$");
 	private static final Pattern TAR_LIST_PAT = Pattern.compile("^\\w (.*)$");
 
@@ -155,7 +157,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	private S3Client s3Client;
 	private String objectKeyPrefix = S3BackupService.DEFAULT_OBJECT_KEY_PREFIX;
 	private SettingDao settingDao;
-	private Long maxVersion = null;
+	private String maxVersion = null;
 	private boolean performFirstTimeUpdate = true;
 	private String workDirectory = DEFAULT_WORK_DIRECTORY;
 	private List<String> tarCommand = DEFAULT_TAR_COMMAND;
@@ -207,7 +209,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			if ( instrVersion != null ) {
 				metaKey = objectKeyForPath(META_OBJECT_KEY_PREFIX + instrVersion);
 			} else {
-				S3ObjectReference versionObj = getSetupConfigurationObjectForUpdate();
+				S3ObjectReference versionObj = getConfigObjectForUpdateToHighestVersion();
 				if ( versionObj != null ) {
 					metaKey = versionObj.getKey();
 				}
@@ -246,12 +248,21 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Set<Path> installedFiles = applySetupObjects(config);
 		applySetupSyncPaths(config, installedFiles);
 		applySetupCleanPaths(config);
-		updateNodeMetadataForInstalledVersion(config);
+
+		try {
+			updateNodeMetadataForInstalledVersion(config);
+		} catch ( SetupException e ) {
+			// assume node not associated yet
+			log.warn("Error publishing S3 setup version node metadata: {}", e.getMessage());
+		}
 
 		if ( config.isRestartRequired() ) {
 			SystemService sysService = (systemService != null ? systemService.service() : null);
 			if ( sysService != null ) {
 				sysService.exit(true);
+			} else {
+				log.warn("S3 setup {} requires restart, but no SystemService available",
+						config.getObjectKey());
 			}
 		}
 	}
@@ -297,7 +308,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Set<Path> deleted = new LinkedHashSet<>();
 		for ( String syncPath : config.getSyncPaths() ) {
 			syncPath = StringUtils.expandTemplateString(syncPath, sysProps);
-			Path path = FileSystems.getDefault().getPath(syncPath);
+			Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath();
 			Set<Path> result = applySetupSyncPath(path, installedFiles);
 			deleted.addAll(result);
 		}
@@ -308,23 +319,52 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		return deleted;
 	}
 
+	/**
+	 * Apply sync rules to a specific directory.
+	 * 
+	 * <p>
+	 * This method will delete any file found in {@code dir} that is <b>not</b>
+	 * also in {@code installedFiles}.
+	 * </p>
+	 * 
+	 * @param dir
+	 *        the directory to delete files from
+	 * @param installedFiles
+	 *        the list of files to keep (these must be absolute paths)
+	 * @return the set of deleted files, or an empty set if nothing deleted
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	private Set<Path> applySetupSyncPath(Path dir, Set<Path> installedFiles) throws IOException {
 		if ( !Files.isDirectory(dir) ) {
 			return Collections.emptySet();
 		}
 		Set<Path> deleted = new LinkedHashSet<>();
-		Files.walk(dir).filter(p -> !Files.isDirectory(p) && !installedFiles.contains(p)).forEach(p -> {
-			try {
-				if ( Files.deleteIfExists(p) ) {
-					deleted.add(p);
-				}
-			} catch ( IOException e ) {
-				log.warn("Error deleting syncPath {} file {}: {}", dir, p, e.getMessage());
-			}
-		});
+		Files.walk(dir)
+				.filter(p -> !Files.isDirectory(p) && !installedFiles.contains(p.toAbsolutePath()))
+				.forEach(p -> {
+					try {
+						log.trace("Deleting syncPath {} file {}", dir, p);
+						if ( Files.deleteIfExists(p) ) {
+							deleted.add(p);
+						}
+					} catch ( IOException e ) {
+						log.warn("Error deleting syncPath {} file {}: {}", dir, p, e.getMessage());
+					}
+				});
 		return deleted;
 	}
 
+	/**
+	 * Download and install all setup objects in a given configuration.
+	 * 
+	 * @param config
+	 *        the configuration to apply
+	 * @return the set of absolute paths of all installed files (or an empty set
+	 *         if nothing installed)
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	private Set<Path> applySetupObjects(S3SetupConfiguration config) throws IOException {
 		Set<Path> installed = new LinkedHashSet<>();
 		for ( String dataObjKey : config.getObjects() ) {
@@ -348,13 +388,12 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			// download the data object to the work dir
 			String dataObjFilename = DigestUtils.sha1Hex(dataObjKey);
 			File dataObjFile = new File(workDir, dataObjFilename);
-			try (OutputStream out = new BufferedOutputStream(new FileOutputStream(dataObjFile))) {
+			try (InputStream in = obj.getObjectContent();
+					OutputStream out = new BufferedOutputStream(new FileOutputStream(dataObjFile))) {
 				log.info("Downloading S3 setup resource {} -> {}", dataObjKey, dataObjFile);
 				FileCopyUtils.copy(obj.getObjectContent(), out);
-			}
 
-			// extract tarball
-			try {
+				// extract tarball
 				List<Path> extractedPaths = extractTarball(dataObjFile);
 				installed.addAll(extractedPaths);
 			} finally {
@@ -376,16 +415,18 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		}
 
 		log.info("S3 setup version {} installed", config.getVersion());
-		settingDao.storeSetting(SETTING_KEY_VERSION, SetupSettings.SETUP_TYPE_KEY,
-				config.getVersion().toString());
+		settingDao.storeSetting(SETTING_KEY_VERSION, SetupSettings.SETUP_TYPE_KEY, config.getVersion());
+		publishNodeMetadataForInstalledVersion(config.getVersion());
+	}
 
+	private void publishNodeMetadataForInstalledVersion(String version) {
 		NodeMetadataService service = (nodeMetadataService != null ? nodeMetadataService.service()
 				: null);
 		if ( service == null ) {
 			return;
 		}
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
-		meta.putInfoValue("setup", "s3-version", config.getVersion());
+		meta.putInfoValue("setup", "s3-version", version);
 		service.addNodeMetadata(meta);
 	}
 
@@ -407,6 +448,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			}
 			log.debug("Tar command: {}", buf.toString());
 		}
+		log.info("Extracting S3 tar archive {}", tarball);
 		List<Path> extractedPaths = new ArrayList<>();
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		pb.redirectErrorStream(true); // OS X tar output list to STDERR; Linux GNU tar to STDOUT
@@ -418,7 +460,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				if ( m.matches() ) {
 					line = m.group(1);
 				}
-				Path path = FileSystems.getDefault().getPath(line);
+				Path path = FileSystems.getDefault().getPath(line).toAbsolutePath();
 				extractedPaths.add(path);
 				log.trace("Installed setup resource: {}", line);
 			}
@@ -429,8 +471,11 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			log.warn("Interrupted waiting for tar command to complete");
 		}
 		if ( pr.exitValue() != 0 ) {
-			log.error("Tar command returned non-zero exit code {}: {}", pr.exitValue(),
-					extractedPaths.stream().map(p -> p.toString()).collect(Collectors.joining("\n")));
+			String output = extractedPaths.stream().map(p -> p.toString())
+					.collect(Collectors.joining("\n")).trim();
+			log.error("Tar command returned non-zero exit code {}: {}", pr.exitValue(), output);
+			throw new IOException(
+					"Tar command returned non-zero exit code " + pr.exitValue() + ": " + output);
 		}
 		return extractedPaths;
 	}
@@ -443,15 +488,22 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		String installedVersion = settingDao.getSetting(SETTING_KEY_VERSION,
 				SetupSettings.SETUP_TYPE_KEY);
 		if ( installedVersion != null ) {
-			log.info("S3 setup version {} detected, not performing first time update");
+			log.info("S3 setup version {} detected, not performing first time update", installedVersion);
+			try {
+				// publish the installed version each time we start up, to make sure pushed out when associated
+				publishNodeMetadataForInstalledVersion(installedVersion);
+			} catch ( SetupException e ) {
+				// assume node not associated yet
+				log.warn("Error publishing S3 setup version node metadata: {}", e.getMessage());
+			}
 			return;
 		}
-		performUpdate();
+		performUpdateToHighestVersion();
 	}
 
-	private void performUpdate() {
+	private void performUpdateToHighestVersion() {
 		try {
-			S3ObjectReference versionObj = getSetupConfigurationObjectForUpdate();
+			S3ObjectReference versionObj = getConfigObjectForUpdateToHighestVersion();
 			if ( versionObj == null ) {
 				return;
 			}
@@ -466,27 +518,48 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 	}
 
+	/**
+	 * Get a {@link S3SetupConfiguration} for a specific S3 object key.
+	 * 
+	 * <p>
+	 * This method will populate the {@code objectKey} and {@code version}
+	 * properties based on the passed on {@code objectKey}.
+	 * </p>
+	 * 
+	 * @param objectKey
+	 *        the S3 key of the object to load
+	 * @return the parsed S3 setup metadata object
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	private S3SetupConfiguration getSetupConfiguration(String objectKey) throws IOException {
 		String metaJson = s3Client.getObjectAsString(objectKey);
 		S3SetupConfiguration config = OBJECT_MAPPER.readValue(metaJson, S3SetupConfiguration.class);
 		config.setObjectKey(objectKey);
 		if ( config.getVersion() == null ) {
 			// apply from key
-			Matcher ml = VERSION_NUM_PAT.matcher(objectKey);
+			Matcher ml = VERSION_PAT.matcher(objectKey);
 			if ( ml.find() ) {
 				String v = ml.group(1);
-				try {
-					config.setVersion(Long.parseLong(v));
-				} catch ( NumberFormatException e ) {
-					log.warn("Unable to extract setup config version from object key {}: {}", objectKey,
-							e.getMessage());
-				}
+				config.setVersion(v);
 			}
 		}
 		return config;
 	}
 
-	private S3ObjectReference getSetupConfigurationObjectForUpdate() {
+	/**
+	 * Get the S3 object for the {@link S3SetupConfiguration} to perform an
+	 * update to the highest available package version.
+	 * 
+	 * <p>
+	 * If a {@code maxVersion} is configured, this method will find the highest
+	 * available package version less than or equal to {@code maxVersion}.
+	 * </p>
+	 * 
+	 * @return the S3 object that holds the setup metadata to update to, or
+	 *         {@literal null} if not available
+	 */
+	private S3ObjectReference getConfigObjectForUpdateToHighestVersion() {
 		final String metaDir = objectKeyForPath(META_OBJECT_KEY_PREFIX);
 		Set<S3ObjectReference> objs = s3Client.listObjects(metaDir);
 		S3ObjectReference versionObj = null;
@@ -494,28 +567,43 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			// take the last (highest version)
 			versionObj = objs.stream().reduce((l, r) -> r).orElse(null);
 		} else {
-			final long max = maxVersion;
+			final String max = maxVersion;
 			versionObj = objs.stream().max((l, r) -> {
-				long vl = 0;
-				long vr = 0;
-				Matcher ml = VERSION_NUM_PAT.matcher(l.getKey());
-				Matcher mr = VERSION_NUM_PAT.matcher(r.getKey());
+				String vl = null;
+				String vr = null;
+				Matcher ml = VERSION_PAT.matcher(l.getKey());
+				Matcher mr = VERSION_PAT.matcher(r.getKey());
 				if ( ml.find() && mr.find() ) {
-					vl = Long.parseLong(ml.group(1));
-					if ( vl > max ) {
-						vl = -vl;
+					vl = ml.group(1);
+					if ( vl.compareTo(max) > 0 ) {
+						vl = null;
 					}
-					vr = Long.parseLong(mr.group(1));
-					if ( vr > max ) {
-						vr = -vr;
+					vr = mr.group(1);
+					if ( vr.compareTo(max) > 0 ) {
+						vr = null;
 					}
 				}
-				return (vl < vr ? -1 : vl > vr ? 1 : 0);
+				if ( vl == null && vr == null ) {
+					return 0;
+				} else if ( vl == null ) {
+					return -1;
+				} else if ( vr == null ) {
+					return 1;
+				}
+				return vl.compareTo(vr);
 			}).orElse(null);
 		}
 		return versionObj;
 	}
 
+	/**
+	 * Construct a full S3 object key that includes the configured
+	 * {@code objectKeyPrefix} from a relative path value.
+	 * 
+	 * @param path
+	 *        the relative object key path to get a full object key for
+	 * @return the S3 object key
+	 */
 	private String objectKeyForPath(String path) {
 		String globalPrefix = this.objectKeyPrefix;
 		if ( globalPrefix == null ) {
@@ -540,7 +628,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 * @param maxVersion
 	 *        the max version, or {@literal null} or {@literal 0} for no maximum
 	 */
-	public void setMaxVersion(Long maxVersion) {
+	public void setMaxVersion(String maxVersion) {
 		this.maxVersion = maxVersion;
 	}
 

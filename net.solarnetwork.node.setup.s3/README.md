@@ -110,7 +110,7 @@ versions sorted lexicographically):
 ```
 
 Because the object key ends in `00001.json` the _version_ of the package is
-**1**. This package includes just one object: `setupdata/foobar.txz`. Let's
+**00001**. This package includes just one object: `setupdata/foobar.txz`. Let's
 assume the tar archive contains the following files:
 
  * `conf/auto-settings.csv`
@@ -197,9 +197,9 @@ other files would remain there after the setup task completed.
 The plugin responds to the `UpdatePlatform` instruction topic. The following
 instruction parameters are supported:
 
-| Parameter    | Description                                              |
-|--------------|----------------------------------------------------------|
-| `Version`    | The _full_ version to install (including leading zeros). |
+| Parameter    | Description             |
+|--------------|-------------------------|
+| `Version`    | The version to install. |
 
 If `Version` is not specified, then the _latest_ package will be installed.
 
@@ -216,8 +216,6 @@ To install a specific version, you'd use a `POST` request like
 ```
 /solaruser/api/v1/sec/instr/add?topic=UpdatePlatform&nodeId=123&parameters%5B0%5D.name=Version&parameters%5B0%5D.value=000001
 ```
-
-**Note** how the _full_ version value `000001` is passed.
 
 
 # Node Metadata

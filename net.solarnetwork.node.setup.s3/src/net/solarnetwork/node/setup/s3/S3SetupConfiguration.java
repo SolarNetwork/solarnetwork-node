@@ -32,7 +32,7 @@ public class S3SetupConfiguration {
 
 	public static final String DEFAULT_CLEAN_PATHS = "{osgi.configuration.area}/config.ini";
 
-	private Long version;
+	private String version;
 	private String objectKey;
 	private String[] syncPaths;
 	private String[] objects;
@@ -95,7 +95,7 @@ public class S3SetupConfiguration {
 	 * 
 	 * @return the version
 	 */
-	public Long getVersion() {
+	public String getVersion() {
 		return version;
 	}
 
@@ -103,13 +103,14 @@ public class S3SetupConfiguration {
 	 * Set the configuration version.
 	 * 
 	 * <p>
-	 * Version numbers should be globally unique and increase only over time.
+	 * Version numbers are lexicographically ordered, should be globally unique,
+	 * and only increase over time.
 	 * </p>
 	 * 
 	 * @param version
 	 *        the version to set
 	 */
-	public void setVersion(Long version) {
+	public void setVersion(String version) {
 		this.version = version;
 	}
 
