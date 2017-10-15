@@ -423,6 +423,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		NodeMetadataService service = (nodeMetadataService != null ? nodeMetadataService.service()
 				: null);
 		if ( service == null ) {
+			log.warn("No NodeMetadataService available to publish installed S3 version {}", version);
 			return;
 		}
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
