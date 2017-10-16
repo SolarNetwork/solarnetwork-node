@@ -25,6 +25,9 @@
 	<!-- Supporting Services -->
 	
 	<bean id="s3SetupManager" class="net.solarnetwork.node.setup.s3.S3SetupManager" init-method="init">
+		<osgix:managed-properties 
+			persistent-id="net.solarnetwork.node.setup.s3.S3SetupManager" 
+			autowire-on-update="true"/>
 		<property name="s3Client" ref="s3Client"/>
 		<property name="settingDao" ref="settingDao"/>
 		<property name="taskExecutor" ref="taskExecutor"/>
