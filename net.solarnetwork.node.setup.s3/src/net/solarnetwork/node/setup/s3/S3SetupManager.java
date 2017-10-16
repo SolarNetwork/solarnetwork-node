@@ -215,8 +215,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				}
 			}
 			if ( metaKey == null ) {
-				log.warn("Unable to setup from S3: resource {} not available", metaKey);
-				return null;
+				String msg = "Unable to setup from S3: no versions available at path "
+						+ objectKeyForPath(META_OBJECT_KEY_PREFIX);
+				log.warn(msg);
+				return statusWithError(instruction, "S3SM003", msg);
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
