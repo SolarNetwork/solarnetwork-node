@@ -1,7 +1,7 @@
 /* ==================================================================
- * Backup.java - Mar 27, 2013 7:10:38 AM
+ * BackupIdentity.java - 12/10/2017 5:11:49 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,25 +22,48 @@
 
 package net.solarnetwork.node.backup;
 
+import java.util.Date;
+
 /**
- * An individual backup.
+ * Identity information about a {@link Backup}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.0
+ * @since 1.55
  */
-public interface Backup extends BackupIdentity {
+public interface BackupIdentity {
 
 	/**
-	 * Boolean flag indicating if this backup is complete.
+	 * Get a unique key for the backup.
 	 * 
-	 * @return <em>true</em> if the backup is finished, <em>false</em> otherwise
+	 * @return the backup key
 	 */
-	boolean isComplete();
+	String getKey();
 
 	/**
-	 * Get the size, in bytes, of this backup.
+	 * Get the node ID associated with the backup.
 	 * 
-	 * @return the size in bytes, or <em>null</em> if not known
+	 * @return the node ID
 	 */
-	Long getSize();
+	Long getNodeId();
+
+	/**
+	 * Get the date the backup was created.
+	 * 
+	 * @return the backup date
+	 */
+	Date getDate();
+
+	/**
+	 * Get an optional qualifier.
+	 * 
+	 * <p>
+	 * A qualifier can be used to provide a backup with a more descriptive name
+	 * or tag.
+	 * </p>
+	 * 
+	 * @return the qualifier, or {@literal null} if not known
+	 */
+	String getQualifier();
+
 }

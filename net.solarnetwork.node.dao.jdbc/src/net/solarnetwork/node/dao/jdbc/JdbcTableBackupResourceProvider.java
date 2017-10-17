@@ -150,6 +150,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 			return result;
 		}
 
+		@Override
+		public String getSha256Digest() {
+			return null;
+		}
+
 	}
 
 	private final class JdbcTableCsvExporter implements Runnable {

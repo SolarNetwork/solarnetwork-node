@@ -26,8 +26,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -43,7 +41,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -112,14 +109,14 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 
 	private String accessToken;
 	private String accessSecret;
-	private String regionName = DEFAULT_REGION_NAME;
+	private String regionName;
 	private String bucketName;
-	private String objectKeyPrefix = DEFAULT_OBJECT_KEY_PREFIX;
+	private String objectKeyPrefix;
 	private MessageSource messageSource;
 	private OptionalService<IdentityService> identityService;
-	private int cacheSeconds = 60 * 60;
+	private int cacheSeconds;
 
-	private S3Client s3Client = null;
+	private SdkS3Client s3Client = new SdkS3Client();
 
 	private final AtomicReference<BackupStatus> status = new AtomicReference<>(
 			BackupStatus.Unconfigured);
@@ -129,6 +126,16 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 
 	private static final ConcurrentMap<String, CachedResult<S3BackupMetadata>> CACHED_BACKUPS = new ConcurrentHashMap<>(
 			8);
+
+	/**
+	 * Default constructor.
+	 */
+	public S3BackupService() {
+		super();
+		setRegionName(DEFAULT_REGION_NAME);
+		setObjectKeyPrefix(DEFAULT_OBJECT_KEY_PREFIX);
+		setCacheSeconds(60 * 60);
+	}
 
 	@Override
 	public String getKey() {
@@ -169,6 +176,22 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		return new String(Hex.encodeHex(digest.digest()));
 	}
 
+	private void setupClient() {
+		SdkS3Client c = s3Client;
+		if ( c != null ) {
+			c.setBucketName(bucketName);
+			c.setRegionName(regionName);
+			if ( accessToken != null && accessToken.length() > 0 && accessSecret != null
+					&& accessSecret.length() > 0 ) {
+				c.setCredentialsProvider(new AWSStaticCredentialsProvider(
+						new BasicAWSCredentials(accessToken, accessSecret)));
+			}
+			if ( c.isConfigured() ) {
+				status.set(BackupStatus.Configured);
+			}
+		}
+	}
+
 	private Backup performBackupInternal(final Iterable<BackupResource> resources, final Calendar now,
 			Map<String, String> props) {
 		if ( resources == null ) {
@@ -179,7 +202,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			log.debug("No resources provided, nothing to backup");
 			return null;
 		}
-		S3Client client = getS3Client();
+		S3Client client = this.s3Client;
 		if ( !status.compareAndSet(BackupStatus.Configured, BackupStatus.RunningBackup) ) {
 			// try to reset from error
 			if ( !status.compareAndSet(BackupStatus.Error, BackupStatus.RunningBackup) ) {
@@ -215,7 +238,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				} else {
 					log.info("Backup resource already saved to S3: {}", rsrc.getBackupPath());
 				}
-				meta.addBackupResource(rsrc, objectKey);
+				meta.addBackupResource(rsrc, objectKey, sha);
 			}
 
 			// now save metadata
@@ -264,34 +287,6 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		return (nodeId != null ? nodeId : 0L);
 	}
 
-	public static final Long nodeIdFromBackupKey(String key) {
-		Long nodeId = 0L;
-		Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(key);
-		if ( m.find() ) {
-			try {
-				return nodeId = Long.valueOf(m.group(1));
-			} catch ( NumberFormatException e ) {
-				// ignore
-			}
-		}
-		return nodeId;
-	}
-
-	public static final Date dateFromBackupKey(String key) {
-		final SimpleDateFormat sdf = new SimpleDateFormat(BACKUP_KEY_DATE_FORMAT);
-		if ( key != null ) {
-			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(key);
-			if ( m.find() ) {
-				try {
-					return sdf.parse(m.group(2));
-				} catch ( ParseException e ) {
-					// ignore
-				}
-			}
-		}
-		return new Date();
-	}
-
 	@Override
 	public Backup backupForKey(String key) {
 		return backupForKeyInternal(key);
@@ -307,7 +302,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		if ( inProgress != null && backupKey.equals(inProgress.getKey()) ) {
 			return inProgress;
 		}
-		S3Client client = getS3Client();
+		S3Client client = this.s3Client;
 		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
 			return null;
 		}
@@ -352,7 +347,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		if ( cached != null && cached.isValid() ) {
 			return cached.getResult();
 		}
-		S3Client client = getS3Client();
+		S3Client client = this.s3Client;
 		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
 			return Collections.emptyList();
 		}
@@ -360,8 +355,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		try {
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
-					.map(o -> new SimpleBackup(nodeIdFromBackupKey(o.getKey()), o.getModified(),
-							pathWithoutPrefix(o.getKey(), objectKeyPrefix), null, true))
+					.map(o -> new SimpleBackup(
+							identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null,
+							true))
 					.collect(Collectors.toList());
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
@@ -399,7 +395,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 
 	@Override
 	public BackupResourceIterable getBackupResources(Backup backup) {
-		S3Client client = getS3Client();
+		S3Client client = this.s3Client;
 		if ( EnumSet.of(BackupStatus.Unconfigured, BackupStatus.Error).contains(status.get()) ) {
 			return new CollectionBackupResourceIterable(Collections.emptyList());
 		}
@@ -440,21 +436,6 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		cal.setTime(backupDate);
 		cal.set(Calendar.MILLISECOND, 0);
 		return performBackupInternal(resources, cal, props);
-	}
-
-	private synchronized S3Client getS3Client() {
-		S3Client c = s3Client;
-		if ( c == null && accessToken != null && accessSecret != null && bucketName != null ) {
-			SdkS3Client sdkClient = new SdkS3Client();
-			sdkClient.setBucketName(bucketName);
-			sdkClient.setRegionName(regionName);
-			sdkClient.setCredentialsProvider(new AWSStaticCredentialsProvider(
-					new BasicAWSCredentials(accessToken, accessSecret)));
-			c = sdkClient;
-			s3Client = sdkClient;
-			status.set(BackupStatus.Configured);
-		}
-		return c;
 	}
 
 	@Override
@@ -512,7 +493,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	public void setAccessToken(String accessToken) {
 		if ( accessToken != null && !accessToken.equals(this.accessToken) ) {
 			this.accessToken = accessToken;
-			this.s3Client = null;
+			setupClient();
 		}
 	}
 
@@ -525,7 +506,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	public void setAccessSecret(String accessSecret) {
 		if ( accessSecret != null && !accessSecret.equals(this.accessSecret) ) {
 			this.accessSecret = accessSecret;
-			this.s3Client = null;
+			setupClient();
 		}
 	}
 
@@ -538,7 +519,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	public void setRegionName(String regionName) {
 		if ( regionName != null && !regionName.equals(this.regionName) ) {
 			this.regionName = regionName;
-			this.s3Client = null;
+			setupClient();
 		}
 	}
 
@@ -551,7 +532,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	public void setBucketName(String bucketName) {
 		if ( bucketName != null && !bucketName.equals(this.bucketName) ) {
 			this.bucketName = bucketName;
-			this.s3Client = null;
+			setupClient();
 		}
 	}
 
@@ -587,6 +568,17 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 */
 	public void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
+	}
+
+	/**
+	 * Set the S3 client.
+	 * 
+	 * @param s3Client
+	 *        the client
+	 */
+	public void setS3Client(SdkS3Client s3Client) {
+		this.s3Client = s3Client;
+		setupClient();
 	}
 
 }

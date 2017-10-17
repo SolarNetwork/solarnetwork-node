@@ -14,33 +14,33 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
-	<service ref="s3BackupService">
-		<interfaces>
-			<value>net.solarnetwork.node.backup.BackupService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-		</interfaces>
-	</service>
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
-	<service ref="s3Client" interface="net.solarnetwork.node.backup.s3.S3Client"/>
+	<reference id="s3Client" interface="net.solarnetwork.node.backup.s3.S3Client"/>
+	
+	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
+	
+	<service ref="s3SetupManager" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
 	
 	<!-- Supporting Services -->
 	
-	<bean id="s3Client" class="net.solarnetwork.node.backup.s3.SdkS3Client"/>
-
-	<bean id="s3BackupService" class="net.solarnetwork.node.backup.s3.S3BackupService">
+	<bean id="s3SetupManager" class="net.solarnetwork.node.setup.s3.S3SetupManager" init-method="init">
 		<osgix:managed-properties 
-			persistent-id="net.solarnetwork.node.backup.s3.S3BackupService" 
+			persistent-id="net.solarnetwork.node.setup.s3.S3SetupManager" 
 			autowire-on-update="true"/>
 		<property name="s3Client" ref="s3Client"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basename" value="net.solarnetwork.node.backup.s3.S3BackupService"/>
-			</bean>
-		</property>
-		<property name="identityService">
+		<property name="settingDao" ref="settingDao"/>
+		<property name="taskExecutor" ref="taskExecutor"/>
+		<property name="nodeMetadataService">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+			</bean>	
+		</property>
+		<property name="systemService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.SystemService"/>
 			</bean>	
 		</property>
 	</bean>

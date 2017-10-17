@@ -29,13 +29,11 @@ import java.util.Date;
  * Basic implementation of {@link BackupInfo}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.46
  */
-public class SimpleBackupInfo implements BackupInfo {
+public class SimpleBackupInfo extends SimpleBackupIdentity implements BackupInfo {
 
-	private final String key;
-	private final Date date;
 	private final Collection<BackupResourceProviderInfo> providerInfos;
 	private final Collection<BackupResourceInfo> resourceInfos;
 
@@ -53,21 +51,31 @@ public class SimpleBackupInfo implements BackupInfo {
 	 */
 	public SimpleBackupInfo(String key, Date date, Collection<BackupResourceProviderInfo> providerInfos,
 			Collection<BackupResourceInfo> resourceInfos) {
-		super();
-		this.key = key;
-		this.date = date;
+		this(key, date, null, null, providerInfos, resourceInfos);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *        The backup key.
+	 * @param date
+	 *        The backup date.
+	 * @param nodeId
+	 *        The node ID.
+	 * @param qualifier
+	 *        The qualifier.
+	 * @param providerInfos
+	 *        The providers.
+	 * @param resourceInfos
+	 *        The resources.
+	 */
+	public SimpleBackupInfo(String key, Date date, Long nodeId, String qualifier,
+			Collection<BackupResourceProviderInfo> providerInfos,
+			Collection<BackupResourceInfo> resourceInfos) {
+		super(key, date, null, null);
 		this.providerInfos = providerInfos;
 		this.resourceInfos = resourceInfos;
-	}
-
-	@Override
-	public String getKey() {
-		return key;
-	}
-
-	@Override
-	public Date getDate() {
-		return date;
 	}
 
 	@Override

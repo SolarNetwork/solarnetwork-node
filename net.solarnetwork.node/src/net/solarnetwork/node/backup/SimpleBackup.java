@@ -28,7 +28,7 @@ import java.util.Date;
  * Simple implementation of {@link Backup}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SimpleBackup implements Backup {
 
@@ -37,6 +37,7 @@ public class SimpleBackup implements Backup {
 	private final Long size;
 	private final boolean complete;
 	private final Long nodeId;
+	private final String qualifier;
 
 	/**
 	 * Construct with values.
@@ -69,12 +70,50 @@ public class SimpleBackup implements Backup {
 	 *        the complete flag
 	 */
 	public SimpleBackup(Long nodeId, Date date, String key, Long size, boolean complete) {
+		this(nodeId, date, null, key, size, complete);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param nodeId
+	 *        the node ID
+	 * @param date
+	 *        the date
+	 * @param qualifier
+	 *        the qualifier
+	 * @param key
+	 *        the key
+	 * @param size
+	 *        the size
+	 * @param complete
+	 *        the complete flag
+	 * @since 1.2
+	 */
+	public SimpleBackup(Long nodeId, Date date, String qualifier, String key, Long size,
+			boolean complete) {
 		super();
 		this.nodeId = nodeId;
 		this.date = date;
+		this.qualifier = qualifier;
 		this.key = key;
 		this.size = size;
 		this.complete = complete;
+	}
+
+	/**
+	 * Construct from an identity with values.
+	 * 
+	 * @param ident
+	 *        the backup identity info
+	 * @param size
+	 *        the size
+	 * @param complete
+	 *        the complete flag
+	 * @since 1.2
+	 */
+	public SimpleBackup(BackupIdentity ident, Long size, boolean complete) {
+		this(ident.getNodeId(), ident.getDate(), ident.getQualifier(), ident.getKey(), size, complete);
 	}
 
 	@Override
@@ -85,6 +124,11 @@ public class SimpleBackup implements Backup {
 	@Override
 	public Date getDate() {
 		return date;
+	}
+
+	@Override
+	public String getQualifier() {
+		return qualifier;
 	}
 
 	@Override

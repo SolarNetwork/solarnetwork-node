@@ -22,15 +22,19 @@
 
 package net.solarnetwork.node.backup;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -43,36 +47,17 @@ import net.solarnetwork.node.Constants;
  * {@link BackupResourceProvider} for node files, such as installed application
  * bundle JARs.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>rootPath</dt>
- * <dd>The root path from which {@code resourceDirectories} are relative to. If
- * not provided, the runtime working directory will be used.</dd>
- * <dt>resourceDirectories</dt>
- * <dd>An array of directory paths, relative to {@code rootPath}, to look for
- * files to include in the backup. Defaults to
- * {@code [app/base, app/main]}.</dd>
- * 
- * <dt>fileNamePattern</dt>
- * <dd>A regexp used to match against files found in the
- * {@code resourceDirectories}. Only files matching this expression are included
- * in the backup. Defaults to {@code \.jar$}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class FileBackupResourceProvider implements BackupResourceProvider {
 
 	private String rootPath = System.getProperty(Constants.SYSTEM_PROP_NODE_HOME, "");
-	private String[] resourceDirectories = new String[] { "app/base", "app/main" };
+	private String[] resourceDirectories = new String[] { "app/main" };
 	private String fileNamePattern = "\\.jar$";
 	private MessageSource messageSource;
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
 	public String getKey() {
@@ -108,8 +93,25 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			for ( File f : files ) {
 				// make sure backup path is relative
 				final String backupPath = path + '/' + f.getName();
-				fileList.add(
-						new ResourceBackupResource(new FileSystemResource(f), backupPath, getKey()));
+				String digest = null;
+				InputStream in = null;
+				try {
+					in = new BufferedInputStream(new FileInputStream(f));
+					digest = DigestUtils.sha256Hex(in);
+				} catch ( IOException e ) {
+					log.warn("Error calculating SHA-256 digest of {}: {}", f, e.getMessage());
+				} finally {
+					if ( in != null ) {
+						try {
+							in.close();
+						} catch ( IOException e ) {
+							// ignore
+						}
+					}
+				}
+
+				fileList.add(new ResourceBackupResource(new FileSystemResource(f), backupPath, getKey(),
+						digest));
 			}
 		}
 		return fileList;
@@ -128,8 +130,12 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 								backupFile.getParent(), resource.getBackupPath());
 					}
 					try {
-						FileCopyUtils.copy(resource.getInputStream(), new FileOutputStream(backupFile));
-						backupFile.setLastModified(resource.getModificationDate());
+						// save to temp file first, then we'll rename
+						File tempFile = new File(backupFile.getParentFile(), "." + backupFile.getName());
+						log.debug("Installing resource {} => {}", resource.getBackupPath(), tempFile);
+						FileCopyUtils.copy(resource.getInputStream(), new FileOutputStream(tempFile));
+						tempFile.setLastModified(resource.getModificationDate());
+						moveTemporaryResourceFile(tempFile, backupFile);
 					} catch ( IOException e ) {
 						log.error("Unable to restore backup resource {} to {}: {}",
 								resource.getBackupPath(), rootDir.getPath(), e.getMessage());
@@ -139,6 +145,46 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 			}
 		}
 		return false;
+	}
+
+	private void moveTemporaryResourceFile(File tempFile, File outputFile) throws IOException {
+		if ( outputFile.exists() ) {
+			// if the file has not changed, just delete tmp file
+			InputStream outputFileInputStream = null;
+			InputStream tmpOutputFileInputStream = null;
+			try {
+				outputFileInputStream = new FileInputStream(outputFile);
+				tmpOutputFileInputStream = new FileInputStream(tempFile);
+				String outputFileHash = DigestUtils.sha256Hex(outputFileInputStream);
+				String tmpOutputFileHash = DigestUtils.sha256Hex(tmpOutputFileInputStream);
+				if ( tmpOutputFileHash.equals(outputFileHash) ) {
+					// file unchanged, so just delete tmp file
+					tempFile.delete();
+				} else {
+					log.debug("{} content updated", outputFile);
+					outputFile.delete();
+					tempFile.renameTo(outputFile);
+				}
+			} finally {
+				if ( outputFileInputStream != null ) {
+					try {
+						outputFileInputStream.close();
+					} catch ( IOException e ) {
+						// ignore;
+					}
+				}
+				if ( tmpOutputFileInputStream != null ) {
+					try {
+						tmpOutputFileInputStream.close();
+					} catch ( IOException e ) {
+						// ignore
+					}
+				}
+			}
+		} else {
+			// rename temp file
+			tempFile.renameTo(outputFile);
+		}
 	}
 
 	@Override
@@ -159,8 +205,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	}
 
 	/**
-	 * Set the {@code resourceDirectories} property as a comma-delimieted
-	 * string.
+	 * Set the {@code resourceDirectories} property as a comma-delimited string.
 	 * 
 	 * @param list
 	 *        a comma-delimited list of paths
@@ -179,28 +224,59 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		return StringUtils.arrayToCommaDelimitedString(getResourceDirectories());
 	}
 
-	public void setRootPath(String rootPath) {
-		this.rootPath = rootPath;
-	}
-
-	public void setResourceDirectories(String[] bundlePaths) {
-		this.resourceDirectories = bundlePaths;
-	}
-
-	public void setFileNamePattern(String fileNamePattern) {
-		this.fileNamePattern = fileNamePattern;
-	}
-
 	public String getRootPath() {
 		return rootPath;
+	}
+
+	/**
+	 * Set the root path from which {@code resourceDirectories} are relative to.
+	 * 
+	 * <p>
+	 * If not provided, the system property
+	 * {@link net.solarnetwork.node.Constants#SYSTEM_PROP_NODE_HOME} will be
+	 * used, and if that isn't set then the runtime working directory will be
+	 * used.
+	 * </p>
+	 * 
+	 * @param rootPath
+	 *        the root path to use
+	 */
+	public void setRootPath(String rootPath) {
+		this.rootPath = rootPath;
 	}
 
 	public String[] getResourceDirectories() {
 		return resourceDirectories;
 	}
 
+	/**
+	 * Set an array of directory paths, relative to {@code rootPath}, to look
+	 * for files to include in the backup.
+	 * 
+	 * @param bundlePaths
+	 *        the paths to use; defaults to {@literal [app/main]}
+	 */
+	public void setResourceDirectories(String[] bundlePaths) {
+		this.resourceDirectories = bundlePaths;
+	}
+
 	public String getFileNamePattern() {
 		return fileNamePattern;
+	}
+
+	/**
+	 * Set a regexp used to match against files found in the
+	 * {@code resourceDirectories}.
+	 * 
+	 * <p>
+	 * Only files matching this expression are included in the backup.
+	 * </p>
+	 * 
+	 * @param fileNamePattern
+	 *        the pattern to use; defaults to {@literal \.jar$}
+	 */
+	public void setFileNamePattern(String fileNamePattern) {
+		this.fileNamePattern = fileNamePattern;
 	}
 
 	/**
@@ -211,6 +287,15 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get the configured {@link MessageSource}.
+	 * 
+	 * @return the message source
+	 */
+	public MessageSource getMessageSource() {
+		return messageSource;
 	}
 
 }

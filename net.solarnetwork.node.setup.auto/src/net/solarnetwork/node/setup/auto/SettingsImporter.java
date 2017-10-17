@@ -25,12 +25,18 @@ package net.solarnetwork.node.setup.auto;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import net.solarnetwork.node.settings.SettingsImportOptions;
-import net.solarnetwork.node.settings.SettingsService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Locale;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
+import net.solarnetwork.node.backup.FileBackupResourceProvider;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
+import net.solarnetwork.node.settings.SettingsImportOptions;
+import net.solarnetwork.node.settings.SettingsService;
 
 /**
  * Look for a settings export to automatically load then the application starts.
@@ -39,14 +45,18 @@ import org.springframework.core.io.Resource;
  * to import a previously-exported settings CSV resource.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SettingsImporter {
+public class SettingsImporter extends FileBackupResourceProvider {
 
 	private Resource settingsResource = new FileSystemResource("conf/auto-settings.csv");
 	private SettingsService settingsService;
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	public SettingsImporter() {
+		super();
+		setResourceDirectories(new String[] { "conf" });
+		setFileNamePattern("^auto-settings\\..*");
+	}
 
 	/**
 	 * Attempt to load the {@code settingsResource}. Does not throw any
@@ -76,6 +86,33 @@ public class SettingsImporter {
 				}
 			}
 		}
+	}
+
+	@Override
+	public String getKey() {
+		return SettingsImporter.class.getName();
+	}
+
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "Auto Settings Provider";
+		String desc = "Backs up the Auto Settings data.";
+		MessageSource ms = getMessageSource();
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		String desc = "Auto Settings";
+		MessageSource ms = getMessageSource();
+		if ( ms != null ) {
+			desc = ms.getMessage("auto-settings.desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), desc);
 	}
 
 	public void setSettingsService(SettingsService settingsService) {

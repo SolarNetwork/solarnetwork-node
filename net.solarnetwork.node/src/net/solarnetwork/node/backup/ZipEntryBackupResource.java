@@ -31,7 +31,7 @@ import java.util.zip.ZipFile;
  * {@link BackupResource} for a file in a zip archive.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ZipEntryBackupResource implements BackupResource {
 
@@ -89,6 +89,11 @@ public class ZipEntryBackupResource implements BackupResource {
 	@Override
 	public long getModificationDate() {
 		return entry.getTime();
+	}
+
+	@Override
+	public String getSha256Digest() {
+		return null;
 	}
 
 }

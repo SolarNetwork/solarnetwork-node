@@ -134,6 +134,9 @@
 										<fmt:formatDate value="${backup.date}" pattern="dd MMM yyyy HH:mm"/>
 									</fmt:param>
 								</fmt:message>
+								<c:if test="${not empty backup.qualifier}">
+									&mdash; ${backup.qualifier}
+								</c:if>
 							</option>
 						</c:forEach>
 					</select>

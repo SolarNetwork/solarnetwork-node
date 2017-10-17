@@ -4,12 +4,12 @@ Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.54.0
+Bundle-Version: 1.55.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
  net.solarnetwork.node;version="1.22.0",
- net.solarnetwork.node.backup;version="1.5.0",
+ net.solarnetwork.node.backup;version="1.6.0",
  net.solarnetwork.node.dao;version="1.8.0",
  net.solarnetwork.node.domain;version="1.11.0",
  net.solarnetwork.node.job;version="1.13.4",
@@ -36,8 +36,9 @@ Import-Package:
  net.solarnetwork.domain;version="1.4.0",
  net.solarnetwork.support;version="1.0.0",
  net.solarnetwork.util;version="1.26.0",
- org.apache.commons.codec;version="1.4.0",
- org.apache.commons.codec.binary;version="1.4.0",
+ org.apache.commons.codec;version="[1.7,2.0)",
+ org.apache.commons.codec.binary;version="[1.7,2.0)",
+ org.apache.commons.codec.digest;version="[1.7,2.0)",
  org.apache.commons.io.input;version="2.4.0",
  org.apache.commons.logging;version="[1.1,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",

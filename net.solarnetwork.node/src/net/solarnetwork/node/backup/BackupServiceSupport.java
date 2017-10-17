@@ -41,7 +41,7 @@ import net.solarnetwork.node.Constants;
  * Abstract support class for {@link BackupService} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.54
  */
 public abstract class BackupServiceSupport implements BackupService {
@@ -50,12 +50,18 @@ public abstract class BackupServiceSupport implements BackupService {
 	public static final String BACKUP_KEY_DATE_FORMAT = "yyyyMMdd'T'HHmmss";
 
 	/**
-	 * A pattern to match {@literal node-N-backup-D} where {@literal N} is a
+	 * A pattern to match {@literal node-N-backup-D-Q} where {@literal N} is a
 	 * node ID and {@literal D} is a date formatted using
-	 * {@link #BACKUP_KEY_DATE_FORMAT}.
+	 * {@link #BACKUP_KEY_DATE_FORMAT} and {@literal Q} is an optional
+	 * qualifier.
+	 * 
+	 * <p>
+	 * Note that the qualifier and the leading dash is optional, so its
+	 * {@link Matcher} group is {@literal 4} (not 3).
+	 * </p>
 	 */
 	public static final Pattern NODE_AND_DATE_BACKUP_KEY_PATTERN = Pattern
-			.compile("node-(\\d+)-backup-(\\d{8}T\\d{6})");
+			.compile("node-(\\d+)-backup-(\\d{8}T\\d{6})(-(\\w+))?");
 
 	protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -202,6 +208,63 @@ public abstract class BackupServiceSupport implements BackupService {
 					result = Long.valueOf(m.group(1));
 				} catch ( NumberFormatException e ) {
 					log.warn("Unable to parse node ID from key [{}]", backupKey);
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Extract backup identity information from a backup key.
+	 * 
+	 * <p>
+	 * This method calls
+	 * {@link #identityFromBackupKey(Pattern, String, String)}, passing
+	 * {@link #NODE_AND_DATE_BACKUP_KEY_PATTERN} and
+	 * {@link #BACKUP_KEY_DATE_FORMAT} for arguments.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the key to extract the details from
+	 * @return the extracted details, or {@literal null} if none found
+	 * @since 1.1
+	 */
+	public static final BackupIdentity identityFromBackupKey(String key) {
+		return identityFromBackupKey(NODE_AND_DATE_BACKUP_KEY_PATTERN, BACKUP_KEY_DATE_FORMAT, key);
+	}
+
+	/**
+	 * Extract backup identity information from a backup key.
+	 * 
+	 * @param nodeIdAndDatePattern
+	 *        a pattern that contains groups for a node ID, date, and an
+	 *        optional qualifier
+	 * @param dateFormat
+	 *        the date format to parse the date with
+	 * @param key
+	 *        the key to extract the details from
+	 * @return the extracted details, or {@literal null} if none found
+	 * @since 1.1
+	 */
+	public static final BackupIdentity identityFromBackupKey(Pattern nodeIdAndDatePattern,
+			String dateFormat, String key) {
+		BackupIdentity result = null;
+		if ( key != null ) {
+			Matcher m = nodeIdAndDatePattern.matcher(key);
+			if ( m.find() ) {
+				final SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+				try {
+					Long nodeId = Long.valueOf(m.group(1));
+					Date date = sdf.parse(m.group(2));
+					String qualifier = null;
+					if ( m.groupCount() > 2 ) {
+						qualifier = m.group(m.groupCount());
+					}
+					result = new SimpleBackupIdentity(key, date, nodeId, qualifier);
+				} catch ( NumberFormatException e ) {
+					// ignore
+				} catch ( ParseException e ) {
+					// ignore
 				}
 			}
 		}
