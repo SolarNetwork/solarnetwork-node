@@ -20,18 +20,14 @@
 
 	<osgix:cm-properties id="dao.jdbc.cfg"
 		persistent-id="net.solarnetwork.node.dao.jdbc">
-		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql
-		</beans:prop>
+		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
-		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService
-		</beans:prop>
+		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
-		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver
-		</beans:prop>
-		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true
-		</beans:prop>
+		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
+		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
 		<beans:prop key="jdbc.pass">solarnode</beans:prop>
 		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
@@ -42,11 +38,9 @@
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
 		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementCache(prepared=true,callable=true,max=50)</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql
-		</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
-		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql
-		</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>

@@ -158,16 +158,27 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 				}
 				BackupService backupService = getBackupService();
 				if ( backupService != null ) {
+					log.warn("Looking for backup to restore from {}", backupService);
 					Backup backup = getBackupToRestore(backupService);
 					if ( backup != null && restoreScheduled.compareAndSet(false, true) ) {
 						Map<String, String> props = Collections.singletonMap(
 								BackupManager.RESOURCE_PROVIDER_FILTER, backupResourceProviderFilter);
+						log.warn("Discovered backup {} for scheduled restore using props {}",
+								backup.getKey(), props);
 						if ( backupService.markBackupForRestore(backup, props) ) {
 							cleanupExistingDatabase();
 							shutdown(backup);
+						} else {
+							log.warn(
+									"BackupService {} failed to mark backup {} for restore); cannot schedule restore from backup",
+									backupService, backup.getKey());
 						}
+					} else if ( backup == null ) {
+						log.warn("No backup available to restore; cannot schedule restore from backup");
 					}
 				} else {
+					log.warn(
+							"No BackupService available for restore; will try scheduling restore again");
 					scheduleRestoreFromBackup(count);
 				}
 			}
