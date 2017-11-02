@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web.support;
@@ -27,16 +25,16 @@ package net.solarnetwork.node.setup.web.support;
 import java.io.IOException;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
+import org.apache.taglibs.standard.util.EscapeXML;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingsService;
-import org.apache.taglibs.standard.util.EscapeXML;
 
 /**
  * Expose the current value of a setting.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class SettingValueTag extends TagSupport {
 
@@ -52,6 +50,9 @@ public class SettingValueTag extends TagSupport {
 		assert service != null;
 		assert provider != null;
 		assert setting != null;
+		if ( service == null || provider == null || setting == null ) {
+			return EVAL_PAGE;
+		}
 		Object val = service.getSettingValue(provider, setting);
 		if ( val != null ) {
 			try {
