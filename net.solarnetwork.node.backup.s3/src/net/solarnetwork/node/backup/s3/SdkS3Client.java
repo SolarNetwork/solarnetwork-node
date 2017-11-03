@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.amazonaws.AmazonClientException;
@@ -34,6 +35,8 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -149,6 +152,23 @@ public class SdkS3Client implements S3Client {
 			log.warn("AWS error: {}; HTTP code {}; AWS code {}; type {}; request ID {}", e.getMessage(),
 					e.getStatusCode(), e.getErrorCode(), e.getErrorType(), e.getRequestId());
 			throw new RemoteServiceException("Error putting S3 object at " + key, e);
+		} catch ( AmazonClientException e ) {
+			log.debug("Error communicating with AWS: {}", e.getMessage());
+			throw new RemoteServiceException("Error communicating with AWS", e);
+		}
+	}
+
+	@Override
+	public void deleteObjects(Set<String> keys) throws IOException {
+		AmazonS3 client = getClient();
+		try {
+			DeleteObjectsRequest req = new DeleteObjectsRequest(bucketName)
+					.withKeys(keys.stream().map(k -> new KeyVersion(k)).collect(Collectors.toList()));
+			client.deleteObjects(req);
+		} catch ( AmazonServiceException e ) {
+			log.warn("AWS error: {}; HTTP code {}; AWS code {}; type {}; request ID {}", e.getMessage(),
+					e.getStatusCode(), e.getErrorCode(), e.getErrorType(), e.getRequestId());
+			throw new RemoteServiceException("Error deleting S3 objects " + keys, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
 			throw new RemoteServiceException("Error communicating with AWS", e);
