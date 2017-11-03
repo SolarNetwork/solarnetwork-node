@@ -96,7 +96,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * @return the file for marked backup metadata
 	 */
 	protected File markedBackupForRestoreFile() {
-		return new File(defaultBackuprDir(), "RESTORE_ON_BOOT");
+		return new File(defaultBackuprDir(), getKey() + ".RESTORE_ON_BOOT");
 	}
 
 	/**
