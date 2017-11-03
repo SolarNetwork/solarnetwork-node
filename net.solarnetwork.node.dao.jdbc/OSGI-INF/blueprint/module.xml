@@ -78,6 +78,11 @@
 		<property name="serviceFilter" value="(db=node)"/>
 	</bean>
 
+	<bean id="identityService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService" />
+	</bean>
+
 	<!-- Published Services -->
 
 	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"
@@ -196,6 +201,7 @@
 			<property name="restoreDelaySeconds" value="${restoreFromBackup.secondsDelay}" />
 			<property name="backupResourceProviderFilter" value="${restoreFromBackup.resourceProviderFilter}" />
 			<property name="sqlStateRegex" value="${restoreFromBackup.sqlStateRegex}" />
+			<property name="identityService" ref="identityService"/>
 		</bean>
 	</service>
 
