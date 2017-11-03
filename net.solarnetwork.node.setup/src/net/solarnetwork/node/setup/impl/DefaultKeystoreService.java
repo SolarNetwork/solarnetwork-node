@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.setup.impl;
 
-import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +48,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import javax.annotation.Resource;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 import org.apache.commons.codec.binary.Base64;
@@ -65,7 +63,6 @@ import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.support.CertificateService;
@@ -84,7 +81,7 @@ import net.solarnetwork.support.ConfigurableSSLService;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class DefaultKeystoreService extends ConfigurableSSLService
 		implements PKIService, SSLService, BackupResourceProvider {
@@ -94,9 +91,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	/** The default value for the {@code keyStorePath} property. */
 	public static final String DEFAULT_KEY_STORE_PATH = "conf/tls/node.jks";
 
-	/** The settings key for the key store password. */
-	public static final String KEY_PASSWORD = "solarnode.keystore.pw";
-
 	private static final String PKCS12_KEYSTORE_TYPE = "pkcs12";
 	private static final int PASSWORD_LENGTH = 20;
 
@@ -105,17 +99,17 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	private int keySize = 2048;
 	private MessageSource messageSource;
 
-	@Resource
-	private CertificateService certificateService;
-
-	@Resource
-	private SettingDao settingDao;
+	private final SetupIdentityDao setupIdentityDao;
+	private final CertificateService certificateService;
 
 	/**
 	 * Default constructor.
 	 */
-	public DefaultKeystoreService() {
+	public DefaultKeystoreService(SetupIdentityDao setupIdentityDao,
+			CertificateService certificateService) {
 		super();
+		this.setupIdentityDao = setupIdentityDao;
+		this.certificateService = certificateService;
 		setKeyStorePath(DefaultKeystoreService.DEFAULT_KEY_STORE_PATH);
 		setTrustStorePassword("solarnode");
 		setKeyStorePassword(null);
@@ -185,13 +179,14 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	/**
 	 * Get the keystore password.
 	 * 
+	 * <p>
 	 * If a password has been configured via
 	 * {@link #setKeyStorePassword(String)} this method will return that.
-	 * Otherwise, the {@link SettingDao} is used to query the
-	 * {@link #KEY_PASSWORD} setting value. If that value is available, that
-	 * value is returned. Othersise, a new random password will be generated and
-	 * persisted into the {@code SettingDao} on {@link #KEY_PASSWORD}, and the
-	 * generated password will be returned.
+	 * Otherwise, the {@link SetupIdentityDao} is used get the existing
+	 * password. If available, that password is returned. Otherwise, a new
+	 * random password will be generated and persisted into
+	 * {@code SetupIdentityDao}, and the generated password will be returned.
+	 * </p>
 	 */
 	@Override
 	protected String getKeyStorePassword() {
@@ -199,25 +194,34 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		if ( manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ) {
 			return manualKeyStorePassword;
 		}
-		String result = getSetting(KEY_PASSWORD);
+		SetupIdentityInfo info = setupIdentityDao.getSetupIdentityInfo();
+		String result = info.getKeyStorePassword();
 		if ( result == null ) {
-			// generate new random password
-			try {
-				SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-				final int start = 32;
-				final int end = 126;
-				final int range = end - start;
-				char[] passwd = new char[PASSWORD_LENGTH];
-				for ( int i = 0; i < PASSWORD_LENGTH; i++ ) {
-					passwd[i] = (char) (random.nextInt(range) + start);
-				}
-				result = new String(passwd);
-				saveSetting(KEY_PASSWORD, result);
-			} catch ( NoSuchAlgorithmException e ) {
-				throw new CertificateException("Error creating random key store password", e);
-			}
+			// generate new random password and save
+			result = generateNewKeyStorePassword();
+			setupIdentityDao.saveSetupIdentityInfo(info.withKeyStorePassword(result));
 		}
 		return result;
+	}
+
+	private String generateNewKeyStorePassword() {
+		String manualKeyStorePassword = super.getKeyStorePassword();
+		if ( manualKeyStorePassword != null && manualKeyStorePassword.length() > 0 ) {
+			return manualKeyStorePassword;
+		}
+		try {
+			SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+			final int start = 32;
+			final int end = 126;
+			final int range = end - start;
+			char[] passwd = new char[PASSWORD_LENGTH];
+			for ( int i = 0; i < PASSWORD_LENGTH; i++ ) {
+				passwd[i] = (char) (random.nextInt(range) + start);
+			}
+			return new String(passwd);
+		} catch ( NoSuchAlgorithmException e ) {
+			throw new CertificateException("Error creating random password", e);
+		}
 	}
 
 	@Override
@@ -270,7 +274,8 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 							"Deleting existing certificate store due to invalid password, will create new store");
 					if ( ksFile.delete() ) {
 						// clear out old key store password, so we generate a new one
-						deleteSetting(KEY_PASSWORD);
+						setupIdentityDao.saveSetupIdentityInfo(
+								setupIdentityDao.getSetupIdentityInfo().withKeyStorePassword(null));
 						keyStore = loadKeyStore();
 					}
 				}
@@ -432,8 +437,7 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	public void savePKCS12Keystore(String keystore, String password) throws CertificateException {
 		KeyStore keyStore = loadKeyStore(PKCS12_KEYSTORE_TYPE,
 				new ByteArrayInputStream(Base64.decodeBase64(keystore)), password);
-		deleteSetting(KEY_PASSWORD);
-		final String newPassword = getKeyStorePassword();
+		final String newPassword = generateNewKeyStorePassword();
 		KeyStore newKeyStore = loadKeyStore(KeyStore.getDefaultType(), null, newPassword);
 
 		// change the password to our local random one
@@ -444,6 +448,8 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 			ksFile.delete();
 		}
 		saveKeyStore(newKeyStore);
+		setupIdentityDao.saveSetupIdentityInfo(
+				setupIdentityDao.getSetupIdentityInfo().withKeyStorePassword(newPassword));
 	}
 
 	private void copyNodeChain(KeyStore keyStore, String password, KeyStore newKeyStore,
@@ -599,22 +605,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		}
 	}
 
-	private String getSetting(String key) {
-		return settingDao.getSetting(key, SETUP_TYPE_KEY);
-	}
-
-	private void saveSetting(String key, String value) {
-		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
-	}
-
-	private void deleteSetting(String key) {
-		settingDao.deleteSetting(key, SETUP_TYPE_KEY);
-	}
-
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
 	public void setNodeAlias(String nodeAlias) {
 		this.nodeAlias = nodeAlias;
 	}
@@ -625,10 +615,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 
 	public void setKeySize(int keySize) {
 		this.keySize = keySize;
-	}
-
-	public void setCertificateService(CertificateService certificateService) {
-		this.certificateService = certificateService;
 	}
 
 	/**

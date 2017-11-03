@@ -22,12 +22,12 @@
 
 package net.solarnetwork.node.setup.test;
 
-import static net.solarnetwork.node.setup.impl.DefaultKeystoreService.KEY_PASSWORD;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -59,20 +59,19 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mortbay.jetty.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.SetupSettings;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.setup.impl.DefaultKeystoreService;
 import net.solarnetwork.node.setup.impl.DefaultSetupService;
+import net.solarnetwork.node.setup.impl.SetupIdentityDao;
+import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.pki.bc.BCCertificateService;
 import net.solarnetwork.support.CertificateException;
 
@@ -80,16 +79,15 @@ import net.solarnetwork.support.CertificateException;
  * Test cases for the {@link DefaultSetupService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultSetupServiceTest {
 
 	private static final String TEST_CONF_VALUE = "password";
+	private static final String TEST_PW_VALUE = "test.password";
 	private static final String TEST_DN = "UID=1, OU=Development, O=SolarNetwork";
 	private static final String TEST_CA_DN = "CN=Developer CA, OU=SolarNetwork Developer Network, O=SolarNetwork Domain";
 
-	public static final int HTTP_PORT = 8888;
-	private static final String TEST_SOLARIN_PORT = String.valueOf(HTTP_PORT);
 	private static final String TEST_SOLARIN_HOST = "localhost";
 
 	private static final String KEYSTORE_PATH = "conf/test.jks";
@@ -97,7 +95,7 @@ public class DefaultSetupServiceTest {
 	private static KeyPair CA_KEY_PAIR;
 	private static X509Certificate CA_CERT;
 
-	private SettingDao settingDao;
+	private SetupIdentityDao setupIdentityDao;
 	private BCCertificateService certService;
 	private DefaultKeystoreService keystoreService;
 	private Server httpServer;
@@ -117,31 +115,37 @@ public class DefaultSetupServiceTest {
 
 	@Before
 	public void setup() throws Exception {
-		settingDao = EasyMock.createMock(SettingDao.class);
+		setupIdentityDao = EasyMock.createMock(SetupIdentityDao.class);
 		certService = new BCCertificateService();
-		keystoreService = new DefaultKeystoreService();
-		keystoreService.setSettingDao(settingDao);
-		keystoreService.setCertificateService(certService);
+		keystoreService = new DefaultKeystoreService(setupIdentityDao, certService);
 		keystoreService.setKeyStorePath(KEYSTORE_PATH);
 
-		httpServer = new Server(HTTP_PORT);
+		httpServer = new Server(0);
 		httpServer.start();
 
-		service = new DefaultSetupService();
+		service = new DefaultSetupService(setupIdentityDao);
 		service.setPkiService(keystoreService);
-		service.setSettingDao(settingDao);
+	}
+
+	private int getHttpServerPort() {
+		return httpServer.getConnectors()[0].getLocalPort();
+	}
+
+	private void replayAll() {
+		EasyMock.replay(setupIdentityDao);
 	}
 
 	@After
 	public void cleanup() throws Exception {
 		new File(KEYSTORE_PATH).delete();
 		httpServer.stop();
+		EasyMock.verify(setupIdentityDao);
 	}
 
 	private synchronized KeyStore loadKeyStore() throws Exception {
 		File ksFile = new File(KEYSTORE_PATH);
 		InputStream in = null;
-		String passwd = TEST_CONF_VALUE;
+		String passwd = TEST_PW_VALUE;
 		try {
 			if ( ksFile.isFile() ) {
 				in = new BufferedInputStream(new FileInputStream(ksFile));
@@ -174,9 +178,10 @@ public class DefaultSetupServiceTest {
 
 	@Test
 	public void handleRenewCertificateInstruction() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		keystoreService.saveCACertificate(CA_CERT);
 		keystoreService.generateNodeSelfSignedCertificate(TEST_DN);
 		String csr = keystoreService.generateNodePKCS10CertificateRequestString();
@@ -194,20 +199,14 @@ public class DefaultSetupServiceTest {
 			log.debug("Saved signed node certificate {}:\n{}", originalCert.getSerialNumber(),
 					signedPem);
 
-			verify(settingDao);
-			assertNotNull(csr);
+			assertThat("Generated CSR", csr, notNullValue());
 		} finally {
 			pemReader.close();
 		}
 
 		// now let's renew!
-		EasyMock.reset(settingDao);
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
-
 		KeyStore keyStore = loadKeyStore();
-		PrivateKey nodeKey = (PrivateKey) keyStore.getKey("node", TEST_CONF_VALUE.toCharArray());
+		PrivateKey nodeKey = (PrivateKey) keyStore.getKey("node", TEST_PW_VALUE.toCharArray());
 		JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSA");
 		ContentSigner signer = signerBuilder.build(nodeKey);
 		PKCS10CertificationRequestBuilder builder = new PKCS10CertificationRequestBuilder(
@@ -227,19 +226,18 @@ public class DefaultSetupServiceTest {
 		}
 
 		InstructionState state = service.processInstruction(instr);
-		Assert.assertEquals(InstructionState.Completed, state);
+		assertThat("Instruction state", state, equalTo(InstructionState.Completed));
 
 		X509Certificate nodeCert = keystoreService.getNodeCertificate();
-		Assert.assertEquals(renewedCert, nodeCert);
-
-		verify(settingDao);
+		assertThat("Node cert is now renewed cert", nodeCert, equalTo(renewedCert));
 	}
 
 	@Test
 	public void renewNetworkCertificate() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, TEST_SOLARIN_HOST,
+				getHttpServerPort(), false, TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		keystoreService.saveCACertificate(CA_CERT);
 		keystoreService.generateNodeSelfSignedCertificate(TEST_DN);
 		String csr = keystoreService.generateNodePKCS10CertificateRequestString();
@@ -257,24 +255,12 @@ public class DefaultSetupServiceTest {
 			log.debug("Saved signed node certificate {}:\n{}", originalCert.getSerialNumber(),
 					signedPem);
 
-			verify(settingDao);
-			assertNotNull(csr);
+			assertThat("Generated CSR", csr, notNullValue());
 		} finally {
 			pemReader.close();
 		}
 
 		// now let's renew!
-		EasyMock.reset(settingDao);
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-
-		expect(settingDao.getSetting(SetupSettings.KEY_SOLARNETWORK_HOST_PORT,
-				SetupSettings.SETUP_TYPE_KEY)).andReturn(TEST_SOLARIN_PORT);
-		expect(settingDao.getSetting(SetupSettings.KEY_SOLARNETWORK_HOST_NAME,
-				SetupSettings.SETUP_TYPE_KEY)).andReturn(TEST_SOLARIN_HOST);
-		expect(settingDao.getSetting(SetupSettings.KEY_SOLARNETWORK_FORCE_TLS,
-				SetupSettings.SETUP_TYPE_KEY)).andReturn("false");
-
 		AbstractTestHandler handler = new AbstractTestHandler() {
 
 			@Override
@@ -308,10 +294,6 @@ public class DefaultSetupServiceTest {
 		};
 		httpServer.addHandler(handler);
 
-		replay(settingDao);
-
 		service.renewNetworkCertificate("foobar");
-
-		verify(settingDao);
 	}
 }

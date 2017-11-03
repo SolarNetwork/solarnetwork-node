@@ -3,10 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup
 Bundle-Description: Provides core SolarNode setup infrastructure support.
-Bundle-Version: 1.17.0
+Bundle-Version: 1.18.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
+ com.fasterxml.jackson.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.core;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
  javax.annotation,
  javax.net.ssl,
  javax.security.auth,
@@ -20,7 +24,7 @@ Import-Package:
  net.solarnetwork.node.setup;version="1.12.0",
  net.solarnetwork.node.support;version="1.14.0",
  net.solarnetwork.support;version="1.4.0",
- net.solarnetwork.util;version="1.26.0",
+ net.solarnetwork.util;version="1.27.0",
  org.aopalliance.aop;version="[1.0,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",

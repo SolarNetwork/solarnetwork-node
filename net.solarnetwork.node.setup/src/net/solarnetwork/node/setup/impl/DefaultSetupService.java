@@ -24,12 +24,7 @@
 
 package net.solarnetwork.node.setup.impl;
 
-import static net.solarnetwork.node.SetupSettings.KEY_CONFIRMATION_CODE;
 import static net.solarnetwork.node.SetupSettings.KEY_NODE_ID;
-import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_FORCE_TLS;
-import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_NAME;
-import static net.solarnetwork.node.SetupSettings.KEY_SOLARNETWORK_HOST_PORT;
-import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,10 +45,6 @@ import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
@@ -114,7 +105,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -151,6 +142,9 @@ public class DefaultSetupService extends XmlServiceSupport
 	 */
 	public static final String NETWORK_APP_CONFIGURATION_URL_PATH = "/api/v1/pub/config";
 
+	public static final Pattern DEFAULT_SUBJECT_NAME_NODE_ID_PATTERN = Pattern
+			.compile("UID\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+
 	private static final long APP_CONFIG_CACHE_MS = 24 * 60 * 60 * 1000L; // 1 day
 
 	// The keys used in the verification code xml
@@ -175,19 +169,22 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
 	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
 
+	private final SetupIdentityDao setupIdentityDao;
 	private OptionalService<BackupManager> backupManager;
 	private PKIService pkiService;
-	private PlatformTransactionManager transactionManager;
-	private SettingDao settingDao;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
 
 	private NodeAppConfiguration appConfiguration = new NodeAppConfiguration();
 
 	/**
 	 * Default constructor.
+	 * 
+	 * @param setupIdentityDao
+	 *        the identity DAO to use
 	 */
-	public DefaultSetupService() {
+	public DefaultSetupService(SetupIdentityDao setupIdentityDao) {
 		super();
+		this.setupIdentityDao = setupIdentityDao;
 		setConnectionTimeout(60000);
 	}
 
@@ -218,11 +215,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	}
 
 	private boolean isForceTLS() {
-		String force = getSetting(KEY_SOLARNETWORK_FORCE_TLS);
-		if ( force == null ) {
-			return false;
-		}
-		return Boolean.parseBoolean(force);
+		return setupIdentityDao.getSetupIdentityInfo().isSolarNetForceTls();
 	}
 
 	private int getPort() {
@@ -235,11 +228,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	@Override
 	public Long getNodeId() {
-		String nodeId = getSetting(KEY_NODE_ID);
-		if ( nodeId == null ) {
-			return null;
-		}
-		return Long.valueOf(nodeId);
+		return setupIdentityDao.getSetupIdentityInfo().getNodeId();
 	}
 
 	@Override
@@ -257,16 +246,13 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	@Override
 	public String getSolarNetHostName() {
-		return getSetting(KEY_SOLARNETWORK_HOST_NAME);
+		return setupIdentityDao.getSetupIdentityInfo().getSolarNetHostName();
 	}
 
 	@Override
 	public Integer getSolarNetHostPort() {
-		String port = getSetting(KEY_SOLARNETWORK_HOST_PORT);
-		if ( port == null ) {
-			return 443;
-		}
-		return Integer.valueOf(port);
+		Integer port = setupIdentityDao.getSetupIdentityInfo().getSolarNetHostPort();
+		return (port == null ? 443 : port);
 	}
 
 	@Override
@@ -399,19 +385,13 @@ public class DefaultSetupService extends XmlServiceSupport
 					getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
 					getNodeAssociationPropertyMapping());
 
-			final TransactionTemplate tt = new TransactionTemplate(transactionManager);
-			tt.execute(new TransactionCallbackWithoutResult() {
-
-				@Override
-				protected void doInTransactionWithoutResult(TransactionStatus status) {
-					// Store the confirmation code and settings on the node
-					saveSetting(KEY_CONFIRMATION_CODE, result.getConfirmationKey());
-					saveSetting(KEY_NODE_ID, result.getNetworkId().toString());
-					saveSetting(KEY_SOLARNETWORK_HOST_NAME, details.getHost());
-					saveSetting(KEY_SOLARNETWORK_HOST_PORT, details.getPort().toString());
-					saveSetting(KEY_SOLARNETWORK_FORCE_TLS, String.valueOf(details.isForceTLS()));
-				}
-			});
+			SetupIdentityInfo oldInfo = setupIdentityDao.getSetupIdentityInfo();
+			SetupIdentityInfo info = new SetupIdentityInfo(result.getNetworkId(),
+					result.getConfirmationKey(), details.getHost(), details.getPort(),
+					details.isForceTLS(),
+					details.getKeystorePassword() != null ? details.getKeystorePassword()
+							: oldInfo.getKeyStorePassword());
+			setupIdentityDao.saveSetupIdentityInfo(info);
 
 			if ( result.getNetworkCertificateStatus() == null ) {
 				// create the node's CSR based on the given subjectDN
@@ -581,27 +561,8 @@ public class DefaultSetupService extends XmlServiceSupport
 		return config;
 	}
 
-	private String getSetting(String key) {
-		return (settingDao == null ? null : settingDao.getSetting(key, SETUP_TYPE_KEY));
-	}
-
-	private void saveSetting(String key, String value) {
-		if ( settingDao == null ) {
-			return;
-		}
-		settingDao.storeSetting(key, SETUP_TYPE_KEY, value);
-	}
-
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
 	public void setSolarInUrlPrefix(String solarInUrlPrefix) {
 		this.solarInUrlPrefix = solarInUrlPrefix;
-	}
-
-	public void setTransactionManager(PlatformTransactionManager transactionManager) {
-		this.transactionManager = transactionManager;
 	}
 
 	public void setPkiService(PKIService pkiService) {
