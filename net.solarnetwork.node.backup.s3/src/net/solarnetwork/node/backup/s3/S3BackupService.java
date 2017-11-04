@@ -352,8 +352,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 					CACHED_BACKUPS.replace(backupKey, cachedBackup, newCachedBackup);
 				}
 			}
-		} catch ( RemoteServiceException e ) {
-			log.warn("Error accessing S3: {}", e.getMessage());
+		} catch ( RemoteServiceException | IOException e ) {
+			log.warn("Error listing S3 objects with prefix {}: {}", backupKey, e.getMessage());
 		}
 		return backup;
 	}
@@ -398,8 +398,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
-		} catch ( RemoteServiceException e ) {
-			log.warn("Error accessing S3: {}", e.getMessage());
+		} catch ( RemoteServiceException | IOException e ) {
+			log.warn("Error listing S3 avaialble backups with prefix {}: {}", objectKeyPrefix,
+					e.getMessage());
 			return Collections.emptyList();
 		}
 	}

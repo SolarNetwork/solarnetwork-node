@@ -562,7 +562,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 * @return the S3 object that holds the setup metadata to update to, or
 	 *         {@literal null} if not available
 	 */
-	private S3ObjectReference getConfigObjectForUpdateToHighestVersion() {
+	private S3ObjectReference getConfigObjectForUpdateToHighestVersion() throws IOException {
 		final String metaDir = objectKeyForPath(META_OBJECT_KEY_PREFIX);
 		Set<S3ObjectReference> objs = s3Client.listObjects(metaDir);
 		S3ObjectReference versionObj = null;
