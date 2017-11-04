@@ -42,15 +42,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.dao.jdbc.SQLExceptionHandler;
+import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Recover from connection exceptions by restoring from backup.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler {
 
@@ -59,6 +61,7 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 	private int restoreDelaySeconds = 15;
 	private String backupResourceProviderFilter;
 	private List<Pattern> sqlStatePatterns;
+	private OptionalService<IdentityService> identityService;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -158,16 +161,27 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 				}
 				BackupService backupService = getBackupService();
 				if ( backupService != null ) {
+					log.warn("Looking for backup to restore from {}", backupService);
 					Backup backup = getBackupToRestore(backupService);
 					if ( backup != null && restoreScheduled.compareAndSet(false, true) ) {
 						Map<String, String> props = Collections.singletonMap(
 								BackupManager.RESOURCE_PROVIDER_FILTER, backupResourceProviderFilter);
+						log.warn("Discovered backup {} for scheduled restore using props {}",
+								backup.getKey(), props);
 						if ( backupService.markBackupForRestore(backup, props) ) {
 							cleanupExistingDatabase();
 							shutdown(backup);
+						} else {
+							log.warn(
+									"BackupService {} failed to mark backup {} for restore); cannot schedule restore from backup",
+									backupService, backup.getKey());
 						}
+					} else if ( backup == null ) {
+						log.warn("No backup available to restore; cannot schedule restore from backup");
 					}
 				} else {
+					log.warn(
+							"No BackupService available for restore; will try scheduling restore again");
 					scheduleRestoreFromBackup(count);
 				}
 			}
@@ -192,6 +206,9 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 			log.debug("No BackupService available to restore from");
 			return null;
 		}
+		final IdentityService identService = (identityService != null ? identityService.service()
+				: null);
+		final Long nodeId = (identService != null ? identService.getNodeId() : null);
 		Collection<Backup> backups = backupService.getAvailableBackups();
 		if ( backups == null || backups.isEmpty() ) {
 			log.debug("No Backup available to restore from");
@@ -199,9 +216,10 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 		}
 		Backup backup = null;
 		for ( Backup b : backups ) {
-			if ( b.isComplete() ) {
+			// get the most recent available backup for this node
+			if ( b.isComplete() && (backup == null || backup.getDate().before(b.getDate()))
+					&& (nodeId == null || nodeId.equals(b.getNodeId())) ) {
 				backup = b;
-				break;
 			}
 		}
 		return backup;
@@ -274,6 +292,18 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 			}
 		}
 		setSqlStatePatterns(pats);
+	}
+
+	/**
+	 * Set an {@link IdentityService} to know the current node identity to
+	 * associate backups with.
+	 * 
+	 * @param identityService
+	 *        the identity service to use
+	 * @since 1.1
+	 */
+	public void setIdentityService(OptionalService<IdentityService> identityService) {
+		this.identityService = identityService;
 	}
 
 }

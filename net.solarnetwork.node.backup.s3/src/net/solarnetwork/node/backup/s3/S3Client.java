@@ -87,4 +87,12 @@ public interface S3Client {
 	S3ObjectReference putObject(String key, InputStream in, ObjectMetadata objectMetadata)
 			throws IOException;
 
+	/**
+	 * Delete a set of keys from S3.
+	 * 
+	 * @param keys
+	 *        the keys to delete
+	 */
+	void deleteObjects(Set<String> keys) throws IOException;
+
 }

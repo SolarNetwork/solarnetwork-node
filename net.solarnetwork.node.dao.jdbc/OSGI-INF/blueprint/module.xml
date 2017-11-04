@@ -20,40 +20,42 @@
 
 	<osgix:cm-properties id="dao.jdbc.cfg"
 		persistent-id="net.solarnetwork.node.dao.jdbc">
-		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql
-		</beans:prop>
+		<beans:prop key="DatabaseSetup.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/derby-init.sql</beans:prop>
 		<beans:prop key="restoreFromBackup.exceptionThreshold">1</beans:prop>
 		<beans:prop key="restoreFromBackup.secondsDelay">30</beans:prop>
-		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService
-		</beans:prop>
+		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
-		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver
-		</beans:prop>
-		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true
-		</beans:prop>
+		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
+		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
 		<beans:prop key="jdbc.pass">solarnode</beans:prop>
 		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
 		<beans:prop key="jdbc.pool.maxActive">3</beans:prop>
 		<beans:prop key="jdbc.pool.maxWait">20000</beans:prop>
+		<beans:prop key="jdbc.pool.maxAge">0</beans:prop>
 		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
 		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
+		<beans:prop key="jdbc.pool.removeAbandoned">true</beans:prop>
+		<beans:prop key="jdbc.pool.removeAbandonedTimeout">600</beans:prop>
+		<beans:prop key="jdbc.pool.abandonWhenPercentageFull">70</beans:prop>
+		<beans:prop key="jdbc.pool.logAbandoned">false</beans:prop>
 		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
-		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementCache(prepared=true,callable=true,max=50)</beans:prop>
+		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementCache(prepared=true,callable=true,max=50);ResetAbandonedTimer</beans:prop>
+		<beans:prop key="jdbc.pool.jmxEnabled">true</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
-		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql
-		</beans:prop>
+		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
-		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql
-		</beans:prop>
+		<beans:prop key="JdbcGeneralLocationDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generallocdatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralLocationDatumDao.sqlResourcePrefix">derby-generallocdatum</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
+		<beans:prop key="job.generalNodeDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.trimMinutes">120</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.fileSystemUseThreshold">90</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.tableSizeThreshold">1048576</beans:prop>
 		<beans:prop key="job.generalLocationDatumCleaner.cron">35 30 0/2 ? * *</beans:prop>
+		<beans:prop key="job.generalLocationDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalLocationDatumTrimmer.cron">35 30 1/2 ? * *</beans:prop>
 		<beans:prop key="job.generalLocationDatumTrimmer.trimMinutes">120</beans:prop>
 		<beans:prop key="job.generalLocationDatumTrimmer.fileSystemUseThreshold">90</beans:prop>
@@ -74,6 +76,11 @@
 		<property name="bundleContext" ref="bundleContext" />
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.jdbc.DatabaseSystemService" />
 		<property name="serviceFilter" value="(db=node)"/>
+	</bean>
+
+	<bean id="identityService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService" />
 	</bean>
 
 	<!-- Published Services -->
@@ -140,7 +147,7 @@
 		class="net.solarnetwork.dao.jdbc.TomcatJdbcPoolDataSourceFactoryBean">
 		<property name="poolProperties">
 			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties">
-				<property name="jmxEnabled" value="true" />
+				<property name="jmxEnabled" value="${jdbc.pool.jmxEnabled}" />
 				<property name="testWhileIdle" value="false" />
 				<property name="testOnBorrow" value="true" />
 				<property name="testOnConnect" value="true" />
@@ -151,11 +158,14 @@
 				<property name="maxActive" value="${jdbc.pool.maxActive}" />
 				<property name="initialSize" value="0" />
 				<property name="maxWait" value="${jdbc.pool.maxWait}" />
-				<property name="removeAbandonedTimeout" value="60" />
 				<property name="minEvictableIdleTimeMillis" value="${jdbc.pool.minEvictableIdleTimeMillis}" />
 				<property name="minIdle" value="0" />
 				<property name="maxIdle" value="${jdbc.pool.maxActive}" />
-				<property name="logAbandoned" value="true" />
+				<property name="maxAge" value="${jdbc.pool.maxAge}"/>
+				<property name="removeAbandoned" value="${jdbc.pool.removeAbandoned}"/>
+				<property name="removeAbandonedTimeout" value="${jdbc.pool.removeAbandonedTimeout}" />
+				<property name="abandonWhenPercentageFull" value="${jdbc.pool.abandonWhenPercentageFull}"/>
+				<property name="logAbandoned" value="${jdbc.pool.logAbandoned}" />
 				<property name="jdbcInterceptors" value="${jdbc.pool.interceptors}" />
 			</bean>
 		</property>
@@ -169,6 +179,8 @@
 		</property>
 		<property name="bundleContext" ref="bundleContext" />
 		<property name="sqlExceptionHandlerSupport" value="true" />
+		<property name="registerJmx" value="${jdbc.pool.jmxEnabled}"/>
+		<property name="jmxName" value="SolarNode"/>
 	</bean>
 
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
@@ -189,6 +201,7 @@
 			<property name="restoreDelaySeconds" value="${restoreFromBackup.secondsDelay}" />
 			<property name="backupResourceProviderFilter" value="${restoreFromBackup.resourceProviderFilter}" />
 			<property name="sqlStateRegex" value="${restoreFromBackup.sqlStateRegex}" />
+			<property name="identityService" ref="identityService"/>
 		</bean>
 	</service>
 
@@ -263,6 +276,7 @@
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="datumDao" value-ref="generalNodeDatumDao" />
+				<entry key="hours" value="${job.generalNodeDatumCleaner.uploadedTrimHours}"/>
 			</map>
 		</property>
 	</bean>
@@ -330,6 +344,7 @@
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="datumDao" value-ref="generalLocationDatumDao" />
+				<entry key="hours" value="${job.generalNodeDatumCleaner.uploadedTrimHours}"/>
 			</map>
 		</property>
 	</bean>

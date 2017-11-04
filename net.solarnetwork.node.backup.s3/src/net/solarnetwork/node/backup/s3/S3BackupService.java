@@ -103,6 +103,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	/** The default value for the {@code objectKeyPrefix} property. */
 	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
 
+	/** The default value for the {@code additionalBackupCount} property. */
+	public static final int DEFAULT_ADDITIONAL_BACKUP_COUNT = 10;
+
 	private static final String META_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS";
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
 	private static final String DATA_OBJECT_KEY_PREFIX = "backup-data/";
@@ -115,6 +118,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	private MessageSource messageSource;
 	private OptionalService<IdentityService> identityService;
 	private int cacheSeconds;
+	private int additionalBackupCount;
 
 	private SdkS3Client s3Client = new SdkS3Client();
 
@@ -134,7 +138,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		super();
 		setRegionName(DEFAULT_REGION_NAME);
 		setObjectKeyPrefix(DEFAULT_OBJECT_KEY_PREFIX);
-		setCacheSeconds(60 * 60);
+		setCacheSeconds((int) TimeUnit.HOURS.toSeconds(1));
+		setAdditionalBackupCount(DEFAULT_ADDITIONAL_BACKUP_COUNT);
 	}
 
 	@Override
@@ -255,22 +260,49 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				result = new S3BackupMetadata(metaRef);
 			}
 
-			// add this backup to the cached data
-			CachedResult<List<Backup>> cached = cachedBackupList.get();
-			if ( cached != null ) {
-				List<Backup> list = cached.getResult();
-				List<Backup> newList = new ArrayList<>(list);
-				newList.add(0, result);
-				cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(newList,
-						cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
-			}
+			if ( additionalBackupCount < 1 ) {
+				// add this backup to the cached data
+				CachedResult<List<Backup>> cached = cachedBackupList.get();
+				if ( cached != null ) {
+					List<Backup> list = cached.getResult();
+					List<Backup> newList = new ArrayList<>(list);
+					newList.add(0, result);
+					updateCachedBackupList(newList);
+				}
+			} else {
+				// clean out older backups
+				List<Backup> knownBackups = getAvailableBackupsInternal();
+				List<String> backupsForNode = knownBackups.stream()
+						.filter(b -> nodeId.equals(b.getNodeId())).map(b -> b.getKey())
+						.collect(Collectors.toList());
+				if ( backupsForNode.size() > additionalBackupCount + 1 ) {
+					Set<String> keysToDelete = backupsForNode.stream()
+							.limit(backupsForNode.size() - additionalBackupCount - 1)
+							.collect(Collectors.toSet());
+					log.info("Deleting {} expired backups for node {}: {}", keysToDelete.size(), nodeId,
+							keysToDelete);
+					client.deleteObjects(keysToDelete);
 
+					// update cache
+					knownBackups = knownBackups.stream().filter(b -> !keysToDelete.contains(b.getKey()))
+							.collect(Collectors.toList());
+					updateCachedBackupList(knownBackups);
+				}
+			}
 		} catch ( IOException e ) {
 			log.error("IO error performing backup", e);
 		} finally {
 			status.compareAndSet(BackupStatus.RunningBackup, BackupStatus.Configured);
 		}
 		return result;
+	}
+
+	private void updateCachedBackupList(List<Backup> newList) {
+		CachedResult<List<Backup>> cached = cachedBackupList.get();
+		if ( cached != null ) {
+			cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(newList,
+					cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+		}
 	}
 
 	private Long nodeId(Map<String, String> props) {
@@ -343,6 +375,10 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 
 	@Override
 	public Collection<Backup> getAvailableBackups() {
+		return getAvailableBackupsInternal();
+	}
+
+	private List<Backup> getAvailableBackupsInternal() {
 		CachedResult<List<Backup>> cached = cachedBackupList.get();
 		if ( cached != null && cached.isValid() ) {
 			return cached.getResult();
@@ -581,4 +617,21 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		setupClient();
 	}
 
+	/**
+	 * Set the number of additional backups to maintain.
+	 * 
+	 * <p>
+	 * If greater than zero, then this service will maintain this many copies of
+	 * past backups <em>for the same node ID</em> in addition to the most recent
+	 * one. Backups will be purged by their creation date, so that any backups
+	 * other the most recent plus the next {@code additionalBackupCount} older
+	 * backups are deleted.
+	 * </p>
+	 * 
+	 * @param additionalBackupCount
+	 *        the count; defaults to 10
+	 */
+	public void setAdditionalBackupCount(int additionalBackupCount) {
+		this.additionalBackupCount = additionalBackupCount;
+	}
 }

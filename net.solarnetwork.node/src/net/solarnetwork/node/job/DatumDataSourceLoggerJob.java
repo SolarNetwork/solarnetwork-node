@@ -116,8 +116,9 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
 				}
 
 				if ( log.isInfoEnabled() ) {
-					log.info("Got Datum to persist: {}", (datumList.size() == 1
-							? datumList.iterator().next().toString() : datumList.toString()));
+					log.info("Got {} Datum to persist: {}", datumList.size(),
+							(datumList.size() == 1 ? datumList.iterator().next().toString()
+									: datumList.toString()));
 				}
 				for ( T datum : datumList ) {
 					try {

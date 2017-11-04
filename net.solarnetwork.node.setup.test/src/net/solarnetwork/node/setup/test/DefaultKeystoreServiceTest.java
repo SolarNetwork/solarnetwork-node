@@ -22,15 +22,16 @@
 
 package net.solarnetwork.node.setup.test;
 
-import static net.solarnetwork.node.setup.impl.DefaultKeystoreService.KEY_PASSWORD;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -46,27 +47,31 @@ import org.apache.commons.codec.binary.Base64;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
+import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.SetupSettings;
-import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.setup.impl.DefaultKeystoreService;
+import net.solarnetwork.node.setup.impl.SetupIdentityDao;
+import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.pki.bc.BCCertificateService;
 
 /**
  * Test cases for the {@link DefaultKeystoreService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultKeystoreServiceTest {
 
 	private static final String TEST_CONF_VALUE = "password";
+	private static final String TEST_PW_VALUE = "test.password";
 	private static final String TEST_DN = "UID=1, OU=Development, O=SolarNetwork";
 	private static final String TEST_CA_DN = "CN=Developer CA, OU=SolarNetwork Developer Network, O=SolarNetwork Domain";
 	private static final String TEST_CA_SUB_DN = "CN=Unit Test CA, OU=SolarNetwork Developer Network, O=SolarNetwork Domain";
@@ -77,7 +82,7 @@ public class DefaultKeystoreServiceTest {
 	private static KeyPair CA_SUB_KEY_PAIR;
 	private static X509Certificate CA_SUB_CERT;
 
-	private SettingDao settingDao;
+	private SetupIdentityDao setupIdentityDao;
 	private BCCertificateService certService;
 
 	private DefaultKeystoreService service;
@@ -99,109 +104,150 @@ public class DefaultKeystoreServiceTest {
 
 	@Before
 	public void setup() {
-		settingDao = EasyMock.createMock(SettingDao.class);
+		setupIdentityDao = EasyMock.createMock(SetupIdentityDao.class);
 		certService = new BCCertificateService();
-		service = new DefaultKeystoreService();
-		service.setSettingDao(settingDao);
-		service.setCertificateService(certService);
+		service = new DefaultKeystoreService(setupIdentityDao, certService);
 		service.setKeyStorePath("conf/test.jks");
+	}
+
+	private void replayAll() {
+		replay(setupIdentityDao);
 	}
 
 	@After
 	public void cleanup() {
 		new File("conf/test.jks").delete();
+		verify(setupIdentityDao);
 	}
 
 	@Test
 	public void checkForCertificateNoConfKey() {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(null);
-		settingDao.storeSetting(eq(KEY_PASSWORD), eq(SetupSettings.SETUP_TYPE_KEY),
-				anyObject(String.class));
-		replay(settingDao);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(SetupIdentityInfo.UNKNOWN_IDENTITY);
+		Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>();
+		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
+		replayAll();
 		final boolean result = service.isNodeCertificateValid(TEST_DN);
-		verify(settingDao);
-		assertFalse("Node certificate should not be valid", result);
+		assertThat("Node certificate should not be valid", result, equalTo(false));
+		assertThat("Identity info updated", infoCapture.hasCaptured(), equalTo(true));
+		assertThat("Identity password set", infoCapture.getValue().getKeyStorePassword(),
+				notNullValue());
 	}
 
 	@Test
 	public void checkForCertificateFileMissing() {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE);
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info);
+		replayAll();
 		final boolean result = service.isNodeCertificateValid(TEST_DN);
-		verify(settingDao);
-		assertFalse("Node certificate should not be valid", result);
+		assertThat("Node certificate should not be valid", result, equalTo(false));
 	}
 
 	@Test
 	public void generateNodeSelfSignedCertificate() {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(3);
-		replay(settingDao);
+		// try to load existing identity; find none
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(SetupIdentityInfo.UNKNOWN_IDENTITY);
+
+		// generate new password for key store
+		final Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>();
+		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
+
+		// load the identity again, this time returning the captured value
+		expect(setupIdentityDao.getSetupIdentityInfo()).andAnswer(new IAnswer<SetupIdentityInfo>() {
+
+			@Override
+			public SetupIdentityInfo answer() throws Throwable {
+				return infoCapture.getValue();
+			}
+		}).times(2);
+
+		replayAll();
+
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		log.debug("Got self-signed cert: {}", result);
-		verify(settingDao);
-		assertNotNull("Node certificate should exist", result);
+		assertThat("Node certificate should exist", result, notNullValue());
+		assertThat("Identity info updated", infoCapture.hasCaptured(), equalTo(true));
+		assertThat("Identity password set", infoCapture.getValue().getKeyStorePassword(),
+				notNullValue());
 	}
 
 	@Test
 	public void generateNodeSelfSignedCertificateExistingKeyStoreBadPassword() {
 		generateNodeSelfSignedCertificate();
-		EasyMock.reset(settingDao);
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn("this.is.not.the.password");
-		expect(settingDao.deleteSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY)).andReturn(true);
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(3);
-		replay(settingDao);
+		reset(setupIdentityDao);
+
+		// load identity for old node
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				"this.is.not.the.password");
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).times(2);
+
+		// generate new password for key store
+		final Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>(CaptureType.LAST);
+		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
+		EasyMock.expectLastCall().times(2);
+
+		// load the identity again, this time returning the captured value
+		expect(setupIdentityDao.getSetupIdentityInfo()).andAnswer(new IAnswer<SetupIdentityInfo>() {
+
+			@Override
+			public SetupIdentityInfo answer() throws Throwable {
+				return infoCapture.getValue();
+			}
+		}).atLeastOnce();
+
+		replay(setupIdentityDao);
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		log.debug("Got self-signed cert: {}", result);
-		verify(settingDao);
-		assertNotNull("Node certificate should exist", result);
+		assertThat("Node certificate should exist", result, notNullValue());
+		assertThat("Identity info updated", infoCapture.hasCaptured(), equalTo(true));
+		assertThat("Identity password set", infoCapture.getValue().getKeyStorePassword(),
+				notNullValue());
 	}
 
 	@Test
 	public void validateNodeSelfSignedCertificate() {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		final Certificate result = service.generateNodeSelfSignedCertificate(TEST_DN);
 		final boolean valid = service.isNodeCertificateValid(TEST_DN);
 		final boolean certified = service.isNodeCertificateValid(TEST_CA_DN);
-		verify(settingDao);
-		assertNotNull("Node certificate should exist", result);
-		assertTrue("Node certificate is self-signed and should be considered valid", valid);
-		assertFalse("Node certificate is self-signed and should not be considered certified", certified);
+		assertThat("Node certificate should exist", result, notNullValue());
+		assertThat("Node certificate is self-signed and should be considered valid", valid,
+				equalTo(true));
+		assertThat("Node certificate is self-signed and should not be considered certified", certified,
+				equalTo(false));
 	}
 
 	@Test
 	public void saveTrustedCert() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
 		log.debug("Saving CA Cert: {}", CA_CERT);
-		replay(settingDao);
+		replayAll();
 		service.saveCACertificate(CA_CERT);
-		verify(settingDao);
 	}
 
 	@Test
 	public void generateCSR() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).times(7);
-		replay(settingDao);
-		service.saveCACertificate(CA_CERT);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		service.generateNodeSelfSignedCertificate(TEST_DN);
 		String csr = service.generateNodePKCS10CertificateRequestString();
-		verify(settingDao);
 		assertNotNull(csr);
 		log.debug("Got CSR:\n{}", csr);
 	}
 
 	@Test
 	public void saveCASignedCert() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
 		String csr = service.generateNodePKCS10CertificateRequestString();
@@ -216,7 +262,6 @@ public class DefaultKeystoreServiceTest {
 
 			log.debug("Saved signed node certificate:\n{}", signedPem);
 
-			verify(settingDao);
 			assertNotNull(csr);
 		} finally {
 			pemReader.close();
@@ -225,9 +270,10 @@ public class DefaultKeystoreServiceTest {
 
 	@Test
 	public void saveCASubSignedCert() throws Exception {
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-		replay(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+		replayAll();
 		service.saveCACertificate(CA_CERT);
 		service.generateNodeSelfSignedCertificate(TEST_DN);
 		String csr = service.generateNodePKCS10CertificateRequestString();
@@ -243,8 +289,6 @@ public class DefaultKeystoreServiceTest {
 			service.saveNodeSignedCertificate(signedPem);
 
 			log.debug("Saved signed node certificate:\n{}", signedPem);
-
-			verify(settingDao);
 			assertNotNull(csr);
 		} finally {
 			pemReader.close();
@@ -254,17 +298,15 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void generatePKCS12Keystore() throws Exception {
 		saveCASignedCert();
+		reset(setupIdentityDao);
 
-		EasyMock.reset(settingDao);
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, "localhost", 80, false,
+				TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
 
-		expect(settingDao.getSetting(KEY_PASSWORD, SetupSettings.SETUP_TYPE_KEY))
-				.andReturn(TEST_CONF_VALUE).atLeastOnce();
-
-		replay(settingDao);
+		replay(setupIdentityDao);
 
 		String keystoreData = service.generatePKCS12KeystoreString("foobar");
-
-		verify(settingDao);
 
 		assertNotNull(keystoreData);
 

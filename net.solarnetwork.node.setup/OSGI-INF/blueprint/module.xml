@@ -21,6 +21,7 @@
 	
 	<osgix:cm-properties id="setup.cfg" persistent-id="net.solarnetwork.node.setup">
 		<beans:prop key="SetupService.solarInUrlPrefix">/solarin</beans:prop>
+		<beans:prop key="SetupIdentityDao.dataFilePath">conf/identity.json</beans:prop>
 		<beans:prop key="PKIService.keyStorePath">conf/tls/node.jks</beans:prop>
 		<beans:prop key="PKIService.manualKeyStorePassword"></beans:prop>
 		<beans:prop key="PKIService.trustStorePath">conf/tls/trust.jks</beans:prop>
@@ -28,11 +29,14 @@
 		<beans:prop key="PKIService.jreTrustStorePassword">changeit</beans:prop>
 	</osgix:cm-properties>
 	
+	<ctx:property-placeholder properties-ref="setup.cfg"/>
+	
 	<!-- Service References -->
 	
-	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager" availability="optional"/>
-	
-	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao" availability="optional"/>
+	<bean id="settingDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
+	</bean>
 	
 	<reference id="certificateService" interface="net.solarnetwork.support.CertificateService"/>
 	
@@ -63,19 +67,35 @@
 		</interfaces>
 	</service>
 	
+	<service ref="setupIdentityDao">
+		<interfaces>
+			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
+		</interfaces>
+	</service>
+	
 	<!--  Supporting Services -->
 
-	<ctx:property-placeholder properties-ref="setup.cfg"/>
-	
 	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
 		<property name="service" ref="backupManagerService"/>
 	</bean>
 
-	<bean id="setupService" class="net.solarnetwork.node.setup.impl.DefaultSetupService" 
-		init-method="init" >
-		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
-		<property name="transactionManager" ref="txManager"/>
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+
+	<bean id="setupIdentityDao" class="net.solarnetwork.node.setup.impl.DefaultSetupIdentityDao">
+		<argument ref="objectMapper"/>
+		<property name="dataFilePath" value="${SetupIdentityDao.dataFilePath}"/>
 		<property name="settingDao" ref="settingDao"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.setup.impl.DefaultSetupIdentityDao"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="setupService" class="net.solarnetwork.node.setup.impl.DefaultSetupService" 
+			init-method="init" >
+		<argument ref="setupIdentityDao"/>
+		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
 		<property name="pkiService" ref="pkiService"/>
 		<property name="backupManager" ref="backupManager"/>
 		<property name="eventAdmin" ref="eventAdmin"/>
@@ -87,13 +107,13 @@
 	</bean>
 	
 	<bean id="pkiService" class="net.solarnetwork.node.setup.impl.DefaultKeystoreService">
+		<argument ref="setupIdentityDao"/>
+		<argument ref="certificateService"/>
 		<property name="keyStorePath" value="${PKIService.keyStorePath}"/>
-		<property name="certificateService" ref="certificateService"/>
 		<property name="manualKeyStorePassword" value="${PKIService.manualKeyStorePassword}"/>
 		<property name="trustStorePath" value="${PKIService.trustStorePath}"/>
 		<property name="trustStorePassword" value="${PKIService.trustStorePassword}"/>
 		<property name="jreTrustStorePassword" value="${PKIService.jreTrustStorePassword}"/>
-		<property name="settingDao" ref="settingDao"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.setup.impl.DefaultKeystoreService"/>
