@@ -45,7 +45,7 @@ import org.springframework.context.NoSuchMessageException;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PrefixedMessageSource implements MessageSource, HierarchicalMessageSource {
 
@@ -94,6 +94,12 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 				}
 			}
 		}
+		if ( singleDelegate != null ) {
+			String result = singleDelegate.getMessage(code, args, null, locale);
+			if ( result != null ) {
+				return result;
+			}
+		}
 		if ( parent != null ) {
 			return parent.getMessage(code, args, defaultMessage, locale);
 		}
@@ -118,6 +124,12 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 				if ( result != null ) {
 					return result;
 				}
+			}
+		}
+		if ( singleDelegate != null ) {
+			String result = singleDelegate.getMessage(code, args, null, locale);
+			if ( result != null ) {
+				return result;
 			}
 		}
 		if ( parent != null ) {
@@ -216,6 +228,12 @@ public class PrefixedMessageSource implements MessageSource, HierarchicalMessage
 
 	/**
 	 * Set the singular {@link MessageSource} to use with the singular prefix.
+	 * 
+	 * <p>
+	 * Note when this method is used, then messages found in this delegate under
+	 * un-prefixed keys will be returned without consulting any parent source
+	 * first.
+	 * </p>
 	 * 
 	 * @param delegate
 	 *        the singular delegate to use
