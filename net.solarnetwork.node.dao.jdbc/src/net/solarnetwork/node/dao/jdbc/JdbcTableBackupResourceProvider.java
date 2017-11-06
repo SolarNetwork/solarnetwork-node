@@ -283,6 +283,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 			in = new InputStreamReader(resource.getInputStream());
 			reader = new PreparedStatementCsvReader(in, CsvPreference.STANDARD_PREFERENCE);
 			String[] header = reader.getHeader(true);
+			if ( header == null ) {
+				// no data; skip
+				log.info("No data provided in backup resource for table {}", tableName);
+				return true;
+			}
 			Map<String, Integer> csvColumns = JdbcUtils.csvColumnIndexMapping(header);
 			CellProcessor[] cellProcessors = JdbcUtils.parsingCellProcessorsForCsvColumns(header,
 					columnMetaData);
