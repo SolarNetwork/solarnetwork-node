@@ -312,7 +312,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Set<Path> deleted = new LinkedHashSet<>();
 		for ( String syncPath : config.getSyncPaths() ) {
 			syncPath = StringUtils.expandTemplateString(syncPath, sysProps);
-			Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath();
+			Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath().normalize();
 			Set<Path> result = applySetupSyncPath(path, installedFiles);
 			deleted.addAll(result);
 		}
@@ -344,8 +344,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			return Collections.emptySet();
 		}
 		Set<Path> deleted = new LinkedHashSet<>();
-		Files.walk(dir)
-				.filter(p -> !Files.isDirectory(p) && !installedFiles.contains(p.toAbsolutePath()))
+		Files.walk(dir).filter(
+				p -> !Files.isDirectory(p) && !installedFiles.contains(p.toAbsolutePath().normalize()))
 				.forEach(p -> {
 					try {
 						log.trace("Deleting syncPath {} file {}", dir, p);
@@ -465,7 +465,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				if ( m.matches() ) {
 					line = m.group(1);
 				}
-				Path path = FileSystems.getDefault().getPath(line).toAbsolutePath();
+				Path path = FileSystems.getDefault().getPath(line).toAbsolutePath().normalize();
 				extractedPaths.add(path);
 				log.trace("Installed setup resource: {}", line);
 			}
