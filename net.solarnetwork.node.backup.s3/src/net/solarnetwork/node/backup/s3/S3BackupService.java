@@ -63,6 +63,7 @@ import net.solarnetwork.node.backup.SimpleBackup;
 import net.solarnetwork.node.backup.SimpleBackupServiceInfo;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
@@ -352,8 +353,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 					CACHED_BACKUPS.replace(backupKey, cachedBackup, newCachedBackup);
 				}
 			}
-		} catch ( RemoteServiceException e ) {
-			log.warn("Error accessing S3: {}", e.getMessage());
+		} catch ( RemoteServiceException | IOException e ) {
+			log.warn("Error listing S3 objects with prefix {}: {}", backupKey, e.getMessage());
 		}
 		return backup;
 	}
@@ -398,8 +399,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
-		} catch ( RemoteServiceException e ) {
-			log.warn("Error accessing S3: {}", e.getMessage());
+		} catch ( RemoteServiceException | IOException e ) {
+			log.warn("Error listing S3 avaialble backups with prefix {}: {}", objectKeyPrefix,
+					e.getMessage());
 			return Collections.emptyList();
 		}
 	}
@@ -507,6 +509,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		result.add(new BasicTextFieldSettingSpecifier("regionName", DEFAULT_REGION_NAME));
 		result.add(new BasicTextFieldSettingSpecifier("bucketName", ""));
 		result.add(new BasicTextFieldSettingSpecifier("objectKeyPrefix", DEFAULT_OBJECT_KEY_PREFIX));
+		result.add(new BasicSliderSettingSpecifier("additionalBackupCount",
+				(double) DEFAULT_ADDITIONAL_BACKUP_COUNT, 0.0, 20.0, 1.0));
 		return result;
 	}
 

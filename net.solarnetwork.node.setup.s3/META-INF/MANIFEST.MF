@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Setup S3
 Bundle-SymbolicName: net.solarnetwork.node.setup.s3
 Bundle-Description: Sync vendor-specific resources from Amazon S3.
-Bundle-Version: 0.1.0
+Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

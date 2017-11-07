@@ -51,7 +51,7 @@ public interface S3Client {
 	 *        the prefix to match
 	 * @return the matching objects, never {@literal null}
 	 */
-	Set<S3ObjectReference> listObjects(String prefix);
+	Set<S3ObjectReference> listObjects(String prefix) throws IOException;
 
 	/**
 	 * Get the contents of a S3 object as a string.
@@ -60,7 +60,7 @@ public interface S3Client {
 	 *        the key of the object to get
 	 * @return the string, or {@literal null} if not found
 	 */
-	String getObjectAsString(String key);
+	String getObjectAsString(String key) throws IOException;
 
 	/**
 	 * Get a S3 object.
@@ -69,7 +69,7 @@ public interface S3Client {
 	 *        the key of the object to get
 	 * @return the object, or {@literal null} if not found
 	 */
-	S3Object getObject(String key);
+	S3Object getObject(String key) throws IOException;
 
 	/**
 	 * Put an object onto S3.

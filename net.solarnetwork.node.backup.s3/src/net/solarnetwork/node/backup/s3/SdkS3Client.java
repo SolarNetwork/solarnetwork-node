@@ -79,7 +79,7 @@ public class SdkS3Client implements S3Client {
 	}
 
 	@Override
-	public Set<S3ObjectReference> listObjects(String prefix) {
+	public Set<S3ObjectReference> listObjects(String prefix) throws IOException {
 		AmazonS3 client = getClient();
 		Set<S3ObjectReference> result = new LinkedHashSet<>(100);
 		try {
@@ -104,13 +104,13 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error listing S3 objects at " + prefix, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
-			throw new RemoteServiceException("Error communicating with AWS", e);
+			throw new IOException("Error communicating with AWS", e);
 		}
 		return result;
 	}
 
 	@Override
-	public String getObjectAsString(String key) {
+	public String getObjectAsString(String key) throws IOException {
 		AmazonS3 client = getClient();
 		try {
 			return client.getObjectAsString(bucketName, key);
@@ -120,12 +120,12 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error getting S3 object at " + key, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
-			throw new RemoteServiceException("Error communicating with AWS", e);
+			throw new IOException("Error communicating with AWS", e);
 		}
 	}
 
 	@Override
-	public S3Object getObject(String key) {
+	public S3Object getObject(String key) throws IOException {
 		AmazonS3 client = getClient();
 		try {
 			return client.getObject(bucketName, key);
@@ -135,7 +135,7 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error getting S3 object at " + key, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
-			throw new RemoteServiceException("Error communicating with AWS", e);
+			throw new IOException("Error communicating with AWS", e);
 		}
 	}
 
@@ -154,7 +154,7 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error putting S3 object at " + key, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
-			throw new RemoteServiceException("Error communicating with AWS", e);
+			throw new IOException("Error communicating with AWS", e);
 		}
 	}
 
@@ -171,7 +171,7 @@ public class SdkS3Client implements S3Client {
 			throw new RemoteServiceException("Error deleting S3 objects " + keys, e);
 		} catch ( AmazonClientException e ) {
 			log.debug("Error communicating with AWS: {}", e.getMessage());
-			throw new RemoteServiceException("Error communicating with AWS", e);
+			throw new IOException("Error communicating with AWS", e);
 		}
 	}
 

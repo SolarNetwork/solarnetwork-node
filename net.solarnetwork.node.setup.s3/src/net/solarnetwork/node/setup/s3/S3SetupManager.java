@@ -172,16 +172,18 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 * Call after all properties are configured on the class.
 	 */
 	public void init() {
-		if ( performFirstTimeUpdate ) {
-			if ( taskExecutor != null ) {
-				taskExecutor.execute(new Runnable() {
+		if ( !performFirstTimeUpdate ) {
+			return;
+		}
+		log.info("First time update check enabled; will check if update needed");
+		if ( taskExecutor != null ) {
+			taskExecutor.execute(new Runnable() {
 
-					@Override
-					public void run() {
-						performFirstTimeUpdateIfNeeded();
-					}
-				});
-			}
+				@Override
+				public void run() {
+					performFirstTimeUpdateIfNeeded();
+				}
+			});
 		} else {
 			performFirstTimeUpdateIfNeeded();
 		}
@@ -310,7 +312,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Set<Path> deleted = new LinkedHashSet<>();
 		for ( String syncPath : config.getSyncPaths() ) {
 			syncPath = StringUtils.expandTemplateString(syncPath, sysProps);
-			Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath();
+			Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath().normalize();
 			Set<Path> result = applySetupSyncPath(path, installedFiles);
 			deleted.addAll(result);
 		}
@@ -342,8 +344,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			return Collections.emptySet();
 		}
 		Set<Path> deleted = new LinkedHashSet<>();
-		Files.walk(dir)
-				.filter(p -> !Files.isDirectory(p) && !installedFiles.contains(p.toAbsolutePath()))
+		Files.walk(dir).filter(
+				p -> !Files.isDirectory(p) && !installedFiles.contains(p.toAbsolutePath().normalize()))
 				.forEach(p -> {
 					try {
 						log.trace("Deleting syncPath {} file {}", dir, p);
@@ -463,7 +465,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				if ( m.matches() ) {
 					line = m.group(1);
 				}
-				Path path = FileSystems.getDefault().getPath(line).toAbsolutePath();
+				Path path = FileSystems.getDefault().getPath(line).toAbsolutePath().normalize();
 				extractedPaths.add(path);
 				log.trace("Installed setup resource: {}", line);
 			}
@@ -485,6 +487,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 	private void performFirstTimeUpdateIfNeeded() {
 		if ( !isConfigured() ) {
+			log.info("S3 not configured, cannot perform first time update check");
 			// TODO: perhaps delay and try again later?
 			return;
 		}
@@ -508,6 +511,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		try {
 			S3ObjectReference versionObj = getConfigObjectForUpdateToHighestVersion();
 			if ( versionObj == null ) {
+				log.info("No S3 setup versions available at {}; nothing to update to",
+						objectKeyForPath(META_OBJECT_KEY_PREFIX));
 				return;
 			}
 			log.info("S3 setup {} detected, will install now", versionObj.getKey());
@@ -562,13 +567,14 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 * @return the S3 object that holds the setup metadata to update to, or
 	 *         {@literal null} if not available
 	 */
-	private S3ObjectReference getConfigObjectForUpdateToHighestVersion() {
+	private S3ObjectReference getConfigObjectForUpdateToHighestVersion() throws IOException {
 		final String metaDir = objectKeyForPath(META_OBJECT_KEY_PREFIX);
 		Set<S3ObjectReference> objs = s3Client.listObjects(metaDir);
 		S3ObjectReference versionObj = null;
 		if ( maxVersion == null ) {
-			// take the last (highest version)
-			versionObj = objs.stream().reduce((l, r) -> r).orElse(null);
+			// take the last (highest version), excluding the meta dir itself
+			versionObj = objs.stream().filter(o -> !metaDir.equals(o.getKey())).reduce((l, r) -> r)
+					.orElse(null);
 		} else {
 			final String max = maxVersion;
 			versionObj = objs.stream().max((l, r) -> {

@@ -92,12 +92,21 @@ public class PrefixedMessageSourceTests {
 	}
 
 	@Test
-	public void singluarPrefixResolvesWithParent() {
+	public void singluarPrefixStrippedResolvesWithDelegate() {
 		PrefixedMessageSource messageSource = new PrefixedMessageSource();
 		messageSource.setPrefix("a.");
 		messageSource.setDelegate(messageSourceA);
 		messageSource.setParentMessageSource(messageSourceP);
-		assertThat(messageSource.getMessage("title", null, Locale.getDefault()), equalTo("Parent"));
+		assertThat(messageSource.getMessage("title", null, Locale.getDefault()), equalTo("Child A"));
+	}
+
+	@Test
+	public void singluarPrefixMissingFromDelegateResolvesWithParent() {
+		PrefixedMessageSource messageSource = new PrefixedMessageSource();
+		messageSource.setPrefix("a.");
+		messageSource.setDelegate(messageSourceA);
+		messageSource.setParentMessageSource(messageSourceP);
+		assertThat(messageSource.getMessage("info", null, Locale.getDefault()), equalTo("Nothing"));
 	}
 
 	@Test
