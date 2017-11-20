@@ -277,9 +277,10 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 				Dictionary<String, ?> props = config.getProperties();
 
 				// first look for expression on common attribute names
-				String propCronExpression = (String) props.get("trigger.cronExpression");
+				String propCronExpression = (String) props.get("triggerCronExpression");
 				if ( propCronExpression == null ) {
-					propCronExpression = (String) props.get("triggerCronExpression");
+					// legacy property name
+					propCronExpression = (String) props.get("trigger.cronExpression");
 				}
 
 				// get JobDataMap
