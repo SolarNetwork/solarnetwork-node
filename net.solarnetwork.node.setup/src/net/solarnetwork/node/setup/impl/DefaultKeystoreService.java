@@ -447,7 +447,7 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		if ( ksFile.isFile() ) {
 			ksFile.delete();
 		}
-		saveKeyStore(newKeyStore);
+		saveKeyStore(newKeyStore, newPassword);
 		setupIdentityDao.saveSetupIdentityInfo(
 				setupIdentityDao.getSetupIdentityInfo().withKeyStorePassword(newPassword));
 	}
@@ -586,6 +586,11 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	}
 
 	private synchronized void saveKeyStore(KeyStore keyStore) {
+		String passwd = getKeyStorePassword();
+		saveKeyStore(keyStore, passwd);
+	}
+
+	private synchronized void saveKeyStore(final KeyStore keyStore, final String passwd) {
 		if ( keyStore == null ) {
 			return;
 		}
@@ -595,7 +600,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 			throw new RuntimeException("Unable to create KeyStore directory: " + ksFile.getParent());
 		}
 
-		String passwd = getKeyStorePassword();
 		try {
 			saveKeyStore(keyStore, passwd, new BufferedOutputStream(new FileOutputStream(ksFile)));
 			resetSocketFactory();
