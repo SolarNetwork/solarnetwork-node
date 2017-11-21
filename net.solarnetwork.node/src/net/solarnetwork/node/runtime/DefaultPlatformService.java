@@ -97,7 +97,7 @@ public class DefaultPlatformService implements PlatformService {
 	}
 
 	@Override
-	public <T> Future<T> performTaskWithState(PlatformState state, PlatformTask<T> task) {
+	public <T> Future<T> performTaskWithState(final PlatformState state, final PlatformTask<T> task) {
 		return singletonExecutorService.submit(new Callable<T>() {
 
 			@Override
