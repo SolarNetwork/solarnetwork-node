@@ -50,9 +50,15 @@
 				<h3 class="info-title"><fmt:message key="platform.lock.title"/></h3>
 			</div>
 			<div class="modal-body">
-				<p class="hide info-message"></p>
+				<p class="info-message hide-while-restarting"></p>
+				<div class="restart-required hide-while-restarting hide alert">
+					<fmt:message key='platform.lock.restartRequired.warning'/>
+				</div>
+				<div class="restarting hide alert alert-info">
+					<fmt:message key="platform.lock.taskComplete.msg"/><span> </span><fmt:message key="restart.underway"/>
+				</div>
 				<div class="progress progress-striped active">
-					<div class="bar" style="width: 100%;"></div>
+					<div class="bar"></div>
 			    </div>
 			</div>
 		</form>

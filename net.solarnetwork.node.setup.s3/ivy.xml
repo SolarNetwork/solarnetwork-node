@@ -11,7 +11,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.55,2.0)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.56,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.backup.s3" rev="[0.2,2.0)"/>
 		<dependency org="com.amazonaws" name="aws-java-sdk-osgi" rev="1.11.207"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.7" />

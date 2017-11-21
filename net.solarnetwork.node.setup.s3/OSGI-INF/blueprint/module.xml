@@ -31,6 +31,11 @@
 		<property name="s3Client" ref="s3Client"/>
 		<property name="settingDao" ref="settingDao"/>
 		<property name="taskExecutor" ref="taskExecutor"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.setup.s3.S3SetupManager"/>
+			</bean>
+		</property>
 		<property name="nodeMetadataService">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
@@ -41,6 +46,12 @@
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
 				<property name="serviceClassName" value="net.solarnetwork.node.SystemService"/>
+			</bean>	
+		</property>
+		<property name="platformService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.PlatformService"/>
 			</bean>	
 		</property>
 	</bean>

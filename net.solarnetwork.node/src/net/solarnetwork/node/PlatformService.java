@@ -103,6 +103,21 @@ public interface PlatformService {
 		 */
 		double getPercentComplete();
 
+		/**
+		 * Get a flag that indicates if the task is complete.
+		 * 
+		 * @return the complete flag
+		 */
+		boolean isComplete();
+
+		/**
+		 * Get a flag that indicates if a system restart is required after the
+		 * task completes.
+		 * 
+		 * @return a restart required flag
+		 */
+		boolean isRestartRequired();
+
 	}
 
 	/**
@@ -135,6 +150,21 @@ public interface PlatformService {
 		 * @return the amount of work completed, or anything < 0 if not known
 		 */
 		double getPercentComplete();
+
+		/**
+		 * Get a flag that indicates if the task is complete.
+		 * 
+		 * @return the complete flag
+		 */
+		boolean isComplete();
+
+		/**
+		 * Get a flag that indicates if a system restart is required after the
+		 * task completes.
+		 * 
+		 * @return a restart required flag
+		 */
+		boolean isRestartRequired();
 	}
 
 	/**

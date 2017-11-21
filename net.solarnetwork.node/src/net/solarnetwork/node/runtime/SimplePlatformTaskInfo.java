@@ -37,6 +37,8 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	private final String title;
 	private final String message;
 	private final double percentComplete;
+	private final boolean complete;
+	private final boolean restartRequired;
 
 	/**
 	 * Construct from values.
@@ -47,12 +49,17 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	 *        the message
 	 * @param percentComplete
 	 *        the percent complete
+	 * @param restartRequired
+	 *        the restart required flag
 	 */
-	public SimplePlatformTaskInfo(String title, String message, double percentComplete) {
+	public SimplePlatformTaskInfo(String title, String message, double percentComplete, boolean complete,
+			boolean restartRequired) {
 		super();
 		this.title = title;
 		this.message = message;
 		this.percentComplete = percentComplete;
+		this.complete = complete;
+		this.restartRequired = restartRequired;
 	}
 
 	/**
@@ -64,7 +71,8 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	 *        the desired locale
 	 */
 	public SimplePlatformTaskInfo(PlatformService.PlatformTaskStatus status, Locale locale) {
-		this(status.getTitle(locale), status.getMessage(locale), status.getPercentComplete());
+		this(status.getTitle(locale), status.getMessage(locale), status.getPercentComplete(),
+				status.isComplete(), status.isRestartRequired());
 	}
 
 	@Override
@@ -80,6 +88,16 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	@Override
 	public double getPercentComplete() {
 		return percentComplete;
+	}
+
+	@Override
+	public boolean isComplete() {
+		return complete;
+	}
+
+	@Override
+	public boolean isRestartRequired() {
+		return restartRequired;
 	}
 
 }
