@@ -42,6 +42,21 @@
 			<tiles:insertAttribute name="body" />
 		</div>
 		
+		<%-- System lock overlay --%>
+		<setup:url value="/platform/state" var="urlPlatformState"/>
+		<form id="platform-lock-modal" class="modal dynamic hide fade" action="${urlPlatformState}" method="get"
+				data-backdrop="static" data-keyboard="false">
+			<div class="modal-header">
+				<h3 class="info-title"><fmt:message key="platform.lock.title"/></h3>
+			</div>
+			<div class="modal-body">
+				<p class="hide info-message"></p>
+				<div class="progress progress-striped active">
+					<div class="bar" style="width: 100%;"></div>
+			    </div>
+			</div>
+		</form>
+		
 		<%-- Application scoped setup resource integration support  --%>
 		<setup:resources role="USER" type="text/html" inline="true" scope="Application"/>
 	</body>

@@ -37,16 +37,17 @@ import org.springframework.messaging.support.GenericMessage;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.PlatformService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Bridge between OSGi EventAdmin events and a Spring
+ * Bridge between OSGi EventAdmin events and a Spring Messaging.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EventMessageBridge implements EventHandler {
 
@@ -56,8 +57,16 @@ public class EventMessageBridge implements EventHandler {
 	/** The prefix automatically added to every message topic value. */
 	public static final String MESSAGE_TOPIC_PREFIX = "/topic/";
 
+	/**
+	 * The prefix automatically added to every public message topic value.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String PUBLIC_MESSAGE_TOPIC_PREFIX = "/pub/topic/";
+
 	private final OptionalService<SimpMessageSendingOperations> messageSendingOps;
 	private Map<String, String> topicMapping;
+	private Map<String, String> publicTopicMapping;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -71,6 +80,12 @@ public class EventMessageBridge implements EventHandler {
 		return Collections.unmodifiableMap(map);
 	}
 
+	private static Map<String, String> defaultPublicTopicMapping() {
+		Map<String, String> map = new HashMap<String, String>();
+		map.put(PlatformService.EVENT_TOPIC_PLATFORM_STATE_CHANGED, "platform/state");
+		return Collections.unmodifiableMap(map);
+	}
+
 	/**
 	 * Constructor.
 	 * 
@@ -81,6 +96,7 @@ public class EventMessageBridge implements EventHandler {
 		super();
 		this.messageSendingOps = messageSendingOps;
 		topicMapping = defaultTopicMapping();
+		publicTopicMapping = defaultPublicTopicMapping();
 	}
 
 	@Override
@@ -95,11 +111,19 @@ public class EventMessageBridge implements EventHandler {
 	}
 
 	private String messageTopicForEvent(Event event, Map<String, Object> data) {
+		boolean pubTopic = false;
 		String topic = event.getTopic();
 		if ( topicMapping != null ) {
 			String val = topicMapping.get(topic);
 			if ( val != null ) {
 				topic = val;
+			}
+		}
+		if ( publicTopicMapping != null ) {
+			String val = publicTopicMapping.get(topic);
+			if ( val != null ) {
+				topic = val;
+				pubTopic = true;
 			}
 		}
 		topic = StringUtils.expandTemplateString(topic, data);
@@ -110,7 +134,7 @@ public class EventMessageBridge implements EventHandler {
 		// remove double-slashes
 		topic = topic.replaceAll("\\/\\/", "/");
 
-		return "/topic/" + topic;
+		return (pubTopic ? PUBLIC_MESSAGE_TOPIC_PREFIX : MESSAGE_TOPIC_PREFIX) + topic;
 	}
 
 	private Map<String, Object> mapForEvent(Event event) {
@@ -199,6 +223,26 @@ public class EventMessageBridge implements EventHandler {
 	 */
 	public void setTopicMapping(Map<String, String> topicMapping) {
 		this.topicMapping = topicMapping;
+	}
+
+	/**
+	 * Set the mapping of event topic values to corresponding public message
+	 * topic values.
+	 * 
+	 * <p>
+	 * The same messaging handling rules as documented in
+	 * {@link #setTopicMapping(Map)} apply here, except that the resulting topic
+	 * will have the {@link #PUBLIC_MESSAGE_TOPIC_PREFIX} instead of the
+	 * {@link #MESSAGE_TOPIC_PREFIX}.
+	 * </p>
+	 * 
+	 * @param publicTopicMapping
+	 *        the public topic mapping to set
+	 * @since 1.1
+	 * @see #setTopicMapping(Map)
+	 */
+	public void setPublicTopicMapping(Map<String, String> publicTopicMapping) {
+		this.publicTopicMapping = publicTopicMapping;
 	}
 
 }

@@ -25,6 +25,8 @@
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
 	/js/global.js
+	/js/global-websocket.js
+	/js/global-platform.js
 	/js/backups.js
 	/js/datum.js
 	/js/certs.js
