@@ -34,6 +34,7 @@ import net.solarnetwork.node.PlatformService.PlatformTaskInfo;
  */
 public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 
+	private final String taskId;
 	private final String title;
 	private final String message;
 	private final double percentComplete;
@@ -43,6 +44,8 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	/**
 	 * Construct from values.
 	 * 
+	 * @param taskId
+	 *        the task ID
 	 * @param title
 	 *        the title
 	 * @param message
@@ -52,9 +55,10 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	 * @param restartRequired
 	 *        the restart required flag
 	 */
-	public SimplePlatformTaskInfo(String title, String message, double percentComplete, boolean complete,
-			boolean restartRequired) {
+	public SimplePlatformTaskInfo(String taskId, String title, String message, double percentComplete,
+			boolean complete, boolean restartRequired) {
 		super();
+		this.taskId = taskId;
 		this.title = title;
 		this.message = message;
 		this.percentComplete = percentComplete;
@@ -71,8 +75,13 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	 *        the desired locale
 	 */
 	public SimplePlatformTaskInfo(PlatformService.PlatformTaskStatus status, Locale locale) {
-		this(status.getTitle(locale), status.getMessage(locale), status.getPercentComplete(),
-				status.isComplete(), status.isRestartRequired());
+		this(status.getTaskId(), status.getTitle(locale), status.getMessage(locale),
+				status.getPercentComplete(), status.isComplete(), status.isRestartRequired());
+	}
+
+	@Override
+	public String getTaskId() {
+		return taskId;
 	}
 
 	@Override

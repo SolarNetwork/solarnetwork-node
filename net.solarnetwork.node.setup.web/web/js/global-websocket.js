@@ -38,12 +38,12 @@ SolarNode.WebSocket = (function() {
 		});
 	}
 	
-	function subscribeToTopic(topic, msgHandler) {
+	function subscribeToTopic(topic, msgHandler, headers) {
 		doWithConnection(function(err, client) {
 			if ( err ) {
 				return;
 			}
-			var sub = client.subscribe(topic, msgHandler);
+			var sub = client.subscribe(topic, msgHandler, headers);
 			if ( sub ) {
 				console.info('Subscribed to message topic %s', topic);
 				subscriptions[topic] = sub;
@@ -59,6 +59,15 @@ SolarNode.WebSocket = (function() {
 		}
 	}
 	
+	function sendMessage(destination, headers, body) {
+		doWithConnection(function(err, client) {
+			if ( err ) {
+				return;
+			}
+			client.send(destination, headers, body);
+		});
+	}
+	
 	function topicNameWithWildcardSuffix(topic, suffix) {
 		var topicSuffix = (suffix ? suffix : '**');
 		if ( !topicSuffix.startsWith('/') ) {
@@ -72,6 +81,8 @@ SolarNode.WebSocket = (function() {
 	return Object.defineProperties(self, {
 		doWithConnection : { value : doWithConnection },
 
+		sendMessage : { value : sendMessage },
+		
 		subscribeToTopic : { value : subscribeToTopic },
 		unsubscribeFromTopic : { value : unsubscribeFromTopic },
 		

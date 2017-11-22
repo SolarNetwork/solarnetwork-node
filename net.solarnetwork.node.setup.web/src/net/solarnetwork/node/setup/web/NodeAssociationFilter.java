@@ -46,6 +46,7 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 	private static final String NODE_ASSOCIATE_PATH = "/associate";
 	private static final String CSRF_PATH = "/csrf";
 	private static final String WEBSOCKET_PATH = "/ws";
+	private static final String PUB_PATH = "/pub/";
 
 	@Autowired
 	private IdentityService identityService;
@@ -65,7 +66,7 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 		final String path = request.getPathInfo();
 		final Long nodeId = identityService.getNodeId();
 		if ( !(path.startsWith(NODE_ASSOCIATE_PATH) || path.equals(CSRF_PATH)
-				|| path.equals(WEBSOCKET_PATH)) && nodeId == null ) {
+				|| path.equals(WEBSOCKET_PATH) || path.startsWith(PUB_PATH)) && nodeId == null ) {
 			// not associated yet, so redirect to associate start
 			response.sendRedirect(request.getContextPath() + NODE_ASSOCIATE_PATH);
 		} else if ( nodeId != null && path.startsWith(NODE_ASSOCIATE_PATH) ) {

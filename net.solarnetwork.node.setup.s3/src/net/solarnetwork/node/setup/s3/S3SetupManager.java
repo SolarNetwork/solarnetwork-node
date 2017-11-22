@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,6 +66,7 @@ import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.PlatformService;
 import net.solarnetwork.node.PlatformService.PlatformState;
 import net.solarnetwork.node.PlatformService.PlatformTask;
+import net.solarnetwork.node.PlatformService.PlatformTaskStatusHandler;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.SystemService;
@@ -142,6 +144,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+	private static final Pattern LEADING_ZEROS_PAT = Pattern.compile("^0+");
 
 	/**
 	 * Get the default destination path.
@@ -272,7 +276,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				if ( e.getCause() instanceof IOException ) {
 					throw (IOException) e.getCause();
 				}
-				throw new RuntimeException("Exception applying setup version " + config.getVersion());
+				throw new RuntimeException("Exception applying setup version " + config.getVersion(), e);
 			}
 		} else {
 			try {
@@ -280,7 +284,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			} catch ( IOException e ) {
 				throw e;
 			} catch ( Exception e ) {
-				throw new RuntimeException("Exception applying setup version " + config.getVersion());
+				throw new RuntimeException("Exception applying setup version " + config.getVersion(), e);
 			}
 		}
 	}
@@ -303,8 +307,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 	private class S3SetupManagerPlatformTask implements PlatformTask<S3SetupTaskResult> {
 
+		private final String taskId;
 		private final AtomicReference<S3SetupManagerPlatformTaskState> state;
 		private final AtomicReference<String> assetName;
+		private final List<PlatformTaskStatusHandler> statusHandlers = new ArrayList<>(2);
 		private final int stepCount;
 		private final S3SetupConfiguration config;
 		private int step;
@@ -313,6 +319,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		public S3SetupManagerPlatformTask(S3SetupConfiguration config) {
 			super();
 			assert config != null;
+			this.taskId = UUID.randomUUID().toString();
 			this.config = config;
 			this.stepCount = config.getTotalStepCount() + 1;
 			state = new AtomicReference<S3SetupManagerPlatformTaskState>(
@@ -335,7 +342,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					// assume node not associated yet
 					log.warn("Error publishing S3 setup version node metadata: {}", e.getMessage());
 				}
-				setState(S3SetupManagerPlatformTaskState.Complete, null);
+
+				complete = true;
+				setStateAndIncrementStep(S3SetupManagerPlatformTaskState.Complete, null);
+
 				if ( config.isRestartRequired() ) {
 					SystemService sysService = (systemService != null ? systemService.service() : null);
 					if ( sysService != null ) {
@@ -348,8 +358,27 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 				return new S3SetupTaskResult(true, installedFiles, deletedFiles);
 			} finally {
-				complete = true;
+				if ( !complete ) {
+					complete = true;
+					informStatusHandlers();
+				}
 			}
+		}
+
+		private synchronized void informStatusHandlers() {
+			for ( PlatformTaskStatusHandler handler : statusHandlers ) {
+				handler.taskStatusUpdated(this);
+			}
+		}
+
+		@Override
+		public synchronized void registerStatusHandler(PlatformTaskStatusHandler handler) {
+			statusHandlers.add(handler);
+		}
+
+		@Override
+		public String getTaskId() {
+			return taskId;
 		}
 
 		@Override
@@ -368,8 +397,13 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			if ( ms == null ) {
 				return null;
 			}
-			return messageSource.getMessage("platformTask.title", new Object[] { config.getVersion() },
+			return messageSource.getMessage("platformTask.title", new Object[] { getConfigVersion() },
 					locale);
+		}
+
+		private String getConfigVersion() {
+			String version = config.getVersion();
+			return (version != null ? LEADING_ZEROS_PAT.matcher(version).replaceFirst("") : "");
 		}
 
 		@Override
@@ -396,7 +430,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 				case PostingSetupVersion:
 					return ms.getMessage("platformTask.message.PostingSetupVersion",
-							new Object[] { config.getVersion() }, locale);
+							new Object[] { getConfigVersion() }, locale);
 
 				default:
 					return null;
@@ -411,6 +445,18 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		private void setState(S3SetupManagerPlatformTaskState taskState, String asset) {
 			state.set(taskState);
 			assetName.set(asset);
+			informStatusHandlers();
+		}
+
+		private void setStateAndIncrementStep(S3SetupManagerPlatformTaskState taskState, String asset) {
+			state.set(taskState);
+			assetName.set(asset);
+			incrementStep();
+		}
+
+		private void incrementStep() {
+			step++;
+			informStatusHandlers();
 		}
 
 		/**
@@ -430,7 +476,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				return Collections.emptySet();
 			}
 			Set<Path> installed = new LinkedHashSet<>();
-			for ( int i = 0; i < objCount; i++, step++ ) {
+			for ( int i = 0; i < objCount; i++, incrementStep() ) {
 				String dataObjKey = objects[i];
 				if ( !TARBALL_PAT.matcher(dataObjKey).find() ) {
 					log.warn("S3 setup resource {} not a supported type; skipping");
@@ -460,8 +506,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					FileCopyUtils.copy(obj.getObjectContent(), out);
 
 					// extract tarball
-					step++;
-					setState(S3SetupManagerPlatformTaskState.InstallingAsset, dataObjKey);
+					setStateAndIncrementStep(S3SetupManagerPlatformTaskState.InstallingAsset,
+							dataObjKey);
 					List<Path> extractedPaths = extractTarball(dataObjFile);
 					installed.addAll(extractedPaths);
 				} finally {
@@ -490,7 +536,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				Path path = FileSystems.getDefault().getPath(syncPath).toAbsolutePath().normalize();
 				Set<Path> result = applySetupSyncPath(path, installedFiles);
 				deleted.addAll(result);
-				step++;
+				incrementStep();
 			}
 			if ( !deleted.isEmpty() ) {
 				log.info("Deleted files from syncPaths {}: {}", Arrays.asList(config.getSyncPaths()),
@@ -553,7 +599,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 						deleted.add(cleanFile.toPath());
 					}
 				}
-				step++;
+				incrementStep();
 			}
 			if ( !deleted.isEmpty() ) {
 				log.info("Deleted files from cleanPaths {}: {}", Arrays.asList(config.getCleanPaths()),

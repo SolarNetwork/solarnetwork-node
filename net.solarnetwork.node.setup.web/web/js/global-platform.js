@@ -1,10 +1,11 @@
 'use strict';
 SolarNode.Platform = (function() {
 	var self = {};
-	var willBeRestarting = false;
+	var subscribedToTask = false;
+	var waitingForRestart = false;
 	
 	function getActivePlatformTaskInfo(callback) {
-		$.getJSON(SolarNode.context.path('/platform/task'), function(json) {
+		$.getJSON(SolarNode.context.path('/pub/platform/task'), function(json) {
 			callback(json && json.data ? json.data : null);
 		}).fail(function() {
 			callback(null);
@@ -21,41 +22,49 @@ SolarNode.Platform = (function() {
 	function setPlatformLockModalVisible(modal, visible) {
 		modal.modal(visible ? 'show' : 'hide');
 	}
+	
+	function handleRestart(modal) {
+		if ( waitingForRestart ) {
+			return;
+		}
+		waitingForRestart = true;
+		modal.find('.bar').css('width', '100%');
+		modal.find('.restarting').removeClass('hide');
+		modal.find('.hide-while-restarting').addClass('hide');
+		setTimeout(function() {
+			SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+		}, 10000);
+		setPlatformLockModalVisible(modal, true);
+	}
 
-	function refreshPlatformTaskInfo(modal) {
-		function handleRestart() {
-			modal.find('.bar').css('width', '100%');
-			modal.find('.restarting').removeClass('hide');
-			modal.find('.hide-while-restarting').addClass('hide');
-			setTimeout(function() {
-				SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
-			}, 10000);
+	function subscribeToTask(modal) {
+		if ( subscribedToTask ) {
+			return;
 		}
-		function refresh() {
-			getActivePlatformTaskInfo(function(info) {
-				if ( info ) {
-					updatePlatformTaskInfo(modal, info);
-				}
-				if ( info && info.complete === false ) {
-					willBeRestarting = info.restartRequired;
-					setPlatformLockModalVisible(modal, true);
-					setTimeout(refresh, 10000);
-				} else if ( willBeRestarting ) {
-					if ( info ) {
-						setTimeout(refresh, 10000);
-					} else {
-						handleRestart();
-					}
-				} else {
-					setPlatformLockModalVisible(modal, false);
-				}
-			});
-		}
-		refresh();
+		SolarNode.WebSocket.subscribeToTopic('/pub/topic/platform/task', function(msg) {
+			var body = (msg && msg.body ? JSON.parse(msg.body) : null);
+			var info = (body ? body.data : null);
+			if ( info ) {
+				updatePlatformTaskInfo(modal, info);
+			}
+			if ( info && info.complete === false ) {
+				setPlatformLockModalVisible(modal, true);
+			}
+		}, {
+			"Accept-Language" : (navigator.language || navigator.userLanguage || 'en')
+		});
+		subscribedToTask = true;
+		getActivePlatformTaskInfo(function(info) {
+			if ( info ) {
+				updatePlatformTaskInfo(modal, info);
+				setPlatformLockModalVisible(modal, true);
+			}
+		});
 	}
 	
 	function checkPlatformState(modal) {
 		var checkStateUrl = modal.attr('action');
+		
 		$.getJSON(checkStateUrl, function(data) {
 			if ( data === undefined || data.success !== true ) {
 				SolarNode.warn('Error!', 'An error occured checking the platform state.');
@@ -63,19 +72,20 @@ SolarNode.Platform = (function() {
 			}
 			var lockActive = data.data === 'UserBlockingSystemTask';
 			if ( lockActive ) {
-				refreshPlatformTaskInfo(modal);
+				subscribeToTask(modal);
 			} else {
 				setPlatformLockModalVisible(modal, false);
 			}
+		}).fail(function(err) {
+			console.warn('An error occured checking the platform state at %s: %s', checkStateUrl, err);
 		});
 	}
 
 	return Object.defineProperties(self, {
-		willBeRestarting : { get : function() { return willBeRestarting; } },
-
 		checkPlatformState : { value : checkPlatformState },
 		setPlatformLockModalVisible : { value : setPlatformLockModalVisible },
-		refreshPlatformTaskInfo : { value : refreshPlatformTaskInfo },
+		subscribeToTask : { value : subscribeToTask },
+		handleRestart : { value : handleRestart },
 	});
 }());
 
@@ -83,14 +93,17 @@ $(document).ready(function() {
 	$('#platform-lock-modal').first().each(function() {
 		var modal = $(this);
 		
-		function handlePlatformStateMessage(msg) {
-			var msg = JSON.parse(msg.body);
-			console.info('Got platform/state message: %o', msg);
+		function handlePlatformStateMessage(message) {
+			var msg = JSON.parse(message.body);
 			if ( msg.data ) {
+				var currState = msg.data.platformState;
+				console.info('Got platform/state change from %s \u2192 %s', msg.data.oldPlatformState, currState);
 				var lockActive = msg.data.platformState === 'UserBlockingSystemTask';
-				if ( lockActive ) {
-					SolarNode.Platform.checkPlatformState(modal);
-				} else if ( !SolarNode.Platform.willBeRestarting ){
+				if ( currState === 'UserBlockingSystemTask' ) {
+					SolarNode.Platform.subscribeToTask(modal);
+				} else if ( currState === 'Restarting' ) {
+					SolarNode.Platform.handleRestart(modal);
+				} else {
 					SolarNode.Platform.setPlatformLockModalVisible(modal, false);
 				}
 			}

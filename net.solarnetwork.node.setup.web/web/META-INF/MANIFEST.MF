@@ -102,6 +102,8 @@ Import-Package:
  org.springframework.messaging.handler.annotation;version="[4.2,5.0)",
  org.springframework.messaging.simp;version="[4.2,5.0)",
  org.springframework.messaging.simp.annotation;version="[4.2,5.0)",
+ org.springframework.messaging.simp.stomp;version="4.2.9.RELEASE",
+ org.springframework.messaging.support;version="4.2.9.RELEASE",
  org.springframework.scheduling.concurrent;version="[4.1,5.0)",
  org.springframework.security.authentication;version="[4.1,5.0)",
  org.springframework.security.config;version="[4.1,5.0)",
@@ -152,5 +154,6 @@ Import-Package:
  org.springframework.web.servlet.tags.form;version="[4.2,5.0)",
  org.springframework.web.servlet.view;version="[4.2,5.0)",
  org.springframework.web.servlet.view.tiles3;version="[4.2,5.0)",
+ org.springframework.web.socket.messaging;version="[4.2,5.0)",
  org.springframework.web.socket.server.standard;version="[4.2,5.0)",
  org.springframework.web.util;version="[4.2,5.0)"

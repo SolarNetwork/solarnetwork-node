@@ -264,6 +264,7 @@
 	<service interface="net.solarnetwork.node.PlatformService">
 		<bean class="net.solarnetwork.node.runtime.DefaultPlatformService">
 			<property name="eventAdmin" ref="eventAdmin"/>
+			<property name="messageSendingOperations" ref="messageSendingOperations"/>
 		</bean>
 	</service>
 

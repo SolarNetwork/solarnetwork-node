@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -35,7 +36,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
+import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.PlatformService;
 import net.solarnetwork.util.OptionalService;
 
@@ -51,6 +56,7 @@ public class DefaultPlatformService implements PlatformService {
 	private final AtomicReference<PlatformTask<?>> activeSingletonTask = new AtomicReference<PlatformTask<?>>();
 	private ExecutorService singletonExecutorService = defaultSingletonExecutorService();
 	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
 
 	private static ExecutorService defaultSingletonExecutorService() {
 		// we want at most one task happening at a time for this service;
@@ -97,6 +103,40 @@ public class DefaultPlatformService implements PlatformService {
 	}
 
 	@Override
+	public void subscribeToActivePlatformTaskInfo(Locale locale) {
+		PlatformTask<?> task = activeSingletonTask.get();
+		if ( task != null ) {
+			final Locale loc = (locale != null ? locale : Locale.getDefault());
+			final String lang = (loc != null && loc.getLanguage() != null ? loc.getLanguage() : "en");
+			task.registerStatusHandler(new PlatformTaskStatusHandler() {
+
+				@Override
+				public void taskStatusUpdated(PlatformTaskStatus status) {
+					PlatformTaskInfo info = new SimplePlatformTaskInfo(status, loc);
+					postMessage(MSG_TOPIC_PLATFORM_TASK_INFO, info,
+							Collections.<String, Object> singletonMap("lang", lang), true);
+				}
+
+			});
+		}
+	}
+
+	private void postMessage(String dest, Object body, Map<String, Object> headers, boolean convert) {
+		SimpMessageSendingOperations ops = (messageSendingOps != null ? messageSendingOps.service()
+				: null);
+		if ( ops == null ) {
+			return;
+		}
+		if ( convert ) {
+			Result<?> r = (body instanceof Result ? (Result<?>) body : Result.result(body));
+			ops.convertAndSend(dest, r, headers);
+		} else {
+			Message<Object> msg = new GenericMessage<Object>(body, headers);
+			ops.send(dest, msg);
+		}
+	}
+
+	@Override
 	public <T> Future<T> performTaskWithState(final PlatformState state, final PlatformTask<T> task) {
 		return singletonExecutorService.submit(new Callable<T>() {
 
@@ -111,7 +151,9 @@ public class DefaultPlatformService implements PlatformService {
 					return task.call();
 				} finally {
 					activeSingletonTask.compareAndSet(task, null);
-					updatePlatformState(PlatformState.Normal);
+					updatePlatformState(
+							task.isComplete() && task.isRestartRequired() ? PlatformState.Restarting
+									: PlatformState.Normal);
 				}
 			}
 
@@ -142,6 +184,17 @@ public class DefaultPlatformService implements PlatformService {
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	/**
+	 * Set a {@link SimpMessageSendingOperations} for posting messages to.
+	 * 
+	 * @param messageSendingOps
+	 *        the message sender to use
+	 */
+	public void setMessageSendingOperations(
+			OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+		this.messageSendingOps = messageSendingOps;
 	}
 
 }

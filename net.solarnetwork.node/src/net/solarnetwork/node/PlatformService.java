@@ -62,6 +62,16 @@ public interface PlatformService {
 	String OLD_PLATFORM_STATE_PROPERTY = "oldPlatformState";
 
 	/**
+	 * A message topic for task info updates.
+	 * 
+	 * <p>
+	 * The message body will contain a {@link new.solarnetwork.domain.Result}
+	 * with {@link PlatformTaskInfo} content.
+	 * </p>
+	 */
+	String MSG_TOPIC_PLATFORM_TASK_INFO = "/pub/topic/platform/task";
+
+	/**
 	 * An enumeration of possible platform states.
 	 */
 	enum PlatformState {
@@ -74,12 +84,24 @@ public interface PlatformService {
 		 */
 		UserBlockingSystemTask,
 
+		/**
+		 * The platform is restarting.
+		 */
+		Restarting,
+
 	}
 
 	/**
 	 * Information about a task.
 	 */
 	interface PlatformTaskInfo {
+
+		/**
+		 * Get a unique task ID for this task.
+		 * 
+		 * @return the unique ID
+		 */
+		String getTaskId();
 
 		/**
 		 * Get a title of this task.
@@ -126,6 +148,13 @@ public interface PlatformService {
 	interface PlatformTaskStatus {
 
 		/**
+		 * Get a unique task ID for this task.
+		 * 
+		 * @return the unique ID
+		 */
+		String getTaskId();
+
+		/**
 		 * Get a title of this task.
 		 * 
 		 * @param locale
@@ -168,12 +197,35 @@ public interface PlatformService {
 	}
 
 	/**
+	 * A callback handler for dealing with real-time status updates.
+	 */
+	interface PlatformTaskStatusHandler {
+
+		/**
+		 * Update the task info for a task.
+		 * 
+		 * @param info
+		 */
+		void taskStatusUpdated(PlatformTaskStatus status);
+	}
+
+	/**
 	 * A platform task.
 	 *
 	 * @param <T>
 	 *        the task result
 	 */
 	interface PlatformTask<T> extends Callable<T>, PlatformTaskStatus {
+
+		/**
+		 * Register a status handler for a specific locale.
+		 * 
+		 * @param handler
+		 *        the handler
+		 * @param locale
+		 *        the desired locale
+		 */
+		void registerStatusHandler(PlatformTaskStatusHandler handler);
 
 	}
 
@@ -200,6 +252,20 @@ public interface PlatformService {
 	 * @return the localized platform task info
 	 */
 	PlatformTaskInfo activePlatformTaskInfo(Locale locale);
+
+	/**
+	 * Register a subscription to the active platform task's status updates for
+	 * a specific locale.
+	 * 
+	 * <p>
+	 * Once registered, this service will post messages to the
+	 * {@link #MSG_TOPIC_PLATFORM_TASK_INFO} topic.
+	 * </p>
+	 * 
+	 * @param locale
+	 *        the locale to register for updates
+	 */
+	void subscribeToActivePlatformTaskInfo(Locale locale);
 
 	/**
 	 * Perform a platform state-altering task.

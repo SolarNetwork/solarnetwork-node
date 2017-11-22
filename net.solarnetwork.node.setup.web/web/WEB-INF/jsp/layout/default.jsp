@@ -43,7 +43,7 @@
 		</div>
 		
 		<%-- System lock overlay --%>
-		<setup:url value="/platform/state" var="urlPlatformState"/>
+		<setup:url value="/pub/platform/state" var="urlPlatformState"/>
 		<form id="platform-lock-modal" class="modal dynamic hide fade" action="${urlPlatformState}" method="get"
 				data-backdrop="static" data-keyboard="false">
 			<div class="modal-header">
