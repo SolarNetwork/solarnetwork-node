@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.33.1
+Bundle-Version: 1.34.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ClassPath: WEB-INF/classes/
@@ -32,7 +32,7 @@ Import-Package:
  net.sf.packtag.servlet;version="3.13.1.SN02",
  net.sf.packtag.tag;version="3.13.1.SN02",
  net.solarnetwork.domain;version="1.7",
- net.solarnetwork.node;version="1.20",
+ net.solarnetwork.node;version="1.23",
  net.solarnetwork.node.backup;version="1.6",
  net.solarnetwork.node.dao;version="1.8",
  net.solarnetwork.node.domain;version="1.11",
@@ -102,6 +102,8 @@ Import-Package:
  org.springframework.messaging.handler.annotation;version="[4.2,5.0)",
  org.springframework.messaging.simp;version="[4.2,5.0)",
  org.springframework.messaging.simp.annotation;version="[4.2,5.0)",
+ org.springframework.messaging.simp.stomp;version="4.2.9.RELEASE",
+ org.springframework.messaging.support;version="4.2.9.RELEASE",
  org.springframework.scheduling.concurrent;version="[4.1,5.0)",
  org.springframework.security.authentication;version="[4.1,5.0)",
  org.springframework.security.config;version="[4.1,5.0)",
@@ -152,5 +154,6 @@ Import-Package:
  org.springframework.web.servlet.tags.form;version="[4.2,5.0)",
  org.springframework.web.servlet.view;version="[4.2,5.0)",
  org.springframework.web.servlet.view.tiles3;version="[4.2,5.0)",
+ org.springframework.web.socket.messaging;version="[4.2,5.0)",
  org.springframework.web.socket.server.standard;version="[4.2,5.0)",
  org.springframework.web.util;version="[4.2,5.0)"

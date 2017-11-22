@@ -9,7 +9,7 @@
 		http://www.springframework.org/schema/websocket
         http://www.springframework.org/schema/websocket/spring-websocket-4.2.xsd">
 
-	<websocket:message-broker application-destination-prefix="/app">
+	<websocket:message-broker application-destination-prefix="/app,/pub/app">
 		<websocket:stomp-endpoint path="/ws"/>
 		<websocket:simple-broker prefix="/topic, /queue, /pub/topic, /pub/queue"/>
 		<websocket:message-converters register-defaults="true">

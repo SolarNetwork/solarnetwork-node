@@ -139,44 +139,46 @@ public class JobUtils {
 			log.info("Trigger {} job data changed", triggerKey(trigger));
 			triggerChanged = true;
 		}
-		if ( !reschedule || triggerChanged ) {
-			if ( reschedule ) {
-				CronTriggerFactoryBean newTrigger;
-				if ( baseCronExpression != null ) {
-					RandomizedCronTriggerFactoryBean r = new RandomizedCronTriggerFactoryBean();
-					r.setRandomSecond(true);
-					newTrigger = r;
-				} else {
-					newTrigger = new CronTriggerFactoryBean();
-				}
-				newTrigger.setName(ct.getKey().getName());
-				newTrigger.setGroup(ct.getKey().getGroup());
-				newTrigger.setDescription(ct.getDescription());
-				newTrigger.setMisfireInstruction(ct.getMisfireInstruction());
-				newTrigger.setCronExpression(newCronExpression);
-				newTrigger.setJobDetail(jobDetail);
-				if ( newJobDataMap != null ) {
-					newTrigger.setJobDataMap(newJobDataMap);
-				}
-				try {
-					newTrigger.afterPropertiesSet();
-					CronTrigger newCt = newTrigger.getObject();
-					scheduler.rescheduleJob(ct.getKey(), newCt);
-				} catch ( ParseException e ) {
-					log.error("Error in cron expression [{}]", newCronExpression, e);
-				} catch ( SchedulerException e ) {
-					log.error("Error re-scheduling trigger {} for job {}",
-							new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
-				}
+		if ( reschedule && !triggerChanged ) {
+			// unchanged
+			return;
+		}
+		if ( reschedule ) {
+			CronTriggerFactoryBean newTrigger;
+			if ( baseCronExpression != null ) {
+				RandomizedCronTriggerFactoryBean r = new RandomizedCronTriggerFactoryBean();
+				r.setRandomSecond(true);
+				newTrigger = r;
 			} else {
-				log.info("Scheduling trigger {} as cron {}",
-						new Object[] { triggerKey(trigger), currentCronExpression });
-				try {
-					scheduler.scheduleJob(jobDetail, ct);
-				} catch ( SchedulerException e ) {
-					log.error("Error scheduling trigger {} for job {}",
-							new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
-				}
+				newTrigger = new CronTriggerFactoryBean();
+			}
+			newTrigger.setName(ct.getKey().getName());
+			newTrigger.setGroup(ct.getKey().getGroup());
+			newTrigger.setDescription(ct.getDescription());
+			newTrigger.setMisfireInstruction(ct.getMisfireInstruction());
+			newTrigger.setCronExpression(newCronExpression);
+			newTrigger.setJobDetail(jobDetail);
+			if ( newJobDataMap != null ) {
+				newTrigger.setJobDataMap(newJobDataMap);
+			}
+			try {
+				newTrigger.afterPropertiesSet();
+				CronTrigger newCt = newTrigger.getObject();
+				scheduler.rescheduleJob(ct.getKey(), newCt);
+			} catch ( ParseException e ) {
+				log.error("Error in cron expression [{}]", newCronExpression, e);
+			} catch ( SchedulerException e ) {
+				log.error("Error re-scheduling trigger {} for job {}",
+						new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
+			}
+		} else {
+			log.info("Scheduling trigger {} as cron {}",
+					new Object[] { triggerKey(trigger), newCronExpression });
+			try {
+				scheduler.scheduleJob(jobDetail, ct);
+			} catch ( SchedulerException e ) {
+				log.error("Error scheduling trigger {} for job {}",
+						new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
 			}
 		}
 	}

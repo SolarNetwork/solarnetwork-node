@@ -9,63 +9,6 @@ SolarNode.Datum = (function() {
 	});
 		
 	var self = {};
-	var stompClient;
-	var pingTask;
-	var subscriptions = [];
-	
-	function executePing(url) {
-		$.getJSON(SolarNode.context.path('/csrf')).then(function() {
-			
-		});
-	}
-	
-	function doWithConnection(callback) {
-		if ( stompClient != null ) {
-			callback(null, stompClient);
-		}
-		var csrf = SolarNode.csrfData;
-		var url = 'ws://' +document.location.host +SolarNode.context.path('/ws');
-		var socket = new WebSocket(url);
-		var client = Stomp.over(socket);
-		client.debug = true;
-		var headers = {};
-		headers[csrf.headerName] = csrf.token;
-		client.connect(headers, function(frame) {
-			stompClient = client;
-			console.info('Connected to node WebSocket');
-			
-			if ( !pingTask ) {
-				pingTask = setInterval(executePing, 60000);
-			}
-			
-			callback(null, client);
-		}, function (error) {
-			console.error('STOMP protocol error %s', error);
-			callback(error);
-		});
-	}
-	
-	function subscribeToTopic(topic, msgHandler) {
-		doWithConnection(function(err, client) {
-			if ( err ) {
-				return;
-			}
-			var sub = client.subscribe(topic, msgHandler);
-			if ( sub ) {
-				console.info('Subscribed to message topic %s', topic);
-				subscriptions.push(sub);
-			}
-		});
-	}
-	
-	function topicNameWithWildcardSuffix(topic, suffix) {
-		var topicSuffix = (suffix ? suffix : '**');
-		if ( !topicSuffix.startsWith('/') ) {
-			topic += '/';
-		}
-		topic += topicSuffix;
-		return topic;
-	}
 	
 	/**
 	 * Subscribe to the "datum created" topic.
@@ -74,8 +17,8 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatumCreated(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
-		subscribeToTopic(topic, msgHandler);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
+		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 	
 	/**
@@ -85,8 +28,8 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatumStored(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/stored', sourceId);
-		subscribeToTopic(topic, msgHandler);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/stored', sourceId);
+		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
 	/**
@@ -96,8 +39,8 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatum(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/*', sourceId);
-		subscribeToTopic(topic, msgHandler);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/*', sourceId);
+		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
 	/**
@@ -107,8 +50,8 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeControl(controlId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/control/*', controlId);
-		subscribeToTopic(topic, msgHandler);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/control/*', controlId);
+		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
 	function replaceTemplateProperties(el, obj, prefix) {

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc.reactor;
@@ -59,7 +57,7 @@ import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
  * JDBC implementation of {@link JdbcInstructionDao}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 		implements net.solarnetwork.node.reactor.InstructionDao {
@@ -136,6 +134,14 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 	 */
 	public static final String RESOURCE_SQL_DELETE_OLD = "delete-old";
 
+	/**
+	 * The default value for the {@code maxInstructionStatusParamLength}
+	 * property.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_MAX_INSTRUCTION_STATUS_PARAM_LENGTH = 1024;
+
 	private static final class StringMapTypeReference
 			extends TypeReference<LinkedHashMap<String, Object>> {
 
@@ -148,6 +154,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 	private static final StringMapTypeReference STRING_MAP_TYPE = new StringMapTypeReference();
 
 	private ObjectMapper objectMapper;
+	private int maxInstructionStatusParamLength = DEFAULT_MAX_INSTRUCTION_STATUS_PARAM_LENGTH;
 
 	/**
 	 * Default constructor.
@@ -304,11 +311,26 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 		String jparams = null;
 		Map<String, ?> resultParameters = status.getResultParameters();
 		if ( resultParameters != null && !resultParameters.isEmpty() ) {
+			Map<String, Object> stringParameters = new LinkedHashMap<String, Object>(
+					resultParameters.size());
+			for ( Map.Entry<String, ?> me : resultParameters.entrySet() ) {
+				String key = me.getKey();
+				Object val = me.getValue();
+				if ( val != null ) {
+					String s = val.toString();
+					if ( s.length() > maxInstructionStatusParamLength ) {
+						// truncate in middle
+						s = s.substring(0, maxInstructionStatusParamLength / 2) + '\u2026'
+								+ s.substring(s.length() - maxInstructionStatusParamLength / 2);
+					}
+					stringParameters.put(key, s);
+				}
+			}
 			try {
-				jparams = objectMapper.writeValueAsString(resultParameters);
+				jparams = objectMapper.writeValueAsString(stringParameters);
 			} catch ( JsonProcessingException e ) {
 				// report and move on
-				log.warn("Error serializing result parameters {} to JSON: {}", resultParameters,
+				log.warn("Error serializing result parameters {} to JSON: {}", stringParameters,
 						e.getMessage());
 			}
 		}
@@ -375,6 +397,22 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 	 */
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
+	}
+
+	/**
+	 * Set a maximum length for all instruction status result parameter values.
+	 * 
+	 * <p>
+	 * This is to help work around exceedingly long error message parameters.
+	 * </p>
+	 * 
+	 * @param maxInstructionStatusParamLength
+	 *        the maximum length; defaults to
+	 *        {@link #DEFAULT_MAX_INSTRUCTION_STATUS_PARAM_LENGTH}
+	 * @since 1.1
+	 */
+	public void setMaxInstructionStatusParamLength(int maxInstructionStatusParamLength) {
+		this.maxInstructionStatusParamLength = maxInstructionStatusParamLength;
 	}
 
 }

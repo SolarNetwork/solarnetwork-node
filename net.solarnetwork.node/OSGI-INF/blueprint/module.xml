@@ -23,6 +23,11 @@
 	
 	<!-- Service References -->
 
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" availability="optional">
 		<reference-listener bind-method="onBind" unbind-method="onUnbind">
 			<bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
@@ -251,6 +256,15 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.runtime.EventMessageBridge">
 			<argument ref="messageSendingOperations"/>
+		</bean>
+	</service>
+	
+	<!-- PlatformService -->
+
+	<service interface="net.solarnetwork.node.PlatformService">
+		<bean class="net.solarnetwork.node.runtime.DefaultPlatformService">
+			<property name="eventAdmin" ref="eventAdmin"/>
+			<property name="messageSendingOperations" ref="messageSendingOperations"/>
 		</bean>
 	</service>
 

@@ -39,6 +39,22 @@ public class S3SetupConfiguration {
 	private String[] cleanPaths;
 	private boolean restartRequired;
 
+	/**
+	 * Get the total count of objects * 2, sync paths, and clean paths
+	 * configured on this object.
+	 * 
+	 * <p>
+	 * The object count is doubled to account for downloading, then installing
+	 * the objects.
+	 * </p>
+	 * 
+	 * @return the total count
+	 */
+	public int getTotalStepCount() {
+		return (syncPaths != null ? syncPaths.length : 0) + (objects != null ? objects.length * 2 : 0)
+				+ (cleanPaths != null ? cleanPaths.length : 0);
+	}
+
 	public String[] getSyncPaths() {
 		return syncPaths;
 	}
