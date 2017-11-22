@@ -12,11 +12,11 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @author maxieduncan
  * @version 1.0
  */
-public class CSISupport extends ModbusDeviceDatumDataSourceSupport {
-	private CSIData sample = new SI60KTLCTData();
+public class KTLSupport extends ModbusDeviceDatumDataSourceSupport {
+	private KTLData sample = new SI60KTLCTData();
 
 	
-	public CSIData getSample() {
+	public KTLData getSample() {
 		return sample;
 	}
 
@@ -27,7 +27,7 @@ public class CSISupport extends ModbusDeviceDatumDataSourceSupport {
 	}	
 	
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		CSISupport defaults = new CSISupport();
+		KTLSupport defaults = new KTLSupport();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));

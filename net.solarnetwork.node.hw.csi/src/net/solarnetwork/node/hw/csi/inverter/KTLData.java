@@ -4,11 +4,11 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
- * Common API for SDM meter data.
+ * Common API for KTL inverter data.
  * 
  * @author Max Duncan
  */
-public interface CSIData {
+public interface KTLData {
 	
 	/**
 	 * Read data from the inverter and store it internally.
@@ -21,7 +21,7 @@ public interface CSIData {
 
 	void populateMeasurements(GeneralNodeACEnergyDatum datum);
 	
-	CSIData getSnapshot();
+	KTLData getSnapshot();
 
 	String dataDebugString();
 	

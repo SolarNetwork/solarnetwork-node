@@ -12,7 +12,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * @author maxieduncan
  *
  */
-public abstract class BaseCSIData implements CSIData {
+public abstract class BaseKTLData implements KTLData {
 	private long inverterDataTimestamp = 0;
 	private final TIntIntHashMap dataRegisters = new TIntIntHashMap(64);
 

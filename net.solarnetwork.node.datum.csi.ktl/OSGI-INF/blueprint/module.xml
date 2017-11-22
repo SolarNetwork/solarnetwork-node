@@ -23,8 +23,8 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.csi.ktl.CSIDatumDataSource</value>
-				<value>net.solarnetwork.node.hw.csi.inverter.CSISupport</value>
+				<value>net.solarnetwork.node.datum.csi.ktl.KTLDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.csi.inverter.KTLSupport</value>
 				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>
@@ -37,7 +37,7 @@
 
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="CSI Inverter"/>
+		<property name="displayName" value="KTL Inverter"/>
 		<property name="factoryUID" value="net.solarnetwork.node.datum.csi.ktl"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
@@ -63,7 +63,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="csiDatumLoggerTrigger"/>
+					<property name="name" value="ktlDatumLoggerTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -90,13 +90,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="csiDatumLoggerJob"/>
+					<property name="name" value="ktlDatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.csi.ktl.CSIDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.csi.ktl.KTLDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="modbusNetwork">

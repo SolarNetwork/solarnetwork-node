@@ -1,5 +1,5 @@
 /* ==================================================================
- * SDM120DataTests.java - 24/01/2016 5:10:24 pm
+ * SI60KTLCTDataTests.java - 23/11/2017 5:10:24 pm
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SDMDatum.java - 26/01/2016 3:07:11 pm
+ * KTLDatum.java - 23/11/2017 3:07:11 pm
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -24,19 +24,19 @@ package net.solarnetwork.node.datum.csi.ktl;
 
 import java.util.Date;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.csi.inverter.CSIData;
+import net.solarnetwork.node.hw.csi.inverter.KTLData;
 
 /**
  * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
- * supported by the SDM-XXX series meters.
+ * supported by the KTL series inverters.
  * 
  * @author matt
  * @author maxieduncan
  * @version 1.0
  */
-public class CSIDatum extends GeneralNodeACEnergyDatum {
+public class KTLDatum extends GeneralNodeACEnergyDatum {
 
-	private final CSIData sample;
+	private final KTLData sample;
 
 	/**
 	 * Construct with a sample.
@@ -44,7 +44,7 @@ public class CSIDatum extends GeneralNodeACEnergyDatum {
 	 * @param sample
 	 *        the sample
 	 */
-	public CSIDatum(CSIData sample) {
+	public KTLDatum(KTLData sample) {
 		super();
 		this.sample = sample;
 		if ( sample.getInverterDataTimestamp() > 0 ) {
@@ -67,7 +67,7 @@ public class CSIDatum extends GeneralNodeACEnergyDatum {
 	 * 
 	 * @return the sample data
 	 */
-	public CSIData getSample() {
+	public KTLData getSample() {
 		return sample;
 	}
 

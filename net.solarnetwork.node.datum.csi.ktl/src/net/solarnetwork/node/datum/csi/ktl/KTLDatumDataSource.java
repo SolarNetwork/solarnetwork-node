@@ -1,5 +1,5 @@
 /* ==================================================================
- * SDMDatumDataSource.java - 26/01/2016 3:06:48 pm
+ * KTLDatumDataSource.java - 23/11/2017 3:06:48 pm
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -30,8 +30,8 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.csi.inverter.CSIData;
-import net.solarnetwork.node.hw.csi.inverter.CSISupport;
+import net.solarnetwork.node.hw.csi.inverter.KTLData;
+import net.solarnetwork.node.hw.csi.inverter.KTLSupport;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -52,28 +52,28 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * {@link SettingSpecifierProvider}.</dd>
  * 
  * <dt>sampleCacheMs</dt>
- * <dd>The maximum number of milliseconds to cache data read from the meter,
- * until the data will be read from the meter again.</dd>
+ * <dd>The maximum number of milliseconds to cache data read from the inverter,
+ * until the data will be read from the inverter again.</dd>
  * </dl>
  * 
  * @author matt
  * @author maxieduncan
  * @version 1.0
  */
-public class CSIDatumDataSource extends CSISupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
+public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 
-	private CSIData getCurrentSample() {
-		CSIData currSample;
+	private KTLData getCurrentSample() {
+		KTLData currSample;
 		if ( isCachedSampleExpired() ) {
 			try {
-				currSample = performAction(new ModbusConnectionAction<CSIData>() {
+				currSample = performAction(new ModbusConnectionAction<KTLData>() {
 
 					@Override
-					public CSIData doWithConnection(ModbusConnection connection) throws IOException {
+					public KTLData doWithConnection(ModbusConnection connection) throws IOException {
 						getSample().readInverterData(connection);
 						return getSample().getSnapshot();
 					}
@@ -82,7 +82,7 @@ public class CSIDatumDataSource extends CSISupport implements DatumDataSource<Ge
 				if ( log.isTraceEnabled() && currSample != null) {
 					log.trace(currSample.dataDebugString());
 				}
-				log.debug("Read SDM data: {}", currSample);
+				log.debug("Read KTL data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Communication problem reading from Modbus device " + modbusNetwork(), e);
@@ -103,16 +103,16 @@ public class CSIDatumDataSource extends CSISupport implements DatumDataSource<Ge
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return CSIDatum.class;
+		return KTLDatum.class;
 	}
 
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final CSIData currSample = getCurrentSample();
-		CSIDatum d = new CSIDatum(currSample);
+		final KTLData currSample = getCurrentSample();
+		KTLDatum d = new KTLDatum(currSample);
 		if ( currSample.getInverterDataTimestamp() >= start ) {
-			// we read from the meter
+			// we read from the inverter
 			postDatumCapturedEvent(d);
 		}
 		return d;
@@ -120,23 +120,23 @@ public class CSIDatumDataSource extends CSISupport implements DatumDataSource<Ge
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return CSIDatum.class;
+		return KTLDatum.class;
 	}
 
 	@Override
 	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
 		final long start = System.currentTimeMillis();
-		final CSIData currSample = getCurrentSample();
+		final KTLData currSample = getCurrentSample();
 		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(1);
 		if ( currSample == null ) {
 			return results;
 		}
 		final boolean postCapturedEvent = (currSample.getInverterDataTimestamp() >= start);
 		if ( postCapturedEvent ) {
-			CSIDatum d = new CSIDatum(currSample);
+			KTLDatum d = new KTLDatum(currSample);
 			d.setSourceId("Main");// TODO
 			if ( postCapturedEvent ) {
-				// we read from the meter
+				// we read from the inverter
 				postDatumCapturedEvent(d);
 			}
 			results.add(d);
@@ -169,7 +169,7 @@ public class CSIDatumDataSource extends CSISupport implements DatumDataSource<Ge
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		CSIDatumDataSource defaults = new CSIDatumDataSource();
+		KTLDatumDataSource defaults = new KTLDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));

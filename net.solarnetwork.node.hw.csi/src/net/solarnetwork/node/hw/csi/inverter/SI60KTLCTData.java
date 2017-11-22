@@ -31,14 +31,14 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  * @author maxieduncan
  * @version 1.0
  */
-public class SI60KTLCTData extends BaseCSIData {
+public class SI60KTLCTData extends BaseKTLData {
 	@Override
 	public void populateMeasurements(GeneralNodeACEnergyDatum datum) {
 		// TODO Auto-generated method stub
 	}
 
 	@Override
-	public CSIData getSnapshot() {
+	public KTLData getSnapshot() {
 		return new SI60KTLCTData();// TODO copy values
 	}
 
