@@ -17,7 +17,7 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatumCreated(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 	
@@ -28,7 +28,7 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatumStored(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/stored', sourceId);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/stored', sourceId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
@@ -39,7 +39,7 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeDatum(sourceId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/datum/*', sourceId);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/*', sourceId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
@@ -50,7 +50,7 @@ SolarNode.Datum = (function() {
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
 	function subscribeControl(controlId, msgHandler) {
-		var topic = topicNameWithWildcardSuffix('/topic/control/*', controlId);
+		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/control/*', controlId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
 
