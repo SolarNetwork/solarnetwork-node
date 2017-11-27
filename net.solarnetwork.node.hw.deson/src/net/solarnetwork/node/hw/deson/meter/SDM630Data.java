@@ -85,6 +85,14 @@ public class SDM630Data extends BaseSDMData {
 	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL = 76;
 	public static final int ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL = 78;
 
+	// total phase energy (Float32, k)
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1 = 346;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P2 = 348;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P3 = 350;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_EXPORT_P1 = 352;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_EXPORT_P2 = 354;
+	public static final int ADDR_DATA_ACTIVE_ENERGY_EXPORT_P3 = 356;
+
 	// control info
 	public static final int ADDR_SYSTEM_WIRING_TYPE = 10;
 	public static final int ADDR_SYSTEM_SERIAL_NUMBER = 42;
@@ -211,8 +219,9 @@ public class SDM630Data extends BaseSDMData {
 
 	@Override
 	protected boolean readMeterDataInternal(ModbusConnection conn) {
-		readInputData(conn, ADDR_DATA_V_L1_NEUTRAL, ADDR_DATA_V_L1_NEUTRAL + 79);
-		readInputData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_V_L1_L2 + 25);
+		readInputData(conn, ADDR_DATA_V_L1_NEUTRAL, ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL + 1);
+		readInputData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_I_NEUTRAL + 1);
+		readInputData(conn, ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1, ADDR_DATA_ACTIVE_ENERGY_EXPORT_P3 + 1);
 		return true;
 	}
 
@@ -276,6 +285,16 @@ public class SDM630Data extends BaseSDMData {
 	}
 
 	private void populatePhaseAMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		Long whImport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1);
+		Long whExport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_P1);
+		if ( isBackwards() ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
+
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P1));
 		datum.setCurrent(sample.getCurrent(ADDR_DATA_I1));
 		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L1_L2));
@@ -287,6 +306,16 @@ public class SDM630Data extends BaseSDMData {
 	}
 
 	private void populatePhaseBMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		Long whImport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_P2);
+		Long whExport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_P2);
+		if ( isBackwards() ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
+
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P2));
 		datum.setCurrent(sample.getCurrent(ADDR_DATA_I2));
 		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L2_L3));
@@ -298,6 +327,16 @@ public class SDM630Data extends BaseSDMData {
 	}
 
 	private void populatePhaseCMeasurements(final SDMData sample, final GeneralNodeACEnergyDatum datum) {
+		Long whImport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_P3);
+		Long whExport = sample.getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_P3);
+		if ( isBackwards() ) {
+			datum.setWattHourReading(whExport);
+			datum.setReverseWattHourReading(whImport);
+		} else {
+			datum.setWattHourReading(whImport);
+			datum.setReverseWattHourReading(whExport);
+		}
+
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P3));
 		datum.setCurrent(sample.getCurrent(ADDR_DATA_I3));
 		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L3_L1));
