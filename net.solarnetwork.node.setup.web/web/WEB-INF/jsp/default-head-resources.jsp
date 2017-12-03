@@ -24,6 +24,7 @@
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
+	/js-lib/d3.js
 	/js/global.js
 	/js/global-websocket.js
 	/js/global-platform.js
@@ -34,6 +35,7 @@
 	/js/settings.js
 	/js/new-node.js
 	/js/plugins.js
+	/js/graph-data.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>
