@@ -220,6 +220,7 @@ function graphinit(source, units) {
                 ticktext = d3.select(this).text();
 
                 //this regex checks for positive and negative numbers that can have commas , and 0-2 decimal places
+                //NOTE this could break depending on the locale numbers are formatted in
                 var re = new RegExp('-?([0-9]|,)+(\.[0-9][0-9]?)?');
 
                 //takes the first result which should cut off the any decimal places after 2
