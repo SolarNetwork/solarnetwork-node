@@ -2,7 +2,7 @@
 //script to draw line graphs of datums with a wattage variable
 //this script will put the graphs inside the graphpoint class which 
 //one must put in the html document before loading the script
-
+//requires d3 https://d3js.org/d3.v3.js
 
 //json field we are interested in
 var key = "watts";
@@ -166,7 +166,7 @@ function graphinit(source, units) {
                     ydomain = [Math.min(0, data[0]), Math.max(0, data[0])];
 
                     //slightly extend the domain so the datapoint is not right at the edge of the graph
-                    //1.1 was chosen for astetics 
+                    //1.1 was chosen for aesthetics 
                     ydomain[0] = ydomain[0] * 1.1;
                     ydomain[1] = ydomain[1] * 1.1;
 
@@ -184,7 +184,7 @@ function graphinit(source, units) {
                 //extends the domain using the calculated stddev
                 ydomain = [d3.min(data) - stddev, d3.max(data) + stddev];
 
-                //5 ticks was chosen asteticly, not too many to cause crowding on the graph
+                //5 ticks was chosen aesthetically, not too many to cause crowding on the graph
                 //not too few to stop reading the graph
                 yticks = 5;
             }
