@@ -1,18 +1,18 @@
 //Author Robert Rewcastle
 //script to draw line graphs of datums with a wattage variable
-//this script will put the graphs inside the graphpoint class which 
+//this script will put the graphs inside an html tag with a graphpoint class which 
 //one must put in the html document before loading the script
 //requires d3 https://d3js.org/d3.v3.js
 
 //json field we are interested in
 var key = "watts";
-var units = "V";
+var units = "W";
 
 //This map is graphs to look up the latest reading based on their sourceId
 var datamap = {};
 
-//this array will contain all the sourceIds of graphs
-var graphs = [];
+//this array will contain all the sourceIds of graphs we are plotting
+var sourceIds = [];
 
 //https://stackoverflow.com/questions/1960473/get-all-unique-values-in-an-array-remove-duplicates
 //This get used for deciding how many ticks on the y axis
@@ -52,16 +52,13 @@ var handler = function handleMessage(msg) {
 		datamap[datum.sourceId] = datum[key];
 		
 		//if we have not seen this sourceId before we need to graph it
-		if (graphs.indexOf(datum.sourceId)==-1){
+		if (sourceIds.indexOf(datum.sourceId)==-1){
 			
 			//add a new graph for this new sourceId
-			graphs.push(datum.sourceId);
+			sourceIds.push(datum.sourceId);
 			graphinit(datum.sourceId,units);
-
 		}
 	}
-	
-	
 };
 
 //creates a new graph looking that plots wattage data from datums coming from source 
@@ -74,7 +71,7 @@ function graphinit(source, units) {
         duration = 1000,//time for the animation 
         now = new Date(Date.now() - duration),//not sure what the -duration is for
 
-        //prefill the array with the first reading (might change in future)
+        //prefill the array with the first reading
         data = new Array(n).fill(datamap[source]);
 
     //positional styling for the graph
@@ -92,13 +89,13 @@ function graphinit(source, units) {
 
     //draws the line for the graph (not sure how this code works at this stage)
     var line = d3.svg.line()
-        .interpolate("step-after")
-        .x(function (d, i) { return x(now - (n - 1 - i) * duration); })
-        .y(function (d, i) { return y(d); });
+        .interpolate("step-after")//other possible options are linear, step-after, basis, bundle and cardinal
+        .x(function (d, i) { return x(now - (n - 1 - i) * duration); })//not sure what is going on here 
+        .y(function (d, i) { return y(d); });//not sure what is going on here
 
-    //finds the location on the main page where graphs are to be placed and adds one
-    var p = d3.select(".graphpoint").append("p").text(source + " (" + key + ")");
-    var svg = d3.select(".graphpoint").append("svg")
+    //finds the location on the page the script is loaded is loaded to put the graph
+    var p = d3.select(".graphpoint").append("p").text(source + " (" + key + ")");//adds a title in form of "SourceId (metric)"
+    var svg = d3.select(".graphpoint").append("svg")//adds a svg area to draw the graph
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .style("margin-left", margin.left + "px")
@@ -106,7 +103,7 @@ function graphinit(source, units) {
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 
-    svg.append("defs").append("clipPath")
+    svg.append("defs").append("clipPath")//sets the svg to cuttoff drawings outside of its area
         .attr("id", "clip")
         .append("rect")
         .attr("width", width)
@@ -119,7 +116,7 @@ function graphinit(source, units) {
 
     svg.append("g")
         .attr("class", "yaxis")
-        //.call(d3.svg.axis().scale(y).ticks(3).orient("left"));//the number in the ticks() determines how many steps in axis
+       
     var path = svg.append("g")
         .attr("clip-path", "url(#clip)")
         .append("path")

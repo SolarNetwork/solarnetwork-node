@@ -5,7 +5,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.context.MessageSource;
 
@@ -16,36 +15,55 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
+/**
+ * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, the
+ * datum will contain random values based around a settable center deviating by
+ * a settable deviation.
+ * 
+ * <p>
+ * This class implements {@link SettingSpecifierProvider} and
+ * {@link DatumDataSource}
+ * </p>
+ * 
+ * @author robert
+ * @version 1.0
+ */
+
 public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	@Override
 	public String getUID() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public String getGroupUID() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		// TODO Auto-generated method stub
 		return GeneralNodeACEnergyDatum.class;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see net.solarnetwork.node.DatumDataSource#readCurrentDatum()
+	 * 
+	 * Returns a {@link GeneralNodeACEnergyDatum} filled with mock data. The
+	 * method uses reflection to find setters in {@link
+	 * GeneralNodeACEnergyDatum} and fill them with a number equal to the
+	 * baseReading +- a random number that goes upto deviation.
+	 * 
+	 * @return A {@link GeneralNodeACEnergyDatum}
+	 * 
+	 */
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 
-		// we'll increment our Wh reading by a random amount between 0-15, with
-		// the assumption we will read samples once per minute
-		long wattHours = wattHourReading.addAndGet(Math.round(Math.random() * 15.0));
-
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setCreated(new Date());
-		datum.setWattHourReading(wattHours);
 		datum.setSourceId(sourceId);
 
 		Class<GeneralNodeACEnergyDatum> gacdatum = GeneralNodeACEnergyDatum.class;
@@ -85,14 +103,16 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 						if (setterarg != null) {
 							try {
 								m.invoke(datum, setterarg);
+
+								// These exceptions should not get thrown due to
+								// all of my checks but if they do
+								// thats a mistake on my part, print the
+								// stacktrace.
 							} catch (IllegalAccessException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (IllegalArgumentException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							} catch (InvocationTargetException e) {
-								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 						}
@@ -105,9 +125,8 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 		return datum;
 	}
 
-	private final AtomicLong wattHourReading = new AtomicLong(0);
-
-	private String sourceId = "Deson Mock 2";
+	// default values
+	private String sourceId = "Mock Energy Meter";
 
 	private String baseReading = "1000";
 
@@ -115,12 +134,12 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 
 	private Boolean deviate = true;
 
-	// reflected method
+	// Method get used by the settings page
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 
-	// reflected method
+	// Method get used by the settings page
 	public void setBaseReading(String baseReading) {
 		try {
 			Double reading = Double.parseDouble(baseReading);
@@ -128,10 +147,9 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 		} catch (NumberFormatException e) {
 			// what was entered was not valid keep current value
 		}
-
 	}
 
-	// reflected method
+	// Method get used by the settings page
 	public void setDeviation(String deviation) {
 		try {
 			Double reading = Double.parseDouble(deviation);
@@ -142,7 +160,7 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 
 	}
 
-	// reflected method
+	// Method get used by the settings page
 	public void setDeviate(String deviate) {
 		this.deviate = Boolean.parseBoolean(deviate);
 	}
@@ -156,7 +174,7 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 
 	@Override
 	public String getDisplayName() {
-		return "Foobar Power";
+		return "Mock Meter";
 	}
 
 	@Override
@@ -168,13 +186,18 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 		this.messageSource = messageSource;
 	}
 
+	// Puts the user configerable settings on the settings page
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(1);
+
+		// user enters text
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		results.add(new BasicTextFieldSettingSpecifier("baseReading", defaults.baseReading));
 		results.add(new BasicTextFieldSettingSpecifier("deviation", defaults.deviation));
+
+		// toggleable button
 		results.add(new BasicToggleSettingSpecifier("deviate", defaults.deviate));
 		return results;
 	}
