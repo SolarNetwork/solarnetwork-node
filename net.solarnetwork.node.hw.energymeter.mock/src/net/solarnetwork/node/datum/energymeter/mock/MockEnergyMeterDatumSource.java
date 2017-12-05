@@ -2,7 +2,6 @@ package net.solarnetwork.node.datum.energymeter.mock;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -14,6 +13,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 /**
  * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, the
@@ -29,17 +29,8 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * @version 1.0
  */
 
-public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
-
-	@Override
-	public String getUID() {
-		return null;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return null;
-	}
+public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
+		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
@@ -182,6 +173,7 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 		return messageSource;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -190,7 +182,7 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(1);
+		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 
 		// user enters text
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
