@@ -1,7 +1,5 @@
 package net.solarnetwork.node.datum.energymeter.mock;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +10,6 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 /**
@@ -31,6 +28,23 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+
+	// default values
+	private String sourceId = "Mock Energy Meter";
+	private String voltagerms = "230";
+	private String frequency = "50";
+	private String resistance = "10";
+	private String inductance = "10";
+
+	private MessageSource messageSource;
+
+	private Integer apparantPow;
+	private Float phaseVolt;
+	private Float phaseCurr;
+	private Integer watt;
+	private Integer realPow;
+	private Integer reacPow;
+	private Float powfac;
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
@@ -57,73 +71,59 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setCreated(new Date());
 		datum.setSourceId(sourceId);
 
-		Class<GeneralNodeACEnergyDatum> gacdatum = GeneralNodeACEnergyDatum.class;
-
-		Method[] gacdMethods = gacdatum.getMethods();
-		for (Method m : gacdMethods) {
-
-			// check if method is setter
-			if (m.getName().toLowerCase().startsWith("set")) {
-				Class<?>[] args = m.getParameterTypes();
-
-				// only 1 thing to set
-				if (args.length == 1) {
-					Class<?> arg = args[0];
-
-					// check we have a number
-					if (Number.class.isAssignableFrom(arg)) {
-						Number result;
-						if (deviate) {
-							result = (Math.cos(Math.random() * Math.PI) * Double.parseDouble(deviation)
-									+ Double.parseDouble(baseReading));
-						} else {
-							result = Double.parseDouble(baseReading);
-						}
-
-						// get the number in the correct format
-						Object setterarg = null;
-						if (arg.equals(Double.class)) {
-							setterarg = result;
-						} else if (arg.equals(Float.class)) {
-							setterarg = result.floatValue();
-						} else if (arg.equals(Integer.class)) {
-							setterarg = result.intValue();
-						}
-
-						// if the setter is of the type we support invoke it
-						if (setterarg != null) {
-							try {
-								m.invoke(datum, setterarg);
-
-								// These exceptions should not get thrown due to
-								// all of my checks but if they do
-								// thats a mistake on my part, print the
-								// stacktrace.
-							} catch (IllegalAccessException e) {
-								e.printStackTrace();
-							} catch (IllegalArgumentException e) {
-								e.printStackTrace();
-							} catch (InvocationTargetException e) {
-								e.printStackTrace();
-							}
-						}
-
-					}
-				}
-			}
-		}
-
+		datum.setFrequency(Float.parseFloat(this.frequency));
+		datum.setVoltage(Float.parseFloat(this.voltagerms));
+		calcVariables();
+		datum.setReactivePower(this.reacPow);
+		datum.setApparentPower(this.apparantPow);
+		datum.setPhaseVoltage(this.phaseVolt);
+		datum.setCurrent(this.phaseCurr);
+		datum.setWatts(this.watt);
+		datum.setRealPower(this.realPow);
+		datum.setPowerFactor(this.powfac);
 		return datum;
 	}
 
-	// default values
-	private String sourceId = "Mock Energy Meter";
+	/**
+	 * Calculates the values to feed the datum
+	 */
+	private void calcVariables() {
+		double vrms = Double.parseDouble(voltagerms);
 
-	private String baseReading = "1000";
+		// convention to use capital L for inductance reading in microhenry
+		double L = Double.parseDouble(inductance) / 1000000;
 
-	private String deviation = "200";
+		double f = Double.parseDouble(frequency);
 
-	private Boolean deviate = true;
+		// convention to use capital R for resistance
+		double R = Double.parseDouble(resistance);
+
+		double vmax = Math.sqrt(2) * vrms;
+
+		double phasevoltage = vmax * Math.sin(2 * Math.PI * f * System.currentTimeMillis() / 1000);
+		this.phaseVolt = (float) phasevoltage;
+
+		double inductiveReactance = 2 * Math.PI * f * L;
+		double impedance = Math.sqrt(Math.pow(R, 2) + Math.pow(inductiveReactance, 2));
+
+		double phasecurrent = phasevoltage / impedance;
+		this.phaseCurr = (float) phasecurrent;
+		double current = vrms / impedance;
+
+		double reactivePower = Math.pow(current, 2) * inductiveReactance;
+		this.reacPow = (int) reactivePower;
+		double realPower = Math.pow(current, 2) * R;
+		this.realPow = (int) realPower;
+		this.apparantPow = (int) (Math.pow(current, 2) * impedance);
+
+		// not sure if correct calculation
+		double watts = Math.pow(phasecurrent, 2) * R;
+		this.watt = (int) watts;
+
+		double phaseAngle = Math.atan(inductiveReactance / R);
+		this.powfac = (float) Math.cos(phaseAngle);
+
+	}
 
 	// Method get used by the settings page
 	public void setSourceId(String sourceId) {
@@ -131,20 +131,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	// Method get used by the settings page
-	public void setBaseReading(String baseReading) {
+	public void setVoltage(String voltage) {
 		try {
-			Double reading = Double.parseDouble(baseReading);
-			this.baseReading = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
-	}
-
-	// Method get used by the settings page
-	public void setDeviation(String deviation) {
-		try {
-			Double reading = Double.parseDouble(deviation);
-			this.deviation = reading.toString();
+			Float reading = Float.parseFloat(voltage);
+			this.voltagerms = reading.toString();
 		} catch (NumberFormatException e) {
 			// what was entered was not valid keep current value
 		}
@@ -152,11 +142,37 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	// Method get used by the settings page
-	public void setDeviate(String deviate) {
-		this.deviate = Boolean.parseBoolean(deviate);
+	public void setResistance(String resistance) {
+		try {
+			Double reading = Double.parseDouble(resistance);
+			this.resistance = reading.toString();
+		} catch (NumberFormatException e) {
+			// what was entered was not valid keep current value
+		}
+
 	}
 
-	private MessageSource messageSource;
+	// Method get used by the settings page
+	public void setInductance(String inductance) {
+		try {
+			Double reading = Double.parseDouble(inductance);
+			this.inductance = reading.toString();
+		} catch (NumberFormatException e) {
+			// what was entered was not valid keep current value
+		}
+
+	}
+
+	// Method get used by the settings page
+	public void setFrequency(String frequency) {
+		try {
+			Float reading = Float.parseFloat(frequency);
+			this.frequency = reading.toString();
+		} catch (NumberFormatException e) {
+			// what was entered was not valid keep current value
+		}
+
+	}
 
 	@Override
 	public String getSettingUID() {
@@ -178,7 +194,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		this.messageSource = messageSource;
 	}
 
-	// Puts the user configerable settings on the settings page
+	// Puts the user configurable settings on the settings page
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
@@ -186,11 +202,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		// user enters text
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		results.add(new BasicTextFieldSettingSpecifier("baseReading", defaults.baseReading));
-		results.add(new BasicTextFieldSettingSpecifier("deviation", defaults.deviation));
-
-		// toggleable button
-		results.add(new BasicToggleSettingSpecifier("deviate", defaults.deviate));
+		results.add(new BasicTextFieldSettingSpecifier("voltage", defaults.voltagerms));
+		results.add(new BasicTextFieldSettingSpecifier("frequency", defaults.frequency));
+		results.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance));
+		results.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance));
 		return results;
 	}
 }
