@@ -1,4 +1,4 @@
-package net.solarnetwork.node.hw.energymeter.mock;
+package net.solarnetwork.node.datum.energymeter.mock;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -169,7 +169,7 @@ public class MockEnergyMeterDatumSource implements DatumDataSource<GeneralNodeAC
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.hw.energymeter.mock";
+		return "net.solarnetwork.node.datum.energymeter.mock";
 	}
 
 	@Override

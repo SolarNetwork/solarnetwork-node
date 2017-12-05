@@ -23,7 +23,7 @@
 
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.hw.energymeter.mock.MockEnergyMeterDatumSource"/>
+		<property name="basenames" value="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource"/>
 	</bean>
 
 	<!-- support localized strings for the periodic job settings in the GUI -->
@@ -36,21 +36,21 @@
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="EnergyMeter Mock"/>
-			<property name="factoryUID" value="net.solarnetwork.node.hw.energymeter.mock"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.energymeter.mock"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 
 	<!-- publish a "service factory" that each Mock Energy Meter Inverter component instance can be
 	     configured in the GUI, along with a periodic job to collect datum from it -->
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.hw.energymeter.mock" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.energymeter.mock" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.hw.energymeter.mock"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.energymeter.mock"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 
@@ -99,7 +99,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.hw.energymeter.mock.MockEnergyMeterDatumSource">
+								<bean class="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 								</bean>
 							</entry>
