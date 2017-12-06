@@ -49,6 +49,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Integer realPow;
 	private Integer reacPow;
 	private Float powfac;
+	private Long watthours;
+	private Long wattmillis;
+
+	private Long lastsample = null;
 
 	Random rng = new Random();
 
@@ -74,8 +78,11 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		// applies randomness to voltage and frequency if randomness is on
 		calcRandomness();
 
-		// the values for the datum calculated here
+		// the values for most datum variables are calculated here
 		calcVariables();
+
+		// calculates the watt hours
+		calcWattHours();
 
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 
@@ -90,7 +97,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setWatts(this.watt);
 		datum.setRealPower(this.realPow);
 		datum.setPowerFactor(this.powfac);
-
+		datum.setWattHourReading(this.watthours);
 		return datum;
 	}
 
@@ -147,6 +154,21 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		double phaseAngle = Math.atan(inductiveReactance / R);
 		this.powfac = (float) Math.cos(phaseAngle);
+
+	}
+
+	private void calcWattHours() {
+		if (this.lastsample == null) {
+			this.lastsample = System.currentTimeMillis();
+			this.wattmillis = 0L;
+			this.watthours = 0L;
+		} else {
+			Long newsample = System.currentTimeMillis();
+			Long diff = (newsample - this.lastsample);
+			this.wattmillis += this.reacPow.longValue() * diff;
+			this.watthours = this.wattmillis / 1000 / 60 / 60;
+			this.lastsample = newsample;
+		}
 
 	}
 
@@ -258,7 +280,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance));
 		results.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance));
 		results.add(new BasicToggleSettingSpecifier("randomness", defaults.randomness));
-		results.add(new BasicTextFieldSettingSpecifier("voldev", defaults.voltDeviation));
+		results.add(new BasicTextFieldSettingSpecifier("voltdev", defaults.voltDeviation));
 		results.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation));
 		return results;
 	}
