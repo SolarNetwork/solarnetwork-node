@@ -2,20 +2,20 @@ package net.solarnetwork.node.datum.energymeter.mock;
 
 import java.util.Date;
 import java.util.List;
-
-import org.springframework.context.MessageSource;
+import java.util.Random;
 
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 /**
- * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, the
- * datum will contain random values based around a settable center deviating by
- * a settable deviation.
+ * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, this
+ * mock tries to simulate a AC circuit containing a resister and inductor in
+ * series.
  * 
  * <p>
  * This class implements {@link SettingSpecifierProvider} and
@@ -35,8 +35,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private String frequency = "50";
 	private String resistance = "10";
 	private String inductance = "10";
+	private String randomness = "false";
+	private String freqDeviation = "0";
+	private String voltDeviation = "0";
 
-	private MessageSource messageSource;
+	private double randomVolt;
+	private double randomFreq;
 
 	private Integer apparantPow;
 	private Float phaseVolt;
@@ -45,6 +49,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Integer realPow;
 	private Integer reacPow;
 	private Float powfac;
+
+	Random rng = new Random();
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
@@ -56,10 +62,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * 
 	 * @see net.solarnetwork.node.DatumDataSource#readCurrentDatum()
 	 * 
-	 * Returns a {@link GeneralNodeACEnergyDatum} filled with mock data. The
-	 * method uses reflection to find setters in {@link
-	 * GeneralNodeACEnergyDatum} and fill them with a number equal to the
-	 * baseReading +- a random number that goes upto deviation.
+	 * Returns a {@link GeneralNodeACEnergyDatum} the data in the datum is the
+	 * state of the simulated circuit.
 	 * 
 	 * @return A {@link GeneralNodeACEnergyDatum}
 	 * 
@@ -67,13 +71,18 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 
+		// applies randomness to voltage and frequency if randomness is on
+		calcRandomness();
+
+		// the values for the datum calculated here
+		calcVariables();
+
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
+
 		datum.setCreated(new Date());
 		datum.setSourceId(sourceId);
-
-		datum.setFrequency(Float.parseFloat(this.frequency));
-		datum.setVoltage(Float.parseFloat(this.voltagerms));
-		calcVariables();
+		datum.setFrequency((float) this.randomFreq);
+		datum.setVoltage((float) this.randomVolt);
 		datum.setReactivePower(this.reacPow);
 		datum.setApparentPower(this.apparantPow);
 		datum.setPhaseVoltage(this.phaseVolt);
@@ -81,19 +90,35 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setWatts(this.watt);
 		datum.setRealPower(this.realPow);
 		datum.setPowerFactor(this.powfac);
+
 		return datum;
+	}
+
+	private void calcRandomness() {
+		this.randomVolt = Double.parseDouble(voltagerms);
+		this.randomFreq = Double.parseDouble(frequency);
+
+		// if randomness is off randomVolt and randomFreq will have no deviation
+		if (Boolean.parseBoolean(randomness)) {
+
+			// add deviation to the supply
+			double vd = Double.parseDouble(this.voltDeviation);
+			double fd = Double.parseDouble(this.freqDeviation);
+			this.randomVolt += vd * Math.cos(Math.PI * rng.nextDouble());
+			this.randomFreq += fd * Math.cos(Math.PI * rng.nextDouble());
+		}
 	}
 
 	/**
 	 * Calculates the values to feed the datum
 	 */
 	private void calcVariables() {
-		double vrms = Double.parseDouble(voltagerms);
+		double vrms = this.randomVolt;
 
 		// convention to use capital L for inductance reading in microhenry
 		double L = Double.parseDouble(inductance) / 1000000;
 
-		double f = Double.parseDouble(frequency);
+		double f = this.randomFreq;
 
 		// convention to use capital R for resistance
 		double R = Double.parseDouble(resistance);
@@ -174,6 +199,42 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	}
 
+	// Method get used by the settings page
+	public void setVoltdev(String voltdev) {
+		try {
+			Double reading = Double.parseDouble(voltdev);
+			this.voltDeviation = reading.toString();
+		} catch (NumberFormatException e) {
+			// what was entered was not valid keep current value
+		}
+
+	}
+
+	// Method get used by the settings page
+	public void setFreqdev(String freqdev) {
+		try {
+			Double reading = Double.parseDouble(freqdev);
+			this.freqDeviation = reading.toString();
+		} catch (NumberFormatException e) {
+			// what was entered was not valid keep current value
+		}
+
+	}
+
+	public void setRandomness(String random) {
+		this.randomness = random;
+	}
+
+	/**
+	 * Dependency injection of a Random instance to improve controllability if
+	 * needed eg unit testing.
+	 * 
+	 * @param rng
+	 */
+	public void setRNG(Random rng) {
+		this.rng = rng;
+	}
+
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.datum.energymeter.mock";
@@ -182,16 +243,6 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public String getDisplayName() {
 		return "Mock Meter";
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	// Puts the user configurable settings on the settings page
@@ -206,6 +257,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("frequency", defaults.frequency));
 		results.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance));
 		results.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance));
+		results.add(new BasicToggleSettingSpecifier("randomness", defaults.randomness));
+		results.add(new BasicTextFieldSettingSpecifier("voldev", defaults.voltDeviation));
+		results.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation));
 		return results;
 	}
 }
