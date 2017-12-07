@@ -46,7 +46,6 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * @author robert
  * @version 1.0
  */
-
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
@@ -205,37 +204,31 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	// Method get used by the settings page
 	public void setVoltage(Double voltage) {
 		this.voltagerms = voltage;
-
 	}
 
 	// Method get used by the settings page
 	public void setResistance(Double resistance) {
 		this.resistance = resistance;
-
 	}
 
 	// Method get used by the settings page
 	public void setInductance(Double inductance) {
 		this.inductance = inductance;
-
 	}
 
 	// Method get used by the settings page
 	public void setFrequency(Double frequency) {
 		this.frequency = frequency;
-
 	}
 
 	// Method get used by the settings page
 	public void setVoltdev(Double voltdev) {
 		this.voltDeviation = voltdev;
-
 	}
 
 	// Method get used by the settings page
 	public void setFreqdev(Double freqdev) {
 		this.freqDeviation = freqdev;
-
 	}
 
 	public void setRandomness(Boolean random) {
