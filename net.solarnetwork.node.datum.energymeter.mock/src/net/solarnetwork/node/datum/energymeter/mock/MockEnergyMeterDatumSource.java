@@ -52,7 +52,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Long watthours;
 	private Long wattmillis;
 
-	private Long lastsample = null;
+	private GeneralNodeACEnergyDatum lastsample = null;
+	private GeneralNodeACEnergyDatum currentsample = null;
 
 	private Random rng = new Random();
 
@@ -75,6 +76,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 
+		this.lastsample = this.currentsample;
+
+		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
+		datum.setCreated(new Date());
+
+		this.currentsample = datum;
+
 		// applies randomness to voltage and frequency if randomness is on
 		calcRandomness();
 
@@ -83,8 +91,6 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		// calculates the watt hours
 		calcWattHours();
-
-		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 
 		datum.setCreated(new Date());
 		datum.setSourceId(sourceId);
@@ -159,15 +165,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	private void calcWattHours() {
 		if (this.lastsample == null) {
-			this.lastsample = System.currentTimeMillis();
 			this.wattmillis = 0L;
 			this.watthours = 0L;
 		} else {
-			Long newsample = System.currentTimeMillis();
-			Long diff = (newsample - this.lastsample);
+			Long diff = (this.currentsample.getCreated().getTime() - this.lastsample.getCreated().getTime());
 			this.wattmillis += this.realPow.longValue() * diff;
 			this.watthours = this.wattmillis / 1000 / 60 / 60;
-			this.lastsample = newsample;
 		}
 
 	}
