@@ -31,13 +31,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	// default values
 	private String sourceId = "Mock Energy Meter";
-	private String voltagerms = "230";
-	private String frequency = "50";
-	private String resistance = "10";
-	private String inductance = "10";
-	private String randomness = "false";
-	private String freqDeviation = "0";
-	private String voltDeviation = "0";
+	private Double voltagerms = 230.0;
+	private Double frequency = 50.0;
+	private Double resistance = 10.0;
+	private Double inductance = 10.0;
+	private Boolean randomness = false;
+	private Double freqDeviation = 0.0;
+	private Double voltDeviation = 0.0;
 
 	private double randomVolt;
 	private double randomFreq;
@@ -102,15 +102,15 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private void calcRandomness() {
-		this.randomVolt = Double.parseDouble(voltagerms);
-		this.randomFreq = Double.parseDouble(frequency);
+		this.randomVolt = voltagerms;
+		this.randomFreq = frequency;
 
 		// if randomness is off randomVolt and randomFreq will have no deviation
-		if (Boolean.parseBoolean(randomness)) {
+		if (randomness) {
 
 			// add deviation to the supply
-			double vd = Double.parseDouble(this.voltDeviation);
-			double fd = Double.parseDouble(this.freqDeviation);
+			double vd = this.voltDeviation;
+			double fd = this.freqDeviation;
 			this.randomVolt += vd * Math.cos(Math.PI * rng.nextDouble());
 			this.randomFreq += fd * Math.cos(Math.PI * rng.nextDouble());
 		}
@@ -123,12 +123,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		double vrms = this.randomVolt;
 
 		// convention to use capital L for inductance reading in microhenry
-		double L = Double.parseDouble(inductance) / 1000000;
+		double L = inductance / 1000000;
 
 		double f = this.randomFreq;
 
 		// convention to use capital R for resistance
-		double R = Double.parseDouble(resistance);
+		double R = resistance;
 
 		double vmax = Math.sqrt(2) * vrms;
 
@@ -178,72 +178,42 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	// Method get used by the settings page
-	public void setVoltage(String voltage) {
-		try {
-			Float reading = Float.parseFloat(voltage);
-			this.voltagerms = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setVoltage(Double voltage) {
+		this.voltagerms = voltage;
 
 	}
 
 	// Method get used by the settings page
-	public void setResistance(String resistance) {
-		try {
-			Double reading = Double.parseDouble(resistance);
-			this.resistance = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setResistance(Double resistance) {
+		this.resistance = resistance;
 
 	}
 
 	// Method get used by the settings page
-	public void setInductance(String inductance) {
-		try {
-			Double reading = Double.parseDouble(inductance);
-			this.inductance = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setInductance(Double inductance) {
+		this.inductance = inductance;
 
 	}
 
 	// Method get used by the settings page
-	public void setFrequency(String frequency) {
-		try {
-			Float reading = Float.parseFloat(frequency);
-			this.frequency = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setFrequency(Double frequency) {
+		this.frequency = frequency;
 
 	}
 
 	// Method get used by the settings page
-	public void setVoltdev(String voltdev) {
-		try {
-			Double reading = Double.parseDouble(voltdev);
-			this.voltDeviation = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setVoltdev(Double voltdev) {
+		this.voltDeviation = voltdev;
 
 	}
 
 	// Method get used by the settings page
-	public void setFreqdev(String freqdev) {
-		try {
-			Double reading = Double.parseDouble(freqdev);
-			this.freqDeviation = reading.toString();
-		} catch (NumberFormatException e) {
-			// what was entered was not valid keep current value
-		}
+	public void setFreqdev(Double freqdev) {
+		this.freqDeviation = freqdev;
 
 	}
 
-	public void setRandomness(String random) {
+	public void setRandomness(Boolean random) {
 		this.randomness = random;
 	}
 
@@ -275,13 +245,13 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		// user enters text
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		results.add(new BasicTextFieldSettingSpecifier("voltage", defaults.voltagerms));
-		results.add(new BasicTextFieldSettingSpecifier("frequency", defaults.frequency));
-		results.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance));
-		results.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance));
+		results.add(new BasicTextFieldSettingSpecifier("voltage", defaults.voltagerms.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("frequency", defaults.frequency.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("resistance", defaults.resistance.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("inductance", defaults.inductance.toString()));
 		results.add(new BasicToggleSettingSpecifier("randomness", defaults.randomness));
-		results.add(new BasicTextFieldSettingSpecifier("voltdev", defaults.voltDeviation));
-		results.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation));
+		results.add(new BasicTextFieldSettingSpecifier("voltdev", defaults.voltDeviation.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation.toString()));
 		return results;
 	}
 }
