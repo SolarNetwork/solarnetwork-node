@@ -54,7 +54,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	private Long lastsample = null;
 
-	Random rng = new Random();
+	private Random rng = new Random();
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
@@ -165,7 +165,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		} else {
 			Long newsample = System.currentTimeMillis();
 			Long diff = (newsample - this.lastsample);
-			this.wattmillis += this.reacPow.longValue() * diff;
+			this.wattmillis += this.realPow.longValue() * diff;
 			this.watthours = this.wattmillis / 1000 / 60 / 60;
 			this.lastsample = newsample;
 		}
