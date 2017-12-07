@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.datum.energymeter.mock;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -59,23 +62,23 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Double freqDeviation = 0.0;
 	private Double voltDeviation = 0.0;
 
-	private double randomVolt;
-	private double randomFreq;
-
-	private Integer apparantPow;
-	private Float phaseVolt;
-	private Float phaseCurr;
-	private Integer watt;
-	private Integer realPow;
-	private Integer reacPow;
-	private Float powfac;
-	private Long watthours;
-	private Long wattmillis;
-
-	private GeneralNodeACEnergyDatum lastsample = null;
-	private GeneralNodeACEnergyDatum currentsample = null;
-
 	private Random rng = new Random();
+
+	private final AtomicReference<GeneralNodeACEnergyDatum> lastsample = new AtomicReference<GeneralNodeACEnergyDatum>();
+
+	/**
+	 * Get a mock starting value for our meter based on the current time so the
+	 * meter back to zero each time the app restarts.
+	 * 
+	 * @return a starting meter value
+	 */
+	private static long meterStartValue() {
+		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+		Date now = cal.getTime();
+		cal.set(2010, cal.getMinimum(Calendar.MONTH), 1, 0, 0, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		return (now.getTime() - cal.getTimeInMillis()) / (1000L * 60);
+	}
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
@@ -95,63 +98,46 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 */
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
-
-		this.lastsample = this.currentsample;
-
+		GeneralNodeACEnergyDatum prev = this.lastsample.get();
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setCreated(new Date());
-
-		this.currentsample = datum;
-
-		// applies randomness to voltage and frequency if randomness is on
-		calcRandomness();
+		datum.setSourceId(sourceId);
 
 		// the values for most datum variables are calculated here
-		calcVariables();
+		calcVariables(datum);
 
-		// calculates the watt hours
-		calcWattHours();
+		calcWattHours(prev, datum);
 
-		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
-		datum.setFrequency((float) this.randomFreq);
-		datum.setVoltage((float) this.randomVolt);
-		datum.setReactivePower(this.reacPow);
-		datum.setApparentPower(this.apparantPow);
-		datum.setPhaseVoltage(this.phaseVolt);
-		datum.setCurrent(this.phaseCurr);
-		datum.setWatts(this.watt);
-		datum.setRealPower(this.realPow);
-		datum.setPowerFactor(this.powfac);
-		datum.setWattHourReading(this.watthours);
+		this.lastsample.compareAndSet(prev, datum);
+
 		return datum;
 	}
 
-	private void calcRandomness() {
-		this.randomVolt = voltagerms;
-		this.randomFreq = frequency;
+	private double readVoltage() {
+		return voltagerms + (randomness ? voltDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+	}
 
-		// if randomness is off randomVolt and randomFreq will have no deviation
-		if ( randomness ) {
-
-			// add deviation to the supply
-			double vd = this.voltDeviation;
-			double fd = this.freqDeviation;
-			this.randomVolt += vd * Math.cos(Math.PI * rng.nextDouble());
-			this.randomFreq += fd * Math.cos(Math.PI * rng.nextDouble());
-		}
+	private double readFrequency() {
+		return frequency + (randomness ? freqDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
 	}
 
 	/**
-	 * Calculates the values to feed the datum
+	 * Calculates the values to feed the datum.
+	 * 
+	 * @param vrms
+	 *        the voltage to use
+	 * @param f
+	 *        the frequency to use
 	 */
-	private void calcVariables() {
-		double vrms = this.randomVolt;
+	private void calcVariables(GeneralNodeACEnergyDatum datum) {
+		double vrms = readVoltage();
+		datum.setVoltage((float) vrms);
+
+		double f = readFrequency();
+		datum.setFrequency((float) f);
 
 		// convention to use capital L for inductance reading in microhenry
 		double L = inductance / 1000000;
-
-		double f = this.randomFreq;
 
 		// convention to use capital R for resistance
 		double R = resistance;
@@ -159,41 +145,39 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		double vmax = Math.sqrt(2) * vrms;
 
 		double phasevoltage = vmax * Math.sin(2 * Math.PI * f * System.currentTimeMillis() / 1000);
-		this.phaseVolt = (float) phasevoltage;
+		datum.setPhaseVoltage((float) phasevoltage);
 
 		double inductiveReactance = 2 * Math.PI * f * L;
 		double impedance = Math.sqrt(Math.pow(R, 2) + Math.pow(inductiveReactance, 2));
 
 		double phasecurrent = phasevoltage / impedance;
-		this.phaseCurr = (float) phasecurrent;
+		datum.setCurrent((float) phasecurrent);
 		double current = vrms / impedance;
 
 		double reactivePower = Math.pow(current, 2) * inductiveReactance;
-		this.reacPow = (int) reactivePower;
+		datum.setReactivePower((int) reactivePower);
 		double realPower = Math.pow(current, 2) * R;
-		this.realPow = (int) realPower;
-		this.apparantPow = (int) (Math.pow(current, 2) * impedance);
+		datum.setRealPower((int) realPower);
+		datum.setApparentPower((int) (Math.pow(current, 2) * impedance));
 
 		// not sure if correct calculation
 		double watts = Math.pow(phasecurrent, 2) * R;
-		this.watt = (int) watts;
+		datum.setWatts((int) watts);
 
 		double phaseAngle = Math.atan(inductiveReactance / R);
-		this.powfac = (float) Math.cos(phaseAngle);
-
+		datum.setPowerFactor((float) Math.cos(phaseAngle));
 	}
 
-	private void calcWattHours() {
-		if ( this.lastsample == null ) {
-			this.wattmillis = 0L;
-			this.watthours = 0L;
+	private void calcWattHours(GeneralNodeACEnergyDatum prev, GeneralNodeACEnergyDatum datum) {
+		if ( prev == null ) {
+			datum.setWattHourReading(meterStartValue());
 		} else {
-			Long diff = (this.currentsample.getCreated().getTime()
-					- this.lastsample.getCreated().getTime());
-			this.wattmillis += this.realPow.longValue() * diff;
-			this.watthours = this.wattmillis / 1000 / 60 / 60;
+			double diffHours = ((datum.getCreated().getTime() - prev.getCreated().getTime())
+					/ (double) (1000 * 60 * 60));
+			long wh = (long) (datum.getRealPower() * diffHours);
+			long newWh = prev.getWattHourReading() + wh;
+			datum.setWattHourReading(newWh);
 		}
-
 	}
 
 	// Method get used by the settings page
