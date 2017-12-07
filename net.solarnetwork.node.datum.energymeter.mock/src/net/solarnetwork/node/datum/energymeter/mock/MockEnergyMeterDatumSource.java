@@ -1,9 +1,9 @@
+
 package net.solarnetwork.node.datum.energymeter.mock;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -112,7 +112,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		this.randomFreq = frequency;
 
 		// if randomness is off randomVolt and randomFreq will have no deviation
-		if (randomness) {
+		if ( randomness ) {
 
 			// add deviation to the supply
 			double vd = this.voltDeviation;
@@ -164,11 +164,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	private void calcWattHours() {
-		if (this.lastsample == null) {
+		if ( this.lastsample == null ) {
 			this.wattmillis = 0L;
 			this.watthours = 0L;
 		} else {
-			Long diff = (this.currentsample.getCreated().getTime() - this.lastsample.getCreated().getTime());
+			Long diff = (this.currentsample.getCreated().getTime()
+					- this.lastsample.getCreated().getTime());
 			this.wattmillis += this.realPow.longValue() * diff;
 			this.watthours = this.wattmillis / 1000 / 60 / 60;
 		}
