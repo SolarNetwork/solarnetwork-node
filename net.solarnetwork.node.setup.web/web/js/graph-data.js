@@ -94,8 +94,8 @@ function graphinit(source, units) {
         .y(function (d, i) { return y(d); });//not sure what is going on here
 
     //finds the location on the page the script is loaded is loaded to put the graph
-    var p = d3.select(".graphpoint").append("p").text(source + " (" + key + ")");//adds a title in form of "SourceId (metric)"
-    var svg = d3.select(".graphpoint").append("svg")//adds a svg area to draw the graph
+    var p = d3.select(".datum-charts").append("p").text(source + " (" + key + ")");//adds a title in form of "SourceId (metric)"
+    var svg = d3.select(".datum-charts").append("svg")//adds a svg area to draw the graph
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .style("margin-left", margin.left + "px")

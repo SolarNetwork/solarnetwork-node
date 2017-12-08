@@ -31,9 +31,9 @@
 	</dl>
 </section>
 
-<section id = "datum-charts">
-	<h2>Datum Graphs</h2>
-	<p class="graphpoint"></p>
+<section id = "datum-activity-charts">
+	<h2>Datum Charts</h2>
+	<div class="datum-charts"></div>
 </section>
 
 <section id="datum-activity-seenprops" class="hide">
