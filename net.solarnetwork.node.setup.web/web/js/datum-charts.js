@@ -78,7 +78,7 @@ function graphinit(source, units) {
 
     //positional styling for the graph
     var margin = { top: 10, right: 0, bottom: 20, left: 60 },
-        width = 960 - margin.right,
+        width = 320 - margin.right,
         height = 120 - margin.top - margin.bottom;
 
     //sets the axis scales
@@ -96,7 +96,7 @@ function graphinit(source, units) {
         .y(function (d, i) { return y(d); });//not sure what is going on here
 
     //finds the location on the page the script is loaded is loaded to put the graph
-    var p = d3.select(".chart").append("p").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
+    var p = d3.select(".chart").append("h3").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
     var svg = d3.select(".chart").append("svg")//adds a svg area to draw the graph
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
