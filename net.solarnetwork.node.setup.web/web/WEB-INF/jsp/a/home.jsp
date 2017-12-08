@@ -31,6 +31,11 @@
 	</dl>
 </section>
 
+<section id = "datum-charts">
+	<h2>Datum Graphs</h2>
+	<p class="graphpoint"></p>
+</section>
+
 <section id="datum-activity-seenprops" class="hide">
 	<h2><fmt:message key="datum.activity.seenprops.title"/></h2>	
 	<p><fmt:message key="datum.activity.seenprops.intro"/></p>
@@ -58,8 +63,6 @@
 </section>
 
 <section id="datum-activity" class="hide">
-	<h2>Datum Graphs</h2>
-	<p class="graphpoint"></p>
 	<h2><fmt:message key="datum.activity.title"/></h2>	
 	<p><fmt:message key="datum.activity.intro"/></p>
 	<table class="table datum-activity">
