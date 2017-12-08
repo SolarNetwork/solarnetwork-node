@@ -5,14 +5,11 @@
 //requires d3 https://d3js.org/d3.v3.js
 
 //json field we are interested in
-var key = "watts";
+var datumPropName = "watts";
 var units = "W";
 
 //This map is graphs to look up the latest reading based on their sourceId
 var datamap = {};
-
-//this array will contain all the sourceIds of graphs we are plotting
-var sourceIds = [];
 
 //https://stackoverflow.com/questions/1960473/get-all-unique-values-in-an-array-remove-duplicates
 //This get used for deciding how many ticks on the y axis
@@ -25,15 +22,15 @@ function onlyUnique(value, index, self) {
 function StandardDeviation(numbersArr) {
     //--CALCULATE AVAREGE--
     var total = 0;
-    for(var key in numbersArr) 
-       total += numbersArr[key];
+    for(var datumPropName in numbersArr) 
+       total += numbersArr[datumPropName];
     var meanVal = total / numbersArr.length;
     //--CALCULATE AVAREGE--
   
     //--CALCULATE STANDARD DEVIATION--
     var SDprep = 0;
-    for(var key in numbersArr) 
-       SDprep += Math.pow((parseFloat(numbersArr[key]) - meanVal),2);
+    for(var datumPropName in numbersArr) 
+       SDprep += Math.pow((parseFloat(numbersArr[datumPropName]) - meanVal),2);
     var SDresult = Math.sqrt(SDprep/numbersArr.length);
     //--CALCULATE STANDARD DEVIATION--
     return SDresult
@@ -47,17 +44,22 @@ var handler = function handleMessage(msg) {
 	var datum = JSON.parse(msg.body).data;
 
 	//check that the datum has a reading
-	if (datum[key] != undefined){
-		//map the sourceId to the current reading
-		datamap[datum.sourceId] = datum[key];
+	if (datum[datumPropName] != undefined){
+		
 		
 		//if we have not seen this sourceId before we need to graph it
-		if (sourceIds.indexOf(datum.sourceId)==-1){
+		if (datamap[datum.sourceId] == undefined){
+			
+			//map the sourceId to the current reading
+			datamap[datum.sourceId] = datum[datumPropName];
 			
 			//add a new graph for this new sourceId
-			sourceIds.push(datum.sourceId);
 			graphinit(datum.sourceId,units);
+			
 		}
+		
+		//map the sourceId to the current reading
+		datamap[datum.sourceId] = datum[datumPropName];
 	}
 };
 
@@ -94,7 +96,7 @@ function graphinit(source, units) {
         .y(function (d, i) { return y(d); });//not sure what is going on here
 
     //finds the location on the page the script is loaded is loaded to put the graph
-    var p = d3.select(".chart").append("p").text(source + " (" + key + ")");//adds a title in form of "SourceId (metric)"
+    var p = d3.select(".chart").append("p").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
     var svg = d3.select(".chart").append("svg")//adds a svg area to draw the graph
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
