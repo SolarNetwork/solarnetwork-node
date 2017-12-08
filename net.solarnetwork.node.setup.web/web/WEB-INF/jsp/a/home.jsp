@@ -32,7 +32,7 @@
 </section>
 
 <section id = "datum-activity-charts">
-	<h2>Datum Charts</h2>
+	<h2><fmt:message key="datum.charts.title"/></h2>
 	<div class="chart"></div>
 </section>
 
