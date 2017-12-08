@@ -315,11 +315,11 @@ div.plugin .desc {
 }
 
 /* charting styling */
-.x.axis line {
+.chart .x.axis line {
     shape-rendering: auto;
 }
 
-.line {
+.chart .line {
     fill: none;
     stroke: #000;
     stroke-width: 1.5px;

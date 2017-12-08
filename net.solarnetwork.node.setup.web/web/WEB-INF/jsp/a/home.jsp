@@ -33,7 +33,7 @@
 
 <section id = "datum-activity-charts">
 	<h2>Datum Charts</h2>
-	<div class="datum-charts"></div>
+	<div class="chart"></div>
 </section>
 
 <section id="datum-activity-seenprops" class="hide">
