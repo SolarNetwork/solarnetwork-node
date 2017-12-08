@@ -1,17 +1,5 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
-<style>
 
-    .x.axis line {
-        shape-rendering: auto;
-    }
-
-    .line {
-        fill: none;
-        stroke: #000;
-        stroke-width: 1.5px;
-
-    }
-</style>
 <p class="lead">
 	<fmt:message key='home.intro-loggedin'>
 		<fmt:param><sec:authentication property="principal.username" /></fmt:param>

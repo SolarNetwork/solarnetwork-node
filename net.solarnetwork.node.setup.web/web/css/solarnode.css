@@ -311,4 +311,18 @@ div.plugin .desc {
 		float: right;
 		width: auto;
 	}
+	
 }
+
+/* charting styling */
+.x.axis line {
+    shape-rendering: auto;
+}
+
+.line {
+    fill: none;
+    stroke: #000;
+    stroke-width: 1.5px;
+
+}
+
