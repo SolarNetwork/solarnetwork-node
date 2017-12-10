@@ -61,7 +61,7 @@ import net.solarnetwork.node.support.XmlServiceSupport;
 public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	/** The default value for the {@code baseUrl} property. */
-	public static final String DEFAULT_API_BASE_URL = "http://www.yr.no/";
+	public static final String DEFAULT_API_BASE_URL = "http://www.yr.no";
 
 	private String baseUrl;
 
