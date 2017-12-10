@@ -57,7 +57,6 @@ public abstract class ConfigurableYrClientService<T extends Datum> implements Id
 	public ConfigurableYrClientService() {
 		super();
 		datumCache = new ConcurrentHashMap<String, T>(4);
-		setClient(new XmlYrClient());
 	}
 
 	/**
