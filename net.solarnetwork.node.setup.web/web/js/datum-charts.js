@@ -4,7 +4,7 @@
 //one must put in the html document before loading the script
 //requires d3 https://d3js.org/d3.v3.js
 
-
+'use strict';
 SolarNode.DatumCharts = (function(){
 	//json field we are interested in
 	var datumPropName = "watts";
@@ -222,7 +222,7 @@ SolarNode.DatumCharts = (function(){
 
 	            //hack to only show 2dp accuracy probably a better way but couldn't find it
 	            svg.selectAll("g .yaxis").selectAll("g .tick").selectAll("text").each(function roundtick(d, i) {
-	                ticktext = d3.select(this).text();
+	                var ticktext = d3.select(this).text();
 
 	                
 
