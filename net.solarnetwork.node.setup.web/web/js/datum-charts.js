@@ -13,6 +13,10 @@ SolarNode.DatumCharts = (function(){
 	//This map is graphs to look up the latest reading based on their sourceId
 	var datamap = {};
 	
+	//this regex checks for positive and negative numbers that can have commas , and 0-2 decimal places
+    //NOTE this could break depending on the locale numbers are formatted in
+    var re = new RegExp('-?([0-9]|,)+(\.[0-9][0-9]?)?');	
+	
 	//https://stackoverflow.com/questions/1960473/get-all-unique-values-in-an-array-remove-duplicates
 	//This get used for deciding how many ticks on the y axis
 	function onlyUnique(value, index, self) { 
@@ -220,9 +224,7 @@ SolarNode.DatumCharts = (function(){
 	            svg.selectAll("g .yaxis").selectAll("g .tick").selectAll("text").each(function roundtick(d, i) {
 	                ticktext = d3.select(this).text();
 
-	                //this regex checks for positive and negative numbers that can have commas , and 0-2 decimal places
-	                //NOTE this could break depending on the locale numbers are formatted in
-	                var re = new RegExp('-?([0-9]|,)+(\.[0-9][0-9]?)?');
+	                
 
 	                //takes the first result which should cut off the any decimal places after 2
 	                
