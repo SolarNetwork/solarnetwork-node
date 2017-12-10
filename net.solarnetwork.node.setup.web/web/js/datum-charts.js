@@ -25,7 +25,7 @@ SolarNode.DatumCharts = (function(){
 
 	//https://stackoverflow.com/questions/7343890/standard-deviation-javascript
 	//This get used for giving the graph some white space either side of the graph
-	function StandardDeviation(numbersArr) {
+	function standardDeviation(numbersArr) {
 	    //--CALCULATE AVAREGE--
 	    var total = 0;
 	    for(var datumPropName in numbersArr) 
@@ -185,7 +185,7 @@ SolarNode.DatumCharts = (function(){
 	                //note not true standard dev of the data but gives a nice look
 	                //take the stardard dev of the unique values to get a get a nice whitespace above and below
 	                //the graph
-	                var stddev = StandardDeviation(unique);
+	                var stddev = standardDeviation(unique);
 
 	                //extends the domain using the calculated stddev
 	                ydomain = [d3.min(data) - stddev, d3.max(data) + stddev];
