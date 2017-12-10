@@ -102,10 +102,11 @@ SolarNode.DatumCharts = (function(){
 	        .y(function (d, i) { return y(d); });//not sure what is going on here
 
 	    //finds the location on the page the script is loaded is loaded to put the graph
-	    var p = d3.select(".chart").append("h3").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
-	    var svg = d3.select(".chart").append("svg")//adds a svg area to draw the graph
+	    var p = d3.select("#datum-activity-charts").append("h3").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
+	    var svg = d3.select("#datum-activity-charts").append("svg")//adds a svg area to draw the graph
 	        .attr("width", width + margin.left + margin.right)
 	        .attr("height", height + margin.top + margin.bottom)
+	        .attr("class", "chart")
 	        .style("margin-left", margin.left + "px")
 	        .append("g")
 	        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");

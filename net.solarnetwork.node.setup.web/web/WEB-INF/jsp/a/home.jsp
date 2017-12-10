@@ -33,7 +33,6 @@
 
 <section id="datum-activity-charts" class="hide">
 	<h2><fmt:message key="datum.charts.title"/></h2>
-	<div class="chart"></div>
 </section>
 
 <section id="datum-activity-seenprops" class="hide">

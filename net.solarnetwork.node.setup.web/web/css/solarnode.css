@@ -315,14 +315,19 @@ div.plugin .desc {
 }
 
 /* charting styling */
-.chart .x.axis line {
-    shape-rendering: auto;
+.chart .tick text {
+	font-size: 10px;
 }
 
 .chart .line {
-    fill: none;
-    stroke: #000;
-    stroke-width: 1.5px;
-
+	fill: none;
+	stroke: #2982cd;
+	stroke-width: 1px;
+	shape-rendering: crispedges;
 }
 
+.chart path.domain {
+	fill: none;
+	stroke: #000;
+	stroke-width 1px;
+}
