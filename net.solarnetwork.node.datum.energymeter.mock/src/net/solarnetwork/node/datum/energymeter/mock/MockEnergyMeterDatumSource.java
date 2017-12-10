@@ -61,6 +61,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	private Boolean randomness = false;
 	private Double freqDeviation = 0.0;
 	private Double voltDeviation = 0.0;
+	private Double resistanceDeviation = 0.0;
+	private Double inductanceDeviation = 0.0;
 
 	private Random rng = new Random();
 
@@ -121,6 +123,16 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		return frequency + (randomness ? freqDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
 	}
 
+	private double readResistance() {
+		return resistance
+				+ (randomness ? resistanceDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+	}
+
+	private double readInductance() {
+		return inductance
+				+ (randomness ? inductanceDeviation : 0) * Math.cos(Math.PI * rng.nextDouble());
+	}
+
 	/**
 	 * Calculates the values to feed the datum.
 	 * 
@@ -137,10 +149,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setFrequency((float) f);
 
 		// convention to use capital L for inductance reading in microhenry
-		double L = inductance / 1000000;
+		double L = readInductance() / 1000000;
 
 		// convention to use capital R for resistance
-		double R = resistance;
+		double R = readResistance();
 
 		double vmax = Math.sqrt(2) * vrms;
 
@@ -219,6 +231,14 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		this.randomness = random;
 	}
 
+	public void setResistanceDeviation(Double resistanceDeviation) {
+		this.resistanceDeviation = resistanceDeviation;
+	}
+
+	public void setInductanceDeviation(Double inductanceDeviation) {
+		this.inductanceDeviation = inductanceDeviation;
+	}
+
 	/**
 	 * Dependency injection of a Random instance to improve controllability if
 	 * needed eg unit testing.
@@ -254,6 +274,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		results.add(new BasicToggleSettingSpecifier("randomness", defaults.randomness));
 		results.add(new BasicTextFieldSettingSpecifier("voltdev", defaults.voltDeviation.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("freqdev", defaults.freqDeviation.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("resistanceDeviation",
+				defaults.resistanceDeviation.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("inductanceDeviation",
+				defaults.inductanceDeviation.toString()));
 		return results;
 	}
 }
