@@ -204,7 +204,7 @@ SolarNode.DatumCharts = (function(){
 	            }
 	            
 	            //applies the new domain
-	            y.domain(ydomain)
+	            y.domain(ydomain);
 	            
 	            // calculate a display scale for the units, e.g. kilo, mega, giga
 	            displayScale = d3.max([sn.displayScaleForValue(ydomain[0]), sn.displayScaleForValue(ydomain[1])]);
