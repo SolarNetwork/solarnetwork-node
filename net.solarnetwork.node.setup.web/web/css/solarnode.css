@@ -315,6 +315,11 @@ div.plugin .desc {
 }
 
 /* charting styling */
+
+.chart {
+	shape-rendering: crispedges;
+}
+
 .chart .tick text {
 	font-size: 10px;
 }
@@ -323,7 +328,6 @@ div.plugin .desc {
 	fill: none;
 	stroke: #2982cd;
 	stroke-width: 1px;
-	shape-rendering: crispedges;
 }
 
 .chart path.domain {
