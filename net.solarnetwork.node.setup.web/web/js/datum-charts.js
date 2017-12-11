@@ -9,6 +9,7 @@ SolarNode.DatumCharts = (function(){
 	//json field we are interested in
 	var datumPropName = "watts";
 	var units = "W";
+	var dataAxisFormat = d3.format(',.1r');
 
 	//This map is graphs to look up the latest reading based on their sourceId
 	var datamap = {};
@@ -79,6 +80,9 @@ SolarNode.DatumCharts = (function(){
 	        duration = 1000,//time for the animation 
 	        now = new Date(Date.now() - duration),//not sure what the -duration is for
 
+	        // a scale factor to apply to y axis labels
+            displayScale = 1,
+
 	        //prefill the array with the first reading
 	        data = new Array(n).fill(datamap[source]);
 
@@ -122,9 +126,14 @@ SolarNode.DatumCharts = (function(){
 	        .attr("class", "x axis")
 	        .attr("transform", "translate(0," + height + ")")
 	        .call(x.axis = d3.axisBottom().scale(x));
-
-	    svg.append("g")
+	    
+	    var yAxis = d3.axisLeft().scale(y).ticks(5).tickFormat(function(d) {
+    			return dataAxisFormat(d/displayScale) +' ' +sn.displayUnitsForScale(units, displayScale);
+        });
+	    
+	    var axisY = svg.append("g")
 	        .attr("class", "yaxis")
+	        .call(yAxis);
 	       
 	    var path = svg.append("g")
 	        .attr("clip-path", "url(#clip)")
@@ -145,7 +154,6 @@ SolarNode.DatumCharts = (function(){
 
 	            //gets the number of unique data values
 	            var numunique = unique.length;
-
 	            
 	            // update the domains
 	            now = new Date();
@@ -197,11 +205,12 @@ SolarNode.DatumCharts = (function(){
 	            
 	            //applies the new domain
 	            y.domain(ydomain)
+	            
+	            // calculate a display scale for the units, e.g. kilo, mega, giga
+	            displayScale = d3.max([sn.displayScaleForValue(ydomain[0]), sn.displayScaleForValue(ydomain[1])]);
 
 	            //sets the new ticks
-	            svg.select("g .yaxis")
-	                //the number of ticks is the minimum of the number of unique values and 5 
-	                .call(d3.axisLeft().scale(y).ticks(yticks));
+	            axisY.call(yAxis);
 
 	            //grabs the datapoint and puts it in the data array
 	            data.push(datamap[source]);
@@ -220,17 +229,6 @@ SolarNode.DatumCharts = (function(){
 
 	            // pop the old data point off the front
 	            data.shift();
-
-	            //hack to only show 2dp accuracy probably a better way but couldn't find it
-	            svg.selectAll("g .yaxis").selectAll("g .tick").selectAll("text").each(function roundtick(d, i) {
-	                var ticktext = d3.select(this).text();
-
-	                
-
-	                //takes the first result which should cut off the any decimal places after 2
-	                
-	                d3.select(this).text(re.exec(ticktext)[0]+units);
-	            });
 
 	        }).transition().on("start", function () { tick() });
 	    };
