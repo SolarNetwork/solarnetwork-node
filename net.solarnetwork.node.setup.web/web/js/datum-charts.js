@@ -88,16 +88,16 @@ SolarNode.DatumCharts = (function(){
 	        height = 120 - margin.top - margin.bottom;
 
 	    //sets the axis scales
-	    var x = d3.time.scale()
+	    var x = d3.scaleTime()
 	        .domain([now - (n - 2) * duration, now - duration])
 	        .range([0, width]);
 
-	    var y = d3.scale.linear()
+	    var y = d3.scaleLinear()
 	        .range([height, 0]);
 
 	    //draws the line for the graph (not sure how this code works at this stage)
-	    var line = d3.svg.line()
-	        .interpolate("step-after")//other possible options are linear, step-after, basis, bundle and cardinal
+	    var line = d3.line()
+	        .curve(d3.curveStepAfter)//other possible options are linear, step-after, basis, bundle and cardinal
 	        .x(function (d, i) { return x(now - (n - 1 - i) * duration); })//not sure what is going on here 
 	        .y(function (d, i) { return y(d); });//not sure what is going on here
 
@@ -120,7 +120,7 @@ SolarNode.DatumCharts = (function(){
 	    var axis = svg.append("g")
 	        .attr("class", "x axis")
 	        .attr("transform", "translate(0," + height + ")")
-	        .call(x.axis = d3.svg.axis().scale(x).orient("bottom"));
+	        .call(x.axis = d3.axisBottom().scale(x));
 
 	    svg.append("g")
 	        .attr("class", "yaxis")
@@ -133,7 +133,7 @@ SolarNode.DatumCharts = (function(){
 
 	    var transition = d3.select({}).transition()
 	        .duration(duration)
-	        .ease("linear");
+	        .ease(d3.easeLinear);
 
 	    //causes the animation of the graph to progress once called it will call itself again
 	    function tick() {
@@ -200,7 +200,7 @@ SolarNode.DatumCharts = (function(){
 	            //sets the new ticks
 	            svg.select("g .yaxis")
 	                //the number of ticks is the minimum of the number of unique values and 5 
-	                .call(d3.svg.axis().scale(y).ticks(yticks).orient("left"));
+	                .call(d3.axisLeft().scale(y).ticks(yticks));
 
 	            //grabs the datapoint and puts it in the data array
 	            data.push(datamap[source]);
@@ -231,7 +231,7 @@ SolarNode.DatumCharts = (function(){
 	                d3.select(this).text(re.exec(ticktext)[0]+units);
 	            });
 
-	        }).transition().each("start", function () { tick() });
+	        }).transition().on("start", function () { tick() });
 	    };
 
 	    //start animating the graph

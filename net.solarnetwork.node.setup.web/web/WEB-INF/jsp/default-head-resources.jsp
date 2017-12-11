@@ -24,7 +24,7 @@
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
-	/js-lib/d3.js
+	/js-lib/d3v4.js
 	/js/global.js
 	/js/global-websocket.js
 	/js/global-platform.js
