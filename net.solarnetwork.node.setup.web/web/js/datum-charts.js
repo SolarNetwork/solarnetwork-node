@@ -97,7 +97,7 @@ SolarNode.DatumCharts = (function(){
 
 	    //draws the line for the graph (not sure how this code works at this stage)
 	    var line = d3.line()
-	        .curve(d3.curveStepAfter)//other possible options are linear, step-after, basis, bundle and cardinal
+	        .curve(d3.curveStepAfter)//there are other possible values such as curveLinear, curveStepAfter, curveBasis and more
 	        .x(function (d, i) { return x(now - (n - 1 - i) * duration); })//not sure what is going on here 
 	        .y(function (d, i) { return y(d); });//not sure what is going on here
 
