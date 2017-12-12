@@ -99,12 +99,12 @@ SolarNode.DatumCharts = (function(){
 			.y(function (d, i) { return y(d); });
 
 		// append title and SVG chart elements
-		var p = d3.select("#datum-activity-charts").append("h3").text(source + " (" + datumPropName + ")");
-		var svg = d3.select("#datum-activity-charts").append("svg")
+		var container = d3.select('#datum-activity-charts-container').append('div').attr('class', 'chart-card');
+		container.append("h3").text(source + " (" + datumPropName + ")");
+		var svg = container.append("svg")
 			.attr("width", width + margin.left + margin.right)
 			.attr("height", height + margin.top + margin.bottom)
 			.attr("class", "chart")
-			.style("margin-left", margin.left + "px")
 			.append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
