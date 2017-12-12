@@ -316,7 +316,7 @@ div.plugin .desc {
 
 /* charting styling */
 
-.chart {
+.chart .axis {
 	shape-rendering: crispedges;
 }
 
