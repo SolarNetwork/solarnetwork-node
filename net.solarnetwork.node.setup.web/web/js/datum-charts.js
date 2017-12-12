@@ -7,8 +7,8 @@
 'use strict';
 SolarNode.DatumCharts = (function(){
 	//json field we are interested in
-	var datumPropName = "watts";
-	var units = "W";
+	var datumPropName = 'watts';
+	var units = 'W';
 
 	//This map is graphs to look up the latest reading based on their sourceId
 	var datamap = {};
@@ -98,27 +98,27 @@ SolarNode.DatumCharts = (function(){
 			.x(function (d, i) { return x(now - (n - 1 - i) * duration); })
 			.y(function (d, i) { return y(d); });
 
-		// append title and SVG chart elements
+		// append title and SVG chart elements inside a <div class='chart-card'>
 		var container = d3.select('#datum-activity-charts-container').append('div').attr('class', 'chart-card');
-		container.append("h4").text(source + " (" + datumPropName + ")");
-		var svg = container.append("svg")
-			.attr("width", width + margin.left + margin.right)
-			.attr("height", height + margin.top + margin.bottom)
-			.attr("class", "chart")
-			.append("g")
-			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+		container.append('h4').text(source + ' (' + datumPropName + ')');
+		var svg = container.append('svg')
+			.attr('width', width + margin.left + margin.right)
+			.attr('height', height + margin.top + margin.bottom)
+			.attr('class', 'chart')
+			.append('g')
+			.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
-		svg.append("defs").append("clipPath")
-			.attr("id", "clip")
-			.append("rect")
-			.attr("width", width)
-			.attr("height", height);
+		svg.append('defs').append('clipPath')
+			.attr('id', 'clip')
+			.append('rect')
+			.attr('width', width)
+			.attr('height', height);
 
 		var xAxis = d3.axisBottom().scale(x);
 		
-		var axisX = svg.append("g")
-			.attr("class", "x axis")
-			.attr("transform", "translate(0," + height + ")")
+		var axisX = svg.append('g')
+			.attr('class', 'x axis')
+			.attr('transform', 'translate(0,' + height + ')')
 			.call(xAxis);
 		
 		var dataAxisPrecision = 0;
@@ -128,16 +128,16 @@ SolarNode.DatumCharts = (function(){
 			return dataAxisFormat(d/displayScale) +' ' +sn.displayUnitsForScale(units, displayScale);
 		});
 
-		var axisY = svg.append("g")
-			.attr("class", "y axis")
+		var axisY = svg.append('g')
+			.attr('class', 'y axis')
 			.call(yAxis);
 
-		var path = svg.append("g")
-			.attr("clip-path", "url(#clip)")
-			.append("path")
+		var path = svg.append('g')
+			.attr('clip-path', 'url(#clip)')
+			.append('path')
 			.datum(data)
-			.attr("class", "line")
-			.attr("d", line);
+			.attr('class', 'line')
+			.attr('d', line);
 		
 		function calculateYDomain() {
 			var yDomainPadding = 0;
@@ -193,10 +193,10 @@ SolarNode.DatumCharts = (function(){
 
 			// redraw the line
 			path.datum(data)
-					.attr("d", line)
-					.attr("transform", null)
+					.attr('d', line)
+					.attr('transform', null)
 				.transition(t)
-					.attr("transform", "translate(" + x(now - (n - 1) * duration) + ")")
+					.attr('transform', 'translate(' + x(now - (n - 1) * duration) + ')')
 					.on('end', tick);
 
 			// pop the old data point off the front
