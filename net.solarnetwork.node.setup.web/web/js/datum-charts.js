@@ -48,11 +48,11 @@ SolarNode.DatumCharts = (function(){
 		var datum = JSON.parse(msg.body).data;
 
 		//check that the datum has a reading
-		if (datum[datumPropName] != undefined) {
+		if (datum[datumPropName] !== undefined) {
 			$('#datum-activity-charts').removeClass('hide');
 
 			//if we have not seen this sourceId before we need to graph it
-			if (datamap[datum.sourceId] == undefined) {
+			if (datamap[datum.sourceId] === undefined) {
 
 				//map the sourceId to the current reading
 				datamap[datum.sourceId] = datum[datumPropName];
