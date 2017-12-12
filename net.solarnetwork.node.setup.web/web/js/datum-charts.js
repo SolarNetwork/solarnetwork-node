@@ -100,7 +100,7 @@ SolarNode.DatumCharts = (function(){
 
 		// append title and SVG chart elements
 		var container = d3.select('#datum-activity-charts-container').append('div').attr('class', 'chart-card');
-		container.append("h3").text(source + " (" + datumPropName + ")");
+		container.append("h4").text(source + " (" + datumPropName + ")");
 		var svg = container.append("svg")
 			.attr("width", width + margin.left + margin.right)
 			.attr("height", height + margin.top + margin.bottom)
