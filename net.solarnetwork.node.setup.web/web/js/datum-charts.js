@@ -129,7 +129,7 @@ SolarNode.DatumCharts = (function(){
 		});
 
 		var axisY = svg.append("g")
-			.attr("class", "yaxis")
+			.attr("class", "y axis")
 			.call(yAxis);
 
 		var path = svg.append("g")
