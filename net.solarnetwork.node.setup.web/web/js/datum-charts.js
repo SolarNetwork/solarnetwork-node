@@ -13,14 +13,12 @@ SolarNode.DatumCharts = (function(){
 	//This map is graphs to look up the latest reading based on their sourceId
 	var datamap = {};
 
-	//https://stackoverflow.com/questions/1960473/get-all-unique-values-in-an-array-remove-duplicates
-	//This get used for deciding how many ticks on the y axis
+	// Array filter function for removing duplicate values
 	function onlyUnique(value, index, self) {
 		return self.indexOf(value) === index;
 	}
 
-	//https://stackoverflow.com/questions/7343890/standard-deviation-javascript
-	//This get used for giving the graph some white space either side of the graph
+	// used for giving the graph some white space either side of the graph
 	function standardDeviation(numbersArr) {
 		//--CALCULATE AVAREGE--
 		var total = 0,
@@ -41,8 +39,8 @@ SolarNode.DatumCharts = (function(){
 		return sDresult
 	}
 
-	//when a new datum comes in, this handler gets called
-	//the handler checks if the new datum has a wattage reading and
+	// when a new datum comes in, this handler gets called
+	// and checks if the new datum has a datumPropName value
 	function handleMessage(msg) {
 
 		var datum = JSON.parse(msg.body).data;
@@ -58,8 +56,7 @@ SolarNode.DatumCharts = (function(){
 				datamap[datum.sourceId] = datum[datumPropName];
 
 				//add a new graph for this new sourceId
-				graphinit(datum.sourceId,units);
-
+				graphinit(datum.sourceId, units);
 			}
 
 			//map the sourceId to the current reading
@@ -178,7 +175,6 @@ SolarNode.DatumCharts = (function(){
 				dataAxisPrecision = newDataAxisPrecision;
 				dataAxisFormat = d3.format(',.'+newDataAxisPrecision +'f');
 			}
-			
 
 			// redraw y-axis (on own, fastesr transition)
 			axisY.transition()
