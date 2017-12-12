@@ -145,9 +145,13 @@ SolarNode.DatumCharts = (function(){
 		function calculateYDomain() {
 			var yDomainPadding = 0;
 			var ydomain = [d3.min(data), d3.max(data)];
+
+			// calculate a display scale for the units, e.g. kilo, mega, giga
+			displayScale = d3.max([sn.displayScaleForValue(ydomain[0]), sn.displayScaleForValue(ydomain[1])]);
+
 			if ( ydomain[0] === ydomain[1] ) {
 				// expand the domain so the single value is in the middle vertically
-				yDomainPadding = 5;
+				yDomainPadding = displayScale;
 			} else {
 				// add a bit of padding around the edges
 				yDomainPadding = standardDeviation(data.filter(onlyUnique));
@@ -167,9 +171,6 @@ SolarNode.DatumCharts = (function(){
 			now = new Date();
 			x.domain([now - (n - 2) * duration, now - duration]);
 			y.domain(calculateYDomain());
-
-			// calculate a display scale for the units, e.g. kilo, mega, giga
-			displayScale = d3.max([sn.displayScaleForValue(y.domain()[0]), sn.displayScaleForValue(y.domain()[1])]);
 			
 			// try to display integer y-axis labels, unless range too narrow and a decimal point is required
 			var newDataAxisPrecision = ((y.domain()[1]/displayScale) - (y.domain()[0]/displayScale)) < 5 ? 1 : 0;
