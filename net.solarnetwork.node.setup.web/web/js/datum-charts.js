@@ -9,7 +9,6 @@ SolarNode.DatumCharts = (function(){
 	//json field we are interested in
 	var datumPropName = "watts";
 	var units = "W";
-	var dataAxisFormat = d3.format(',.1r');
 
 	//This map is graphs to look up the latest reading based on their sourceId
 	var datamap = {};
@@ -24,34 +23,36 @@ SolarNode.DatumCharts = (function(){
 	//This get used for giving the graph some white space either side of the graph
 	function standardDeviation(numbersArr) {
 		//--CALCULATE AVAREGE--
-		var total = 0;
-		for(var datumPropName in numbersArr)
-		   total += numbersArr[datumPropName];
+		var total = 0,
+			datumPropName;
+		for (datumPropName in numbersArr) {
+			total += numbersArr[datumPropName];
+		}
 		var meanVal = total / numbersArr.length;
 		//--CALCULATE AVAREGE--
 
 		//--CALCULATE STANDARD DEVIATION--
-		var SDprep = 0;
-		for(var datumPropName in numbersArr)
-		   SDprep += Math.pow((parseFloat(numbersArr[datumPropName]) - meanVal),2);
-		var SDresult = Math.sqrt(SDprep/numbersArr.length);
+		var sDprep = 0;
+		for (datumPropName in numbersArr) {
+			sDprep += Math.pow((parseFloat(numbersArr[datumPropName]) - meanVal), 2);
+		}
+		var sDresult = Math.sqrt(sDprep/numbersArr.length);
 		//--CALCULATE STANDARD DEVIATION--
-		return SDresult
-
+		return sDresult
 	}
 
 	//when a new datum comes in, this handler gets called
 	//the handler checks if the new datum has a wattage reading and
-	var handler = function handleMessage(msg) {
+	function handleMessage(msg) {
 
 		var datum = JSON.parse(msg.body).data;
 
 		//check that the datum has a reading
-		if (datum[datumPropName] != undefined){
+		if (datum[datumPropName] != undefined) {
 			$('#datum-activity-charts').removeClass('hide');
 
 			//if we have not seen this sourceId before we need to graph it
-			if (datamap[datum.sourceId] == undefined){
+			if (datamap[datum.sourceId] == undefined) {
 
 				//map the sourceId to the current reading
 				datamap[datum.sourceId] = datum[datumPropName];
@@ -70,40 +71,39 @@ SolarNode.DatumCharts = (function(){
 	//this code is heavily based on the last graph from https://bost.ocks.org/mike/path/
 	//apologies for the magic numbers
 	function graphinit(source, units) {
-
-
-		var n = 243,//how many sample points to have on the graph
-			duration = 1000,//time for the animation
-			now = new Date(Date.now() - duration),//not sure what the -duration is for
+		// how many sample points to have on the graph
+		var n = 243,
+			// time for the animation
+			duration = 1000,
+			
+			now = new Date(Date.now() - duration),
 
 			// a scale factor to apply to y axis labels
 			displayScale = 1,
 
-			//prefill the array with the first reading
+			// prefill the array with the first reading
 			data = new Array(n).fill(datamap[source]);
 
-		//positional styling for the graph
 		var margin = { top: 10, right: 0, bottom: 20, left: 60 },
 			width = 320 - margin.right,
 			height = 120 - margin.top - margin.bottom;
 
-		//sets the axis scales
 		var x = d3.scaleTime()
 			.domain([now - (n - 2) * duration, now - duration])
 			.range([0, width]);
 
 		var y = d3.scaleLinear()
+			.domain(calculateYDomain())
 			.range([height, 0]);
 
-		//draws the line for the graph (not sure how this code works at this stage)
 		var line = d3.line()
-			.curve(d3.curveStepAfter)//there are other possible values such as curveLinear, curveStepAfter, curveBasis and more
-			.x(function (d, i) { return x(now - (n - 1 - i) * duration); })//not sure what is going on here
-			.y(function (d, i) { return y(d); });//not sure what is going on here
+			.curve(d3.curveStepAfter)
+			.x(function (d, i) { return x(now - (n - 1 - i) * duration); })
+			.y(function (d, i) { return y(d); });
 
-		//finds the location on the page the script is loaded is loaded to put the graph
-		var p = d3.select("#datum-activity-charts").append("h3").text(source + " (" + datumPropName + ")");//adds a title in form of "SourceId (metric)"
-		var svg = d3.select("#datum-activity-charts").append("svg")//adds a svg area to draw the graph
+		// append title and SVG chart elements
+		var p = d3.select("#datum-activity-charts").append("h3").text(source + " (" + datumPropName + ")");
+		var svg = d3.select("#datum-activity-charts").append("svg")
 			.attr("width", width + margin.left + margin.right)
 			.attr("height", height + margin.top + margin.bottom)
 			.attr("class", "chart")
@@ -111,20 +111,24 @@ SolarNode.DatumCharts = (function(){
 			.append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
-		svg.append("defs").append("clipPath")//sets the svg to cuttoff drawings outside of its area
+		svg.append("defs").append("clipPath")
 			.attr("id", "clip")
 			.append("rect")
 			.attr("width", width)
 			.attr("height", height);
 
-		var axis = svg.append("g")
+		var xAxis = d3.axisBottom().scale(x);
+		
+		var axisX = svg.append("g")
 			.attr("class", "x axis")
 			.attr("transform", "translate(0," + height + ")")
-			.call(x.axis = d3.axisBottom().scale(x));
+			.call(xAxis);
+		
+		var dataAxisPrecision = 0;
+		var dataAxisFormat = d3.format(',.0f');
 
 		var yAxis = d3.axisLeft().scale(y).ticks(5).tickFormat(function(d) {
-				return dataAxisFormat(d/displayScale) +' ' +sn.displayUnitsForScale(units, displayScale);
+			return dataAxisFormat(d/displayScale) +' ' +sn.displayUnitsForScale(units, displayScale);
 		});
 
 		var axisY = svg.append("g")
@@ -135,99 +139,72 @@ SolarNode.DatumCharts = (function(){
 			.attr("clip-path", "url(#clip)")
 			.append("path")
 			.datum(data)
-			.attr("class", "line");
+			.attr("class", "line")
+			.attr("d", line);
+		
+		function calculateYDomain() {
+			var yDomainPadding = 0;
+			var ydomain = [d3.min(data), d3.max(data)];
+			if ( ydomain[0] === ydomain[1] ) {
+				// expand the domain so the single value is in the middle vertically
+				yDomainPadding = 5;
+			} else {
+				// add a bit of padding around the edges
+				yDomainPadding = standardDeviation(data.filter(onlyUnique));
+			}
+			ydomain[0] -= yDomainPadding;
+			ydomain[1] += yDomainPadding;
 
-		var transition = d3.select({}).transition()
-			.duration(duration)
-			.ease(d3.easeLinear);
-
+			return ydomain;
+		}
+		
 		//causes the animation of the graph to progress once called it will call itself again
 		function tick() {
-			transition = transition.each(function () {
+			//grabs the datapoint and puts it in the data array
+			data.push(datamap[source]);
 
-				//gets only the unique data values
-				var unique = data.filter(onlyUnique);
+			// update the domains
+			now = new Date();
+			x.domain([now - (n - 2) * duration, now - duration]);
+			y.domain(calculateYDomain());
 
-				//gets the number of unique data values
-				var numunique = unique.length;
+			// calculate a display scale for the units, e.g. kilo, mega, giga
+			displayScale = d3.max([sn.displayScaleForValue(y.domain()[0]), sn.displayScaleForValue(y.domain()[1])]);
+			
+			// try to display integer y-axis labels, unless range too narrow and a decimal point is required
+			var newDataAxisPrecision = ((y.domain()[1]/displayScale) - (y.domain()[0]/displayScale)) < 5 ? 1 : 0;
+			if ( newDataAxisPrecision !== dataAxisPrecision ) {
+				dataAxisPrecision = newDataAxisPrecision;
+				dataAxisFormat = d3.format(',.'+newDataAxisPrecision +'f');
+			}
+			
 
-				// update the domains
-				now = new Date();
-				x.domain([now - (n - 2) * duration, now - duration]);
+			// redraw y-axis (on own, fastesr transition)
+			axisY.transition()
+				.duration(250)
+				.ease(d3.easeLinear)
+				.call(yAxis);
+			
+			// create shared transition for x-axis and line
+			var t = d3.transition()
+				.duration(duration)
+				.ease(d3.easeLinear);
 
+			// redraw x-axis
+			axisX.transition(t)
+				.call(xAxis);
 
-				//this variable will represent how many "ticks" are on the y axis
-				var yticks;
-				var ydomain;
-				//if there is only 1 value of data we need to handle our ticks and domain specially
-				if (numunique == 1) {
-
-					//if the only bit of data is a zero we need to center the zero on the domain
-					//and have 1 tick
-					if (data[0] == 0){
-						//the +-10 were arbitrary just needed 0 in the middle
-						ydomain = [-10,10];
-
-						//the 1 tick will appear on the only datapoint which is 0
-						yticks = 1;
-					}else{
-
-						//the number could be positive or negative, (not tested when data is 0)
-						ydomain = [Math.min(0, data[0]), Math.max(0, data[0])];
-
-						//slightly extend the domain so the datapoint is not right at the edge of the graph
-						//1.1 was chosen for aesthetics
-						ydomain[0] = ydomain[0] * 1.1;
-						ydomain[1] = ydomain[1] * 1.1;
-
-						//the 3 ticks will show the domain range and the 1 datapoint
-						yticks = 3;
-					}
-
-				} else {
-
-					//note not true standard dev of the data but gives a nice look
-					//take the stardard dev of the unique values to get a get a nice whitespace above and below
-					//the graph
-					var stddev = standardDeviation(unique);
-
-					//extends the domain using the calculated stddev
-					ydomain = [d3.min(data) - stddev, d3.max(data) + stddev];
-
-					//5 ticks was chosen aesthetically, not too many to cause crowding on the graph
-					//not too few to stop reading the graph
-					yticks = 5;
-				}
-
-				//applies the new domain
-				y.domain(ydomain);
-
-				// calculate a display scale for the units, e.g. kilo, mega, giga
-				displayScale = d3.max([sn.displayScaleForValue(ydomain[0]), sn.displayScaleForValue(ydomain[1])]);
-
-				//sets the new ticks
-				axisY.call(yAxis);
-
-				//grabs the datapoint and puts it in the data array
-				data.push(datamap[source]);
-
-				// redraw the line
-				svg.select(".line")
+			// redraw the line
+			path.datum(data)
 					.attr("d", line)
-					.attr("transform", null);
+					.attr("transform", null)
+				.transition(t)
+					.attr("transform", "translate(" + x(now - (n - 1) * duration) + ")")
+					.on('end', tick);
 
-				// slide the x-axis left
-				axis.call(x.axis);
-
-				// slide the line left
-				path.transition()
-					.attr("transform", "translate(" + x(now - (n - 1) * duration) + ")");
-
-				// pop the old data point off the front
-				data.shift();
-
-			}).transition().on("start", function () { tick() });
-		};
+			// pop the old data point off the front
+			data.shift();
+		}
 
 		//start animating the graph
 		tick();
@@ -236,15 +213,12 @@ SolarNode.DatumCharts = (function(){
 	function subscribeAndRender(){
 		//subscribe to get datums as they come, when a datum arrives it runs the handler
 		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/*', null);
-		SolarNode.WebSocket.subscribeToTopic(topic, handler);
+		SolarNode.WebSocket.subscribeToTopic(topic, handleMessage);
 	}
 
-	return Object.defineProperties(self,{
-
+	return Object.defineProperties(self, {
 		subscribeAndRender : {value : subscribeAndRender}
-
 	});
-
 }());
 
 $(document).ready(function(){
