@@ -3,12 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus
 Bundle-Description: Communication support for the Modbus network protocol.
-Bundle-Version: 2.2.0
+Bundle-Version: 2.3.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.solarnetwork.node.io.modbus;version="2.1.0"
+Export-Package: net.solarnetwork.node.io.modbus;version="2.2.0"
 Import-Package: 
  gnu.io,
+ gnu.trove.map;version="[3.0,4.0)",
+ gnu.trove.map.hash;version="[3.0,4.0)",
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.settings;version="1.1.0",
  net.solarnetwork.node.settings.support;version="1.0.0",

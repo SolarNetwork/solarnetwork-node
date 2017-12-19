@@ -47,12 +47,16 @@ import net.wimpi.modbus.procimg.InputRegister;
  * Helper methods for working with Modbus.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public final class ModbusHelper {
 
-	private static final String UTF8_CHARSET = "UTF-8";
-	private static final String ASCII_CHARSET = "US-ASCII";
+	/** The UTF-8 character set name. */
+	public static final String UTF8_CHARSET = "UTF-8";
+
+	/** The ASCII character set name. */
+	public static final String ASCII_CHARSET = "US-ASCII";
+
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusHelper.class);
 
 	/**
@@ -75,7 +79,7 @@ public final class ModbusHelper {
 	 *        the connection factory to use, via an {@link OptionalService}
 	 * @param action
 	 *        the connection callback
-	 * @return the result of the callback, or <em>null</em> if the callback is
+	 * @return the result of the callback, or {@literal null} if the callback is
 	 *         never invoked
 	 */
 	public static <T> T execute(OptionalService<ModbusSerialConnectionFactory> connectionFactory,
@@ -544,50 +548,54 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse a 32-bit float value from raw Modbus register values. The
-	 * {@code data} array is expected to have a length of at least
-	 * {@code offset} + {@code 1}, and be arranged in big-endian order.
+	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of at least
+	 * {@code offset} + {@literal 1}, and be arranged in big-endian order.
+	 * </p>
 	 * 
 	 * @param data
 	 *        the data array
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseFloat32(final int[] data, int offset) {
 		Float result = null;
 		if ( data != null && (offset + 1) < data.length ) {
-			result = parseFloat32(data[0], data[1]);
+			result = parseFloat32(data[offset], data[offset + 1]);
 		}
 		return result;
 	}
 
 	/**
-	 * Parse a 32-bit float value from raw Modbus register values.
+	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
 	 * 
-	 * @param high
+	 * @param hi
 	 *        the high 16 bits
-	 * @param low
+	 * @param lo
 	 *        the low 16 bits
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
-	public static Float parseFloat32(final int high, final int low) {
-		Float result = Float.intBitsToFloat(((high & 0xFFFF) << 16) | (low & 0xFFFF));
+	public static Float parseFloat32(final int hi, final int lo) {
+		Long int32 = parseInt32(hi, lo);
+		Float result = Float.intBitsToFloat(int32.intValue());
 		if ( result.isNaN() ) {
-			LOG.trace("Data results in NaN: {} {}", high, low);
+			LOG.trace("Float32 data results in NaN: {} {}", hi, lo);
 			result = null;
 		}
 		return result;
 	}
 
 	/**
-	 * Parse a 32-bit float value from raw Modbus register values. The
+	 * Parse an IEEE-754 32-bit float value from raw Modbus register values. The
 	 * {@code data} array is expected to have a length of {@code 2}, and be
 	 * arranged in big-endian order.
 	 * 
 	 * @param data
 	 *        the data array
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseFloat32(final Integer[] data) {
@@ -596,9 +604,81 @@ public final class ModbusHelper {
 			result = Float.intBitsToFloat(
 					((data[0].intValue() & 0xFFFF) << 16) | (data[1].intValue() & 0xFFFF));
 			if ( result.isNaN() ) {
-				LOG.trace("Data results in NaN: {}", (Object) data);
+				LOG.trace("Float32 data results in NaN: {}", (Object) data);
 				result = null;
 			}
+		}
+		return result;
+	}
+
+	/**
+	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
+	 * values.
+	 * 
+	 * @param h1
+	 *        bits 63-48
+	 * @param h2
+	 *        bits 47-32
+	 * @param l1
+	 *        bits 31-16
+	 * @param l2
+	 *        bits 15-0
+	 * @return the parsed {@code Double}, or {@literal null} if the result is
+	 *         {@code NaN}
+	 * @since 1.5
+	 */
+	public static Double parseFloat64(final int h1, final int h2, final int l1, final int l2) {
+		Long l = parseInt64(h1, h2, l1, l2);
+		Double result = Double.longBitsToDouble(l);
+		if ( result.isNaN() ) {
+			LOG.trace("Float64 data results in NaN: {} {} {} {}", h1, h2, l1, l2);
+			result = null;
+		}
+		return result;
+	}
+
+	/**
+	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
+	 * values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of at least
+	 * {@code offset} + {@literal 3}, and be arranged in big-endian order.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed {@code Double}, or {@literal null} if not {@code data}
+	 *         is not suitable or parsed value is {@code NaN}
+	 * @since 1.5
+	 */
+	public static Double parseFloat64(final int[] data, final int offset) {
+		Double result = null;
+		if ( data != null && (offset + 3) < data.length ) {
+			result = parseFloat64(data[offset], data[offset + 1], data[offset + 2], data[offset + 3]);
+		}
+		return result;
+	}
+
+	/**
+	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
+	 * values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of {@literal 4}, and
+	 * be arranged in big-endian order.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the data array
+	 * @return the parsed {@code Double}, or {@literal null} if {@code data} is
+	 *         not suitable or parsed value is {@code NaN}
+	 * @since 1.5
+	 */
+	public static Double parseFloat64(final Integer[] data) {
+		Double result = null;
+		if ( data != null && data.length > 3 ) {
+			result = parseFloat64(data[0], data[1], data[2], data[3]);
 		}
 		return result;
 	}
@@ -621,7 +701,7 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse a 64-bit long value from raw Modbus register values.
+	 * Parse a 64-bit integer value from raw Modbus register values.
 	 * 
 	 * @param h1
 	 *        bits 63-48
@@ -631,31 +711,53 @@ public final class ModbusHelper {
 	 *        bits 31-16
 	 * @param l2
 	 *        bits 15-0
-	 * @return the parsed long
+	 * @return the parsed long, never {@literal null}
 	 */
 	public static Long parseInt64(final int h1, final int h2, final int l1, final int l2) {
-		return ((((long) h1 & 0xFFFF) << 48) | (((long) h2 & 0xFFFF) << 32)
-				| (((long) l1 & 0xFFFF) << 16) | ((long) l2 & 0xFFFF));
+		return (((h1 & 0xFFFFL) << 48) | ((h2 & 0xFFFFL) << 32) | ((l1 & 0xFFFFL) << 16)
+				| (l2 & 0xFFFFL));
 	}
 
 	/**
 	 * Parse a 32-bit long value from raw Modbus register values. The
 	 * {@code data} array is expected to have a length of at least
 	 * {@code offset} + {@code 1}, and be arranged in big-endian order.
+	 * 
+	 * <p>
 	 * <b>Note</b> a {@code Long} is returned to support unsigned 32-bit values.
+	 * </p>
 	 * 
 	 * @param data
 	 *        the data array
 	 * @param offset
 	 *        the offset in the array to parse the 32-bit value
-	 * @return the parsed long
+	 * @return the parsed long, or {@literal null} if {@code data} is
+	 *         {@literal null} or not long enough to read from
 	 */
-	public static Long parseInt32(final int[] data, int offset) {
+	public static Long parseInt32(final int[] data, final int offset) {
 		Long result = null;
 		if ( data != null && (offset + 1) < data.length ) {
-			result = ((long) ((data[offset] & 0xFFFF) << 16) | (long) (data[offset + 1] & 0xFFFF));
+			result = parseInt32(data[offset], data[offset + 1]);
 		}
 		return result;
+	}
+
+	/**
+	 * Parse a 32-bit unsigned integer value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * <b>Note</b> a {@code Long} is returned to support unsigned 32-bit values.
+	 * </p>
+	 * 
+	 * @param hi
+	 *        bits 31-16
+	 * @param lo
+	 *        bits 15-0
+	 * @return the parsed long, never {@literal null}
+	 * @since 1.5
+	 */
+	public static Long parseInt32(final int hi, final int lo) {
+		return (((hi & 0xFFFFL) << 16) | (lo & 0xFFFFL));
 	}
 
 }
