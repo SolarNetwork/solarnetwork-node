@@ -58,13 +58,12 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 
 	private PM3200Data getCurrentSample() {
@@ -191,16 +190,6 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support
 	@Override
 	public String getDisplayName() {
 		return "PM3200 Series Meter";
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
 	}
 
 	@Override

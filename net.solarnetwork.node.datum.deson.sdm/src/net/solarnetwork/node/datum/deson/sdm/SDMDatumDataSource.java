@@ -58,12 +58,11 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private MessageSource messageSource;
 	private long sampleCacheMs = 5000;
 
 	private SDMData getCurrentSample() {
@@ -194,16 +193,6 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 	@Override
 	public String getDisplayName() {
 		return "Deson SDM Series Meter";
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
 	}
 
 	@Override
