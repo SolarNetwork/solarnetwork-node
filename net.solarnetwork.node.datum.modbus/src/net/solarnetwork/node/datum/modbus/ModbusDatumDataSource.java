@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.DatumDataSource;
@@ -43,7 +45,9 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
@@ -191,6 +195,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
+
+		results.add(0, new BasicTitleSettingSpecifier("sample", getSampleMessage(sample.copy()), true));
+
+		results.addAll(getModbusNetworkSettingSpecifiers());
+
 		ModbusDatumDataSource defaults = new ModbusDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
@@ -214,6 +223,26 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				}));
 
 		return results;
+	}
+
+	private String getSampleMessage(ModbusData sample) {
+		if ( sample.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		populateDatumProperties(sample, d, propConfigs);
+
+		Map<String, ?> data = d.getSampleData();
+		if ( data == null || data.isEmpty() ) {
+			return "No data.";
+		}
+
+		StringBuilder buf = new StringBuilder();
+		buf.append(StringUtils.delimitedStringFromMap(data));
+		buf.append("; sampled at ")
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		return buf.toString();
 	}
 
 	@Override
