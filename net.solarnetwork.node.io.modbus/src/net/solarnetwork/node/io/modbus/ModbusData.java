@@ -23,8 +23,10 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Map;
-import gnu.trove.map.hash.TIntShortHashMap;
+import bak.pcj.map.IntKeyShortMap;
+import bak.pcj.map.IntKeyShortOpenHashMap;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
@@ -43,7 +45,7 @@ import gnu.trove.map.hash.TIntShortHashMap;
  */
 public class ModbusData {
 
-	private final TIntShortHashMap dataRegisters;
+	private final IntKeyShortMap dataRegisters;
 	private long dataTimestamp = 0;
 
 	/**
@@ -51,7 +53,7 @@ public class ModbusData {
 	 */
 	public ModbusData() {
 		super();
-		this.dataRegisters = new TIntShortHashMap(64);
+		this.dataRegisters = new IntKeyShortOpenHashMap(64);
 	}
 
 	/**
@@ -66,7 +68,7 @@ public class ModbusData {
 	 */
 	public ModbusData(ModbusData other) {
 		synchronized ( other.dataRegisters ) {
-			this.dataRegisters = new TIntShortHashMap(other.dataRegisters);
+			this.dataRegisters = new IntKeyShortOpenHashMap(other.dataRegisters);
 			this.dataTimestamp = other.dataTimestamp;
 		}
 	}
@@ -488,5 +490,53 @@ public class ModbusData {
 			}
 		}
 
+	}
+
+	/**
+	 * Get a string of data values, useful for debugging.
+	 * 
+	 * <p>
+	 * The generated string will contain a register address followed by two
+	 * register values per line, printed as hexidecimal integers, with a prefix
+	 * and suffix line. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * ModbusData{
+	 *      30000: 0x4141, 0x727E
+	 *      30006: 0xFFC0, 0x0000
+	 *      ...
+	 *      30344: 0x0000, 0x0000
+	 * }
+	 * </pre>
+	 * 
+	 * @return debug string
+	 */
+	public final String dataDebugString() {
+		final StringBuilder buf = new StringBuilder(getClass().getSimpleName()).append("{");
+		int[] keys = dataRegisters.keySet().toArray();
+		if ( keys.length > 0 ) {
+			Arrays.sort(keys);
+			boolean odd = false;
+			int last = -2;
+			for ( int k : keys ) {
+				odd = k % 2 == 1 ? true : false;
+				if ( k > last + 1 ) {
+					int rowAddr = odd ? k - 1 : k;
+					buf.append("\n\t").append(String.format("%5d", rowAddr)).append(": ");
+					if ( odd ) {
+						// fill in empty space for start of row
+						buf.append("      , ");
+					}
+					last = k;
+				} else if ( odd ) {
+					buf.append(", ");
+				}
+				buf.append(String.format("0x%04X", dataRegisters.get(k)));
+			}
+			buf.append("\n");
+		}
+		buf.append("}");
+		return buf.toString();
 	}
 }

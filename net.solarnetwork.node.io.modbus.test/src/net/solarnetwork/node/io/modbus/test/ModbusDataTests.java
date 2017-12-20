@@ -274,4 +274,23 @@ public class ModbusDataTests {
 
 		assertThat("Signed 16-bit integer", d.getSignedInt16(0), equalTo(s));
 	}
+
+	@Test
+	public void debugString() {
+		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { 0xABCD, 0xFEDC, 0x1122, 0x3456 }, 0);
+				m.saveDataArray(new int[] { 0x9999 }, 9); // throw in a lone odd word
+				m.saveDataArray(new int[] { 0xFF01, 0xFF02, 0xFF03, 0xFF04, 0xFF05 }, 1000); // end in odd word
+				return false;
+			}
+		});
+
+		String str = d.dataDebugString();
+		assertThat("Debug string", str, equalTo(
+				"ModbusData{\n\t    0: 0xABCD, 0xFEDC\n\t    2: 0x1122, 0x3456\n\t    8:       , 0x9999\n\t 1000: 0xFF01, 0xFF02\n\t 1002: 0xFF03, 0xFF04\n\t 1004: 0xFF05\n}"));
+	}
 }
