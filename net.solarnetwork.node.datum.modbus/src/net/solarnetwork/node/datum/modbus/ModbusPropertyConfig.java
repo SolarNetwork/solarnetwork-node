@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ public class ModbusPropertyConfig {
 	private ModbusDataType dataType;
 	private int address;
 	private int wordLength;
+	private BigDecimal unitMultiplier;
 
 	/**
 	 * Default constructor.
@@ -53,6 +55,7 @@ public class ModbusPropertyConfig {
 		dataType = ModbusDataType.Float32;
 		address = 0;
 		wordLength = 1;
+		unitMultiplier = BigDecimal.ONE;
 	}
 
 	/**
@@ -69,7 +72,26 @@ public class ModbusPropertyConfig {
 	 */
 	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
 			ModbusDataType dataType, int address) {
-		this(name, datumPropertyType, dataType, address, 0);
+		this(name, datumPropertyType, dataType, address, 0, BigDecimal.ONE);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param name
+	 *        the datum property name
+	 * @param datumPropertyType
+	 *        the datum property type
+	 * @param dataType
+	 *        the modbus data type
+	 * @param address
+	 *        the modbus register address
+	 * @param unitMultiplier
+	 *        the unit multiplier
+	 */
+	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+			ModbusDataType dataType, int address, BigDecimal unitMultiplier) {
+		this(name, datumPropertyType, dataType, address, 0, unitMultiplier);
 	}
 
 	/**
@@ -85,15 +107,18 @@ public class ModbusPropertyConfig {
 	 *        the modbus register address
 	 * @param wordLength
 	 *        the modbus word length to read
+	 * @param unitMultiplier
+	 *        the unit multiplier
 	 */
 	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
-			ModbusDataType dataType, int address, int wordLength) {
+			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier) {
 		super();
 		this.name = name;
 		this.datumPropertyType = datumPropertyType;
 		this.dataType = dataType;
 		this.address = address;
 		this.wordLength = wordLength;
+		this.unitMultiplier = unitMultiplier;
 	}
 
 	public static List<SettingSpecifier> settings(String prefix) {
@@ -125,6 +150,7 @@ public class ModbusPropertyConfig {
 		results.add(dataTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "wordLength", "1"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", "1"));
 		return results;
 	}
 
@@ -279,6 +305,33 @@ public class ModbusPropertyConfig {
 	 */
 	public void setAddress(int address) {
 		this.address = address;
+	}
+
+	/**
+	 * Get the unit multiplier.
+	 * 
+	 * @return the multiplier
+	 */
+	public BigDecimal getUnitMultiplier() {
+		return unitMultiplier;
+	}
+
+	/**
+	 * Set the unit multiplier.
+	 * 
+	 * <p>
+	 * This value represents a multiplication factor to apply to values
+	 * collected for this property so that a standardized unit is captured. For
+	 * example, a power meter might report power as <i>killowatts</i>, in which
+	 * case {@code multiplier} can be configured as {@literal .001} to convert
+	 * the value to <i>watts</i>.
+	 * </p>
+	 * 
+	 * @param unitMultiplier
+	 *        the mutliplier to set
+	 */
+	public void setUnitMultiplier(BigDecimal unitMultiplier) {
+		this.unitMultiplier = unitMultiplier;
 	}
 
 }

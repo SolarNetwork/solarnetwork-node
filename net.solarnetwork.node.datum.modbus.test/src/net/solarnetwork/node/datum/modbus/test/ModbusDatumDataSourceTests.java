@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.modbus.test;
 
+import static net.solarnetwork.node.datum.modbus.DatumPropertySampleType.Accumulating;
 import static net.solarnetwork.node.datum.modbus.DatumPropertySampleType.Instantaneous;
 import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float64;
@@ -38,6 +39,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -209,6 +211,55 @@ public class ModbusDatumDataSourceTests {
 		assertThat("Created", datum.getCreated(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
 		assertThat("Prop value", datum.getStatusSampleString(TEST_STATUS_PROP_NAME), equalTo(message));
+	}
+
+	@Test
+	public void readDatumWithUnitMultipier() throws IOException {
+		// GIVEN
+
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 0,
+						new BigDecimal("0.1")),
+				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
+						new BigDecimal("0.01")),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Accumulating, Float32, 6,
+						new BigDecimal("0.001")),
+				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Accumulating, Float64, 8,
+						new BigDecimal("0.0001")), };
+		dataSource.setPropConfigs(propConfigs);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
+				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
+		expect(modbusConnection.readInts(0, 12)).andReturn(range1);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+				equalTo(new BigDecimal("4845795.9")));
+		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+				equalTo(new BigDecimal("5843478340484.94")));
+		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+				equalTo(new BigDecimal("1.9741974")));
+		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+				equalTo(new BigDecimal("1974.19741974")));
 	}
 
 }

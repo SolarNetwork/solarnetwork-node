@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.modbus;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -138,6 +139,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					break;
 			}
 
+			if ( propVal instanceof Number && conf.getUnitMultiplier() != null ) {
+				propVal = applyUnitMultiplier((Number) propVal, conf.getUnitMultiplier());
+			}
+
 			if ( propVal != null ) {
 				switch (conf.getDatumPropertyType()) {
 					case Accumulating:
@@ -166,6 +171,26 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				}
 			}
 		}
+	}
+
+	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
+			return value;
+		}
+		BigDecimal v = null;
+		if ( value instanceof BigDecimal ) {
+			v = (BigDecimal) value;
+		} else if ( value instanceof Long ) {
+			v = new BigDecimal(value.longValue());
+		} else if ( value instanceof Integer || value instanceof Short ) {
+			v = new BigDecimal(value.intValue());
+		} else if ( value instanceof Double ) {
+			v = BigDecimal.valueOf(value.doubleValue());
+		} else {
+			// note Float falls through to here per recommended way of converting that to BigDecimal
+			v = new BigDecimal(value.toString());
+		}
+		return v.multiply(multiplier);
 	}
 
 	@Override
@@ -251,6 +276,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
+				// try to read from device as few times as possible by combining ranges of addresses
+				// into single calls, but limited to at most maxReadWordCount addresses at a time
+				// because some devices have trouble returning large word counts
 				final int maxReadLen = maxReadWordCount;
 				IntRangeSet addressRangeSet = getRegisterAddressSet(propConfigs);
 				IntRange[] ranges = addressRangeSet.ranges();
