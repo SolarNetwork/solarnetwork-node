@@ -76,7 +76,7 @@ Each property configuration contains the following settings:
 | Data Length     | For variable length data types such as strings, the number of Modbus registers to read.                 |
 | Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
 
-## Overall device settings notes
+## Datum property settings notes
 
 <dl>
 	<dt>Property</dt>
