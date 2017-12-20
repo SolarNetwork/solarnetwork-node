@@ -17,6 +17,10 @@
 <sec:authorize access="hasRole('ROLE_USER')">
 	<setup:resources type="text/css" role='USER'/>
 </sec:authorize>
+<%-- Some JS does not minimize without errors, so ignore those here. --%>
+<pack:script minify="false" context="${basePath}">
+	/js-lib/d3v4.js
+</pack:script>
 <pack:script context="${basePath}"> 
 	/js-lib/jquery-1.12.4.js
 	/js-lib/bootstrap.js
@@ -25,7 +29,6 @@
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
-	/js-lib/d3v4.js
 	/js-lib/solarnetwork-api-core.js
 	/js/global.js
 	/js/global-websocket.js
