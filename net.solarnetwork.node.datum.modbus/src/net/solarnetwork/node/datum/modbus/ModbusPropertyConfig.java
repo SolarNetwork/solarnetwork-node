@@ -103,7 +103,7 @@ public class ModbusPropertyConfig {
 
 		// drop-down menu for datumPropertyType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-				"datumPropertyTypeValue",
+				prefix + "datumPropertyTypeValue",
 				Character.toString(DatumPropertySampleType.Instantaneous.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
 		for ( DatumPropertySampleType e : DatumPropertySampleType.values() ) {
@@ -116,7 +116,7 @@ public class ModbusPropertyConfig {
 
 		// drop-down menu for dataType
 		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
-				"dataTypeValue", ModbusDataType.Float32.toString());
+				prefix + "dataTypeValue", ModbusDataType.Float32.toString());
 		Map<String, String> dataTypeTitles = new LinkedHashMap<String, String>(3);
 		for ( ModbusDataType e : ModbusDataType.values() ) {
 			dataTypeTitles.put(e.toString(), e.toString());
