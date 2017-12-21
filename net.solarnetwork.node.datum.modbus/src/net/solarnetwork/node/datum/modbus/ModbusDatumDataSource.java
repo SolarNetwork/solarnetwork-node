@@ -378,8 +378,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( isCachedSampleExpired() ) {
 			try {
 				currSample = performAction(this);
-				if ( currSample != null && log.isDebugEnabled() ) {
-					log.debug(currSample.dataDebugString());
+				if ( currSample != null && log.isTraceEnabled() ) {
+					log.trace(currSample.dataDebugString());
 				}
 			} catch ( IOException e ) {
 				throw new RuntimeException(
