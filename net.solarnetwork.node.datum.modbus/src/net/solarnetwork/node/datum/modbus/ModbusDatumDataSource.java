@@ -24,10 +24,14 @@ package net.solarnetwork.node.datum.modbus;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.joda.time.DateTime;
@@ -100,8 +104,16 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			return;
 		}
 		for ( ModbusPropertyConfig conf : propConfs ) {
+			// skip configurations without a name
+			if ( conf.getName() == null || conf.getName().length() < 1 ) {
+				continue;
+			}
 			Object propVal = null;
 			switch (conf.getDataType()) {
+				case Boolean:
+					propVal = sample.getBoolean(conf.getAddress());
+					break;
+
 				case Bytes:
 					// can't set on datum currently
 					break;
@@ -139,8 +151,13 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					break;
 			}
 
-			if ( propVal instanceof Number && conf.getUnitMultiplier() != null ) {
-				propVal = applyUnitMultiplier((Number) propVal, conf.getUnitMultiplier());
+			if ( propVal instanceof Number ) {
+				if ( conf.getUnitMultiplier() != null ) {
+					propVal = applyUnitMultiplier((Number) propVal, conf.getUnitMultiplier());
+				}
+				if ( conf.getDecimalScale() >= 0 ) {
+					propVal = applyDecimalScale((Number) propVal, conf.getDecimalScale());
+				}
 			}
 
 			if ( propVal != null ) {
@@ -173,10 +190,26 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		}
 	}
 
+	private Number applyDecimalScale(Number value, int decimalScale) {
+		if ( decimalScale < 0 ) {
+			return value;
+		}
+		BigDecimal v = bigDecimalForNumber(value);
+		if ( v.scale() > decimalScale ) {
+			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
+		}
+		return v;
+	}
+
 	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
+		BigDecimal v = bigDecimalForNumber(value);
+		return v.multiply(multiplier);
+	}
+
+	private BigDecimal bigDecimalForNumber(Number value) {
 		BigDecimal v = null;
 		if ( value instanceof BigDecimal ) {
 			v = (BigDecimal) value;
@@ -190,7 +223,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			// note Float falls through to here per recommended way of converting that to BigDecimal
 			v = new BigDecimal(value.toString());
 		}
-		return v.multiply(multiplier);
+		return v;
 	}
 
 	@Override
@@ -203,7 +236,17 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		return "Generic Modbus Device";
 	}
 
-	private static IntRangeSet getRegisterAddressSet(ModbusPropertyConfig[] configs) {
+	private static Map<ModbusFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
+			ModbusPropertyConfig[] configs) {
+		Map<ModbusFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
+				configs.length);
+		for ( ModbusPropertyConfig config : configs ) {
+			confsByFunction.computeIfAbsent(config.getFunction(), k -> new ArrayList<>(4)).add(config);
+		}
+		return confsByFunction;
+	}
+
+	private static IntRangeSet getRegisterAddressSet(List<ModbusPropertyConfig> configs) {
 		IntRangeSet set = new IntRangeSet();
 		if ( configs != null ) {
 			for ( ModbusPropertyConfig config : configs ) {
@@ -270,24 +313,58 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		return buf.toString();
 	}
 
+	private static short[] shortArrayForBitSet(BitSet set, int start, int count) {
+		short[] result = new short[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = set.get(start + i) ? (short) 1 : (short) 0;
+		}
+		return result;
+	}
+
 	@Override
 	public ModbusData doWithConnection(final ModbusConnection conn) throws IOException {
 		sample.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				// try to read from device as few times as possible by combining ranges of addresses
-				// into single calls, but limited to at most maxReadWordCount addresses at a time
-				// because some devices have trouble returning large word counts
 				final int maxReadLen = maxReadWordCount;
-				IntRangeSet addressRangeSet = getRegisterAddressSet(propConfigs);
-				IntRange[] ranges = addressRangeSet.ranges();
-				for ( IntRange range : ranges ) {
-					for ( int start = range.first(); start < range.last(); ) {
-						int len = Math.min(range.last() - start, maxReadLen);
-						int[] data = conn.readInts(start, len);
-						m.saveDataArray(data, start);
-						start += len;
+				Map<ModbusFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
+						propConfigs);
+				for ( Map.Entry<ModbusFunction, List<ModbusPropertyConfig>> me : functionMap
+						.entrySet() ) {
+					ModbusFunction function = me.getKey();
+					List<ModbusPropertyConfig> configs = me.getValue();
+					// try to read from device as few times as possible by combining ranges of addresses
+					// into single calls, but limited to at most maxReadWordCount addresses at a time
+					// because some devices have trouble returning large word counts
+					IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
+					IntRange[] ranges = addressRangeSet.ranges();
+					for ( IntRange range : ranges ) {
+						for ( int start = range.first(); start < range.last(); ) {
+							int len = Math.min(range.last() - start, maxReadLen);
+							switch (function) {
+								case ReadCoil:
+									m.saveDataArray(shortArrayForBitSet(
+											conn.readDiscreetValues(start, len), start, len), start);
+									break;
+
+								case ReadDiscreteInput:
+									m.saveDataArray(
+											shortArrayForBitSet(conn.readInputDiscreteValues(start, len),
+													start, len),
+											start);
+									break;
+
+								case ReadHoldingRegister:
+									m.saveDataArray(conn.readInts(start, len), start);
+									break;
+
+								case ReadInputRegister:
+									m.saveDataArray(conn.readInputValues(start, len), start);
+									break;
+							}
+							start += len;
+						}
 					}
 				}
 				return true;

@@ -50,6 +50,7 @@ import org.junit.Test;
 import net.solarnetwork.node.datum.modbus.DatumPropertySampleType;
 import net.solarnetwork.node.datum.modbus.ModbusDataType;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
+import net.solarnetwork.node.datum.modbus.ModbusFunction;
 import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -129,8 +130,10 @@ public class ModbusDatumDataSourceTests {
 				new ModbusPropertyConfig(TEST_SINT16_PROP_NAME, Instantaneous, SignedInt16, 1),
 				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 2),
 				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 4),
-				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200),
-				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Instantaneous, Float64, 202), };
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200,
+						BigDecimal.ONE, -1),
+				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Instantaneous, Float64, 202,
+						BigDecimal.ONE, -1), };
 		dataSource.setPropConfigs(propConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
@@ -219,13 +222,13 @@ public class ModbusDatumDataSourceTests {
 
 		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
 				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 0,
-						new BigDecimal("0.1")),
+						new BigDecimal("0.1"), -1),
 				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
-						new BigDecimal("0.01")),
+						new BigDecimal("0.01"), -1),
 				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Accumulating, Float32, 6,
-						new BigDecimal("0.001")),
+						new BigDecimal("0.001"), -1),
 				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Accumulating, Float64, 8,
-						new BigDecimal("0.0001")), };
+						new BigDecimal("0.0001"), -1), };
 		dataSource.setPropConfigs(propConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
@@ -260,6 +263,94 @@ public class ModbusDatumDataSourceTests {
 				equalTo(new BigDecimal("1.9741974")));
 		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
 				equalTo(new BigDecimal("1974.19741974")));
+	}
+
+	@Test
+	public void readDatumWithDecimalScale() throws IOException {
+		// GIVEN
+
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 0,
+						new BigDecimal("0.1"), 0),
+				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
+						new BigDecimal("0.01"), 1),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Accumulating, Float32, 6,
+						new BigDecimal("0.001"), 4),
+				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Accumulating, Float64, 8,
+						new BigDecimal("0.0001"), -1), };
+		dataSource.setPropConfigs(propConfigs);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
+				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
+		expect(modbusConnection.readInts(0, 12)).andReturn(range1);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+				equalTo(new BigDecimal("4845796")));
+		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+				equalTo(new BigDecimal("5843478340484.9")));
+		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+				equalTo(new BigDecimal("1.9742")));
+		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+				equalTo(new BigDecimal("1974.19741974")));
+	}
+
+	@Test
+	public void readDatumWithInputRegisters() throws IOException {
+		// GIVEN
+		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
+		propConfig.setName(TEST_FLOAT32_PROP_NAME);
+		propConfig.setAddress(0);
+		propConfig.setDataType(ModbusDataType.Float32);
+		propConfig.setDatumPropertyType(DatumPropertySampleType.Instantaneous);
+		propConfig.setFunction(ModbusFunction.ReadInputRegister);
+		propConfig.setDecimalScale(-1);
+		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0x44f6, 0xc651 };
+		expect(modbusConnection.readInputValues(0, 2)).andReturn(range1);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+				equalTo(new BigDecimal("1974.1974")));
 	}
 
 }

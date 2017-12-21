@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusDataType.java - 20/12/2017 1:59:32 PM
+ * ModbusFunction.java - 21/12/2017 2:48:46 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -23,48 +23,43 @@
 package net.solarnetwork.node.datum.modbus;
 
 /**
- * An enumeration of supported Modbus data types.
+ * Modbus functions.
  * 
  * @author matt
  * @version 1.0
  */
-public enum ModbusDataType {
+public enum ModbusFunction {
 
-	Boolean(1),
+	ReadCoil(1),
 
-	Int16(1),
+	ReadDiscreteInput(2),
 
-	SignedInt16(1),
+	ReadHoldingRegister(3),
 
-	Int32(2),
+	ReadInputRegister(4);
 
-	Int64(4),
+	private int code;
 
-	Float32(2),
-
-	Float64(4),
-
-	Bytes(-1),
-
-	StringUtf8(-1),
-
-	StringAscii(-1);
-
-	final private int wordLength;
-
-	private ModbusDataType(int wordLength) {
-		this.wordLength = wordLength;
+	private ModbusFunction(int code) {
+		this.code = code;
 	}
 
 	/**
-	 * Get the number of Modbus words (16-bit register values) this data type
-	 * requires.
+	 * Get the Modbus function code value.
 	 * 
-	 * @return the number of words, or {@literal -1} for an unknown length (for
-	 *         example for strings)
+	 * @return the code value
 	 */
-	public int getWordLength() {
-		return wordLength;
+	public int getCode() {
+		return code;
+	}
+
+	/**
+	 * Get a display string.
+	 * 
+	 * @return the string
+	 */
+	public String toDisplayString() {
+		return this.toString() + " (" + this.code + ")";
 	}
 
 }

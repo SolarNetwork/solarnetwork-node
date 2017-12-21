@@ -75,6 +75,7 @@ Each property configuration contains the following settings:
 | Data Type       | The type of data to expect from the read Modbus register(s).                                            |
 | Data Length     | For variable length data types such as strings, the number of Modbus registers to read.                 |
 | Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
+| Decimal Scale   | For numeric data types, a maximum number of decimal places to round decimal numbers to.                 |
 
 ## Datum property settings notes
 
@@ -101,4 +102,8 @@ Each property configuration contains the following settings:
 	base units if possible. For example if a power meter reports power in <i>kilowattts</i>
 	then a unit multiplier of <code>1000</code> can be used to convert the values into
 	<i>watts</i>.</dd>
+	<dt>Decimal Scale</dt>
+	<dd>This setting will round decimal numbers to at most this number of decimal places. Setting
+	to <code>0</code> rounds decimals to whole numbers. Setting to <code>-1</code> disables
+	rounding completely.</dd>
 </dl>

@@ -41,10 +41,12 @@ public class ModbusPropertyConfig {
 
 	private String name;
 	private DatumPropertySampleType datumPropertyType;
+	private ModbusFunction function;
 	private ModbusDataType dataType;
 	private int address;
 	private int wordLength;
 	private BigDecimal unitMultiplier;
+	private int decimalScale;
 
 	/**
 	 * Default constructor.
@@ -53,9 +55,11 @@ public class ModbusPropertyConfig {
 		super();
 		datumPropertyType = DatumPropertySampleType.Instantaneous;
 		dataType = ModbusDataType.Float32;
+		function = ModbusFunction.ReadHoldingRegister;
 		address = 0;
 		wordLength = 1;
 		unitMultiplier = BigDecimal.ONE;
+		decimalScale = 0;
 	}
 
 	/**
@@ -72,7 +76,7 @@ public class ModbusPropertyConfig {
 	 */
 	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
 			ModbusDataType dataType, int address) {
-		this(name, datumPropertyType, dataType, address, 0, BigDecimal.ONE);
+		this(name, datumPropertyType, dataType, address, 0, BigDecimal.ONE, 0);
 	}
 
 	/**
@@ -91,7 +95,29 @@ public class ModbusPropertyConfig {
 	 */
 	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
 			ModbusDataType dataType, int address, BigDecimal unitMultiplier) {
-		this(name, datumPropertyType, dataType, address, 0, unitMultiplier);
+		this(name, datumPropertyType, dataType, address, 0, unitMultiplier, 0);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param name
+	 *        the datum property name
+	 * @param datumPropertyType
+	 *        the datum property type
+	 * @param dataType
+	 *        the modbus data type
+	 * @param address
+	 *        the modbus register address
+	 * @param unitMultiplier
+	 *        the unit multiplier
+	 * @param decimalScale
+	 *        for numbers, the maximum decimal scale to support, or
+	 *        {@literal -1} for no limit
+	 */
+	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+			ModbusDataType dataType, int address, BigDecimal unitMultiplier, int decimalScale) {
+		this(name, datumPropertyType, dataType, address, 0, unitMultiplier, decimalScale);
 	}
 
 	/**
@@ -109,16 +135,22 @@ public class ModbusPropertyConfig {
 	 *        the modbus word length to read
 	 * @param unitMultiplier
 	 *        the unit multiplier
+	 * @param decimalScale
+	 *        for numbers, the maximum decimal scale to support, or
+	 *        {@literal -1} for no limit
 	 */
 	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
-			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier) {
+			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier,
+			int decimalScale) {
 		super();
 		this.name = name;
 		this.datumPropertyType = datumPropertyType;
+		this.function = ModbusFunction.ReadHoldingRegister;
 		this.dataType = dataType;
 		this.address = address;
 		this.wordLength = wordLength;
 		this.unitMultiplier = unitMultiplier;
+		this.decimalScale = decimalScale;
 	}
 
 	public static List<SettingSpecifier> settings(String prefix) {
@@ -139,6 +171,16 @@ public class ModbusPropertyConfig {
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "address", "0"));
 
+		// drop-down menu for function
+		BasicMultiValueSettingSpecifier functionSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "functionValue", ModbusFunction.ReadHoldingRegister.toString());
+		Map<String, String> functionTitles = new LinkedHashMap<String, String>(4);
+		for ( ModbusFunction e : ModbusFunction.values() ) {
+			functionTitles.put(e.toString(), e.toDisplayString());
+		}
+		functionSpec.setValueTitles(functionTitles);
+		results.add(functionSpec);
+
 		// drop-down menu for dataType
 		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "dataTypeValue", ModbusDataType.Float32.toString());
@@ -151,6 +193,7 @@ public class ModbusPropertyConfig {
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "wordLength", "1"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", "1"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale", "0"));
 		return results;
 	}
 
@@ -215,6 +258,47 @@ public class ModbusPropertyConfig {
 			return;
 		}
 		this.datumPropertyType = datumPropertyType;
+	}
+
+	/**
+	 * Get the Modbus function to use.
+	 * 
+	 * @return the Modbus function
+	 */
+	public ModbusFunction getFunction() {
+		return function;
+	}
+
+	/**
+	 * Set the Modbus function to use.
+	 * 
+	 * @param function
+	 *        the Modbus function
+	 */
+	public void setFunction(ModbusFunction function) {
+		this.function = function;
+	}
+
+	/**
+	 * Get the Modbus function to use as a string.
+	 * 
+	 * @return the Modbus function
+	 */
+	public String getFunctionValue() {
+		return function.toString();
+	}
+
+	/**
+	 * Set the Modbus function to use as a string.
+	 * 
+	 * @param function
+	 *        the Modbus function
+	 */
+	public void setFunctionValue(String function) {
+		if ( function == null ) {
+			return;
+		}
+		setFunction(ModbusFunction.valueOf(function));
 	}
 
 	/**
@@ -332,6 +416,32 @@ public class ModbusPropertyConfig {
 	 */
 	public void setUnitMultiplier(BigDecimal unitMultiplier) {
 		this.unitMultiplier = unitMultiplier;
+	}
+
+	/**
+	 * Get the decimal scale to round decimal numbers to.
+	 * 
+	 * @return the decimal scale
+	 */
+	public int getDecimalScale() {
+		return decimalScale;
+	}
+
+	/**
+	 * Set the decimal scale to round decimal numbers to.
+	 * 
+	 * <p>
+	 * This is a <i>maximum</i> scale value that decimal values should be
+	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
+	 * applied. A scale of {@literal 0} would round all decimals to integer
+	 * values.
+	 * </p>
+	 * 
+	 * @param decimalScale
+	 *        the scale to set, or {@literal -1} to disable rounding completely
+	 */
+	public void setDecimalScale(int decimalScale) {
+		this.decimalScale = decimalScale;
 	}
 
 }
