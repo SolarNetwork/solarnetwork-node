@@ -378,10 +378,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( isCachedSampleExpired() ) {
 			try {
 				currSample = performAction(this);
-				if ( currSample != null && log.isTraceEnabled() ) {
-					log.trace(currSample.dataDebugString());
+				if ( currSample != null && log.isDebugEnabled() ) {
+					log.debug(currSample.dataDebugString());
 				}
-				log.debug("Read modbus data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Communication problem reading from Modbus device " + modbusNetwork(), e);
