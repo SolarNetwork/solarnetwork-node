@@ -34,6 +34,8 @@ import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadCoilsResponse;
+import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
+import net.wimpi.modbus.msg.ReadInputDiscretesResponse;
 import net.wimpi.modbus.msg.ReadInputRegistersRequest;
 import net.wimpi.modbus.msg.ReadInputRegistersResponse;
 import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
@@ -94,8 +96,11 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet. This uses
-	 * a Modbus function code {@code 1} request.
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -112,21 +117,8 @@ public final class ModbusHelper {
 			final int count, final int unitId) {
 		BitSet result = new BitSet(addresses.length);
 		for ( int i = 0; i < addresses.length; i++ ) {
-			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-			ReadCoilsRequest req = new ReadCoilsRequest(addresses[i], 1);
-			req.setUnitID(unitId);
-			req.setHeadless();
-			trans.setRequest(req);
-			try {
-				trans.execute();
-			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
-			}
-			ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read coil {} response [{}]", addresses[i], res.getCoils());
-			}
-			result.set(i, res.getCoilStatus(0));
+			BitSet set = readDiscreteValues(conn, addresses[i], count, unitId);
+			result.or(set);
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus coil {} values: {}", addresses, result);
@@ -135,8 +127,88 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Set the value of a set of "coil" type registers. This uses a Modbus
-	 * function code {@code 5} request.
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register addresses to start reading from
+	 * @param count
+	 *        the count of registers to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return BitSet, with each index corresponding to an index in the
+	 *         <code>address</code> parameter
+	 * @since 1.5
+	 */
+	public static BitSet readDiscreteValues(SerialConnection conn, final Integer address,
+			final int count, final int unitId) {
+		BitSet result = new BitSet(count);
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
+		if ( LOG.isTraceEnabled() ) {
+			LOG.trace("Got Modbus read coil {} response [{}]", address, res.getCoils());
+		}
+		for ( int i = 0; i < res.getBitCount(); i++ ) {
+			result.set(address + i, res.getCoilStatus(i));
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read {} Modbus coil {} values: {}", count, address, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
+	 * 
+	 * @param connectionFactory
+	 *        the connection factory to obtain a connection with
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the count of registers to read with each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return BitSet, with each index corresponding to an index in the
+	 *         <code>addresses</code> parameter
+	 * @see readDiscreetValues(SerialConnection, Integer[], int, int)
+	 */
+	public static BitSet readDiscreetValues(
+			OptionalService<ModbusSerialConnectionFactory> connectionFactory, final Integer[] addresses,
+			final int count, final int unitId) {
+		return execute(connectionFactory, new ModbusConnectionCallback<BitSet>() {
+
+			@Override
+			public BitSet doInConnection(SerialConnection conn) throws IOException {
+				return readDiscreetValues(conn, addresses, count, unitId);
+			}
+
+		});
+	}
+
+	/**
+	 * Set the value of a set of "coil" type registers.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 5} request.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -172,37 +244,101 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.This uses a
-	 * Modbus function code {@code 1} request.
+	 * Get the values of a set of "input discrete" type registers, as a BitSet.
 	 * 
-	 * @param connectionFactory
-	 *        the connection factory to obtain a connection with
-	 * @param addresses
-	 *        the Modbus register addresses to read
+	 * <p>
+	 * This uses a Modbus function code {@code 2} request.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param address
+	 *        the Modbus register addresses to start reading from
 	 * @param count
-	 *        the count of registers to read with each address
+	 *        the count of registers to read
 	 * @param unitId
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
-	 * @see readDiscreetValues(SerialConnection, Integer[], int, int)
+	 *         <code>address</code> parameter
+	 * @since 1.5
 	 */
-	public static BitSet readDiscreetValues(
-			OptionalService<ModbusSerialConnectionFactory> connectionFactory, final Integer[] addresses,
+	public static BitSet readInputDiscreteValues(SerialConnection conn, final Integer address,
 			final int count, final int unitId) {
-		return execute(connectionFactory, new ModbusConnectionCallback<BitSet>() {
-
-			@Override
-			public BitSet doInConnection(SerialConnection conn) throws IOException {
-				return readDiscreetValues(conn, addresses, count, unitId);
-			}
-
-		});
+		BitSet result = new BitSet(count);
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadInputDiscretesResponse res = (ReadInputDiscretesResponse) trans.getResponse();
+		if ( LOG.isTraceEnabled() ) {
+			LOG.trace("Got Modbus read input discretes {} response [{}]", address, res.getDiscretes());
+		}
+		for ( int i = 0; i < res.getBitCount(); i++ ) {
+			result.set(address + i, res.getDiscreteStatus(i));
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read {} Modbus input discrete {} values: {}", count, address, result);
+		}
+		return result;
 	}
 
 	/**
-	 * Get the values of specific "input" type registers. This uses a Modbus
-	 * function code {@code 4} request.
+	 * Get the values of specific "input" type registers.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 4} request.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the number of Modbus "words" to read from each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @return register values, starting with {@code address} to
+	 *         {@code address + count}
+	 * @since 1.5
+	 */
+	public static int[] readInputValues(SerialConnection conn, final Integer address, final int count,
+			final int unitId) {
+		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
+		ReadInputRegistersRequest req = new ReadInputRegistersRequest(address, count);
+		req.setUnitID(unitId);
+		req.setHeadless();
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		int[] result = new int[count];
+		ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
+		for ( int w = 0; w < res.getWordCount(); w++ ) {
+			if ( LOG.isTraceEnabled() ) {
+				LOG.trace("Got Modbus read input {} response {}", address + w, res.getRegisterValue(w));
+			}
+			result[w] = res.getRegisterValue(w);
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus input registers {} values: {}", address, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Get the values of specific "input" type registers.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 4} request.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -220,23 +356,11 @@ public final class ModbusHelper {
 		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
 				(addresses == null ? 0 : addresses.length) * count);
 		for ( int i = 0; i < addresses.length; i++ ) {
-			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-			ReadInputRegistersRequest req = new ReadInputRegistersRequest(addresses[i], count);
-			req.setUnitID(unitId);
-			req.setHeadless();
-			trans.setRequest(req);
-			try {
-				trans.execute();
-			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
-			}
-			ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
-			for ( int w = 0; w < res.getWordCount(); w++ ) {
-				if ( LOG.isTraceEnabled() ) {
-					LOG.trace("Got Modbus read input {} response {}", addresses[i] + w,
-							res.getRegisterValue(w));
+			int[] data = readInputValues(conn, addresses[i], count, unitId);
+			if ( data != null ) {
+				for ( int j = 0; j < data.length; j++ ) {
+					result.put(addresses[i] + j, data[j]);
 				}
-				result.put(addresses[i] + w, res.getRegisterValue(w));
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
@@ -401,8 +525,11 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Get the raw bytes of specific registers as an array. This uses a Modbus
-	 * function code {@code 3} request.
+	 * Get the raw bytes of specific registers as an array.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the Modbus connection to use
@@ -589,9 +716,12 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse an IEEE-754 32-bit float value from raw Modbus register values. The
-	 * {@code data} array is expected to have a length of {@code 2}, and be
+	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of {@code 2}, and be
 	 * arranged in big-endian order.
+	 * </p>
 	 * 
 	 * @param data
 	 *        the data array

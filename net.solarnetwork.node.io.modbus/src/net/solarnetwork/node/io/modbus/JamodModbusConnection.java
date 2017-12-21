@@ -32,7 +32,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * 
  * @author matt
  * @version 1.0
- * @since 2.0
+ * @since 2.1
  */
 public class JamodModbusConnection implements ModbusConnection {
 
@@ -91,13 +91,28 @@ public class JamodModbusConnection implements ModbusConnection {
 	}
 
 	@Override
+	public BitSet readDiscreetValues(Integer address, int count) {
+		return ModbusHelper.readDiscreteValues(connection, address, count, unitId);
+	}
+
+	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
 		return ModbusHelper.writeDiscreetValues(connection, addresses, bits, unitId);
 	}
 
 	@Override
+	public BitSet readInputDiscreteValues(Integer address, int count) {
+		return ModbusHelper.readInputDiscreteValues(connection, address, count, unitId);
+	}
+
+	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
 		return ModbusHelper.readInputValues(connection, addresses, count, unitId);
+	}
+
+	@Override
+	public int[] readInputValues(Integer address, int count) {
+		return ModbusHelper.readInputValues(connection, address, count, unitId);
 	}
 
 	@Override

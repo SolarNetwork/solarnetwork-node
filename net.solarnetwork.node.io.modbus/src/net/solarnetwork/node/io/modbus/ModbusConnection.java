@@ -36,7 +36,7 @@ import net.solarnetwork.node.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public interface ModbusConnection {
@@ -82,6 +82,41 @@ public interface ModbusConnection {
 	BitSet readDiscreetValues(final Integer[] addresses, final int count);
 
 	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
+	 * 
+	 * @param addresses
+	 *        the 0-based Modbus register addresses to read
+	 * @param count
+	 *        the count of registers to read with each address
+	 * @return BitSet, with each index corresponding to an index starting with
+	 *         {@code address}
+	 * @since 2.1
+	 */
+	BitSet readDiscreetValues(final Integer address, final int count);
+
+	/**
+	 * Get the values of a set of "input discrete" type registers, as a
+	 * {@code BitSet}.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 2} request.
+	 * </p>
+	 * 
+	 * @param address
+	 *        the 0-based Modbus register addresses to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @return BitSet, with each index corresponding to an index starting with
+	 *         {@code address}
+	 * @since 2.1
+	 */
+	BitSet readInputDiscreteValues(final Integer address, final int count);
+
+	/**
 	 * Set the value of a set of "coil" type registers. This uses a Modbus
 	 * function code {@code 5} request.
 	 * 
@@ -107,6 +142,20 @@ public interface ModbusConnection {
 	 *         should be {@code count} values for each {@code address} read
 	 */
 	Map<Integer, Integer> readInputValues(final Integer[] addresses, final int count);
+
+	/**
+	 * Get the values of specific "input" type registers. This uses a Modbus
+	 * function code {@code 4} request.
+	 * 
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus "words" to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 * @since 2.1
+	 */
+	int[] readInputValues(final Integer address, final int count);
 
 	/**
 	 * Get the raw bytes of specific registers as an array. This uses a Modbus

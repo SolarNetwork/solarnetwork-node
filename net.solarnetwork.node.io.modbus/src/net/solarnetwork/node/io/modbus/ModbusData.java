@@ -97,10 +97,22 @@ public class ModbusData {
 	}
 
 	/**
+	 * Construct a 1-bit boolean from a data register address.
+	 * 
+	 * @param addr
+	 *        the address
+	 * @return the boolean, never {@literal null}
+	 */
+	public final Boolean getBoolean(final int addr) {
+		short s = dataRegisters.get(addr);
+		return (s != 0);
+	}
+
+	/**
 	 * Construct a 16-bit unsigned integer from a data register address.
 	 * 
 	 * @param addr
-	 * @return
+	 * @return the integer, never {@literal null}
 	 */
 	public final Integer getInt16(final int addr) {
 		short s = dataRegisters.get(addr);
@@ -111,7 +123,7 @@ public class ModbusData {
 	 * Construct a 16-bit signed integer from a data register address.
 	 * 
 	 * @param addr
-	 * @return
+	 * @return the short, never {@literal null}
 	 */
 	public final Short getSignedInt16(final int addr) {
 		return dataRegisters.get(addr);
