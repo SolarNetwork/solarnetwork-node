@@ -72,6 +72,7 @@ Each property configuration contains the following settings:
 | Property        | The name of the datum property to save the Modbus value as.                                             |
 | Property Type   | The type of datum property to use.                                                                      |
 | Modbus Address  | The starting register address to read Modbus data from (zero-based).                                    |
+| Modbus Function | The Modbus read function to execute.                                                                    |
 | Data Type       | The type of data to expect from the read Modbus register(s).                                            |
 | Data Length     | For variable length data types such as strings, the number of Modbus registers to read.                 |
 | Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
