@@ -311,4 +311,32 @@ div.plugin .desc {
 		float: right;
 		width: auto;
 	}
+	
+}
+
+/* charting styling */
+
+.chart-card {
+	float: left;
+	margin-right: 20px;
+}
+
+.chart .axis {
+	shape-rendering: crispedges;
+}
+
+.chart .tick text {
+	font-size: 10px;
+}
+
+.chart .line {
+	fill: none;
+	stroke: #2982cd;
+	stroke-width: 1px;
+}
+
+.chart path.domain {
+	fill: none;
+	stroke: #000;
+	stroke-width 1px;
 }
