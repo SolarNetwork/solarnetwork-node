@@ -26,7 +26,7 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
- * SI-60KTL-CT implementation
+ * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
  * @version 1.0
@@ -34,12 +34,13 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 public class SI60KTLCTData extends BaseKTLData {
 	@Override
 	public void populateMeasurements(GeneralNodeACEnergyDatum datum) {
-		// TODO Auto-generated method stub
+		// TODO populate the datum with values
 	}
 
 	@Override
 	public KTLData getSnapshot() {
-		return new SI60KTLCTData();// TODO copy values
+		// TODO copy values
+		return new SI60KTLCTData();
 	}
 
 	public static final int MODEL_1 = 16433;
@@ -51,7 +52,9 @@ public class SI60KTLCTData extends BaseKTLData {
 	
 
 	public static final int ADDR_DEVICE_MODEL = 0;
+	/** AC Active Power 0x001D */
 	public static final int ADDR_ACTIVE_POWER = 29;
+	/** AC Apparent Power 0x001E */
 	public static final int ADDR_APPARENT_POWER = 30;
 
 	@Override
@@ -71,10 +74,12 @@ public class SI60KTLCTData extends BaseKTLData {
 	public Integer getApparentPower() {
 		return getInteger(ADDR_APPARENT_POWER);
 	}
+	
+	// TODO add accessors to get other data.
 
 	@Override
 	public String dataDebugString() {
-		// TODO Auto-generated method stub
+		// TODO add data properties to debug string
 		return "TODO";
 	}
 

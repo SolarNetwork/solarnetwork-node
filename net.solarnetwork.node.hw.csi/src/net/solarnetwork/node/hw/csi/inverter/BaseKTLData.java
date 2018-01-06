@@ -9,8 +9,9 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 
 /**
+ * Contains the common functionality for CSI KTL inverters.
+ * 
  * @author maxieduncan
- *
  */
 public abstract class BaseKTLData implements KTLData {
 	private long inverterDataTimestamp = 0;

@@ -9,6 +9,8 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
+ * Defines CSI KTL inverter modbus settings.
+ * 
  * @author maxieduncan
  * @version 1.0
  */

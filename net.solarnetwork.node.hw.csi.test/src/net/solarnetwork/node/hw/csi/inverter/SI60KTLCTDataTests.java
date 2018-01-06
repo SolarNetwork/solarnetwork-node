@@ -65,5 +65,7 @@ public class SI60KTLCTDataTests {
 	public void getApparentPower() {
 		Assert.assertEquals(Integer.valueOf(2), data.getApparentPower());
 	}
+	
+	// TODO test other values when populated
 
 }

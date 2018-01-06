@@ -40,7 +40,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
- * with the CSI inverter.
+ * with the CSI KTL inverter.
  * 
  * <p>
  * The configurable properties of this class are:
@@ -134,7 +134,7 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 		final boolean postCapturedEvent = (currSample.getInverterDataTimestamp() >= start);
 		if ( postCapturedEvent ) {
 			KTLDatum d = new KTLDatum(currSample);
-			d.setSourceId("Main");// TODO
+			d.setSourceId("Main");// TODO review "Main" as source id
 			if ( postCapturedEvent ) {
 				// we read from the inverter
 				postDatumCapturedEvent(d);
