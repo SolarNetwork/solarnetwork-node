@@ -172,7 +172,6 @@ public class DRETargetCost {
 
 			// if true we need to increase demand
 		} else if (totalCost < settings.getDrtargetCost()) {
-			System.out.println("Debug should be here");
 			// this time we start with the cheapest devices (my reasoning is
 			// that these devices most likely have room to power on more) so we
 			// can acheive nessisary requirements with little number of
