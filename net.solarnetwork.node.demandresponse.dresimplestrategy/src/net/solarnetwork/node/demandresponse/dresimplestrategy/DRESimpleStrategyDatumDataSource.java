@@ -17,8 +17,6 @@ public class DRESimpleStrategyDatumDataSource extends DatumDataSourceSupport
 	private DRESimpleStrategy linkedInstance;
 	private String batteryMode = "Idle";
 
-	// TODO refactor how linkinstance works
-
 	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.demandresponse.dresimplestrategy";

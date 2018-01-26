@@ -102,8 +102,6 @@ public class DRETargetCost {
 			Integer wattValue = DRSupportTools.readWatts(params);
 			Integer costValue = DRSupportTools.readEnergyDepreciationCost(params);
 
-			// TODO double check you have done your maths correctly to factor in
-			// the convention of price being in KWh but using watts
 			costArray[i][0] = (costValue + newPrice) * wattValue;
 			costArray[i][1] = d;
 		}
@@ -148,8 +146,6 @@ public class DRETargetCost {
 					Double appliedenergyReduction = (wattValue - energyReduction > minValue) ? energyReduction
 							: wattValue - minValue;
 
-					System.out.println("reduceAmount" + appliedenergyReduction);
-
 					// Im annoyed by this instruction because it is only reduce
 					// and not gain
 					sendShedInstruction(d, appliedenergyReduction);
@@ -160,10 +156,6 @@ public class DRETargetCost {
 						break;
 					} else {
 						// update the cost for the next devices to calcuate with
-						// TODO ensure that if we have changed batterys this is
-						// still effective
-						// One idea is to have a method to recalcuate the entire
-						// cost all over again
 						totalCost -= appliedenergyReduction * (energyCost + settings.getEnergyCost());
 					}
 

@@ -120,9 +120,6 @@ public class MockDRConsumer extends SimpleManagedTriggerAndJobDetail implements 
 					// and turn it to an int
 					double value = Double.parseDouble(param) + 0.5;// 0.5 for
 																	// rounding
-
-					// TODO shed load should only be able to reduce to minwatts
-					// BUG
 					value = settings.getWatts() - value;
 					if (value < settings.getMinwatts()) {
 						settings.setWatts(settings.getMinwatts());

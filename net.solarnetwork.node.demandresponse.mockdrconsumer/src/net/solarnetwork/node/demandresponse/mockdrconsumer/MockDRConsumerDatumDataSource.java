@@ -93,7 +93,6 @@ public class MockDRConsumerDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		// TODO Auto-generated method stub
 		return GeneralNodeACEnergyDatum.class;
 	}
 

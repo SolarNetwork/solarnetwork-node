@@ -40,7 +40,6 @@ public class DRESimpleStrategy {
 
 	}
 
-	// TODO give this method a massive refactoring
 	protected void drupdate() {
 		numdrdevices = 0;
 		for (FeedbackInstructionHandler handler : feedbackInstructionHandlers) {
