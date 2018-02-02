@@ -28,7 +28,7 @@ import java.util.Map;
 import net.wimpi.modbus.net.SerialConnection;
 
 /**
- * Jamod implementation of {@link ModbusConnection}.
+ * Jamod serial implementation of {@link ModbusConnection}.
  * 
  * @author matt
  * @version 1.0
