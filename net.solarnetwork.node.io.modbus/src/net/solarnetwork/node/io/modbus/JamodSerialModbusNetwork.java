@@ -39,7 +39,7 @@ import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.util.SerialParameters;
 
 /**
- * Jamod implementation of {@link ModbusNetwork}.
+ * Jamod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
  * @version 1.1
