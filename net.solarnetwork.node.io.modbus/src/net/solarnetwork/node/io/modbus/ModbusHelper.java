@@ -46,7 +46,7 @@ import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.procimg.InputRegister;
 
 /**
- * Helper methods for working with Modbus.
+ * Helper methods for working with Modbus serial connection.
  * 
  * @author matt
  * @version 1.5
