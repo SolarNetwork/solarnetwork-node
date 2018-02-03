@@ -23,41 +23,27 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.util.OptionalService;
-import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusSerialTransaction;
-import net.wimpi.modbus.msg.ReadCoilsRequest;
-import net.wimpi.modbus.msg.ReadCoilsResponse;
-import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
-import net.wimpi.modbus.msg.ReadInputDiscretesResponse;
-import net.wimpi.modbus.msg.ReadInputRegistersRequest;
-import net.wimpi.modbus.msg.ReadInputRegistersResponse;
-import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
-import net.wimpi.modbus.msg.ReadMultipleRegistersResponse;
-import net.wimpi.modbus.msg.WriteCoilRequest;
-import net.wimpi.modbus.msg.WriteCoilResponse;
 import net.wimpi.modbus.net.SerialConnection;
-import net.wimpi.modbus.procimg.InputRegister;
 
 /**
  * Helper methods for working with Modbus serial connection.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public final class ModbusHelper {
 
 	/** The UTF-8 character set name. */
-	public static final String UTF8_CHARSET = "UTF-8";
+	public static final String UTF8_CHARSET = ModbusTransactionUtils.UTF8_CHARSET;
 
 	/** The ASCII character set name. */
-	public static final String ASCII_CHARSET = "US-ASCII";
+	public static final String ASCII_CHARSET = ModbusTransactionUtils.ASCII_CHARSET;
 
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusHelper.class);
 
@@ -112,18 +98,14 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>addresses</code> parameter
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readDiscreetValues(net.wimpi.modbus.io.ModbusTransaction, Integer[], int, int)}
 	 */
+	@Deprecated
 	public static BitSet readDiscreetValues(SerialConnection conn, final Integer[] addresses,
 			final int count, final int unitId) {
-		BitSet result = new BitSet(addresses.length);
-		for ( int i = 0; i < addresses.length; i++ ) {
-			BitSet set = readDiscreteValues(conn, addresses[i], count, unitId);
-			result.or(set);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus coil {} values: {}", addresses, result);
-		}
-		return result;
+		return ModbusTransactionUtils.readDiscreetValues(new ModbusSerialTransaction(conn), addresses, count,
+				unitId);
 	}
 
 	/**
@@ -144,31 +126,13 @@ public final class ModbusHelper {
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>address</code> parameter
 	 * @since 1.5
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readDiscreteValues(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static BitSet readDiscreteValues(SerialConnection conn, final Integer address,
 			final int count, final int unitId) {
-		BitSet result = new BitSet(count);
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
-		if ( LOG.isTraceEnabled() ) {
-			LOG.trace("Got Modbus read coil {} response [{}]", address, res.getCoils());
-		}
-		for ( int i = 0; i < res.getBitCount(); i++ ) {
-			result.set(address + i, res.getCoilStatus(i));
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read {} Modbus coil {} values: {}", count, address, result);
-		}
-		return result;
+		return ModbusTransactionUtils.readDiscreteValues(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -206,41 +170,22 @@ public final class ModbusHelper {
 	/**
 	 * Set the value of a set of "coil" type registers.
 	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 5} request.
-	 * </p>
+	 * <p> This uses a Modbus function code {@code 5} request. </p>
 	 * 
-	 * @param conn
-	 *        the Modbus connection to use
-	 * @param addresses
-	 *        the Modbus register addresses to read
-	 * @param bits
-	 *        a BitSet representing the value to set for each corresponding
-	 *        {@code addresses} value
-	 * @param unitId
-	 *        the Modbus unit ID to use in the read request
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
+	 * @param conn the Modbus connection to use @param addresses the Modbus
+	 * register addresses to read @param bits a BitSet representing the value to
+	 * set for each corresponding {@code addresses} value @param unitId the
+	 * Modbus unit ID to use in the read request @return BitSet, with each index
+	 * corresponding to an index in the <code>addresses</code>
+	 * parameter @deprecated use {@link
+	 * ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction,
+	 * Integer[], BitSet, int)
 	 */
+	@Deprecated
 	public static Boolean writeDiscreetValues(SerialConnection conn, final Integer[] addresses,
 			final BitSet bits, final int unitId) {
-		for ( int i = 0; i < addresses.length; i++ ) {
-			ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-			WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
-			req.setUnitID(unitId);
-			req.setHeadless();
-			trans.setRequest(req);
-			try {
-				trans.execute();
-			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
-			}
-			WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got write {} response [{}]", addresses[i], res.getCoil());
-			}
-		}
-		return Boolean.TRUE;
+		return ModbusTransactionUtils.writeDiscreetValues(new ModbusSerialTransaction(conn), addresses, bits,
+				unitId);
 	}
 
 	/**
@@ -261,31 +206,14 @@ public final class ModbusHelper {
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>address</code> parameter
 	 * @since 1.5
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readInputDiscreteValues(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static BitSet readInputDiscreteValues(SerialConnection conn, final Integer address,
 			final int count, final int unitId) {
-		BitSet result = new BitSet(count);
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadInputDiscretesResponse res = (ReadInputDiscretesResponse) trans.getResponse();
-		if ( LOG.isTraceEnabled() ) {
-			LOG.trace("Got Modbus read input discretes {} response [{}]", address, res.getDiscretes());
-		}
-		for ( int i = 0; i < res.getBitCount(); i++ ) {
-			result.set(address + i, res.getDiscreteStatus(i));
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read {} Modbus input discrete {} values: {}", count, address, result);
-		}
-		return result;
+		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -306,31 +234,13 @@ public final class ModbusHelper {
 	 * @return register values, starting with {@code address} to
 	 *         {@code address + count}
 	 * @since 1.5
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readInputValues(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static int[] readInputValues(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadInputRegistersRequest req = new ReadInputRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		int[] result = new int[count];
-		ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read input {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegisterValue(w);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input registers {} values: {}", address, result);
-		}
-		return result;
+		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -350,23 +260,13 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return map of integer addresses to corresponding integer values, there
 	 *         should be {@code count} values for each {@code address} read
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readInputValues(net.wimpi.modbus.io.ModbusTransaction, Integer[], int, int)}
 	 */
+	@Deprecated
 	public static Map<Integer, Integer> readInputValues(SerialConnection conn, final Integer[] addresses,
 			final int count, final int unitId) {
-		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
-				(addresses == null ? 0 : addresses.length) * count);
-		for ( int i = 0; i < addresses.length; i++ ) {
-			int[] data = readInputValues(conn, addresses[i], count, unitId);
-			if ( data != null ) {
-				for ( int j = 0; j < data.length; j++ ) {
-					result.put(addresses[i] + j, data[j]);
-				}
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input registers {} values: {}", addresses, result);
-		}
-		return result;
+		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), addresses, count, unitId);
 	}
 
 	/**
@@ -412,32 +312,13 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readValues(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static Integer[] readValues(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		Integer[] result = new Integer[count];
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegisterValue(w);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return ModbusTransactionUtils.readValues(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -454,32 +335,13 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readInts(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static int[] readInts(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		int[] result = new int[count];
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegisterValue(w);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return ModbusTransactionUtils.readInts(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -496,32 +358,13 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readSignedShorts(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static short[] readSignedShorts(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		short[] result = new short[count];
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegister(w).toShort();
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} shorts: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return ModbusTransactionUtils.readSignedShorts(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -541,36 +384,13 @@ public final class ModbusHelper {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readBytes(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int)}
 	 */
+	@Deprecated
 	public static byte[] readBytes(final SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		byte[] result = new byte[count * 2];
-		ModbusSerialTransaction trans = new ModbusSerialTransaction(conn);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		InputRegister[] registers = res.getRegisters();
-		if ( registers != null ) {
-
-			for ( int i = 0; i < registers.length; i++ ) {
-				if ( LOG.isTraceEnabled() ) {
-					LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
-				}
-				System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} bytes: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return ModbusTransactionUtils.readBytes(new ModbusSerialTransaction(conn), address, count, unitId);
 	}
 
 	/**
@@ -590,7 +410,10 @@ public final class ModbusHelper {
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a UTF-8 encoded string
 	 * @see #readString(SerialConnection, Integer, int, int, boolean, String)
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readUTF8String(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int, boolean)}
 	 */
+	@Deprecated
 	public static String readUTF8String(final SerialConnection conn, final Integer address,
 			final int count, final int unitId, final boolean trim) {
 		return readString(conn, address, count, unitId, trim, UTF8_CHARSET);
@@ -613,7 +436,10 @@ public final class ModbusHelper {
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a US-ASCII encoded string
 	 * @see #readString(SerialConnection, Integer, int, int, boolean, String)
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readASCIIString(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int, boolean)}
 	 */
+	@Deprecated
 	public static String readASCIIString(final SerialConnection conn, final Integer address,
 			final int count, final int unitId, final boolean trim) {
 		return readString(conn, address, count, unitId, trim, ASCII_CHARSET);
@@ -638,26 +464,14 @@ public final class ModbusHelper {
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(SerialConnection, Integer, int, int)
+	 * @deprecated use
+	 *             {@link ModbusTransactionUtils#readString(net.wimpi.modbus.io.ModbusTransaction, Integer, int, int, boolean, String)}
 	 */
+	@Deprecated
 	public static String readString(final SerialConnection conn, final Integer address, final int count,
 			final int unitId, final boolean trim, final String charsetName) {
-		final byte[] bytes = readBytes(conn, address, count, unitId);
-		String result = null;
-		if ( bytes != null ) {
-			try {
-				result = new String(bytes, charsetName);
-				if ( trim ) {
-					result = result.trim();
-				}
-			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e);
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input register {} count {} string: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return ModbusTransactionUtils.readString(new ModbusSerialTransaction(conn), address, count, unitId, trim,
+				charsetName);
 	}
 
 	/**

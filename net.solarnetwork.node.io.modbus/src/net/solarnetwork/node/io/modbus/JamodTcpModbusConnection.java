@@ -1,7 +1,7 @@
 /* ==================================================================
- * JamodModbusConnection.java - Jul 29, 2014 12:58:25 PM
+ * JamodTcpModbusConnection.java - 3/02/2018 8:30:47 AM
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2018 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -25,52 +25,54 @@ package net.solarnetwork.node.io.modbus;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
-import net.wimpi.modbus.io.ModbusSerialTransaction;
-import net.wimpi.modbus.net.SerialConnection;
+import net.wimpi.modbus.io.ModbusTCPTransaction;
+import net.wimpi.modbus.net.TCPMasterConnection;
 
 /**
- * Jamod serial implementation of {@link ModbusConnection}.
+ * Jamod TCP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.1
- * @since 2.1
+ * @version 1.0
+ * @since 2.4
  */
-public class JamodModbusConnection implements ModbusConnection {
+public class JamodTcpModbusConnection implements ModbusConnection {
 
-	private final SerialConnection connection;
+	private final TCPMasterConnection connection;
 	private final int unitId;
 
-	public JamodModbusConnection(SerialConnection conn, int unitId) {
+	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId) {
 		super();
 		this.connection = conn;
 		this.unitId = unitId;
-	}
-
-	final SerialConnection getSerialConnection() {
-		return connection;
 	}
 
 	@Override
 	public String toString() {
 		String portName;
 		try {
-			portName = connection.getSerialPort().getName();
+			portName = connection.getAddress().toString() + ':' + connection.getPort();
 		} catch ( RuntimeException e ) {
 			portName = "UNKNOWN";
 		}
-		return "JamodModbusConnection{port=" + portName + ",unit=" + unitId + '}';
+		return "JamodTcpModbusConnection{host=" + portName + ",unit=" + unitId + '}';
 	}
 
 	@Override
-	public final int getUnitId() {
+	protected void finalize() throws Throwable {
+		close();
+		super.finalize();
+	}
+
+	@Override
+	public int getUnitId() {
 		return unitId;
 	}
 
 	@Override
 	public void open() throws IOException {
-		if ( !connection.isOpen() ) {
+		if ( !connection.isConnected() ) {
 			try {
-				connection.open();
+				connection.connect();
 			} catch ( IOException e ) {
 				throw e;
 			} catch ( Exception e ) {
@@ -81,78 +83,71 @@ public class JamodModbusConnection implements ModbusConnection {
 
 	@Override
 	public void close() {
-		if ( connection.isOpen() ) {
+		if ( connection.isConnected() ) {
 			connection.close();
 		}
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readDiscreetValues(new ModbusSerialTransaction(connection), addresses, count,
+		return ModbusTransactionUtils.readDiscreetValues(new ModbusTCPTransaction(connection), addresses, count,
 				unitId);
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer address, int count) {
-		return ModbusTransactionUtils.readDiscreteValues(new ModbusSerialTransaction(connection), address, count,
+		return ModbusTransactionUtils.readDiscreteValues(new ModbusTCPTransaction(connection), address, count,
 				unitId);
 	}
 
 	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		return ModbusTransactionUtils.writeDiscreetValues(new ModbusSerialTransaction(connection), addresses, bits,
+		return ModbusTransactionUtils.writeDiscreetValues(new ModbusTCPTransaction(connection), addresses, bits,
 				unitId);
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(Integer address, int count) {
-		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusSerialTransaction(connection), address,
-				count, unitId);
+		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusTCPTransaction(connection), address, count,
+				unitId);
 	}
 
 	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(connection), addresses, count,
+		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), addresses, count,
 				unitId);
 	}
 
 	@Override
 	public int[] readInputValues(Integer address, int count) {
-		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(connection), address, count,
-				unitId);
+		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), address, count, unitId);
 	}
 
 	@Override
 	public byte[] readBytes(Integer address, int count) {
-		return ModbusTransactionUtils.readBytes(new ModbusSerialTransaction(connection), address, count, unitId);
+		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), address, count, unitId);
 	}
 
 	@Override
 	public String readString(Integer address, int count, boolean trim, String charsetName) {
-		return ModbusTransactionUtils.readString(new ModbusSerialTransaction(connection), address, count, unitId,
-				trim, charsetName);
+		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), address, count, unitId, trim,
+				charsetName);
 	}
 
 	@Override
 	public int[] readInts(Integer address, int count) {
-		return ModbusTransactionUtils.readInts(new ModbusSerialTransaction(connection), address, count, unitId);
+		return ModbusTransactionUtils.readInts(new ModbusTCPTransaction(connection), address, count, unitId);
 	}
 
 	@Override
 	public short[] readSignedShorts(Integer address, int count) {
-		return ModbusTransactionUtils.readSignedShorts(new ModbusSerialTransaction(connection), address, count,
+		return ModbusTransactionUtils.readSignedShorts(new ModbusTCPTransaction(connection), address, count,
 				unitId);
 	}
 
 	@Override
 	public Integer[] readValues(Integer address, int count) {
-		return ModbusTransactionUtils.readValues(new ModbusSerialTransaction(connection), address, count, unitId);
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
+		return ModbusTransactionUtils.readValues(new ModbusTCPTransaction(connection), address, count, unitId);
 	}
 
 }

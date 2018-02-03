@@ -27,11 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -42,20 +37,20 @@ import net.wimpi.modbus.util.SerialParameters;
  * Jamod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
-public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifierProvider {
+public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
 	private SerialParametersBean serialParams = getDefaultSerialParametersInstance();
-	private String uid = "Serial Port";
-	private String groupUID;
-	private long timeout = 10L;
-	private TimeUnit unit = TimeUnit.SECONDS;
-	private MessageSource messageSource;
 
-	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
-	private final Logger log = LoggerFactory.getLogger(getClass());
+	/**
+	 * Constructor.
+	 */
+	public JamodSerialModbusNetwork() {
+		super();
+		setUid("Serial Port");
+	}
 
 	private static SerialParametersBean getDefaultSerialParametersInstance() {
 		SerialParametersBean params = new SerialParametersBean();
@@ -71,12 +66,13 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 	}
 
 	@Override
-	public String toString() {
-		return "JamodSerialModbusNetwork{port=" + serialParams.getPortName() + '}';
+	protected String getNetworkDescription() {
+		return serialParams.getPortName();
 	}
 
 	@Override
 	public String getUID() {
+		String uid = super.getUID();
 		if ( uid != null ) {
 			return uid;
 		}
@@ -148,42 +144,6 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 		}
 	}
 
-	/**
-	 * Acquire the port lock, returning if lock acquired.
-	 * 
-	 * @throws LockTimeoutException
-	 *         if the lock cannot be obtained
-	 */
-	private void acquireLock() throws LockTimeoutException {
-		if ( lock.isLocked() ) {
-			log.debug("Port {} lock already acquired", serialParams.getPortName());
-			return;
-		}
-		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}",
-				new Object[] { serialParams.getPortName(), timeout, unit });
-		try {
-			if ( lock.tryLock(timeout, unit) ) {
-				log.debug("Acquired port {} lock", serialParams.getPortName());
-				return;
-			}
-			log.debug("Timeout acquiring port {} lock", serialParams.getPortName());
-		} catch ( InterruptedException e ) {
-			log.debug("Interrupted waiting for port {} lock", serialParams.getPortName());
-		}
-		throw new LockTimeoutException("Could not acquire port " + serialParams.getPortName() + " lock");
-	}
-
-	/**
-	 * Release the lock previously obtained via {@link #acquireLock()}. This
-	 * method is safe to call even if the lock has already been released.
-	 */
-	private void releaseLock() {
-		if ( lock.isLocked() ) {
-			log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
-			lock.unlock();
-		}
-	}
-
 	// SettingSpecifierProvider
 
 	@Override
@@ -201,18 +161,14 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 		return getDefaultSettingSpecifiers();
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		JamodSerialModbusNetwork defaults = new JamodSerialModbusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.uid)));
+		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				defaults.serialParams.getPortName()));
-		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		results.add(
+				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate",
 				String.valueOf(defaults.serialParams.getBaudRate())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.databits",
@@ -246,41 +202,27 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 		this.serialParams = serialParams;
 	}
 
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	public long getTimeout() {
-		return timeout;
-	}
-
-	public void setTimeout(long timeout) {
-		this.timeout = timeout;
-	}
-
+	/**
+	 * Get the timeout unit.
+	 * 
+	 * @return the unit
+	 * @deprecated use {@link #getTimeoutUnit()}
+	 */
+	@Deprecated
 	public TimeUnit getUnit() {
-		return unit;
+		return getTimeoutUnit();
 	}
 
+	/**
+	 * SEt the timeout unit.
+	 * 
+	 * @param unit
+	 *        the unit to set
+	 * @deprecated use {@link #setTimeoutUnit(TimeUnit)}
+	 */
+	@Deprecated
 	public void setUnit(TimeUnit unit) {
-		this.unit = unit;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
+		setTimeoutUnit(unit);
 	}
 
 }
