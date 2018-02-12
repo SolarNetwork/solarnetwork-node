@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.xml.sax.InputSource;
 import openadr.model.v20b.OadrPayload;
+import openadr.model.v20b.ObjectFactory;
 
 public class TopNodeConnection {
 
@@ -25,6 +26,10 @@ public class TopNodeConnection {
 		headers = new HttpHeaders();
 		rest = new RestTemplate();
 		headers.setContentType(MediaType.TEXT_XML);
+
+		//Require a class loader when using OSGI 
+		//https://stackoverflow.com/a/1043807
+		ClassLoader cl = ObjectFactory.class.getClassLoader();
 		try {
 			jaxbContext = JAXBContext.newInstance("openadr.model.v20b:" + "openadr.model.v20b.atom:"
 					+ "openadr.model.v20b.currency:" + "openadr.model.v20b.ei:"
@@ -32,7 +37,7 @@ public class TopNodeConnection {
 					+ "openadr.model.v20b.greenbutton:" + "openadr.model.v20b.power:"
 					+ "openadr.model.v20b.pyld:" + "openadr.model.v20b.siscale:"
 					+ "openadr.model.v20b.strm:" + "openadr.model.v20b.xcal:"
-					+ "openadr.model.v20b.xmldsig:" + "openadr.model.v20b.xmldsig11");
+					+ "openadr.model.v20b.xmldsig:" + "openadr.model.v20b.xmldsig11", cl);
 
 			marshaller = jaxbContext.createMarshaller();
 		} catch ( JAXBException e ) {
@@ -40,7 +45,8 @@ public class TopNodeConnection {
 		}
 	}
 
-	public OadrPayload postPayload(String url, OadrPayload payload) {
+	//I assume I have to synchronize this method to prevent trying to connect at the same time
+	public synchronized OadrPayload postPayload(String url, OadrPayload payload) {
 		StringWriter out = new StringWriter();
 		try {
 			marshaller.marshal(payload, out);

@@ -17,7 +17,8 @@ public class OadrQueryRegistrationGenerator extends OadrPayloadGenerator {
 
 		//TODO check if profile name and scheme version are the same thing
 		queryReg.setSchemaVersion(params.getProfileName());
-		return null;
+
+		return payload;
 
 	}
 }

@@ -16,11 +16,11 @@ public abstract class OadrParams {
 	private int modificationNumber;
 	private String eventID;
 
-	private OadrTransportType transportType;
-	private String profileName;
-	private Boolean reportOnly;
-	private Boolean xmlSignature;
-	private Boolean httpPullModel;
+	private OadrTransportType transportType = OadrTransportType.SIMPLE_HTTP;
+	private String profileName = "2.0b";
+	private Boolean reportOnly = false;
+	private Boolean xmlSignature = false;
+	private Boolean httpPullModel = true;
 
 	public String getVenName() {
 		return venName;

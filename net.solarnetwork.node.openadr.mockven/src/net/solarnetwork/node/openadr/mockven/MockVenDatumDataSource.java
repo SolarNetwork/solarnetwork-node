@@ -25,12 +25,10 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		if ( mockVen == null ) {
-			mockVen = new MockVen();
-		}
-		mockVen.pollAndRespond();
 
 		// I don't understand how to configure in OSGI how to do a job so instead we will be using this to summon the MockVen
+		runMockVen();
+
 		return null;
 	}
 
@@ -84,6 +82,18 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 
 	public void setVtnName(String vtnName) {
 		this.vtnName = vtnName;
+	}
+
+	// I don't understand how to configure in OSGI how to do a job so instead we will be using this to summon the MockVen
+	//this gets called when requesting a new datum
+	private void runMockVen() {
+		if ( mockVen == null ) {
+			mockVen = new MockVen();
+		}
+		mockVen.setVenID(venID);
+		mockVen.setVtnURL(vtnAddress);
+		mockVen.setVenName(venName);
+		mockVen.pollAndRespond();
 	}
 
 }
