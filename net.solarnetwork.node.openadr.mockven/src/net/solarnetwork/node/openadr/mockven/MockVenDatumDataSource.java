@@ -53,9 +53,13 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
-		results.add(new BasicTextFieldSettingSpecifier("venName", null));
+		//default names used by EPRI's VEN and VTN
+		//see results.add(new BasicTextFieldSettingSpecifier("vtnName", "EPRI"));
+		//results.add(new BasicTextFieldSettingSpecifier("vtnName", "EPRI"));
+		results.add(new BasicTextFieldSettingSpecifier("venName", "Test_VEN_Name"));
+		results.add(new BasicTextFieldSettingSpecifier("vtnName", "EPRI"));
+
 		results.add(new BasicTextFieldSettingSpecifier("vtnAddress", null));
-		results.add(new BasicTextFieldSettingSpecifier("vtnName", null));
 		return results;
 	}
 
