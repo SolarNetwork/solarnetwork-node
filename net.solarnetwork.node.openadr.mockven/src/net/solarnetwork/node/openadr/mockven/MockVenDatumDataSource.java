@@ -9,6 +9,14 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 
+/**
+ * 
+ * I would prefer is this plugin did not have a datum data source however it was
+ * the easiest way for me to achieve
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class MockVenDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
 
@@ -46,7 +54,6 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 		results.add(new BasicTextFieldSettingSpecifier("venName", null));
-		results.add(new BasicTextFieldSettingSpecifier("venID", null));
 		results.add(new BasicTextFieldSettingSpecifier("vtnAddress", null));
 		results.add(new BasicTextFieldSettingSpecifier("vtnName", null));
 		return results;
@@ -90,7 +97,6 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 		if ( mockVen == null ) {
 			mockVen = new MockVen();
 		}
-		mockVen.setVenID(venID);
 		mockVen.setVtnURL(vtnAddress);
 		mockVen.setVenName(venName);
 		mockVen.pollAndRespond();

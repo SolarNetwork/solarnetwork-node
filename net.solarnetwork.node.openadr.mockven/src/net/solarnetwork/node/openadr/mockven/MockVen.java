@@ -1,20 +1,20 @@
 
 package net.solarnetwork.node.openadr.mockven;
 
-import openadr.model.v20b.OadrCreatedEvent;
 import openadr.model.v20b.OadrCreatedPartyRegistration;
 import openadr.model.v20b.OadrDistributeEvent;
 import openadr.model.v20b.OadrPayload;
-import openadr.model.v20b.OadrPoll;
 import openadr.model.v20b.OadrSignedObject;
-import openadr.model.v20b.ei.EiResponse;
-import openadr.model.v20b.ei.EventDescriptor;
-import openadr.model.v20b.ei.EventResponses.EventResponse;
-import openadr.model.v20b.ei.OptTypeType;
-import openadr.model.v20b.ei.QualifiedEventID;
-import openadr.model.v20b.ei.ResponseCode;
-import openadr.model.v20b.pyld.EiCreatedEvent;
 
+/**
+ * 
+ * Class to simulate a Virtual End Node (VEN). This class is designed to talk to
+ * a VTN via OpenADR 2.0b
+ * 
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class MockVen extends OadrParams {
 
 	private boolean registered = false;
@@ -26,81 +26,57 @@ public class MockVen extends OadrParams {
 	}
 
 	@Override
-	public void setVenID(String venID) {
-		if ( !venID.equals(getVenID()) ) {
-			registered = false;
-		}
-		super.setVenID(venID);
-	}
-
-	@Override
 	public void setVenName(String venName) {
+		//if this parameter changes we assume we are no longer registered
 		if ( !venName.equals(getVenName()) ) {
 			registered = false;
 		}
 		super.setVenName(venName);
 	}
 
-	public boolean isRegisterd() {
-
-		//this should query registration
-		return registered;
-	}
-
 	public void setVtnURL(String url) {
-		//ensure the URL ends with a / as we will be needing to call subdomains
+		//ensure the URL ends with a / as we will be needing to call subdomains from OadrSubDomains
 		if ( !url.endsWith("/") ) {
 			url = url + "/";
 		}
+		//if this parameter changes we assume we are no longer registered
+		if ( !url.equals(this.url) ) {
+			registered = false;
+		}
+
 		this.url = url;
 	}
 
-	//Polls the VTN and responds to events
+	/**
+	 * sends a OadrPoll message to the VTN and acts according to the message
+	 * sent back
+	 */
 	public void pollAndRespond() {
+
+		if ( registered == false ) {
+			queryAndRegister();
+		}
+
 		OadrSignedObject response = pollVTN().getOadrSignedObject();
+
+		//currently the only supported response is for a OadrDistrubuteEvent
 		if ( response.getOadrDistributeEvent() != null ) {
-			//would it be better to have the response behavior expendable? 
-			//I would say probably but for now lets hardcode some behavior
-			//TODO
 			respondToDistributeEvent(response.getOadrDistributeEvent());
 		}
 	}
 
-	//in a good design I guess this would be modifiable to change response behavior 
-	//I need to figure out the best class structure for not but for now lets hardcode
-	//TODO
-	private void respondToDistributeEvent(OadrDistributeEvent event) {
-		//I should be using a generator but for now leave it here
-		//I currently don't have a pattern for passing in values to a generator 
-		//TODO
+	/**
+	 * The
+	 * 
+	 * @param event
+	 */
+	public void respondToDistributeEvent(OadrDistributeEvent event) {
 
-		//NOTE HARDCODED FOR ONE EVENT
-		EventDescriptor params = event.getOadrEvents().get(0).getEiEvent().getEventDescriptor();
-		String eventID = params.getEventID();
-		Long modNum = params.getModificationNumber();
-		String requestId = event.getRequestID();
+		//I don't think it makes sense for the decision to opt in to be in the generator
+		OadrCreatedEventGenerator generator = new OadrCreatedEventGenerator();
+		OadrPayload payload = generator.createPayload(this, event);
 
-		//we have received and event 
-		OadrPayload payload = new OadrPayload();
-		OadrSignedObject signedObject = new OadrSignedObject();
-		OadrCreatedEvent createdEvent = new OadrCreatedEvent();
-		payload.setOadrSignedObject(signedObject.withOadrCreatedEvent(createdEvent));
-
-		createdEvent.setSchemaVersion(getProfileName());
-		EiCreatedEvent eiCreatedEvent = new EiCreatedEvent();
-		eiCreatedEvent.setVenID(getVenID());
-
-		EiResponse eiResponse = new EiResponse();
-		eiResponse.setRequestID(requestId);//check that is not from event 
-		eiResponse.setResponseCode(new ResponseCode().withValue("200"));
-
-		eiCreatedEvent.setEiResponse(eiResponse);
-
-		EventResponse eventResponse = new EventResponse();
-		eventResponse.setOptType(OptTypeType.OPT_IN);
-		eventResponse.setQualifiedEventID(
-				new QualifiedEventID().withEventID(eventID).withModificationNumber(modNum));
-		//eiCreatedEvent.setEventResponses(value);
+		OadrPayload response = connection.postPayload(url + OadrSubDomains.EiEvent, payload);
 
 	}
 
@@ -116,19 +92,9 @@ public class MockVen extends OadrParams {
 			queryAndRegister();
 		}
 
-		if ( registered == false ) {
-			throw new RuntimeException("Failed at registering with VTN");
-		}
-		//this should be in its own generator
-		//TODO move this code
-		OadrPayload payload = new OadrPayload();
-		OadrSignedObject signedObject = new OadrSignedObject();
-		OadrPoll poll = new OadrPoll();
-		payload.withOadrSignedObject(signedObject.withOadrPoll(poll));
+		OadrPollGenerator generator = new OadrPollGenerator();
 
-		//These values should be set from the registration
-		poll.setVenID(this.getVenID());
-		poll.setSchemaVersion(this.getProfileName());
+		OadrPayload payload = generator.createPayload(this);
 
 		OadrPayload response = connection.postPayload(url + OadrSubDomains.OadrPoll, payload);
 		return response;
@@ -141,7 +107,6 @@ public class MockVen extends OadrParams {
 		OadrPayload payload = payloadGen.createPayload(this);
 
 		//should have better error handling.
-		System.out.println(url + OadrSubDomains.EiRegisterParty);
 		OadrPayload response = connection.postPayload(url + OadrSubDomains.EiRegisterParty, payload);
 		OadrCreatedPartyRegistration partyReg = response.getOadrSignedObject()
 				.getOadrCreatedPartyRegistration();
@@ -158,7 +123,7 @@ public class MockVen extends OadrParams {
 			registered = true;
 			//skip register report for now
 		} else {
-			//something went wrong 
+			throw new RuntimeException("Failed at registering with VTN");
 		}
 	}
 
