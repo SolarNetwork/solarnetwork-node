@@ -7,7 +7,7 @@ import openadr.model.v20b.OadrSignedObject;
 
 public class OadrQueryRegistrationGenerator extends OadrPayloadGenerator {
 
-	OadrPayload createPayload(OadrParams params) {
+	public OadrPayload createPayload(OadrParams params) {
 		OadrPayload payload = new OadrPayload();
 		OadrSignedObject signedObject = new OadrSignedObject();
 		OadrQueryRegistration queryReg = new OadrQueryRegistration();

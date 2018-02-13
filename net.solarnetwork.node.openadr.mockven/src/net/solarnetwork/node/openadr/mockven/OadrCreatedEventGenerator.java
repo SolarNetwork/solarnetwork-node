@@ -16,7 +16,7 @@ import openadr.model.v20b.pyld.EiCreatedEvent;
 
 public class OadrCreatedEventGenerator {
 
-	OadrPayload createPayload(OadrParams params, OadrDistributeEvent event) {
+	public OadrPayload createPayload(OadrParams params, OadrDistributeEvent event) {
 		//NOTE HARDCODED FOR ONE EVENT
 		EventDescriptor eventParams = event.getOadrEvents().get(0).getEiEvent().getEventDescriptor();
 		String eventID = eventParams.getEventID();
@@ -40,6 +40,7 @@ public class OadrCreatedEventGenerator {
 		eiCreatedEvent.setEiResponse(eiResponse);
 
 		EventResponse eventResponse = new EventResponse();
+
 		eventResponse.setOptType(OptTypeType.OPT_IN);
 		eventResponse.setQualifiedEventID(
 				new QualifiedEventID().withEventID(eventID).withModificationNumber(modNum));
@@ -52,4 +53,5 @@ public class OadrCreatedEventGenerator {
 
 		return payload;
 	}
+
 }

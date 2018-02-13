@@ -32,16 +32,16 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
-	<!-- publish a "component factory" so our Foobar Inverter appears in the settings GUI -->
+	<!-- publish a "component factory" so our MockVen appears in the settings GUI -->
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Foobar Power"/>
+			<property name="displayName" value="OpenADR Mock Virtual End Node"/>
 			<property name="factoryUID" value="net.solarnetwork.node.openadr.mockven"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 
-	<!-- publish a "service factory" that each Foobar Inverter component instance can be
+	<!-- publish a "service factory" that each MockVen instance can be
 	     configured in the GUI, along with a periodic job to collect datum from it -->
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.openadr.mockven" autowire-on-update="true">
 		<osgix:interfaces>
@@ -58,14 +58,14 @@
 			     we define a cron style trigger, that by default runs once/minute -->
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="foobarPowerDatumLoggerTrigger"/>
+					<property name="name" value="mockvenPowerDatumLoggerTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
 
-			<!-- we can also publish the FoobarDatumDataSource instance itself as a service
+			<!-- we can also publish the MockVenDatumDataSource instance itself as a service
 			     by configuring serviceProviderConfigurations here... this is optional but
 			     generally a good idea -->
 			<property name="serviceProviderConfigurations">
@@ -90,10 +90,10 @@
 			<!-- the jobDetail defines what job should be executed periodically by the
 			     trigger; here we define a  net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob
 			     job which will invoke the readCurrentDatum() method on a DatumDataSource, which
-			     is what FoobarDatumDataSource is! -->
+			     is what MockVenDatumDataSource is! -->
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="foobarPowerDatumLoggerJob"/>
+					<property name="name" value="mockvenPowerDatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>

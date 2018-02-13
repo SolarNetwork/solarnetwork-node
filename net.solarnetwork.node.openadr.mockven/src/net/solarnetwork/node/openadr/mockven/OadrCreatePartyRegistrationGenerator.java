@@ -7,7 +7,7 @@ import openadr.model.v20b.OadrSignedObject;
 
 public class OadrCreatePartyRegistrationGenerator extends OadrPayloadGenerator {
 
-	OadrPayload createPayload(OadrParams params) {
+	public OadrPayload createPayload(OadrParams params) {
 		OadrPayload payload = new OadrPayload();
 		OadrSignedObject signedObject = new OadrSignedObject();
 		OadrCreatePartyRegistration partyReg = new OadrCreatePartyRegistration();
