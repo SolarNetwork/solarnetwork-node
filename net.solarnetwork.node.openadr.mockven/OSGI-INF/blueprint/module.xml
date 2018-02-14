@@ -15,11 +15,11 @@
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<!-- provides access to local database storage for our datum -->
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+<!-- 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
-	</bean>
+	</bean>  -->
 
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -63,6 +63,12 @@
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
 				</bean>
+				 
+				 <!-- <bean class = "net.solarnetwork.node.openadr.mockven.PollTrigger">
+				 	<property name="name" value="mockvenPowerDatumLoggerTrigger"/>
+				 </bean> -->
+				 
+				
 			</property>
 
 			<!-- we can also publish the MockVenDatumDataSource instance itself as a service
@@ -86,6 +92,7 @@
 					</entry>
 				</map>
 			</property>
+			
 
 			<!-- the jobDetail defines what job should be executed periodically by the
 			     trigger; here we define a  net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob
@@ -94,11 +101,11 @@
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 					<property name="name" value="mockvenPowerDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.SimpleServiceJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
-							<entry key="datumDataSource">
+							<!-- <entry key="datumDao" value-ref="generalNodeDatumDao"/>  -->
+							<entry key="service">
 								<bean class="net.solarnetwork.node.openadr.mockven.MockVenDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 								</bean>

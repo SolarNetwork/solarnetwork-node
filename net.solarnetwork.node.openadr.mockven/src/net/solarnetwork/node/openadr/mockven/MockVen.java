@@ -9,7 +9,7 @@ import openadr.model.v20b.OadrSignedObject;
 /**
  * 
  * Class to simulate a Virtual End Node (VEN). This class is designed to talk to
- * a VTN via OpenADR 2.0b
+ * a Virtual Top Node (VTN) via OpenADR 2.0b
  * 
  * 
  * @author robert

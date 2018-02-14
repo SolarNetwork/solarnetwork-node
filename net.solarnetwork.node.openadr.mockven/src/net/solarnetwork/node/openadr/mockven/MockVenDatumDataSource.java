@@ -2,8 +2,7 @@
 package net.solarnetwork.node.openadr.mockven;
 
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -18,27 +17,13 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * @version 1.0
  */
 public class MockVenDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements JobService, SettingSpecifierProvider {
 
 	private String venName;
 	private String venID;
 	private String vtnAddress;
 	private String vtnName;
 	private MockVen mockVen = null;
-
-	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
-	}
-
-	@Override
-	public GeneralNodeDatum readCurrentDatum() {
-
-		// I don't understand how to configure in OSGI how to do a job so instead we will be using this to summon the MockVen
-		runMockVen();
-
-		return null;
-	}
 
 	@Override
 	public String getSettingUID() {
@@ -104,6 +89,12 @@ public class MockVenDatumDataSource extends DatumDataSourceSupport
 		mockVen.setVtnURL(vtnAddress);
 		mockVen.setVenName(venName);
 		mockVen.pollAndRespond();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
+		// TODO Auto-generated method stub
+		runMockVen();
 	}
 
 }
