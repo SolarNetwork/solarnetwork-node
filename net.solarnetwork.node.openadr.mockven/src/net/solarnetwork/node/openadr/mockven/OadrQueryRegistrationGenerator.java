@@ -15,7 +15,7 @@ public class OadrQueryRegistrationGenerator extends OadrPayloadGenerator {
 
 		queryReg.setRequestID(genRandomRequestID());
 
-		//TODO check if profile name and scheme version are the same thing
+		//TODO I not sure if profilename and schema version are the same thing from what I saw it is always "2.0b"
 		queryReg.setSchemaVersion(params.getProfileName());
 
 		return payload;

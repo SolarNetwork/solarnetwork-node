@@ -20,8 +20,23 @@ import openadr.model.v20b.ei.ResponseCode;
 import openadr.model.v20b.ei.SignalTypeEnumeratedType;
 import openadr.model.v20b.pyld.EiCreatedEvent;
 
+/**
+ * 
+ * Class to generate OadrPayloads containing OadrCreatedEvent. This class is
+ * different to my other generators as it requires a OadrDistrubuteEvent object.
+ * This class also has some logic in deciding whether to opt into events or not.
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class OadrCreatedEventGenerator {
 
+	/**
+	 * 
+	 * @param params
+	 * @param event
+	 * @return Payload with a OadrCreatedEvent
+	 */
 	public OadrPayload createPayload(OadrParams params, OadrDistributeEvent event) {
 		//NOTE HARDCODED FOR ONE EVENT
 		EventDescriptor eventParams = event.getOadrEvents().get(0).getEiEvent().getEventDescriptor();

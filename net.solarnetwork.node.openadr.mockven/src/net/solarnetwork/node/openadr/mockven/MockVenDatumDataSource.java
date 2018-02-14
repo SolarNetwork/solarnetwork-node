@@ -12,7 +12,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
 /**
  * 
  * I would prefer is this plugin did not have a datum data source however it was
- * the easiest way for me to achieve
+ * the easiest way for me to achieve an event in regular intervals
  * 
  * @author robert
  * @version 1.0
