@@ -15,6 +15,14 @@ import org.xml.sax.InputSource;
 import openadr.model.v20b.OadrPayload;
 import openadr.model.v20b.ObjectFactory;
 
+/**
+ * 
+ * Class that handles the connection to the VTN. Supports posting OadrPayloads
+ * getting the response.
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class TopNodeConnection {
 
 	private HttpHeaders headers;
@@ -27,7 +35,7 @@ public class TopNodeConnection {
 		rest = new RestTemplate();
 		headers.setContentType(MediaType.TEXT_XML);
 
-		//Require a class loader when using OSGI 
+		//Require a class loader when using OSGI otherwise you get JAXBException
 		//https://stackoverflow.com/a/1043807
 		ClassLoader cl = ObjectFactory.class.getClassLoader();
 		try {
@@ -41,20 +49,24 @@ public class TopNodeConnection {
 
 			marshaller = jaxbContext.createMarshaller();
 		} catch ( JAXBException e ) {
+			//have no way of recovering from exception. So I turn it into a RuntimeException so I don't have to declare that this class throws and exception
 			throw new RuntimeException(e);
 		}
 	}
 
-	//I assume I have to synchronize this method to prevent trying to connect at the same time
+	//I assume I have to synchronize this method to prevent trying to connect at the same time. Never tested multipal connections.
 	public synchronized OadrPayload postPayload(String url, OadrPayload payload) {
 		StringWriter out = new StringWriter();
 		try {
+			//turns the payload into a XML string and writes it to the StringWriter
 			marshaller.marshal(payload, out);
 
+			//send the xml to the VTN and get the response
 			ResponseEntity<String> response = rest.postForEntity(url, out.toString(), String.class);
 
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
 
+			//convert the response into a OadrPayload object
 			OadrPayload returnPayload = (OadrPayload) jaxbUnmarshaller
 					.unmarshal(new InputSource(new StringReader(response.getBody())));
 

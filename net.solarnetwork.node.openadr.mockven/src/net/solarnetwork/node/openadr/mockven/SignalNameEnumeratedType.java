@@ -1,6 +1,14 @@
 
 package net.solarnetwork.node.openadr.mockven;
 
+/**
+ * 
+ * enum of the OpenADR signal names. perhapes this should be moved into the
+ * OpenADR package. Followed the design pattern of SignalTypeEnumeratedType
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public enum SignalNameEnumeratedType {
 	SIMPLE("SIMPLE"),
 	simple("simple"),

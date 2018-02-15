@@ -5,6 +5,13 @@ import openadr.model.v20b.OadrPayload;
 import openadr.model.v20b.OadrQueryRegistration;
 import openadr.model.v20b.OadrSignedObject;
 
+/**
+ * 
+ * Creates a OadrPayload with a OadrQueryRegistration
+ * 
+ * @author solardev
+ * @version 1.0
+ */
 public class OadrQueryRegistrationGenerator extends OadrPayloadGenerator {
 
 	public OadrPayload createPayload(OadrParams params) {

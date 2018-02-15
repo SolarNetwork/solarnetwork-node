@@ -10,8 +10,8 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
 
 /**
  * 
- * I would prefer is this plugin did not have a datum data source however it was
- * the easiest way for me to achieve an event in regular intervals
+ * Setting specifier for the MockVEN it also implements JobService to allow
+ * periodic polling of the VTN
  * 
  * @author robert
  * @version 1.0
@@ -20,7 +20,6 @@ public class MockVenJobService extends DatumDataSourceSupport
 		implements JobService, SettingSpecifierProvider {
 
 	private String venName;
-	private String venID;
 	private String vtnAddress;
 	private String vtnName;
 	private MockVen mockVen = null;
@@ -56,14 +55,6 @@ public class MockVenJobService extends DatumDataSourceSupport
 		this.venName = venName;
 	}
 
-	public String getVenID() {
-		return venID;
-	}
-
-	public void setVenID(String venID) {
-		this.venID = venID;
-	}
-
 	public String getVtnAddress() {
 		return vtnAddress;
 	}
@@ -80,20 +71,22 @@ public class MockVenJobService extends DatumDataSourceSupport
 		this.vtnName = vtnName;
 	}
 
-	// I don't understand how to configure in OSGI how to do a job so instead we will be using this to summon the MockVen
-	//this gets called when requesting a new datum
 	private void runMockVen() {
+		//create a MockVen instance when we don't have one
 		if ( mockVen == null ) {
 			mockVen = new MockVen();
 		}
+		//put the settings into the mock ven
 		mockVen.setVtnURL(vtnAddress);
 		mockVen.setVenName(venName);
+
+		//the poll and respond method will register to the VTN if it is not already registered
+		//otherwise it will send poll request to the VTN and respond to any events
 		mockVen.pollAndRespond();
 	}
 
 	@Override
 	public void executeJobService() throws Exception {
-		// TODO Auto-generated method stub
 		runMockVen();
 	}
 

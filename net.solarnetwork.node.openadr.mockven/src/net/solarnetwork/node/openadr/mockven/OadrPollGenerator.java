@@ -5,6 +5,13 @@ import openadr.model.v20b.OadrPayload;
 import openadr.model.v20b.OadrPoll;
 import openadr.model.v20b.OadrSignedObject;
 
+/**
+ * 
+ * Creates a OadrPayload containing a OadrPoll
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class OadrPollGenerator extends OadrPayloadGenerator {
 
 	public OadrPayload createPayload(OadrParams params) {

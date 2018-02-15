@@ -4,6 +4,16 @@ package net.solarnetwork.node.openadr.mockven;
 import java.util.Date;
 import org.quartz.impl.triggers.SimpleTriggerImpl;
 
+/**
+ * 
+ * FIXME
+ * 
+ * This class currently does not do what I want it to do. I want to be able to
+ * poll the VTN every 10 seconds.
+ * 
+ * @author robert
+ * @version 1.0
+ */
 public class PollTrigger extends SimpleTriggerImpl {
 
 	/**

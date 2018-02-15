@@ -3,11 +3,18 @@ package net.solarnetwork.node.openadr.mockven;
 
 import openadr.model.v20b.OadrTransportType;
 
-public abstract class OadrParams {
+/**
+ * This abstract class just has a bunch of getters and setters of parameters
+ * that often go into OadrPayloads. These are used in the generators of the
+ * various payloads.
+ * 
+ * @author robert
+ * @version 1.0
+ */
+public class OadrParams {
 
 	private String venName;
 
-	//not sure about these constants
 	private String venID;
 	private String registrationID;
 	private String requestID;
