@@ -74,6 +74,9 @@ public class MockVen extends OadrParams {
 
 		//I don't think it makes sense for the decision to opt in to be in the generator
 		OadrCreatedEventGenerator generator = new OadrCreatedEventGenerator();
+
+		//You can potentially use this location for interacting when a demand response engine or some other mechanism for doing demand reposnse on the solarnetwork 
+		//all of the parameters for the event are inside the OadrDistributeEvent 
 		OadrPayload payload = generator.createPayload(this, event);
 
 		OadrPayload response = connection.postPayload(url + OadrSubDomains.EiEvent, payload);

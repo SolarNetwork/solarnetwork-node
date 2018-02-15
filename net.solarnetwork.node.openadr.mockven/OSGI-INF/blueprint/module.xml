@@ -23,7 +23,7 @@
 
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.openadr.mockven.MockVenDatumDataSource"/>
+		<property name="basenames" value="net.solarnetwork.node.openadr.mockven.MockVenJobService"/>
 	</bean>
 
 	<!-- support localized strings for the periodic job settings in the GUI -->
@@ -106,7 +106,7 @@
 						<map>
 							<!-- <entry key="datumDao" value-ref="generalNodeDatumDao"/>  -->
 							<entry key="service">
-								<bean class="net.solarnetwork.node.openadr.mockven.MockVenDatumDataSource">
+								<bean class="net.solarnetwork.node.openadr.mockven.MockVenJobService">
 									<property name="messageSource" ref="jobMessageSource"/>
 								</bean>
 							</entry>

@@ -16,7 +16,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * @author robert
  * @version 1.0
  */
-public class MockVenDatumDataSource extends DatumDataSourceSupport
+public class MockVenJobService extends DatumDataSourceSupport
 		implements JobService, SettingSpecifierProvider {
 
 	private String venName;

@@ -88,6 +88,16 @@ public class OadrCreatedEventGenerator {
 			return OptTypeType.OPT_OUT;
 		}
 
+		//proof of concept showing how to select a specific signalName
+		if ( event.getEiEvent().getEiEventSignals().getEiEventSignals().get(0).getSignalName()
+				.equals(SignalNameEnumeratedType.LOAD_CONTROL.toString()) ) {
+
+			// One can grab the data from the event and use it for applying a demand response. 
+			//If you were to use my existing demand response framework for solarnetwork here is a good location to talk to a demand response engine and update the demand response.
+			//see https://github.com/robbierew/solarnetwork-node/tree/demandresponse
+
+			return OptTypeType.OPT_IN;
+		}
 		return OptTypeType.OPT_IN;
 	}
 
