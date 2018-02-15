@@ -75,6 +75,7 @@ public class TopNodeConnection {
 			return returnPayload;
 
 		} catch ( JAXBException e ) {
+			//have no way of recovering from exception. So I turn it into a RuntimeException so I don't have to declare that this class throws and exception
 			throw new RuntimeException(e);
 		}
 

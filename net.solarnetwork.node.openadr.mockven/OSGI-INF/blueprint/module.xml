@@ -28,7 +28,7 @@
 
 	<!-- support localized strings for the periodic job settings in the GUI -->
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
-		<property name="prefix" value="datumDataSource."/>
+		<property name="prefix" value="jobService."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
@@ -74,24 +74,24 @@
 			<!-- we can also publish the MockVenDatumDataSource instance itself as a service
 			     by configuring serviceProviderConfigurations here... this is optional but
 			     generally a good idea -->
-			<property name="serviceProviderConfigurations">
-				<map>
-					<entry key="datumDataSource">
-						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
-							<property name="interfaces">
-								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
-								</list>
-							</property>
-							<property name="properties">
-								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.EnergyDatum"/>
-								</map>
-							</property>
-						</bean>
-					</entry>
-				</map>
-			</property>
+<!-- 			<property name="serviceProviderConfigurations"> -->
+<!-- 				<map> -->
+<!-- 					<entry key="datumDataSource"> -->
+<!-- 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration"> -->
+<!-- 							<property name="interfaces"> -->
+<!-- 								<list> -->
+<!-- 									<value>net.solarnetwork.node.DatumDataSource</value> -->
+<!-- 								</list> -->
+<!-- 							</property> -->
+<!-- 							<property name="properties"> -->
+<!-- 								<map> -->
+<!-- 									<entry key="datumClassName" value="net.solarnetwork.node.domain.EnergyDatum"/> -->
+<!-- 								</map> -->
+<!-- 							</property> -->
+<!-- 						</bean> -->
+<!-- 					</entry> -->
+<!-- 				</map> -->
+<!-- 			</property> -->
 			
 
 			<!-- the jobDetail defines what job should be executed periodically by the
