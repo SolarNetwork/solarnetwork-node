@@ -3,7 +3,7 @@ package net.solarnetwork.node.openadr.mockven;
 
 /**
  * 
- * class containing static constants of the URL subdomains in OpenADR requests
+ * Class containing static constants of the URL subdomains in OpenADR requests
  * 
  * @author robert
  * @version 1.0

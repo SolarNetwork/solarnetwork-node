@@ -23,6 +23,7 @@ public class OadrParams {
 	private int modificationNumber;
 	private String eventID;
 
+	//default values I copied from the EPRI VEN 
 	private OadrTransportType transportType = OadrTransportType.SIMPLE_HTTP;
 	private String profileName = "2.0b";
 	private Boolean reportOnly = false;

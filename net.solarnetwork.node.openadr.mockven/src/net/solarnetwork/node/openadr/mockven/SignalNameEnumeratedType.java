@@ -3,7 +3,7 @@ package net.solarnetwork.node.openadr.mockven;
 
 /**
  * 
- * enum of the OpenADR signal names. perhapes this should be moved into the
+ * enum of the OpenADR signal names. perhaps this should be moved into the
  * OpenADR package. Followed the design pattern of SignalTypeEnumeratedType
  * 
  * @author robert

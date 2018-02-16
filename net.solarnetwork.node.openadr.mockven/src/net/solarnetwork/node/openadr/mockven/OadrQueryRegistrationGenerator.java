@@ -7,9 +7,10 @@ import openadr.model.v20b.OadrSignedObject;
 
 /**
  * 
- * Creates a OadrPayload with a OadrQueryRegistration
+ * Creates a OadrPayload with a OadrQueryRegistration used in registering with
+ * the VTN
  * 
- * @author solardev
+ * @author robert
  * @version 1.0
  */
 public class OadrQueryRegistrationGenerator extends OadrPayloadGenerator {

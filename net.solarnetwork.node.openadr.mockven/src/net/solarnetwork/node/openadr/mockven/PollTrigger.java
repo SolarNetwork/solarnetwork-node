@@ -9,7 +9,8 @@ import org.quartz.impl.triggers.SimpleTriggerImpl;
  * FIXME
  * 
  * This class currently does not do what I want it to do. I want to be able to
- * poll the VTN every 10 seconds.
+ * poll the VTN every 10 seconds. Currently instead I am using a CronTrigger
+ * which limits my polling to every minute or second.
  * 
  * @author robert
  * @version 1.0

@@ -7,7 +7,9 @@ import openadr.model.v20b.OadrSignedObject;
 
 /**
  * 
- * Creates a OadrPayload containing a OadrPoll
+ * Creates a OadrPayload containing a OadrPoll. An OadrPoll is used to ask the
+ * VTN has anything happened and to ensure there is still communication with the
+ * VTN.
  * 
  * @author robert
  * @version 1.0

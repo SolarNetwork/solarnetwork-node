@@ -76,6 +76,15 @@ public class OadrCreatedEventGenerator {
 	}
 
 	//Feel free to overwrite this method to change opt in behavior.
+	/**
+	 * This method is used to decide whether to opt into the event or not it
+	 * should not be used for applying a demand response instead put that logic
+	 * in MocVen.respondToDistributeEvent()
+	 * 
+	 * @param params
+	 * @param event
+	 * @return
+	 */
 	public OptTypeType OptInLogic(OadrParams params, OadrEvent event) {
 
 		//ensure that the signals are valid if not opt out. This is the behavior of the EPRI VEN
@@ -91,16 +100,19 @@ public class OadrCreatedEventGenerator {
 		//proof of concept showing how to select a specific signalName
 		if ( event.getEiEvent().getEiEventSignals().getEiEventSignals().get(0).getSignalName()
 				.equals(SignalNameEnumeratedType.LOAD_CONTROL.toString()) ) {
-
-			// One can grab the data from the event and use it for applying a demand response. 
-			//If you were to use my existing demand response framework for solarnetwork here is a good location to talk to a demand response engine and update the demand response.
-			//see https://github.com/robbierew/solarnetwork-node/tree/demandresponse
-
 			return OptTypeType.OPT_IN;
 		}
 		return OptTypeType.OPT_IN;
 	}
 
+	/**
+	 * Returns true if the EiEventSignal has a singal name compatible with the
+	 * signal type. This is a translation of the C# implementation in the EPRI
+	 * mock VEN.
+	 * 
+	 * @param event
+	 * @return
+	 */
 	public boolean validSignalNameAndType(EiEventSignal event) {
 		String singalName = event.getSignalName();
 		SignalTypeEnumeratedType signalType = event.getSignalType();
@@ -182,8 +194,16 @@ public class OadrCreatedEventGenerator {
 		return true;
 	}
 
-	//Checks that the event has not already past.
+	/**
+	 * returns true if the OadrEvent has already ended. A event is ended when
+	 * the starting time plus the duration is less than the current time. This
+	 * method is included to match the behaviour
+	 * 
+	 * @param event
+	 * @return
+	 */
 	public boolean eventOver(OadrEvent event) {
+
 		GregorianCalendar now = (GregorianCalendar) GregorianCalendar.getInstance();
 
 		String durationString = event.getEiEvent().getEiActivePeriod().getProperties().getDuration()
@@ -193,7 +213,6 @@ public class OadrCreatedEventGenerator {
 				.getDateTime().getValue().toGregorianCalendar();
 
 		Duration d = Duration.parse(durationString);
-		//d.getSeconds();
 
 		eventdate.add(Calendar.SECOND, (int) d.getSeconds());
 
@@ -202,7 +221,7 @@ public class OadrCreatedEventGenerator {
 			//event still has some time to go
 			return true;
 		} else {
-			//event has already been compleated
+			//event has already been completed
 			return false;
 		}
 
