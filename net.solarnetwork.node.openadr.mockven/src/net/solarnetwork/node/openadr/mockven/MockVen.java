@@ -85,10 +85,21 @@ public class MockVen extends OadrParams {
 		OadrCreatedEventGenerator generator = new OadrCreatedEventGenerator();
 
 		/**
-		 * You can potentially use this location for interacting when a demand
-		 * response engine or some other mechanism for doing demand reposnse on
+		 * You can potentially use this location for interacting with a demand
+		 * response engine or some other mechanism for doing demand response on
 		 * the solarnetwork all of the parameters for the event are inside the
 		 * OadrDistributeEvent
+		 * 
+		 * https://pastebin.com/zrNwcQAX
+		 * 
+		 * e.g. Link above is an XML generated from the EPRI VTN asking for
+		 * 250kW of demand response (specific LOAD_CONTROL with
+		 * X_LOAD_CONTROL_CAPACITY)
+		 * 
+		 * if this was to be implemented here you can write some code to extract
+		 * the "payloadFloat" value and pass it to a demand response engine
+		 * 
+		 * 
 		 */
 		OadrPayload payload = generator.createPayload(this, event);
 
