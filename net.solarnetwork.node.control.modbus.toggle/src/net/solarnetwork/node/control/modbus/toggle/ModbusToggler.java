@@ -39,7 +39,6 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
-import net.solarnetwork.node.io.modbus.ModbusSerialConnectionFactory;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -51,21 +50,6 @@ import net.solarnetwork.util.OptionalService;
 
 /**
  * Control a Modbus "coil" type register to turn a switch on or off.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>address</dt>
- * <dd>The Modbus address of the coil-type register to use.</dd>
- * <dt>unitId</dt>
- * <dd>The Modbus unit ID to use.</dd>
- * <dt>controlId</dt>
- * <dd>The {@link NodeControlProvider} UID to use.</dd>
- * <dt>connectionFactory</dt>
- * <dd>The {@link ModbusSerialConnectionFactory} to use.</dd>
- * </dl>
  * 
  * @author matt
  * @version 1.2
