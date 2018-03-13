@@ -7,29 +7,7 @@ Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.datum.egauge.ws;bundle-version="1.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- javax.xml.xpath,
- net.solarnetwork.domain;version="1.6.1",
- net.solarnetwork.node;version="1.22.0",
- net.solarnetwork.node.dao;version="1.5.0",
  net.solarnetwork.node.datum.egauge.ws,
  net.solarnetwork.node.datum.egauge.ws.client,
- net.solarnetwork.node.domain;version="1.10.0",
- net.solarnetwork.node.job;version="1.10.0",
- net.solarnetwork.node.settings;version="1.8.0",
- net.solarnetwork.node.settings.support;version="1.6.0",
- net.solarnetwork.node.support;version="1.14.0",
- net.solarnetwork.node.test;version="[1.0.0,2.0.0]",
- net.solarnetwork.node.util;version="1.7.0",
- net.solarnetwork.util;version="1.26.0",
  org.junit;version="[4.5,5.0)",
- org.junit.runner;version="[4.5,5.0)",
- org.osgi.service.event;version="[1.2,2.0)",
- org.quartz;version="[2.2,3.0)",
- org.quartz.simpl;version="[2.2,3.0)",
- org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[4.2,5.0)",
- org.springframework.beans.factory;version="[4.2,5.0)",
- org.springframework.context;version="[4.2,5.0)",
- org.springframework.context.support;version="[4.2,5.0)",
- org.springframework.core;version="[4.2,5.0)",
- org.springframework.scheduling.quartz;version="[4.2,5.0)"
+ org.junit.runner;version="[4.5,5.0)"

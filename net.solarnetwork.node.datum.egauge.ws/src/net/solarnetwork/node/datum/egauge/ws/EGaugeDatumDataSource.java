@@ -99,15 +99,16 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		}
 
 		if ( datum != null ) {
-			setSampleCache(datum);
+			setSampleCache(cache, datum);
 		}
 		return datum;
 	}
 
 	//	
 
-	private void setSampleCache(EGaugePowerDatum datum) {
-		sampleCache.set(new CachedResult<EGaugePowerDatum>(datum, sampleCacheMs, TimeUnit.MILLISECONDS));
+	private void setSampleCache(CachedResult<EGaugePowerDatum> cache, EGaugePowerDatum datum) {
+		sampleCache.compareAndSet(cache,
+				new CachedResult<EGaugePowerDatum>(datum, sampleCacheMs, TimeUnit.MILLISECONDS));
 	}
 
 	@Override

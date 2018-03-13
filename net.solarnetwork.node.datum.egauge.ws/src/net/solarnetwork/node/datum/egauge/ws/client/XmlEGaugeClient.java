@@ -29,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.support.XmlServiceSupport;
 
@@ -105,7 +104,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		if ( datum != null ) {
 			convertEGaugeValues(datum);
-			addEnergyDatumSourceMetadata(datum);
+			//			addEnergyDatumSourceMetadata(datum);
 			postDatumCapturedEvent(datum);
 		}
 		return datum;
@@ -135,16 +134,16 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return (host == null ? "" : host) + getQueryUrl();
 	}
 
-	private void addEnergyDatumSourceMetadata(EGaugePowerDatum d) {
-		if ( d == null ) {
-			return;
-		}
-		// associate consumption/generation tags with this source
-		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
-		// TODO review I think we have both generation and consumption data in this datum so is this the correct tag?
-		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
-		addSourceMetadata(d.getSourceId(), sourceMeta);
-	}
+	//	private void addEnergyDatumSourceMetadata(EGaugePowerDatum d) {
+	//		if ( d == null ) {
+	//			return;
+	//		}
+	//		// associate consumption/generation tags with this source
+	//		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
+	//		// TODO review I think we have both generation and consumption data in this datum so is this the correct tag?
+	//		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+	//		addSourceMetadata(d.getSourceId(), sourceMeta);
+	//	}
 
 	@Override
 	public void init() {
@@ -203,9 +202,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	/**
-	 * Set the XML data mapping. This supports setting simple
-	 * {@code deviceinfo.xml} key names or, if the value contains a {@code /}
-	 * character, direct XPath values.
+	 * Set the XML data mapping. The string should be a comma separated list of
+	 * property names to XPath paths.
 	 * 
 	 * 
 	 * @param mapping
