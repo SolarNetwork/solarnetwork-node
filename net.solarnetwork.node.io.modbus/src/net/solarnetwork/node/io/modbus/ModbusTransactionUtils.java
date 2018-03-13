@@ -30,6 +30,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusTransaction;
+import net.wimpi.modbus.msg.ModbusRequest;
+import net.wimpi.modbus.msg.ModbusResponse;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadCoilsResponse;
 import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
@@ -40,14 +42,20 @@ import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
 import net.wimpi.modbus.msg.ReadMultipleRegistersResponse;
 import net.wimpi.modbus.msg.WriteCoilRequest;
 import net.wimpi.modbus.msg.WriteCoilResponse;
-import net.wimpi.modbus.net.SerialConnection;
+import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
+import net.wimpi.modbus.msg.WriteMultipleRegistersResponse;
+import net.wimpi.modbus.msg.WriteSingleRegisterRequest;
+import net.wimpi.modbus.msg.WriteSingleRegisterResponse;
 import net.wimpi.modbus.procimg.InputRegister;
+import net.wimpi.modbus.procimg.Register;
+import net.wimpi.modbus.procimg.SimpleRegister;
+import net.wimpi.modbus.util.BitVector;
 
 /**
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public class ModbusTransactionUtils {
@@ -103,7 +111,7 @@ public class ModbusTransactionUtils {
 	 * @param address
 	 *        the Modbus register addresses to start reading from
 	 * @param count
-	 *        the count of registers to read
+	 *        the count of 16-bit registers to read
 	 * @param unitId
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
@@ -233,13 +241,16 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return map of integer addresses to corresponding integer values, there
 	 *         should be {@code count} values for each {@code address} read
+	 * @see #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction,
+	 *      Integer, int)
 	 */
 	public static Map<Integer, Integer> readInputValues(ModbusTransaction trans, Integer[] addresses,
 			int count, int unitId) {
 		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
 				(addresses == null ? 0 : addresses.length) * count);
 		for ( int i = 0; i < addresses.length; i++ ) {
-			int[] data = readInputValues(trans, addresses[i], count, unitId);
+			int[] data = readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadInputRegister,
+					addresses[i], count);
 			if ( data != null ) {
 				for ( int j = 0; j < data.length; j++ ) {
 					result.put(addresses[i] + j, data[j]);
@@ -269,30 +280,14 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return register values, starting with {@code address} to
 	 *         {@code address + count}
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadInputRegister}
 	 */
+	@Deprecated
 	public static int[] readInputValues(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
-		ReadInputRegistersRequest req = new ReadInputRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		int[] result = new int[count];
-		ReadInputRegistersResponse res = (ReadInputRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read input {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegisterValue(w);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input registers {} values: {}", address, result);
-		}
-		return result;
+		return readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadInputRegister, address, count);
 	}
 
 	/**
@@ -312,34 +307,13 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
+	 * @deprecated use
+	 *             {@link #readBytes(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
+	@Deprecated
 	public static byte[] readBytes(ModbusTransaction trans, Integer address, int count, int unitId) {
-		byte[] result = new byte[count * 2];
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		InputRegister[] registers = res.getRegisters();
-		if ( registers != null ) {
-
-			for ( int i = 0; i < registers.length; i++ ) {
-				if ( LOG.isTraceEnabled() ) {
-					LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
-				}
-				System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} bytes: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return readBytes(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	/**
@@ -360,27 +334,15 @@ public class ModbusTransactionUtils {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
-	 * @see #readBytes(SerialConnection, Integer, int, int)
+	 * @deprecated use
+	 *             {@link #readString(ModbusTransaction, int, ModbusReadFunction, Integer, int, boolean, String)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
+	@Deprecated
 	public static String readString(ModbusTransaction trans, Integer address, int count, int unitId,
 			boolean trim, String charsetName) {
-		final byte[] bytes = readBytes(trans, address, count, unitId);
-		String result = null;
-		if ( bytes != null ) {
-			try {
-				result = new String(bytes, charsetName);
-				if ( trim ) {
-					result = result.trim();
-				}
-			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e);
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input register {} count {} string: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return readString(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count, trim,
+				charsetName);
 	}
 
 	/**
@@ -443,30 +405,13 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
+	@Deprecated
 	public static int[] readInts(ModbusTransaction trans, Integer address, int count, int unitId) {
-		int[] result = new int[count];
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegisterValue(w);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} values: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	/**
@@ -483,31 +428,14 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readSignedShorts(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
+	@Deprecated
 	public static short[] readSignedShorts(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
-		short[] result = new short[count];
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
-		req.setHeadless();
-		trans.setRequest(req);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
-			}
-			result[w] = res.getRegister(w).toShort();
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} shorts: {}",
-					new Object[] { address, count, result });
-		}
-		return result;
+		return readSignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	/**
@@ -524,12 +452,105 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
+	@Deprecated
 	public static Integer[] readValues(ModbusTransaction trans, Integer address, int count, int unitId) {
+		int[] data = readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address,
+				count);
+		if ( data.length != count ) {
+			throw new RuntimeException(
+					"Returned data has length " + data.length + "; expected length " + count);
+		}
 		Integer[] result = new Integer[count];
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(address, count);
-		req.setUnitID(unitId);
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = data[i];
+		}
+		return result;
+	}
+
+	/**
+	 * Create a new {@link ModbusRequest} instance appropriate for a given
+	 * function, unit ID, address, and count.
+	 * 
+	 * @param function
+	 *        the function to use
+	 * @param unitId
+	 *        the unit ID
+	 * @param address
+	 *        the register address
+	 * @param count
+	 *        the count of registers to read
+	 * @return a newly created request instance
+	 */
+	public static ModbusRequest modbusReadRequest(ModbusReadFunction function, int unitId, int address,
+			int count) {
+		ModbusRequest req;
+		switch (function) {
+			case ReadCoil:
+				req = new ReadCoilsRequest(address, count);
+				break;
+
+			case ReadDiscreteInput:
+				req = new ReadInputDiscretesRequest(address, count);
+				break;
+
+			case ReadHoldingRegister:
+				req = new ReadMultipleRegistersRequest(address, count);
+				break;
+
+			case ReadInputRegister:
+				req = new ReadInputRegistersRequest(address, count);
+				break;
+
+			default:
+				throw new UnsupportedOperationException("Function " + function + " is not supported");
+
+		}
 		req.setHeadless();
+		req.setUnitID(unitId);
+		return req;
+	}
+
+	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId, int address,
+			int count) {
+		ModbusRequest req;
+		switch (function) {
+			case WriteHoldingRegister:
+				req = new WriteSingleRegisterRequest(address, null);
+				break;
+
+			case WriteMultipleHoldingRegisters:
+				req = new WriteMultipleRegistersRequest(address, null);
+				break;
+
+			default:
+				throw new UnsupportedOperationException("Function " + function + " is not supported");
+
+		}
+		req.setHeadless();
+		req.setUnitID(unitId);
+		return req;
+	}
+
+	/**
+	 * Get the values of specific registers as an array of signed 16-bit shorts.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 * @since 1.1
+	 */
+	public static short[] readSignedShorts(ModbusTransaction trans, int unitId,
+			ModbusReadFunction function, Integer address, int count) {
+		ModbusRequest req = modbusReadRequest(function, unitId, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -537,11 +558,100 @@ public class ModbusTransactionUtils {
 			throw new RuntimeException(e);
 		}
 		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		short[] result = new short[count];
 		for ( int w = 0; w < res.getWordCount(); w++ ) {
 			if ( LOG.isTraceEnabled() ) {
 				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
 			}
-			result[w] = res.getRegisterValue(w);
+			result[w] = res.getRegister(w).toShort();
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus register {} count {} shorts: {}",
+					new Object[] { address, count, result });
+		}
+		return result;
+	}
+
+	/**
+	 * Write signed 16-bit short values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the signed 16-bit values to write
+	 * @since 1.1
+	 */
+	public static void writeSignedShorts(ModbusTransaction trans, int unitId,
+			ModbusWriteFunction function, Integer address, short[] values) {
+		int len = values.length;
+		int[] unsigned = new int[len];
+		for ( int i = 0; i < len; i += 1 ) {
+			unsigned[i] = Short.toUnsignedInt(values[i]);
+		}
+		writeUnsignedShorts(trans, unitId, function, address, unsigned);
+	}
+
+	/**
+	 * Get the values of specific registers as an array of unsigned 16-bit
+	 * shorts.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 * @since 1.1
+	 */
+	public static int[] readUnsignedShorts(ModbusTransaction trans, int unitId,
+			ModbusReadFunction function, Integer address, int count) {
+		ModbusRequest req = modbusReadRequest(function, unitId, address, count);
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ModbusResponse response = trans.getResponse();
+		int[] result = new int[count];
+		if ( response instanceof ReadMultipleRegistersResponse ) {
+			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) response;
+			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+				result[w] = res.getRegisterValue(w);
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
+		} else if ( response instanceof ReadInputRegistersResponse ) {
+			ReadInputRegistersResponse res = (ReadInputRegistersResponse) response;
+			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+				result[w] = res.getRegisterValue(w);
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
+		} else if ( response instanceof ReadInputDiscretesResponse ) {
+			ReadInputDiscretesResponse res = (ReadInputDiscretesResponse) response;
+			BitVector bv = res.getDiscretes();
+			for ( int w = 0; w < count; w += 1 ) {
+				result[w] = bv.getBit(w) ? 1 : 0;
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
+		} else if ( response instanceof ReadCoilsResponse ) {
+			ReadCoilsResponse res = (ReadCoilsResponse) response;
+			BitVector bv = res.getCoils();
+			for ( int w = 0; w < count; w += 1 ) {
+				result[w] = bv.getBit(w) ? 1 : 0;
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read Modbus register {} count {} values: {}",
@@ -550,4 +660,181 @@ public class ModbusTransactionUtils {
 		return result;
 	}
 
+	/**
+	 * Write unsigned 16-bit short values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the unsigned 16-bit values to write
+	 * @since 1.1
+	 */
+	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId,
+			ModbusWriteFunction function, Integer address, int[] values) {
+		ModbusRequest request = modbusWriteRequest(function, unitId, address, values.length);
+		if ( request instanceof WriteMultipleRegistersRequest ) {
+			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
+			int len = values.length;
+			Register[] regs = new Register[len];
+			for ( int i = 0; i < len; i += 1 ) {
+				regs[i] = new SimpleRegister(values[i]);
+			}
+			req.setRegisters(regs);
+		} else if ( request instanceof WriteSingleRegisterRequest ) {
+			WriteSingleRegisterRequest req = (WriteSingleRegisterRequest) request;
+			req.setRegister(new SimpleRegister(values[0]));
+		} else {
+			throw new UnsupportedOperationException("Funciton " + function + " not supported");
+		}
+
+		trans.setRequest(request);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+
+		if ( LOG.isTraceEnabled() ) {
+			ModbusResponse response = trans.getResponse();
+			if ( response instanceof WriteMultipleRegistersResponse ) {
+				WriteMultipleRegistersResponse res = (WriteMultipleRegistersResponse) response;
+				LOG.trace("Got write {} response count {}", address, res.getWordCount());
+			} else if ( response instanceof WriteSingleRegisterResponse ) {
+				WriteSingleRegisterResponse res = (WriteSingleRegisterResponse) response;
+				LOG.trace("Got write {} response [{}]", address, res.getRegisterValue());
+			}
+		}
+	}
+
+	/**
+	 * Get the raw bytes of specific registers.
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register bytes; the result will have a length equal to
+	 *         {@code count * 2}
+	 * @since 1.1
+	 */
+	public static byte[] readBytes(ModbusTransaction trans, int unitId, ModbusReadFunction function,
+			Integer address, int count) {
+		byte[] result = new byte[count * 2];
+		ModbusRequest req = modbusReadRequest(function, address, count, unitId);
+		trans.setRequest(req);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		InputRegister[] registers = res.getRegisters();
+		if ( registers != null ) {
+
+			for ( int i = 0; i < registers.length; i++ ) {
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
+				}
+				System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
+			}
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus register {} count {} bytes: {}",
+					new Object[] { address, count, result });
+		}
+		return result;
+	}
+
+	/**
+	 * Write raw byte values to registers.
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the byte values to write
+	 * @since 1.1
+	 */
+	public static void writeBytes(ModbusTransaction trans, int unitId, ModbusWriteFunction function,
+			Integer address, byte[] values) {
+
+	}
+
+	/**
+	 * Read a set of registers as bytes and interpret as a string.
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @param trim
+	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        resulting string
+	 * @param charsetName
+	 *        the character set to interpret the bytes as
+	 * @return String from interpreting raw bytes as a string
+	 * @see #readBytes(ModbusReadFunction, Integer, int)
+	 * @since 1.1
+	 */
+	public static String readString(ModbusTransaction trans, int unitId, ModbusReadFunction function,
+			Integer address, int count, boolean trim, String charsetName) {
+		final byte[] bytes = readBytes(trans, unitId, function, address, count);
+		String result = null;
+		if ( bytes != null ) {
+			try {
+				result = new String(bytes, charsetName);
+				if ( trim ) {
+					result = result.trim();
+				}
+			} catch ( UnsupportedEncodingException e ) {
+				throw new RuntimeException(e);
+			}
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus input register {} count {} string: {}",
+					new Object[] { address, count, result });
+		}
+		return result;
+	}
+
+	/**
+	 * Write a string as raw byte values to registers.
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param value
+	 *        the string value to write
+	 * @param charsetName
+	 *        the character set to interpret the bytes as
+	 * @since 1.1
+	 */
+	public static void writeString(ModbusTransaction trans, int unitId, ModbusWriteFunction function,
+			Integer address, String value, String charsetName) {
+
+	}
 }
