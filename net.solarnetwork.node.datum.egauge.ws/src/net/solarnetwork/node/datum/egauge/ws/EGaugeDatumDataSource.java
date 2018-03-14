@@ -23,19 +23,25 @@
 package net.solarnetwork.node.datum.egauge.ws;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugeClient;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.CachedResult;
 
@@ -56,8 +62,6 @@ import net.solarnetwork.util.CachedResult;
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
-	/** The host to get the {@code client} to retrieve the eGauge data from. */
-	private String host;
 	/** The ID that identifies the source. */
 	private String sourceId;
 	/**
@@ -67,11 +71,15 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	private EGaugeClient client;
 	/** The time that the results should be cached in milliseconds. */
 	private long sampleCacheMs = 5000;
+
 	/**
 	 * Used to store error details when the client fails to access eGauge
 	 * content.
 	 */
 	private Throwable sampleException;
+
+	/** The list of property/register configurations. */
+	private EGaugePropertyConfig[] propertyConfigs;
 
 	private AtomicReference<CachedResult<EGaugePowerDatum>> sampleCache = new AtomicReference<>();
 	private final Map<String, Long> validationCache = new HashMap<String, Long>(4);
@@ -86,7 +94,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		// Cache has expired so initiate new instance and cache
 		EGaugePowerDatum datum = null;
 		try {
-			datum = getClient().getCurrent(getHost(), getSourceId());
+			datum = getClient().getCurrent(this);
 		} catch ( RuntimeException e ) {
 			Throwable root = e;
 			while ( root.getCause() != null ) {
@@ -113,8 +121,9 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public String toString() {
-		return "EGaugeDatumDataSource [host=" + host + ", sourceId=" + sourceId + ", client=" + client
-				+ "]";
+		return "EGaugeDatumDataSource [sourceId=" + sourceId + ", client=" + client + ", sampleCacheMs="
+				+ sampleCacheMs + ", sampleException=" + sampleException + ", propertyConfigs="
+				+ Arrays.toString(propertyConfigs) + "]";
 	}
 
 	@Override
@@ -133,7 +142,11 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	}
 
 	public void init() {
-		// Nothing to do currently
+		if ( getPropertyConfigs() == null ) {
+			setPropertyConfigs(new EGaugePropertyConfig[] {
+					new EGaugePropertyConfig("generation", "Solar+", EGaugeReadingType.INSTANTANEOUS),
+					new EGaugePropertyConfig("consumption", "Grid", EGaugeReadingType.INSTANTANEOUS) });
+		}
 	}
 
 	@Override
@@ -151,11 +164,28 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		EGaugeDatumDataSource defaults = new EGaugeDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTextFieldSettingSpecifier("host", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
+
+		results.add(new BasicGroupSettingSpecifier("client", getClient().settings("client.")));
+
+		EGaugePropertyConfig[] confs = getPropertyConfigs();
+		List<EGaugePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<EGaugePropertyConfig> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("propertyConfigs", confsList,
+				new SettingsUtil.KeyedListCallback<EGaugePropertyConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(EGaugePropertyConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								EGaugePropertyConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
+
 		return results;
 	}
 
@@ -180,10 +210,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 			if ( buf.length() > 0 ) {
 				buf.append("; ");
 			}
-			buf.append(snap.getSolarPlusWatts()).append(" W; ");
-			buf.append(snap.getSolarPlusWattHourReading()).append(" Wh; Solar+ sample created ");
-			buf.append(snap.getGridWatts()).append(" W; ");
-			buf.append(snap.getGridWattHourReading()).append(" Wh; Grid sample created ");
+			buf.append(snap.getSampleInfo(getPropertyConfigs()));
 			buf.append(String.format("%tc", snap.getCreated()));
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());
@@ -221,12 +248,60 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		this.client = client;
 	}
 
-	public String getHost() {
-		return host;
+	/**
+	 * @return the propertyConfig
+	 */
+	public EGaugePropertyConfig[] getPropertyConfigs() {
+		return propertyConfigs;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	/**
+	 * @param propertyConfigs
+	 *        the propertyConfig to set
+	 */
+	public void setPropertyConfigs(EGaugePropertyConfig[] propertyConfigs) {
+		this.propertyConfigs = propertyConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code propConfigs} elements.
+	 * 
+	 * @return the number of {@code propConfigs} elements
+	 */
+	public int getPropertyConfigsCount() {
+		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propertyConfigs} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ModbusPropertyConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propIncludes} elements.
+	 */
+	public void setPropertyConfigsCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		int lCount = (confs == null ? 0 : confs.length);
+		if ( lCount != count ) {
+			EGaugePropertyConfig[] newIncs = new EGaugePropertyConfig[count];
+			if ( confs != null ) {
+				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
+			}
+			for ( int i = 0; i < count; i++ ) {
+				if ( newIncs[i] == null ) {
+					newIncs[i] = new EGaugePropertyConfig();
+				}
+			}
+			this.propertyConfigs = newIncs;
+		}
 	}
 
 }

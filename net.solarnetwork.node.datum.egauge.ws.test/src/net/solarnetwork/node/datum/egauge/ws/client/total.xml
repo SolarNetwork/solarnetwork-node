@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<data serial="0x273157d7">
+ <ts>1520222892</ts>
+ <r t="P" n="Grid"><v>50244504010</v></r>
+ <r t="P" n="Solar"><v>587829902</v></r>
+ <r t="P" n="Solar+"><v>706920068</v></r>
+ <r rt="total" t="P" n="Total Usage"><v>50951424078</v></r>
+ <r rt="total" t="P" n="Total Generation"><v>587829902</v></r>
+</data>

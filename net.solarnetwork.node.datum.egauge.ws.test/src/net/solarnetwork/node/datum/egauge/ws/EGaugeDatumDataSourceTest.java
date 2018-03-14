@@ -43,15 +43,15 @@ public class EGaugeDatumDataSourceTest {
 		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
 		XmlEGaugeClient client = XmlEGaugeClientTest
 				.getTestClient(XmlEGaugeClientTest.TEST_FILE_INSTANTANEOUS);
+		client.setHost(TEST_HOST);
 
 		source.setClient(client);
-		source.setHost(TEST_HOST);
 		source.setSourceId(TEST_SOURCE);
 
 		EGaugePowerDatum datum = source.readCurrentDatum();
 		assertEquals(TEST_SOURCE, datum.getSourceId());
 
-		XmlEGaugeClientTest.checkInstantaneousReadings(datum);
+		XmlEGaugeClientTest.checkInstantaneousGenerationReadings(datum);
 	}
 
 }

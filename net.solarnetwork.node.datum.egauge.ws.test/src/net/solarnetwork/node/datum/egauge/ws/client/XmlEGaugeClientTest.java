@@ -24,11 +24,11 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.junit.Test;
+import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
+import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig;
+import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
 
 /**
  * Test cases for the XmlEGaugeClient.
@@ -39,60 +39,74 @@ import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 public class XmlEGaugeClientTest {
 
 	public static final String TEST_FILE_INSTANTANEOUS = "instantaneous.xml";
+	public static final String TEST_FILE_TOTAL = "total.xml";
 
 	private static final String HOST = "testhost";
-	private static final String SOURCE = "test-source";
+	private static final String SOURCE_ID = "test-source";
 
 	@Test
 	public void instantaneousData() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.init();
+		client.setHost(HOST);
 
-		EGaugePowerDatum datum = client.getCurrent(HOST, SOURCE);
-		checkInstantaneousReadings(datum);
+		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
+		source.init();
+		source.setSourceId(SOURCE_ID);
+
+		EGaugePowerDatum datum = client.getCurrent(source);
+		checkInstantaneousGenerationReadings(datum);
+		checkInstantaneousConsumptionReadings(datum);
 	}
 
-	public static void checkInstantaneousReadings(EGaugePowerDatum datum) {
+	public static void checkInstantaneousGenerationReadings(EGaugePowerDatum datum) {
 		assertNotNull(datum);
-		assertEquals(Integer.valueOf(0), datum.getSolarPlusWatts());
-		assertEquals(Long.valueOf(196366), datum.getSolarPlusWattHourReading());// TODO review rounding 196367?
-		assertEquals(Integer.valueOf(20733), datum.getGridWatts());
-		assertEquals(Long.valueOf(13993341), datum.getGridWattHourReading());
+		assertEquals(Integer.valueOf(0), datum.getInstantaneousSampleInteger("generationWatts"));
+		assertEquals(Long.valueOf(196366), datum.getAccumulatingSampleLong("generationWattHourReading"));
 	}
 
-	/**
-	 * Tests that the data mapping converting results in the same XPath
-	 * mappings.
-	 */
+	public static void checkInstantaneousConsumptionReadings(EGaugePowerDatum datum) {
+		assertNotNull(datum);
+		assertEquals(Integer.valueOf(20733), datum.getInstantaneousSampleInteger("consumptionWatts"));
+		assertEquals(Long.valueOf(13993341),
+				datum.getAccumulatingSampleLong("consumptionWattHourReading"));
+	}
+
 	@Test
-	public void dataMapping() {
-		XmlEGaugeClient client = new XmlEGaugeClient();
+	public void totalData() {
+		XmlEGaugeClient client = getTestClient(TEST_FILE_TOTAL);
+		client.init();
+		client.setHost(HOST);
 
-		Map<String, String> xpathMap = new LinkedHashMap<String, String>(10);
-		xpathMap.put("solarPlusWatts", "r[@n='Solar+'][1]/i");
-		xpathMap.put("solarPlusWattHourReading", "r[@n='Solar+'][1]/v");
-		xpathMap.put("gridWatts", "r[@n='Grid'][1]/i");
-		xpathMap.put("gridWattHourReading", "r[@n='Grid'][1]/v");
-		client.setXpathMap(xpathMap);
+		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
+		source.init();
+		source.setSourceId(SOURCE_ID);
+		source.setPropertyConfigs(new EGaugePropertyConfig[] {
+				new EGaugePropertyConfig("test1", "Grid", EGaugeReadingType.TOTAL),
+				new EGaugePropertyConfig("test2", "Solar", EGaugeReadingType.TOTAL),
+				new EGaugePropertyConfig("test3", "Solar+", EGaugeReadingType.TOTAL),
+				new EGaugePropertyConfig("test4", "Total Usage", EGaugeReadingType.TOTAL),
+				new EGaugePropertyConfig("test5", "Total Generation", EGaugeReadingType.TOTAL), });
 
-		String mapping = client.getDataMapping();
-		assertTrue(mapping.contains("solarPlusWatts=r[@n='Solar+'][1]/i"));
-		assertTrue(mapping.contains("solarPlusWattHourReading=r[@n='Solar+'][1]/v"));
-		assertTrue(mapping.contains("gridWatts=r[@n='Grid'][1]/i"));
-		assertTrue(mapping.contains("gridWattHourReading=r[@n='Grid'][1]/v"));
-		assertEquals(4, mapping.split("\\s*,\\s*").length);
+		EGaugePowerDatum datum = client.getCurrent(source);
+		checkTotalReadings(datum);
+	}
 
-		client.setDataMapping(mapping);
-
-		assertEquals(xpathMap, client.getXpathMap());
-
+	public void checkTotalReadings(EGaugePowerDatum datum) {
+		assertNotNull(datum);
+		assertEquals(Long.valueOf(13956806), datum.getAccumulatingSampleLong("test1WattHourReading"));
+		assertEquals(Long.valueOf(163286), datum.getAccumulatingSampleLong("test2WattHourReading"));
+		assertEquals(Long.valueOf(196366), datum.getAccumulatingSampleLong("test3WattHourReading"));
+		assertEquals(Long.valueOf(14153173), datum.getAccumulatingSampleLong("test4WattHourReading"));
+		assertEquals(Long.valueOf(163286), datum.getAccumulatingSampleLong("test5WattHourReading"));
 	}
 
 	public static XmlEGaugeClient getTestClient(String path) {
 		XmlEGaugeClient client = new XmlEGaugeClient() {
 
 			@Override
-			protected String getUrl(String host) {
-				// Return the path to a local file containg test content
+			protected String getUrl(String host, EGaugeReadingType type) {
+				// Return the path to a local file containing test content
 				return getClass().getResource(path).toString();
 			}
 

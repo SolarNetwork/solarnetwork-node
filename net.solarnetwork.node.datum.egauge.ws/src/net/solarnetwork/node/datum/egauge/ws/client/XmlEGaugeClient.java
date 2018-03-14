@@ -23,13 +23,27 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
+import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig;
+import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.XmlServiceSupport;
 
 /**
@@ -44,82 +58,58 @@ import net.solarnetwork.node.support.XmlServiceSupport;
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
-	/** The number of seconds in an hour, used for conversion. */
-	private static final int HOUR_SECONDS = 3600;
-
 	/**
 	 * The default query URL that returns the XML data we will apply the XPath
 	 * mappings to.
 	 */
-	private static final String DEAFAULT_QUERY_URL = "/cgi-bin/egauge?inst";
+	private static final String DEAFAULT_INST_QUERY_URL = "/cgi-bin/egauge?inst";
+	private static final String DEAFAULT_TOT_QUERY_URL = "/cgi-bin/egauge?tot";
 
-	/** The URL that should be used to retrieve the eGauge XML. */
-	private String queryUrl = DEAFAULT_QUERY_URL;
-
-	/** The XPath mappings that will be used to read the file. */
-	private Map<String, XPathExpression> xpathMapping;
 	/**
-	 * Used to set the {@link #getXpathMapping()} values. Not kept in sync if
-	 * {@link #getXpathMapping()} is edited directly.
+	 * The URL that should be used to retrieve the instantanseous eGauge XML.
 	 */
-	private Map<String, String> xpathMap;
+	private String instantaneousQueryUrl = DEAFAULT_INST_QUERY_URL;
+	/**
+	 * The URL that should be used to retrieve the instantanseous eGauge XML.
+	 */
+	private String totalQueryUrl = DEAFAULT_TOT_QUERY_URL;
+
+	private String host;
+
+	@Override
+	public List<SettingSpecifier> settings(String prefix) {
+		List<SettingSpecifier> results = new ArrayList<>();
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "host", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "instantaneousQueryUrl",
+				DEAFAULT_INST_QUERY_URL));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "totalQueryUrl", DEAFAULT_TOT_QUERY_URL));
+
+		return results;
+	}
 
 	/**
 	 * 
 	 * @see net.solarnetwork.node.datum.egauge.ws.client.EGaugeClient#getCurrent()
 	 */
 	@Override
-	public EGaugePowerDatum getCurrent(String host, String sourceId) {
-		String url = getUrl(host);
+	public EGaugePowerDatum getCurrent(EGaugeDatumDataSource source) {
 		EGaugePowerDatum datum = new EGaugePowerDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
+		datum.setSourceId(source.getSourceId());
 
 		try {
-			webFormGetForBean(null, datum, url, null, xpathMapping);
-		} catch ( RuntimeException e ) {
-			Throwable root = e;
-			while ( root.getCause() != null ) {
-				root = root.getCause();
-			}
-
-			/*
-			 * TODO review, this behaviour mimics what was done in
-			 * EnaSolarXMLDatumDataSource except the IOException is swallowed.
-			 * It may be that we just want to throw this exception here?
-			 */
-			if ( root instanceof IOException ) {
-				// turn this into a WARN only
-				log.warn("Error communicating with eGauge inverter at {}: {}", url, e.getMessage());
-
-				// with a stacktrace in DEBUG
-				log.debug("IOException communicating with eGauge inverter at {}", url, e);
-
-				// Note that this means that the exception is swallowed and EGaugePowerDatum won't be able to store a reference in sampleException
-				return null;
-			}
-
-			throw e;
+			populateDatum(datum, source);
+		} catch ( XmlEGaugeClientException e ) {
+			// An exception has been encountered and logged but we need to make sure no datum is returned
+			return null;
 		}
 
 		if ( datum != null ) {
-			convertEGaugeValues(datum);
-			//			addEnergyDatumSourceMetadata(datum);
 			postDatumCapturedEvent(datum);
 		}
 		return datum;
-	}
-
-	/**
-	 * eGauge store the power readings in Watt-seconds while we store them in
-	 * Watt-hours so the units need to be converted.
-	 * 
-	 * @param datum
-	 *        The instance containing the eGauge readings to be updated.
-	 */
-	protected void convertEGaugeValues(EGaugePowerDatum datum) {
-		datum.setSolarPlusWattHourReading(datum.getSolarPlusWattHourReading() / HOUR_SECONDS); //  TODO review rounding
-		datum.setGridWattHourReading(datum.getGridWattHourReading() / HOUR_SECONDS);
 	}
 
 	/**
@@ -130,134 +120,182 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 *        {@link #getQueryUrl()}.
 	 * @return the URL that should be used to retrieve the eGauge data.
 	 */
-	protected String getUrl(String host) {
-		return (host == null ? "" : host) + getQueryUrl();
+	protected String getUrl(String host, EGaugeReadingType type) {
+		return (host == null ? "" : host) + getQueryUrl(type);
 	}
 
-	//	private void addEnergyDatumSourceMetadata(EGaugePowerDatum d) {
-	//		if ( d == null ) {
-	//			return;
-	//		}
-	//		// associate consumption/generation tags with this source
-	//		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
-	//		// TODO review I think we have both generation and consumption data in this datum so is this the correct tag?
-	//		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
-	//		addSourceMetadata(d.getSourceId(), sourceMeta);
-	//	}
+	protected String getQueryUrl(EGaugeReadingType type) {
+		switch (type) {
+			case INSTANTANEOUS:
+				return getInstantaneousQueryUrl();
+			case TOTAL:
+				return getTotalQueryUrl();
+			default:
+				throw new UnsupportedOperationException("Unkown register type: " + type);
+		}
+	}
+
+	protected void populateDatum(EGaugePowerDatum datum, EGaugeDatumDataSource source)
+			throws XmlEGaugeClientException {
+		Map<EGaugeReadingType, Element> documentCache = new HashMap<>();
+
+		EGaugePropertyConfig[] configs = source.getPropertyConfigs();
+		if ( configs != null ) {
+			for ( EGaugePropertyConfig propertyConfig : configs ) {
+				Element xml = getXml(propertyConfig.getReadingType(), documentCache);
+				if ( xml != null ) {
+					populateDatumProperty(datum, propertyConfig, xml);
+				}
+			}
+		}
+
+	}
+
+	protected void populateDatumProperty(EGaugePowerDatum datum, EGaugePropertyConfig propertyConfig,
+			Element xml) {
+
+		String xpathBase = "r[@n='" + propertyConfig.getRegisterName() + "'][1]";
+
+		try {
+			String propertyType = (String) getXPathExpression(xpathBase + "/@t").evaluate(xml,
+					XPathConstants.STRING);
+			String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
+					XPathConstants.STRING);
+
+			switch (propertyConfig.getReadingType()) {
+				case INSTANTANEOUS:
+					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
+							.evaluate(xml, XPathConstants.STRING);
+					datum.addEGaugeInstantaneousPropertyReading(propertyConfig, propertyType, value,
+							instantenouseValue);
+					break;
+				case TOTAL:
+					datum.addEGaugeAccumulatingPropertyReading(propertyConfig, propertyType, value);
+					break;
+				default:
+					throw new UnsupportedOperationException(
+							"Unkown register type: " + propertyConfig.getReadingType());
+			}
+		} catch ( XPathExpressionException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected XPathExpression getXPathExpression(String xpath) throws XPathExpressionException {
+		XPath xp = getXpathFactory().newXPath();
+		if ( getNsContext() != null ) {
+			xp.setNamespaceContext(getNsContext());
+		}
+		return xp.compile(xpath);
+	}
+
+	protected Element getXml(EGaugeReadingType type, Map<EGaugeReadingType, Element> cache)
+			throws XmlEGaugeClientException {
+		if ( cache != null && cache.containsKey(type) ) {
+			return cache.get(type);
+		} else {
+			String url = getUrl(getHost(), type);
+			Element xml = getXml(url);
+			cache.put(type, xml);
+			return xml;
+		}
+	}
+
+	protected Element getXml(String url) throws XmlEGaugeClientException {
+		Document doc;
+		try {
+			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
+			InputSource is = getInputSourceFromURLConnection(conn);
+			doc = getDocBuilderFactory().newDocumentBuilder().parse(is);
+		} catch ( SAXException e ) {
+			throw new RuntimeException(e);
+		} catch ( IOException e ) {
+			// turn this into a WARN only
+			log.warn("Error communicating with eGauge inverter at {}: {}", url, e.getMessage());
+
+			// with a stacktrace in DEBUG
+			log.debug("IOException communicating with eGauge inverter at {}", url, e);
+
+			// Note that this means that the exception is swallowed and EGaugePowerDatum won't be able to store a reference in sampleException
+			throw new XmlEGaugeClientException("Error communicating with eGauge inverter at " + url, e);
+		} catch ( ParserConfigurationException e ) {
+			throw new RuntimeException(e);
+		}
+
+		return doc.getDocumentElement();
+	}
 
 	@Override
 	public void init() {
 		super.init();
-		if ( xpathMapping == null ) {
-			setXpathMap(defaultXpathMap());
+		if ( getInstantaneousQueryUrl() == null ) {
+			setInstantaneousQueryUrl(DEAFAULT_INST_QUERY_URL);
 		}
-		if ( getQueryUrl() == null ) {
-			setQueryUrl(DEAFAULT_QUERY_URL);
+		if ( getTotalQueryUrl() == null ) {
+			setTotalQueryUrl(DEAFAULT_TOT_QUERY_URL);
 		}
 	}
 
 	/**
-	 * The default eGauge XPATH mappings to use when none are provided.
-	 * 
-	 * @return tThe default eGauge XPATH mappings.
+	 * @return the instantaneousQueryUrl
 	 */
-	private static Map<String, String> defaultXpathMap() {
-		Map<String, String> result = new LinkedHashMap<String, String>(10);
-		result.put("solarPlusWatts", "r[@n='Solar+'][1]/i");
-		result.put("solarPlusWattHourReading", "r[@n='Solar+'][1]/v");
-		result.put("gridWatts", "r[@n='Grid'][1]/i");
-		result.put("gridWattHourReading", "r[@n='Grid'][1]/v");
-		return result;
+	public String getInstantaneousQueryUrl() {
+		return instantaneousQueryUrl;
 	}
 
 	/**
-	 * Provides access to the internal XPath map.
-	 * 
-	 * @return the XPath map if set.
+	 * @param instantaneousQueryUrl
+	 *        the instantaneousQueryUrl to set
 	 */
-	protected Map<String, String> getXpathMap() {
-		return xpathMap;
+	public void setInstantaneousQueryUrl(String instantaneousQueryUrl) {
+		this.instantaneousQueryUrl = instantaneousQueryUrl;
 	}
 
 	/**
-	 * Set the XPath mapping using String values.
-	 * 
-	 * @param xpathMap
-	 *        the string XPath mapping values
+	 * @return the totalQueryUrl
 	 */
-	public void setXpathMap(Map<String, String> xpathMap) {
-		this.xpathMap = xpathMap;
-		setXpathMapping(getXPathExpressionMap(xpathMap));
+	public String getTotalQueryUrl() {
+		return totalQueryUrl;
 	}
 
 	/**
-	 * Gets the XML data mapping as a String from the {@link #getXpathMapping()}
-	 * configuration.
-	 * 
-	 * @return the data mapping.
+	 * @param totalQueryUrl
+	 *        the totalQueryUrl to set
 	 */
-	public String getDataMapping() {
-		return getXpathMap().entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
-				.collect(Collectors.joining(","));
+	public void setTotalQueryUrl(String totalQueryUrl) {
+		this.totalQueryUrl = totalQueryUrl;
 	}
 
 	/**
-	 * Set the XML data mapping. The string should be a comma separated list of
-	 * property names to XPath paths.
 	 * 
+	 * Indicates that an exception has been encountered and handled but that the
+	 * datum should not be processed further.
 	 * 
-	 * @param mapping
-	 *        comma-delimited equal-delimited key value pair list
+	 * @author maxieduncan
+	 * @version 1.0
 	 */
-	public void setDataMapping(String mapping) {
-		if ( mapping == null || mapping.length() < 1 ) {
-			return;
+	private class XmlEGaugeClientException extends Exception {
+
+		private static final long serialVersionUID = -4997752985931615440L;
+
+		public XmlEGaugeClientException(String message, Throwable cause) {
+			super(message, cause);
 		}
-		// Split the string by "comma" then the first "equals" to get key/value pairs
-		Map<String, String> map = Arrays.stream(mapping.split("\\s*,\\s*"))
-				.map(s -> s.split("\\s*=\\s*", 2))
-				.collect(Collectors.toMap(a -> a[0], a -> a.length > 1 ? a[1] : ""));
-		setXpathMap(map);
+
 	}
 
-	public Map<String, XPathExpression> getXpathMapping() {
-		return xpathMapping;
+	public String getHost() {
+		return host;
 	}
 
-	/**
-	 * Set a mapping of PowerDatum JavaBean property names to corresponding
-	 * XPath expressions for extracting the data from the XML response.
-	 * 
-	 * <p>
-	 * This property can also be configured via {@link #setXpathMap(Map)} using
-	 * String values, which is useful when using Spring. Defaults to a sensible
-	 * value, so this should only be configured in special cases.
-	 * </p>
-	 * 
-	 * @param xpathMapping
-	 *        the mapping to set
-	 */
-	public void setXpathMapping(Map<String, XPathExpression> xpathMapping) {
-		this.xpathMapping = xpathMapping;
+	public void setHost(String host) {
+		this.host = host;
 	}
 
-	/**
-	 * The URL used to query the eGauge meter.
-	 * 
-	 * @return the eGauge query URL.
-	 */
-	public String getQueryUrl() {
-		return queryUrl;
-	}
-
-	/**
-	 * Sets the URL used to query the eGauge meter.
-	 * 
-	 * @param url
-	 *        the eGauge query URL.
-	 */
-	public void setQueryUrl(String url) {
-		this.queryUrl = url;
+	@Override
+	public String toString() {
+		return "XmlEGaugeClient [instantaneousQueryUrl=" + instantaneousQueryUrl + ", totalQueryUrl="
+				+ totalQueryUrl + ", host=" + host + "]";
 	}
 
 }

@@ -27,108 +27,88 @@ import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 /**
  * Extension of {@link PowerDatum} to map eGauge data appropriately.
  * 
- * <dl>
- * 
- * <dt>SolarPlusWatts (Watts)</dt>
- * <dd>instantaneous power in watts in terms of total output of the inverter
- * right now</dd>
- * 
- * <dt>SolarPlusWattHourReading (WattHourReading)</dt>
- * <dd>total watt-hours of energy produced by the solar inverter, read from the
- * "Solar" register</dd>
- * 
- * <dt>GridWatts (DCPower)</dt>
- * <dd>instantaneous power in watts in terms of total load represented by the
- * building as defined by the "Grid" register.</dd>
- * 
- * <dt>GridWattHourReading</dt>
- * <dd>total watt-hours of energy used by the building according to this meter,
- * read from the "Total Usage" register</dd>
- * 
- * </dl>
- * 
  * @author maxieduncan
  * @version 1.2
  */
 public class EGaugePowerDatum extends GeneralNodePVEnergyDatum {
 
-	/** Stores the "Grid" register watt hour reading. */
-	private static final String GRID_WATT_HOUR_READING_KEY = "gridWattHourReading";
+	private static final String UNIT_POWER = "P";
+
+	/** The number of seconds in an hour, used for conversion. */
+	private static final int HOUR_SECONDS = 3600;
 
 	/**
-	 * Delegates to {@link #getWatts()}
+	 * Adds an eGauge accumulating value converting eGauge units into the SN
+	 * equivalent.
 	 * 
-	 * @return the Solar+ instantaneous Watts reading
+	 * @param propertyConfig
+	 *        the configuration for the property being recorded
+	 * @param type
+	 *        the eGauge value type
+	 * @param value
+	 *        the accumulating value to record
 	 */
-	public Integer getSolarPlusWatts() {
-		return super.getWatts();
+	public void addEGaugeAccumulatingPropertyReading(EGaugePropertyConfig propertyConfig, String type,
+			String value) {
+		switch (type) {
+			case UNIT_POWER:
+				if ( value != null ) {
+					// Convert watt-seconds into watt-hours
+					Long wattHours = Long.valueOf(value) / HOUR_SECONDS;// TODO review rounding
+					super.putAccumulatingSampleValue(
+							propertyConfig.getPropertyName() + "WattHourReading", wattHours);
+				}
+				break;
+			default:
+				throw new UnsupportedOperationException(
+						"Values of type: " + type + " aren't currently supported");
+		}
 	}
 
 	/**
-	 * Delegates to {@link #setWatts(Integer)}
+	 * Adds an eGauge instantaneous reading.
 	 * 
-	 * @param the
-	 *        Solar+ instantaneous Watts reading
+	 * @param propertyConfig
+	 *        the configuration for the property being recorded
+	 * @param type
+	 *        the eGauge value type
+	 * @param value
+	 *        the accumulating value to record, ignored if null
+	 * @param instantenouseValue
+	 *        the instantaneous reading
 	 */
-	public void setSolarPlusWatts(Integer watts) {
-		super.setWatts(watts);
+	public void addEGaugeInstantaneousPropertyReading(EGaugePropertyConfig propertyConfig, String type,
+			String value, String instantenouseValue) {
+		addEGaugeAccumulatingPropertyReading(propertyConfig, type, value);
+
+		switch (type) {
+			case UNIT_POWER:
+				if ( instantenouseValue != null ) {
+					super.putInstantaneousSampleValue(propertyConfig.getPropertyName() + "Watts",
+							Integer.valueOf(instantenouseValue));
+					break;
+				}
+			default:
+				throw new UnsupportedOperationException(
+						"Values of type: " + type + " aren't currently supported");
+		}
 	}
 
-	/**
-	 * Delegates to {@link #getDCPower()}
-	 * 
-	 * @return the Grid instantaneous Watts reading
-	 */
-	public Integer getGridWatts() {
-		return super.getDCPower();
-	}
-
-	/**
-	 * Delegates to {@link #setDCPower(Integer)}
-	 * 
-	 * @param the
-	 *        Grid instantaneous Watts reading
-	 */
-	public void setGridWatts(Integer watts) {
-		super.setDCPower(watts);
-	}
-
-	/**
-	 * Delegates to {@link #getSolarPlusWattHourReading()}
-	 * 
-	 * @return the Solar+ Watt-hours reading
-	 */
-	public Long getSolarPlusWattHourReading() {
-		return super.getWattHourReading();
-	}
-
-	/**
-	 * Delegates to {@link #setSolarPlusWattHourReading(Longong)}
-	 * 
-	 * @param the
-	 *        Solar+ Watt-hours reading
-	 */
-	public void setSolarPlusWattHourReading(Long wattHourReading) {
-		super.setWattHourReading(wattHourReading);
-	}
-
-	/**
-	 * Gets the Grid Watt-hours reading.
-	 * 
-	 * @return the Grid Watt-hours reading
-	 */
-	public Long getGridWattHourReading() {
-		return getAccumulatingSampleLong(GRID_WATT_HOUR_READING_KEY);
-	}
-
-	/**
-	 * Sets the Grid Watt-hours reading.
-	 * 
-	 * @param gridWattHourReading
-	 *        the Grid Watt-hours reading
-	 */
-	public void setGridWattHourReading(Long wattHourReading) {
-		putAccumulatingSampleValue(GRID_WATT_HOUR_READING_KEY, wattHourReading);
+	public String getSampleInfo(EGaugePropertyConfig[] eGaugePropertyConfigs) {
+		StringBuilder buf = new StringBuilder();
+		for ( EGaugePropertyConfig propertyConfig : eGaugePropertyConfigs ) {
+			switch (propertyConfig.getReadingType()) {
+				case INSTANTANEOUS:
+					buf.append(getInstantaneousSampleInteger(propertyConfig.getPropertyName() + "Watts"))
+							.append(" W; ");
+				case TOTAL:
+					buf.append(getAccumulatingSampleLong(
+							propertyConfig.getPropertyName() + "WattHourReading")).append(" Wh;");
+				default:
+					buf.append(" " + propertyConfig.getPropertyName() + " sample created.\n");
+			}
+		}
+		return buf.toString();
 	}
 
 }
