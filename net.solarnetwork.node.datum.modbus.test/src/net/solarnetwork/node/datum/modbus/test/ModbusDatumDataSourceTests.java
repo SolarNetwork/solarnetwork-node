@@ -22,8 +22,9 @@
 
 package net.solarnetwork.node.datum.modbus.test;
 
-import static net.solarnetwork.node.datum.modbus.DatumPropertySampleType.Accumulating;
-import static net.solarnetwork.node.datum.modbus.DatumPropertySampleType.Instantaneous;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
 import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float64;
 import static net.solarnetwork.node.datum.modbus.ModbusDataType.Int16;
@@ -47,10 +48,8 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.datum.modbus.DatumPropertySampleType;
 import net.solarnetwork.node.datum.modbus.ModbusDataType;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
-import net.solarnetwork.node.datum.modbus.ModbusFunction;
 import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -58,13 +57,14 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link ModbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusDatumDataSourceTests {
 
@@ -150,8 +150,10 @@ public class ModbusDatumDataSourceTests {
 		final int[] range1 = new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512,
 				0xdfee };
 		final int[] range2 = new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readInts(0, 8)).andReturn(range1);
-		expect(modbusConnection.readInts(200, 6)).andReturn(range2);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+				.andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+				.andReturn(range2);
 
 		replayAll();
 
@@ -185,7 +187,7 @@ public class ModbusDatumDataSourceTests {
 		propConfig.setAddress(0);
 		propConfig.setDataType(ModbusDataType.StringUtf8);
 		propConfig.setWordLength(8);
-		propConfig.setDatumPropertyType(DatumPropertySampleType.Status);
+		propConfig.setDatumPropertyType(Status);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
@@ -202,7 +204,8 @@ public class ModbusDatumDataSourceTests {
 		final String message = "Hello, world.";
 		final int[] strWords = stringToModbusWordArray(message, ModbusHelper.UTF8_CHARSET,
 				propConfig.getWordLength());
-		expect(modbusConnection.readInts(0, 8)).andReturn(strWords);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+				.andReturn(strWords);
 
 		replayAll();
 
@@ -244,7 +247,8 @@ public class ModbusDatumDataSourceTests {
 
 		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
 				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readInts(0, 12)).andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+				.andReturn(range1);
 
 		replayAll();
 
@@ -293,7 +297,8 @@ public class ModbusDatumDataSourceTests {
 
 		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
 				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readInts(0, 12)).andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+				.andReturn(range1);
 
 		replayAll();
 
@@ -321,8 +326,8 @@ public class ModbusDatumDataSourceTests {
 		propConfig.setName(TEST_FLOAT32_PROP_NAME);
 		propConfig.setAddress(0);
 		propConfig.setDataType(ModbusDataType.Float32);
-		propConfig.setDatumPropertyType(DatumPropertySampleType.Instantaneous);
-		propConfig.setFunction(ModbusFunction.ReadInputRegister);
+		propConfig.setDatumPropertyType(Instantaneous);
+		propConfig.setFunction(ModbusReadFunction.ReadInputRegister);
 		propConfig.setDecimalScale(-1);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
@@ -338,7 +343,8 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final int[] range1 = new int[] { 0x44f6, 0xc651 };
-		expect(modbusConnection.readInputValues(0, 2)).andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 2))
+				.andReturn(range1);
 
 		replayAll();
 

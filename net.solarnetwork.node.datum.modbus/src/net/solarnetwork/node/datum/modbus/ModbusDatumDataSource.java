@@ -38,6 +38,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -46,6 +47,7 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -58,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
@@ -88,6 +90,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			return null;
 		}
 		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setSamples(new GeneralDatumSamples());
 		d.setCreated(new Date(currSample.getDataTimestamp()));
 		d.setSourceId(sourceId);
 		populateDatumProperties(currSample, d, propConfigs);
@@ -163,29 +166,18 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			if ( propVal != null ) {
 				switch (conf.getDatumPropertyType()) {
 					case Accumulating:
-						if ( propVal instanceof Number ) {
-							d.putAccumulatingSampleValue(conf.getName(), (Number) propVal);
-						} else {
+					case Instantaneous:
+						if ( !(propVal instanceof Number) ) {
 							log.warn(
 									"Cannot set datum accumulating property {} to non-number value [{}]",
 									conf.getName(), propVal);
 						}
-						break;
+						continue;
 
-					case Instantaneous:
-						if ( propVal instanceof Number ) {
-							d.putInstantaneousSampleValue(conf.getName(), (Number) propVal);
-						} else {
-							log.warn(
-									"Cannot set datum instantaneous property {} to non-number value [{}]",
-									conf.getName(), propVal);
-						}
-						break;
-
-					case Status:
-						d.putStatusSampleValue(conf.getName(), propVal);
-						break;
+					default:
+						// nothing
 				}
+				d.getSamples().putSampleValue(conf.getDatumPropertyType(), conf.getName(), propVal);
 			}
 		}
 	}
@@ -236,9 +228,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		return "Generic Modbus Device";
 	}
 
-	private static Map<ModbusFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
+	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
 			ModbusPropertyConfig[] configs) {
-		Map<ModbusFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
+		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs.length);
 		for ( ModbusPropertyConfig config : configs ) {
 			confsByFunction.computeIfAbsent(config.getFunction(), k -> new ArrayList<>(4)).add(config);
@@ -328,11 +320,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				final int maxReadLen = maxReadWordCount;
-				Map<ModbusFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
+				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
 						propConfigs);
-				for ( Map.Entry<ModbusFunction, List<ModbusPropertyConfig>> me : functionMap
+				for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap
 						.entrySet() ) {
-					ModbusFunction function = me.getKey();
+					ModbusReadFunction function = me.getKey();
 					List<ModbusPropertyConfig> configs = me.getValue();
 					// try to read from device as few times as possible by combining ranges of addresses
 					// into single calls, but limited to at most maxReadWordCount addresses at a time
@@ -356,11 +348,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 									break;
 
 								case ReadHoldingRegister:
-									m.saveDataArray(conn.readInts(start, len), start);
+									m.saveDataArray(
+											conn.readUnsignedShorts(
+													ModbusReadFunction.ReadHoldingRegister, start, len),
+											start);
 									break;
 
 								case ReadInputRegister:
-									m.saveDataArray(conn.readInputValues(start, len), start);
+									m.saveDataArray(conn.readUnsignedShorts(
+											ModbusReadFunction.ReadInputRegister, start, len), start);
 									break;
 							}
 							start += len;

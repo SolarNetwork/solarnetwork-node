@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -40,8 +42,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class ModbusPropertyConfig {
 
 	private String name;
-	private DatumPropertySampleType datumPropertyType;
-	private ModbusFunction function;
+	private GeneralDatumSamplesType datumPropertyType;
+	private ModbusReadFunction function;
 	private ModbusDataType dataType;
 	private int address;
 	private int wordLength;
@@ -53,9 +55,9 @@ public class ModbusPropertyConfig {
 	 */
 	public ModbusPropertyConfig() {
 		super();
-		datumPropertyType = DatumPropertySampleType.Instantaneous;
+		datumPropertyType = GeneralDatumSamplesType.Instantaneous;
 		dataType = ModbusDataType.Float32;
-		function = ModbusFunction.ReadHoldingRegister;
+		function = ModbusReadFunction.ReadHoldingRegister;
 		address = 0;
 		wordLength = 1;
 		unitMultiplier = BigDecimal.ONE;
@@ -74,7 +76,7 @@ public class ModbusPropertyConfig {
 	 * @param address
 	 *        the modbus register address
 	 */
-	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+	public ModbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
 			ModbusDataType dataType, int address) {
 		this(name, datumPropertyType, dataType, address, 0, BigDecimal.ONE, 0);
 	}
@@ -93,7 +95,7 @@ public class ModbusPropertyConfig {
 	 * @param unitMultiplier
 	 *        the unit multiplier
 	 */
-	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+	public ModbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
 			ModbusDataType dataType, int address, BigDecimal unitMultiplier) {
 		this(name, datumPropertyType, dataType, address, 0, unitMultiplier, 0);
 	}
@@ -115,7 +117,7 @@ public class ModbusPropertyConfig {
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
-	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+	public ModbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
 			ModbusDataType dataType, int address, BigDecimal unitMultiplier, int decimalScale) {
 		this(name, datumPropertyType, dataType, address, 0, unitMultiplier, decimalScale);
 	}
@@ -139,13 +141,13 @@ public class ModbusPropertyConfig {
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
-	public ModbusPropertyConfig(String name, DatumPropertySampleType datumPropertyType,
+	public ModbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
 			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier,
 			int decimalScale) {
 		super();
 		this.name = name;
 		this.datumPropertyType = datumPropertyType;
-		this.function = ModbusFunction.ReadHoldingRegister;
+		this.function = ModbusReadFunction.ReadHoldingRegister;
 		this.dataType = dataType;
 		this.address = address;
 		this.wordLength = wordLength;
@@ -161,9 +163,9 @@ public class ModbusPropertyConfig {
 		// drop-down menu for datumPropertyType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "datumPropertyTypeValue",
-				Character.toString(DatumPropertySampleType.Instantaneous.toKey()));
+				Character.toString(GeneralDatumSamplesType.Instantaneous.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( DatumPropertySampleType e : DatumPropertySampleType.values() ) {
+		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
@@ -173,9 +175,9 @@ public class ModbusPropertyConfig {
 
 		// drop-down menu for function
 		BasicMultiValueSettingSpecifier functionSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "functionValue", ModbusFunction.ReadHoldingRegister.toString());
+				prefix + "functionValue", ModbusReadFunction.ReadHoldingRegister.toString());
 		Map<String, String> functionTitles = new LinkedHashMap<String, String>(4);
-		for ( ModbusFunction e : ModbusFunction.values() ) {
+		for ( ModbusReadFunction e : ModbusReadFunction.values() ) {
 			functionTitles.put(e.toString(), e.toDisplayString());
 		}
 		functionSpec.setValueTitles(functionTitles);
@@ -235,7 +237,7 @@ public class ModbusPropertyConfig {
 		if ( key == null || key.length() < 1 ) {
 			return;
 		}
-		this.datumPropertyType = DatumPropertySampleType.valueOf(key.charAt(0));
+		this.datumPropertyType = GeneralDatumSamplesType.valueOf(key.charAt(0));
 	}
 
 	/**
@@ -243,7 +245,7 @@ public class ModbusPropertyConfig {
 	 * 
 	 * @return the type
 	 */
-	public DatumPropertySampleType getDatumPropertyType() {
+	public GeneralDatumSamplesType getDatumPropertyType() {
 		return datumPropertyType;
 	}
 
@@ -253,7 +255,7 @@ public class ModbusPropertyConfig {
 	 * @param datumPropertyType
 	 *        the datum property type to set
 	 */
-	public void setDatumPropertyType(DatumPropertySampleType datumPropertyType) {
+	public void setDatumPropertyType(GeneralDatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
 		}
@@ -265,7 +267,7 @@ public class ModbusPropertyConfig {
 	 * 
 	 * @return the Modbus function
 	 */
-	public ModbusFunction getFunction() {
+	public ModbusReadFunction getFunction() {
 		return function;
 	}
 
@@ -275,7 +277,7 @@ public class ModbusPropertyConfig {
 	 * @param function
 	 *        the Modbus function
 	 */
-	public void setFunction(ModbusFunction function) {
+	public void setFunction(ModbusReadFunction function) {
 		this.function = function;
 	}
 
@@ -298,7 +300,7 @@ public class ModbusPropertyConfig {
 		if ( function == null ) {
 			return;
 		}
-		setFunction(ModbusFunction.valueOf(function));
+		setFunction(ModbusReadFunction.valueOf(function));
 	}
 
 	/**
