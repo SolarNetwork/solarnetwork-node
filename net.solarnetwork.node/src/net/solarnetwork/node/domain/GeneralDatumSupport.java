@@ -26,12 +26,13 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 
 /**
  * Base Datum implementation with {@link GeneralDatumSamples} support.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cloneable {
 
@@ -50,6 +51,48 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	 */
 	protected GeneralDatumSamples newSamplesInstance() {
 		return new GeneralDatumSamples();
+	}
+
+	/**
+	 * Put a general sample value.
+	 * 
+	 * <p>
+	 * This is a short-cut for calling
+	 * {@link GeneralDatumSamples#putSampleValue(GeneralDatumSamplesType, String, Object)}.
+	 * </p>
+	 * 
+	 * @param type
+	 *        the sample type
+	 * @param key
+	 *        the property key
+	 * @param value
+	 *        the property value
+	 * @since 1.3
+	 */
+	public void putSampleValue(GeneralDatumSamplesType type, String key, Object value) {
+		GeneralDatumSamples s = getSamples();
+		if ( s == null ) {
+			s = newSamplesInstance();
+			setSamples(s);
+		}
+		s.putSampleValue(type, key, value);
+	}
+
+	/**
+	 * Get a sample value.
+	 * 
+	 * @param type
+	 *        the type of sample data to get
+	 * @param key
+	 *        the key of the value, or tag name, to get
+	 * @return the value cast as a {@code V}, or {@literal null} if not
+	 *         available
+	 * @see GeneralDatumSamples#getSampleValue(GeneralDatumSamplesType, String)
+	 * @since 1.3
+	 */
+	public <V> V getSampleValue(GeneralDatumSamplesType type, String key) {
+		GeneralDatumSamples s = getSamples();
+		return (s != null ? s.getSampleValue(type, key) : null);
 	}
 
 	/**
