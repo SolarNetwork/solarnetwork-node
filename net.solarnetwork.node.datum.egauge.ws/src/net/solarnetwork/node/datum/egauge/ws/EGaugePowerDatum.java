@@ -98,10 +98,10 @@ public class EGaugePowerDatum extends GeneralNodePVEnergyDatum {
 		StringBuilder buf = new StringBuilder();
 		for ( EGaugePropertyConfig propertyConfig : eGaugePropertyConfigs ) {
 			switch (propertyConfig.getReadingType()) {
-				case INSTANTANEOUS:
+				case Instantaneous:
 					buf.append(getInstantaneousSampleInteger(propertyConfig.getPropertyName() + "Watts"))
 							.append(" W; ");
-				case TOTAL:
+				case Total:
 					buf.append(getAccumulatingSampleLong(
 							propertyConfig.getPropertyName() + "WattHourReading")).append(" Wh;");
 				default:
