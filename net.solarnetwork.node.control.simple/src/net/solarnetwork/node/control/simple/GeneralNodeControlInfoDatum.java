@@ -32,7 +32,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * instance.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
 
@@ -84,9 +84,8 @@ public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
 		switch (controlInfo.getType()) {
 			case Boolean:
 				// store boolean flag as a status sample value of 0 or 1
-				if ( value.length() > 0
-						&& (value.equals("1") || value.equalsIgnoreCase("yes") || value
-								.equalsIgnoreCase("true")) ) {
+				if ( value.length() > 0 && (value.equals("1") || value.equalsIgnoreCase("yes")
+						|| value.equalsIgnoreCase("true")) ) {
 					putStatusSampleValue(propertyName, 1);
 				} else {
 					putStatusSampleValue(propertyName, 0);
@@ -102,13 +101,18 @@ public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
 				}
 				break;
 
-			default:
-				// store others as floating point instants and status
+			case Float:
+			case Percent:
 				BigDecimal decimalValue = new BigDecimal(value);
 				putStatusSampleValue(propertyName, decimalValue);
 				if ( propertyName.equals(DEFAULT_PROPERTY_NAME) ) {
 					putInstantaneousSampleValue(DEFAULT_INSTANT_PROPERTY_NAME, decimalValue);
 				}
+				break;
+
+			default:
+				// for rest, put as string directly
+				putStatusSampleValue(propertyName, value);
 				break;
 
 		}
