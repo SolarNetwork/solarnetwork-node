@@ -53,6 +53,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -434,26 +435,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	 * </p>
 	 * 
 	 * @param count
-	 *        The desired number of {@code propIncludes} elements.
+	 *        The desired number of {@code propConfigs} elements.
 	 */
 	public void setPropConfigsCount(int count) {
-		if ( count < 0 ) {
-			count = 0;
-		}
-		ModbusPropertyConfig[] confs = this.propConfigs;
-		int lCount = (confs == null ? 0 : confs.length);
-		if ( lCount != count ) {
-			ModbusPropertyConfig[] newIncs = new ModbusPropertyConfig[count];
-			if ( confs != null ) {
-				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
-			}
-			for ( int i = 0; i < count; i++ ) {
-				if ( newIncs[i] == null ) {
-					newIncs[i] = new ModbusPropertyConfig();
-				}
-			}
-			this.propConfigs = newIncs;
-		}
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
+				ModbusPropertyConfig.class, null);
 	}
 
 	/**
