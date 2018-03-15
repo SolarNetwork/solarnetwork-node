@@ -73,6 +73,25 @@ public enum ModbusReadFunction implements ModbusFunction {
 		throw new IllegalArgumentException("Unknown ModbusReadFunction code [" + code + "]");
 	}
 
+	@Override
+	public boolean isReadFunction() {
+		return true;
+	}
+
+	@Override
+	public ModbusFunction oppositeFunction() {
+		switch (this) {
+			case ReadCoil:
+				return ModbusWriteFunction.WriteCoil;
+
+			case ReadHoldingRegister:
+				return ModbusWriteFunction.WriteHoldingRegister;
+
+			default:
+				return null;
+		}
+	}
+
 	/**
 	 * Alias for {@link ModbusHelper#functionForCode(int)}.
 	 * 

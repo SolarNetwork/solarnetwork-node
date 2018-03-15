@@ -45,4 +45,24 @@ public interface ModbusFunction {
 	 */
 	String toDisplayString();
 
+	/**
+	 * Return {@literal true} if this function represents a read operation.
+	 * 
+	 * @return {@literal true} if this function represents a read operation,
+	 *         {@literal false} if a write operation
+	 */
+	boolean isReadFunction();
+
+	/**
+	 * Get an "opposite" function from this function.
+	 * 
+	 * <p>
+	 * This method is used to get a read function for a given write function,
+	 * and a write function for a given read function.
+	 * </p>
+	 * 
+	 * @return the function, or {@code null} if not applicable
+	 */
+	ModbusFunction oppositeFunction();
+
 }
