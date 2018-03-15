@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,11 +41,12 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
-import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig;
-import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.XmlServiceSupport;
@@ -62,21 +63,19 @@ import net.solarnetwork.node.support.XmlServiceSupport;
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
+	/** The number of seconds in an hour, used for conversion. */
+	private static final int HOUR_SECONDS = 3600;
+
 	/**
 	 * The default query URL that returns the XML data we will apply the XPath
 	 * mappings to.
 	 */
 	private static final String DEAFAULT_INST_QUERY_URL = "/cgi-bin/egauge?inst";
-	private static final String DEAFAULT_TOT_QUERY_URL = "/cgi-bin/egauge?tot";
 
 	/**
 	 * The URL that should be used to retrieve the instantanseous eGauge XML.
 	 */
-	private String instantaneousQueryUrl = DEAFAULT_INST_QUERY_URL;
-	/**
-	 * The URL that should be used to retrieve the instantanseous eGauge XML.
-	 */
-	private String totalQueryUrl = DEAFAULT_TOT_QUERY_URL;
+	private String instQueryUrl = DEAFAULT_INST_QUERY_URL;
 
 	private String host;
 
@@ -84,7 +83,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	private String sourceId;
 
 	/** The list of property/register configurations. */
-	private EGaugePropertyConfig[] propertyConfigs;
+	private GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] propertyConfigs;
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -93,17 +92,42 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		results.add(new BasicTextFieldSettingSpecifier("host", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
-		EGaugePropertyConfig[] confs = getPropertyConfigs();
-		List<EGaugePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
-				: Collections.<EGaugePropertyConfig> emptyList());
+		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = getPropertyConfigs();
+		List<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>> confsList = (confs != null
+				? Arrays.asList(confs)
+				: Collections.<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>> emptyList());
 		results.add(SettingsUtil.dynamicListSettingSpecifier("propertyConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<EGaugePropertyConfig>() {
+				new SettingsUtil.KeyedListCallback<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(EGaugePropertyConfig value,
-							int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(
+							GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> value, int index,
+							String key) {
+
+						List<SettingSpecifier> settingSpecifiers = new ArrayList<>();
+
+						// Add the GeneralDatumSamplePropertyConfig properties
+						settingSpecifiers
+								.add(new BasicTextFieldSettingSpecifier(key + ".propertyKey", ""));
+
+						BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+								key + ".propertyType", GeneralDatumSamplesType.Instantaneous.name());
+						// We only support two reading types currenlty
+						Map<String, String> propTypeTitles = new LinkedHashMap<>();
+						propTypeTitles.put(
+								Character.toString(GeneralDatumSamplesType.Instantaneous.toKey()),
+								GeneralDatumSamplesType.Instantaneous.toString());
+						propTypeTitles.put(
+								Character.toString(GeneralDatumSamplesType.Accumulating.toKey()),
+								GeneralDatumSamplesType.Accumulating.toString());
+						propTypeSpec.setValueTitles(propTypeTitles);
+						settingSpecifiers.add(propTypeSpec);
+
+						// Add the EGaugePropertyConfig properties
+						settingSpecifiers.addAll(EGaugePropertyConfig.settings(key + ".config."));
+
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								EGaugePropertyConfig.settings(key + "."));
+								settingSpecifiers);
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -137,33 +161,20 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	/**
 	 * Constructs the URL that should be used to retrieve the eGauge data.
 	 * 
-	 * @param host
-	 *        The host to get the data from. Used in conjunction with
-	 *        {@link #getQueryUrl()}.
+	 * @param queryUrl
+	 *        The eGauge query URL to access on {@link #getHost()}.
 	 * @return the URL that should be used to retrieve the eGauge data.
 	 */
-	protected String getUrl(String host, EGaugeReadingType type) {
-		return (host == null ? "" : host) + getQueryUrl(type);
-	}
-
-	protected String getQueryUrl(EGaugeReadingType type) {
-		switch (type) {
-			case Instantaneous:
-				return getInstantaneousQueryUrl();
-			case Total:
-				return getTotalQueryUrl();
-			default:
-				throw new UnsupportedOperationException("Unkown register type: " + type);
-		}
+	protected String constructEGaugeUrl(String queryUrl) {
+		return (host == null ? "" : getHost()) + queryUrl;
 	}
 
 	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
-		Map<EGaugeReadingType, Element> documentCache = new HashMap<>();
 
-		EGaugePropertyConfig[] configs = getPropertyConfigs();
+		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] configs = getPropertyConfigs();
 		if ( configs != null ) {
-			for ( EGaugePropertyConfig propertyConfig : configs ) {
-				Element xml = getXml(propertyConfig.getReadingType(), documentCache);
+			for ( GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig : configs ) {
+				Element xml = getXml(constructEGaugeUrl(getInstQueryUrl()));
 				if ( xml != null ) {
 					populateDatumProperty(datum, propertyConfig, xml);
 				}
@@ -172,30 +183,43 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	}
 
-	protected void populateDatumProperty(EGaugePowerDatum datum, EGaugePropertyConfig propertyConfig,
-			Element xml) {
+	protected void populateDatumProperty(EGaugePowerDatum datum,
+			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig, Element xml) {
 
-		String xpathBase = "r[@n='" + propertyConfig.getRegisterName() + "'][1]";
+		GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
 
 		try {
-			String propertyType = (String) getXPathExpression(xpathBase + "/@t").evaluate(xml,
-					XPathConstants.STRING);
-			String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
+
+			String xpathBase = "r[@n='" + propertyConfig.getConfig().getRegisterName() + "'][1]";
+			String eGaugePropertyType = (String) getXPathExpression(xpathBase + "/@t").evaluate(xml,
 					XPathConstants.STRING);
 
-			switch (propertyConfig.getReadingType()) {
+			switch (propertyType) {
 				case Instantaneous:
 					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
 							.evaluate(xml, XPathConstants.STRING);
-					datum.addEGaugeInstantaneousPropertyReading(propertyConfig, propertyType, value,
-							instantenouseValue);
+					// Assume an int value
+					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
+							Integer.valueOf(instantenouseValue));
 					break;
-				case Total:
-					datum.addEGaugeAccumulatingPropertyReading(propertyConfig, propertyType, value);
+				case Accumulating:
+					String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
+							XPathConstants.STRING);
+
+					switch (eGaugePropertyType) {
+						case "P":
+							// Convert watt-seconds into watt-hours
+							Long wattHours = Long.valueOf(value) / HOUR_SECONDS;// TODO review rounding
+							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), wattHours);
+							break;
+						default:
+							// Assume a Long value by default
+							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(),
+									Long.valueOf(value));
+					}
 					break;
 				default:
-					throw new UnsupportedOperationException(
-							"Unkown register type: " + propertyConfig.getReadingType());
+					throw new UnsupportedOperationException("Unsuported property type: " + propertyType);
 			}
 		} catch ( XPathExpressionException e ) {
 			throw new RuntimeException(e);
@@ -208,18 +232,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 			xp.setNamespaceContext(getNsContext());
 		}
 		return xp.compile(xpath);
-	}
-
-	protected Element getXml(EGaugeReadingType type, Map<EGaugeReadingType, Element> cache)
-			throws XmlEGaugeClientException {
-		if ( cache != null && cache.containsKey(type) ) {
-			return cache.get(type);
-		} else {
-			String url = getUrl(getHost(), type);
-			Element xml = getXml(url);
-			cache.put(type, xml);
-			return xml;
-		}
 	}
 
 	protected Element getXml(String url) throws XmlEGaugeClientException {
@@ -246,21 +258,29 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return doc.getDocumentElement();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void init() {
 		super.init();
-		if ( getInstantaneousQueryUrl() == null ) {
-			setInstantaneousQueryUrl(DEAFAULT_INST_QUERY_URL);
-		}
-		if ( getTotalQueryUrl() == null ) {
-			setTotalQueryUrl(DEAFAULT_TOT_QUERY_URL);
+		if ( getInstQueryUrl() == null ) {
+			setInstQueryUrl(DEAFAULT_INST_QUERY_URL);
 		}
 
 		if ( getPropertyConfigs() == null ) {
-			setPropertyConfigs(new EGaugePropertyConfig[] {
-					// FIXME, while the two config items show up in the UI the fields show blank values, either fix or remove
-					new EGaugePropertyConfig("generation", "Solar+", EGaugeReadingType.Instantaneous),
-					new EGaugePropertyConfig("consumption", "Grid", EGaugeReadingType.Instantaneous) });
+			// FIXME, while the two config items show up in the UI the fields show blank values, either fix or remove
+			@SuppressWarnings("rawtypes")
+			GeneralDatumSamplePropertyConfig[] defaultConfigs = new GeneralDatumSamplePropertyConfig[] {
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWatts",
+							GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Grid")),
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(
+							"consumptionWattHourReading", GeneralDatumSamplesType.Accumulating,
+							new EGaugePropertyConfig("Grid")),
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWatts",
+							GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(
+							"generationWattHourReading", GeneralDatumSamplesType.Accumulating,
+							new EGaugePropertyConfig("Solar+")) };
+			setPropertyConfigs(defaultConfigs);
 		}
 	}
 
@@ -277,31 +297,16 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	/**
 	 * @return the instantaneousQueryUrl
 	 */
-	public String getInstantaneousQueryUrl() {
-		return instantaneousQueryUrl;
+	public String getInstQueryUrl() {
+		return instQueryUrl;
 	}
 
 	/**
 	 * @param instantaneousQueryUrl
 	 *        the instantaneousQueryUrl to set
 	 */
-	public void setInstantaneousQueryUrl(String instantaneousQueryUrl) {
-		this.instantaneousQueryUrl = instantaneousQueryUrl;
-	}
-
-	/**
-	 * @return the totalQueryUrl
-	 */
-	public String getTotalQueryUrl() {
-		return totalQueryUrl;
-	}
-
-	/**
-	 * @param totalQueryUrl
-	 *        the totalQueryUrl to set
-	 */
-	public void setTotalQueryUrl(String totalQueryUrl) {
-		this.totalQueryUrl = totalQueryUrl;
+	public void setInstQueryUrl(String instantaneousQueryUrl) {
+		this.instQueryUrl = instantaneousQueryUrl;
 	}
 
 	/**
@@ -327,7 +332,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	/**
 	 * @return the propertyConfig
 	 */
-	public EGaugePropertyConfig[] getPropertyConfigs() {
+	public GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] getPropertyConfigs() {
 		return propertyConfigs;
 	}
 
@@ -335,7 +340,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @param propertyConfigs
 	 *        the propertyConfig to set
 	 */
-	public void setPropertyConfigs(EGaugePropertyConfig[] propertyConfigs) {
+	public void setPropertyConfigs(
+			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] propertyConfigs) {
 		this.propertyConfigs = propertyConfigs;
 	}
 
@@ -345,7 +351,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropertyConfigsCount() {
-		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = this.propertyConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
 
@@ -364,16 +370,17 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		if ( count < 0 ) {
 			count = 0;
 		}
-		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = this.propertyConfigs;
 		int lCount = (confs == null ? 0 : confs.length);
 		if ( lCount != count ) {
-			EGaugePropertyConfig[] newIncs = new EGaugePropertyConfig[count];
+			@SuppressWarnings("unchecked")
+			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] newIncs = new GeneralDatumSamplePropertyConfig[count];
 			if ( confs != null ) {
 				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
 			}
 			for ( int i = 0; i < count; i++ ) {
 				if ( newIncs[i] == null ) {
-					newIncs[i] = new EGaugePropertyConfig();
+					newIncs[i] = new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>();
 				}
 			}
 			this.propertyConfigs = newIncs;
@@ -408,14 +415,29 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	@Override
 	public String toString() {
-		return "XmlEGaugeClient [instantaneousQueryUrl=" + instantaneousQueryUrl + ", totalQueryUrl="
-				+ totalQueryUrl + ", host=" + host + ", sourceId=" + sourceId + ", propertyConfigs="
-				+ Arrays.toString(propertyConfigs) + "]";
+		return "XmlEGaugeClient [instantaneousQueryUrl=" + instQueryUrl + ", host=" + host
+				+ ", sourceId=" + sourceId + ", propertyConfigs=" + Arrays.toString(propertyConfigs)
+				+ "]";
 	}
 
 	@Override
 	public Object getSampleInfo(EGaugePowerDatum snap) {
-		return snap.getSampleInfo(getPropertyConfigs());
+		StringBuilder buf = new StringBuilder();
+		for ( GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig : getPropertyConfigs() ) {
+			switch (propertyConfig.getPropertyType()) {
+				case Instantaneous:
+					buf.append(propertyConfig.getPropertyKey() + " (i) = ");
+					buf.append(snap.getInstantaneousSampleInteger(propertyConfig.getPropertyKey()));
+					break;
+				case Accumulating:
+					buf.append(propertyConfig.getPropertyKey() + " (a) = ");
+					buf.append(snap.getAccumulatingSampleLong(propertyConfig.getPropertyKey()));
+					break;
+				default:
+					// Ignore
+			}
+		}
+		return buf.toString();
 	}
 
 }

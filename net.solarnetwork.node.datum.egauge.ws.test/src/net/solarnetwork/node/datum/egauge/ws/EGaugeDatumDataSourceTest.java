@@ -44,9 +44,9 @@ public class EGaugeDatumDataSourceTest {
 		XmlEGaugeClient client = XmlEGaugeClientTest
 				.getTestClient(XmlEGaugeClientTest.TEST_FILE_INSTANTANEOUS);
 		client.setHost(TEST_HOST);
+		client.setSourceId(TEST_SOURCE);
 
 		source.setClient(client);
-		source.setSourceId(TEST_SOURCE);
 
 		EGaugePowerDatum datum = source.readCurrentDatum();
 		assertEquals(TEST_SOURCE, datum.getSourceId());

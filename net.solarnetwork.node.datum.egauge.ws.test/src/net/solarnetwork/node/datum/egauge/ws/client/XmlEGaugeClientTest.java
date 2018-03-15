@@ -25,10 +25,7 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
-import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
-import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig;
-import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
 
 /**
  * Test cases for the XmlEGaugeClient.
@@ -49,12 +46,9 @@ public class XmlEGaugeClientTest {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
 		client.init();
 		client.setHost(HOST);
+		client.setSourceId(SOURCE_ID);
 
-		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
-		source.init();
-		source.setSourceId(SOURCE_ID);
-
-		EGaugePowerDatum datum = client.getCurrent(source);
+		EGaugePowerDatum datum = client.getCurrent();
 		checkInstantaneousGenerationReadings(datum);
 		checkInstantaneousConsumptionReadings(datum);
 	}
@@ -72,40 +66,11 @@ public class XmlEGaugeClientTest {
 				datum.getAccumulatingSampleLong("consumptionWattHourReading"));
 	}
 
-	@Test
-	public void totalData() {
-		XmlEGaugeClient client = getTestClient(TEST_FILE_TOTAL);
-		client.init();
-		client.setHost(HOST);
-
-		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
-		source.init();
-		source.setSourceId(SOURCE_ID);
-		source.setPropertyConfigs(new EGaugePropertyConfig[] {
-				new EGaugePropertyConfig("test1", "Grid", EGaugeReadingType.Total),
-				new EGaugePropertyConfig("test2", "Solar", EGaugeReadingType.Total),
-				new EGaugePropertyConfig("test3", "Solar+", EGaugeReadingType.Total),
-				new EGaugePropertyConfig("test4", "Total Usage", EGaugeReadingType.Total),
-				new EGaugePropertyConfig("test5", "Total Generation", EGaugeReadingType.Total), });
-
-		EGaugePowerDatum datum = client.getCurrent(source);
-		checkTotalReadings(datum);
-	}
-
-	public void checkTotalReadings(EGaugePowerDatum datum) {
-		assertNotNull(datum);
-		assertEquals(Long.valueOf(13956806), datum.getAccumulatingSampleLong("test1WattHourReading"));
-		assertEquals(Long.valueOf(163286), datum.getAccumulatingSampleLong("test2WattHourReading"));
-		assertEquals(Long.valueOf(196366), datum.getAccumulatingSampleLong("test3WattHourReading"));
-		assertEquals(Long.valueOf(14153173), datum.getAccumulatingSampleLong("test4WattHourReading"));
-		assertEquals(Long.valueOf(163286), datum.getAccumulatingSampleLong("test5WattHourReading"));
-	}
-
 	public static XmlEGaugeClient getTestClient(String path) {
 		XmlEGaugeClient client = new XmlEGaugeClient() {
 
 			@Override
-			protected String getUrl(String host, EGaugeReadingType type) {
+			protected String constructEGaugeUrl(String queryUrl) {
 				// Return the path to a local file containing test content
 				return getClass().getResource(path).toString();
 			}
