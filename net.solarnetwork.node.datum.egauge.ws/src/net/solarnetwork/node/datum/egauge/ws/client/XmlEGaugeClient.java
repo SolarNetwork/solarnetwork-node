@@ -25,6 +25,9 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -38,12 +41,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePropertyConfig.EGaugeReadingType;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.XmlServiceSupport;
 
 /**
@@ -76,15 +80,33 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	private String host;
 
+	/** The ID that identifies the source. */
+	private String sourceId;
+
+	/** The list of property/register configurations. */
+	private EGaugePropertyConfig[] propertyConfigs;
+
 	@Override
-	public List<SettingSpecifier> settings(String prefix) {
+	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>();
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "host", ""));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "instantaneousQueryUrl",
-				DEAFAULT_INST_QUERY_URL));
-		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "totalQueryUrl", DEAFAULT_TOT_QUERY_URL));
+		results.add(new BasicTextFieldSettingSpecifier("host", ""));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+
+		EGaugePropertyConfig[] confs = getPropertyConfigs();
+		List<EGaugePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<EGaugePropertyConfig> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("propertyConfigs", confsList,
+				new SettingsUtil.KeyedListCallback<EGaugePropertyConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(EGaugePropertyConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								EGaugePropertyConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
 
 		return results;
 	}
@@ -94,13 +116,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @see net.solarnetwork.node.datum.egauge.ws.client.EGaugeClient#getCurrent()
 	 */
 	@Override
-	public EGaugePowerDatum getCurrent(EGaugeDatumDataSource source) {
+	public EGaugePowerDatum getCurrent() {
 		EGaugePowerDatum datum = new EGaugePowerDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(source.getSourceId());
+		datum.setSourceId(getSourceId());
 
 		try {
-			populateDatum(datum, source);
+			populateDatum(datum);
 		} catch ( XmlEGaugeClientException e ) {
 			// An exception has been encountered and logged but we need to make sure no datum is returned
 			return null;
@@ -126,20 +148,19 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	protected String getQueryUrl(EGaugeReadingType type) {
 		switch (type) {
-			case INSTANTANEOUS:
+			case Instantaneous:
 				return getInstantaneousQueryUrl();
-			case TOTAL:
+			case Total:
 				return getTotalQueryUrl();
 			default:
 				throw new UnsupportedOperationException("Unkown register type: " + type);
 		}
 	}
 
-	protected void populateDatum(EGaugePowerDatum datum, EGaugeDatumDataSource source)
-			throws XmlEGaugeClientException {
+	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
 		Map<EGaugeReadingType, Element> documentCache = new HashMap<>();
 
-		EGaugePropertyConfig[] configs = source.getPropertyConfigs();
+		EGaugePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
 			for ( EGaugePropertyConfig propertyConfig : configs ) {
 				Element xml = getXml(propertyConfig.getReadingType(), documentCache);
@@ -163,13 +184,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 					XPathConstants.STRING);
 
 			switch (propertyConfig.getReadingType()) {
-				case INSTANTANEOUS:
+				case Instantaneous:
 					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
 							.evaluate(xml, XPathConstants.STRING);
 					datum.addEGaugeInstantaneousPropertyReading(propertyConfig, propertyType, value,
 							instantenouseValue);
 					break;
-				case TOTAL:
+				case Total:
 					datum.addEGaugeAccumulatingPropertyReading(propertyConfig, propertyType, value);
 					break;
 				default:
@@ -234,6 +255,22 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		if ( getTotalQueryUrl() == null ) {
 			setTotalQueryUrl(DEAFAULT_TOT_QUERY_URL);
 		}
+
+		if ( getPropertyConfigs() == null ) {
+			setPropertyConfigs(new EGaugePropertyConfig[] {
+					new EGaugePropertyConfig("generation", "Solar+", EGaugeReadingType.Instantaneous),
+					new EGaugePropertyConfig("consumption", "Grid", EGaugeReadingType.Instantaneous) });
+		}
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.datum.egauge.ws.client.xml";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "eGauge web service client";
 	}
 
 	/**
@@ -267,6 +304,82 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	/**
+	 * Get the configured source ID.
+	 * 
+	 * @return the source ID
+	 */
+	@Override
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
+	 * Set the source ID value to assign to the collected data.
+	 * 
+	 * @param sourceId
+	 *        the source ID to set
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
+	/**
+	 * @return the propertyConfig
+	 */
+	public EGaugePropertyConfig[] getPropertyConfigs() {
+		return propertyConfigs;
+	}
+
+	/**
+	 * @param propertyConfigs
+	 *        the propertyConfig to set
+	 */
+	public void setPropertyConfigs(EGaugePropertyConfig[] propertyConfigs) {
+		this.propertyConfigs = propertyConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code propConfigs} elements.
+	 * 
+	 * @return the number of {@code propConfigs} elements
+	 */
+	public int getPropertyConfigsCount() {
+		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propertyConfigs} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link EGaugePropertyConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propIncludes} elements.
+	 */
+	public void setPropertyConfigsCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		EGaugePropertyConfig[] confs = this.propertyConfigs;
+		int lCount = (confs == null ? 0 : confs.length);
+		if ( lCount != count ) {
+			EGaugePropertyConfig[] newIncs = new EGaugePropertyConfig[count];
+			if ( confs != null ) {
+				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
+			}
+			for ( int i = 0; i < count; i++ ) {
+				if ( newIncs[i] == null ) {
+					newIncs[i] = new EGaugePropertyConfig();
+				}
+			}
+			this.propertyConfigs = newIncs;
+		}
+	}
+
+	/**
 	 * 
 	 * Indicates that an exception has been encountered and handled but that the
 	 * datum should not be processed further.
@@ -295,7 +408,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	@Override
 	public String toString() {
 		return "XmlEGaugeClient [instantaneousQueryUrl=" + instantaneousQueryUrl + ", totalQueryUrl="
-				+ totalQueryUrl + ", host=" + host + "]";
+				+ totalQueryUrl + ", host=" + host + ", sourceId=" + sourceId + ", propertyConfigs="
+				+ Arrays.toString(propertyConfigs) + "]";
+	}
+
+	@Override
+	public Object getSampleInfo(EGaugePowerDatum snap) {
+		return snap.getSampleInfo(getPropertyConfigs());
 	}
 
 }

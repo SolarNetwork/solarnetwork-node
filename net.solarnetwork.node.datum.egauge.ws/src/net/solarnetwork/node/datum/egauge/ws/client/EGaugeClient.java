@@ -22,10 +22,8 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
-import java.util.List;
-import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
  * Interface for eGauge clients.
@@ -33,17 +31,17 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * @author maxieduncan
  * @version 1.0
  */
-public interface EGaugeClient {
+public interface EGaugeClient extends SettingSpecifierProvider {
 
 	/**
 	 * Retrieve the current reading from an eGauge device.
 	 * 
-	 * @param source
-	 *        The source making the request to get the current datum.
 	 * @return the current eGauge readings.
 	 */
-	EGaugePowerDatum getCurrent(EGaugeDatumDataSource source);
+	EGaugePowerDatum getCurrent();
 
-	List<SettingSpecifier> settings(String string);
+	Object getSampleInfo(EGaugePowerDatum snap);
+
+	String getSourceId();
 
 }

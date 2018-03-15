@@ -82,11 +82,11 @@ public class XmlEGaugeClientTest {
 		source.init();
 		source.setSourceId(SOURCE_ID);
 		source.setPropertyConfigs(new EGaugePropertyConfig[] {
-				new EGaugePropertyConfig("test1", "Grid", EGaugeReadingType.TOTAL),
-				new EGaugePropertyConfig("test2", "Solar", EGaugeReadingType.TOTAL),
-				new EGaugePropertyConfig("test3", "Solar+", EGaugeReadingType.TOTAL),
-				new EGaugePropertyConfig("test4", "Total Usage", EGaugeReadingType.TOTAL),
-				new EGaugePropertyConfig("test5", "Total Generation", EGaugeReadingType.TOTAL), });
+				new EGaugePropertyConfig("test1", "Grid", EGaugeReadingType.Total),
+				new EGaugePropertyConfig("test2", "Solar", EGaugeReadingType.Total),
+				new EGaugePropertyConfig("test3", "Solar+", EGaugeReadingType.Total),
+				new EGaugePropertyConfig("test4", "Total Usage", EGaugeReadingType.Total),
+				new EGaugePropertyConfig("test5", "Total Generation", EGaugeReadingType.Total), });
 
 		EGaugePowerDatum datum = client.getCurrent(source);
 		checkTotalReadings(datum);

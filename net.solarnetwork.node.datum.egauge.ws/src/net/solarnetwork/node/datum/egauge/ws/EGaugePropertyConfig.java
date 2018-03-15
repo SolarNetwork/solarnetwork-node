@@ -39,8 +39,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class EGaugePropertyConfig {
 
 	public enum EGaugeReadingType {
-		TOTAL,
-		INSTANTANEOUS
+		Total,
+		Instantaneous
 	}
 
 	public EGaugePropertyConfig() {
@@ -67,7 +67,7 @@ public class EGaugePropertyConfig {
 
 		// drop-down menu for readingType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "readingTypeValue", EGaugeReadingType.INSTANTANEOUS.name());
+				prefix + "readingTypeValue", EGaugeReadingType.Instantaneous.name());
 		Map<String, String> propTypeTitles = new LinkedHashMap<>();
 		for ( EGaugeReadingType e : EGaugeReadingType.values() ) {
 			propTypeTitles.put(e.name(), e.toString());
