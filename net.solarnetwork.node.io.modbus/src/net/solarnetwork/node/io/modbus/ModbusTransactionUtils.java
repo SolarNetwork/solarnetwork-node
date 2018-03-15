@@ -158,8 +158,7 @@ public class ModbusTransactionUtils {
 	 *        {@code addresses} value
 	 * @param unitId
 	 *        the Modbus unit ID to use in the read request
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
+	 * @return {@literal true} if the write succeeded
 	 */
 	public static Boolean writeDiscreetValues(ModbusTransaction trans, Integer[] addresses, BitSet bits,
 			int unitId) {

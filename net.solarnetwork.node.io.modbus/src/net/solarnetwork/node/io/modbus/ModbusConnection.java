@@ -100,8 +100,7 @@ public interface ModbusConnection {
 	 * @param bits
 	 *        a BitSet representing the value to set for each corresponding
 	 *        {@code addresses} value
-	 * @return BitSet, with each index corresponding to a value in the
-	 *         {@code addresses} parameter
+	 * @return {@literal true} if the write succeeded
 	 */
 	Boolean writeDiscreetValues(Integer[] addresses, BitSet bits);
 
