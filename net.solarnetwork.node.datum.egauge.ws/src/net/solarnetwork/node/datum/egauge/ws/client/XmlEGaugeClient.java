@@ -50,6 +50,7 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.XmlServiceSupport;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * XML implementation of the EGaugeClient. Instances of this can be shared
@@ -364,27 +365,12 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * </p>
 	 * 
 	 * @param count
-	 *        The desired number of {@code propIncludes} elements.
+	 *        The desired number of {@code propConfigs} elements.
 	 */
+	@SuppressWarnings("unchecked")
 	public void setPropertyConfigsCount(int count) {
-		if ( count < 0 ) {
-			count = 0;
-		}
-		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = this.propertyConfigs;
-		int lCount = (confs == null ? 0 : confs.length);
-		if ( lCount != count ) {
-			@SuppressWarnings("unchecked")
-			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] newIncs = new GeneralDatumSamplePropertyConfig[count];
-			if ( confs != null ) {
-				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
-			}
-			for ( int i = 0; i < count; i++ ) {
-				if ( newIncs[i] == null ) {
-					newIncs[i] = new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>();
-				}
-			}
-			this.propertyConfigs = newIncs;
-		}
+		this.propertyConfigs = ArrayUtils.arrayWithLength(this.propertyConfigs, count,
+				GeneralDatumSamplePropertyConfig.class, null);
 	}
 
 	/**
