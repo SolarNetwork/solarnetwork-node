@@ -29,7 +29,7 @@ package net.solarnetwork.node.io.modbus;
  * @version 1.0
  * @since 2.5
  */
-public enum ModbusWriteFunction {
+public enum ModbusWriteFunction implements ModbusFunction {
 
 	WriteCoil(5),
 
@@ -45,12 +45,47 @@ public enum ModbusWriteFunction {
 		this.code = code;
 	}
 
+	@Override
 	public int getCode() {
 		return code;
 	}
 
+	@Override
 	public String toDisplayString() {
 		return this.toString() + " (" + this.code + ")";
 	}
 
+	/**
+	 * Get an enum instance for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the enum
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not a valid value
+	 */
+	public static ModbusWriteFunction forCode(int code) {
+		for ( ModbusWriteFunction e : ModbusWriteFunction.values() ) {
+			if ( code == e.code ) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("Unknown ModbusWriteFunction code [" + code + "]");
+	}
+
+	/**
+	 * Alias for {@link ModbusHelper#functionForCode(int)}.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the instance, or {@literal null} if not known
+	 */
+	public static ModbusFunction functionForCode(int code) {
+		try {
+			return ModbusHelper.functionForCode(code);
+		} catch ( IllegalArgumentException e ) {
+			// ignore
+			return null;
+		}
+	}
 }

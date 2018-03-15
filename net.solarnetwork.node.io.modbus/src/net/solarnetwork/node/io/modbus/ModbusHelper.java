@@ -171,18 +171,16 @@ public final class ModbusHelper {
 	/**
 	 * Set the value of a set of "coil" type registers.
 	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 5} request.
-	 * </p>
+	 * <p> This uses a Modbus function code {@code 5} request. </p>
 	 * 
-	 * @param conn
-	 *        the Modbus connection to use @param addresses the Modbus register
-	 *        addresses to read @param bits a BitSet representing the value to
-	 *        set for each corresponding {@code addresses} value @param unitId
-	 *        the Modbus unit ID to use in the read request @return BitSet, with
-	 *        each index corresponding to an index in the <code>addresses</code>
-	 *        parameter @deprecated use
-	 *        {@link ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction, Integer[], BitSet, int)
+	 * @param conn the Modbus connection to use @param addresses the Modbus
+	 * register addresses to read @param bits a BitSet representing the value to
+	 * set for each corresponding {@code addresses} value @param unitId the
+	 * Modbus unit ID to use in the read request @return BitSet, with each index
+	 * corresponding to an index in the <code>addresses</code>
+	 * parameter @deprecated use {@link
+	 * ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction,
+	 * Integer[], BitSet, int)
 	 */
 	@Deprecated
 	public static Boolean writeDiscreetValues(SerialConnection conn, final Integer[] addresses,
@@ -731,6 +729,30 @@ public final class ModbusHelper {
 			result[i] = array[i];
 		}
 		return result;
+	}
+
+	/**
+	 * Get a {@link ModbusFunction} for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the function
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
+	 * @since 1.7
+	 */
+	public static ModbusFunction functionForCode(int code) {
+		ModbusFunction f;
+		try {
+			f = ModbusReadFunction.forCode(code);
+		} catch ( IllegalArgumentException e ) {
+			try {
+				f = ModbusWriteFunction.forCode(code);
+			} catch ( IllegalArgumentException e2 ) {
+				throw new IllegalArgumentException("Unknown Modbus function code: " + code);
+			}
+		}
+		return f;
 	}
 
 }

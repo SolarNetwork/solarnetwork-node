@@ -55,4 +55,37 @@ public enum ModbusReadFunction implements ModbusFunction {
 		return this.toString() + " (" + this.code + ")";
 	}
 
+	/**
+	 * Get an enum instance for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the enum
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not a valid value
+	 */
+	public static ModbusReadFunction forCode(int code) {
+		for ( ModbusReadFunction e : ModbusReadFunction.values() ) {
+			if ( code == e.code ) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("Unknown ModbusReadFunction code [" + code + "]");
+	}
+
+	/**
+	 * Alias for {@link ModbusHelper#functionForCode(int)}.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the instance, or {@literal null} if not known
+	 */
+	public static ModbusFunction functionForCode(int code) {
+		try {
+			return ModbusHelper.functionForCode(code);
+		} catch ( IllegalArgumentException e ) {
+			// ignore
+			return null;
+		}
+	}
 }

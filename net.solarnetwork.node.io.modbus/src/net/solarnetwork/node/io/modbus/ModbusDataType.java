@@ -32,45 +32,56 @@ package net.solarnetwork.node.io.modbus;
 public enum ModbusDataType {
 
 	/** Boolean bit. */
-	Boolean(1),
+	Boolean("bit", 1),
 
 	/** Unsigned 16-bit integer. */
-	UInt16(1),
+	UInt16("us", 1),
 
 	/** Signed 16-bit integer. */
-	Int16(1),
+	Int16("s", 1),
 
 	/** Signed 32-bit integer. */
-	Int32(2),
+	Int32("i", 2),
 
 	/** Unsigned 32-bit integer. */
-	UInt32(2),
+	UInt32("u", 2),
 
 	/** Signed 64-bit integer. */
-	Int64(4),
+	Int64("l", 4),
 
 	/** Unsigned 64-bit integer. */
-	UInt64(4),
+	UInt64("ul", 4),
 
 	/** 32-bit floating point. */
-	Float32(2),
+	Float32("f", 2),
 
 	/** 64-bit floating point. */
-	Float64(4),
+	Float64("d", 4),
 
 	/** Raw bytes. */
-	Bytes(-1),
+	Bytes("b", -1),
 
 	/** Bytes interpreted as a UTF-8 encoded string. */
-	StringUtf8(-1),
+	StringUtf8("s", -1),
 
 	/** Bytes interpreted as an ASCII encoded string. */
-	StringAscii(-1);
+	StringAscii("a", -1);
 
+	final private String key;
 	final private int wordLength;
 
-	private ModbusDataType(int wordLength) {
+	private ModbusDataType(String key, int wordLength) {
+		this.key = key;
 		this.wordLength = wordLength;
+	}
+
+	/**
+	 * Get the key value for this enum.
+	 * 
+	 * @return the key
+	 */
+	public String getKey() {
+		return key;
 	}
 
 	/**
@@ -82,6 +93,73 @@ public enum ModbusDataType {
 	 */
 	public int getWordLength() {
 		return wordLength;
+	}
+
+	/**
+	 * Get an enum instance for a key value.
+	 * 
+	 * @param key
+	 *        the key
+	 * @return the enum
+	 * @throws IllegalArgumentException
+	 *         if {@code key} is not a valid value
+	 */
+	public static ModbusDataType forKey(String key) {
+		for ( ModbusDataType e : ModbusDataType.values() ) {
+			if ( key == e.key ) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("Unknown ModbusDataType key [" + key + "]");
+	}
+
+	/**
+	 * Get a friendly display string for this data type.
+	 * 
+	 * @return the display string
+	 */
+	public String toDisplayString() {
+		switch (this) {
+			case Boolean:
+				return "Bit (on/off)";
+
+			case Bytes:
+				return "Bytes, 8-bit (two per register)";
+
+			case Float32:
+				return "Floating point, 32-bit (2 registers)";
+
+			case Float64:
+				return "Floating point, 64-bit (4 registers)";
+
+			case Int16:
+				return "Signed integer, 16-bit (1 register)";
+
+			case Int32:
+				return "Signed integer, 32-bit (2 registers)";
+
+			case Int64:
+				return "Signed integer, 64-bit (4 registers)";
+
+			case StringAscii:
+				return "String (ASCII)";
+
+			case StringUtf8:
+				return "String (UTF-8)";
+
+			case UInt16:
+				return "Unsigned integer, 16-bit (1 register)";
+
+			case UInt32:
+				return "Unsigned integer, 32-bit (2 registers)";
+
+			case UInt64:
+				return "Unsigned integer, 64-bit (4 registers)";
+
+			default:
+				return this.toString();
+
+		}
 	}
 
 }
