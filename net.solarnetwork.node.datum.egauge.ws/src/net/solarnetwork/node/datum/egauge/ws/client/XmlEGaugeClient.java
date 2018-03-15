@@ -258,6 +258,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		if ( getPropertyConfigs() == null ) {
 			setPropertyConfigs(new EGaugePropertyConfig[] {
+					// FIXME, while the two config items show up in the UI the fields show blank values, either fix or remove
 					new EGaugePropertyConfig("generation", "Solar+", EGaugeReadingType.Instantaneous),
 					new EGaugePropertyConfig("consumption", "Grid", EGaugeReadingType.Instantaneous) });
 		}
