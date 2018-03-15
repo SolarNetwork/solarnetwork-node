@@ -480,10 +480,13 @@ public class ModbusTransactionUtils {
 	 * @param unitId
 	 *        the unit ID
 	 * @param address
-	 *        the register address
+	 *        the register address to start reading from
 	 * @param count
 	 *        the count of registers to read
 	 * @return a newly created request instance
+	 * @throws UnsupportedOperationException
+	 *         if the function is not supported
+	 * @since 1.1
 	 */
 	public static ModbusRequest modbusReadRequest(ModbusReadFunction function, int unitId, int address,
 			int count) {
@@ -514,8 +517,23 @@ public class ModbusTransactionUtils {
 		return req;
 	}
 
-	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId, int address,
-			int count) {
+	/**
+	 * Create a new {@link ModbusRequest} suitable for writing to non-discrete
+	 * registers.
+	 * 
+	 * @param function
+	 *        the function to use
+	 * @param unitId
+	 *        the unit ID
+	 * @param address
+	 *        the address to start writing to
+	 * @return a newly created request instance
+	 * @throws UnsupportedOperationException
+	 *         if the function is not supported
+	 * @since 1.1
+	 */
+	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId,
+			int address) {
 		ModbusRequest req;
 		switch (function) {
 			case WriteHoldingRegister:
@@ -673,7 +691,7 @@ public class ModbusTransactionUtils {
 	 */
 	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId,
 			ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusRequest request = modbusWriteRequest(function, unitId, address, values.length);
+		ModbusRequest request = modbusWriteRequest(function, unitId, address);
 		if ( request instanceof WriteMultipleRegistersRequest ) {
 			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
 			int len = values.length;
