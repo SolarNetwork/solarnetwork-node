@@ -199,10 +199,12 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Get the datum property name used for this configuration.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyKey()}.
+	 * </p>
+	 * 
 	 * @return the property name
-	 * @deprecated use {@link #getPropertyKey()}
 	 */
-	@Deprecated
 	public String getName() {
 		return getPropertyKey();
 	}
@@ -210,11 +212,13 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Set the datum property name to use.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyKey(String)}.
+	 * </p>
+	 * 
 	 * @param name
 	 *        the property name
-	 * @deprecated use {@link #setPropertyKey(String)}
 	 */
-	@Deprecated
 	public void setName(String name) {
 		setPropertyKey(name);
 	}
@@ -259,10 +263,12 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Get the datum property type.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyType()}.
+	 * </p>
+	 * 
 	 * @return the type
-	 * @deprecated use {@link #getPropertyType()}
 	 */
-	@Deprecated
 	public GeneralDatumSamplesType getDatumPropertyType() {
 		return getPropertyType();
 	}
@@ -271,14 +277,14 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * Set the datum property type.
 	 * 
 	 * <p>
-	 * This method ignores {@literal null} arguments.
+	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
+	 * and ignores a {@literal null} argument.
+	 * </p>
 	 * </p>
 	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
-	 * @deprecated use {@link #setPropertyType(GeneralDatumSamplesType)}
 	 */
-	@Deprecated
 	public void setDatumPropertyType(GeneralDatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
