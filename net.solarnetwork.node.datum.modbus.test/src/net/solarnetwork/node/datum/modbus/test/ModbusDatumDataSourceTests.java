@@ -183,11 +183,11 @@ public class ModbusDatumDataSourceTests {
 	public void readDatumWithStatusString() throws IOException {
 		// GIVEN
 		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setName(TEST_STATUS_PROP_NAME);
+		propConfig.setPropertyKey(TEST_STATUS_PROP_NAME);
 		propConfig.setAddress(0);
 		propConfig.setDataType(ModbusDataType.StringUtf8);
 		propConfig.setWordLength(8);
-		propConfig.setDatumPropertyType(Status);
+		propConfig.setPropertyType(Status);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
@@ -323,10 +323,10 @@ public class ModbusDatumDataSourceTests {
 	public void readDatumWithInputRegisters() throws IOException {
 		// GIVEN
 		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setName(TEST_FLOAT32_PROP_NAME);
+		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
 		propConfig.setAddress(0);
 		propConfig.setDataType(ModbusDataType.Float32);
-		propConfig.setDatumPropertyType(Instantaneous);
+		propConfig.setPropertyType(Instantaneous);
 		propConfig.setFunction(ModbusReadFunction.ReadInputRegister);
 		propConfig.setDecimalScale(-1);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });

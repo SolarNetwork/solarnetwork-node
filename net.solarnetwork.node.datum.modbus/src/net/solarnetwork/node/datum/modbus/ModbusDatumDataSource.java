@@ -38,7 +38,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -54,6 +53,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -90,7 +90,6 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			return null;
 		}
 		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSamples(new GeneralDatumSamples());
 		d.setCreated(new Date(currSample.getDataTimestamp()));
 		d.setSourceId(sourceId);
 		populateDatumProperties(currSample, d, propConfigs);
@@ -107,8 +106,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			return;
 		}
 		for ( ModbusPropertyConfig conf : propConfs ) {
-			// skip configurations without a name
-			if ( conf.getName() == null || conf.getName().length() < 1 ) {
+			// skip configurations without a property to set
+			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
 				continue;
 			}
 			Object propVal = null;
@@ -164,20 +163,20 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			}
 
 			if ( propVal != null ) {
-				switch (conf.getDatumPropertyType()) {
+				switch (conf.getPropertyType()) {
 					case Accumulating:
 					case Instantaneous:
 						if ( !(propVal instanceof Number) ) {
 							log.warn(
 									"Cannot set datum accumulating property {} to non-number value [{}]",
-									conf.getName(), propVal);
+									conf.getPropertyKey(), propVal);
+							continue;
 						}
-						continue;
 
 					default:
 						// nothing
 				}
-				d.getSamples().putSampleValue(conf.getDatumPropertyType(), conf.getName(), propVal);
+				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
 			}
 		}
 	}
@@ -186,7 +185,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( decimalScale < 0 ) {
 			return value;
 		}
-		BigDecimal v = bigDecimalForNumber(value);
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		if ( v.scale() > decimalScale ) {
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
@@ -197,25 +196,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
-		BigDecimal v = bigDecimalForNumber(value);
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		return v.multiply(multiplier);
-	}
-
-	private BigDecimal bigDecimalForNumber(Number value) {
-		BigDecimal v = null;
-		if ( value instanceof BigDecimal ) {
-			v = (BigDecimal) value;
-		} else if ( value instanceof Long ) {
-			v = new BigDecimal(value.longValue());
-		} else if ( value instanceof Integer || value instanceof Short ) {
-			v = new BigDecimal(value.intValue());
-		} else if ( value instanceof Double ) {
-			v = BigDecimal.valueOf(value.doubleValue());
-		} else {
-			// note Float falls through to here per recommended way of converting that to BigDecimal
-			v = new BigDecimal(value.toString());
-		}
-		return v;
 	}
 
 	@Override

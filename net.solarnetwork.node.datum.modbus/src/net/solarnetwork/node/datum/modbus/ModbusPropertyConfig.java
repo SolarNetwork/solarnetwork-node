@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -36,16 +37,17 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Configuration for a single datum property to be set via Modbus.
  * 
+ * <p>
+ * The {@link #getConfig()} value represents the modbus address to read from.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class ModbusPropertyConfig {
+public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
 
-	private String name;
-	private GeneralDatumSamplesType datumPropertyType;
 	private ModbusReadFunction function;
 	private ModbusDataType dataType;
-	private int address;
 	private int wordLength;
 	private BigDecimal unitMultiplier;
 	private int decimalScale;
@@ -54,11 +56,9 @@ public class ModbusPropertyConfig {
 	 * Default constructor.
 	 */
 	public ModbusPropertyConfig() {
-		super();
-		datumPropertyType = GeneralDatumSamplesType.Instantaneous;
+		super(null, GeneralDatumSamplesType.Instantaneous, 0);
 		dataType = ModbusDataType.Float32;
 		function = ModbusReadFunction.ReadHoldingRegister;
-		address = 0;
 		wordLength = 1;
 		unitMultiplier = BigDecimal.ONE;
 		decimalScale = 0;
@@ -144,12 +144,9 @@ public class ModbusPropertyConfig {
 	public ModbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
 			ModbusDataType dataType, int address, int wordLength, BigDecimal unitMultiplier,
 			int decimalScale) {
-		super();
-		this.name = name;
-		this.datumPropertyType = datumPropertyType;
+		super(name, datumPropertyType, address);
 		this.function = ModbusReadFunction.ReadHoldingRegister;
 		this.dataType = dataType;
-		this.address = address;
 		this.wordLength = wordLength;
 		this.unitMultiplier = unitMultiplier;
 		this.decimalScale = decimalScale;
@@ -203,9 +200,11 @@ public class ModbusPropertyConfig {
 	 * Get the datum property name used for this configuration.
 	 * 
 	 * @return the property name
+	 * @deprecated use {@link #getPropertyKey()}
 	 */
+	@Deprecated
 	public String getName() {
-		return name;
+		return getPropertyKey();
 	}
 
 	/**
@@ -213,22 +212,39 @@ public class ModbusPropertyConfig {
 	 * 
 	 * @param name
 	 *        the property name
+	 * @deprecated use {@link #setPropertyKey(String)}
 	 */
+	@Deprecated
 	public void setName(String name) {
-		this.name = name;
+		setPropertyKey(name);
 	}
 
 	/**
 	 * Get the datum property type key.
 	 * 
+	 * <p>
+	 * This returns the configured {@link #getPropertyType()}
+	 * {@link GeneralDatumSamplesType#toKey()} value as a string.
+	 * </p>
+	 * 
 	 * @return the property type key
 	 */
 	public String getDatumPropertyTypeValue() {
-		return Character.toString(datumPropertyType.toKey());
+		GeneralDatumSamplesType type = getPropertyType();
+		if ( type == null ) {
+			return null;
+		}
+		return Character.toString(type.toKey());
 	}
 
 	/**
 	 * Set the datum property type via a key value.
+	 * 
+	 * <p>
+	 * This uses the first character of {@code key} as a
+	 * {@link GeneralDatumSamplesType} key value to call
+	 * {@link #setPropertyType(GeneralDatumSamplesType)}.
+	 * </p>
 	 * 
 	 * @param key
 	 *        the datum property type key to set
@@ -237,29 +253,37 @@ public class ModbusPropertyConfig {
 		if ( key == null || key.length() < 1 ) {
 			return;
 		}
-		this.datumPropertyType = GeneralDatumSamplesType.valueOf(key.charAt(0));
+		setPropertyType(GeneralDatumSamplesType.valueOf(key.charAt(0)));
 	}
 
 	/**
 	 * Get the datum property type.
 	 * 
 	 * @return the type
+	 * @deprecated use {@link #getPropertyType()}
 	 */
+	@Deprecated
 	public GeneralDatumSamplesType getDatumPropertyType() {
-		return datumPropertyType;
+		return getPropertyType();
 	}
 
 	/**
 	 * Set the datum property type.
 	 * 
+	 * <p>
+	 * This method ignores {@literal null} arguments.
+	 * </p>
+	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
+	 * @deprecated use {@link #setPropertyType(GeneralDatumSamplesType)}
 	 */
+	@Deprecated
 	public void setDatumPropertyType(GeneralDatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
 		}
-		this.datumPropertyType = datumPropertyType;
+		setPropertyType(datumPropertyType);
 	}
 
 	/**
@@ -377,20 +401,30 @@ public class ModbusPropertyConfig {
 	/**
 	 * Get the register address to start reading data from.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getConfig()}, returning {@literal 0} if that
+	 * returns {@literal null}.
+	 * </p>
+	 * 
 	 * @return the register address
 	 */
 	public int getAddress() {
-		return address;
+		Integer addr = getConfig();
+		return (addr != null ? addr : 0);
 	}
 
 	/**
 	 * Set the register address to start reading data from.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setConfig(Integer)}.
+	 * </p>
+	 * 
 	 * @param address
 	 *        the register address to set
 	 */
 	public void setAddress(int address) {
-		this.address = address;
+		setConfig(address);
 	}
 
 	/**
