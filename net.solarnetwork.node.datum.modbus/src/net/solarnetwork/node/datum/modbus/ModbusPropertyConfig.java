@@ -227,37 +227,27 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * Get the datum property type key.
 	 * 
 	 * <p>
-	 * This returns the configured {@link #getPropertyType()}
-	 * {@link GeneralDatumSamplesType#toKey()} value as a string.
+	 * This is an alias for {@link #getPropertyTypeKey()}.
 	 * </p>
 	 * 
 	 * @return the property type key
 	 */
 	public String getDatumPropertyTypeValue() {
-		GeneralDatumSamplesType type = getPropertyType();
-		if ( type == null ) {
-			return null;
-		}
-		return Character.toString(type.toKey());
+		return getPropertyTypeKey();
 	}
 
 	/**
 	 * Set the datum property type via a key value.
 	 * 
 	 * <p>
-	 * This uses the first character of {@code key} as a
-	 * {@link GeneralDatumSamplesType} key value to call
-	 * {@link #setPropertyType(GeneralDatumSamplesType)}.
+	 * This is an alias for {@link #setPropertyTypeKey(String)}.
 	 * </p>
 	 * 
 	 * @param key
 	 *        the datum property type key to set
 	 */
 	public void setDatumPropertyTypeValue(String key) {
-		if ( key == null || key.length() < 1 ) {
-			return;
-		}
-		setPropertyType(GeneralDatumSamplesType.valueOf(key.charAt(0)));
+		setPropertyTypeKey(key);
 	}
 
 	/**
