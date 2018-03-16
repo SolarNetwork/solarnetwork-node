@@ -13,7 +13,7 @@ Import-Package:
  net.solarnetwork.domain;version="1.12.0",
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.backup;version="1.6.0",
- net.solarnetwork.node.domain;version="1.11.0",
+ net.solarnetwork.node.domain;version="1.12.0",
  net.solarnetwork.node.io.modbus;version="2.4.0",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.settings;version="1.10.0",
