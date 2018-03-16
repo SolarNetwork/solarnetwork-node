@@ -147,7 +147,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
 
-		results.add(new BasicGroupSettingSpecifier("client", getClientSettings()));
+		results.add(new BasicGroupSettingSpecifier("eGaugeClient", getClientSettings()));
 
 		return results;
 	}

@@ -34,14 +34,24 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource</value>
-				<value>net.solarnetwork.node.datum.egauge.ws.client.XMLEGaugeClient</value>
 			</list>
 		</property>
 	</bean>
 	
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
-		<property name="delegate" ref="messageSource"/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="client."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.datum.egauge.ws.client.XMLEGaugeClient"/>
+						<property name="parentMessageSource" ref="messageSource"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+		
 	</bean>	
 
 	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
