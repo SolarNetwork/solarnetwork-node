@@ -39,6 +39,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
@@ -112,7 +113,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 								.add(new BasicTextFieldSettingSpecifier(key + ".propertyKey", ""));
 
 						BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-								key + ".propertyType", GeneralDatumSamplesType.Instantaneous.name());
+								key + ".propertyTypeKey", GeneralDatumSamplesType.Instantaneous.name());
 						// We only support two reading types currenlty
 						Map<String, String> propTypeTitles = new LinkedHashMap<>();
 						propTypeTitles.put(
@@ -125,7 +126,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 						settingSpecifiers.add(propTypeSpec);
 
 						// Add the EGaugePropertyConfig properties
-						settingSpecifiers.addAll(EGaugePropertyConfig.settings(key + ".config."));
+						List<String> registerNames = getRegisterNames(getInstQueryUrl());
+						settingSpecifiers
+								.addAll(EGaugePropertyConfig.settings(key + ".config.", registerNames));
 
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								settingSpecifiers);
@@ -259,6 +262,38 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return doc.getDocumentElement();
 	}
 
+	/**
+	 * Retrieves the eGauge file from the specified URL and returns the register
+	 * names found inside.
+	 * 
+	 * @param queryUrl
+	 *        the eGauge path to get the file from
+	 * @return the register names found in the file
+	 * @throws XmlEGaugeClientException
+	 */
+	protected List<String> getRegisterNames(String queryUrl) {
+		try {
+			Element xml = getXml(constructEGaugeUrl(queryUrl));
+			if ( xml != null ) {
+				NodeList nodeList = (NodeList) getXPathExpression("r/@n").evaluate(xml,
+						XPathConstants.NODESET);
+				if ( nodeList != null ) {
+					List<String> registerNames = new ArrayList<>();
+					for ( int i = 0; i < nodeList.getLength(); i++ ) {
+						registerNames.add(nodeList.item(i).getNodeValue());
+					}
+					return registerNames;
+				}
+			}
+		} catch ( Exception e ) {
+			// This is non fatal, just log a warning for reference
+			log.warn("Error communicating with eGauge inverter at {}: {}", getInstQueryUrl(),
+					e.getMessage());
+		}
+
+		return null;
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init() {
@@ -268,19 +303,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		}
 
 		if ( getPropertyConfigs() == null ) {
-			// FIXME, while the two config items show up in the UI the fields show blank values, either fix or remove
+			// Add two empty readings. Tried adding default values to them but they didn't show in the UI
 			@SuppressWarnings("rawtypes")
 			GeneralDatumSamplePropertyConfig[] defaultConfigs = new GeneralDatumSamplePropertyConfig[] {
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWatts",
-							GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Grid")),
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(
-							"consumptionWattHourReading", GeneralDatumSamplesType.Accumulating,
-							new EGaugePropertyConfig("Grid")),
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWatts",
-							GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(
-							"generationWattHourReading", GeneralDatumSamplesType.Accumulating,
-							new EGaugePropertyConfig("Solar+")) };
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(),
+					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>() };
 			setPropertyConfigs(defaultConfigs);
 		}
 	}

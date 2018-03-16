@@ -23,8 +23,11 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
@@ -46,10 +49,21 @@ public class EGaugePropertyConfig {
 
 	private String registerName;
 
-	public static List<SettingSpecifier> settings(String prefix) {
+	public static List<SettingSpecifier> settings(String prefix, List<String> registerNames) {
 		List<SettingSpecifier> results = new ArrayList<>();
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "registerName", ""));
+		if ( registerNames == null || registerNames.isEmpty() ) {
+			results.add(new BasicTextFieldSettingSpecifier(prefix + "registerName", ""));
+		} else {
+			BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+					prefix + "registerName", registerNames.get(0));
+			Map<String, String> propTypeTitles = new LinkedHashMap<>();
+			for ( String registerName : registerNames ) {
+				propTypeTitles.put(registerName, registerName);
+			}
+			propTypeSpec.setValueTitles(propTypeTitles);
+			results.add(propTypeSpec);
+		}
 
 		return results;
 	}

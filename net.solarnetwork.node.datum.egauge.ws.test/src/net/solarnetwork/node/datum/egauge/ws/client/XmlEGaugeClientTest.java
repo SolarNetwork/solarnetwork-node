@@ -24,7 +24,10 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import java.util.Arrays;
 import org.junit.Test;
+import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 
 /**
@@ -42,11 +45,40 @@ public class XmlEGaugeClientTest {
 	private static final String SOURCE_ID = "test-source";
 
 	@Test
+	public void instantaneousRegisterNames() throws Exception {
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		assertEquals(Arrays.asList(new String[] { "Grid", "Solar", "Solar+" }),
+				client.getRegisterNames("test"));
+	}
+
+	@Test
+	public void totalRegisterNames() throws Exception {
+		XmlEGaugeClient client = getTestClient(TEST_FILE_TOTAL);
+		assertEquals(
+				Arrays.asList(
+						new String[] { "Grid", "Solar", "Solar+", "Total Usage", "Total Generation" }),
+				client.getRegisterNames("test"));
+	}
+
+	@Test
 	public void instantaneousData() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
 		client.init();
 		client.setHost(HOST);
 		client.setSourceId(SOURCE_ID);
+
+		@SuppressWarnings({ "unchecked" })
+		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] defaultConfigs = new GeneralDatumSamplePropertyConfig[] {
+				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWatts",
+						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Grid")),
+				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWattHourReading",
+						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Grid")),
+				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWatts",
+						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
+				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWattHourReading",
+						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Solar+")) };
+
+		client.setPropertyConfigs(defaultConfigs);
 
 		EGaugePowerDatum datum = client.getCurrent();
 		checkInstantaneousGenerationReadings(datum);
