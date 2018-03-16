@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import static net.solarnetwork.node.io.modbus.ModbusHelper.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
@@ -90,64 +91,112 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 
 	@Override
 	public BitSet readDiscreetValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readDiscreetValues(new ModbusTCPTransaction(connection), addresses, count,
-				unitId);
+		return ModbusTransactionUtils.readDiscreetValues(new ModbusTCPTransaction(connection), addresses,
+				count, unitId);
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer address, int count) {
-		return ModbusTransactionUtils.readDiscreteValues(new ModbusTCPTransaction(connection), address, count,
-				unitId);
+		return ModbusTransactionUtils.readDiscreteValues(new ModbusTCPTransaction(connection), address,
+				count, unitId);
 	}
 
 	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		return ModbusTransactionUtils.writeDiscreetValues(new ModbusTCPTransaction(connection), addresses, bits,
-				unitId);
+		return ModbusTransactionUtils.writeDiscreetValues(new ModbusTCPTransaction(connection),
+				addresses, bits, unitId);
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(Integer address, int count) {
-		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusTCPTransaction(connection), address, count,
-				unitId);
+		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusTCPTransaction(connection),
+				address, count, unitId);
 	}
 
 	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), addresses, count,
-				unitId);
+		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), addresses,
+				count, unitId);
 	}
 
 	@Override
 	public int[] readInputValues(Integer address, int count) {
-		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), address, count, unitId);
+		return readUnsignedShorts(ModbusReadFunction.ReadInputRegister, address, count);
 	}
 
 	@Override
 	public byte[] readBytes(Integer address, int count) {
-		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), address, count, unitId);
+		return readBytes(ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	@Override
 	public String readString(Integer address, int count, boolean trim, String charsetName) {
-		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), address, count, unitId, trim,
-				charsetName);
+		return readString(ModbusReadFunction.ReadHoldingRegister, address, count, trim, charsetName);
 	}
 
 	@Override
 	public int[] readInts(Integer address, int count) {
-		return ModbusTransactionUtils.readInts(new ModbusTCPTransaction(connection), address, count, unitId);
+		return readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	@Override
 	public short[] readSignedShorts(Integer address, int count) {
-		return ModbusTransactionUtils.readSignedShorts(new ModbusTCPTransaction(connection), address, count,
-				unitId);
+		return readSignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	@Override
 	public Integer[] readValues(Integer address, int count) {
-		return ModbusTransactionUtils.readValues(new ModbusTCPTransaction(connection), address, count, unitId);
+		return integerArray(readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count));
+	}
+
+	@Override
+	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
+		return ModbusTransactionUtils.readSignedShorts(new ModbusTCPTransaction(connection), unitId,
+				function, address, count);
+	}
+
+	@Override
+	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
+		ModbusTransactionUtils.writeSignedShorts(new ModbusTCPTransaction(connection), unitId, function,
+				address, values);
+	}
+
+	@Override
+	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
+		return ModbusTransactionUtils.readUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
+				function, address, count);
+	}
+
+	@Override
+	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
+		ModbusTransactionUtils.writeUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
+				function, address, values);
+	}
+
+	@Override
+	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
+		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), unitId, function,
+				address, count);
+	}
+
+	@Override
+	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+		ModbusTransactionUtils.writeBytes(new ModbusTCPTransaction(connection), unitId, function,
+				address, values);
+	}
+
+	@Override
+	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+			String charsetName) {
+		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), unitId, function,
+				address, count, trim, charsetName);
+	}
+
+	@Override
+	public void writeString(ModbusWriteFunction function, Integer address, String value,
+			String charsetName) {
+		ModbusTransactionUtils.writeString(new ModbusTCPTransaction(connection), unitId, function,
+				address, value, charsetName);
 	}
 
 }

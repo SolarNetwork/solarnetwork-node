@@ -67,4 +67,46 @@ public enum ModbusDataType {
 		return wordLength;
 	}
 
+	/**
+	 * Convert this to the (new) standard {@code ModbusDataType}.
+	 * 
+	 * @return the converted data type
+	 */
+	public net.solarnetwork.node.io.modbus.ModbusDataType toModbusDataType() {
+		switch (this) {
+			case Boolean:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Boolean;
+
+			case Int16:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+
+			case SignedInt16:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
+
+			case Int32:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+
+			case Int64:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
+
+			case Float32:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
+
+			case Float64:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Float64;
+
+			case Bytes:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Bytes;
+
+			case StringUtf8:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
+
+			case StringAscii:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
+
+			default:
+				throw new IllegalArgumentException("Unsupported type: " + this);
+		}
+	}
+
 }
