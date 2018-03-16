@@ -124,11 +124,6 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		return getCurrentSample();
 	}
 
-	@Override
-	public String getUID() {
-		return getClient().getSourceId();
-	}
-
 	public void init() {
 		// nothing to do
 	}
@@ -148,7 +143,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		EGaugeDatumDataSource defaults = new EGaugeDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
 
