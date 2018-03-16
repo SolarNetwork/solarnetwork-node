@@ -30,7 +30,8 @@ Each device configuration contains the following overall settings:
 | Service Group      | A group name to associate this data source with.                                 |
 | Modbus Connection  | The service name of the Modbus port to use.                                      |
 | Modbus Unit ID     | The ID of the Modbus device to control, from 1 - 255.                            |
-| Address            | The zero-based Modbus address for the coil type switch to toggle.                |
+| Address            | The zero-based Modbus address for coil or holding register to toggle.            |
+| Function           | The Modbus function to use when writing the control state.                       |
 
 ## Overall device settings notes
 
@@ -44,6 +45,9 @@ Each device configuration contains the following overall settings:
 	<dd>Note this value is the zero-based address to read. Sometimes documentation for Modbus
 	devices list the addresses in one-based notation. If that is the case for your device,
 	simply subtract one from the documented address here.</dd>
+	<dt>Function</dT>
+	<dd>Typically this will either be <code>WriteCoil</code> or <code>WriteHoldingRegister</code>,
+	and depends on the device you're using.</dd>
 </dl>
 
 # Use
