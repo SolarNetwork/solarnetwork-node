@@ -25,12 +25,13 @@ package net.solarnetwork.node.datum.modbus.test;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float32;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.Float64;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.Int16;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.Int32;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.Int64;
-import static net.solarnetwork.node.datum.modbus.ModbusDataType.SignedInt16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Float64;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int64;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -48,7 +49,6 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.datum.modbus.ModbusDataType;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
 import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
@@ -64,7 +64,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link ModbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
 public class ModbusDatumDataSourceTests {
 
@@ -126,9 +126,9 @@ public class ModbusDatumDataSourceTests {
 
 		// we will collect 2 ranges of data; 0 - 7 for some integers; 200 - 205 for some floating points
 		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
-				new ModbusPropertyConfig(TEST_INT16_PROP_NAME, Instantaneous, Int16, 0),
-				new ModbusPropertyConfig(TEST_SINT16_PROP_NAME, Instantaneous, SignedInt16, 1),
-				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 2),
+				new ModbusPropertyConfig(TEST_INT16_PROP_NAME, Instantaneous, UInt16, 0),
+				new ModbusPropertyConfig(TEST_SINT16_PROP_NAME, Instantaneous, Int16, 1),
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 2),
 				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 4),
 				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200,
 						BigDecimal.ONE, -1),
@@ -185,7 +185,7 @@ public class ModbusDatumDataSourceTests {
 		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
 		propConfig.setPropertyKey(TEST_STATUS_PROP_NAME);
 		propConfig.setAddress(0);
-		propConfig.setDataType(ModbusDataType.StringUtf8);
+		propConfig.setDataType(StringUtf8);
 		propConfig.setWordLength(8);
 		propConfig.setPropertyType(Status);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
@@ -224,7 +224,7 @@ public class ModbusDatumDataSourceTests {
 		// GIVEN
 
 		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
-				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 0,
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 0,
 						new BigDecimal("0.1"), -1),
 				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
 						new BigDecimal("0.01"), -1),
@@ -274,7 +274,7 @@ public class ModbusDatumDataSourceTests {
 		// GIVEN
 
 		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
-				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, Int32, 0,
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 0,
 						new BigDecimal("0.1"), 0),
 				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
 						new BigDecimal("0.01"), 1),
@@ -325,7 +325,7 @@ public class ModbusDatumDataSourceTests {
 		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
 		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
 		propConfig.setAddress(0);
-		propConfig.setDataType(ModbusDataType.Float32);
+		propConfig.setDataType(Float32);
 		propConfig.setPropertyType(Instantaneous);
 		propConfig.setFunction(ModbusReadFunction.ReadInputRegister);
 		propConfig.setDecimalScale(-1);
