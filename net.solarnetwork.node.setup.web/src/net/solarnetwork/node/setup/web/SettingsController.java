@@ -151,6 +151,18 @@ public class SettingsController {
 		}
 		return response(null);
 	}
+	
+	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Object> resetConfiguration(
+			@RequestParam(value = "uid", required = true) String factoryUID,
+			@RequestParam(value = "instance", required = true) String instanceUID) {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
+			service.resetProviderFactoryInstance(factoryUID, instanceUID);
+		}
+		return response(null);
+	}
 
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody

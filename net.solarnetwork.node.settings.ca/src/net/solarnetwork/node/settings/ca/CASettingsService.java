@@ -537,6 +537,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}
 		}
 	}
+	
+	@Override
+	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+		throw new UnsupportedOperationException();
+	}
 
 	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value", "flags",
 			"modified" };
