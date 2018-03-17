@@ -57,7 +57,7 @@ import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * Control a Modbus "coil" type register to turn a switch on or off.
+ * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
  * @version 1.3
