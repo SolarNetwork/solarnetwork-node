@@ -52,7 +52,7 @@ public enum ModbusReadFunction implements ModbusFunction {
 
 	@Override
 	public String toDisplayString() {
-		return this.toString() + " (" + this.code + ")";
+		return this.toString().replaceAll("([a-z])([A-Z])", "$1 $2") + " (" + this.code + ")";
 	}
 
 	/**

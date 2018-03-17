@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
@@ -153,14 +154,14 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	}
 
 	public static List<SettingSpecifier> settings(String prefix) {
+		ModbusPropertyConfig defaults = new ModbusPropertyConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
 
 		// drop-down menu for datumPropertyType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "datumPropertyTypeValue",
-				Character.toString(GeneralDatumSamplesType.Instantaneous.toKey()));
+				prefix + "datumPropertyTypeKey", defaults.getDatumPropertyTypeValue());
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
 		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
@@ -168,24 +169,25 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "address", "0"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "address",
+				String.valueOf(defaults.getAddress())));
 
 		// drop-down menu for function
 		BasicMultiValueSettingSpecifier functionSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "functionValue", ModbusReadFunction.ReadHoldingRegister.toString());
+				prefix + "functionCode", defaults.getFunctionCode());
 		Map<String, String> functionTitles = new LinkedHashMap<String, String>(4);
 		for ( ModbusReadFunction e : ModbusReadFunction.values() ) {
-			functionTitles.put(e.toString(), e.toDisplayString());
+			functionTitles.put(String.valueOf(e.getCode()), e.toDisplayString());
 		}
 		functionSpec.setValueTitles(functionTitles);
 		results.add(functionSpec);
 
 		// drop-down menu for dataType
 		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "dataTypeValue", ModbusDataType.Float32.toString());
+				prefix + "dataTypeKey", defaults.getDataTypeKey());
 		Map<String, String> dataTypeTitles = new LinkedHashMap<String, String>(3);
 		for ( ModbusDataType e : ModbusDataType.values() ) {
-			dataTypeTitles.put(e.toString(), e.toString());
+			dataTypeTitles.put(e.getKey(), e.toDisplayString());
 		}
 		dataTypeSpec.setValueTitles(dataTypeTitles);
 		results.add(dataTypeSpec);
@@ -302,10 +304,34 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	}
 
 	/**
+	 * Get the Modbus function code to use as a string.
+	 * 
+	 * @return the Modbus function code as a string
+	 */
+	public String getFunctionCode() {
+		return String.valueOf(function.getCode());
+	}
+
+	/**
+	 * Set the Modbus function to use as a string.
+	 * 
+	 * @param function
+	 *        the Modbus function
+	 */
+	public void setFunctionCode(String function) {
+		if ( function == null ) {
+			return;
+		}
+		setFunction(ModbusReadFunction.forCode(Integer.parseInt(function)));
+	}
+
+	/**
 	 * Get the Modbus function to use as a string.
 	 * 
 	 * @return the Modbus function
+	 * @deprecated use {@link #getFunctionCode()}
 	 */
+	@Deprecated
 	public String getFunctionValue() {
 		return function.toString();
 	}
@@ -315,7 +341,9 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * 
 	 * @param function
 	 *        the Modbus function
+	 * @deprecated use {@link #setFunctionCode(String)}
 	 */
+	@Deprecated
 	public void setFunctionValue(String function) {
 		if ( function == null ) {
 			return;
@@ -349,7 +377,9 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * Get the data type as a string value.
 	 * 
 	 * @return the type as a string
+	 * @deprecated use {@link #getDataTypeKey()}
 	 */
+	@Deprecated
 	public String getDataTypeValue() {
 		return dataType.toString();
 	}
@@ -359,9 +389,32 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * 
 	 * @param dataType
 	 *        the type to set
+	 * @deprecated use {@link #setDataTypeKey(String)
 	 */
+	@Deprecated
 	public void setDataTypeValue(String dataType) {
-		setDataType(ModbusDataType.valueOf(dataType));
+		setDataType(
+				net.solarnetwork.node.datum.modbus.ModbusDataType.valueOf(dataType).toModbusDataType());
+	}
+
+	/**
+	 * Get the data type as a key value.
+	 * 
+	 * @return the type as a key
+	 */
+	public String getDataTypeKey() {
+		ModbusDataType type = getDataType();
+		return (type != null ? type.getKey() : null);
+	}
+
+	/**
+	 * Set the data type as a string value.
+	 * 
+	 * @param dataType
+	 *        the type to set
+	 */
+	public void setDataTypeKey(String key) {
+		setDataType(ModbusDataType.forKey(key));
 	}
 
 	/**

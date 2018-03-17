@@ -130,10 +130,18 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					break;
 
 				case Int16:
+					propVal = sample.getSignedInt16(conf.getAddress());
+					break;
+
+				case UInt16:
 					propVal = sample.getInt16(conf.getAddress());
 					break;
 
 				case Int32:
+					propVal = sample.getSignedInt32(conf.getAddress());
+					break;
+
+				case UInt32:
 					propVal = sample.getInt32(conf.getAddress());
 					break;
 
@@ -141,8 +149,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					propVal = sample.getInt64(conf.getAddress());
 					break;
 
-				case SignedInt16:
-					propVal = sample.getSignedInt16(conf.getAddress());
+				case UInt64:
+					propVal = sample.getUnsignedInt64(conf.getAddress());
 					break;
 
 				case StringAscii:

@@ -27,7 +27,9 @@ package net.solarnetwork.node.datum.modbus;
  * 
  * @author matt
  * @version 1.0
+ * @deprecated use {@link net.solarnetwork.node.io.modbus.ModbusDataType}
  */
+@Deprecated
 public enum ModbusDataType {
 
 	Boolean(1),
@@ -106,6 +108,48 @@ public enum ModbusDataType {
 
 			default:
 				throw new IllegalArgumentException("Unsupported type: " + this);
+		}
+	}
+
+	/**
+	 * Convert the (new) standard {@code ModbusDataType} to this enum.
+	 * 
+	 * @return the converted data type
+	 */
+	public ModbusDataType forModbusDataType(net.solarnetwork.node.io.modbus.ModbusDataType type) {
+		switch (type) {
+			case Boolean:
+				return Boolean;
+
+			case Bytes:
+				return Bytes;
+
+			case Float32:
+				return Float32;
+
+			case Float64:
+				return Float64;
+
+			case Int16:
+				return SignedInt16;
+
+			case UInt16:
+				return Int16;
+
+			case UInt32:
+				return Int32;
+
+			case UInt64:
+				return Int64;
+
+			case StringAscii:
+				return StringAscii;
+
+			case StringUtf8:
+				return StringUtf8;
+
+			default:
+				throw new IllegalArgumentException("Unsupported type: " + type);
 		}
 	}
 

@@ -34,29 +34,29 @@ public enum ModbusDataType {
 	/** Boolean bit. */
 	Boolean("bit", 1),
 
-	/** Unsigned 16-bit integer. */
-	UInt16("us", 1),
-
-	/** Signed 16-bit integer. */
-	Int16("s", 1),
-
-	/** Signed 32-bit integer. */
-	Int32("i", 2),
-
-	/** Unsigned 32-bit integer. */
-	UInt32("u", 2),
-
-	/** Signed 64-bit integer. */
-	Int64("l", 4),
-
-	/** Unsigned 64-bit integer. */
-	UInt64("ul", 4),
-
 	/** 32-bit floating point. */
-	Float32("f", 2),
+	Float32("f32", 2),
 
 	/** 64-bit floating point. */
-	Float64("d", 4),
+	Float64("f64", 4),
+
+	/** Signed 16-bit integer. */
+	Int16("i16", 1),
+
+	/** Unsigned 16-bit integer. */
+	UInt16("u16", 1),
+
+	/** Signed 32-bit integer. */
+	Int32("i32", 2),
+
+	/** Unsigned 32-bit integer. */
+	UInt32("u32", 2),
+
+	/** Signed 64-bit integer. */
+	Int64("i64", 4),
+
+	/** Unsigned 64-bit integer. */
+	UInt64("u64", 4),
 
 	/** Raw bytes. */
 	Bytes("b", -1),
@@ -106,10 +106,11 @@ public enum ModbusDataType {
 	 */
 	public static ModbusDataType forKey(String key) {
 		for ( ModbusDataType e : ModbusDataType.values() ) {
-			if ( key == e.key ) {
+			if ( key.equals(e.key) ) {
 				return e;
 			}
 		}
+
 		throw new IllegalArgumentException("Unknown ModbusDataType key [" + key + "]");
 	}
 
@@ -127,19 +128,19 @@ public enum ModbusDataType {
 				return "Bytes, 8-bit (two per register)";
 
 			case Float32:
-				return "Floating point, 32-bit (2 registers)";
+				return "32-bit floating point (2 registers)";
 
 			case Float64:
-				return "Floating point, 64-bit (4 registers)";
+				return "64-bit floating point (4 registers)";
 
 			case Int16:
-				return "Signed integer, 16-bit (1 register)";
+				return "16-bit signed integer (1 register)";
 
 			case Int32:
-				return "Signed integer, 32-bit (2 registers)";
+				return "32-bit signed integer (2 registers)";
 
 			case Int64:
-				return "Signed integer, 64-bit (4 registers)";
+				return "64-bit signed integer (4 registers)";
 
 			case StringAscii:
 				return "String (ASCII)";
@@ -148,13 +149,13 @@ public enum ModbusDataType {
 				return "String (UTF-8)";
 
 			case UInt16:
-				return "Unsigned integer, 16-bit (1 register)";
+				return "16-bit unsigned integer (1 register)";
 
 			case UInt32:
-				return "Unsigned integer, 32-bit (2 registers)";
+				return "32-bit unsigned integer (2 registers)";
 
 			case UInt64:
-				return "Unsigned integer, 64-bit (4 registers)";
+				return "64-bit unsigned integer (4 registers)";
 
 			default:
 				return this.toString();

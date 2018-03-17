@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.modbus.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
+import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import org.junit.Test;
@@ -37,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusDataTests {
 
@@ -151,6 +152,25 @@ public class ModbusDataTests {
 		});
 
 		assertThat("Unsigned 32-bit integer", d.getInt32(0), equalTo(l));
+	}
+
+	@Test
+	public void readLargeUnsignedInt64() {
+		ModbusData d = new ModbusData();
+		final BigInteger ull = new BigInteger("AC93244488888ABB", 16);
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new short[] { (short) (ull.shiftRight(48).intValue() & 0xFFFF),
+						(short) (ull.shiftRight(32).intValue() & 0xFFFF),
+						(short) (ull.shiftRight(16).intValue() & 0xFFFF),
+						(short) (ull.intValue() & 0xFFFF), }, 0);
+				return false;
+			}
+		});
+
+		assertThat("Unsigned 64-bit integer", d.getUnsignedInt64(0), equalTo(ull));
 	}
 
 	@Test
