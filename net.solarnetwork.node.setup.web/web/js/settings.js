@@ -389,6 +389,38 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	alert.insertAfter(origButton).removeClass('hidden');
 };
 
+/**
+ * Show an alert element asking the user if they really want to reset
+ * the selected factory configuration to default, and allow them to dismiss the alert
+ * or confirm the reset by clicking another button.
+ */
+SolarNode.Settings.resetFactoryConfiguration = function(params) {
+	var origButton = $(params.button);
+	origButton.attr('disabled', 'disabled');
+	var alert = $('#alert-reset').clone();
+	
+	var reallyDeleteButton = alert.find('button.submit');
+	reallyDeleteButton.click(function() {
+		$(this).attr('disabled', 'disabled');
+		$.ajax({
+			type : 'POST',
+			url : params.url,
+			data : {uid: params.factoryUID, instance: params.instanceUID},
+			beforeSend: function(xhr) {
+				SolarNode.csrf(xhr);
+	        },
+			success: delayedReload
+		});
+	});
+	alert.bind('close', function(e) {
+		origButton.removeAttr('disabled');
+		origButton.removeClass('hidden');
+		reallyDeleteButton.unbind();
+	});
+	origButton.addClass('hidden');
+	alert.insertAfter(origButton).removeClass('hidden');
+};
+
 function formatTimestamp(date) {
 	if ( !date ) {
 		return;
