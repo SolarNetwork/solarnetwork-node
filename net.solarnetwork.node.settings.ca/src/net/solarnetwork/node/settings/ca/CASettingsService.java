@@ -498,22 +498,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			settingDao.storeSetting(getFactorySettingKey(factoryUID), newInstanceKey, newInstanceKey);
-			try {
-				Configuration conf = getConfiguration(factoryUID, newInstanceKey);
-				@SuppressWarnings("unchecked")
-				Dictionary<String, Object> props = conf.getProperties();
-				if ( props == null ) {
-					props = new Hashtable<String, Object>();
-				}
-				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, newInstanceKey);
-				conf.update(props);
-				return newInstanceKey;
-			} catch ( IOException e ) {
-				throw new RuntimeException(e);
-			} catch ( InvalidSyntaxException e ) {
-				throw new RuntimeException(e);
-			}
+			return addProviderFactoryInstance(factoryUID, newInstanceKey);
 		}
 	}
 
@@ -540,9 +525,31 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	
 	@Override
 	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
-		throw new UnsupportedOperationException();
+		deleteProviderFactoryInstance(factoryUID, instanceUID);
+		synchronized ( factories ) {
+			addProviderFactoryInstance(factoryUID, instanceUID);
+		}
 	}
 
+	private String addProviderFactoryInstance(String factoryUID, String instanceUID) {
+		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+		try {
+			Configuration conf = getConfiguration(factoryUID, instanceUID);
+			@SuppressWarnings("unchecked")
+			Dictionary<String, Object> props = conf.getProperties();
+			if ( props == null ) {
+				props = new Hashtable<String, Object>();
+			}
+			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
+			conf.update(props);
+			return instanceUID;
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		} catch ( InvalidSyntaxException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+	
 	private static final String[] CSV_HEADERS = new String[] { "key", "type", "value", "flags",
 			"modified" };
 	private static final String SETTING_MODIFIED_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
