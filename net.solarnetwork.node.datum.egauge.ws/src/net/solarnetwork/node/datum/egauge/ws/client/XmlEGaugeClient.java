@@ -303,7 +303,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return null;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void init() {
 		super.init();
@@ -313,11 +312,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		if ( getPropertyConfigs() == null ) {
 			// Add two empty readings. Tried adding default values to them but they didn't show in the UI
-			@SuppressWarnings("rawtypes")
-			GeneralDatumSamplePropertyConfig[] defaultConfigs = new GeneralDatumSamplePropertyConfig[] {
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>(),
-					new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>() };
-			setPropertyConfigs(defaultConfigs);
+			setPropertyConfigsCount(2);
 		}
 	}
 
