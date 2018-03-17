@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,10 +203,18 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 				case Instantaneous:
 					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
 							.evaluate(xml, XPathConstants.STRING);
-					// Assume an int value
-					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
-							Integer.valueOf(instantenouseValue));
-					break;
+
+					switch (eGaugePropertyType) {
+						case "P":
+							// Store watts as an int value
+							datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
+									Integer.valueOf(instantenouseValue));
+							break;
+						default:
+							// Store as a BigDecimal value by default
+							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(),
+									new BigDecimal(instantenouseValue));
+					}
 				case Accumulating:
 					String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
 							XPathConstants.STRING);
@@ -217,9 +226,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), wattHours);
 							break;
 						default:
-							// Assume a Long value by default
+							// Store as a BigDecimal value by default
 							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(),
-									Long.valueOf(value));
+									new BigDecimal(value));
 					}
 					break;
 				default:
