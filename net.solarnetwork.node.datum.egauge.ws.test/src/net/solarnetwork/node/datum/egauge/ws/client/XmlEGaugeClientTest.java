@@ -43,6 +43,31 @@ public class XmlEGaugeClientTest {
 	private static final String SOURCE_ID = "test-source";
 
 	@Test
+	public void getUrl() {
+		XmlEGaugeClient client = new XmlEGaugeClient();
+
+		client.setBaseUrl("http://example.com");
+		client.setQueryUrl("/cgi-bin/egauge?inst");
+		assertEquals("http://example.com/cgi-bin/egauge?inst", client.getUrl());
+
+		client.setBaseUrl("http://example.com/");
+		client.setQueryUrl("/cgi-bin/egauge?inst");
+		assertEquals("http://example.com/cgi-bin/egauge?inst", client.getUrl());
+
+		client.setBaseUrl("http://example.com/");
+		client.setQueryUrl("cgi-bin/egauge?inst");
+		assertEquals("http://example.com/cgi-bin/egauge?inst", client.getUrl());
+
+		client.setBaseUrl("http://example.com");
+		client.setQueryUrl("cgi-bin/egauge?inst");
+		assertEquals("http://example.com/cgi-bin/egauge?inst", client.getUrl());
+
+		client.setBaseUrl("http://example.com/proxy/");
+		client.setQueryUrl("/cgi-bin/egauge?inst");
+		assertEquals("http://example.com/proxy/cgi-bin/egauge?inst", client.getUrl());
+	}
+
+	@Test
 	public void instantaneousRegisterNames() throws Exception {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
 		assertEquals(Arrays.asList(new String[] { "Grid", "Solar", "Solar+" }),

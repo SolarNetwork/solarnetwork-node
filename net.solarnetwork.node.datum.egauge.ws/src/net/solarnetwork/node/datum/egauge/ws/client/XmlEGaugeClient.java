@@ -72,9 +72,10 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * The default query URL that returns the XML data we will apply the XPath
 	 * mappings to.
 	 */
-	private static final String DEAFAULT_QUERY_URL = "http://localhost/cgi-bin/egauge?inst";
+	private static final String DEFAULT_QUERY_URL = "/cgi-bin/egauge?inst&tot";
 
-	private String url = DEAFAULT_QUERY_URL;
+	private String baseUrl;
+	private String queryUrl = DEFAULT_QUERY_URL;
 
 	/** The ID that identifies the source. */
 	private String sourceId;
@@ -86,7 +87,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>();
 
-		results.add(new BasicTextFieldSettingSpecifier("host", ""));
+		results.add(new BasicTextFieldSettingSpecifier("baseUrl", ""));
+		results.add(new BasicTextFieldSettingSpecifier("queryUrl", DEFAULT_QUERY_URL));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
 		EGaugeDatumSamplePropertyConfig[] confs = getPropertyConfigs();
@@ -286,8 +288,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	@Override
 	public void init() {
 		super.init();
-		if ( getUrl() == null ) {
-			setUrl(DEAFAULT_QUERY_URL);
+		if ( getQueryUrl() == null ) {
+			setQueryUrl(DEFAULT_QUERY_URL);
 		}
 
 		if ( getPropertyConfigs() == null ) {
@@ -386,17 +388,12 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	public String getUrl() {
-		return url;
-	}
-
-	public void setUrl(String host) {
-		this.url = host;
-	}
-
-	@Override
-	public String toString() {
-		return "XmlEGaugeClient [url=" + url + ", sourceId=" + sourceId + ", propertyConfigs="
-				+ Arrays.toString(propertyConfigs) + "]";
+		StringBuilder builder = new StringBuilder();
+		builder.append(getBaseUrl().endsWith("/") ? getBaseUrl().substring(0, getBaseUrl().length() - 1)
+				: getBaseUrl());
+		builder.append("/");
+		builder.append(getQueryUrl().startsWith("/") ? getQueryUrl().substring(1) : getQueryUrl());
+		return builder.toString();
 	}
 
 	@Override
@@ -417,6 +414,28 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 			}
 		}
 		return buf.toString();
+	}
+
+	public String getBaseUrl() {
+		return baseUrl;
+	}
+
+	public void setBaseUrl(String baseUrl) {
+		this.baseUrl = baseUrl;
+	}
+
+	public String getQueryUrl() {
+		return queryUrl;
+	}
+
+	public void setQueryUrl(String queryUrl) {
+		this.queryUrl = queryUrl;
+	}
+
+	@Override
+	public String toString() {
+		return "XmlEGaugeClient{baseUrl=" + baseUrl + ", queryUrl=" + queryUrl + ", sourceId=" + sourceId
+				+ ", propertyConfigs=" + Arrays.toString(propertyConfigs) + "}";
 	}
 
 }
