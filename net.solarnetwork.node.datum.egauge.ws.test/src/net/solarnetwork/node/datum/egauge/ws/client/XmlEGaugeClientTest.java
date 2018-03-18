@@ -26,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.util.Arrays;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 
@@ -67,15 +66,14 @@ public class XmlEGaugeClientTest {
 		client.setHost(HOST);
 		client.setSourceId(SOURCE_ID);
 
-		@SuppressWarnings({ "unchecked" })
-		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] defaultConfigs = new GeneralDatumSamplePropertyConfig[] {
-				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWatts",
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("consumptionWatts",
 						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Grid")),
-				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("consumptionWattHourReading",
+				new EGaugeDatumSamplePropertyConfig("consumptionWattHourReading",
 						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Grid")),
-				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWatts",
+				new EGaugeDatumSamplePropertyConfig("generationWatts",
 						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
-				new GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>("generationWattHourReading",
+				new EGaugeDatumSamplePropertyConfig("generationWattHourReading",
 						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Solar+")) };
 
 		client.setPropertyConfigs(defaultConfigs);

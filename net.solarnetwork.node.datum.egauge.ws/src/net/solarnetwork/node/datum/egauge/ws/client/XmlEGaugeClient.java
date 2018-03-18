@@ -43,7 +43,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -86,7 +85,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	private String sourceId;
 
 	/** The list of property/register configurations. */
-	private GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] propertyConfigs;
+	private EGaugeDatumSamplePropertyConfig[] propertyConfigs;
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -95,17 +94,15 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		results.add(new BasicTextFieldSettingSpecifier("host", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
-		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = getPropertyConfigs();
-		List<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>> confsList = (confs != null
-				? Arrays.asList(confs)
-				: Collections.<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>> emptyList());
+		EGaugeDatumSamplePropertyConfig[] confs = getPropertyConfigs();
+		List<EGaugeDatumSamplePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<EGaugeDatumSamplePropertyConfig> emptyList());
 		results.add(SettingsUtil.dynamicListSettingSpecifier("propertyConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>>() {
+				new SettingsUtil.KeyedListCallback<EGaugeDatumSamplePropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
-							GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> value, int index,
-							String key) {
+							EGaugeDatumSamplePropertyConfig value, int index, String key) {
 
 						List<SettingSpecifier> settingSpecifiers = new ArrayList<>();
 
@@ -176,9 +173,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
 
-		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] configs = getPropertyConfigs();
+		EGaugeDatumSamplePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
-			for ( GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig : configs ) {
+			for ( EGaugeDatumSamplePropertyConfig propertyConfig : configs ) {
 				Element xml = getXml(constructEGaugeUrl(getInstQueryUrl()));
 				if ( xml != null ) {
 					populateDatumProperty(datum, propertyConfig, xml);
@@ -189,7 +186,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	protected void populateDatumProperty(EGaugePowerDatum datum,
-			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig, Element xml) {
+			EGaugeDatumSamplePropertyConfig propertyConfig, Element xml) {
 
 		GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
 
@@ -364,7 +361,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	/**
 	 * @return the propertyConfig
 	 */
-	public GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] getPropertyConfigs() {
+	public EGaugeDatumSamplePropertyConfig[] getPropertyConfigs() {
 		return propertyConfigs;
 	}
 
@@ -372,8 +369,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @param propertyConfigs
 	 *        the propertyConfig to set
 	 */
-	public void setPropertyConfigs(
-			GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] propertyConfigs) {
+	public void setPropertyConfigs(EGaugeDatumSamplePropertyConfig[] propertyConfigs) {
 		this.propertyConfigs = propertyConfigs;
 	}
 
@@ -383,7 +379,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropertyConfigsCount() {
-		GeneralDatumSamplePropertyConfig<EGaugePropertyConfig>[] confs = this.propertyConfigs;
+		EGaugeDatumSamplePropertyConfig[] confs = this.propertyConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
 
@@ -398,10 +394,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
-	@SuppressWarnings("unchecked")
 	public void setPropertyConfigsCount(int count) {
 		this.propertyConfigs = ArrayUtils.arrayWithLength(this.propertyConfigs, count,
-				GeneralDatumSamplePropertyConfig.class, null);
+				EGaugeDatumSamplePropertyConfig.class, null);
 	}
 
 	/**
@@ -440,7 +435,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	@Override
 	public Object getSampleInfo(EGaugePowerDatum snap) {
 		StringBuilder buf = new StringBuilder();
-		for ( GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> propertyConfig : getPropertyConfigs() ) {
+		for ( EGaugeDatumSamplePropertyConfig propertyConfig : getPropertyConfigs() ) {
 			switch (propertyConfig.getPropertyType()) {
 				case Instantaneous:
 					buf.append(propertyConfig.getPropertyKey() + " (i) = ");
