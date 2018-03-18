@@ -40,14 +40,13 @@ public class XmlEGaugeClientTest {
 	public static final String TEST_FILE_INSTANTANEOUS = "instantaneous.xml";
 	public static final String TEST_FILE_TOTAL = "total.xml";
 
-	private static final String HOST = "testhost";
 	private static final String SOURCE_ID = "test-source";
 
 	@Test
 	public void instantaneousRegisterNames() throws Exception {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
 		assertEquals(Arrays.asList(new String[] { "Grid", "Solar", "Solar+" }),
-				client.getRegisterNames("test"));
+				client.getRegisterNames());
 	}
 
 	@Test
@@ -56,14 +55,13 @@ public class XmlEGaugeClientTest {
 		assertEquals(
 				Arrays.asList(
 						new String[] { "Grid", "Solar", "Solar+", "Total Usage", "Total Generation" }),
-				client.getRegisterNames("test"));
+				client.getRegisterNames());
 	}
 
 	@Test
 	public void instantaneousData() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
 		client.init();
-		client.setHost(HOST);
 		client.setSourceId(SOURCE_ID);
 
 		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
@@ -100,7 +98,7 @@ public class XmlEGaugeClientTest {
 		XmlEGaugeClient client = new XmlEGaugeClient() {
 
 			@Override
-			protected String constructEGaugeUrl(String queryUrl) {
+			public String getUrl() {
 				// Return the path to a local file containing test content
 				return getClass().getResource(path).toString();
 			}

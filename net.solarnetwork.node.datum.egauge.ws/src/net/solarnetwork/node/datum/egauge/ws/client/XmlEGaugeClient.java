@@ -57,8 +57,8 @@ import net.solarnetwork.util.ArrayUtils;
  * XML implementation of the EGaugeClient. Instances of this can be shared
  * between EGaugeDatumDataSource instances.
  * 
- * The {@code xpathMap} configuration should match the content expected to be
- * returned by the {@code queryUrl}.
+ * The {@code propertyConfigs} configuration should match the content expected
+ * to be returned by the {@code url}.
  * 
  * @author maxieduncan
  * @version 1.0
@@ -72,14 +72,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * The default query URL that returns the XML data we will apply the XPath
 	 * mappings to.
 	 */
-	private static final String DEAFAULT_INST_QUERY_URL = "/cgi-bin/egauge?inst";
+	private static final String DEAFAULT_QUERY_URL = "http://localhost/cgi-bin/egauge?inst";
 
-	/**
-	 * The URL that should be used to retrieve the instantanseous eGauge XML.
-	 */
-	private String instQueryUrl = DEAFAULT_INST_QUERY_URL;
-
-	private String host;
+	private String url = DEAFAULT_QUERY_URL;
 
 	/** The ID that identifies the source. */
 	private String sourceId;
@@ -124,7 +119,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 						settingSpecifiers.add(propTypeSpec);
 
 						// Add the EGaugePropertyConfig properties
-						List<String> registerNames = getRegisterNames(getInstQueryUrl());
+						List<String> registerNames = getRegisterNames();
 						settingSpecifiers
 								.addAll(EGaugePropertyConfig.settings(key + ".config.", registerNames));
 
@@ -160,23 +155,12 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return datum;
 	}
 
-	/**
-	 * Constructs the URL that should be used to retrieve the eGauge data.
-	 * 
-	 * @param queryUrl
-	 *        The eGauge query URL to access on {@link #getHost()}.
-	 * @return the URL that should be used to retrieve the eGauge data.
-	 */
-	protected String constructEGaugeUrl(String queryUrl) {
-		return (host == null ? "" : getHost()) + queryUrl;
-	}
-
 	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
 
 		EGaugeDatumSamplePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
 			for ( EGaugeDatumSamplePropertyConfig propertyConfig : configs ) {
-				Element xml = getXml(constructEGaugeUrl(getInstQueryUrl()));
+				Element xml = getXml(getUrl());
 				if ( xml != null ) {
 					populateDatumProperty(datum, propertyConfig, xml);
 				}
@@ -277,9 +261,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @return the register names found in the file
 	 * @throws XmlEGaugeClientException
 	 */
-	protected List<String> getRegisterNames(String queryUrl) {
+	protected List<String> getRegisterNames() {
 		try {
-			Element xml = getXml(constructEGaugeUrl(queryUrl));
+			Element xml = getXml(getUrl());
 			if ( xml != null ) {
 				NodeList nodeList = (NodeList) getXPathExpression("r/@n").evaluate(xml,
 						XPathConstants.NODESET);
@@ -293,8 +277,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 			}
 		} catch ( Exception e ) {
 			// This is non fatal, just log a warning for reference
-			log.warn("Error communicating with eGauge inverter at {}: {}", getInstQueryUrl(),
-					e.getMessage());
+			log.warn("Error communicating with eGauge inverter at {}: {}", getUrl(), e.getMessage());
 		}
 
 		return null;
@@ -303,8 +286,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	@Override
 	public void init() {
 		super.init();
-		if ( getInstQueryUrl() == null ) {
-			setInstQueryUrl(DEAFAULT_INST_QUERY_URL);
+		if ( getUrl() == null ) {
+			setUrl(DEAFAULT_QUERY_URL);
 		}
 
 		if ( getPropertyConfigs() == null ) {
@@ -321,21 +304,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	@Override
 	public String getDisplayName() {
 		return "eGauge web service client";
-	}
-
-	/**
-	 * @return the instantaneousQueryUrl
-	 */
-	public String getInstQueryUrl() {
-		return instQueryUrl;
-	}
-
-	/**
-	 * @param instantaneousQueryUrl
-	 *        the instantaneousQueryUrl to set
-	 */
-	public void setInstQueryUrl(String instantaneousQueryUrl) {
-		this.instQueryUrl = instantaneousQueryUrl;
 	}
 
 	/**
@@ -417,19 +385,18 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	}
 
-	public String getHost() {
-		return host;
+	public String getUrl() {
+		return url;
 	}
 
-	public void setHost(String host) {
-		this.host = host;
+	public void setUrl(String host) {
+		this.url = host;
 	}
 
 	@Override
 	public String toString() {
-		return "XmlEGaugeClient [instantaneousQueryUrl=" + instQueryUrl + ", host=" + host
-				+ ", sourceId=" + sourceId + ", propertyConfigs=" + Arrays.toString(propertyConfigs)
-				+ "]";
+		return "XmlEGaugeClient [url=" + url + ", sourceId=" + sourceId + ", propertyConfigs="
+				+ Arrays.toString(propertyConfigs) + "]";
 	}
 
 	@Override

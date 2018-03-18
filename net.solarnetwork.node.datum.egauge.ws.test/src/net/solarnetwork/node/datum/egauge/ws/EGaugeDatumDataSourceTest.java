@@ -35,7 +35,6 @@ import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClientTest;
  */
 public class EGaugeDatumDataSourceTest {
 
-	private static final String TEST_HOST = "http://solarnetwork.net";
 	private static final String TEST_SOURCE = "solarnetwork egague test";
 
 	@Test
@@ -43,7 +42,6 @@ public class EGaugeDatumDataSourceTest {
 		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
 		XmlEGaugeClient client = XmlEGaugeClientTest
 				.getTestClient(XmlEGaugeClientTest.TEST_FILE_INSTANTANEOUS);
-		client.setHost(TEST_HOST);
 		client.setSourceId(TEST_SOURCE);
 
 		source.setClient(client);
