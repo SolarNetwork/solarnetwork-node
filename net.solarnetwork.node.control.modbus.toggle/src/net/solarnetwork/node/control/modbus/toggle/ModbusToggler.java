@@ -27,8 +27,11 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
@@ -39,27 +42,42 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.ModbusFunction;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * Control a Modbus "coil" type register to turn a switch on or off.
+ * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ModbusToggler extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
-	private Integer address = 0x4008;
+	/** The default value for the {@code address} property. */
+	public static final int DEFAULT_ADDRESS = 0x4008;
 
-	private String controlId = "/switch/1";
+	/** The default value for the {@code controlId} property. */
+	public static final String DEFAULT_CONTROL_ID = "/switch/1";
+
+	private final AtomicReference<CachedResult<NodeControlInfoDatum>> cachedSample = new AtomicReference<CachedResult<NodeControlInfoDatum>>(
+			null);
+
+	private int address = DEFAULT_ADDRESS;
+	private ModbusWriteFunction function = ModbusWriteFunction.WriteCoil;
+	private String controlId = DEFAULT_CONTROL_ID;
+	private long sampleCacheMs = 5000;
 	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 
@@ -69,36 +87,90 @@ public class ModbusToggler extends ModbusDeviceSupport
 	}
 
 	/**
-	 * Get the values of the discreet values, as a Boolean.
+	 * Get the discreet values, as a Boolean.
 	 * 
-	 * @return Boolean for the switch status
+	 * @return Boolean for the switch status, or {@literal null} if not known
 	 */
-	private synchronized Boolean currentValue() throws IOException {
-		BitSet result = performAction(new ModbusConnectionAction<BitSet>() {
-
-			@Override
-			public BitSet doWithConnection(ModbusConnection conn) throws IOException {
-				return conn.readDiscreetValues(new Integer[] { address }, 1);
+	private NodeControlInfoDatum currentValue() throws IOException {
+		CachedResult<NodeControlInfoDatum> result = cachedSample.get();
+		if ( result == null || !result.isValid() ) {
+			Boolean value = readCurrentValue();
+			if ( value != null ) {
+				NodeControlInfoDatum data = newNodeControlInfoDatum(this.controlId, value);
+				cachedSample.compareAndSet(result, new CachedResult<NodeControlInfoDatum>(data,
+						sampleCacheMs, TimeUnit.MILLISECONDS));
+				result = cachedSample.get();
 			}
-		});
-		if ( log.isInfoEnabled() ) {
-			log.info("Read {} value: {}", controlId, result.get(0));
 		}
-		return result.get(0);
+		return (result != null ? result.getResult() : null);
 	}
 
-	private synchronized Boolean setValue(Boolean desiredValue) throws IOException {
-		final BitSet bits = new BitSet(1);
-		bits.set(0, desiredValue);
-		log.info("Setting {} value to {}", controlId, desiredValue);
-		final Integer[] addresses = new Integer[] { address };
-		return performAction(new ModbusConnectionAction<Boolean>() {
+	private synchronized Boolean readCurrentValue() throws IOException {
+		final ModbusWriteFunction function = getFunction();
+		final Integer address = getAddress();
+		Boolean result = performAction(new ModbusConnectionAction<Boolean>() {
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-				return conn.writeDiscreetValues(addresses, bits);
+				if ( function == ModbusWriteFunction.WriteCoil
+						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
+					BitSet bits = conn.readDiscreetValues(new Integer[] { address }, 1);
+					return (bits != null ? bits.get(0) : null);
+				}
+
+				// for all other functions, write as unsigned short value with 1 for true, 0 for false
+				ModbusFunction readFunction = function.oppositeFunction();
+				if ( readFunction != null ) {
+					int[] data = conn.readUnsignedShorts(
+							ModbusReadFunction.forCode(readFunction.getCode()), address, 1);
+					return (data != null && data.length > 0 && data[0] == 1 ? true : false);
+				} else {
+					log.warn("Unsupported Modbus function for reading value: {}", function);
+				}
+				return null;
 			}
 		});
+		log.info("Read {} value: {}", controlId, result);
+		return result;
+	}
+
+	/**
+	 * Set the modbus register to a true/false value.
+	 * 
+	 * @param desiredValue
+	 *        the desired value to set
+	 * @return {@literal true} if the write succeeded
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	private synchronized boolean setValue(final Boolean desiredValue) throws IOException {
+		log.info("Setting {} value to {}", controlId, desiredValue);
+		final ModbusWriteFunction function = getFunction();
+		final Integer address = getAddress();
+
+		boolean result = performAction(new ModbusConnectionAction<Boolean>() {
+
+			@Override
+			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
+				if ( function == ModbusWriteFunction.WriteCoil
+						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
+					final BitSet bits = new BitSet(1);
+					bits.set(0, desiredValue);
+					return conn.writeDiscreetValues(new Integer[] { address }, bits);
+				}
+
+				// for all other functions, write as unsigned short value with 1 for true, 0 for false
+				conn.writeUnsignedShorts(function, address,
+						new int[] { Boolean.TRUE.equals(desiredValue) ? 1 : 0 });
+				return true;
+			}
+		});
+		if ( result ) {
+			NodeControlInfoDatum data = newNodeControlInfoDatum(this.controlId, result);
+			cachedSample.set(
+					new CachedResult<NodeControlInfoDatum>(data, sampleCacheMs, TimeUnit.MILLISECONDS));
+		}
+		return result;
 	}
 
 	// NodeControlProvider
@@ -115,12 +187,14 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
+		if ( this.controlId == null || !this.controlId.equals(controlId) ) {
+			return null;
+		}
 		// read the control's current status
 		log.debug("Reading {} status", controlId);
 		NodeControlInfoDatum result = null;
 		try {
-			Boolean value = currentValue();
-			result = newNodeControlInfoDatum(controlId, value);
+			result = currentValue();
 		} catch ( Exception e ) {
 			log.error("Error reading {} status: {}", controlId, e.getMessage());
 		}
@@ -158,6 +232,9 @@ public class ModbusToggler extends ModbusDeviceSupport
 
 	@Override
 	public InstructionState processInstruction(Instruction instruction) {
+		if ( !InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic()) ) {
+			return null;
+		}
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		log.debug("Inspecting instruction {} against control {}", instruction.getId(), controlId);
@@ -167,14 +244,14 @@ public class ModbusToggler extends ModbusDeviceSupport
 				// treat parameter value as a boolean String
 				String str = instruction.getParameterValue(controlId);
 				Boolean desiredValue = Boolean.parseBoolean(str);
-				Boolean modbusResult = null;
+				boolean success = false;
 				try {
-					modbusResult = setValue(desiredValue);
+					success = setValue(desiredValue);
 				} catch ( Exception e ) {
 					log.warn("Error handling instruction {} on control {}: {}", instruction.getTopic(),
 							controlId, e.getMessage());
 				}
-				if ( modbusResult != null && modbusResult.booleanValue() ) {
+				if ( success ) {
 					postControlEvent(newNodeControlInfoDatum(controlId, desiredValue),
 							NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 					result = InstructionState.Completed;
@@ -206,19 +283,32 @@ public class ModbusToggler extends ModbusDeviceSupport
 		// get current value
 		BasicTitleSettingSpecifier status = new BasicTitleSettingSpecifier("status", "N/A", true);
 		try {
-			Boolean val = currentValue();
-			status.setDefaultValue(val.toString());
+			NodeControlInfoDatum val = currentValue();
+			if ( val != null ) {
+				status.setDefaultValue(val.getValue());
+			}
 		} catch ( Exception e ) {
 			log.debug("Error reading {} status: {}", controlId, e.getMessage());
 		}
 		results.add(status);
 
-		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.getControlId()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
-		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
+		results.add(
+				new BasicTextFieldSettingSpecifier("address", String.valueOf(defaults.getAddress())));
+
+		// drop-down menu for function
+		BasicMultiValueSettingSpecifier functionSpec = new BasicMultiValueSettingSpecifier(
+				"functionCode", defaults.getFunctionCode());
+		Map<String, String> functionTitles = new LinkedHashMap<String, String>(4);
+		for ( ModbusWriteFunction e : ModbusWriteFunction.values() ) {
+			functionTitles.put(e.toString(), e.toDisplayString());
+		}
+		functionSpec.setValueTitles(functionTitles);
+		results.add(functionSpec);
 
 		return results;
 	}
@@ -232,11 +322,11 @@ public class ModbusToggler extends ModbusDeviceSupport
 		this.messageSource = messageSource;
 	}
 
-	public Integer getAddress() {
+	public int getAddress() {
 		return address;
 	}
 
-	public void setAddress(Integer address) {
+	public void setAddress(int address) {
 		this.address = address;
 	}
 
@@ -256,4 +346,69 @@ public class ModbusToggler extends ModbusDeviceSupport
 		this.eventAdmin = eventAdmin;
 	}
 
+	/**
+	 * Get the Modbus write function to use.
+	 * 
+	 * @return the write function
+	 * @since 1.3
+	 */
+	public ModbusWriteFunction getFunction() {
+		return function;
+	}
+
+	/**
+	 * Set the write function to use.
+	 * 
+	 * @param function
+	 *        the function to write to Modbus with
+	 * @since 1.3
+	 */
+	public void setFunction(ModbusWriteFunction function) {
+		this.function = function;
+	}
+
+	/**
+	 * Get the Modbus function code to use as a string.
+	 * 
+	 * @return the Modbus function code as a string
+	 * @since 1.3
+	 */
+	public String getFunctionCode() {
+		return String.valueOf(function.getCode());
+	}
+
+	/**
+	 * Set the Modbus function to use as a string.
+	 * 
+	 * @param function
+	 *        the Modbus function
+	 * @since 1.3
+	 */
+	public void setFunctionCode(String function) {
+		if ( function == null ) {
+			return;
+		}
+		setFunction(ModbusWriteFunction.forCode(Integer.parseInt(function)));
+	}
+
+	/**
+	 * Get the sample cache maximum age, in milliseconds.
+	 * 
+	 * @return the cache milliseconds
+	 * @since 1.3
+	 */
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	/**
+	 * Set the sample cache maximum age, in milliseconds.
+	 * 
+	 * @param sampleCacheSecondsMs
+	 *        the cache milliseconds
+	 * @since 1.3
+	 */
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
+	}
 }

@@ -92,7 +92,11 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	 */
 	public <V> V getSampleValue(GeneralDatumSamplesType type, String key) {
 		GeneralDatumSamples s = getSamples();
-		return (s != null ? s.getSampleValue(type, key) : null);
+		V result = null;
+		if ( s != null ) {
+			result = s.getSampleValue(type, key);
+		}
+		return result;
 	}
 
 	/**

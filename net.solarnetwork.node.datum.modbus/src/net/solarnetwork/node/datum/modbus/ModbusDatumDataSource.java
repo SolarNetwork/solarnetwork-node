@@ -46,19 +46,22 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
@@ -104,8 +107,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			return;
 		}
 		for ( ModbusPropertyConfig conf : propConfs ) {
-			// skip configurations without a name
-			if ( conf.getName() == null || conf.getName().length() < 1 ) {
+			// skip configurations without a property to set
+			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
 				continue;
 			}
 			Object propVal = null;
@@ -127,10 +130,18 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					break;
 
 				case Int16:
+					propVal = sample.getSignedInt16(conf.getAddress());
+					break;
+
+				case UInt16:
 					propVal = sample.getInt16(conf.getAddress());
 					break;
 
 				case Int32:
+					propVal = sample.getSignedInt32(conf.getAddress());
+					break;
+
+				case UInt32:
 					propVal = sample.getInt32(conf.getAddress());
 					break;
 
@@ -138,8 +149,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					propVal = sample.getInt64(conf.getAddress());
 					break;
 
-				case SignedInt16:
-					propVal = sample.getSignedInt16(conf.getAddress());
+				case UInt64:
+					propVal = sample.getUnsignedInt64(conf.getAddress());
 					break;
 
 				case StringAscii:
@@ -161,31 +172,20 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			}
 
 			if ( propVal != null ) {
-				switch (conf.getDatumPropertyType()) {
+				switch (conf.getPropertyType()) {
 					case Accumulating:
-						if ( propVal instanceof Number ) {
-							d.putAccumulatingSampleValue(conf.getName(), (Number) propVal);
-						} else {
+					case Instantaneous:
+						if ( !(propVal instanceof Number) ) {
 							log.warn(
 									"Cannot set datum accumulating property {} to non-number value [{}]",
-									conf.getName(), propVal);
+									conf.getPropertyKey(), propVal);
+							continue;
 						}
-						break;
 
-					case Instantaneous:
-						if ( propVal instanceof Number ) {
-							d.putInstantaneousSampleValue(conf.getName(), (Number) propVal);
-						} else {
-							log.warn(
-									"Cannot set datum instantaneous property {} to non-number value [{}]",
-									conf.getName(), propVal);
-						}
-						break;
-
-					case Status:
-						d.putStatusSampleValue(conf.getName(), propVal);
-						break;
+					default:
+						// nothing
 				}
+				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
 			}
 		}
 	}
@@ -194,7 +194,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( decimalScale < 0 ) {
 			return value;
 		}
-		BigDecimal v = bigDecimalForNumber(value);
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		if ( v.scale() > decimalScale ) {
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
@@ -205,25 +205,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
 			return value;
 		}
-		BigDecimal v = bigDecimalForNumber(value);
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
 		return v.multiply(multiplier);
-	}
-
-	private BigDecimal bigDecimalForNumber(Number value) {
-		BigDecimal v = null;
-		if ( value instanceof BigDecimal ) {
-			v = (BigDecimal) value;
-		} else if ( value instanceof Long ) {
-			v = new BigDecimal(value.longValue());
-		} else if ( value instanceof Integer || value instanceof Short ) {
-			v = new BigDecimal(value.intValue());
-		} else if ( value instanceof Double ) {
-			v = BigDecimal.valueOf(value.doubleValue());
-		} else {
-			// note Float falls through to here per recommended way of converting that to BigDecimal
-			v = new BigDecimal(value.toString());
-		}
-		return v;
 	}
 
 	@Override
@@ -236,9 +219,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		return "Generic Modbus Device";
 	}
 
-	private static Map<ModbusFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
+	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
 			ModbusPropertyConfig[] configs) {
-		Map<ModbusFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
+		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs.length);
 		for ( ModbusPropertyConfig config : configs ) {
 			confsByFunction.computeIfAbsent(config.getFunction(), k -> new ArrayList<>(4)).add(config);
@@ -328,11 +311,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				final int maxReadLen = maxReadWordCount;
-				Map<ModbusFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
+				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
 						propConfigs);
-				for ( Map.Entry<ModbusFunction, List<ModbusPropertyConfig>> me : functionMap
+				for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap
 						.entrySet() ) {
-					ModbusFunction function = me.getKey();
+					ModbusReadFunction function = me.getKey();
 					List<ModbusPropertyConfig> configs = me.getValue();
 					// try to read from device as few times as possible by combining ranges of addresses
 					// into single calls, but limited to at most maxReadWordCount addresses at a time
@@ -356,11 +339,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 									break;
 
 								case ReadHoldingRegister:
-									m.saveDataArray(conn.readInts(start, len), start);
+									m.saveDataArray(
+											conn.readUnsignedShorts(
+													ModbusReadFunction.ReadHoldingRegister, start, len),
+											start);
 									break;
 
 								case ReadInputRegister:
-									m.saveDataArray(conn.readInputValues(start, len), start);
+									m.saveDataArray(conn.readUnsignedShorts(
+											ModbusReadFunction.ReadInputRegister, start, len), start);
 									break;
 							}
 							start += len;
@@ -456,26 +443,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	 * </p>
 	 * 
 	 * @param count
-	 *        The desired number of {@code propIncludes} elements.
+	 *        The desired number of {@code propConfigs} elements.
 	 */
 	public void setPropConfigsCount(int count) {
-		if ( count < 0 ) {
-			count = 0;
-		}
-		ModbusPropertyConfig[] confs = this.propConfigs;
-		int lCount = (confs == null ? 0 : confs.length);
-		if ( lCount != count ) {
-			ModbusPropertyConfig[] newIncs = new ModbusPropertyConfig[count];
-			if ( confs != null ) {
-				System.arraycopy(confs, 0, newIncs, 0, Math.min(count, confs.length));
-			}
-			for ( int i = 0; i < count; i++ ) {
-				if ( newIncs[i] == null ) {
-					newIncs[i] = new ModbusPropertyConfig();
-				}
-			}
-			this.propConfigs = newIncs;
-		}
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
+				ModbusPropertyConfig.class, null);
 	}
 
 	/**
