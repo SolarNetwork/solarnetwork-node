@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -187,17 +188,10 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
 							.evaluate(xml, XPathConstants.STRING);
 
-					switch (eGaugePropertyType) {
-						case "P":
-							// Store watts as an int value
-							datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
-									Integer.valueOf(instantenouseValue));
-							break;
-						default:
-							// Store as a BigDecimal value by default
-							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(),
-									new BigDecimal(instantenouseValue));
-					}
+					// Store as a BigDecimal value by default
+					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
+							new BigDecimal(instantenouseValue));
+					break;
 				case Accumulating:
 					String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
 							XPathConstants.STRING);
@@ -205,7 +199,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 					switch (eGaugePropertyType) {
 						case "P":
 							// Convert watt-seconds into watt-hours
-							Long wattHours = Long.valueOf(value) / HOUR_SECONDS;// TODO review rounding
+							BigDecimal wattHours = new BigDecimal(value)
+									.divide(new BigDecimal(HOUR_SECONDS), RoundingMode.DOWN);
 							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), wattHours);
 							break;
 						default:
@@ -389,10 +384,15 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	public String getUrl() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(getBaseUrl().endsWith("/") ? getBaseUrl().substring(0, getBaseUrl().length() - 1)
-				: getBaseUrl());
+		if ( getBaseUrl() != null ) {
+			builder.append(
+					getBaseUrl().endsWith("/") ? getBaseUrl().substring(0, getBaseUrl().length() - 1)
+							: getBaseUrl());
+		}
 		builder.append("/");
-		builder.append(getQueryUrl().startsWith("/") ? getQueryUrl().substring(1) : getQueryUrl());
+		if ( getQueryUrl() != null ) {
+			builder.append(getQueryUrl().startsWith("/") ? getQueryUrl().substring(1) : getQueryUrl());
+		}
 		return builder.toString();
 	}
 
