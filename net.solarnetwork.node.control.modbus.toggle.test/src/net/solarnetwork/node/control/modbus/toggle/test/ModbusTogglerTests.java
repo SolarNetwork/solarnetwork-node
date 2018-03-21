@@ -51,6 +51,8 @@ import net.solarnetwork.node.io.modbus.AbstractModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.util.StaticOptionalService;
@@ -168,6 +170,26 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
+	public void processSetControlParameterOnHoldingRegister() {
+		// given
+		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		expectModbusAction(Boolean.class);
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+				aryEq(new int[] { 1 }));
+
+		// when
+		replayAll();
+		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
+				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(TEST_CONTROL_ID, "true");
+		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+
+		// then
+		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+	}
+
+	@Test
 	public void processSetControlParameterOff() {
 		// given
 		expectModbusAction(Boolean.class);
@@ -176,6 +198,26 @@ public class ModbusTogglerTests {
 		writeBitSet.set(0, false);
 		expect(conn.writeDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(writeBitSet)))
 				.andReturn(true);
+
+		// when
+		replayAll();
+		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
+				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(TEST_CONTROL_ID, "false");
+		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+
+		// then
+		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+	}
+
+	@Test
+	public void processSetControlParameterOffHoldingRegister() {
+		// given
+		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		expectModbusAction(Boolean.class);
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+				aryEq(new int[] { 0 }));
 
 		// when
 		replayAll();
@@ -212,6 +254,29 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
+	public void currentValueOnHoldingRegister() {
+		// given
+		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		expectModbusAction(Boolean.class);
+
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+				.andReturn(new int[] { 1 });
+
+		// when
+		replayAll();
+		NodeControlInfo result = toggler.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		// then
+		assertThat("Current value provided", result, notNullValue());
+		assertThat("Control ID", result.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Control prop name", result.getPropertyName(), nullValue());
+		assertThat("Control readonly", result.getReadonly(), equalTo(false));
+		assertThat("Control type", result.getType(), equalTo(NodeControlPropertyType.Boolean));
+		assertThat("Control unit", result.getUnit(), nullValue());
+		assertThat("Control value", result.getValue(), equalTo("true"));
+	}
+
+	@Test
 	public void currentValueOff() {
 		// given
 		expectModbusAction(Boolean.class);
@@ -219,6 +284,29 @@ public class ModbusTogglerTests {
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, false);
 		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+
+		// when
+		replayAll();
+		NodeControlInfo result = toggler.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		// then
+		assertThat("Current value provided", result, notNullValue());
+		assertThat("Control ID", result.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Control prop name", result.getPropertyName(), nullValue());
+		assertThat("Control readonly", result.getReadonly(), equalTo(false));
+		assertThat("Control type", result.getType(), equalTo(NodeControlPropertyType.Boolean));
+		assertThat("Control unit", result.getUnit(), nullValue());
+		assertThat("Control value", result.getValue(), equalTo("false"));
+	}
+
+	@Test
+	public void currentValueOffHoldingRegister() {
+		// given
+		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		expectModbusAction(Boolean.class);
+
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+				.andReturn(new int[] { 0 });
 
 		// when
 		replayAll();
