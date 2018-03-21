@@ -22,7 +22,14 @@
 
 package net.solarnetwork.node.datum.egauge.ws.test;
 
+import static org.hamcrest.Matchers.arrayWithSize;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.util.Map;
+import java.util.Properties;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource;
@@ -31,6 +38,8 @@ import net.solarnetwork.node.datum.egauge.ws.client.EGaugeDatumSamplePropertyCon
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
 import net.solarnetwork.node.datum.egauge.ws.test.client.test.XmlEGaugeClientTests;
+import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.util.ClassUtils;
 
 /**
  * Test case for the EGaugeDatumDataSource.
@@ -68,6 +77,39 @@ public class EGaugeDatumDataSourceTests {
 
 		XmlEGaugeClientTests.checkInstantaneousGenerationReadings(datum);
 		XmlEGaugeClientTests.checkInstantaneousConsumptionReadings(datum);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private Map<String, Object> loadSettings(String resource) {
+		Properties settings = new Properties();
+		try {
+			settings.load(getClass().getResourceAsStream(resource));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+		return (Map) settings;
+	}
+
+	/**
+	 * Simulate configuring via SettingSpecifier framework.
+	 */
+	@Test
+	public void configureViaSettings() throws IOException {
+		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
+		XmlEGaugeClient client = XmlEGaugeClientTests
+				.getTestClient(XmlEGaugeClientTests.TEST_FILE_INSTANTANEOUS);
+		source.setClient(client);
+
+		ClassUtils.setBeanProperties(source, loadSettings("config-01.properties"));
+
+		assertThat("Client source ID", client.getSourceId(), equalTo("test.source"));
+		assertThat("Client prop configs", client.getPropertyConfigs(), arrayWithSize(2));
+
+		PVEnergyDatum datum = source.readCurrentDatum();
+		assertThat("Datum created", datum.getCreated(), notNullValue());
+		assertThat("Datum sourceId", datum.getSourceId(), equalTo("test.source"));
+		assertThat("Datum watts", datum.getWatts(), equalTo(20733));
+		assertThat("Datum wattHours", datum.getWattHourReading(), equalTo(13993341L));
 	}
 
 }
