@@ -13,6 +13,7 @@
 
 		<!-- Testing -->
 		<dependency org="junit" name="junit" rev="4.12"/>
+		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.hamcrest" rev="1.3_1"/>
 		<dependency org="org.easymock" name="easymock" rev="3.1"/>
 		<dependency org="org.springframework" name="spring-test" rev="4.2.6.RELEASE"/>		
 		
