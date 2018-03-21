@@ -52,12 +52,6 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="eGauge Sytems service"/>
-		<property name="factoryUID" value="net.solarnetwork.node.datum.egauge.ws"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-		
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
@@ -65,7 +59,13 @@
 	
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="eGauge Sytems service"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.egauge.ws"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.egauge.ws" autowire-on-update="true">
 		<osgix:interfaces>
@@ -96,7 +96,6 @@
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
-									
 									<property name="client" ref="xmlClient"/>
 								</bean>
 							</entry>
