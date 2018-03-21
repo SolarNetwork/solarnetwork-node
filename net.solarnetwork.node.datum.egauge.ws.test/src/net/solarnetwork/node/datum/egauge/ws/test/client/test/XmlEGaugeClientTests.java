@@ -38,7 +38,7 @@ import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
  * @author maxieduncan
  * @version 1.0
  */
-public class XmlEGaugeClientTest {
+public class XmlEGaugeClientTests {
 
 	public static final String TEST_FILE_INSTANTANEOUS = "instantaneous.xml";
 	public static final String TEST_FILE_TOTAL = "total.xml";

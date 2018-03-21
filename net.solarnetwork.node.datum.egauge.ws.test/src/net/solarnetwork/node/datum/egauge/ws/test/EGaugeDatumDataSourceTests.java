@@ -30,7 +30,7 @@ import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugeDatumSamplePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
-import net.solarnetwork.node.datum.egauge.ws.test.client.test.XmlEGaugeClientTest;
+import net.solarnetwork.node.datum.egauge.ws.test.client.test.XmlEGaugeClientTests;
 
 /**
  * Test case for the EGaugeDatumDataSource.
@@ -38,15 +38,15 @@ import net.solarnetwork.node.datum.egauge.ws.test.client.test.XmlEGaugeClientTes
  * @author maxieduncan
  * @version 1.0
  */
-public class EGaugeDatumDataSourceTest {
+public class EGaugeDatumDataSourceTests {
 
 	private static final String TEST_SOURCE = "solarnetwork egague test";
 
 	@Test
 	public void getCurrent() {
 		EGaugeDatumDataSource source = new EGaugeDatumDataSource();
-		XmlEGaugeClient client = XmlEGaugeClientTest
-				.getTestClient(XmlEGaugeClientTest.TEST_FILE_INSTANTANEOUS);
+		XmlEGaugeClient client = XmlEGaugeClientTests
+				.getTestClient(XmlEGaugeClientTests.TEST_FILE_INSTANTANEOUS);
 		client.setSourceId(TEST_SOURCE);
 
 		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
@@ -66,8 +66,8 @@ public class EGaugeDatumDataSourceTest {
 		EGaugePowerDatum datum = source.readCurrentDatum();
 		assertEquals(TEST_SOURCE, datum.getSourceId());
 
-		XmlEGaugeClientTest.checkInstantaneousGenerationReadings(datum);
-		XmlEGaugeClientTest.checkInstantaneousConsumptionReadings(datum);
+		XmlEGaugeClientTests.checkInstantaneousGenerationReadings(datum);
+		XmlEGaugeClientTests.checkInstantaneousConsumptionReadings(datum);
 	}
 
 }
