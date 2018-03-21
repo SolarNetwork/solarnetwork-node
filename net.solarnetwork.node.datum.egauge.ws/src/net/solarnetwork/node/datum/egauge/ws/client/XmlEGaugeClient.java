@@ -159,17 +159,15 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
-
 		EGaugeDatumSamplePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
-			for ( EGaugeDatumSamplePropertyConfig propertyConfig : configs ) {
-				Element xml = getXml(getUrl());
-				if ( xml != null ) {
+			Element xml = getXml(getUrl());
+			if ( xml != null ) {
+				for ( EGaugeDatumSamplePropertyConfig propertyConfig : configs ) {
 					populateDatumProperty(datum, propertyConfig, xml);
 				}
 			}
 		}
-
 	}
 
 	protected void populateDatumProperty(EGaugePowerDatum datum,
