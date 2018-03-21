@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.egauge.ws.client;
+package net.solarnetwork.node.datum.egauge.ws.test.client.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -28,6 +28,9 @@ import java.util.Arrays;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
+import net.solarnetwork.node.datum.egauge.ws.client.EGaugeDatumSamplePropertyConfig;
+import net.solarnetwork.node.datum.egauge.ws.client.EGaugePropertyConfig;
+import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
 
 /**
  * Test cases for the XmlEGaugeClient.

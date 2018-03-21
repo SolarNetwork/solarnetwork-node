@@ -258,7 +258,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @return the register names found in the file
 	 * @throws XmlEGaugeClientException
 	 */
-	protected List<String> getRegisterNames() {
+	public List<String> getRegisterNames() {
 		try {
 			Element xml = getXml(getUrl());
 			if ( xml != null ) {
