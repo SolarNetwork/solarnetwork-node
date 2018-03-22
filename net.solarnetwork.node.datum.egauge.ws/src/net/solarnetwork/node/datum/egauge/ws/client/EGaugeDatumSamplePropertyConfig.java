@@ -36,6 +36,7 @@ public class EGaugeDatumSamplePropertyConfig
 
 	public EGaugeDatumSamplePropertyConfig() {
 		super();
+		setPropertyType(GeneralDatumSamplesType.Instantaneous);
 		setConfig(new EGaugePropertyConfig());
 	}
 
