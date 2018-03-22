@@ -26,7 +26,9 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 
 /**
  * Base Datum implementation with {@link GeneralDatumSamples} support.
@@ -34,7 +36,7 @@ import net.solarnetwork.domain.GeneralDatumSamplesType;
  * @author matt
  * @version 1.3
  */
-public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cloneable {
+public abstract class GeneralDatumSupport extends BaseDatum implements Datum, GeneralDatum, Cloneable {
 
 	private GeneralDatumSamples samples;
 
@@ -51,6 +53,22 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Cl
 	 */
 	protected GeneralDatumSamples newSamplesInstance() {
 		return new GeneralDatumSamples();
+	}
+
+	@Override
+	public GeneralDatumSamplesOperations asSampleOperations() {
+		return getSamples();
+	}
+
+	@Override
+	public MutableGeneralDatumSamplesOperations asMutableSampleOperations() {
+		GeneralDatumSamples s = getSamples();
+		if ( s == null ) {
+			s = newSamplesInstance();
+			samples = s;
+
+		}
+		return s;
 	}
 
 	/**
