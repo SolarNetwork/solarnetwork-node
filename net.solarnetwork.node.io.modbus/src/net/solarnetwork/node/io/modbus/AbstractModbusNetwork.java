@@ -85,7 +85,8 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 */
 	protected void releaseLock() {
 		if ( lock.isLocked() ) {
-			log.debug("Releasing lock on ", this);
+			final String desc = getNetworkDescription();
+			log.debug("Releasing lock on {}", desc);
 			lock.unlock();
 		}
 	}
