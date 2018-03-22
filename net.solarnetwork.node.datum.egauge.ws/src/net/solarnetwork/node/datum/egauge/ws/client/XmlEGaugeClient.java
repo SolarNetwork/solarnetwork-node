@@ -44,8 +44,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
@@ -410,20 +412,22 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	@Override
-	public Object getSampleInfo(EGaugePowerDatum snap) {
+	public String getSampleInfo(GeneralDatum snap) {
 		StringBuilder buf = new StringBuilder();
+		GeneralDatumSamplesOperations ops = snap.asSampleOperations();
 		for ( EGaugeDatumSamplePropertyConfig propertyConfig : getPropertyConfigs() ) {
-			switch (propertyConfig.getPropertyType()) {
-				case Instantaneous:
-					buf.append(propertyConfig.getPropertyKey() + " (i) = ");
-					buf.append(snap.getInstantaneousSampleInteger(propertyConfig.getPropertyKey()));
-					break;
-				case Accumulating:
-					buf.append(propertyConfig.getPropertyKey() + " (a) = ");
-					buf.append(snap.getAccumulatingSampleLong(propertyConfig.getPropertyKey()));
-					break;
-				default:
-					// Ignore
+			if ( !propertyConfig.isValid() ) {
+				continue;
+			}
+			if ( buf.length() > 0 ) {
+				buf.append("; ");
+			}
+			buf.append(propertyConfig.getPropertyKey()).append(" (")
+					.append(propertyConfig.getPropertyTypeKey()).append(") = ");
+			Object v = ops.getSampleValue(propertyConfig.getPropertyType(),
+					propertyConfig.getPropertyKey());
+			if ( v != null ) {
+				buf.append(v);
 			}
 		}
 		return buf.toString();

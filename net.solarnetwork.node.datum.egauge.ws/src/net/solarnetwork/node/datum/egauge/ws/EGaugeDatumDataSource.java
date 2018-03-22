@@ -71,7 +71,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	 */
 	private Throwable sampleException;
 
-	private AtomicReference<CachedResult<EGaugePowerDatum>> sampleCache = new AtomicReference<>();
+	private final AtomicReference<CachedResult<EGaugePowerDatum>> sampleCache = new AtomicReference<>();
 
 	private EGaugePowerDatum getCurrentSample() {
 		// First check for a cached sample
@@ -110,8 +110,8 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public String toString() {
-		return "EGaugeDatumDataSource [client=" + client + ", sampleCacheMs=" + sampleCacheMs
-				+ ", sampleException=" + sampleException + "]";
+		return "EGaugeDatumDataSource{client=" + client + ", sampleCacheMs=" + sampleCacheMs
+				+ ", sampleException=" + sampleException + "}";
 	}
 
 	@Override
@@ -187,11 +187,19 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 			buf.append("Error communicating with eGauge inverter: ").append(t.getMessage());
 		}
 		if ( snap != null ) {
-			if ( buf.length() > 0 ) {
-				buf.append("; ");
+			String info = getClient().getSampleInfo(snap);
+			if ( info != null ) {
+				if ( buf.length() > 0 ) {
+					buf.append("; ");
+				}
+				buf.append(info);
 			}
-			buf.append((getClient().getSampleInfo(snap)));
-			buf.append(String.format("%tc", snap.getCreated()));
+			if ( snap.getCreated() != null ) {
+				if ( buf.length() > 0 ) {
+					buf.append("; ");
+				}
+				buf.append(String.format("%tc", snap.getCreated()));
+			}
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());
 	}

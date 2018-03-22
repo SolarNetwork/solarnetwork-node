@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
@@ -40,8 +41,26 @@ public interface EGaugeClient extends SettingSpecifierProvider {
 	 */
 	EGaugePowerDatum getCurrent();
 
-	Object getSampleInfo(EGaugePowerDatum snap);
+	/**
+	 * Get information about a general datum sample.
+	 * 
+	 * <p>
+	 * {@code snap} is presumed to be populated with data collected from this
+	 * client.
+	 * </p>
+	 * 
+	 * @param snap
+	 *        the data sample to get information about
+	 * @return the information string
+	 */
+	String getSampleInfo(GeneralDatum snap);
 
+	/**
+	 * Get the source ID the client is configured to populate returned datum
+	 * with.
+	 * 
+	 * @return the datum source ID
+	 */
 	String getSourceId();
 
 }

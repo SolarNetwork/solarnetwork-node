@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.datum.egauge.ws.test.client.test;
 
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -35,6 +38,7 @@ import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugeDatumSamplePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
+import net.solarnetwork.node.domain.PVEnergyDatum;
 
 /**
  * Test cases for the XmlEGaugeClient.
@@ -93,8 +97,6 @@ public class XmlEGaugeClientTests {
 	@Test
 	public void instantaneousData() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
-		client.init();
-		client.setSourceId(SOURCE_ID);
 
 		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
 				new EGaugeDatumSamplePropertyConfig("consumptionWatts",
@@ -116,8 +118,6 @@ public class XmlEGaugeClientTests {
 	@Test
 	public void getCurrentInvalidPropertyConfiguration() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
-		client.init();
-		client.setSourceId(SOURCE_ID);
 
 		EGaugeDatumSamplePropertyConfig[] configs = new EGaugeDatumSamplePropertyConfig[] {
 				new EGaugeDatumSamplePropertyConfig() };
@@ -131,15 +131,13 @@ public class XmlEGaugeClientTests {
 	@Test
 	public void getCurrentValidAndInvalidPropertyConfiguration() {
 		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
-		client.init();
-		client.setSourceId(SOURCE_ID);
 
 		EGaugeDatumSamplePropertyConfig[] configs = new EGaugeDatumSamplePropertyConfig[] {
 				new EGaugeDatumSamplePropertyConfig(), new EGaugeDatumSamplePropertyConfig(),
-				new EGaugeDatumSamplePropertyConfig("generationWatts",
-						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
-				new EGaugeDatumSamplePropertyConfig("generationWattHourReading",
-						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Solar+")) };
+				new EGaugeDatumSamplePropertyConfig("generationWatts", Instantaneous,
+						new EGaugePropertyConfig("Solar+")),
+				new EGaugeDatumSamplePropertyConfig("generationWattHourReading", Accumulating,
+						new EGaugePropertyConfig("Solar+")) };
 
 		client.setPropertyConfigs(configs);
 
@@ -148,6 +146,59 @@ public class XmlEGaugeClientTests {
 		assertThat("No consumption watts", datum.getSampleData(), not(hasKey("consumptionWatts")));
 		assertThat("No consumption watt hours", datum.getSampleData(),
 				not(hasKey("consumptionWattHourReading")));
+	}
+
+	@Test
+	public void getSampleInfo() {
+		EGaugePowerDatum datum = new EGaugePowerDatum();
+		datum.asMutableSampleOperations().putSampleValue(Instantaneous, PVEnergyDatum.WATTS_KEY, 123);
+		datum.asMutableSampleOperations().putSampleValue(Accumulating,
+				PVEnergyDatum.WATT_HOUR_READING_KEY, 190823741982L);
+
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.setPropertyConfigs(new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig(PVEnergyDatum.WATTS_KEY, Instantaneous,
+						new EGaugePropertyConfig("Solar+")),
+				new EGaugeDatumSamplePropertyConfig(PVEnergyDatum.WATT_HOUR_READING_KEY, Accumulating,
+						new EGaugePropertyConfig("Solar+")) });
+
+		String info = client.getSampleInfo(datum);
+		assertThat(info, equalTo("watts (i) = 123; wattHours (a) = 190823741982"));
+	}
+
+	@Test
+	public void getSampleInfoSkippingUnconfigured() {
+		EGaugePowerDatum datum = new EGaugePowerDatum();
+		datum.asMutableSampleOperations().putSampleValue(Instantaneous, PVEnergyDatum.WATTS_KEY, 123);
+		datum.asMutableSampleOperations().putSampleValue(Accumulating,
+				PVEnergyDatum.WATT_HOUR_READING_KEY, 190823741982L);
+
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.setPropertyConfigs(new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig(), new EGaugeDatumSamplePropertyConfig(),
+				new EGaugeDatumSamplePropertyConfig(PVEnergyDatum.WATTS_KEY, Instantaneous,
+						new EGaugePropertyConfig("Solar+")),
+				new EGaugeDatumSamplePropertyConfig(PVEnergyDatum.WATT_HOUR_READING_KEY, Accumulating,
+						new EGaugePropertyConfig("Solar+")) });
+
+		String info = client.getSampleInfo(datum);
+		assertThat(info, equalTo("watts (i) = 123; wattHours (a) = 190823741982"));
+	}
+
+	@Test
+	public void getSampleInfoSingle() {
+		EGaugePowerDatum datum = new EGaugePowerDatum();
+		datum.asMutableSampleOperations().putSampleValue(Instantaneous, PVEnergyDatum.WATTS_KEY, 123);
+		datum.asMutableSampleOperations().putSampleValue(Accumulating,
+				PVEnergyDatum.WATT_HOUR_READING_KEY, 190823741982L);
+
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.setPropertyConfigs(new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig(PVEnergyDatum.WATT_HOUR_READING_KEY, Accumulating,
+						new EGaugePropertyConfig("Solar+")) });
+
+		String info = client.getSampleInfo(datum);
+		assertThat(info, equalTo("wattHours (a) = 190823741982"));
 	}
 
 	public static void checkInstantaneousGenerationReadings(EGaugePowerDatum datum) {
@@ -179,6 +230,7 @@ public class XmlEGaugeClientTests {
 
 		};
 		client.init();
+		client.setSourceId(SOURCE_ID);
 		return client;
 	}
 
