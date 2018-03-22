@@ -135,10 +135,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return results;
 	}
 
-	/**
-	 * 
-	 * @see net.solarnetwork.node.datum.egauge.ws.client.EGaugeClient#getCurrent()
-	 */
 	@Override
 	public EGaugePowerDatum getCurrent() {
 		if ( getBaseUrl() == null ) {
@@ -152,6 +148,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		try {
 			populateDatum(datum);
+			Map<String, ?> sampleData = datum.getSampleData();
+			if ( sampleData == null || sampleData.isEmpty() ) {
+				// not configured probably
+				return null;
+			}
 		} catch ( XmlEGaugeClientException e ) {
 			// An exception has been encountered and logged but we need to make sure no datum is returned
 			return null;
@@ -177,6 +178,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	protected void populateDatumProperty(EGaugePowerDatum datum,
 			EGaugeDatumSamplePropertyConfig propertyConfig, Element xml) {
+
+		if ( !propertyConfig.isValid() ) {
+			// no property type or key configured
+			return;
+		}
 
 		GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
 

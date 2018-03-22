@@ -45,4 +45,22 @@ public class EGaugeDatumSamplePropertyConfig
 		super(propertyKey, propertyType, propertyConfig);
 	}
 
+	/**
+	 * Test if this configuration appears to be valid.
+	 * 
+	 * <p>
+	 * This only verifies that expected properties have non-empty values.
+	 * </p>
+	 * 
+	 * @return {@literal true} if the configuration appears valid,
+	 *         {@literal false} otherwise
+	 */
+	public boolean isValid() {
+		if ( getPropertyType() == null || getPropertyKey() == null || getPropertyKey().trim().isEmpty()
+				|| getConfig() == null || !getConfig().isValid() ) {
+			return false;
+		}
+		return true;
+	}
+
 }

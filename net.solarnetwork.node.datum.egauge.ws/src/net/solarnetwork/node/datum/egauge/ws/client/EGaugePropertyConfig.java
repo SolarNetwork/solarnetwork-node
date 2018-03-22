@@ -69,6 +69,23 @@ public class EGaugePropertyConfig {
 	}
 
 	/**
+	 * Test if this configuration appears to be valid.
+	 * 
+	 * <p>
+	 * This only verifies that expected properties have non-empty values.
+	 * </p>
+	 * 
+	 * @return {@literal true} if the configuration appears valid,
+	 *         {@literal false} otherwise
+	 */
+	public boolean isValid() {
+		if ( registerName == null || registerName.trim().isEmpty() ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
 	 * @return the register
 	 */
 	public String getRegisterName() {
@@ -85,7 +102,7 @@ public class EGaugePropertyConfig {
 
 	@Override
 	public String toString() {
-		return "EGaugePropertyConfig [registerName=" + registerName + "]";
+		return "EGaugePropertyConfig{registerName=" + registerName + "}";
 	}
 
 }

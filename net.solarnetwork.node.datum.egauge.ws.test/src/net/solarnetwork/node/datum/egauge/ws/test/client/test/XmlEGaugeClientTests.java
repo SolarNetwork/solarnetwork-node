@@ -22,8 +22,12 @@
 
 package net.solarnetwork.node.datum.egauge.ws.test.client.test;
 
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import java.util.Arrays;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
@@ -107,6 +111,43 @@ public class XmlEGaugeClientTests {
 		EGaugePowerDatum datum = client.getCurrent();
 		checkInstantaneousGenerationReadings(datum);
 		checkInstantaneousConsumptionReadings(datum);
+	}
+
+	@Test
+	public void getCurrentInvalidPropertyConfiguration() {
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.init();
+		client.setSourceId(SOURCE_ID);
+
+		EGaugeDatumSamplePropertyConfig[] configs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig() };
+
+		client.setPropertyConfigs(configs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat(datum, nullValue());
+	}
+
+	@Test
+	public void getCurrentValidAndInvalidPropertyConfiguration() {
+		XmlEGaugeClient client = getTestClient(TEST_FILE_INSTANTANEOUS);
+		client.init();
+		client.setSourceId(SOURCE_ID);
+
+		EGaugeDatumSamplePropertyConfig[] configs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig(), new EGaugeDatumSamplePropertyConfig(),
+				new EGaugeDatumSamplePropertyConfig("generationWatts",
+						GeneralDatumSamplesType.Instantaneous, new EGaugePropertyConfig("Solar+")),
+				new EGaugeDatumSamplePropertyConfig("generationWattHourReading",
+						GeneralDatumSamplesType.Accumulating, new EGaugePropertyConfig("Solar+")) };
+
+		client.setPropertyConfigs(configs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		checkInstantaneousGenerationReadings(datum);
+		assertThat("No consumption watts", datum.getSampleData(), not(hasKey("consumptionWatts")));
+		assertThat("No consumption watt hours", datum.getSampleData(),
+				not(hasKey("consumptionWattHourReading")));
 	}
 
 	public static void checkInstantaneousGenerationReadings(EGaugePowerDatum datum) {
