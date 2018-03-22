@@ -30,7 +30,7 @@
 	</bean>
 		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource"/>
+		<property name="basename" value="net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource"/>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
 				<property name="prefix" value="client."/>
@@ -40,11 +40,7 @@
 	</bean>
 		
 	<bean id="xmlClientMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames">
-			<list>
-				<value>net.solarnetwork.node.datum.egauge.ws.client.XMLEGaugeClient</value>
-			</list>
-		</property>
+		<property name="basename" value="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient"/>
 	</bean>
 	
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
