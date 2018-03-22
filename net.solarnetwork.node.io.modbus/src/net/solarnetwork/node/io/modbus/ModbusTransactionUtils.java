@@ -513,6 +513,9 @@ public class ModbusTransactionUtils {
 		}
 		req.setHeadless();
 		req.setUnitID(unitId);
+		if ( LOG.isTraceEnabled() ) {
+			LOG.trace("Modbus {} {} @ {} x {}", unitId, function, address, count);
+		}
 		return req;
 	}
 
@@ -531,8 +534,8 @@ public class ModbusTransactionUtils {
 	 *         if the function is not supported
 	 * @since 1.1
 	 */
-	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId,
-			int address) {
+	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId, int address,
+			int count) {
 		ModbusRequest req;
 		switch (function) {
 			case WriteHoldingRegister:
@@ -549,6 +552,9 @@ public class ModbusTransactionUtils {
 		}
 		req.setHeadless();
 		req.setUnitID(unitId);
+		if ( LOG.isTraceEnabled() ) {
+			LOG.trace("Modbus {} {} @ {} x {}", unitId, function, address, count);
+		}
 		return req;
 	}
 
@@ -690,7 +696,8 @@ public class ModbusTransactionUtils {
 	 */
 	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId,
 			ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusRequest request = modbusWriteRequest(function, unitId, address);
+		ModbusRequest request = modbusWriteRequest(function, unitId, address,
+				(values != null ? values.length : 0));
 		if ( request instanceof WriteMultipleRegistersRequest ) {
 			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
 			int len = values.length;
