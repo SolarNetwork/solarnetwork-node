@@ -141,6 +141,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 */
 	@Override
 	public EGaugePowerDatum getCurrent() {
+		if ( getBaseUrl() == null ) {
+			// not configured yet
+			return null;
+		}
+
 		EGaugePowerDatum datum = new EGaugePowerDatum();
 		datum.setCreated(new Date());
 		datum.setSourceId(getSourceId());
@@ -257,6 +262,10 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * @throws XmlEGaugeClientException
 	 */
 	public List<String> getRegisterNames() {
+		if ( getBaseUrl() == null ) {
+			// not configured yet
+			return Collections.emptyList();
+		}
 		try {
 			Element xml = getXml(getUrl());
 			if ( xml != null ) {
