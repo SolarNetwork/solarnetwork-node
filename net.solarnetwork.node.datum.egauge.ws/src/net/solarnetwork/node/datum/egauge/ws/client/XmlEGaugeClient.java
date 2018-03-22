@@ -73,7 +73,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * The default query URL that returns the XML data we will apply the XPath
 	 * mappings to.
 	 */
-	private static final String DEFAULT_QUERY_URL = "/cgi-bin/egauge?inst&tot";
+	private static final String DEFAULT_QUERY_URL = "/cgi-bin/egauge?inst";
 
 	private String baseUrl;
 	private String queryUrl = DEFAULT_QUERY_URL;
