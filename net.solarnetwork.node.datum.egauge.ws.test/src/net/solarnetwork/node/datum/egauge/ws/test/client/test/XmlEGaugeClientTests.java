@@ -126,6 +126,11 @@ public class XmlEGaugeClientTests {
 		XmlEGaugeClient client = new XmlEGaugeClient() {
 
 			@Override
+			public String getBaseUrl() {
+				return "";
+			}
+
+			@Override
 			public String getUrl() {
 				// Return the path to a local file containing test content
 				return getClass().getResource(path).toString();
