@@ -40,11 +40,17 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 
 	private final TCPMasterConnection connection;
 	private final int unitId;
+	private final boolean headless;
 
 	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId) {
+		this(conn, unitId, false);
+	}
+
+	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId, boolean headless) {
 		super();
 		this.connection = conn;
 		this.unitId = unitId;
+		this.headless = headless;
 	}
 
 	@Override
@@ -92,31 +98,31 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 	@Override
 	public BitSet readDiscreetValues(Integer[] addresses, int count) {
 		return ModbusTransactionUtils.readDiscreetValues(new ModbusTCPTransaction(connection), addresses,
-				count, unitId);
+				count, unitId, headless);
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer address, int count) {
 		return ModbusTransactionUtils.readDiscreteValues(new ModbusTCPTransaction(connection), address,
-				count, unitId);
+				count, unitId, headless);
 	}
 
 	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
 		return ModbusTransactionUtils.writeDiscreetValues(new ModbusTCPTransaction(connection),
-				addresses, bits, unitId);
+				addresses, bits, unitId, headless);
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(Integer address, int count) {
 		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusTCPTransaction(connection),
-				address, count, unitId);
+				address, count, unitId, headless);
 	}
 
 	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
 		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), addresses,
-				count, unitId);
+				count, unitId, headless);
 	}
 
 	@Override
@@ -152,51 +158,51 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 	@Override
 	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
 		return ModbusTransactionUtils.readSignedShorts(new ModbusTCPTransaction(connection), unitId,
-				function, address, count);
+				headless, function, address, count);
 	}
 
 	@Override
 	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		ModbusTransactionUtils.writeSignedShorts(new ModbusTCPTransaction(connection), unitId, function,
-				address, values);
+		ModbusTransactionUtils.writeSignedShorts(new ModbusTCPTransaction(connection), unitId, headless,
+				function, address, values);
 	}
 
 	@Override
 	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
 		return ModbusTransactionUtils.readUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
-				function, address, count);
+				headless, function, address, count);
 	}
 
 	@Override
 	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
 		ModbusTransactionUtils.writeUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
-				function, address, values);
+				headless, function, address, values);
 	}
 
 	@Override
 	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), unitId, function,
-				address, count);
+		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), unitId, headless,
+				function, address, count);
 	}
 
 	@Override
 	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
-		ModbusTransactionUtils.writeBytes(new ModbusTCPTransaction(connection), unitId, function,
-				address, values);
+		ModbusTransactionUtils.writeBytes(new ModbusTCPTransaction(connection), unitId, headless,
+				function, address, values);
 	}
 
 	@Override
 	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
 			String charsetName) {
-		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), unitId, function,
-				address, count, trim, charsetName);
+		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), unitId, headless,
+				function, address, count, trim, charsetName);
 	}
 
 	@Override
 	public void writeString(ModbusWriteFunction function, Integer address, String value,
 			String charsetName) {
-		ModbusTransactionUtils.writeString(new ModbusTCPTransaction(connection), unitId, function,
-				address, value, charsetName);
+		ModbusTransactionUtils.writeString(new ModbusTCPTransaction(connection), unitId, headless,
+				function, address, value, charsetName);
 	}
 
 }

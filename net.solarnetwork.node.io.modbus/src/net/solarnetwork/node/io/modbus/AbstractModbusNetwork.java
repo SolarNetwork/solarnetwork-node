@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.LockTimeoutException;
+import net.wimpi.modbus.ModbusIOException;
 
 /**
  * Abstract implementation of {@link ModbusNetwork}.
@@ -43,11 +45,47 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	private long timeout = 10L;
 	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
 	private MessageSource messageSource;
+	private boolean headless = true;
 
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	@Override
+	public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
+		ModbusConnection conn = null;
+		try {
+			conn = createConnection(unitId);
+			conn.open();
+			return action.doWithConnection(conn);
+		} catch ( RuntimeException e ) {
+			// unwrap ModbusIOException into IOException to cut down chatter
+			Throwable t = e;
+			while ( t.getCause() != null ) {
+				t = t.getCause();
+			}
+
+			log.warn("{} performing action {} on device {}", t.getClass().getSimpleName(), action,
+					unitId);
+
+			if ( t instanceof ModbusIOException ) {
+				throw new IOException(t.getMessage(), t);
+			}
+			if ( t instanceof RuntimeException ) {
+				throw (RuntimeException) t;
+			}
+			throw e;
+		} finally {
+			if ( conn != null ) {
+				try {
+					conn.close();
+				} catch ( RuntimeException e ) {
+					// ignore this
+				}
+			}
+		}
+	}
 
 	/**
 	 * Acquire a network-wide lock, returning if lock acquired.
@@ -206,4 +244,32 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
+
+	/**
+	 * Get the "headless" operation flag.
+	 * 
+	 * @return the headless mode; defaults to {@literal true}
+	 * @see #setHeadless(boolean)
+	 */
+	public boolean isHeadless() {
+		return headless;
+	}
+
+	/**
+	 * Set the "headless" operation flag.
+	 * 
+	 * <p>
+	 * When {@literal true}, a 6-byte Modbus header with a transaction ID, etc.
+	 * is left off requests. This is most often used for Modbus RTU over serial
+	 * connections. When {@literal false} the header is included. This is most
+	 * often used with Modbus TCP.
+	 * </p>
+	 * 
+	 * @param headless
+	 *        {@literal true} for headless operation, {@literal false} otherwise
+	 */
+	public void setHeadless(boolean headless) {
+		this.headless = headless;
+	}
+
 }

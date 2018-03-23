@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -31,10 +30,16 @@ import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.wimpi.modbus.net.TCPMasterConnection;
 
 /**
  * Jamod implementation of {@link ModbusNetwork} using a TCP connection.
+ * 
+ * <p>
+ * Note that the "headless" mode is set to {@literal false} by default for this
+ * implementation!.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -51,24 +56,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	public JamodTcpModbusNetwork() {
 		super();
 		setUid("Modbus TCP");
-	}
-
-	@Override
-	public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
-		ModbusConnection conn = null;
-		try {
-			conn = createConnection(unitId);
-			conn.open();
-			return action.doWithConnection(conn);
-		} finally {
-			if ( conn != null ) {
-				try {
-					conn.close();
-				} catch ( RuntimeException e ) {
-					// ignore this
-				}
-			}
-		}
+		setHeadless(false);
 	}
 
 	@Override
@@ -77,7 +65,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			TCPMasterConnection conn = new LockingTcpConnection(InetAddress.getByName(host));
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
-			return new JamodTcpModbusConnection(conn, unitId);
+			return new JamodTcpModbusConnection(conn, unitId, isHeadless());
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -149,6 +137,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
+		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
 		results.add(
 				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
 		return results;

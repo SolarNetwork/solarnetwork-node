@@ -40,11 +40,17 @@ public class JamodModbusConnection implements ModbusConnection {
 
 	private final SerialConnection connection;
 	private final int unitId;
+	private final boolean headless;
 
 	public JamodModbusConnection(SerialConnection conn, int unitId) {
+		this(conn, unitId, true);
+	}
+
+	public JamodModbusConnection(SerialConnection conn, int unitId, boolean headless) {
 		super();
 		this.connection = conn;
 		this.unitId = unitId;
+		this.headless = headless;
 	}
 
 	final SerialConnection getSerialConnection() {
@@ -90,31 +96,31 @@ public class JamodModbusConnection implements ModbusConnection {
 	@Override
 	public BitSet readDiscreetValues(Integer[] addresses, int count) {
 		return ModbusTransactionUtils.readDiscreetValues(new ModbusSerialTransaction(connection),
-				addresses, count, unitId);
+				addresses, count, unitId, headless);
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer address, int count) {
 		return ModbusTransactionUtils.readDiscreteValues(new ModbusSerialTransaction(connection),
-				address, count, unitId);
+				address, count, unitId, headless);
 	}
 
 	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
 		return ModbusTransactionUtils.writeDiscreetValues(new ModbusSerialTransaction(connection),
-				addresses, bits, unitId);
+				addresses, bits, unitId, headless);
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(Integer address, int count) {
 		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusSerialTransaction(connection),
-				address, count, unitId);
+				address, count, unitId, headless);
 	}
 
 	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
 		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(connection), addresses,
-				count, unitId);
+				count, unitId, headless);
 	}
 
 	@Override
@@ -156,51 +162,51 @@ public class JamodModbusConnection implements ModbusConnection {
 	@Override
 	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
 		return ModbusTransactionUtils.readSignedShorts(new ModbusSerialTransaction(connection), unitId,
-				function, address, count);
+				headless, function, address, count);
 	}
 
 	@Override
 	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
 		ModbusTransactionUtils.writeSignedShorts(new ModbusSerialTransaction(connection), unitId,
-				function, address, values);
+				headless, function, address, values);
 	}
 
 	@Override
 	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
 		return ModbusTransactionUtils.readUnsignedShorts(new ModbusSerialTransaction(connection), unitId,
-				function, address, count);
+				headless, function, address, count);
 	}
 
 	@Override
 	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
 		ModbusTransactionUtils.writeUnsignedShorts(new ModbusSerialTransaction(connection), unitId,
-				function, address, values);
+				headless, function, address, values);
 	}
 
 	@Override
 	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
 		return ModbusTransactionUtils.readBytes(new ModbusSerialTransaction(connection), unitId,
-				function, address, count);
+				headless, function, address, count);
 	}
 
 	@Override
 	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
-		ModbusTransactionUtils.writeBytes(new ModbusSerialTransaction(connection), unitId, function,
-				address, values);
+		ModbusTransactionUtils.writeBytes(new ModbusSerialTransaction(connection), unitId, headless,
+				function, address, values);
 	}
 
 	@Override
 	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
 			String charsetName) {
 		return ModbusTransactionUtils.readString(new ModbusSerialTransaction(connection), unitId,
-				function, address, count, trim, charsetName);
+				headless, function, address, count, trim, charsetName);
 	}
 
 	@Override
 	public void writeString(ModbusWriteFunction function, Integer address, String value,
 			String charsetName) {
-		ModbusTransactionUtils.writeString(new ModbusSerialTransaction(connection), unitId, function,
-				address, value, charsetName);
+		ModbusTransactionUtils.writeString(new ModbusSerialTransaction(connection), unitId, headless,
+				function, address, value, charsetName);
 	}
 
 }

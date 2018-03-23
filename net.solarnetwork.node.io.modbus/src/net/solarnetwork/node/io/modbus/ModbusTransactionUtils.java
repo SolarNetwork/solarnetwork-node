@@ -85,9 +85,40 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>addresses</code> parameter
+	 * @deprecated use
+	 *             {@link #readDiscreetValues(ModbusTransaction, Integer[], int, int, boolean)}
+	 *             passing {@literal true} for {@code headless}
 	 */
+	@Deprecated
 	public static BitSet readDiscreetValues(ModbusTransaction trans, Integer[] addresses, int count,
 			int unitId) {
+		return readDiscreetValues(trans, addresses, count, unitId, true);
+	}
+
+	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the count of registers to read with each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @return BitSet, with each index corresponding to an index in the
+	 *         <code>addresses</code> parameter
+	 * @since 1.1
+	 */
+	public static BitSet readDiscreetValues(ModbusTransaction trans, Integer[] addresses, int count,
+			int unitId, boolean headless) {
+
 		BitSet result = new BitSet(addresses.length);
 		for ( int i = 0; i < addresses.length; i++ ) {
 			BitSet set = readDiscreteValues(trans, addresses[i], count, unitId);
@@ -116,9 +147,39 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>address</code> parameter
+	 * @deprecated use
+	 *             {@link #readDiscreetValues(ModbusTransaction, Integer[], int, int, boolean)}
+	 *             passing {@literal true} for {@code headless}
 	 */
+	@Deprecated
 	public static BitSet readDiscreteValues(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
+		return readDiscreteValues(trans, address, count, unitId, true);
+	}
+
+	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param address
+	 *        the Modbus register addresses to start reading from
+	 * @param count
+	 *        the count of 16-bit registers to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @return BitSet, with each index corresponding to an index in the
+	 *         <code>address</code> parameter
+	 * @since 1.1
+	 */
+	public static BitSet readDiscreteValues(ModbusTransaction trans, Integer address, int count,
+			int unitId, boolean headless) {
 		BitSet result = new BitSet(count);
 		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
 		req.setUnitID(unitId);
@@ -159,13 +220,24 @@ public class ModbusTransactionUtils {
 	 * @param unitId
 	 *        the Modbus unit ID to use in the read request
 	 * @return {@literal true} if the write succeeded
+	 * @deprecated use
+	 *             {@link #writeDiscreetValues(ModbusTransaction, Integer[], BitSet, int, boolean)}
+	 *             passing {@literal true} for {@code headless}
 	 */
+	@Deprecated
 	public static Boolean writeDiscreetValues(ModbusTransaction trans, Integer[] addresses, BitSet bits,
 			int unitId) {
+		return writeDiscreetValues(trans, addresses, bits, unitId, true);
+	}
+
+	public static Boolean writeDiscreetValues(ModbusTransaction trans, Integer[] addresses, BitSet bits,
+			int unitId, boolean headless) {
 		for ( int i = 0; i < addresses.length; i++ ) {
 			WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
 			req.setUnitID(unitId);
-			req.setHeadless();
+			if ( headless ) {
+				req.setHeadless();
+			}
 			trans.setRequest(req);
 			try {
 				trans.execute();
@@ -197,9 +269,39 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @return BitSet, with each index corresponding to an index in the
 	 *         <code>address</code> parameter
+	 * @deprecated use
+	 *             {@link #readInputDiscreteValues(ModbusTransaction, Integer, int, int, boolean)}
+	 *             passing {@literal true} for {@code headless}
 	 */
+	@Deprecated
 	public static BitSet readInputDiscreteValues(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
+		return readInputDiscreteValues(trans, address, count, unitId, true);
+	}
+
+	/**
+	 * Get the values of a set of "input discrete" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 2} request.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param address
+	 *        the Modbus register addresses to start reading from
+	 * @param count
+	 *        the count of registers to read
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @return BitSet, with each index corresponding to an index in the
+	 *         <code>address</code> parameter
+	 * @since 1.1
+	 */
+	public static BitSet readInputDiscreteValues(ModbusTransaction trans, Integer address, int count,
+			int unitId, boolean headless) {
 		BitSet result = new BitSet(count);
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
 		req.setUnitID(unitId);
@@ -242,14 +344,46 @@ public class ModbusTransactionUtils {
 	 *         should be {@code count} values for each {@code address} read
 	 * @see #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction,
 	 *      Integer, int)
+	 * @deprecated use
+	 *             {@link #readInputValues(ModbusTransaction, Integer[], int, int, boolean)}
+	 *             passing {@literal true} for {@code headless}
 	 */
+	@Deprecated
 	public static Map<Integer, Integer> readInputValues(ModbusTransaction trans, Integer[] addresses,
 			int count, int unitId) {
+		return readInputValues(trans, addresses, count, unitId, true);
+	}
+
+	/**
+	 * Get the values of specific "input" type registers.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 4} request.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the number of Modbus "words" to read from each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @return map of integer addresses to corresponding integer values, there
+	 *         should be {@code count} values for each {@code address} read
+	 * @see #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction,
+	 *      Integer, int)
+	 * @since 1.1
+	 */
+	public static Map<Integer, Integer> readInputValues(ModbusTransaction trans, Integer[] addresses,
+			int count, int unitId, boolean headless) {
 		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
 				(addresses == null ? 0 : addresses.length) * count);
 		for ( int i = 0; i < addresses.length; i++ ) {
-			int[] data = readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadInputRegister,
-					addresses[i], count);
+			int[] data = readUnsignedShorts(trans, unitId, headless,
+					ModbusReadFunction.ReadInputRegister, addresses[i], count);
 			if ( data != null ) {
 				for ( int j = 0; j < data.length; j++ ) {
 					result.put(addresses[i] + j, data[j]);
@@ -286,7 +420,8 @@ public class ModbusTransactionUtils {
 	@Deprecated
 	public static int[] readInputValues(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
-		return readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadInputRegister, address, count);
+		return readUnsignedShorts(trans, unitId, true, ModbusReadFunction.ReadInputRegister, address,
+				count);
 	}
 
 	/**
@@ -307,12 +442,13 @@ public class ModbusTransactionUtils {
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
 	 * @deprecated use
-	 *             {@link #readBytes(ModbusTransaction, int, ModbusReadFunction, Integer, int)}
-	 *             with {@link ModbusReadFunction#ReadHoldingRegister}
+	 *             {@link #readBytes(ModbusTransaction, int, boolean, ModbusReadFunction, Integer, int)}
+	 *             with {@link ModbusReadFunction#ReadHoldingRegister} and
+	 *             {@literal true} for {@code headless}
 	 */
 	@Deprecated
 	public static byte[] readBytes(ModbusTransaction trans, Integer address, int count, int unitId) {
-		return readBytes(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
+		return readBytes(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	/**
@@ -340,8 +476,8 @@ public class ModbusTransactionUtils {
 	@Deprecated
 	public static String readString(ModbusTransaction trans, Integer address, int count, int unitId,
 			boolean trim, String charsetName) {
-		return readString(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count, trim,
-				charsetName);
+		return readString(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count,
+				trim, charsetName);
 	}
 
 	/**
@@ -360,7 +496,8 @@ public class ModbusTransactionUtils {
 	 *        if <em>true</em> then remove leading/trailing whitespace from the
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a US-ASCII encoded string
-	 * @see #readString(ModbusTransaction, Integer, int, int, boolean, String)
+	 * @see #readString(ModbusTransaction, int, boolean, ModbusReadFunction,
+	 *      Integer, int, boolean, String)
 	 */
 	public static String readASCIIString(final ModbusTransaction trans, final Integer address,
 			final int count, final int unitId, final boolean trim) {
@@ -410,7 +547,8 @@ public class ModbusTransactionUtils {
 	 */
 	@Deprecated
 	public static int[] readInts(ModbusTransaction trans, Integer address, int count, int unitId) {
-		return readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
+		return readUnsignedShorts(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address,
+				count);
 	}
 
 	/**
@@ -434,7 +572,8 @@ public class ModbusTransactionUtils {
 	@Deprecated
 	public static short[] readSignedShorts(ModbusTransaction trans, Integer address, int count,
 			int unitId) {
-		return readSignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address, count);
+		return readSignedShorts(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address,
+				count);
 	}
 
 	/**
@@ -457,8 +596,8 @@ public class ModbusTransactionUtils {
 	 */
 	@Deprecated
 	public static Integer[] readValues(ModbusTransaction trans, Integer address, int count, int unitId) {
-		int[] data = readUnsignedShorts(trans, unitId, ModbusReadFunction.ReadHoldingRegister, address,
-				count);
+		int[] data = readUnsignedShorts(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister,
+				address, count);
 		if ( data.length != count ) {
 			throw new RuntimeException(
 					"Returned data has length " + data.length + "; expected length " + count);
@@ -478,6 +617,8 @@ public class ModbusTransactionUtils {
 	 *        the function to use
 	 * @param unitId
 	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param address
 	 *        the register address to start reading from
 	 * @param count
@@ -487,8 +628,8 @@ public class ModbusTransactionUtils {
 	 *         if the function is not supported
 	 * @since 1.1
 	 */
-	public static ModbusRequest modbusReadRequest(ModbusReadFunction function, int unitId, int address,
-			int count) {
+	public static ModbusRequest modbusReadRequest(ModbusReadFunction function, int unitId,
+			boolean headless, int address, int count) {
 		ModbusRequest req;
 		switch (function) {
 			case ReadCoil:
@@ -511,7 +652,9 @@ public class ModbusTransactionUtils {
 				throw new UnsupportedOperationException("Function " + function + " is not supported");
 
 		}
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		req.setUnitID(unitId);
 		if ( LOG.isTraceEnabled() ) {
 			LOG.trace("Modbus {} {} @ {} x {}", unitId, function, address, count);
@@ -527,6 +670,8 @@ public class ModbusTransactionUtils {
 	 *        the function to use
 	 * @param unitId
 	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param address
 	 *        the address to start writing to
 	 * @return a newly created request instance
@@ -534,8 +679,8 @@ public class ModbusTransactionUtils {
 	 *         if the function is not supported
 	 * @since 1.1
 	 */
-	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId, int address,
-			int count) {
+	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId,
+			boolean headless, int address, int count) {
 		ModbusRequest req;
 		switch (function) {
 			case WriteHoldingRegister:
@@ -550,7 +695,9 @@ public class ModbusTransactionUtils {
 				throw new UnsupportedOperationException("Function " + function + " is not supported");
 
 		}
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		req.setUnitID(unitId);
 		if ( LOG.isTraceEnabled() ) {
 			LOG.trace("Modbus {} {} @ {} x {}", unitId, function, address, count);
@@ -561,8 +708,14 @@ public class ModbusTransactionUtils {
 	/**
 	 * Get the values of specific registers as an array of signed 16-bit shorts.
 	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
-	 *        the Modbus function code to use
+	 *        the function to use
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
 	 * @param count
@@ -571,9 +724,9 @@ public class ModbusTransactionUtils {
 	 *         {@code count}
 	 * @since 1.1
 	 */
-	public static short[] readSignedShorts(ModbusTransaction trans, int unitId,
+	public static short[] readSignedShorts(ModbusTransaction trans, int unitId, boolean headless,
 			ModbusReadFunction function, Integer address, int count) {
-		ModbusRequest req = modbusReadRequest(function, unitId, address, count);
+		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -598,28 +751,42 @@ public class ModbusTransactionUtils {
 	/**
 	 * Write signed 16-bit short values to registers.
 	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
-	 *        the Modbus function code to use
+	 *        the function to use
 	 * @param address
-	 *        the 0-based Modbus register address to start writing to
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
 	 * @param values
 	 *        the signed 16-bit values to write
 	 * @since 1.1
 	 */
-	public static void writeSignedShorts(ModbusTransaction trans, int unitId,
+	public static void writeSignedShorts(ModbusTransaction trans, int unitId, boolean headless,
 			ModbusWriteFunction function, Integer address, short[] values) {
 		int len = values.length;
 		int[] unsigned = new int[len];
 		for ( int i = 0; i < len; i += 1 ) {
 			unsigned[i] = Short.toUnsignedInt(values[i]);
 		}
-		writeUnsignedShorts(trans, unitId, function, address, unsigned);
+		writeUnsignedShorts(trans, unitId, headless, function, address, unsigned);
 	}
 
 	/**
 	 * Get the values of specific registers as an array of unsigned 16-bit
 	 * shorts.
 	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -630,9 +797,9 @@ public class ModbusTransactionUtils {
 	 *         {@code count}
 	 * @since 1.1
 	 */
-	public static int[] readUnsignedShorts(ModbusTransaction trans, int unitId,
+	public static int[] readUnsignedShorts(ModbusTransaction trans, int unitId, boolean headless,
 			ModbusReadFunction function, Integer address, int count) {
-		ModbusRequest req = modbusReadRequest(function, unitId, address, count);
+		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -686,6 +853,12 @@ public class ModbusTransactionUtils {
 	/**
 	 * Write unsigned 16-bit short values to registers.
 	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -694,9 +867,9 @@ public class ModbusTransactionUtils {
 	 *        the unsigned 16-bit values to write
 	 * @since 1.1
 	 */
-	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId,
+	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId, boolean headless,
 			ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusRequest request = modbusWriteRequest(function, unitId, address,
+		ModbusRequest request = modbusWriteRequest(function, unitId, headless, address,
 				(values != null ? values.length : 0));
 		if ( request instanceof WriteMultipleRegistersRequest ) {
 			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
@@ -739,6 +912,8 @@ public class ModbusTransactionUtils {
 	 *        the Modbus transaction to use
 	 * @param unitId
 	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -749,10 +924,10 @@ public class ModbusTransactionUtils {
 	 *         {@code count * 2}
 	 * @since 1.1
 	 */
-	public static byte[] readBytes(ModbusTransaction trans, int unitId, ModbusReadFunction function,
-			Integer address, int count) {
+	public static byte[] readBytes(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusReadFunction function, Integer address, int count) {
 		byte[] result = new byte[count * 2];
-		ModbusRequest req = modbusReadRequest(function, address, count, unitId);
+		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -784,6 +959,8 @@ public class ModbusTransactionUtils {
 	 *        the Modbus transaction to use
 	 * @param unitId
 	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -792,9 +969,17 @@ public class ModbusTransactionUtils {
 	 *        the byte values to write
 	 * @since 1.1
 	 */
-	public static void writeBytes(ModbusTransaction trans, int unitId, ModbusWriteFunction function,
-			Integer address, byte[] values) {
-
+	public static void writeBytes(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusWriteFunction function, Integer address, byte[] values) {
+		int[] unsigned = new int[(int) Math.ceil(values.length / 2.0)];
+		for ( int i = 0; i < values.length; i += 2 ) {
+			int v = ((values[i] & 0xFF) << 8);
+			if ( i + 1 < values.length ) {
+				v |= (values[i + 1] & 0xFF);
+			}
+			unsigned[i / 2] = v;
+		}
+		writeUnsignedShorts(trans, unitId, headless, function, address, unsigned);
 	}
 
 	/**
@@ -804,6 +989,8 @@ public class ModbusTransactionUtils {
 	 *        the Modbus transaction to use
 	 * @param unitId
 	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -819,9 +1006,9 @@ public class ModbusTransactionUtils {
 	 * @see #readBytes(ModbusReadFunction, Integer, int)
 	 * @since 1.1
 	 */
-	public static String readString(ModbusTransaction trans, int unitId, ModbusReadFunction function,
-			Integer address, int count, boolean trim, String charsetName) {
-		final byte[] bytes = readBytes(trans, unitId, function, address, count);
+	public static String readString(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusReadFunction function, Integer address, int count, boolean trim, String charsetName) {
+		final byte[] bytes = readBytes(trans, unitId, headless, function, address, count);
 		String result = null;
 		if ( bytes != null ) {
 			try {
@@ -847,6 +1034,8 @@ public class ModbusTransactionUtils {
 	 *        the Modbus transaction to use
 	 * @param unitId
 	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -857,8 +1046,14 @@ public class ModbusTransactionUtils {
 	 *        the character set to interpret the bytes as
 	 * @since 1.1
 	 */
-	public static void writeString(ModbusTransaction trans, int unitId, ModbusWriteFunction function,
-			Integer address, String value, String charsetName) {
+	public static void writeString(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusWriteFunction function, Integer address, String value, String charsetName) {
+		try {
+			byte[] bytes = value.getBytes(charsetName);
+			writeBytes(trans, unitId, headless, function, address, bytes);
+		} catch ( UnsupportedEncodingException e ) {
+			throw new RuntimeException(e);
+		}
 
 	}
 }

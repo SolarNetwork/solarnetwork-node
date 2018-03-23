@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +29,7 @@ import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
 import net.wimpi.modbus.util.SerialParameters;
 
@@ -80,26 +80,9 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 	}
 
 	@Override
-	public <T> T performAction(ModbusConnectionAction<T> action, final int unitId) throws IOException {
-		ModbusConnection conn = null;
-		try {
-			conn = createConnection(unitId);
-			conn.open();
-			return action.doWithConnection(conn);
-		} finally {
-			if ( conn != null ) {
-				try {
-					conn.close();
-				} catch ( RuntimeException e ) {
-					// ignore this
-				}
-			}
-		}
-	}
-
-	@Override
 	public ModbusConnection createConnection(int unitId) {
-		return new JamodModbusConnection(new LockingSerialConnection(serialParams), unitId);
+		return new JamodModbusConnection(new LockingSerialConnection(serialParams), unitId,
+				isHeadless());
 	}
 
 	/**
@@ -167,6 +150,7 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				defaults.serialParams.getPortName()));
+		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
 		results.add(
 				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate",
