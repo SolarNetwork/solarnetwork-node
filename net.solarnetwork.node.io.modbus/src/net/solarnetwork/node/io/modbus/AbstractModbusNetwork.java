@@ -23,12 +23,17 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.wimpi.modbus.ModbusIOException;
 
 /**
@@ -46,6 +51,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
 	private MessageSource messageSource;
 	private boolean headless = true;
+	private int retries = 3;
 
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
@@ -146,6 +152,28 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 */
 	protected String getNetworkDescription() {
 		return this.toString();
+	}
+
+	/**
+	 * Get a list of base settings.
+	 * 
+	 * @return the base settings
+	 */
+	protected List<SettingSpecifier> getBaseSettingSpecifiers() {
+		AbstractModbusNetwork defaults = new AbstractModbusNetwork() {
+
+			@Override
+			public ModbusConnection createConnection(int unitId) {
+				return null;
+			}
+		};
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(5);
+		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
+		results.add(
+				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
+		results.add(
+				new BasicTextFieldSettingSpecifier("retries", String.valueOf(defaults.getRetries())));
+		return results;
 	}
 
 	/**
@@ -272,4 +300,24 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 		this.headless = headless;
 	}
 
+	/**
+	 * Get the number of "retries" to perform on each transaction in the event
+	 * of errors.
+	 * 
+	 * @return the number of retries; defaults to {@literal 3}
+	 */
+	public int getRetries() {
+		return retries;
+	}
+
+	/**
+	 * Set the number of "retries" to perform on each transaction in the event
+	 * of errors.
+	 * 
+	 * @param retries
+	 *        the number of retries
+	 */
+	public void setRetries(int retries) {
+		this.retries = retries;
+	}
 }

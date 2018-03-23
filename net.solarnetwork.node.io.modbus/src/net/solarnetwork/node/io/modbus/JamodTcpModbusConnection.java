@@ -36,21 +36,17 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * @version 1.0
  * @since 2.4
  */
-public class JamodTcpModbusConnection implements ModbusConnection {
+public class JamodTcpModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
 	private final TCPMasterConnection connection;
-	private final int unitId;
-	private final boolean headless;
 
 	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId) {
 		this(conn, unitId, false);
 	}
 
 	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId, boolean headless) {
-		super();
+		super(unitId, headless);
 		this.connection = conn;
-		this.unitId = unitId;
-		this.headless = headless;
 	}
 
 	@Override
@@ -61,18 +57,13 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 		} catch ( RuntimeException e ) {
 			portName = "UNKNOWN";
 		}
-		return "JamodTcpModbusConnection{host=" + portName + ",unit=" + unitId + '}';
+		return "JamodTcpModbusConnection{host=" + portName + ",unit=" + getUnitId() + '}';
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
 		close();
 		super.finalize();
-	}
-
-	@Override
-	public int getUnitId() {
-		return unitId;
 	}
 
 	@Override
@@ -95,34 +86,40 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 		}
 	}
 
+	private ModbusTCPTransaction createTransaction() {
+		ModbusTCPTransaction tx = new ModbusTCPTransaction(connection);
+		tx.setRetries(getRetries());
+		return tx;
+	}
+
 	@Override
 	public BitSet readDiscreetValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readDiscreetValues(new ModbusTCPTransaction(connection), addresses,
-				count, unitId, headless);
+		return ModbusTransactionUtils.readDiscreetValues(createTransaction(), addresses, count,
+				getUnitId(), isHeadless());
 	}
 
 	@Override
 	public BitSet readDiscreetValues(Integer address, int count) {
-		return ModbusTransactionUtils.readDiscreteValues(new ModbusTCPTransaction(connection), address,
-				count, unitId, headless);
+		return ModbusTransactionUtils.readDiscreteValues(createTransaction(), address, count,
+				getUnitId(), isHeadless());
 	}
 
 	@Override
 	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		return ModbusTransactionUtils.writeDiscreetValues(new ModbusTCPTransaction(connection),
-				addresses, bits, unitId, headless);
+		return ModbusTransactionUtils.writeDiscreetValues(createTransaction(), addresses, bits,
+				getUnitId(), isHeadless());
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(Integer address, int count) {
-		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusTCPTransaction(connection),
-				address, count, unitId, headless);
+		return ModbusTransactionUtils.readInputDiscreteValues(createTransaction(), address, count,
+				getUnitId(), isHeadless());
 	}
 
 	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readInputValues(new ModbusTCPTransaction(connection), addresses,
-				count, unitId, headless);
+		return ModbusTransactionUtils.readInputValues(createTransaction(), addresses, count, getUnitId(),
+				isHeadless());
 	}
 
 	@Override
@@ -157,52 +154,52 @@ public class JamodTcpModbusConnection implements ModbusConnection {
 
 	@Override
 	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readSignedShorts(new ModbusTCPTransaction(connection), unitId,
-				headless, function, address, count);
+		return ModbusTransactionUtils.readSignedShorts(createTransaction(), getUnitId(), isHeadless(),
+				function, address, count);
 	}
 
 	@Override
 	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		ModbusTransactionUtils.writeSignedShorts(new ModbusTCPTransaction(connection), unitId, headless,
+		ModbusTransactionUtils.writeSignedShorts(createTransaction(), getUnitId(), isHeadless(),
 				function, address, values);
 	}
 
 	@Override
 	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
-				headless, function, address, count);
-	}
-
-	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusTransactionUtils.writeUnsignedShorts(new ModbusTCPTransaction(connection), unitId,
-				headless, function, address, values);
-	}
-
-	@Override
-	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readBytes(new ModbusTCPTransaction(connection), unitId, headless,
+		return ModbusTransactionUtils.readUnsignedShorts(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count);
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
-		ModbusTransactionUtils.writeBytes(new ModbusTCPTransaction(connection), unitId, headless,
+	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
+		ModbusTransactionUtils.writeUnsignedShorts(createTransaction(), getUnitId(), isHeadless(),
 				function, address, values);
+	}
+
+	@Override
+	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
+		return ModbusTransactionUtils.readBytes(createTransaction(), getUnitId(), isHeadless(), function,
+				address, count);
+	}
+
+	@Override
+	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+		ModbusTransactionUtils.writeBytes(createTransaction(), getUnitId(), isHeadless(), function,
+				address, values);
 	}
 
 	@Override
 	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
 			String charsetName) {
-		return ModbusTransactionUtils.readString(new ModbusTCPTransaction(connection), unitId, headless,
+		return ModbusTransactionUtils.readString(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count, trim, charsetName);
 	}
 
 	@Override
 	public void writeString(ModbusWriteFunction function, Integer address, String value,
 			String charsetName) {
-		ModbusTransactionUtils.writeString(new ModbusTCPTransaction(connection), unitId, headless,
-				function, address, value, charsetName);
+		ModbusTransactionUtils.writeString(createTransaction(), getUnitId(), isHeadless(), function,
+				address, value, charsetName);
 	}
 
 }

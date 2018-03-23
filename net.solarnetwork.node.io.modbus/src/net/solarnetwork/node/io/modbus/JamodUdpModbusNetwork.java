@@ -30,7 +30,6 @@ import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.wimpi.modbus.net.UDPMasterConnection;
 
 /**
@@ -65,7 +64,9 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 			UDPMasterConnection conn = new LockingUdpConnection(InetAddress.getByName(host));
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
-			return new JamodUdpModbusConnection(conn, unitId, isHeadless());
+			JamodUdpModbusConnection mbconn = new JamodUdpModbusConnection(conn, unitId, isHeadless());
+			mbconn.setRetries(getRetries());
+			return mbconn;
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -137,9 +138,7 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
-		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
-		results.add(
-				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
+		results.addAll(getBaseSettingSpecifiers());
 		return results;
 	}
 

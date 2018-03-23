@@ -30,7 +30,6 @@ import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.wimpi.modbus.net.TCPMasterConnection;
 
 /**
@@ -65,7 +64,9 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			TCPMasterConnection conn = new LockingTcpConnection(InetAddress.getByName(host));
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
-			return new JamodTcpModbusConnection(conn, unitId, isHeadless());
+			JamodTcpModbusConnection mbconn = new JamodTcpModbusConnection(conn, unitId, isHeadless());
+			mbconn.setRetries(getRetries());
+			return mbconn;
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -137,9 +138,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
-		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
-		results.add(
-				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
+		results.addAll(getBaseSettingSpecifiers());
 		return results;
 	}
 
