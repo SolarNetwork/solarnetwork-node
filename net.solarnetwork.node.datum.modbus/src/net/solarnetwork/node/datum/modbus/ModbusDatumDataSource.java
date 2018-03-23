@@ -361,7 +361,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	}
 
 	private ModbusData getCurrentSample() {
-		ModbusData currSample;
+		ModbusData currSample = null;
 		if ( isCachedSampleExpired() ) {
 			try {
 				currSample = performAction(this);
@@ -369,8 +369,13 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					log.trace(currSample.dataDebugString());
 				}
 			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from Modbus device " + modbusNetwork(), e);
+				Throwable t = e;
+				while ( t.getCause() != null ) {
+					t = t.getCause();
+				}
+				log.debug("Error reading from Modbus device {}", modbusNetwork(), t);
+				log.warn("Communication problem reading from Modbus device {}: {}", modbusNetwork(),
+						t.getMessage());
 			}
 		} else {
 			currSample = sample.copy();
