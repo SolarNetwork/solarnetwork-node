@@ -33,6 +33,7 @@ public abstract class AbstractModbusConnection {
 	private final int unitId;
 	private final boolean headless;
 	private int retries = 3;
+	private long retryDelayMs = 0;
 
 	public AbstractModbusConnection(int unitId, boolean headless) {
 		super();
@@ -77,6 +78,25 @@ public abstract class AbstractModbusConnection {
 	 */
 	public void setRetries(int retries) {
 		this.retries = retries;
+	}
+
+	/**
+	 * Get a retry delay, in milliseconds.
+	 * 
+	 * @return the retry delay
+	 */
+	public long getRetryDelayMs() {
+		return retryDelayMs;
+	}
+
+	/**
+	 * Set a retry delay, in milliseconds.
+	 * 
+	 * @param retryDelayMs
+	 *        the retry delay to set
+	 */
+	public void setRetryDelayMs(long retryDelayMs) {
+		this.retryDelayMs = retryDelayMs;
 	}
 
 }

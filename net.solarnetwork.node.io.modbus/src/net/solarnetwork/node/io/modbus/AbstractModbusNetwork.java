@@ -45,6 +45,9 @@ import net.wimpi.modbus.ModbusIOException;
  */
 public abstract class AbstractModbusNetwork implements ModbusNetwork {
 
+	/** A default value for the {@code retryDelay} property. */
+	public static final long DEFAULT_RETRY_DELAY_MILLIS = 60;
+
 	private String uid = "Modbus Port";
 	private String groupUID;
 	private long timeout = 10L;
@@ -52,6 +55,8 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	private MessageSource messageSource;
 	private boolean headless = true;
 	private int retries = 3;
+	private long retryDelay = DEFAULT_RETRY_DELAY_MILLIS;
+	private TimeUnit retryDelayUnit = TimeUnit.MILLISECONDS;
 
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
@@ -169,10 +174,10 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 		};
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(5);
 		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		results.add(new BasicTextFieldSettingSpecifier("retries", String.valueOf(defaults.retries)));
 		results.add(
-				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
-		results.add(
-				new BasicTextFieldSettingSpecifier("retries", String.valueOf(defaults.getRetries())));
+				new BasicTextFieldSettingSpecifier("retryDelay", String.valueOf(defaults.retryDelay)));
 		return results;
 	}
 
@@ -320,4 +325,43 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	public void setRetries(int retries) {
 		this.retries = retries;
 	}
+
+	/**
+	 * Get the retry delay.
+	 * 
+	 * @return the retry delay
+	 */
+	public long getRetryDelay() {
+		return retryDelay;
+	}
+
+	/**
+	 * Set a retry delay between error retries.
+	 * 
+	 * @param retryDelay
+	 *        the delay, or {@literal 0} for no delay
+	 */
+	public void setRetryDelay(long retryDelay) {
+		this.retryDelay = retryDelay;
+	}
+
+	/**
+	 * Get the retry delay time unit.
+	 * 
+	 * @return the time unit; defaults to {@link TimeUnit#MILLISECONDS}
+	 */
+	public TimeUnit getRetryDelayUnit() {
+		return retryDelayUnit;
+	}
+
+	/**
+	 * Set the retry delay time unit.
+	 * 
+	 * @param retryDelayUnit
+	 *        the unit to set
+	 */
+	public void setRetryDelayUnit(TimeUnit retryDelayUnit) {
+		this.retryDelayUnit = retryDelayUnit;
+	}
+
 }

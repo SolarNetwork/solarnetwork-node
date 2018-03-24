@@ -25,11 +25,15 @@ package net.solarnetwork.node.io.modbus;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.ClassUtils;
 import net.wimpi.modbus.net.TCPMasterConnection;
 
 /**
@@ -48,6 +52,9 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 	private String host;
 	private int port = net.wimpi.modbus.Modbus.DEFAULT_PORT;
+	private boolean socketReuseAddress = true;
+	private int socketLinger = 1;
+	private boolean socketKeepAlive = true;
 
 	/**
 	 * Default constructor.
@@ -64,6 +71,14 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			TCPMasterConnection conn = new LockingTcpConnection(InetAddress.getByName(host));
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
+
+			// SN extended feature support; don't assume we are using this
+			Map<String, Object> extendedProperties = new HashMap<String, Object>(4);
+			extendedProperties.put("socketKeepAlive", isSocketKeepAlive());
+			extendedProperties.put("socketLinger", getSocketLinger());
+			extendedProperties.put("socketReuseAddress", isSocketReuseAddress());
+			ClassUtils.setBeanProperties(conn, extendedProperties, true);
+
 			JamodTcpModbusConnection mbconn = new JamodTcpModbusConnection(conn, unitId, isHeadless());
 			mbconn.setRetries(getRetries());
 			return mbconn;
@@ -139,6 +154,12 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
 		results.addAll(getBaseSettingSpecifiers());
+		results.add(new BasicTextFieldSettingSpecifier("retryDelay",
+				String.valueOf(defaults.getRetryDelay())));
+		results.add(new BasicToggleSettingSpecifier("socketReuseAddress", defaults.socketReuseAddress));
+		results.add(new BasicTextFieldSettingSpecifier("socketLinger",
+				String.valueOf(defaults.socketLinger)));
+		results.add(new BasicToggleSettingSpecifier("socketKeepAlive", defaults.socketKeepAlive));
 		return results;
 	}
 
@@ -186,4 +207,60 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		this.port = port;
 	}
 
+	/**
+	 * Get the socket reuse address flag.
+	 * 
+	 * @return the socket reuse flag; defaults to {@literal true}
+	 */
+	public boolean isSocketReuseAddress() {
+		return socketReuseAddress;
+	}
+
+	/**
+	 * Control the socket reuse setting.
+	 * 
+	 * @param reuse
+	 *        {@literal true} to enable socket reuse
+	 */
+	public void setSocketReuseAddress(boolean reuse) {
+		this.socketReuseAddress = reuse;
+	}
+
+	/**
+	 * Get the socket linger amount, in seconds.
+	 * 
+	 * @return the socket linger; defaults to {@literal 1}
+	 */
+	public int getSocketLinger() {
+		return socketLinger;
+	}
+
+	/**
+	 * Set the socket linger time, in seconds.
+	 * 
+	 * @param lingerSeconds
+	 *        the linger time, or {@literal 0} to disable
+	 */
+	public void setSocketLinger(int lingerSeconds) {
+		this.socketLinger = lingerSeconds;
+	}
+
+	/**
+	 * Get the socket keep-alive flag.
+	 * 
+	 * @return the keep-alive flag; defaults to {@literal true}
+	 */
+	public boolean isSocketKeepAlive() {
+		return socketKeepAlive;
+	}
+
+	/**
+	 * Set the socket keep-alive flag.
+	 * 
+	 * @param keepAlive
+	 *        {@literal true} to enable keep alive mode
+	 */
+	public void setSocketKeepAlive(boolean keepAlive) {
+		this.socketKeepAlive = keepAlive;
+	}
 }
