@@ -388,7 +388,18 @@ public class ModbusToggler extends ModbusDeviceSupport
 		if ( function == null ) {
 			return;
 		}
-		setFunction(ModbusWriteFunction.forCode(Integer.parseInt(function)));
+		ModbusWriteFunction f = null;
+		try {
+			try {
+				f = ModbusWriteFunction.forCode(Integer.parseInt(function));
+			} catch ( NumberFormatException e ) {
+				// backwards compatibility hook for enum name
+				f = ModbusWriteFunction.valueOf(function);
+			}
+		} catch ( IllegalArgumentException e ) {
+			// ignore
+		}
+		setFunction(f);
 	}
 
 	/**

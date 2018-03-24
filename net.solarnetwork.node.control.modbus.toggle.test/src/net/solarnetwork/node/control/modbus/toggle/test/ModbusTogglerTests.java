@@ -369,4 +369,14 @@ public class ModbusTogglerTests {
 		assertThat("Non-cached instance", cacheExpiredResult, not(sameInstance(result)));
 	}
 
+	@Test
+	public void configureFunctionAsName() {
+		// when
+		replayAll();
+		toggler.setFunctionCode(ModbusWriteFunction.WriteHoldingRegister.name());
+
+		// then
+		assertThat(toggler.getFunction(), equalTo(ModbusWriteFunction.WriteHoldingRegister));
+	}
+
 }
