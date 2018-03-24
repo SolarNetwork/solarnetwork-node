@@ -25,7 +25,7 @@ package net.solarnetwork.node.io.modbus;
 import static net.solarnetwork.node.io.modbus.ModbusHelper.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import net.solarnetwork.util.ClassUtils;
 import net.wimpi.modbus.io.ModbusTCPTransaction;
@@ -93,10 +93,10 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 		tx.setRetries(getRetries());
 
 		// SN extended feature support; don't assume we are using this
-		if ( getRetryDelayMs() > 0 ) {
-			ClassUtils.setBeanProperties(tx,
-					Collections.singletonMap("retryDelayMillis", getRetryDelayMs()), true);
-		}
+		Map<String, Object> extendedProperties = new HashMap<String, Object>(2);
+		extendedProperties.put("retryDelayMillis", getRetryDelayMs());
+		extendedProperties.put("retryReconnect", isRetryReconnect());
+		ClassUtils.setBeanProperties(tx, extendedProperties, true);
 
 		return tx;
 	}

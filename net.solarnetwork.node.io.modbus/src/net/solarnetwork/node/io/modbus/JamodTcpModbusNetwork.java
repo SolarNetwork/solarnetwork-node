@@ -40,8 +40,8 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * Jamod implementation of {@link ModbusNetwork} using a TCP connection.
  * 
  * <p>
- * Note that the "headless" mode is set to {@literal false} by default for this
- * implementation!.
+ * Note that {@code headless} is set to {@literal false} and
+ * {@code retryReconnect} to {@literal true} by default for this implementation.
  * </p>
  * 
  * @author matt
@@ -63,6 +63,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		super();
 		setUid("Modbus TCP");
 		setHeadless(false);
+		setRetryReconnect(true);
 	}
 
 	@Override
@@ -81,6 +82,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 			JamodTcpModbusConnection mbconn = new JamodTcpModbusConnection(conn, unitId, isHeadless());
 			mbconn.setRetries(getRetries());
+			mbconn.setRetryReconnect(isRetryReconnect());
 			return mbconn;
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
@@ -154,8 +156,6 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
 		results.addAll(getBaseSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("retryDelay",
-				String.valueOf(defaults.getRetryDelay())));
 		results.add(new BasicToggleSettingSpecifier("socketReuseAddress", defaults.socketReuseAddress));
 		results.add(new BasicTextFieldSettingSpecifier("socketLinger",
 				String.valueOf(defaults.socketLinger)));

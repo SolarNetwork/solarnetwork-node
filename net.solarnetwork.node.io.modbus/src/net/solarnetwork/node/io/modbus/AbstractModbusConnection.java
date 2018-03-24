@@ -34,6 +34,7 @@ public abstract class AbstractModbusConnection {
 	private final boolean headless;
 	private int retries = 3;
 	private long retryDelayMs = 0;
+	private boolean retryReconnect = false;
 
 	public AbstractModbusConnection(int unitId, boolean headless) {
 		super();
@@ -97,6 +98,33 @@ public abstract class AbstractModbusConnection {
 	 */
 	public void setRetryDelayMs(long retryDelayMs) {
 		this.retryDelayMs = retryDelayMs;
+	}
+
+	/**
+	 * Get the retry reconnect mode.
+	 * 
+	 * @return {@literal} true to reconnect between error retries,
+	 *         {@literal false} to continue using the same connection; defaults
+	 *         to {@literal false}
+	 */
+	public boolean isRetryReconnect() {
+		return retryReconnect;
+	}
+
+	/**
+	 * Toggle the mode to reconnect between error retries.
+	 * 
+	 * <p>
+	 * When enabled, if an IO error occurs while executing a transaction the
+	 * connection will be closed and reopened.
+	 * </p>
+	 * 
+	 * @param retryReconnect
+	 *        {@literal} true to reconnect between error retries,
+	 *        {@literal false} to continue using the same connection
+	 */
+	public void setRetryReconnect(boolean retryReconnect) {
+		this.retryReconnect = retryReconnect;
 	}
 
 }

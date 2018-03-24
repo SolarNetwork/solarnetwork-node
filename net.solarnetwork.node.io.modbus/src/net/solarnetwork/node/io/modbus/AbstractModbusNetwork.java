@@ -57,6 +57,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	private int retries = 3;
 	private long retryDelay = DEFAULT_RETRY_DELAY_MILLIS;
 	private TimeUnit retryDelayUnit = TimeUnit.MILLISECONDS;
+	private boolean retryReconnect = false;
 
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
@@ -165,19 +166,26 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 * @return the base settings
 	 */
 	protected List<SettingSpecifier> getBaseSettingSpecifiers() {
-		AbstractModbusNetwork defaults = new AbstractModbusNetwork() {
+		AbstractModbusNetwork defaults;
+		try {
+			defaults = getClass().newInstance();
+		} catch ( Exception e ) {
+			defaults = new AbstractModbusNetwork() {
 
-			@Override
-			public ModbusConnection createConnection(int unitId) {
-				return null;
-			}
-		};
+				@Override
+				public ModbusConnection createConnection(int unitId) {
+					return null;
+				}
+			};
+		}
+
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(5);
-		results.add(new BasicToggleSettingSpecifier("headless", defaults.isHeadless()));
+		results.add(new BasicToggleSettingSpecifier("headless", defaults.headless));
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
 		results.add(new BasicTextFieldSettingSpecifier("retries", String.valueOf(defaults.retries)));
 		results.add(
 				new BasicTextFieldSettingSpecifier("retryDelay", String.valueOf(defaults.retryDelay)));
+		results.add(new BasicToggleSettingSpecifier("retryReconnect", defaults.retryReconnect));
 		return results;
 	}
 
@@ -364,4 +372,30 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 		this.retryDelayUnit = retryDelayUnit;
 	}
 
+	/**
+	 * Get the retry reconnect mode.
+	 * 
+	 * @return {@literal} true to reconnect between error retries,
+	 *         {@literal false} to continue using the same connection; defaults
+	 *         to {@literal false}
+	 */
+	public boolean isRetryReconnect() {
+		return retryReconnect;
+	}
+
+	/**
+	 * Toggle the mode to reconnect between error retries.
+	 * 
+	 * <p>
+	 * When enabled, if an IO error occurs while executing a transaction the
+	 * connection will be closed and reopened.
+	 * </p>
+	 * 
+	 * @param retryReconnect
+	 *        {@literal} true to reconnect between error retries,
+	 *        {@literal false} to continue using the same connection
+	 */
+	public void setRetryReconnect(boolean retryReconnect) {
+		this.retryReconnect = retryReconnect;
+	}
 }
