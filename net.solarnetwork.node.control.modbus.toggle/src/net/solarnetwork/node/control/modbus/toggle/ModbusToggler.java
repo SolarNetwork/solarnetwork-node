@@ -55,6 +55,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
@@ -241,9 +242,9 @@ public class ModbusToggler extends ModbusDeviceSupport
 		for ( String paramName : instruction.getParameterNames() ) {
 			log.trace("Got instruction parameter {}", paramName);
 			if ( controlId.equals(paramName) ) {
-				// treat parameter value as a boolean String
+				// treat parameter value as a boolean String (1, true, t, yes, y)
 				String str = instruction.getParameterValue(controlId);
-				Boolean desiredValue = Boolean.parseBoolean(str);
+				Boolean desiredValue = StringUtils.parseBoolean(str);
 				boolean success = false;
 				try {
 					success = setValue(desiredValue);
