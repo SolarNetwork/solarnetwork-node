@@ -3,11 +3,17 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus
 Bundle-Description: Communication support for the Modbus network protocol.
-Bundle-Version: 2.2.0
+Bundle-Version: 2.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
-Export-Package: net.solarnetwork.node.io.modbus;version="2.1.0"
+Export-Package: net.solarnetwork.node.io.modbus;version="2.4.0"
 Import-Package: 
+ bak.pcj;version="1.2.0",
+ bak.pcj.hash;version="[1.2,2.0)",
+ bak.pcj.list;version="[1.2,2.0)",
+ bak.pcj.map;version="[1.2,2.0)",
+ bak.pcj.set;version="[1.2,2.0)",
+ bak.pcj.util;version="[1.2,2.0)",
  gnu.io,
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.settings;version="1.1.0",
@@ -17,8 +23,8 @@ Import-Package:
  net.wimpi.modbus;version="[1.2.0,1.3.0)",
  net.wimpi.modbus.io;version="[1.2.0,1.3.0)",
  net.wimpi.modbus.msg;version="[1.2.0,1.3.0)",
- net.wimpi.modbus.procimg;version="[1.2.0,1.3.0)",
  net.wimpi.modbus.net;version="[1.2.0,1.3.0)",
+ net.wimpi.modbus.procimg;version="[1.2.0,1.3.0)",
  net.wimpi.modbus.util;version="[1.2.0,1.3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",

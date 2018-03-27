@@ -23,7 +23,9 @@
 	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
-	</bean>	
+	</bean>
+
+	<bean id="client" class="net.solarnetwork.node.weather.yr.XmlYrClient" init-method="init"/>
 
 	<!-- Day logging support -->
 
@@ -89,6 +91,7 @@
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.yr.YrDayDatumDataSource">
 											<property name="messageSource" ref="dayMessageSource"/>
+											<property name="client" ref="client"/>
 										</bean>
 									</property>
 									<property name="locationService" ref="locationService"/>
@@ -168,6 +171,7 @@
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.yr.YrWeatherDatumDataSource">
 											<property name="messageSource" ref="weatherMessageSource"/>
+											<property name="client" ref="client"/>
 										</bean>
 									</property>
 									<property name="locationService" ref="locationService"/>

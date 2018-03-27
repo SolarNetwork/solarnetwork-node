@@ -30,8 +30,10 @@ import org.slf4j.LoggerFactory;
  * Utilities for dealing with raw data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @deprecated use {@link net.solarnetwork.util.NumberUtils}
  */
+@Deprecated
 public final class DataUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(DataUtils.class);

@@ -3,11 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Yr Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.yr
 Bundle-Description: Collect weather data from Yr.
-Bundle-Version: 0.1.0
+Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.weather.yr;version="0.1.0"
+ net.solarnetwork.node.weather.yr;version="0.2.0"
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
