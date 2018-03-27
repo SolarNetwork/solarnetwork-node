@@ -204,6 +204,20 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void deleteWithoutType() {
+		insertVolatile();
+		EasyMock.reset(eventAdminMock);
+
+		replay(eventAdminMock);
+
+		boolean result = settingDao.deleteSetting(TEST_KEY);
+
+		verify(eventAdminMock);
+
+		Assert.assertTrue(result);
+	}
+	
+	@Test
 	public void batchRead() {
 		final int count = 5;
 		for ( int i = 0; i < count; i += 1 ) {
