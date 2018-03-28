@@ -77,7 +77,7 @@
 									});
 								});
 								</script>
-								<button type="button" class="btn btn-danger" id="reset${instance.key}">
+								<button type="button" class="btn btn-primary" id="reset${instance.key}">
 									<fmt:message key='settings.factory.reset'>
 										<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 										<fmt:param value="${instance.key}"/>
