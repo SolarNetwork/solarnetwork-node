@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusFunction.java - 21/12/2017 2:48:46 PM
+ * ModbusFunction.java - 11/03/2018 8:43:19 AM
  * 
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2018 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,46 +20,49 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.modbus;
+package net.solarnetwork.node.io.modbus;
 
 /**
- * Modbus functions.
+ * API for a modbus function.
  * 
  * @author matt
  * @version 1.0
+ * @since 2.5
  */
-public enum ModbusFunction {
-
-	ReadCoil(1),
-
-	ReadDiscreteInput(2),
-
-	ReadHoldingRegister(3),
-
-	ReadInputRegister(4);
-
-	private int code;
-
-	private ModbusFunction(int code) {
-		this.code = code;
-	}
+public interface ModbusFunction {
 
 	/**
-	 * Get the Modbus function code value.
+	 * Get the function code.
 	 * 
-	 * @return the code value
+	 * @return the code
 	 */
-	public int getCode() {
-		return code;
-	}
+	int getCode();
 
 	/**
-	 * Get a display string.
+	 * Get a friendly display string for this function.
 	 * 
-	 * @return the string
+	 * @return a display string
 	 */
-	public String toDisplayString() {
-		return this.toString() + " (" + this.code + ")";
-	}
+	String toDisplayString();
+
+	/**
+	 * Return {@literal true} if this function represents a read operation.
+	 * 
+	 * @return {@literal true} if this function represents a read operation,
+	 *         {@literal false} if a write operation
+	 */
+	boolean isReadFunction();
+
+	/**
+	 * Get an "opposite" function from this function.
+	 * 
+	 * <p>
+	 * This method is used to get a read function for a given write function,
+	 * and a write function for a given read function.
+	 * </p>
+	 * 
+	 * @return the function, or {@code null} if not applicable
+	 */
+	ModbusFunction oppositeFunction();
 
 }

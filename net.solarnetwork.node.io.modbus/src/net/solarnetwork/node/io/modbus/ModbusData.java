@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
 import bak.pcj.map.IntKeyShortMap;
@@ -40,7 +41,7 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.3
  */
 public class ModbusData {
@@ -109,7 +110,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 16-bit unsigned integer from a data register address.
+	 * Construct an unsigned 16-bit integer from a data register address.
 	 * 
 	 * @param addr
 	 * @return the integer, never {@literal null}
@@ -120,7 +121,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 16-bit signed integer from a data register address.
+	 * Construct a signed 16-bit integer from a data register address.
 	 * 
 	 * @param addr
 	 * @return the short, never {@literal null}
@@ -143,6 +144,33 @@ public class ModbusData {
 	}
 
 	/**
+	 * Construct a signed 32-bit integer from data register addresses.
+	 * 
+	 * @param hiAddr
+	 *        the address of the high 16 bits
+	 * @param loAddr
+	 *        the address of the low 16 bits
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final Integer getSignedInt32(final int hiAddr, final int loAddr) {
+		return (((dataRegisters.get(hiAddr) & 0xFFFF) << 16) | dataRegisters.get(loAddr) & 0xFFFF);
+	}
+
+	/**
+	 * Construct a signed 32-bit integer from data register addresses.
+	 * 
+	 * @param addr
+	 *        the address of the high 16 bits; the low 16-bit address is assumed
+	 *        to be {@code addr + 1}
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final Integer getSignedInt32(final int addr) {
+		return getSignedInt32(addr, addr + 1);
+	}
+
+	/**
 	 * Construct an unsigned 32-bit integer from data register addresses.
 	 * 
 	 * @param addr
@@ -151,7 +179,7 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt32(final int addr) {
-		return ModbusHelper.parseInt32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
+		return getInt32(addr, addr + 1);
 	}
 
 	/**
@@ -180,7 +208,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 64-bit long value from data register addresses.
+	 * Construct a signed 64-bit long value from data register addresses.
 	 * 
 	 * @param h1Addr
 	 *        the address of bits 63-48
@@ -198,7 +226,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 64-bit integer from data register addresses.
+	 * Construct a signed 64-bit integer from data register addresses.
 	 * 
 	 * @param addr
 	 *        the address of the high 16-bit data register to read; the
@@ -208,6 +236,47 @@ public class ModbusData {
 	 */
 	public final Long getInt64(final int addr) {
 		return getInt64(addr, addr + 1, addr + 2, addr + 3);
+	}
+
+	/**
+	 * Construct an unsigned 64-bit integer from data register addresses.
+	 * 
+	 * @param h1Addr
+	 *        the address of bits 63-48
+	 * @param h2Addr
+	 *        the address of bits 47-32
+	 * @param l1Addr
+	 *        the address of bits 31-16
+	 * @param l2Addr
+	 *        the address of bits 15-0
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final BigInteger getUnsignedInt64(final int h1Addr, final int h2Addr, final int l1Addr,
+			final int l2Addr) {
+		int[] addrs = new int[] { h1Addr, h2Addr, l1Addr, l2Addr };
+		BigInteger r = new BigInteger("0");
+		for ( int i = 0; i < 4; i++ ) {
+			if ( i > 0 ) {
+				r = r.shiftLeft(16);
+			}
+			r = r.add(new BigInteger(String.valueOf(dataRegisters.get(addrs[i]) & 0xFFFF)));
+		}
+		return r;
+	}
+
+	/**
+	 * Construct an unsigned 64-bit integer from data register addresses.
+	 * 
+	 * @param addr
+	 *        the address of the high 16 bits; the remaining three 16-bit
+	 *        addresses are assumed to be {@code addr + 1}, {@code addr + 2},
+	 *        and {@code addr + 3}
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final BigInteger getUnsignedInt64(final int addr) {
+		return getUnsignedInt64(addr, addr + 1, addr + 2, addr + 3);
 	}
 
 	/**

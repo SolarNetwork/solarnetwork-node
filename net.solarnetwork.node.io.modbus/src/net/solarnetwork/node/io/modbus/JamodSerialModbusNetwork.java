@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -80,26 +79,11 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 	}
 
 	@Override
-	public <T> T performAction(ModbusConnectionAction<T> action, final int unitId) throws IOException {
-		ModbusConnection conn = null;
-		try {
-			conn = createConnection(unitId);
-			conn.open();
-			return action.doWithConnection(conn);
-		} finally {
-			if ( conn != null ) {
-				try {
-					conn.close();
-				} catch ( RuntimeException e ) {
-					// ignore this
-				}
-			}
-		}
-	}
-
-	@Override
 	public ModbusConnection createConnection(int unitId) {
-		return new JamodModbusConnection(new LockingSerialConnection(serialParams), unitId);
+		JamodModbusConnection mbconn = new JamodModbusConnection(
+				new LockingSerialConnection(serialParams), unitId, isHeadless());
+		mbconn.setRetries(getRetries());
+		return mbconn;
 	}
 
 	/**
@@ -158,17 +142,12 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		return getDefaultSettingSpecifiers();
-	}
-
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		JamodSerialModbusNetwork defaults = new JamodSerialModbusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTextFieldSettingSpecifier("uid", String.valueOf(defaults.getUid())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				defaults.serialParams.getPortName()));
-		results.add(
-				new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.getTimeout())));
+		results.addAll(getBaseSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate",
 				String.valueOf(defaults.serialParams.getBaudRate())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.databits",

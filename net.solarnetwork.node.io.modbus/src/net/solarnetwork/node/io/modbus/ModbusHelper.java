@@ -35,7 +35,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Helper methods for working with Modbus serial connection.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.5
  */
 public final class ModbusHelper {
 
@@ -104,8 +104,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static BitSet readDiscreetValues(SerialConnection conn, final Integer[] addresses,
 			final int count, final int unitId) {
-		return ModbusTransactionUtils.readDiscreetValues(new ModbusSerialTransaction(conn), addresses, count,
-				unitId);
+		return ModbusTransactionUtils.readDiscreetValues(new ModbusSerialTransaction(conn), addresses,
+				count, unitId);
 	}
 
 	/**
@@ -132,7 +132,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static BitSet readDiscreteValues(SerialConnection conn, final Integer address,
 			final int count, final int unitId) {
-		return ModbusTransactionUtils.readDiscreteValues(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readDiscreteValues(new ModbusSerialTransaction(conn), address,
+				count, unitId);
 	}
 
 	/**
@@ -170,22 +171,24 @@ public final class ModbusHelper {
 	/**
 	 * Set the value of a set of "coil" type registers.
 	 * 
-	 * <p> This uses a Modbus function code {@code 5} request. </p>
+	 * <p>
+	 * This uses a Modbus function code {@code 5} request.
+	 * </p>
 	 * 
-	 * @param conn the Modbus connection to use @param addresses the Modbus
-	 * register addresses to read @param bits a BitSet representing the value to
-	 * set for each corresponding {@code addresses} value @param unitId the
-	 * Modbus unit ID to use in the read request @return BitSet, with each index
-	 * corresponding to an index in the <code>addresses</code>
-	 * parameter @deprecated use {@link
-	 * ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction,
-	 * Integer[], BitSet, int)
+	 * @param conn
+	 *        the Modbus connection to use @param addresses the Modbus register
+	 *        addresses to read @param bits a BitSet representing the value to
+	 *        set for each corresponding {@code addresses} value @param unitId
+	 *        the Modbus unit ID to use in the read request @return BitSet, with
+	 *        each index corresponding to an index in the <code>addresses</code>
+	 *        parameter @deprecated use
+	 *        {@link ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction, Integer[], BitSet, int)
 	 */
 	@Deprecated
 	public static Boolean writeDiscreetValues(SerialConnection conn, final Integer[] addresses,
 			final BitSet bits, final int unitId) {
-		return ModbusTransactionUtils.writeDiscreetValues(new ModbusSerialTransaction(conn), addresses, bits,
-				unitId);
+		return ModbusTransactionUtils.writeDiscreetValues(new ModbusSerialTransaction(conn), addresses,
+				bits, unitId);
 	}
 
 	/**
@@ -212,8 +215,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static BitSet readInputDiscreteValues(SerialConnection conn, final Integer address,
 			final int count, final int unitId) {
-		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusSerialTransaction(conn), address, count,
-				unitId);
+		return ModbusTransactionUtils.readInputDiscreteValues(new ModbusSerialTransaction(conn), address,
+				count, unitId);
 	}
 
 	/**
@@ -240,7 +243,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static int[] readInputValues(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -266,7 +270,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static Map<Integer, Integer> readInputValues(SerialConnection conn, final Integer[] addresses,
 			final int count, final int unitId) {
-		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), addresses, count, unitId);
+		return ModbusTransactionUtils.readInputValues(new ModbusSerialTransaction(conn), addresses,
+				count, unitId);
 	}
 
 	/**
@@ -318,7 +323,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static Integer[] readValues(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		return ModbusTransactionUtils.readValues(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readValues(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -341,7 +347,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static int[] readInts(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		return ModbusTransactionUtils.readInts(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readInts(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -364,7 +371,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static short[] readSignedShorts(SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		return ModbusTransactionUtils.readSignedShorts(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readSignedShorts(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -390,7 +398,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static byte[] readBytes(final SerialConnection conn, final Integer address, final int count,
 			final int unitId) {
-		return ModbusTransactionUtils.readBytes(new ModbusSerialTransaction(conn), address, count, unitId);
+		return ModbusTransactionUtils.readBytes(new ModbusSerialTransaction(conn), address, count,
+				unitId);
 	}
 
 	/**
@@ -470,8 +479,8 @@ public final class ModbusHelper {
 	@Deprecated
 	public static String readString(final SerialConnection conn, final Integer address, final int count,
 			final int unitId, final boolean trim, final String charsetName) {
-		return ModbusTransactionUtils.readString(new ModbusSerialTransaction(conn), address, count, unitId, trim,
-				charsetName);
+		return ModbusTransactionUtils.readString(new ModbusSerialTransaction(conn), address, count,
+				unitId, trim, charsetName);
 	}
 
 	/**
@@ -628,9 +637,12 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse a 64-bit long value from raw Modbus register values. The
-	 * {@code data} array is expected to have a length of {@code 4}, and be
+	 * Parse a signed 64-bit long value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of {@code 4}, and be
 	 * arranged in big-endian order.
+	 * </p>
 	 * 
 	 * @param data
 	 *        the data array
@@ -645,7 +657,7 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse a 64-bit integer value from raw Modbus register values.
+	 * Parse a signed 64-bit integer value from raw Modbus register values.
 	 * 
 	 * @param h1
 	 *        bits 63-48
@@ -663,9 +675,12 @@ public final class ModbusHelper {
 	}
 
 	/**
-	 * Parse a 32-bit long value from raw Modbus register values. The
-	 * {@code data} array is expected to have a length of at least
+	 * Parse an unsigned 32-bit long value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * The {@code data} array is expected to have a length of at least
 	 * {@code offset} + {@code 1}, and be arranged in big-endian order.
+	 * </p>
 	 * 
 	 * <p>
 	 * <b>Note</b> a {@code Long} is returned to support unsigned 32-bit values.
@@ -701,7 +716,51 @@ public final class ModbusHelper {
 	 * @since 1.5
 	 */
 	public static Long parseInt32(final int hi, final int lo) {
-		return (((hi & 0xFFFFL) << 16) | (lo & 0xFFFFL));
+		return (((hi & 0xFFFFL) << 16) | lo & 0xFFFFL);
+	}
+
+	/**
+	 * Convert an array of ints to Integer objects.
+	 * 
+	 * @param array
+	 *        the array to convert
+	 * @return the converted array, or {@literal null} if {@code array} is
+	 *         {@literal null}
+	 */
+	public static Integer[] integerArray(int[] array) {
+		if ( array == null ) {
+			return null;
+		}
+		int count = array.length;
+		Integer[] result = new Integer[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * Get a {@link ModbusFunction} for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the function
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
+	 * @since 1.5
+	 */
+	public static ModbusFunction functionForCode(int code) {
+		ModbusFunction f;
+		try {
+			f = ModbusReadFunction.forCode(code);
+		} catch ( IllegalArgumentException e ) {
+			try {
+				f = ModbusWriteFunction.forCode(code);
+			} catch ( IllegalArgumentException e2 ) {
+				throw new IllegalArgumentException("Unknown Modbus function code: " + code);
+			}
+		}
+		return f;
 	}
 
 }

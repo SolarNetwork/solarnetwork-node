@@ -27,7 +27,9 @@ package net.solarnetwork.node.datum.modbus;
  * 
  * @author matt
  * @version 1.0
+ * @deprecated use {@link net.solarnetwork.node.io.modbus.ModbusDataType}
  */
+@Deprecated
 public enum ModbusDataType {
 
 	Boolean(1),
@@ -65,6 +67,90 @@ public enum ModbusDataType {
 	 */
 	public int getWordLength() {
 		return wordLength;
+	}
+
+	/**
+	 * Convert this to the (new) standard {@code ModbusDataType}.
+	 * 
+	 * @return the converted data type
+	 */
+	public net.solarnetwork.node.io.modbus.ModbusDataType toModbusDataType() {
+		switch (this) {
+			case Boolean:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Boolean;
+
+			case Int16:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+
+			case SignedInt16:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
+
+			case Int32:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+
+			case Int64:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
+
+			case Float32:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
+
+			case Float64:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Float64;
+
+			case Bytes:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.Bytes;
+
+			case StringUtf8:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
+
+			case StringAscii:
+				return net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
+
+			default:
+				throw new IllegalArgumentException("Unsupported type: " + this);
+		}
+	}
+
+	/**
+	 * Convert the (new) standard {@code ModbusDataType} to this enum.
+	 * 
+	 * @return the converted data type
+	 */
+	public ModbusDataType forModbusDataType(net.solarnetwork.node.io.modbus.ModbusDataType type) {
+		switch (type) {
+			case Boolean:
+				return Boolean;
+
+			case Bytes:
+				return Bytes;
+
+			case Float32:
+				return Float32;
+
+			case Float64:
+				return Float64;
+
+			case Int16:
+				return SignedInt16;
+
+			case UInt16:
+				return Int16;
+
+			case UInt32:
+				return Int32;
+
+			case UInt64:
+				return Int64;
+
+			case StringAscii:
+				return StringAscii;
+
+			case StringUtf8:
+				return StringUtf8;
+
+			default:
+				throw new IllegalArgumentException("Unsupported type: " + type);
+		}
 	}
 
 }
