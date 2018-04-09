@@ -30,7 +30,9 @@
 		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
 		<beans:prop key="jdbc.user">solarnode</beans:prop>
 		<beans:prop key="jdbc.pass">solarnode</beans:prop>
+		<beans:prop key="jdbc.pool.minIdle">0</beans:prop>
 		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
+		<beans:prop key="jdbc.pool.initialSize">0</beans:prop>
 		<beans:prop key="jdbc.pool.maxActive">3</beans:prop>
 		<beans:prop key="jdbc.pool.maxWait">20000</beans:prop>
 		<beans:prop key="jdbc.pool.maxAge">0</beans:prop>
@@ -148,19 +150,19 @@
 		<property name="poolProperties">
 			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties">
 				<property name="jmxEnabled" value="${jdbc.pool.jmxEnabled}" />
-				<property name="testWhileIdle" value="false" />
+				<property name="testWhileIdle" value="true" />
 				<property name="testOnBorrow" value="true" />
 				<property name="testOnConnect" value="true" />
-				<property name="validationQuery" value="${jdbc.pool.validationQuery}" />
 				<property name="testOnReturn" value="false" />
+				<property name="validationQuery" value="${jdbc.pool.validationQuery}" />
 				<property name="validationInterval" value="30000" />
 				<property name="timeBetweenEvictionRunsMillis" value="${jdbc.pool.timeBetweenEvictionRunsMillis}" />
-				<property name="maxActive" value="${jdbc.pool.maxActive}" />
-				<property name="initialSize" value="0" />
-				<property name="maxWait" value="${jdbc.pool.maxWait}" />
 				<property name="minEvictableIdleTimeMillis" value="${jdbc.pool.minEvictableIdleTimeMillis}" />
-				<property name="minIdle" value="0" />
-				<property name="maxIdle" value="${jdbc.pool.maxActive}" />
+				<property name="initialSize" value="${jdbc.pool.initialSize}" />
+				<property name="maxActive" value="${jdbc.pool.maxActive}" />
+				<property name="minIdle" value="${jdbc.pool.minIdle}" />
+				<property name="maxIdle" value="${jdbc.pool.maxIdle}" />
+				<property name="maxWait" value="${jdbc.pool.maxWait}" />
 				<property name="maxAge" value="${jdbc.pool.maxAge}"/>
 				<property name="removeAbandoned" value="${jdbc.pool.removeAbandoned}"/>
 				<property name="removeAbandonedTimeout" value="${jdbc.pool.removeAbandonedTimeout}" />

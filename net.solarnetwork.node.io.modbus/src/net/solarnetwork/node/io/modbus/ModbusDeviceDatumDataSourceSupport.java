@@ -23,9 +23,13 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -35,7 +39,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -60,6 +64,21 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	private Map<String, Object> deviceInfo;
 	private int unitId = 1;
 	private OptionalService<ModbusNetwork> modbusNetwork;
+
+	/**
+	 * Get setting specifiers for the {@literal unitId} and
+	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.1
+	 */
+	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Modbus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
+		return results;
+	}
 
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}

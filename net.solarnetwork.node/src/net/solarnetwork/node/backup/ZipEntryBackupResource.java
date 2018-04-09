@@ -31,7 +31,7 @@ import java.util.zip.ZipFile;
  * {@link BackupResource} for a file in a zip archive.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ZipEntryBackupResource implements BackupResource {
 
@@ -68,6 +68,13 @@ public class ZipEntryBackupResource implements BackupResource {
 		super();
 		this.archiveFile = archiveFile;
 		this.entry = entry;
+		if ( providerKey == null ) {
+			// treat first directory name as provider key
+			final int providerIndex = entry.getName().indexOf('/');
+			if ( providerIndex != -1 ) {
+				providerKey = entry.getName().substring(0, providerIndex);
+			}
+		}
 		this.providerKey = providerKey;
 	}
 
