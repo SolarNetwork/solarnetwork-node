@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import static net.solarnetwork.node.io.modbus.ModbusHelper.integerArray;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
@@ -33,7 +33,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Jamod serial implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.1
  */
 public class JamodModbusConnection extends AbstractModbusConnection implements ModbusConnection {

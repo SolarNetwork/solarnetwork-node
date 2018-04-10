@@ -140,7 +140,7 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt32(final int hiAddr, final int loAddr) {
-		return ModbusHelper.parseInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
 	}
 
 	/**
@@ -154,7 +154,7 @@ public class ModbusData {
 	 * @since 1.1
 	 */
 	public final Integer getSignedInt32(final int hiAddr, final int loAddr) {
-		return (((dataRegisters.get(hiAddr) & 0xFFFF) << 16) | dataRegisters.get(loAddr) & 0xFFFF);
+		return ModbusDataUtils.parseInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
 	}
 
 	/**
@@ -192,7 +192,7 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available.
 	 */
 	public final Float getFloat32(final int hiAddr, final int loAddr) {
-		return ModbusHelper.parseFloat32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+		return ModbusDataUtils.parseFloat32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
 	}
 
 	/**
@@ -221,7 +221,7 @@ public class ModbusData {
 	 * @return the parsed long
 	 */
 	public final Long getInt64(final int h1Addr, final int h2Addr, final int l1Addr, final int l2Addr) {
-		return ModbusHelper.parseInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+		return ModbusDataUtils.parseInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
 				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
 	}
 
@@ -254,15 +254,8 @@ public class ModbusData {
 	 */
 	public final BigInteger getUnsignedInt64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
-		int[] addrs = new int[] { h1Addr, h2Addr, l1Addr, l2Addr };
-		BigInteger r = new BigInteger("0");
-		for ( int i = 0; i < 4; i++ ) {
-			if ( i > 0 ) {
-				r = r.shiftLeft(16);
-			}
-			r = r.add(new BigInteger(String.valueOf(dataRegisters.get(addrs[i]) & 0xFFFF)));
-		}
-		return r;
+		return ModbusDataUtils.parseUnsignedInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
 	}
 
 	/**
@@ -294,7 +287,7 @@ public class ModbusData {
 	 */
 	public final Double getFloat64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
-		return ModbusHelper.parseFloat64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+		return ModbusDataUtils.parseFloat64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
 				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
 	}
 
@@ -381,7 +374,7 @@ public class ModbusData {
 	 * @return the parsed string
 	 */
 	public String getUtf8String(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusHelper.UTF8_CHARSET);
+		return getString(addr, count, trim, ModbusDataUtils.UTF8_CHARSET);
 	}
 
 	/**
@@ -397,7 +390,7 @@ public class ModbusData {
 	 * @return the parsed string
 	 */
 	public String getAsciiString(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusHelper.ASCII_CHARSET);
+		return getString(addr, count, trim, ModbusDataUtils.ASCII_CHARSET);
 	}
 
 	/**
