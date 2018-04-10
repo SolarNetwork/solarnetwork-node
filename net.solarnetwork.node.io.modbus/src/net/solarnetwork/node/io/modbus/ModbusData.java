@@ -41,7 +41,7 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.3
  */
 public class ModbusData {
@@ -406,6 +406,24 @@ public class ModbusData {
 			if ( action.updateModbusData(new MutableModbusDataView()) ) {
 				dataTimestamp = now;
 			}
+		}
+		return this;
+	}
+
+	/**
+	 * Force the data timestamp to be expired.
+	 * 
+	 * <p>
+	 * Calling this method will reset the {@code dataTimestamp} to zero,
+	 * effectively expiring the data.
+	 * </p>
+	 * 
+	 * @return this object to allow method chaining
+	 * @since 1.2
+	 */
+	public final ModbusData expire() {
+		synchronized ( dataRegisters ) {
+			dataTimestamp = 0;
 		}
 		return this;
 	}
