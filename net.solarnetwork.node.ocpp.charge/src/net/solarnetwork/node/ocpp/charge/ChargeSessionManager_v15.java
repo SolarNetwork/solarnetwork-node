@@ -115,6 +115,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	public static final String CLOSE_POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_NAME = "OCPP_PostActiveChargeSessionsMeterValues";
 
 	/**
+	 * The name used to schedule the {@link PurgePostedChargeSessionsJob} as.
+	 */
+	public static final String PURGE_POSTED_CHARGE_SESSIONS_JOB_NAME = "OCPP_PurgePostedChargeSessions";
+
+	/**
 	 * The job and trigger group used to schedule the
 	 * {@link PostOfflineChargeSessionsJob} with. Note the trigger name will be
 	 * the {@link #getUID()} property value.
@@ -139,6 +144,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public static final int CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL = 600;
 
+	/**
+	 * The interval at which to purge charge sessions that have been posted.
+	 */
+	public static final int PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL = 20;
+
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
 	private ChargeConfigurationDao chargeConfigurationDao;
@@ -152,6 +162,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private SimpleTrigger postOfflineChargeSessionsTrigger;
 	private SimpleTrigger closeCompletedChargeSessionsTrigger;
 	private SimpleTrigger postActiveChargeSessionsMeterValuesTrigger;
+	private SimpleTrigger purgePostedChargeSessionsTrigger;
 
 	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
 			8);
@@ -165,6 +176,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		log.info("Starting up OCPP ChargeSessionManager {}", getUID());
 		configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
 		configureCloseCompletedChargeSessionJob(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL);
+		configurePurgePostedChargeSessionsJob(PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL);
 
 		// configure aspects from OCPP properties
 		handleChargeConfigurationUpdated();
@@ -178,6 +190,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		configurePostOfflineChargeSessionsJob(0);
 		configureCloseCompletedChargeSessionJob(0);
 		configurePostActiveChargeSessionsMeterValuesJob(0);
+		configurePurgePostedChargeSessionsJob(0);
 	}
 
 	@Override
@@ -643,6 +656,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 	}
 
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public int deletePostedChargeSessions(Date olderThanDate) {
+		return chargeSessionDao.deletePostedChargeSessions(olderThanDate);
+	}
+
 	private Map<String, Object> standardJobMap() {
 		Map<String, Object> jobMap = new HashMap<String, Object>();
 		jobMap.put("service", this);
@@ -680,6 +699,16 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				"OCPP post active charge sessions meter values");
 		return ((seconds > 0 && postActiveChargeSessionsMeterValuesTrigger != null)
 				|| (seconds < 1 && postActiveChargeSessionsMeterValuesTrigger == null));
+	}
+
+	private boolean configurePurgePostedChargeSessionsJob(final int seconds) {
+		purgePostedChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
+				purgePostedChargeSessionsTrigger,
+				new JobKey(PURGE_POSTED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
+				PurgePostedChargeSessionsJob.class, new JobDataMap(standardJobMap()),
+				"OCPP purge posted charge sessions");
+		return ((seconds > 0 && purgePostedChargeSessionsTrigger != null)
+				|| (seconds < 1 && purgePostedChargeSessionsTrigger == null));
 	}
 
 	// Datum support
@@ -818,7 +847,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 
 		final long created = (eventProperties.get("created") instanceof Number
-				? ((Number) eventProperties.get("created")).longValue() : System.currentTimeMillis());
+				? ((Number) eventProperties.get("created")).longValue()
+				: System.currentTimeMillis());
 
 		// reconstruct Datum from event properties
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
