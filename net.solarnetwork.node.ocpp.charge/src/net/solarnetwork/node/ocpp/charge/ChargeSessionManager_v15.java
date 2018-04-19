@@ -93,7 +93,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Default implementation of {@link ChargeSessionManager}.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
@@ -147,7 +147,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	/**
 	 * The interval at which to purge charge sessions that have been posted.
 	 */
-	public static final int PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL = 20;
+	public static final int PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL = 1800;
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
@@ -756,7 +756,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private Object ignoreReadingsForSocket(final String socketId) {
 		Object lock = new Object();
 		Object existingLock = socketReadingsIgnoreMap.putIfAbsent(socketId, lock);
-		return (existingLock != null ? existingLock : lock);
+		Object result = (existingLock != null ? existingLock : lock);
+		log.info("Ignoring readings on socket {} using {} lock {}", socketId,
+				(existingLock != null ? "existing" : "new"), result);
+		return result;
 	}
 
 	/**
@@ -771,7 +774,15 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	private void resumeReadingsForSocket(final String socketId, final Object socketLock) {
 		if ( socketLock != null ) {
-			socketReadingsIgnoreMap.remove(socketId, socketLock);
+			boolean removed = socketReadingsIgnoreMap.remove(socketId, socketLock);
+			if ( removed ) {
+				log.info("Resuming listening for readings on socket {} after releasing lock {}",
+						socketId, socketLock);
+			} else {
+				log.warn(
+						"Unable to resume listening for readings on {} with lock {}; current lock is {}",
+						socketId, socketLock, socketReadingsIgnoreMap.get(socketId));
+			}
 		}
 	}
 
@@ -837,7 +848,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private void handleDatumCapturedEvent(String socketId, String sourceId,
 			Map<String, Object> eventProperties) {
 		if ( shouldIgnoreReadingsForSocket(socketId) ) {
-			log.debug("Ignoring DATUM_CAPTURED event for socket {} that is transitioning state",
+			log.info("Ignoring DATUM_CAPTURED event for socket {} that is in transitioning state",
 					socketId);
 			return;
 		}
