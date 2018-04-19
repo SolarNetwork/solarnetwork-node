@@ -79,7 +79,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Test cases for the {@link ChargeSessionManager_v15} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 
@@ -126,6 +126,7 @@ public class ChargeSessionManager_v15Tests extends AbstractNodeTest {
 		manager.setSocketConnectorMapping(Collections.singletonMap(TEST_SOCKET_ID, TEST_CONNECTOR_ID));
 		manager.setSocketMeterSourceMapping(
 				Collections.singletonMap(TEST_SOCKET_ID, TEST_METER_SOURCE_ID));
+		manager.setEventExecutor(null); // handle events on calling thread
 	}
 
 	@After

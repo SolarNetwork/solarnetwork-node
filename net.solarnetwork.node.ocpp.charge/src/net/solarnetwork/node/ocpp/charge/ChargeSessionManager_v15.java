@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
@@ -155,6 +157,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private ChargeSessionDao chargeSessionDao;
 	private SocketDao socketDao;
 	private TransactionTemplate transactionTemplate;
+	private Executor executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
 	private Map<String, Integer> socketConnectorMapping = Collections.emptyMap();
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
@@ -801,16 +804,41 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	// EventHandler
 
 	@Override
-	public void handleEvent(Event event) {
+	public void handleEvent(final Event event) {
 		final String topic = event.getTopic();
-		try {
-			if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
-				handleDatumCapturedEvent(event);
-			} else if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
-				handleChargeConfigurationUpdated();
+		Runnable r = null;
+		if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
+			r = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						handleDatumCapturedEvent(event);
+					} catch ( RuntimeException e ) {
+						log.error("Error handling event {}", topic, e);
+					}
+				}
+			};
+		} else if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
+			r = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						handleChargeConfigurationUpdated();
+					} catch ( RuntimeException e ) {
+						log.error("Error handling event {}", topic, e);
+					}
+				}
+			};
+		}
+		if ( r != null ) {
+			if ( executor != null ) {
+				// kick off to new thread so we don't block the event thread
+				executor.execute(r);
+			} else {
+				r.run();
 			}
-		} catch ( RuntimeException e ) {
-			log.error("Error handling event {}", topic, e);
 		}
 	}
 
@@ -1199,6 +1227,18 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
+	}
+
+	/**
+	 * Set an {@link Executor} to handle events with.
+	 * 
+	 * @param executor
+	 *        the executor, or {@literal null} to handle events on the calling
+	 *        thread; defaults to a single-thread executor service
+	 * @since 2.3
+	 */
+	public void setEventExecutor(Executor executor) {
+		this.executor = executor;
 	}
 
 }
