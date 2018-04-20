@@ -23,6 +23,7 @@
 package net.solarnetwork.node.ocpp;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import net.solarnetwork.node.Identifiable;
 
@@ -34,7 +35,7 @@ import net.solarnetwork.node.Identifiable;
  * and finally confirming that charging is complete.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface ChargeSessionManager extends Identifiable {
 
@@ -222,5 +223,17 @@ public interface ChargeSessionManager extends Identifiable {
 	 * @since 1.2
 	 */
 	void postActiveChargeSessionsMeterValues();
+
+	/**
+	 * Delete all posted charge sessions that <b>posted</b> on or before
+	 * {@code olderThanDate}.
+	 * 
+	 * @param olderThanDate
+	 *        The start (created) date to delete up to, or {@literal null} to
+	 *        use the current time.
+	 * @return The number of charge sessions deleted.
+	 * @since 1.3
+	 */
+	int deletePostedChargeSessions(Date olderThanDate);
 
 }

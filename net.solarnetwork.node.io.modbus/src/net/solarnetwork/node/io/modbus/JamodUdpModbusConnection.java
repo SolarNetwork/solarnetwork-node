@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import static net.solarnetwork.node.io.modbus.ModbusHelper.integerArray;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
@@ -33,7 +33,7 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * Jamod UDP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public class JamodUdpModbusConnection extends AbstractModbusConnection implements ModbusConnection {

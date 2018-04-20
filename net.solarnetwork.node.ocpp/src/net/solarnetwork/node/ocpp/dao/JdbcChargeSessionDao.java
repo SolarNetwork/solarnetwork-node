@@ -54,7 +54,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * JDBC implementation of {@link ChargeSessionDao}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession>
 		implements ChargeSessionDao {
@@ -82,6 +82,7 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession>
 	public static final String SQL_GET_NEEDING_POSTING = "get-needsposting";
 	public static final String SQL_DELETE_COMPLETED = "delete-completed";
 	public static final String SQL_DELETE_INCOMPLETE = "delete-incomplete";
+	public static final String SQL_DELETE_POSTED = "delete-posted";
 	public static final String SQL_INSERT_READING = "insert-reading";
 	public static final String SQL_GET_READINGS_FOR_SESSION = "get-readings-sessionid";
 
@@ -302,36 +303,35 @@ public class JdbcChargeSessionDao extends AbstractOcppJdbcDao<ChargeSession>
 				});
 	}
 
+	private int deleteOlderThan(String query, Date olderThanDate) {
+		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
+		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
+		return getJdbcTemplate().update(getSqlResource(query), new PreparedStatementSetter() {
+
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				ps.setTimestamp(1, ts, cal);
+			}
+
+		});
+	}
+
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteCompletedChargeSessions(Date olderThanDate) {
-		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
-		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
-		return getJdbcTemplate().update(getSqlResource(SQL_DELETE_COMPLETED),
-				new PreparedStatementSetter() {
-
-					@Override
-					public void setValues(PreparedStatement ps) throws SQLException {
-						ps.setTimestamp(1, ts, cal);
-					}
-
-				});
+		return deleteOlderThan(SQL_DELETE_COMPLETED, olderThanDate);
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public int deleteIncompletedChargeSessions(Date olderThanDate) {
-		final Calendar cal = calendarForDate(olderThanDate != null ? olderThanDate : new Date());
-		final Timestamp ts = new Timestamp(cal.getTimeInMillis());
-		return getJdbcTemplate().update(getSqlResource(SQL_DELETE_INCOMPLETE),
-				new PreparedStatementSetter() {
+		return deleteOlderThan(SQL_DELETE_INCOMPLETE, olderThanDate);
+	}
 
-					@Override
-					public void setValues(PreparedStatement ps) throws SQLException {
-						ps.setTimestamp(1, ts, cal);
-					}
-
-				});
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public int deletePostedChargeSessions(Date olderThanDate) {
+		return deleteOlderThan(SQL_DELETE_POSTED, olderThanDate);
 	}
 
 	@Override

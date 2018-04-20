@@ -64,7 +64,7 @@ import net.solarnetwork.util.UnionIterator;
  * Default implementation of {@link BackupManager}.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -235,7 +235,7 @@ public class DefaultBackupManager implements BackupManager {
 	public Backup createBackup(final Map<String, String> props) {
 		final BackupService service = activeBackupService();
 		if ( service == null ) {
-			log.debug("No active backup service available, cannot perform backup");
+			log.info("No active backup service available, cannot perform backup");
 			return null;
 		}
 		final BackupServiceInfo info = service.getInfo();

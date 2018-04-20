@@ -41,7 +41,7 @@ import ocpp.v15.cs.Measurand;
  * finished because of a lack of power being drawn on the associated socket.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -86,7 +86,7 @@ public class CloseCompletedChargeSessionsJob extends AbstractJob {
 						&& (session.getCreated().getTime() + maxAgeLastReading) < System
 								.currentTimeMillis() ) {
 					log.info(
-							"OCCP charge session {} on socket {} has not recorded any readings since {}; closing session",
+							"OCCP charge session {} on socket {} has not recorded any readings since session started at {}; closing session",
 							session.getSessionId(), socketId, session.getCreated());
 					close = true;
 				} else if ( readings != null && !readings.isEmpty() ) {

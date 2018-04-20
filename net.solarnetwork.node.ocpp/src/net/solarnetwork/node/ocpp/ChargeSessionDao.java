@@ -30,7 +30,7 @@ import ocpp.v15.cs.MeterValue;
  * DAO API for {@link ChargeSession} entities.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface ChargeSessionDao {
 
@@ -142,5 +142,17 @@ public interface ChargeSessionDao {
 	 * @return The number of charge sessions deleted.
 	 */
 	int deleteIncompletedChargeSessions(Date olderThanDate);
+
+	/**
+	 * Delete all posted charge sessions that <b>posted</b> on or before
+	 * {@code olderThanDate}.
+	 * 
+	 * @param olderThanDate
+	 *        The start (created) date to delete up to, or {@literal null} to
+	 *        use the current time.
+	 * @return The number of charge sessions deleted.
+	 * @since 1.1
+	 */
+	int deletePostedChargeSessions(Date olderThanDate);
 
 }

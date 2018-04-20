@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode OCPP Charge
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge
-Bundle-Version: 0.5.1
+Bundle-Version: 0.6.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 

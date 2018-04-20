@@ -35,7 +35,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Helper methods for working with Modbus serial connection.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public final class ModbusHelper {
 
@@ -171,18 +171,16 @@ public final class ModbusHelper {
 	/**
 	 * Set the value of a set of "coil" type registers.
 	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 5} request.
-	 * </p>
+	 * <p> This uses a Modbus function code {@code 5} request. </p>
 	 * 
-	 * @param conn
-	 *        the Modbus connection to use @param addresses the Modbus register
-	 *        addresses to read @param bits a BitSet representing the value to
-	 *        set for each corresponding {@code addresses} value @param unitId
-	 *        the Modbus unit ID to use in the read request @return BitSet, with
-	 *        each index corresponding to an index in the <code>addresses</code>
-	 *        parameter @deprecated use
-	 *        {@link ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction, Integer[], BitSet, int)
+	 * @param conn the Modbus connection to use @param addresses the Modbus
+	 * register addresses to read @param bits a BitSet representing the value to
+	 * set for each corresponding {@code addresses} value @param unitId the
+	 * Modbus unit ID to use in the read request @return BitSet, with each index
+	 * corresponding to an index in the <code>addresses</code>
+	 * parameter @deprecated use {@link
+	 * ModbusTransactionUtils#writeDiscreetValues(net.wimpi.modbus.io.ModbusTransaction,
+	 * Integer[], BitSet, int)
 	 */
 	@Deprecated
 	public static Boolean writeDiscreetValues(SerialConnection conn, final Integer[] addresses,
@@ -513,7 +511,7 @@ public final class ModbusHelper {
 	public static Float parseFloat32(final int[] data, int offset) {
 		Float result = null;
 		if ( data != null && (offset + 1) < data.length ) {
-			result = parseFloat32(data[offset], data[offset + 1]);
+			result = ModbusDataUtils.parseFloat32(data[offset], data[offset + 1]);
 		}
 		return result;
 	}
@@ -527,7 +525,10 @@ public final class ModbusHelper {
 	 *        the low 16 bits
 	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
+	 * @deprecated in {@code 1.6} use
+	 *             {@link ModbusDataUtils#parseFloat32(int, int)}
 	 */
+	@Deprecated
 	public static Float parseFloat32(final int hi, final int lo) {
 		Long int32 = parseInt32(hi, lo);
 		Float result = Float.intBitsToFloat(int32.intValue());
@@ -579,7 +580,10 @@ public final class ModbusHelper {
 	 * @return the parsed {@code Double}, or {@literal null} if the result is
 	 *         {@code NaN}
 	 * @since 1.5
+	 * @deprecated in {@code 1.6} use
+	 *             {@link ModbusDataUtils#parseFloat64(int, int, int, int)}
 	 */
+	@Deprecated
 	public static Double parseFloat64(final int h1, final int h2, final int l1, final int l2) {
 		Long l = parseInt64(h1, h2, l1, l2);
 		Double result = Double.longBitsToDouble(l);
@@ -608,7 +612,8 @@ public final class ModbusHelper {
 	public static Double parseFloat64(final int[] data, final int offset) {
 		Double result = null;
 		if ( data != null && (offset + 3) < data.length ) {
-			result = parseFloat64(data[offset], data[offset + 1], data[offset + 2], data[offset + 3]);
+			result = ModbusDataUtils.parseFloat64(data[offset], data[offset + 1], data[offset + 2],
+					data[offset + 3]);
 		}
 		return result;
 	}
@@ -631,7 +636,7 @@ public final class ModbusHelper {
 	public static Double parseFloat64(final Integer[] data) {
 		Double result = null;
 		if ( data != null && data.length > 3 ) {
-			result = parseFloat64(data[0], data[1], data[2], data[3]);
+			result = ModbusDataUtils.parseFloat64(data[0], data[1], data[2], data[3]);
 		}
 		return result;
 	}
@@ -651,7 +656,7 @@ public final class ModbusHelper {
 	public static Long parseInt64(final Integer[] data) {
 		Long result = null;
 		if ( data != null && data.length == 4 ) {
-			result = parseInt64(data[0], data[1], data[2], data[3]);
+			result = ModbusDataUtils.parseInt64(data[0], data[1], data[2], data[3]);
 		}
 		return result;
 	}
@@ -668,10 +673,12 @@ public final class ModbusHelper {
 	 * @param l2
 	 *        bits 15-0
 	 * @return the parsed long, never {@literal null}
+	 * @deprecated in {@code 1.6} use
+	 *             {@link ModbusDataUtils#parseInt64(int, int, int, int)}
 	 */
+	@Deprecated
 	public static Long parseInt64(final int h1, final int h2, final int l1, final int l2) {
-		return (((h1 & 0xFFFFL) << 48) | ((h2 & 0xFFFFL) << 32) | ((l1 & 0xFFFFL) << 16)
-				| (l2 & 0xFFFFL));
+		return ModbusDataUtils.parseInt64(h1, h2, l1, l2);
 	}
 
 	/**
@@ -696,7 +703,7 @@ public final class ModbusHelper {
 	public static Long parseInt32(final int[] data, final int offset) {
 		Long result = null;
 		if ( data != null && (offset + 1) < data.length ) {
-			result = parseInt32(data[offset], data[offset + 1]);
+			result = ModbusDataUtils.parseUnsignedInt32(data[offset], data[offset + 1]);
 		}
 		return result;
 	}
@@ -714,7 +721,10 @@ public final class ModbusHelper {
 	 *        bits 15-0
 	 * @return the parsed long, never {@literal null}
 	 * @since 1.5
+	 * @deprecated in {@code 1.6} use
+	 *             {@link ModbusDataUtils#parseUnsignedInt32(int, int)}
 	 */
+	@Deprecated
 	public static Long parseInt32(final int hi, final int lo) {
 		return (((hi & 0xFFFFL) << 16) | lo & 0xFFFFL);
 	}
@@ -723,20 +733,14 @@ public final class ModbusHelper {
 	 * Convert an array of ints to Integer objects.
 	 * 
 	 * @param array
-	 *        the array to convert
-	 * @return the converted array, or {@literal null} if {@code array} is
-	 *         {@literal null}
+	 *        the array to convert @return the converted array, or
+	 *        {@literal null} if {@code array} is {@literal null}
+	 * @deprecated in {@literal 1.6} use
+	 *             {@link ModbusDataUtils#integerArray(int[])
 	 */
+	@Deprecated
 	public static Integer[] integerArray(int[] array) {
-		if ( array == null ) {
-			return null;
-		}
-		int count = array.length;
-		Integer[] result = new Integer[count];
-		for ( int i = 0; i < count; i++ ) {
-			result[i] = array[i];
-		}
-		return result;
+		return ModbusDataUtils.integerArray(array);
 	}
 
 	/**

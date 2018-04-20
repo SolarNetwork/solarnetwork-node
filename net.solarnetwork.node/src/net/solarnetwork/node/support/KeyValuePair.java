@@ -30,15 +30,18 @@ import java.io.Serializable;
  * A key and value pair.
  * 
  * @author matt
- * @version $Id$
+ * @version 1.1
+ * @deprecated since 1.1 use {@link net.solarnetwork.domain.KeyValuePair}
+ *             instead
  */
+@Deprecated
 public class KeyValuePair implements Serializable, Comparable<KeyValuePair> {
 
 	private static final long serialVersionUID = -8143671046909870551L;
 
 	private String key;
 	private String value;
-	
+
 	/**
 	 * Default constructor.
 	 */
@@ -49,8 +52,10 @@ public class KeyValuePair implements Serializable, Comparable<KeyValuePair> {
 	/**
 	 * Construct with values.
 	 * 
-	 * @param key the key
-	 * @param value the value
+	 * @param key
+	 *        the key
+	 * @param value
+	 *        the value
 	 */
 	public KeyValuePair(String key, String value) {
 		super();
@@ -61,16 +66,17 @@ public class KeyValuePair implements Serializable, Comparable<KeyValuePair> {
 	/**
 	 * Compare the {@code key} values of two KeyValuePair objects.
 	 */
+	@Override
 	public int compareTo(KeyValuePair o) {
 		if ( key == null ) {
 			return 1;
 		}
 		return key.compareTo(o.key);
 	}
-	
+
 	@Override
 	public String toString() {
-		return "KeyValuePair{"+key+'='+value+'}';
+		return "KeyValuePair{" + key + '=' + value + '}';
 	}
 
 	@Override
@@ -112,23 +118,25 @@ public class KeyValuePair implements Serializable, Comparable<KeyValuePair> {
 	public String getKey() {
 		return key;
 	}
-	
+
 	/**
-	 * @param key the key to set
+	 * @param key
+	 *        the key to set
 	 */
 	public void setKey(String key) {
 		this.key = key;
 	}
-	
+
 	/**
 	 * @return the value
 	 */
 	public String getValue() {
 		return value;
 	}
-	
+
 	/**
-	 * @param value the value to set
+	 * @param value
+	 *        the value to set
 	 */
 	public void setValue(String value) {
 		this.value = value;

@@ -32,6 +32,9 @@ import java.util.Set;
 import java.util.UUID;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.ocpp.ChargeSession;
 import net.solarnetwork.node.ocpp.ChargeSessionMeterReading;
@@ -42,15 +45,12 @@ import ocpp.v15.cs.Measurand;
 import ocpp.v15.cs.MeterValue.Value;
 import ocpp.v15.cs.ReadingContext;
 import ocpp.v15.cs.UnitOfMeasure;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Test cases for the {@link JdbcChargeSessionDao} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 
@@ -159,6 +159,33 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void deletePostedOlder() {
+		insert();
+		ChargeSession session = dao.getChargeSession(lastSession.getSessionId());
+		Calendar cal = Calendar.getInstance();
+		cal.add(Calendar.DATE, -1);
+		session.setPosted(cal.getTime());
+		dao.storeChargeSession(session);
+
+		// insert a 2nd, with ended date now
+		insert();
+		ChargeSession session2 = dao.getChargeSession(lastSession.getSessionId());
+		session2.setPosted(new Date());
+		dao.storeChargeSession(session2);
+
+		cal = Calendar.getInstance();
+		cal.add(Calendar.HOUR, -1);
+		int result = dao.deletePostedChargeSessions(cal.getTime());
+		Assert.assertEquals("Deleted count", 1, result);
+
+		ChargeSession notThere = dao.getChargeSession(session.getSessionId());
+		Assert.assertNull("Session deleted", notThere);
+
+		ChargeSession stillThere = dao.getChargeSession(session2.getSessionId());
+		Assert.assertNotNull("Session not deleted", stillThere);
+	}
+
+	@Test
 	public void insertReadingsNone() {
 		final String sessionId = UUID.randomUUID().toString();
 		dao.addMeterReadings(sessionId, new Date(), Collections.<Value> emptyList());
@@ -188,8 +215,8 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 	@Test
 	public void listReadings() {
 		insertReadings();
-		List<ChargeSessionMeterReading> results = dao.findMeterReadingsForSession(lastSession
-				.getSessionId());
+		List<ChargeSessionMeterReading> results = dao
+				.findMeterReadingsForSession(lastSession.getSessionId());
 		Assert.assertNotNull("Readings", results);
 		Assert.assertEquals("Readings count", Measurand.values().length, results.size());
 		Set<Measurand> mSet = EnumSet.allOf(Measurand.class);
@@ -264,8 +291,8 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull("Results list", results);
 		Assert.assertEquals("Results count", 2, results.size());
 		Assert.assertEquals("Results ordered by date", TEST_SOCKET_ID, results.get(0).getSocketId());
-		Assert.assertEquals("Results ordered by date", session.getSocketId(), results.get(1)
-				.getSocketId());
+		Assert.assertEquals("Results ordered by date", session.getSocketId(),
+				results.get(1).getSocketId());
 	}
 
 	@Test
@@ -298,8 +325,8 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
 		Assert.assertNotNull("Results list", results);
 		Assert.assertEquals("Results count", 1, results.size());
-		Assert.assertEquals("Results ordered by date", lastSession.getSessionId(), results.get(0)
-				.getSessionId());
+		Assert.assertEquals("Results ordered by date", lastSession.getSessionId(),
+				results.get(0).getSessionId());
 	}
 
 	@Test
@@ -329,7 +356,7 @@ public class JdbcChargeSessionDaoTests extends AbstractNodeTransactionalTest {
 		List<ChargeSession> results = dao.getChargeSessionsNeedingPosting(Integer.MAX_VALUE);
 		Assert.assertNotNull("Results list", results);
 		Assert.assertEquals("Results count", 1, results.size());
-		Assert.assertEquals("Results ordered by date", session.getSessionId(), results.get(0)
-				.getSessionId());
+		Assert.assertEquals("Results ordered by date", session.getSessionId(),
+				results.get(0).getSessionId());
 	}
 }

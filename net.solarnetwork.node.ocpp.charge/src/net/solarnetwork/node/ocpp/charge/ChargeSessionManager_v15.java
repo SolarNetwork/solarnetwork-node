@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
@@ -93,7 +95,7 @@ import ocpp.v15.cs.UnitOfMeasure;
  * Default implementation of {@link ChargeSessionManager}.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		implements ChargeSessionManager, ChargeSessionManager_v15Settings, EventHandler {
@@ -113,6 +115,11 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 * {@link PostActiveChargeSessionsMeterValuesJob} as.
 	 */
 	public static final String CLOSE_POST_ACTIVE_CHARGE_SESSIONS_METER_VALUES_JOB_NAME = "OCPP_PostActiveChargeSessionsMeterValues";
+
+	/**
+	 * The name used to schedule the {@link PurgePostedChargeSessionsJob} as.
+	 */
+	public static final String PURGE_POSTED_CHARGE_SESSIONS_JOB_NAME = "OCPP_PurgePostedChargeSessions";
 
 	/**
 	 * The job and trigger group used to schedule the
@@ -139,12 +146,18 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public static final int CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL = 600;
 
+	/**
+	 * The interval at which to purge charge sessions that have been posted.
+	 */
+	public static final int PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL = 1800;
+
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
 	private ChargeConfigurationDao chargeConfigurationDao;
 	private ChargeSessionDao chargeSessionDao;
 	private SocketDao socketDao;
 	private TransactionTemplate transactionTemplate;
+	private Executor executor = Executors.newSingleThreadExecutor(); // to kick off the handleEvent() thread
 	private Map<String, Integer> socketConnectorMapping = Collections.emptyMap();
 	private Map<String, String> socketMeterSourceMapping = Collections.emptyMap();
 	private OptionalServiceCollection<DatumDataSource<ACEnergyDatum>> meterDataSource;
@@ -152,6 +165,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private SimpleTrigger postOfflineChargeSessionsTrigger;
 	private SimpleTrigger closeCompletedChargeSessionsTrigger;
 	private SimpleTrigger postActiveChargeSessionsMeterValuesTrigger;
+	private SimpleTrigger purgePostedChargeSessionsTrigger;
 
 	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
 			8);
@@ -165,6 +179,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		log.info("Starting up OCPP ChargeSessionManager {}", getUID());
 		configurePostOfflineChargeSessionsJob(POST_OFFLINE_CHARGE_SESSIONS_JOB_INTERVAL);
 		configureCloseCompletedChargeSessionJob(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL);
+		configurePurgePostedChargeSessionsJob(PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL);
 
 		// configure aspects from OCPP properties
 		handleChargeConfigurationUpdated();
@@ -178,6 +193,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		configurePostOfflineChargeSessionsJob(0);
 		configureCloseCompletedChargeSessionJob(0);
 		configurePostActiveChargeSessionsMeterValuesJob(0);
+		configurePurgePostedChargeSessionsJob(0);
 	}
 
 	@Override
@@ -643,6 +659,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 	}
 
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public int deletePostedChargeSessions(Date olderThanDate) {
+		return chargeSessionDao.deletePostedChargeSessions(olderThanDate);
+	}
+
 	private Map<String, Object> standardJobMap() {
 		Map<String, Object> jobMap = new HashMap<String, Object>();
 		jobMap.put("service", this);
@@ -680,6 +702,16 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				"OCPP post active charge sessions meter values");
 		return ((seconds > 0 && postActiveChargeSessionsMeterValuesTrigger != null)
 				|| (seconds < 1 && postActiveChargeSessionsMeterValuesTrigger == null));
+	}
+
+	private boolean configurePurgePostedChargeSessionsJob(final int seconds) {
+		purgePostedChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
+				purgePostedChargeSessionsTrigger,
+				new JobKey(PURGE_POSTED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
+				PurgePostedChargeSessionsJob.class, new JobDataMap(standardJobMap()),
+				"OCPP purge posted charge sessions");
+		return ((seconds > 0 && purgePostedChargeSessionsTrigger != null)
+				|| (seconds < 1 && purgePostedChargeSessionsTrigger == null));
 	}
 
 	// Datum support
@@ -727,7 +759,10 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private Object ignoreReadingsForSocket(final String socketId) {
 		Object lock = new Object();
 		Object existingLock = socketReadingsIgnoreMap.putIfAbsent(socketId, lock);
-		return (existingLock != null ? existingLock : lock);
+		Object result = (existingLock != null ? existingLock : lock);
+		log.info("Ignoring readings on socket {} using {} lock {}", socketId,
+				(existingLock != null ? "existing" : "new"), result);
+		return result;
 	}
 
 	/**
@@ -742,7 +777,15 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	private void resumeReadingsForSocket(final String socketId, final Object socketLock) {
 		if ( socketLock != null ) {
-			socketReadingsIgnoreMap.remove(socketId, socketLock);
+			boolean removed = socketReadingsIgnoreMap.remove(socketId, socketLock);
+			if ( removed ) {
+				log.info("Resuming listening for readings on socket {} after releasing lock {}",
+						socketId, socketLock);
+			} else {
+				log.warn(
+						"Unable to resume listening for readings on {} with lock {}; current lock is {}",
+						socketId, socketLock, socketReadingsIgnoreMap.get(socketId));
+			}
 		}
 	}
 
@@ -761,16 +804,41 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	// EventHandler
 
 	@Override
-	public void handleEvent(Event event) {
+	public void handleEvent(final Event event) {
 		final String topic = event.getTopic();
-		try {
-			if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
-				handleDatumCapturedEvent(event);
-			} else if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
-				handleChargeConfigurationUpdated();
+		Runnable r = null;
+		if ( topic.equals(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED) ) {
+			r = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						handleDatumCapturedEvent(event);
+					} catch ( RuntimeException e ) {
+						log.error("Error handling event {}", topic, e);
+					}
+				}
+			};
+		} else if ( topic.equals(ChargeConfigurationDao.EVENT_TOPIC_CHARGE_CONFIGURATION_UPDATED) ) {
+			r = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						handleChargeConfigurationUpdated();
+					} catch ( RuntimeException e ) {
+						log.error("Error handling event {}", topic, e);
+					}
+				}
+			};
+		}
+		if ( r != null ) {
+			if ( executor != null ) {
+				// kick off to new thread so we don't block the event thread
+				executor.execute(r);
+			} else {
+				r.run();
 			}
-		} catch ( RuntimeException e ) {
-			log.error("Error handling event {}", topic, e);
 		}
 	}
 
@@ -808,7 +876,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private void handleDatumCapturedEvent(String socketId, String sourceId,
 			Map<String, Object> eventProperties) {
 		if ( shouldIgnoreReadingsForSocket(socketId) ) {
-			log.debug("Ignoring DATUM_CAPTURED event for socket {} that is transitioning state",
+			log.info("Ignoring DATUM_CAPTURED event for socket {} that is in transitioning state",
 					socketId);
 			return;
 		}
@@ -818,7 +886,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 
 		final long created = (eventProperties.get("created") instanceof Number
-				? ((Number) eventProperties.get("created")).longValue() : System.currentTimeMillis());
+				? ((Number) eventProperties.get("created")).longValue()
+				: System.currentTimeMillis());
 
 		// reconstruct Datum from event properties
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
@@ -1158,6 +1227,18 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
+	}
+
+	/**
+	 * Set an {@link Executor} to handle events with.
+	 * 
+	 * @param executor
+	 *        the executor, or {@literal null} to handle events on the calling
+	 *        thread; defaults to a single-thread executor service
+	 * @since 2.3
+	 */
+	public void setEventExecutor(Executor executor) {
+		this.executor = executor;
 	}
 
 }
