@@ -3,10 +3,10 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode S3 Backup
 Bundle-SymbolicName: net.solarnetwork.node.backup.s3
 Bundle-Description: SolarNode cloud backup provider using Amazon S3.
-Bundle-Version: 0.4.1
+Bundle-Version: 0.4.2
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: net.solarnetwork.node.backup.s3;version="0.2.0"
+Export-Package: net.solarnetwork.node.backup.s3;version="0.2.1"
 Import-Package: 
  com.amazonaws;version="[1.11,1.12)",
  com.amazonaws.auth;version="[1.11,1.12)",
