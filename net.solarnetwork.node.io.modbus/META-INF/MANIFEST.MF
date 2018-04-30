@@ -8,7 +8,7 @@ Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: net.solarnetwork.node.io.modbus;version="2.5.0"
 Import-Package: 
- bak.pcj;version="1.2.0",
+ bak.pcj;version="[1.2,2.0)",
  bak.pcj.hash;version="[1.2,2.0)",
  bak.pcj.list;version="[1.2,2.0)",
  bak.pcj.map;version="[1.2,2.0)",
