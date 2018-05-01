@@ -5,7 +5,7 @@ Bundle-Description: Collect data from Canadian Solar INC devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.csi.ktl
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.domain;version="1.6.1",
  net.solarnetwork.node;version="1.22.0",

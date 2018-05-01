@@ -19,11 +19,13 @@
  * 02111-1307 USA
  * ==================================================================
  */
- 
+
 package net.solarnetwork.node.hw.csi.inverter;
 
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
  * Implementation for accessing SI-60KTL-CT data.
@@ -32,6 +34,39 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  * @version 1.0
  */
 public class SI60KTLCTData extends BaseKTLData {
+
+	public static final int MODEL_1 = 16433;
+	public static final int MODEL_2 = 16434;
+	public static final int MODEL_3 = 16435;
+
+	public static final int ADDR_START = 0;
+	public static final int ADDR_LENGTH = 59;
+
+	public static final int ADDR_DEVICE_MODEL = 0;
+
+	/** AC Active Power 0x001D */
+	public static final int ADDR_ACTIVE_POWER = 29;
+
+	/** AC Apparent Power 0x001E */
+	public static final int ADDR_APPARENT_POWER = 30;
+
+	/**
+	 * Default constructor.
+	 */
+	public SI60KTLCTData() {
+		super();
+	}
+
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param other
+	 *        the data to copy
+	 */
+	public SI60KTLCTData(ModbusData other) {
+		super(other);
+	}
+
 	@Override
 	public void populateMeasurements(GeneralNodeACEnergyDatum datum) {
 		// TODO populate the datum with values
@@ -39,48 +74,29 @@ public class SI60KTLCTData extends BaseKTLData {
 
 	@Override
 	public KTLData getSnapshot() {
-		// TODO copy values
-		return new SI60KTLCTData();
+		return new SI60KTLCTData(this);
 	}
 
-	public static final int MODEL_1 = 16433;
-	public static final int MODEL_2 = 16434;
-	public static final int MODEL_3 = 16435;
-	
-	public static final int ADDR_START = 0;
-	public static final int ADDR_LENGTH = 59;
-	
-
-	public static final int ADDR_DEVICE_MODEL = 0;
-	/** AC Active Power 0x001D */
-	public static final int ADDR_ACTIVE_POWER = 29;
-	/** AC Apparent Power 0x001E */
-	public static final int ADDR_APPARENT_POWER = 30;
-
 	@Override
-	protected boolean readInverterDataInternal(ModbusConnection conn) {
-		readInputData(conn, ADDR_START, ADDR_LENGTH);
+	protected boolean readInverterDataInternal(ModbusConnection conn, MutableModbusData mutableData) {
+		int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, ADDR_START,
+				ADDR_LENGTH);
+		mutableData.saveDataArray(data, ADDR_START);
 		return true;
 	}
-	
-	public Integer getDeviceModel() {
-		return getInteger(ADDR_DEVICE_MODEL);
-	}
-	
-	public Integer getActivePower() {
-		return getInteger(ADDR_ACTIVE_POWER);
-	}
-	
-	public Integer getApparentPower() {
-		return getInteger(ADDR_APPARENT_POWER);
-	}
-	
-	// TODO add accessors to get other data.
 
-	@Override
-	public String dataDebugString() {
-		// TODO add data properties to debug string
-		return "TODO";
+	public Integer getDeviceModel() {
+		return getInt16(ADDR_DEVICE_MODEL);
 	}
+
+	public Integer getActivePower() {
+		return getInt16(ADDR_ACTIVE_POWER);
+	}
+
+	public Integer getApparentPower() {
+		return getInt16(ADDR_APPARENT_POWER);
+	}
+
+	// TODO add accessors to get other data.
 
 }

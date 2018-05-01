@@ -63,8 +63,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private MessageSource messageSource;
-	private long sampleCacheMs = 5000;
+	private String sourceId = "CSI";
 
 	private KTLData getCurrentSample() {
 		KTLData currSample;
@@ -79,7 +78,7 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 					}
 
 				});
-				if ( log.isTraceEnabled() && currSample != null) {
+				if ( log.isTraceEnabled() && currSample != null ) {
 					log.trace(currSample.dataDebugString());
 				}
 				log.debug("Read KTL data: {}", currSample);
@@ -93,14 +92,6 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 		return currSample;
 	}
 
-	private boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - getSample().getInverterDataTimestamp();
-		if ( lastReadDiff > sampleCacheMs ) {
-			return true;
-		}
-		return false;
-	}
-
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
 		return KTLDatum.class;
@@ -111,6 +102,7 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 		final long start = System.currentTimeMillis();
 		final KTLData currSample = getCurrentSample();
 		KTLDatum d = new KTLDatum(currSample);
+		d.setSourceId(this.sourceId);
 		if ( currSample.getInverterDataTimestamp() >= start ) {
 			// we read from the inverter
 			postDatumCapturedEvent(d);
@@ -134,14 +126,14 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 		final boolean postCapturedEvent = (currSample.getInverterDataTimestamp() >= start);
 		if ( postCapturedEvent ) {
 			KTLDatum d = new KTLDatum(currSample);
-			d.setSourceId("Main");// TODO review "Main" as source id
+			d.setSourceId(this.sourceId);
 			if ( postCapturedEvent ) {
 				// we read from the inverter
 				postDatumCapturedEvent(d);
 			}
 			results.add(d);
 		}
-		
+
 		return results;
 	}
 
@@ -158,41 +150,23 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 	}
 
 	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		KTLDatumDataSource defaults = new KTLDatumDataSource();
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+
+		KTLDatumDataSource defaults = new KTLDatumDataSource();
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+
 		return results;
 	}
 
 	/**
-	 * Get the sample cache maximum age, in milliseconds.
+	 * Set the source ID to use for returned datum.
 	 * 
-	 * @return the cache milliseconds
+	 * @param soruceId
+	 *        the source ID to use; defaults to {@literal modbus}
 	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheSecondsMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }

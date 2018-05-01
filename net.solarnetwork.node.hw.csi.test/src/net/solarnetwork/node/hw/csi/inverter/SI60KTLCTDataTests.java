@@ -25,6 +25,8 @@ package net.solarnetwork.node.hw.csi.inverter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
+import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 
 /**
  * Unit tests for the {@link SI60KTLCTData} class.
@@ -35,37 +37,42 @@ import org.junit.Test;
 public class SI60KTLCTDataTests {
 
 	// TODO replace this with actual data read from an active device
-	private static final int[] TEST_DATA = new int[] { 
-			0x4031, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001,
-			0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-	};
-	
-	private SI60KTLCTData data = new SI60KTLCTData();
-	
+	private static final int[] TEST_DATA = new int[] { 0x4031, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			0x0000, 0x0001, 0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
+
+	private final SI60KTLCTData data = new SI60KTLCTData();
+
 	@Before
 	public void setup() {
-		data.saveDataArray(TEST_DATA, SI60KTLCTData.ADDR_START);
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(TEST_DATA, SI60KTLCTData.ADDR_START);
+				return true;
+			}
+		});
 	}
-	
+
 	@Test
 	public void getDeviceModel() {
 		Assert.assertEquals(Integer.valueOf(16433), data.getDeviceModel());
 	}
-	
+
 	@Test
 	public void getActivePower() {
 		Assert.assertEquals(Integer.valueOf(1), data.getActivePower());
 	}
-	
+
 	@Test
 	public void getApparentPower() {
 		Assert.assertEquals(Integer.valueOf(2), data.getApparentPower());
 	}
-	
+
 	// TODO test other values when populated
 
 }

@@ -1,89 +1,71 @@
-/**
+
+/* ==================================================================
+ * BaseKTLData.java - 22 Nov 2017 12:28:46
  * 
+ * Copyright 2017 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
  */
+
 package net.solarnetwork.node.hw.csi.inverter;
 
-import java.util.Map;
-import gnu.trove.map.hash.TIntIntHashMap;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusData;
 
 /**
  * Contains the common functionality for CSI KTL inverters.
  * 
  * @author maxieduncan
  */
-public abstract class BaseKTLData implements KTLData {
-	private long inverterDataTimestamp = 0;
-	private final TIntIntHashMap dataRegisters = new TIntIntHashMap(64);
+public abstract class BaseKTLData extends ModbusData implements KTLData {
 
 	/**
-	 * @param
+	 * Default constructor.
 	 */
-	@Override
-	public final synchronized void readInverterData(ModbusConnection conn) {
-		if (readInverterDataInternal(conn)) {
-			this.inverterDataTimestamp = System.currentTimeMillis();
-		}
+	public BaseKTLData() {
+		super();
 	}
 
-	protected abstract boolean readInverterDataInternal(ModbusConnection conn);
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param other
+	 *        the data to copy
+	 */
+	public BaseKTLData(ModbusData other) {
+		super(other);
+	}
+
+	@Override
+	public final synchronized void readInverterData(final ModbusConnection conn) {
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				return readInverterDataInternal(conn, m);
+			}
+		});
+	}
+
+	protected abstract boolean readInverterDataInternal(ModbusConnection conn, MutableModbusData data);
 
 	@Override
 	public long getInverterDataTimestamp() {
-		return inverterDataTimestamp;
-	}
-	
-	/**
-	 * Read Modbus input registers in an address range.
-	 * 
-	 * @param conn
-	 *        The Modbus connection.
-	 * @param startAddr
-	 *        The starting Modbus register address.
-	 * @param endAddr
-	 *        The ending Modbus register address.
-	 */
-	protected void readInputData(final ModbusConnection conn, final int startAddr, final int endAddr) {
-		Map<Integer, Integer> data = conn.readInputValues(new Integer[] { startAddr },
-				(endAddr - startAddr + 1));
-		dataRegisters.putAll(data);
-	}
-	
-	/**
-	 * Internally store an array of 16-bit integer register data values,
-	 * starting at a given address.
-	 * 
-	 * @param data
-	 *        the data array to save
-	 * @param addr
-	 *        the starting address of the data
-	 */
-	protected void saveDataArray(final int[] data, int addr) {
-		if ( data == null || data.length < 1 ) {
-			return;
-		}
-		for ( int v : data ) {
-			dataRegisters.put(addr, v);
-			addr++;
-		}
-	}
-	
-	/**
-	 * Construct a Float from a saved data register address. This method can
-	 * only be called after data register data has been populated using:
-	 * {@link #readInputData(ModbusConnection, int, int)}.
-	 * 
-	 * @param addr
-	 *        The address of the saved data register to read.
-	 * @return The parsed value, or <em>null</em> if not available.
-	 */
-	protected Float getFloat32(final int addr) {
-		return ModbusHelper.parseFloat32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
-	}
-	
-	protected Integer getInteger(final int addr) {
-		return dataRegisters.get(addr);
+		return getDataTimestamp();
 	}
 
 }
