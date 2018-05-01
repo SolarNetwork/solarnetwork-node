@@ -36,16 +36,16 @@ import net.solarnetwork.node.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public interface ModbusConnection {
 
 	/** The UTF-8 character set. */
-	final String UTF8_CHARSET = "UTF-8";
+	String UTF8_CHARSET = "UTF-8";
 
 	/** The US-ASCII character set. */
-	final String ASCII_CHARSET = "US-ASCII";
+	String ASCII_CHARSET = "US-ASCII";
 
 	/**
 	 * Get the Modbus Unit ID this device represents.
@@ -69,17 +69,40 @@ public interface ModbusConnection {
 	void close();
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet. This uses
-	 * a Modbus function code {@code 1} request.
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 1} request.
+	 * </p>
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
 	 * @param count
-	 *        the count of registers to read with each address
+	 *        the count of coils to read with each address
 	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
+	 *         {@code addresses} parameter plus each bit in the set
+	 * @return BitSet, with each index corresponding to an index offset by each
+	 *         {@code address}, e.g. if the first {@code address} were
+	 *         {@literal 100} the first returned index would be {@literal 100},
+	 *         then {@literal 101}, etc.
 	 */
-	BitSet readDiscreetValues(final Integer[] addresses, final int count);
+	BitSet readDiscreetValues(Integer[] addresses, int count);
+
+	/**
+	 * Set the value of a set of "coil" type registers.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 5} request.
+	 * </p>
+	 * 
+	 * @param addresses
+	 *        the 0-based Modbus register addresses to read
+	 * @param bits
+	 *        a BitSet representing the value to set for each corresponding
+	 *        {@code addresses} value
+	 * @return {@literal true} if the write succeeded
+	 */
+	Boolean writeDiscreetValues(Integer[] addresses, BitSet bits);
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
@@ -91,12 +114,14 @@ public interface ModbusConnection {
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
 	 * @param count
-	 *        the count of registers to read with each address
-	 * @return BitSet, with each index corresponding to an index starting with
-	 *         {@code address}
-	 * @since 2.1
+	 *        the count of 16-bit registers to read
+	 * @return BitSet, with each index corresponding to an bit index offset by
+	 *         {@code address}, e.g. if {@code address} were {@literal 100} the
+	 *         first returned index would be {@literal 100}, then
+	 *         {@literal 101}, etc.
+	 * @since 1.1
 	 */
-	BitSet readDiscreetValues(final Integer address, final int count);
+	BitSet readDiscreetValues(Integer address, int count);
 
 	/**
 	 * Get the values of a set of "input discrete" type registers, as a
@@ -109,30 +134,21 @@ public interface ModbusConnection {
 	 * @param address
 	 *        the 0-based Modbus register addresses to start reading from
 	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @return BitSet, with each index corresponding to an index starting with
-	 *         {@code address}
-	 * @since 2.1
+	 *        the count of 16-bit registers to read
+	 * @return BitSet, with each index corresponding to an bit index offset by
+	 *         {@code address}, e.g. if {@code address} were {@literal 100} the
+	 *         first returned index would be {@literal 100}, then
+	 *         {@literal 101}, etc.
+	 * @since 1.1
 	 */
-	BitSet readInputDiscreteValues(final Integer address, final int count);
+	BitSet readInputDiscreteValues(Integer address, int count);
 
 	/**
-	 * Set the value of a set of "coil" type registers. This uses a Modbus
-	 * function code {@code 5} request.
+	 * Get the values of specific "input" type registers.
 	 * 
-	 * @param addresses
-	 *        the 0-based Modbus register addresses to read
-	 * @param bits
-	 *        a BitSet representing the value to set for each corresponding
-	 *        {@code addresses} value
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
-	 */
-	Boolean writeDiscreetValues(final Integer[] addresses, final BitSet bits);
-
-	/**
-	 * Get the values of specific "input" type registers. This uses a Modbus
-	 * function code {@code 4} request.
+	 * <p>
+	 * This uses a Modbus function code {@code 4} request.
+	 * </p>
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
@@ -140,8 +156,12 @@ public interface ModbusConnection {
 	 *        the number of Modbus "words" to read from each address
 	 * @return map of integer addresses to corresponding integer values, there
 	 *         should be {@code count} values for each {@code address} read
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
+	 *             with a {@link ModbusReadFunction#ReadInputRegister}
 	 */
-	Map<Integer, Integer> readInputValues(final Integer[] addresses, final int count);
+	@Deprecated
+	Map<Integer, Integer> readInputValues(Integer[] addresses, int count);
 
 	/**
 	 * Get the values of specific "input" type registers. This uses a Modbus
@@ -153,13 +173,20 @@ public interface ModbusConnection {
 	 *        the number of Modbus "words" to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
-	 * @since 2.1
+	 * @since 1.1
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
+	 *             with a {@link ModbusReadFunction#ReadInputRegister}
 	 */
-	int[] readInputValues(final Integer address, final int count);
+	@Deprecated
+	int[] readInputValues(Integer address, int count);
 
 	/**
-	 * Get the raw bytes of specific registers as an array. This uses a Modbus
-	 * function code {@code 3} request.
+	 * Get the raw bytes of specific registers as an array.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
@@ -167,12 +194,18 @@ public interface ModbusConnection {
 	 *        the number of Modbus 2-byte "words" to read
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
+	 * @deprecated use {@link #readBytes(ModbusReadFunction, Integer, int)} with
+	 *             a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
-	byte[] readBytes(final Integer address, final int count);
+	@Deprecated
+	byte[] readBytes(Integer address, int count);
 
 	/**
-	 * Read a set of "input" type registers and interpret as a string. This uses
-	 * a Modbus function code {@code 3} request.
+	 * Read a set of "input" type registers and interpret as a string.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
@@ -184,14 +217,19 @@ public interface ModbusConnection {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
-	 * @see #readBytes(Integer, int, int)
+	 * @deprecated use
+	 *             {@link #readString(ModbusReadFunction, Integer, int, boolean, String)}
+	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
-	String readString(final Integer address, final int count, final boolean trim,
-			final String charsetName);
+	@Deprecated
+	String readString(Integer address, int count, boolean trim, String charsetName);
 
 	/**
 	 * Get the values of specific registers as an array of unsigned integers.
+	 * 
+	 * <p>
 	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
@@ -199,12 +237,19 @@ public interface ModbusConnection {
 	 *        the number of Modbus "words" to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
+	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
-	int[] readInts(final Integer address, final int count);
+	@Deprecated
+	int[] readInts(Integer address, int count);
 
 	/**
-	 * Get the values of specific registers as an array of signed shorts. This
-	 * uses a Modbus function code {@code 3} request.
+	 * Get the values of specific registers as an array of signed shorts.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
@@ -212,12 +257,19 @@ public interface ModbusConnection {
 	 *        the number of Modbus "words" to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readSignedShorts(ModbusReadFunction, Integer, int)}
+	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
-	short[] readSignedShorts(final Integer address, final int count);
+	@Deprecated
+	short[] readSignedShorts(Integer address, int count);
 
 	/**
-	 * Get the values of specific registers as an array. This uses a Modbus
-	 * function code {@code 3} request.
+	 * Get the values of specific registers as an array.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@code 3} request.
+	 * </p>
 	 * 
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
@@ -225,7 +277,133 @@ public interface ModbusConnection {
 	 *        the number of Modbus "words" to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @deprecated use
+	 *             {@link #readSignedShorts(ModbusReadFunction, Integer, int)}
+	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
-	Integer[] readValues(final Integer address, final int count);
+	@Deprecated
+	Integer[] readValues(Integer address, int count);
+
+	/**
+	 * Get the values of specific registers as an array of signed 16-bit shorts.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 * @since 1.2
+	 */
+	short[] readSignedShorts(ModbusReadFunction function, Integer address, int count);
+
+	/**
+	 * Write signed 16-bit short values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the signed 16-bit values to write
+	 * @since 1.2
+	 */
+	void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values);
+
+	/**
+	 * Get the values of specific registers as an array of unsigned 16-bit
+	 * shorts.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 * @since 1.2
+	 */
+	int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count);
+
+	/**
+	 * Write unsigned 16-bit short values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the unsigned 16-bit values to write
+	 * @since 1.2
+	 */
+	void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values);
+
+	/**
+	 * Get the raw bytes of specific registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @return array of register bytes; the result will have a length equal to
+	 *         {@code count * 2}
+	 * @since 1.2
+	 */
+	byte[] readBytes(ModbusReadFunction function, Integer address, int count);
+
+	/**
+	 * Write raw byte values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to;
+	 *        {@code values.length * 2} 16-bit registers will be written
+	 * @param values
+	 *        the byte values to write
+	 * @since 1.2
+	 */
+	void writeBytes(ModbusWriteFunction function, Integer address, byte[] values);
+
+	/**
+	 * Read a set of registers as bytes and interpret as a string.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
+	 * @param trim
+	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        resulting string
+	 * @param charsetName
+	 *        the character set to interpret the bytes as
+	 * @return String from interpreting raw bytes as a string
+	 * @see #readBytes(ModbusReadFunction, Integer, int)
+	 * @since 1.2
+	 */
+	String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+			String charsetName);
+
+	/**
+	 * Write a string as raw byte values to registers.
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param value
+	 *        the string value to write
+	 * @param charsetName
+	 *        the character set to interpret the bytes as
+	 * @since 1.2
+	 */
+	void writeString(ModbusWriteFunction function, Integer address, String value, String charsetName);
 
 }

@@ -3,14 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Control Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.control.simple
 Bundle-Description: Collect samples from configured SolarNode controls.
-Bundle-Version: 1.6.0
+Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  net.solarnetwork.domain;version="1.2.0",
  net.solarnetwork.node;version="1.10.0",
  net.solarnetwork.node.dao;version="1.6.0",
- net.solarnetwork.node.domain;version="1.0.0",
+ net.solarnetwork.node.domain;version="1.12.0",
  net.solarnetwork.node.job;version="1.11.0",
  net.solarnetwork.node.settings;version="1.8.0",
  net.solarnetwork.node.settings.support;version="1.6.0",

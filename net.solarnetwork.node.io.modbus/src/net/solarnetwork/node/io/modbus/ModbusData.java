@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
 import bak.pcj.map.IntKeyShortMap;
@@ -40,7 +41,7 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  * @since 2.3
  */
 public class ModbusData {
@@ -109,7 +110,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 16-bit unsigned integer from a data register address.
+	 * Construct an unsigned 16-bit integer from a data register address.
 	 * 
 	 * @param addr
 	 * @return the integer, never {@literal null}
@@ -120,7 +121,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 16-bit signed integer from a data register address.
+	 * Construct a signed 16-bit integer from a data register address.
 	 * 
 	 * @param addr
 	 * @return the short, never {@literal null}
@@ -139,7 +140,34 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt32(final int hiAddr, final int loAddr) {
-		return ModbusHelper.parseInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+	}
+
+	/**
+	 * Construct a signed 32-bit integer from data register addresses.
+	 * 
+	 * @param hiAddr
+	 *        the address of the high 16 bits
+	 * @param loAddr
+	 *        the address of the low 16 bits
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final Integer getSignedInt32(final int hiAddr, final int loAddr) {
+		return ModbusDataUtils.parseInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+	}
+
+	/**
+	 * Construct a signed 32-bit integer from data register addresses.
+	 * 
+	 * @param addr
+	 *        the address of the high 16 bits; the low 16-bit address is assumed
+	 *        to be {@code addr + 1}
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final Integer getSignedInt32(final int addr) {
+		return getSignedInt32(addr, addr + 1);
 	}
 
 	/**
@@ -151,7 +179,7 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt32(final int addr) {
-		return ModbusHelper.parseInt32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
+		return getInt32(addr, addr + 1);
 	}
 
 	/**
@@ -164,7 +192,7 @@ public class ModbusData {
 	 * @return the parsed value, or {@literal null} if not available.
 	 */
 	public final Float getFloat32(final int hiAddr, final int loAddr) {
-		return ModbusHelper.parseFloat32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+		return ModbusDataUtils.parseFloat32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
 	}
 
 	/**
@@ -180,7 +208,7 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a 64-bit long value from data register addresses.
+	 * Construct a signed 64-bit long value from data register addresses.
 	 * 
 	 * @param h1Addr
 	 *        the address of bits 63-48
@@ -193,12 +221,12 @@ public class ModbusData {
 	 * @return the parsed long
 	 */
 	public final Long getInt64(final int h1Addr, final int h2Addr, final int l1Addr, final int l2Addr) {
-		return ModbusHelper.parseInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+		return ModbusDataUtils.parseInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
 				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
 	}
 
 	/**
-	 * Construct a 64-bit integer from data register addresses.
+	 * Construct a signed 64-bit integer from data register addresses.
 	 * 
 	 * @param addr
 	 *        the address of the high 16-bit data register to read; the
@@ -208,6 +236,40 @@ public class ModbusData {
 	 */
 	public final Long getInt64(final int addr) {
 		return getInt64(addr, addr + 1, addr + 2, addr + 3);
+	}
+
+	/**
+	 * Construct an unsigned 64-bit integer from data register addresses.
+	 * 
+	 * @param h1Addr
+	 *        the address of bits 63-48
+	 * @param h2Addr
+	 *        the address of bits 47-32
+	 * @param l1Addr
+	 *        the address of bits 31-16
+	 * @param l2Addr
+	 *        the address of bits 15-0
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final BigInteger getUnsignedInt64(final int h1Addr, final int h2Addr, final int l1Addr,
+			final int l2Addr) {
+		return ModbusDataUtils.parseUnsignedInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
+	}
+
+	/**
+	 * Construct an unsigned 64-bit integer from data register addresses.
+	 * 
+	 * @param addr
+	 *        the address of the high 16 bits; the remaining three 16-bit
+	 *        addresses are assumed to be {@code addr + 1}, {@code addr + 2},
+	 *        and {@code addr + 3}
+	 * @return the parsed value, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public final BigInteger getUnsignedInt64(final int addr) {
+		return getUnsignedInt64(addr, addr + 1, addr + 2, addr + 3);
 	}
 
 	/**
@@ -225,7 +287,7 @@ public class ModbusData {
 	 */
 	public final Double getFloat64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
-		return ModbusHelper.parseFloat64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
+		return ModbusDataUtils.parseFloat64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
 				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
 	}
 
@@ -312,7 +374,7 @@ public class ModbusData {
 	 * @return the parsed string
 	 */
 	public String getUtf8String(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusHelper.UTF8_CHARSET);
+		return getString(addr, count, trim, ModbusDataUtils.UTF8_CHARSET);
 	}
 
 	/**
@@ -328,7 +390,7 @@ public class ModbusData {
 	 * @return the parsed string
 	 */
 	public String getAsciiString(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusHelper.ASCII_CHARSET);
+		return getString(addr, count, trim, ModbusDataUtils.ASCII_CHARSET);
 	}
 
 	/**
@@ -344,6 +406,24 @@ public class ModbusData {
 			if ( action.updateModbusData(new MutableModbusDataView()) ) {
 				dataTimestamp = now;
 			}
+		}
+		return this;
+	}
+
+	/**
+	 * Force the data timestamp to be expired.
+	 * 
+	 * <p>
+	 * Calling this method will reset the {@code dataTimestamp} to zero,
+	 * effectively expiring the data.
+	 * </p>
+	 * 
+	 * @return this object to allow method chaining
+	 * @since 1.2
+	 */
+	public final ModbusData expire() {
+		synchronized ( dataRegisters ) {
+			dataTimestamp = 0;
 		}
 		return this;
 	}

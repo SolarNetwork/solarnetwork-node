@@ -1,7 +1,7 @@
 /* ==================================================================
-ddddddd * DatumPropertySampleType.java - 20/12/2017 1:44:58 PM
+ * GeneralDatum.java - 23/03/2018 9:22:50 AM
  * 
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2018 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,53 +20,35 @@ ddddddd * DatumPropertySampleType.java - 20/12/2017 1:44:58 PM
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.modbus;
+package net.solarnetwork.node.domain;
+
+import net.solarnetwork.domain.GeneralDatumSamplesOperations;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 
 /**
- * The sample type for a datum property.
+ * API for a general datum.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.57
  */
-public enum DatumPropertySampleType {
-
-	Instantaneous('i'),
-
-	Accumulating('a'),
-
-	Status('s');
-
-	private final char type;
-
-	private DatumPropertySampleType(char type) {
-		this.type = type;
-	}
+public interface GeneralDatum extends Datum {
 
 	/**
-	 * Get a key value for this enum.
+	 * Get a general accessor for the sample data.
 	 * 
-	 * @return the key
+	 * @return the operations instance, or {@literal null} if no samples are
+	 *         available
 	 */
-	public char toKey() {
-		return type;
-	}
+	GeneralDatumSamplesOperations asSampleOperations();
 
 	/**
-	 * Get an enum instance for a key value.
+	 * Get a mutable general accessor for the sample data.
 	 * 
-	 * @param key
-	 *        the key
-	 * @return the enum
-	 * @throws IllegalArgumentException
-	 *         if {@code key} is not a valid value
+	 * @return the operations instance, never {@literal null}
+	 * @throws UnsupportedOperationException
+	 *         if mutation is not supported
 	 */
-	public static DatumPropertySampleType valueOf(char key) {
-		for ( DatumPropertySampleType e : DatumPropertySampleType.values() ) {
-			if ( key == e.type ) {
-				return e;
-			}
-		}
-		throw new IllegalArgumentException("Unknown DatumPropertySampleType key [" + key + "]");
-	}
+	MutableGeneralDatumSamplesOperations asMutableSampleOperations();
 
 }

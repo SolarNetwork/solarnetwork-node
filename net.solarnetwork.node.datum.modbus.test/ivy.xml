@@ -6,10 +6,11 @@
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<!-- Logging -->
-    	<dependency org="log4j" name="log4j" rev="1.2.17" conf="runtime"/>
-		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.7.21" conf="runtime"/>
-		<dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.7.21" conf="runtime"/>
-		<dependency org="org.slf4j" name="osgi-over-slf4j" rev="1.7.21" conf="runtime"/>
+		<dependency org="log4j" name="log4j" rev="1.2.17" conf="runtime"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.24" conf="runtime"/>
+		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.7.24" conf="runtime"/>
+		<dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.7.24" conf="runtime"/>
+		<dependency org="org.slf4j" name="osgi-over-slf4j" rev="1.7.24" conf="runtime"/>
 
 		<!-- Testing -->
 		<dependency org="junit" name="junit" rev="4.12"/>
@@ -21,5 +22,6 @@
 		<!-- Testing support -->
 		
 		<!-- SolarNetwork -->
+		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>
 </ivy-module>

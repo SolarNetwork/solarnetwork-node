@@ -91,7 +91,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class S3BackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -392,6 +392,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		try {
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
+					.filter(o -> NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o.getKey()).find())
 					.map(o -> new SimpleBackup(
 							identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null,
 							true))
