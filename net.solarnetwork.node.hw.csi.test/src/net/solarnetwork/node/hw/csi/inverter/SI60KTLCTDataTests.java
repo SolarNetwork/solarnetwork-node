@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,12 +67,12 @@ public class SI60KTLCTDataTests {
 
 	@Test
 	public void getActivePower() {
-		Assert.assertEquals(Integer.valueOf(1), data.getActivePower());
+		assertThat("Active power", data.getActivePower(), equalTo(100));
 	}
 
 	@Test
 	public void getApparentPower() {
-		Assert.assertEquals(Integer.valueOf(2), data.getApparentPower());
+		assertThat("Apparent power", data.getApparentPower(), equalTo(200));
 	}
 
 	// TODO test other values when populated
