@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
@@ -41,20 +40,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
  * with the CSI KTL inverter.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with
- * {@link SettingSpecifierProvider}.</dd>
- * 
- * <dt>sampleCacheMs</dt>
- * <dd>The maximum number of milliseconds to cache data read from the inverter,
- * until the data will be read from the inverter again.</dd>
- * </dl>
  * 
  * @author matt
  * @author maxieduncan
