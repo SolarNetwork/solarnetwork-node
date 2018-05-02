@@ -23,8 +23,8 @@
 package net.solarnetwork.node.datum.csi.ktl;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
@@ -51,7 +51,7 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 	private String sourceId = "CSI";
 
 	private KTLData getCurrentSample() {
-		KTLData currSample;
+		KTLData currSample = null;
 		if ( isCachedSampleExpired() ) {
 			try {
 				currSample = performAction(new ModbusConnectionAction<KTLData>() {
@@ -79,13 +79,16 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return KTLDatum.class;
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
 		final KTLData currSample = getCurrentSample();
+		if ( currSample == null ) {
+			return null;
+		}
 		KTLDatum d = new KTLDatum(currSample);
 		d.setSourceId(this.sourceId);
 		if ( currSample.getInverterDataTimestamp() >= start ) {
@@ -97,29 +100,16 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 
 	@Override
 	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return KTLDatum.class;
+		return GeneralNodeACEnergyDatum.class;
 	}
 
 	@Override
 	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		final long start = System.currentTimeMillis();
-		final KTLData currSample = getCurrentSample();
-		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(1);
-		if ( currSample == null ) {
-			return results;
+		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+		if ( datum != null ) {
+			return Collections.singletonList(datum);
 		}
-		final boolean postCapturedEvent = (currSample.getInverterDataTimestamp() >= start);
-		if ( postCapturedEvent ) {
-			KTLDatum d = new KTLDatum(currSample);
-			d.setSourceId(this.sourceId);
-			if ( postCapturedEvent ) {
-				// we read from the inverter
-				postDatumCapturedEvent(d);
-			}
-			results.add(d);
-		}
-
-		return results;
+		return Collections.emptyList();
 	}
 
 	// SettingSpecifierProvider
