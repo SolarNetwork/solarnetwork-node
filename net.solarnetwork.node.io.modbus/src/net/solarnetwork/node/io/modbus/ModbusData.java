@@ -41,13 +41,14 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.3
  */
 public class ModbusData {
 
 	private final IntKeyShortMap dataRegisters;
 	private long dataTimestamp = 0;
+	private ModbusWordOrder wordOrder;
 
 	/**
 	 * Default constructor.
@@ -55,6 +56,7 @@ public class ModbusData {
 	public ModbusData() {
 		super();
 		this.dataRegisters = new IntKeyShortOpenHashMap(64);
+		this.wordOrder = ModbusWordOrder.MostToLeastSignificant;
 	}
 
 	/**
@@ -71,6 +73,7 @@ public class ModbusData {
 		synchronized ( other.dataRegisters ) {
 			this.dataRegisters = new IntKeyShortOpenHashMap(other.dataRegisters);
 			this.dataTimestamp = other.dataTimestamp;
+			this.wordOrder = other.wordOrder;
 		}
 	}
 
@@ -160,26 +163,37 @@ public class ModbusData {
 	/**
 	 * Construct a signed 32-bit integer from data register addresses.
 	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
+	 * 
 	 * @param addr
-	 *        the address of the high 16 bits; the low 16-bit address is assumed
+	 *        the address of the first register; the second register is assumed
 	 *        to be {@code addr + 1}
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
 	public final Integer getSignedInt32(final int addr) {
-		return getSignedInt32(addr, addr + 1);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getSignedInt32(addr, addr + 1)
+				: getSignedInt32(addr + 1, addr));
 	}
 
 	/**
-	 * Construct an unsigned 32-bit integer from data register addresses.
+	 * Construct an unsigned 32-bit integer from a starting data register
+	 * address.
+	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
 	 * 
 	 * @param addr
-	 *        the address of the high 16-bit data register to read; the low
-	 *        16-bit address is assumed to be {@code addr + 1}
+	 *        the address of the first register; the second register is assumed
+	 *        to be {@code addr + 1}
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt32(final int addr) {
-		return getInt32(addr, addr + 1);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
+				: getInt32(addr + 1, addr));
 	}
 
 	/**
@@ -198,13 +212,18 @@ public class ModbusData {
 	/**
 	 * Construct a 32-bit float from a starting data register address.
 	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
+	 * 
 	 * @param addr
-	 *        the address of the high 16-bit data register to read; the low
-	 *        16-bit address is assumed to be {@code addr + 1}
+	 *        the address of the first register; the second register is assumed
+	 *        to be {@code addr + 1}
 	 * @return The parsed value, or {@literal null} if not available.
 	 */
 	public final Float getFloat32(final int addr) {
-		return getFloat32(addr, addr + 1);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getFloat32(addr, addr + 1)
+				: getFloat32(addr + 1, addr));
 	}
 
 	/**
@@ -226,16 +245,22 @@ public class ModbusData {
 	}
 
 	/**
-	 * Construct a signed 64-bit integer from data register addresses.
+	 * Construct a signed 64-bit integer from a starting data register address.
+	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
 	 * 
 	 * @param addr
-	 *        the address of the high 16-bit data register to read; the
-	 *        remaining three 16-bit addresses are assumed to be
-	 *        {@code addr + 1}, {@code addr + 2}, and {@code addr + 3}
+	 *        the address of the first register; the remaining three registers
+	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
+	 *        {@code addr + 3}
 	 * @return the parsed value, or {@literal null} if not available
 	 */
 	public final Long getInt64(final int addr) {
-		return getInt64(addr, addr + 1, addr + 2, addr + 3);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant
+				? getInt64(addr, addr + 1, addr + 2, addr + 3)
+				: getInt64(addr + 3, addr + 2, addr + 1, addr));
 	}
 
 	/**
@@ -261,15 +286,21 @@ public class ModbusData {
 	/**
 	 * Construct an unsigned 64-bit integer from data register addresses.
 	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
+	 * 
 	 * @param addr
-	 *        the address of the high 16 bits; the remaining three 16-bit
-	 *        addresses are assumed to be {@code addr + 1}, {@code addr + 2},
-	 *        and {@code addr + 3}
+	 *        the address of the first register; the remaining three registers
+	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
+	 *        {@code addr + 3}
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
 	public final BigInteger getUnsignedInt64(final int addr) {
-		return getUnsignedInt64(addr, addr + 1, addr + 2, addr + 3);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant
+				? getUnsignedInt64(addr, addr + 1, addr + 2, addr + 3)
+				: getUnsignedInt64(addr + 3, addr + 2, addr + 1, addr));
 	}
 
 	/**
@@ -294,18 +325,28 @@ public class ModbusData {
 	/**
 	 * Construct a 32-bit float from a starting data register address.
 	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
+	 * 
 	 * @param addr
-	 *        the address of the high 16-bit data register to read; the
-	 *        remaining three 16-bit addresses are assumed to be
-	 *        {@code addr + 1}, {@code addr + 2}, and {@code addr + 3}
+	 *        the address of the first register; the remaining three registers
+	 *        are assumed to be {@code addr + 1}, {@code addr + 2}, and
+	 *        {@code addr + 3}
 	 * @return The parsed value, or {@literal null} if not available.
 	 */
 	public final Double getFloat64(final int addr) {
-		return getFloat64(addr, addr + 1, addr + 2, addr + 3);
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant
+				? getFloat64(addr, addr + 1, addr + 2, addr + 3)
+				: getFloat64(addr + 3, addr + 2, addr + 1, addr));
 	}
 
 	/**
 	 * Construct a byte array out of a data address range.
+	 * 
+	 * <p>
+	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * </p>
 	 * 
 	 * @param addr
 	 *        the starting address of the 16-bit register to read
@@ -316,7 +357,8 @@ public class ModbusData {
 	public byte[] getBytes(final int addr, final int count) {
 		byte[] result = new byte[count * 2];
 		for ( int i = addr, end = addr + count; i < end; i++ ) {
-			short word = dataRegisters.get(i);
+			short word = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? dataRegisters.get(i)
+					: dataRegisters.get(end - i - 1));
 			result[i * 2] = (byte) ((word >> 8) & 0xFF);
 			result[i * 2 + 1] = (byte) (word & 0xFF);
 		}
@@ -494,6 +536,11 @@ public class ModbusData {
 		 * {@code bytes} (rounded up to nearest even even length).
 		 * </p>
 		 * 
+		 * <p>
+		 * This method will respect the configured {@link #getWordOrder()}
+		 * value.
+		 * </p>
+		 * 
 		 * @param data
 		 *        the bytes to save
 		 * @param addr
@@ -573,12 +620,15 @@ public class ModbusData {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
-			for ( int i = 0; i < data.length; i += 2 ) {
+			final int wordLength = (int) Math.ceil(data.length / 2.0);
+			for ( int i = 0, j = 0; i < data.length; i += 2, j++ ) {
 				int n = ((data[i] & 0xFF) << 8);
 				if ( i + 1 < data.length ) {
 					n = n | (data[i + 1] & 0xFF);
 				}
-				dataRegisters.put(i / 2, (short) n);
+				int idx = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? addr + j
+						: addr + wordLength - j - 1);
+				dataRegisters.put(idx, (short) n);
 			}
 		}
 
@@ -631,4 +681,29 @@ public class ModbusData {
 		buf.append("}");
 		return buf.toString();
 	}
+
+	/**
+	 * Get the word ordering to use when reading multi-register data types.
+	 * 
+	 * @return the word order
+	 * @since 1.3
+	 */
+	public ModbusWordOrder getWordOrder() {
+		return wordOrder;
+	}
+
+	/**
+	 * Set the word ordering to use when reading multi-register data types.
+	 * 
+	 * @param wordOrder
+	 *        the word order to use; {@literal null} will be ignored
+	 * @since 1.3
+	 */
+	public void setWordOrder(ModbusWordOrder wordOrder) {
+		if ( wordOrder == null ) {
+			return;
+		}
+		this.wordOrder = wordOrder;
+	}
+
 }
