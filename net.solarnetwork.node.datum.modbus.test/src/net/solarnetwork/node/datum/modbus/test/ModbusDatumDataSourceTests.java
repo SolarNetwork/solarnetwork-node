@@ -58,13 +58,14 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link ModbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusDatumDataSourceTests {
 
@@ -297,6 +298,57 @@ public class ModbusDatumDataSourceTests {
 
 		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
 				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+				.andReturn(range1);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+				equalTo(new BigDecimal("4845796")));
+		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+				equalTo(new BigDecimal("5843478340484.9")));
+		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+				equalTo(new BigDecimal("1.9742")));
+		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+				equalTo(new BigDecimal("1974.19741974")));
+	}
+
+	@Test
+	public void readDatumWithDecimalScaleLeastSignificantWordOrder() throws IOException {
+		// GIVEN
+
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 0,
+						new BigDecimal("0.1"), 0),
+				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 2,
+						new BigDecimal("0.01"), 1),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Accumulating, Float32, 6,
+						new BigDecimal("0.001"), 4),
+				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Accumulating, Float64, 8,
+						new BigDecimal("0.0001"), -1), };
+		dataSource.setPropConfigs(propConfigs);
+		dataSource.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0x68e7, 0x02e3, 0xdfee, 0x1512, 0x1376, 0x0002, 0xc651, 0x44f6,
+				0x8ce7, 0x6328, 0xd3d1, 0x4172 };
 		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 

@@ -47,9 +47,11 @@ import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
@@ -61,17 +63,26 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
 
-	private String sourceId = "modbus";
-	private long sampleCacheMs = 5000;
-	private int maxReadWordCount = 64;
+	private String sourceId;
+	private long sampleCacheMs;
+	private int maxReadWordCount;
 	private ModbusPropertyConfig[] propConfigs;
 
-	private final ModbusData sample = new ModbusData();
+	private final ModbusData sample;
+
+	public ModbusDatumDataSource() {
+		super();
+		sample = new ModbusData();
+		sourceId = "modbus";
+		sampleCacheMs = 5000;
+		maxReadWordCount = 64;
+		setWordOrder(ModbusWordOrder.MostToLeastSignificant);
+	}
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
@@ -221,6 +232,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 
 	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
 			ModbusPropertyConfig[] configs) {
+		if ( configs == null ) {
+			return null;
+		}
 		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs.length);
 		for ( ModbusPropertyConfig config : configs ) {
@@ -257,6 +271,16 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				String.valueOf(defaults.sampleCacheMs)));
 		results.add(new BasicTextFieldSettingSpecifier("maxReadWordCount",
 				String.valueOf(defaults.maxReadWordCount)));
+
+		// drop-down menu for word order
+		BasicMultiValueSettingSpecifier wordOrderSpec = new BasicMultiValueSettingSpecifier(
+				"wordOrderKey", String.valueOf(defaults.getWordOrder().getKey()));
+		Map<String, String> wordOrderTitles = new LinkedHashMap<String, String>(2);
+		for ( ModbusWordOrder e : ModbusWordOrder.values() ) {
+			wordOrderTitles.put(String.valueOf(e.getKey()), e.toDisplayString());
+		}
+		wordOrderSpec.setValueTitles(wordOrderTitles);
+		results.add(wordOrderSpec);
 
 		ModbusPropertyConfig[] confs = getPropConfigs();
 		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
@@ -484,4 +508,61 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		this.sourceId = sourceId;
 	}
 
+	/**
+	 * Get the word order.
+	 * 
+	 * @return the word order
+	 * @since 1.2
+	 */
+	public ModbusWordOrder getWordOrder() {
+		return sample.getWordOrder();
+	}
+
+	/**
+	 * Set the word order.
+	 * 
+	 * @param wordOrder
+	 *        the order to set; {@literal null} will be ignored
+	 * @since 1.2
+	 */
+	public void setWordOrder(ModbusWordOrder wordOrder) {
+		if ( wordOrder == null ) {
+			return;
+		}
+		sample.setWordOrder(wordOrder);
+	}
+
+	/**
+	 * Get the word order as a key value.
+	 * 
+	 * @return the word order as a key; if {@link #getWordOrder()} is
+	 *         {@literal null} then
+	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
+	 * @since 1.2
+	 */
+	public char getWordOrderKey() {
+		ModbusWordOrder order = getWordOrder();
+		if ( order == null ) {
+			order = ModbusWordOrder.MostToLeastSignificant;
+		}
+		return order.getKey();
+	}
+
+	/**
+	 * Set the word order as a key value.
+	 * 
+	 * @param key
+	 *        the word order key to set; if {@code key} is not valid then
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
+	 * @since 1.2
+	 */
+	public void setWordOrderKey(char key) {
+		ModbusWordOrder order;
+		try {
+			order = ModbusWordOrder.forKey(key);
+		} catch ( IllegalArgumentException e ) {
+			order = ModbusWordOrder.MostToLeastSignificant;
+		}
+		setWordOrder(order);
+	}
 }
