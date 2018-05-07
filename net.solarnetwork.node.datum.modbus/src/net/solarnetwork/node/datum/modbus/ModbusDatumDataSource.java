@@ -63,7 +63,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
@@ -230,7 +230,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		return "Generic Modbus Device";
 	}
 
-	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getRegisterAddressSets(
+	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getReadFunctionSets(
 			ModbusPropertyConfig[] configs) {
 		if ( configs == null ) {
 			return null;
@@ -335,7 +335,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				final int maxReadLen = maxReadWordCount;
-				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getRegisterAddressSets(
+				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getReadFunctionSets(
 						propConfigs);
 				for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap
 						.entrySet() ) {
