@@ -345,6 +345,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					// into single calls, but limited to at most maxReadWordCount addresses at a time
 					// because some devices have trouble returning large word counts
 					IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
+					log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
 					IntRange[] ranges = addressRangeSet.ranges();
 					for ( IntRange range : ranges ) {
 						for ( int start = range.first(); start < range.last(); ) {
