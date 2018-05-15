@@ -77,9 +77,6 @@ public class PacketHeader {
 	 *         if no envelope is available
 	 */
 	public PacketEnvelope getEnvelope() {
-		if ( data == null || data.length < (offset + 1) ) {
-			throw new IllegalArgumentException("Not enough data available.");
-		}
 		return PacketEnvelope.forCode(data[offset]);
 	}
 
@@ -91,9 +88,6 @@ public class PacketHeader {
 	 *         if no type is available
 	 */
 	public PacketType getType() {
-		if ( data == null || data.length < (offset + 2) ) {
-			throw new IllegalArgumentException("Not enough data available.");
-		}
 		return PacketType.forCode(data[offset + 1]);
 	}
 
@@ -103,9 +97,6 @@ public class PacketHeader {
 	 * @return the address of the slave the packet is associated with
 	 */
 	public short getAddress() {
-		if ( data == null || data.length < (offset + 3) ) {
-			throw new IllegalArgumentException("Not enough data available.");
-		}
 		return (short) (data[offset + 2] & (short) 0xFF);
 	}
 
@@ -116,10 +107,25 @@ public class PacketHeader {
 	 * @return the number of data bytes
 	 */
 	public int getDataLength() {
-		if ( data == null || data.length < (offset + 4) ) {
-			throw new IllegalArgumentException("Not enough data available.");
-		}
 		return (data[offset + 3] & 0xFF);
+	}
+
+	/**
+	 * Get the command byte.
+	 * 
+	 * @return the command
+	 */
+	public byte getCommand() {
+		return data[offset + 4];
+	}
+
+	/**
+	 * Get the sub-command byte.
+	 * 
+	 * @return the sub-command
+	 */
+	public byte getSubCommand() {
+		return data[offset + 5];
 	}
 
 	/**

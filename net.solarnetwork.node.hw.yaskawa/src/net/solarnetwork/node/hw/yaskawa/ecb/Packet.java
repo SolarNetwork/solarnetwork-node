@@ -74,6 +74,31 @@ public class Packet {
 	}
 
 	/**
+	 * Get the body of the packet.
+	 * 
+	 * <p>
+	 * This is the "data" portion of the packet, i.e. the packet without the
+	 * header or envelope bytes.
+	 * </p>
+	 * 
+	 * @return the body data
+	 * @throws IllegalArgumentException
+	 *         if there aren't enough actual data bytes to fulfill the
+	 *         {@literal dataLength} encoded in the packet
+	 */
+	public byte[] getBody() {
+		int dataLength = this.header.getDataLength();
+		byte[] body = new byte[dataLength];
+		if ( offset + 6 + dataLength > this.data.length ) {
+			throw new IllegalArgumentException("Not enough data.");
+		}
+		if ( dataLength > 0 ) {
+			System.arraycopy(this.data, offset + 6, body, 0, dataLength);
+		}
+		return body;
+	}
+
+	/**
 	 * Get the CRC calculated from the data itself.
 	 * 
 	 * @return the CRC

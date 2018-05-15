@@ -64,12 +64,14 @@ public class PacketHeaderTests {
 
 	@Test
 	public void constructValid() {
-		PacketHeader header = new PacketHeader(new byte[] { 0x02, 0x05, 0x01, 0x00, 0x01, 0x01 });
+		PacketHeader header = new PacketHeader(new byte[] { 0x02, 0x05, 0x01, 0x00, 0x03, 0x04 });
 		assertThat("Valid", header.isValid(), equalTo(true));
 		assertThat("Envelope", header.getEnvelope(), equalTo(PacketEnvelope.Start));
 		assertThat("Type", header.getType(), equalTo(PacketType.MasterLinkRequest));
 		assertThat("Address", header.getAddress(), equalTo((short) 1));
 		assertThat("Data length", header.getDataLength(), equalTo(0));
+		assertThat("Command", header.getCommand(), equalTo((byte) 0x03));
+		assertThat("Sub-command", header.getSubCommand(), equalTo((byte) 0x04));
 	}
 
 	@Test(expected = IllegalArgumentException.class)

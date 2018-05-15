@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb.test;
 
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
@@ -35,6 +37,17 @@ import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
  */
 public class PacketTests {
 
+	private static Byte[] byteArray(byte[] array) {
+		if ( array == null ) {
+			return null;
+		}
+		Byte[] result = new Byte[array.length];
+		for ( int i = 0, len = array.length; i < len; i++ ) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
 	@Test
 	public void crc() {
 		Packet p = new Packet(
@@ -42,6 +55,26 @@ public class PacketTests {
 		assertThat("Calcualted CRC", p.getCalculatedCrc(), equalTo(0xAC0D));
 		assertThat("Encoded CRC", p.getCrc(), equalTo(0xAC0D));
 		assertThat("Packet appears valid", p.isValid(), equalTo(true));
+	}
+
+	@Test
+	public void bodyEmpty() {
+		Packet p = new Packet(
+				new byte[] { 0x02, 0x05, 0x01, 0x00, 0x01, 0x01, (byte) 0x0D, (byte) 0xAC, 0x03 });
+		assertThat("Body", byteArray(p.getBody()), arrayWithSize(0));
+	}
+
+	@Test
+	public void body() {
+		Packet p = new Packet(
+				new byte[] { 0x02, 0x05, 0x01, 0x02, 0x01, 0x01, (byte) 0x10, (byte) 0x11 });
+		assertThat("Body", byteArray(p.getBody()), arrayContaining((byte) 0x10, (byte) 0x11));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void bodyMissingData() {
+		Packet p = new Packet(new byte[] { 0x02, 0x05, 0x01, 0x02, 0x01, 0x01, (byte) 0x10 });
+		p.getBody();
 	}
 
 }
