@@ -41,7 +41,7 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.3
  */
 public class ModbusData {
@@ -98,6 +98,57 @@ public class ModbusData {
 	 */
 	public ModbusData copy() {
 		return new ModbusData(this);
+	}
+
+	/**
+	 * Get a number value from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the number value for
+	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if the reference data type is not numeric
+	 */
+	public final Number getNumber(ModbusReference ref) {
+		if ( ref == null ) {
+			return null;
+		}
+		ModbusDataType type = ref.getDataType();
+		if ( type == null ) {
+			type = ModbusDataType.UInt16;
+		}
+		final int addr = ref.getAddress();
+		switch (type) {
+			case Boolean:
+				return getBoolean(addr) ? 1 : 0;
+
+			case Float32:
+				return getFloat32(addr);
+
+			case Float64:
+				return getFloat64(addr);
+
+			case Int16:
+				return getSignedInt16(addr);
+
+			case Int32:
+				return getSignedInt32(addr);
+
+			case Int64:
+				return getInt64(addr);
+
+			case UInt16:
+				return getInt16(addr);
+
+			case UInt32:
+				return getInt32(addr);
+
+			case UInt64:
+				return getUnsignedInt64(addr);
+
+			default:
+				throw new IllegalArgumentException("Cannot get number for " + type + " type reference");
+		}
 	}
 
 	/**
