@@ -42,14 +42,37 @@ public class ION6200RegisterTests {
 
 	@Test
 	public void intRangeSet() {
+		// [0-3,12-13,102-103,110-111,114-116,119-122,137-145,4000-4001,4011-4015]
 		IntRangeSet set = ION6200Register.getRegisterAddressSet();
 		assertThat("Register set", notNullValue());
 		assertThat("Register set length", set.ranges(), arrayWithSize(9));
 	}
 
 	@Test
+	public void configIntRangeSet() {
+		IntRangeSet set = ION6200Register.getConfigRegisterAddressSet();
+		assertThat("Register set", notNullValue());
+		assertThat("Register set length", set.ranges(), arrayWithSize(4));
+		IntRange[] ranges = set.ranges();
+		assertThat("Range 0", ranges[0], equalTo(new IntRange(0, 3)));
+		assertThat("Range 1", ranges[1], equalTo(new IntRange(12, 13)));
+		assertThat("Range 2", ranges[2], equalTo(new IntRange(4000, 4001)));
+		assertThat("Range 3", ranges[3], equalTo(new IntRange(4011, 4015)));
+	}
+
+	@Test
+	public void meterIntRangeSet() {
+		IntRangeSet set = ION6200Register.getMeterRegisterAddressSet();
+		assertThat("Register set", notNullValue());
+		assertThat("Register set length", set.ranges(), arrayWithSize(5));
+		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
+		IntRange[] ranges = reduced.ranges();
+		assertThat("Register set length", ranges, arrayWithSize(1));
+		assertThat("Range 0", ranges[0], equalTo(new IntRange(102, 145)));
+	}
+
+	@Test
 	public void reducedIntRangeSet() {
-		// [0-3,12-13,102-103,110-111,114-116,119-122,137-145,4000-4001,4011-4015]
 		// [0-13,102-145,4000-4015]
 		IntRangeSet set = IntRangeSetUtils.combineToReduceSize(ION6200Register.getRegisterAddressSet(),
 				64);

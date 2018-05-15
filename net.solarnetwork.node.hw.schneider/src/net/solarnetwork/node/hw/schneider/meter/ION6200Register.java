@@ -28,6 +28,7 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Enumeration of Modbus register mappings for the IOS6200 series meter.
@@ -36,7 +37,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * @version 1.0
  * @since 2.4
  */
-public enum ION6200Register {
+public enum ION6200Register implements ModbusReference {
 
 	/** Serial number. */
 	InfoSerialNumber(0, UInt32),
@@ -59,7 +60,7 @@ public enum ION6200Register {
 	/** Power factor total, in x100 decimal scale. */
 	MeterPowerFactorTotal(115, Int16),
 
-	/** Active power total, reported in PPS W. */
+	/** Active power total, reported in PPS kW or MW. */
 	MeterActivePowerTotal(119, Int16),
 
 	/** Active power total, reported in PPS VAR. */
@@ -135,7 +136,8 @@ public enum ION6200Register {
 	/** The programmable power scale (PPS) enumeration. */
 	ConfigProgrammablePowerScale(4014, UInt16);
 
-	private static final IntRangeSet REGISTER_ADDRESS_SET = createRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createMeterRegisterAddressSet();
 
 	private final int address;
 	private final ModbusDataType dataType;
@@ -145,9 +147,12 @@ public enum ION6200Register {
 		this.dataType = dataType;
 	}
 
-	private static IntRangeSet createRegisterAddressSet() {
+	private static IntRangeSet createMeterRegisterAddressSet() {
 		IntRangeSet set = new IntRangeSet();
 		for ( ION6200Register r : ION6200Register.values() ) {
+			if ( !r.name().startsWith("Meter") ) {
+				continue;
+			}
 			int len = r.getDataType().getWordLength();
 			if ( len > 0 ) {
 				set.addAll(r.getAddress(), r.getAddress() + len);
@@ -156,29 +161,31 @@ public enum ION6200Register {
 		return set;
 	}
 
-	/**
-	 * Get the register address, or starting address for multi-register values.
-	 * 
-	 * @return the address
-	 */
+	private static IntRangeSet createConfigRegisterAddressSet() {
+		IntRangeSet set = new IntRangeSet();
+		for ( ION6200Register r : ION6200Register.values() ) {
+			if ( !(r.name().startsWith("Info") || r.name().startsWith("Config")) ) {
+				continue;
+			}
+			int len = r.getDataType().getWordLength();
+			if ( len > 0 ) {
+				set.addAll(r.getAddress(), r.getAddress() + len);
+			}
+		}
+		return set;
+	}
+
+	@Override
 	public int getAddress() {
 		return address;
 	}
 
-	/**
-	 * Get the data type.
-	 * 
-	 * @return the data type
-	 */
+	@Override
 	public ModbusDataType getDataType() {
 		return dataType;
 	}
 
-	/**
-	 * Get the read function.
-	 * 
-	 * @return the read function
-	 */
+	@Override
 	public ModbusReadFunction getFunction() {
 		return ModbusReadFunction.ReadHoldingRegister;
 	}
@@ -190,7 +197,39 @@ public enum ION6200Register {
 	 * @return the range set
 	 */
 	public static IntRangeSet getRegisterAddressSet() {
-		return (IntRangeSet) REGISTER_ADDRESS_SET.clone();
+		IntRangeSet s = new IntRangeSet(CONFIG_REGISTER_ADDRESS_SET);
+		s.addAll(METER_REGISTER_ADDRESS_SET);
+		return s;
+	}
+
+	/**
+	 * Get an address range set that covers all the configuration and info
+	 * registers defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and <i>exclusive</i> ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getConfigRegisterAddressSet() {
+		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the meter registers defined in
+	 * this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and <i>exclusive</i> ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getMeterRegisterAddressSet() {
+		return (IntRangeSet) METER_REGISTER_ADDRESS_SET.clone();
 	}
 
 }
