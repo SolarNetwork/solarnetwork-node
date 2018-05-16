@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb;
 
+import java.util.Arrays;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+
 /**
  * An ECB message packet.
  * 
@@ -62,6 +66,111 @@ public class Packet {
 		this.data = data;
 		this.offset = offset;
 		this.header = new PacketHeader(data, offset);
+	}
+
+	/**
+	 * Construct from hex-encoded packet data.
+	 * 
+	 * @param hexData
+	 *        the hex-encoded data; whitespace is allowed (it will be removed)
+	 * @throws DecoderException
+	 *         if there is a problem decoding the hex data
+	 */
+	public Packet(String hexData) throws DecoderException {
+		this(decodeHex(hexData));
+	}
+
+	@Override
+	public String toString() {
+		return "Packet{" + Arrays.toString(data) + "}";
+	}
+
+	private static byte[] decodeHex(String hexData) throws DecoderException {
+		if ( hexData == null ) {
+			return null;
+		}
+		return Hex.decodeHex(hexData.replaceAll("\\s+", "").toCharArray());
+	}
+
+	/**
+	 * Construct a packet from components and a hex-encoded body.
+	 * 
+	 * @param address
+	 *        the address to send the packet to
+	 * @param cmd
+	 *        the command
+	 * @param subCommand
+	 *        the sub-command
+	 * @param hexBody
+	 *        the body of the packet, as a Hex-encoded string (whitespace
+	 *        allowed) or {@literal null} for no body
+	 * @return the packet
+	 * @throws DecoderException
+	 *         if there is a problem decoding the {@code hexBody}
+	 */
+	public static Packet forCommand(int address, int cmd, int subCommand, String hexBody)
+			throws DecoderException {
+		return forCommand(address, cmd, subCommand, decodeHex(hexBody));
+	}
+
+	/**
+	 * Construct a packet from components.
+	 * 
+	 * @param address
+	 *        the address to send the packet to
+	 * @param cmd
+	 *        the command
+	 * @param subCommand
+	 *        the sub-command
+	 * @param body
+	 *        the body of the packet
+	 * @return the packet
+	 */
+	public static Packet forCommand(int address, int cmd, int subCommand, byte[] body) {
+		int bodyLen = (body != null ? body.length : 0);
+		byte[] data = new byte[bodyLen + 9];
+		data[0] = PacketEnvelope.Start.getCode();
+		data[1] = PacketType.MasterLinkRequest.getCode();
+		data[2] = (byte) (address & 0xFF);
+		data[3] = (byte) (bodyLen & 0xFF);
+		data[4] = (byte) (cmd & 0xFF);
+		data[5] = (byte) (subCommand & 0xFF);
+		if ( body != null ) {
+			System.arraycopy(body, 0, data, 6, data.length);
+		}
+		data[bodyLen + 8] = PacketEnvelope.End.getCode();
+		Packet p = new Packet(data);
+		p.setCrc();
+		return p;
+	}
+
+	/**
+	 * Construct a packet from data components.
+	 * 
+	 * @param preamble
+	 *        the first 4 bytes of data, starting with
+	 *        {@link PacketEnvelope#Start} and ending with the data length byte
+	 * @param preambleOffset
+	 *        the offset within {@code preamble} to start at
+	 * @param data
+	 *        the remaining bytes of data for the entire packet, starting with
+	 *        the command byte through to the {@link PacketEnvelope#End} byte
+	 * @param dataOffset
+	 *        the offset within {@code data} to start at
+	 * @return the packet
+	 */
+	public static Packet forData(byte[] preamble, int preambleOffset, byte[] data, int dataOffset) {
+		if ( preamble == null || preamble.length < preambleOffset + 4 ) {
+			throw new IllegalArgumentException("Not enough data in preamble");
+		}
+		int dataLen = preamble[preambleOffset + 3];
+		if ( data == null || data.length < dataOffset + dataLen + 3 ) {
+			throw new IllegalArgumentException("Not enough data");
+		}
+		byte[] packetData = new byte[dataLen + 9];
+		System.arraycopy(preamble, preambleOffset, packetData, 0, 4);
+		System.arraycopy(data, dataOffset, packetData, 4, dataLen + 5);
+		return new Packet(packetData);
 	}
 
 	/**
@@ -124,6 +233,21 @@ public class Packet {
 	}
 
 	/**
+	 * Set the CRC bytes in the packet according to the calculated CRC from the
+	 * packet data.
+	 */
+	private void setCrc() {
+		int dataLength = this.header.getDataLength();
+		int crcOffset = offset + 6 + dataLength;
+		if ( this.data.length < crcOffset + 1 ) {
+			return;
+		}
+		int calcCrc = getCalculatedCrc();
+		this.data[crcOffset] = (byte) (calcCrc & 0xFF);
+		this.data[crcOffset + 1] = (byte) ((calcCrc >> 8) & 0xFF);
+	}
+
+	/**
 	 * Test if the data appears to be a properly encoded packet.
 	 * 
 	 * @return {@literal true} if the data represents a valid packet
@@ -132,4 +256,14 @@ public class Packet {
 		return (data != null && data.length > 8 && header != null && header.isValid()
 				&& getCalculatedCrc() == getCrc());
 	}
+
+	/**
+	 * Get the entire packet encoded as bytes.
+	 * 
+	 * @return the packet bytes
+	 */
+	public byte[] getBytes() {
+		return data;
+	}
+
 }

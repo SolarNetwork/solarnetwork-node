@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 
@@ -75,6 +76,55 @@ public class PacketTests {
 	public void bodyMissingData() {
 		Packet p = new Packet(new byte[] { 0x02, 0x05, 0x01, 0x02, 0x01, 0x01, (byte) 0x10 });
 		p.getBody();
+	}
+
+	@Test
+	public void constructFromHex() throws DecoderException {
+		Packet p = new Packet("0205010001010DAC03");
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+	}
+
+	@Test
+	public void constructFromHexWithWhitespace() throws DecoderException {
+		Packet p = new Packet("02 05 01 00 01 01 0D AC 03");
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+	}
+
+	@Test
+	public void forComponents() throws DecoderException {
+		Packet p = Packet.forCommand(1, 1, 1, (String) null);
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+		assertThat("Address", p.getHeader().getAddress(), equalTo((short) 1));
+		assertThat("Command", p.getHeader().getCommand(), equalTo((byte) 1));
+		assertThat("Sub-command", p.getHeader().getSubCommand(), equalTo((byte) 1));
+		assertThat("CRC", p.getCrc(), equalTo(0xAC0D));
+	}
+
+	@Test
+	public void forDataNoBody() {
+		Packet p = Packet.forData(new byte[] { 0x02, 0x05, 0x01, 0x00 }, 0,
+				new byte[] { 0x01, 0x01, (byte) 0x0D, (byte) 0xAC, 0x03 }, 0);
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+	}
+
+	@Test
+	public void forDataNoBodyWithinOffsets() {
+		byte[] bytes = new byte[] { (byte) 0xFF, 0x02, 0x05, 0x01, 0x00, 0x01, 0x01, (byte) 0x0D,
+				(byte) 0xAC, 0x03, (byte) 0xFF };
+		Packet p = Packet.forData(bytes, 1, bytes, 5);
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+		assertThat("Address", p.getHeader().getAddress(), equalTo((short) 1));
+		assertThat("Command", p.getHeader().getCommand(), equalTo((byte) 1));
+		assertThat("Sub-command", p.getHeader().getSubCommand(), equalTo((byte) 1));
+		assertThat("CRC", p.getCrc(), equalTo(0xAC0D));
+	}
+
+	@Test
+	public void forDataWithBody() {
+		byte[] bytes = new byte[] { 0x02, 0x05, 0x01, 0x02, 0x01, 0x01, (byte) 0xFF, (byte) 0xFE,
+				(byte) 0xBD, (byte) 0x5D, 0x03 };
+		Packet p = Packet.forData(bytes, 0, bytes, 4);
+		assertThat("Packet valid", p.isValid(), equalTo(true));
 	}
 
 }
