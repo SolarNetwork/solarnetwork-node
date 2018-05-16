@@ -61,6 +61,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private long sampleCacheMs = 5000;
 	private String sourceId = "ION6200";
+	private boolean backwards = false;
 
 	/**
 	 * Default constructor.
@@ -119,7 +120,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( currSample == null ) {
 			return null;
 		}
-		ION6200Datum d = new ION6200Datum(currSample, ACPhase.Total);
+		ION6200Datum d = new ION6200Datum(currSample, ACPhase.Total, this.backwards);
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -212,6 +213,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		results.add(new BasicToggleSettingSpecifier("megawattModel", defaults.sample.isMegawattModel()));
+		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
 
 		return results;
 	}
@@ -278,6 +280,16 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 */
 	public void setMegawattModel(boolean megawattModel) {
 		this.sample.setMegawattModel(megawattModel);
+	}
+
+	/**
+	 * Toggle the "backwards" current direction flag.
+	 * 
+	 * @param backwards
+	 *        {@literal true} to swap energy delivered and received values
+	 */
+	public void setBackwards(boolean backwards) {
+		this.backwards = backwards;
 	}
 
 }

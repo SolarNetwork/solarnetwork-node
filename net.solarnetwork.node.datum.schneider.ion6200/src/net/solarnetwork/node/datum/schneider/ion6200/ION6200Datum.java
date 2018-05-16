@@ -36,16 +36,25 @@ import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
 public class ION6200Datum extends GeneralNodeACEnergyDatum {
 
 	private final ION6200DataAccessor data;
+	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param backwards
+	 *        if {@literal true} then treat the meter as being installed
+	 *        backwards with respect to the current direction; in this case
+	 *        certain instantaneous measurements will be negated and certain
+	 *        accumulating properties will be switched (like <i>received</i>
+	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
+	 *        energy as {@code wattHoursReverse})
 	 */
-	public ION6200Datum(ION6200DataAccessor data, ACPhase phase) {
+	public ION6200Datum(ION6200DataAccessor data, ACPhase phase, boolean backwards) {
 		super();
 		this.data = data;
+		this.backwards = backwards;
 		if ( data.getDataTimestamp() > 0 ) {
 			setCreated(new Date(data.getDataTimestamp()));
 		}
@@ -58,11 +67,16 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum {
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setWatts(data.getActivePower());
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
-		setWattHourReading(data.getActiveEnergyReceived());
-		setReverseWattHourReading(data.getActiveEnergyDelivered());
+		setWatts((backwards ? -1 : 1) * data.getActivePower());
+		if ( backwards ) {
+			setWattHourReading(data.getActiveEnergyReceived());
+			setReverseWattHourReading(data.getActiveEnergyDelivered());
+		} else {
+			setWattHourReading(data.getActiveEnergyDelivered());
+			setReverseWattHourReading(data.getActiveEnergyReceived());
+		}
 	}
 
 	/**
