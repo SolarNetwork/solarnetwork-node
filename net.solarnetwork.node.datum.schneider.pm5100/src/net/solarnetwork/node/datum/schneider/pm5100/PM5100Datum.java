@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200Datum.java - 15/05/2018 7:39:50 AM
+ * PM5100Datum.java - 15/05/2018 7:39:50 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,12 +20,12 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.schneider.ion6200;
+package net.solarnetwork.node.datum.schneider.pm5100;
 
 import java.util.Date;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
+import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 
 /**
  * Datum for the ION6200 meter.
@@ -33,9 +33,9 @@ import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
  * @author matt
  * @version 1.0
  */
-public class ION6200Datum extends GeneralNodeACEnergyDatum {
+public class PM5100Datum extends GeneralNodeACEnergyDatum {
 
-	private final ION6200DataAccessor data;
+	private final PM5100DataAccessor data;
 	private final boolean backwards;
 
 	/**
@@ -51,7 +51,7 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum {
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public ION6200Datum(ION6200DataAccessor data, ACPhase phase, boolean backwards) {
+	public PM5100Datum(PM5100DataAccessor data, ACPhase phase, boolean backwards) {
 		super();
 		this.data = data;
 		this.backwards = backwards;
@@ -61,7 +61,7 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum {
 		populateMeasurements(data, phase);
 	}
 
-	private void populateMeasurements(ION6200DataAccessor data, ACPhase phase) {
+	private void populateMeasurements(PM5100DataAccessor data, ACPhase phase) {
 		setPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
@@ -84,7 +84,7 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum {
 	 * 
 	 * @return the data
 	 */
-	public ION6200DataAccessor getData() {
+	public PM5100DataAccessor getData() {
 		return data;
 	}
 

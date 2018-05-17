@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200DatumDataSource.java - 15/05/2018 7:02:47 AM
+ * PM5100DatumDataSource.java - 15/05/2018 7:02:47 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.schneider.ion6200;
+package net.solarnetwork.node.datum.schneider.pm5100;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,9 +35,10 @@ import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.schneider.meter.ION6200Data;
-import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
-import net.solarnetwork.node.hw.schneider.meter.ION6200VoltsMode;
+import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
+import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
+import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
+import net.solarnetwork.node.hw.schneider.meter.PM5100PowerSystem;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
@@ -48,26 +49,26 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} for the ION6200 series meter.
+ * {@link DatumDataSource} for the PM5100Data series meter.
  * 
  * @author matt
  * @version 1.0
  */
-public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
+public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private final ION6200Data sample;
+	private final PM5100Data sample;
 
 	private long sampleCacheMs = 5000;
-	private String sourceId = "ION6200";
+	private String sourceId = "PM5100";
 	private boolean backwards = false;
 
 	/**
 	 * Default constructor.
 	 */
-	public ION6200DatumDataSource() {
-		this(new ION6200Data());
+	public PM5100DatumDataSource() {
+		this(new PM5100Data());
 	}
 
 	/**
@@ -76,19 +77,19 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public ION6200DatumDataSource(ION6200Data sample) {
+	public PM5100DatumDataSource(PM5100Data sample) {
 		super();
 		this.sample = sample;
 	}
 
-	private ION6200Data getCurrentSample() {
-		ION6200Data currSample = null;
+	private PM5100Data getCurrentSample() {
+		PM5100Data currSample = null;
 		if ( isCachedSampleExpired() ) {
 			try {
-				currSample = performAction(new ModbusConnectionAction<ION6200Data>() {
+				currSample = performAction(new ModbusConnectionAction<PM5100Data>() {
 
 					@Override
-					public ION6200Data doWithConnection(ModbusConnection connection) throws IOException {
+					public PM5100Data doWithConnection(ModbusConnection connection) throws IOException {
 						getSample().readMeterData(connection);
 						return getSample().getSnapshot();
 					}
@@ -97,10 +98,10 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				if ( log.isTraceEnabled() && currSample != null ) {
 					log.trace(currSample.dataDebugString());
 				}
-				log.debug("Read ION6200 data: {}", currSample);
+				log.debug("Read PM5100 data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
-						"Communication problem reading from ION6200 device " + modbusNetwork(), e);
+						"Communication problem reading from PM5100 device " + modbusNetwork(), e);
 			}
 		} else {
 			currSample = getSample().getSnapshot();
@@ -116,11 +117,11 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final ION6200Data currSample = getCurrentSample();
+		final PM5100Data currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		ION6200Datum d = new ION6200Datum(currSample, ACPhase.Total, this.backwards);
+		PM5100Datum d = new PM5100Datum(currSample, ACPhase.Total, this.backwards);
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -144,26 +145,26 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return Collections.emptyList();
 	}
 
-	public ION6200Data getSample() {
+	public PM5100Data getSample() {
 		return sample;
 	}
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		sample.readConfigurationData(conn);
-		ION6200DataAccessor data = (ION6200DataAccessor) sample.copy();
+		PM5100DataAccessor data = (PM5100DataAccessor) sample.copy();
 		Map<String, Object> result = new LinkedHashMap<>(4);
-		Integer type = data.getDeviceType();
-		if ( type != null ) {
-			Integer firmwareVersion = data.getFirmwareRevision();
+		PM5100Model model = data.getModel();
+		if ( model != null ) {
+			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
 				result.put(INFO_KEY_DEVICE_MODEL,
-						String.format("%d (firmware %d)", type, firmwareVersion));
+						String.format("%s (firmware %s)", model, firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, type);
+				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
-		ION6200VoltsMode wiringMode = data.getVoltsMode();
+		PM5100PowerSystem wiringMode = data.getPowerSystem();
 		if ( wiringMode != null ) {
 			result.put("Wiring Mode", wiringMode.getDescription());
 		}
@@ -191,12 +192,12 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.schneider.ion6200";
+		return "net.solarnetwork.node.datum.schneider.pm5100";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "Schneider ION6200 Meter";
+		return "Schneider PM5100 Meter";
 	}
 
 	@Override
@@ -208,11 +209,10 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		ION6200DatumDataSource defaults = new ION6200DatumDataSource();
+		PM5100DatumDataSource defaults = new PM5100DatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		results.add(new BasicToggleSettingSpecifier("megawattModel", defaults.sample.isMegawattModel()));
 		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
 
 		return results;
@@ -228,7 +228,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(ION6200Data data) {
+	private String getSampleMessage(PM5100Data data) {
 		if ( data.getDataTimestamp() < 1 ) {
 			return "N/A";
 		}
@@ -269,17 +269,6 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
-	}
-
-	/**
-	 * Toggle the "Megawatt" model mode.
-	 * 
-	 * @param megawattModel
-	 *        {@literal true} to interpret the data for a Megawatt model device,
-	 *        {@literal false} for other models
-	 */
-	public void setMegawattModel(boolean megawattModel) {
-		this.sample.setMegawattModel(megawattModel);
 	}
 
 	/**

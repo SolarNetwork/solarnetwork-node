@@ -722,6 +722,9 @@ public class ModbusData {
 						buf.append("      , ");
 					}
 					last = k;
+					if ( odd ) {
+						last -= 1;
+					}
 				} else if ( odd ) {
 					buf.append(", ");
 				}
