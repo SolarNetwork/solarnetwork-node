@@ -13,6 +13,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.43,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.57.2,2.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[2.8,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="[1.3,2.0)"/>
 		<dependency org="commons-codec" name="commons-codec" rev="1.7" />
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>

@@ -25,10 +25,17 @@ package net.solarnetwork.node.hw.yaskawa.ecb.app;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketEnvelope;
+import net.solarnetwork.node.hw.yaskawa.ecb.PacketHeader;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork;
@@ -43,6 +50,8 @@ import net.solarnetwork.node.support.SerialPortBeanParameters;
 public class Cmdline {
 
 	private final SerialNetwork serial;
+
+	private static final Logger log = LoggerFactory.getLogger(Cmdline.class);
 
 	/**
 	 * Constructor.
@@ -113,6 +122,7 @@ public class Cmdline {
 		if ( components.length < 3 ) {
 			throw new IllegalArgumentException("send must provide ADDR CMD SUBCMD HEXBODY arguments");
 		}
+		log.debug("Got cmd components: {}", Arrays.toString(components));
 		int addr = Integer.parseInt(components[0]);
 		int cmd = Integer.parseInt(components[1]);
 		int subCmd = Integer.parseInt(components[2]);
@@ -125,10 +135,10 @@ public class Cmdline {
 			conn.writeMessage(msg.getBytes());
 			byte[] head = conn.readMarkedMessage(new byte[] { PacketEnvelope.Start.getCode() }, 4);
 			System.out.println("Got head: " + Hex.encodeHexString(head));
-			int dataLen = head[3];
-			byte[] resp = conn.readMarkedMessage(
-					new byte[] { msg.getHeader().getCommand(), msg.getHeader().getSubCommand() },
-					dataLen + 5);
+			PacketHeader header = new PacketHeader(head);
+			int dataLen = header.getDataLength();
+			byte[] resp = conn.readMarkedMessage(new byte[] { msg.getCommand(), msg.getSubCommand() },
+					dataLen + 3);
 			System.out.println("Got resp: " + Hex.encodeHexString(resp));
 			Packet respMsg = Packet.forData(head, 0, resp, 0);
 			System.out.println("Got packet: " + respMsg);
@@ -137,10 +147,7 @@ public class Cmdline {
 		}
 	}
 
-	private boolean handlePrompt(BufferedReader in, SerialConnection conn) throws IOException {
-		System.out.print("> ");
-		System.out.flush();
-		String input = in.readLine();
+	private boolean handleCommand(String input, SerialConnection conn) throws IOException {
 		ActionLine act = ActionLine.forLine(input);
 		try {
 			switch (act.action) {
@@ -160,14 +167,25 @@ public class Cmdline {
 		return true;
 	}
 
-	public void execute() throws IOException {
+	private boolean handlePrompt(BufferedReader in, SerialConnection conn) throws IOException {
+		System.out.print("> ");
+		System.out.flush();
+		String input = in.readLine();
+		return handleCommand(input, conn);
+	}
+
+	public void execute(String cmd) throws IOException {
 		SerialConnection conn = null;
 		BufferedReader reader;
 		try {
 			conn = serial.createConnection();
 			conn.open();
-			reader = new BufferedReader(new InputStreamReader(System.in));
-			handlePrompt(reader, conn);
+			if ( cmd != null && cmd.length() > 0 ) {
+				handleCommand(cmd, conn);
+			} else {
+				reader = new BufferedReader(new InputStreamReader(System.in));
+				handlePrompt(reader, conn);
+			}
 		} finally {
 			if ( conn != null ) {
 				conn.close();
@@ -216,8 +234,12 @@ public class Cmdline {
 		serialParams.setBaud(9600);
 		serialParams.setParity(0);
 		serialParams.setStopBits(1);
+		serialParams.setReceiveThreshold(-1);
+		serialParams.setRts(false);
+		serialParams.setDtr(false);
 
 		boolean oneShot = false;
+		List<String> nonSwitchArguments = new ArrayList<>(8);
 
 		for ( int i = 0; i < args.length; i++ ) {
 			String arg = args[i];
@@ -231,20 +253,28 @@ public class Cmdline {
 					nextArg = getArg(args, i + 1);
 					if ( nextArg != null ) {
 						serialParams.setSerialPort(nextArg);
+						i++;
 					}
 					break;
 
+				default:
+					nonSwitchArguments.add(arg);
+					break;
 			}
 		}
+
+		log.debug("One shot: {}", oneShot);
+
 		try {
 			Cmdline app = new Cmdline(serial);
 			if ( oneShot ) {
-				app.execute();
+				app.execute(nonSwitchArguments.stream().collect(Collectors.joining(" ")));
 			} else {
 				app.go();
 			}
 		} catch ( IOException e ) {
 			// ignore
 		}
+		System.exit(0);
 	}
 }

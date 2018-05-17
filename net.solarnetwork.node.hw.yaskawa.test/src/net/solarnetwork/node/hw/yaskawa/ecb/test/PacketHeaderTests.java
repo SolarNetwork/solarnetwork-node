@@ -54,12 +54,12 @@ public class PacketHeaderTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void constructNotEnoughData() {
-		new PacketHeader(new byte[5]);
+		new PacketHeader(new byte[3]);
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void constructNotEnoughDataWithOffset() {
-		new PacketHeader(new byte[10], 5);
+		new PacketHeader(new byte[10], 7);
 	}
 
 	@Test
@@ -70,8 +70,6 @@ public class PacketHeaderTests {
 		assertThat("Type", header.getType(), equalTo(PacketType.MasterLinkRequest));
 		assertThat("Address", header.getAddress(), equalTo((short) 1));
 		assertThat("Data length", header.getDataLength(), equalTo(0));
-		assertThat("Command", header.getCommand(), equalTo((byte) 0x03));
-		assertThat("Sub-command", header.getSubCommand(), equalTo((byte) 0x04));
 	}
 
 	@Test(expected = IllegalArgumentException.class)

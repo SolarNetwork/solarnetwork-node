@@ -23,12 +23,16 @@
 package net.solarnetwork.node.hw.yaskawa.ecb;
 
 /**
- * The start of a packet, up to but not including any packet data.
+ * The start of a packet, up to but not including any command, sub-command, or
+ * packet data.
  * 
  * @author matt
  * @version 1.0
  */
 public class PacketHeader {
+
+	/** The number of bytes in a packet header. */
+	public static final int BYTE_LENGTH = 4;
 
 	private final byte[] data;
 	private final int offset;
@@ -57,7 +61,7 @@ public class PacketHeader {
 	 */
 	public PacketHeader(byte[] data, int offset) {
 		super();
-		if ( data == null || data.length < offset + 6 ) {
+		if ( data == null || data.length < offset + BYTE_LENGTH ) {
 			throw new IllegalArgumentException("Not enough data available.");
 		}
 		this.data = data;
@@ -111,24 +115,6 @@ public class PacketHeader {
 	}
 
 	/**
-	 * Get the command byte.
-	 * 
-	 * @return the command
-	 */
-	public byte getCommand() {
-		return data[offset + 4];
-	}
-
-	/**
-	 * Get the sub-command byte.
-	 * 
-	 * @return the sub-command
-	 */
-	public byte getSubCommand() {
-		return data[offset + 5];
-	}
-
-	/**
 	 * Test if the header data appears to be a properly encoded packet header.
 	 * 
 	 * @return {@literal true} if the header data represents a valid packet
@@ -136,7 +122,7 @@ public class PacketHeader {
 	 */
 	public boolean isValid() {
 		try {
-			return (data != null && data.length > (offset + 5) && getEnvelope() == PacketEnvelope.Start
+			return (data != null && (offset + 3) < data.length && getEnvelope() == PacketEnvelope.Start
 					&& getType() != null);
 		} catch ( IllegalArgumentException e ) {
 			return false;

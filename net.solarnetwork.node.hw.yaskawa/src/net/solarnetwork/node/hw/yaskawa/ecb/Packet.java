@@ -127,8 +127,8 @@ public class Packet {
 	 * @return the packet
 	 */
 	public static Packet forCommand(int address, int cmd, int subCommand, byte[] body) {
-		int bodyLen = (body != null ? body.length : 0);
-		byte[] data = new byte[bodyLen + 9];
+		int bodyLen = 2 + (body != null ? body.length : 0);
+		byte[] data = new byte[bodyLen + 7];
 		data[0] = PacketEnvelope.Start.getCode();
 		data[1] = PacketType.MasterLinkRequest.getCode();
 		data[2] = (byte) (address & 0xFF);
@@ -136,9 +136,9 @@ public class Packet {
 		data[4] = (byte) (cmd & 0xFF);
 		data[5] = (byte) (subCommand & 0xFF);
 		if ( body != null ) {
-			System.arraycopy(body, 0, data, 6, data.length);
+			System.arraycopy(body, 0, data, 6, bodyLen - 2);
 		}
-		data[bodyLen + 8] = PacketEnvelope.End.getCode();
+		data[bodyLen + 6] = PacketEnvelope.End.getCode();
 		Packet p = new Packet(data);
 		p.setCrc();
 		return p;
@@ -147,11 +147,11 @@ public class Packet {
 	/**
 	 * Construct a packet from data components.
 	 * 
-	 * @param preamble
+	 * @param header
 	 *        the first 4 bytes of data, starting with
 	 *        {@link PacketEnvelope#Start} and ending with the data length byte
-	 * @param preambleOffset
-	 *        the offset within {@code preamble} to start at
+	 * @param headerOffset
+	 *        the offset within {@code header} to start at
 	 * @param data
 	 *        the remaining bytes of data for the entire packet, starting with
 	 *        the command byte through to the {@link PacketEnvelope#End} byte
@@ -159,18 +159,34 @@ public class Packet {
 	 *        the offset within {@code data} to start at
 	 * @return the packet
 	 */
-	public static Packet forData(byte[] preamble, int preambleOffset, byte[] data, int dataOffset) {
-		if ( preamble == null || preamble.length < preambleOffset + 4 ) {
-			throw new IllegalArgumentException("Not enough data in preamble");
+	public static Packet forData(byte[] header, int headerOffset, byte[] data, int dataOffset) {
+		if ( header == null || header.length < headerOffset + 4 ) {
+			throw new IllegalArgumentException("Not enough data in header");
 		}
-		int dataLen = preamble[preambleOffset + 3];
+		int dataLen = header[headerOffset + 3];
 		if ( data == null || data.length < dataOffset + dataLen + 3 ) {
 			throw new IllegalArgumentException("Not enough data");
 		}
-		byte[] packetData = new byte[dataLen + 9];
-		System.arraycopy(preamble, preambleOffset, packetData, 0, 4);
-		System.arraycopy(data, dataOffset, packetData, 4, dataLen + 5);
+		byte[] packetData = new byte[dataLen + 7];
+		System.arraycopy(header, headerOffset, packetData, 0, 4);
+		System.arraycopy(data, dataOffset, packetData, 4, dataLen + 3);
 		return new Packet(packetData);
+	}
+
+	/**
+	 * Construct from header and body hex data.
+	 * 
+	 * @param headerHex
+	 *        the header data, in hex
+	 * @param dataHex
+	 *        the rest of the packet data, in hex
+	 * @return the packet
+	 * @throws DecoderException
+	 *         if there is a problem decoding the {@code headerHex} or
+	 *         {@code dataHex}
+	 */
+	public static Packet forData(String headerHex, String dataHex) throws DecoderException {
+		return new Packet(headerHex + dataHex);
 	}
 
 	/**
@@ -183,11 +199,29 @@ public class Packet {
 	}
 
 	/**
+	 * Get the command byte.
+	 * 
+	 * @return the command
+	 */
+	public byte getCommand() {
+		return data[offset + 4];
+	}
+
+	/**
+	 * Get the sub-command byte.
+	 * 
+	 * @return the sub-command
+	 */
+	public byte getSubCommand() {
+		return data[offset + 5];
+	}
+
+	/**
 	 * Get the body of the packet.
 	 * 
 	 * <p>
 	 * This is the "data" portion of the packet, i.e. the packet without the
-	 * header or envelope bytes.
+	 * header, command, sub-command, or envelope bytes.
 	 * </p>
 	 * 
 	 * @return the body data
@@ -197,12 +231,12 @@ public class Packet {
 	 */
 	public byte[] getBody() {
 		int dataLength = this.header.getDataLength();
-		byte[] body = new byte[dataLength];
-		if ( offset + 6 + dataLength > this.data.length ) {
+		byte[] body = new byte[Math.max(dataLength - 2, 0)];
+		if ( offset + PacketHeader.BYTE_LENGTH + dataLength > this.data.length ) {
 			throw new IllegalArgumentException("Not enough data.");
 		}
 		if ( dataLength > 0 ) {
-			System.arraycopy(this.data, offset + 6, body, 0, dataLength);
+			System.arraycopy(this.data, offset + PacketHeader.BYTE_LENGTH + 2, body, 0, dataLength - 2);
 		}
 		return body;
 	}
@@ -214,7 +248,7 @@ public class Packet {
 	 */
 	public int getCalculatedCrc() {
 		int dataLength = this.header.getDataLength();
-		return DataUtils.crc16(this.data, offset + 1, dataLength + 5);
+		return DataUtils.crc16(this.data, offset + 1, dataLength + 3);
 	}
 
 	/**
@@ -224,7 +258,7 @@ public class Packet {
 	 */
 	public int getCrc() {
 		int dataLength = this.header.getDataLength();
-		int crcOffset = offset + 6 + dataLength;
+		int crcOffset = offset + PacketHeader.BYTE_LENGTH + dataLength;
 		if ( this.data.length < crcOffset + 1 ) {
 			return 0;
 		}
@@ -238,7 +272,7 @@ public class Packet {
 	 */
 	private void setCrc() {
 		int dataLength = this.header.getDataLength();
-		int crcOffset = offset + 6 + dataLength;
+		int crcOffset = offset + PacketHeader.BYTE_LENGTH + dataLength;
 		if ( this.data.length < crcOffset + 1 ) {
 			return;
 		}
