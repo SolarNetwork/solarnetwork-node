@@ -210,8 +210,8 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 
 	@Override
 	public Float getFrequency() {
-		Short v = getSignedInt16(PM5100Register.MeterFrequency.getAddress());
-		return (v != null ? v.floatValue() / 100.0f : null);
+		Float v = getFloat32(PM5100Register.MeterFrequency.getAddress());
+		return (v != null ? v.floatValue() : null);
 	}
 
 	@Override
