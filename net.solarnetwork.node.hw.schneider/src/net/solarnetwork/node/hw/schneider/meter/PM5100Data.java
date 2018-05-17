@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.domain.ACPhase;
@@ -37,6 +38,8 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * @since 2.4
  */
 public class PM5100Data extends ModbusData implements PM5100DataAccessor {
+
+	private static final int MAX_RESULTS = 64;
 
 	/**
 	 * Constructor.
@@ -82,7 +85,8 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
-				updateData(conn, m, PM5100Register.getRegisterAddressSet());
+				updateData(conn, m,
+						combineToReduceSize(PM5100Register.getRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});
@@ -99,7 +103,8 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				updateData(conn, m, PM5100Register.getMeterRegisterAddressSet());
+				updateData(conn, m,
+						combineToReduceSize(PM5100Register.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});

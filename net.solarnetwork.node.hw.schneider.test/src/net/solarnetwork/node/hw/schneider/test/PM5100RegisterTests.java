@@ -55,7 +55,7 @@ public class PM5100RegisterTests {
 		assertThat("Register set length", set.ranges(), arrayWithSize(6));
 		IntRange[] ranges = set.ranges();
 		assertThat("Range 0", ranges[0], equalTo(new IntRange(29, 48)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(79, 79)));
+		assertThat("Range 1", ranges[1], equalTo(new IntRange(89, 89)));
 		assertThat("Range 2", ranges[2], equalTo(new IntRange(128, 134)));
 		assertThat("Range 3", ranges[3], equalTo(new IntRange(1637, 1638)));
 		assertThat("Range 4", ranges[4], equalTo(new IntRange(1640, 1640)));
@@ -83,7 +83,7 @@ public class PM5100RegisterTests {
 		assertThat("Register set", notNullValue());
 		assertThat("Register set length", set.ranges(), arrayWithSize(7));
 		IntRange[] ranges = set.ranges();
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(29, 79)));
+		assertThat("Range 0", ranges[0], equalTo(new IntRange(29, 89)));
 		assertThat("Range 1", ranges[1], equalTo(new IntRange(128, 134)));
 		assertThat("Range 3", ranges[2], equalTo(new IntRange(1637, 1640)));
 		assertThat("Range 2", ranges[3], equalTo(new IntRange(2013, 2015)));

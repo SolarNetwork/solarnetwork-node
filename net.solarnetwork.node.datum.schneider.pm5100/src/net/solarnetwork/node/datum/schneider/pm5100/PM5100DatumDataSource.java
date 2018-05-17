@@ -159,7 +159,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
 				result.put(INFO_KEY_DEVICE_MODEL,
-						String.format("%s (firmware %d)", model, firmwareVersion));
+						String.format("%s (firmware %s)", model, firmwareVersion));
 			} else {
 				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
 			}

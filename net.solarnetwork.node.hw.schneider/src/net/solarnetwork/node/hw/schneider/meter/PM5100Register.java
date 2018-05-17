@@ -47,7 +47,7 @@ public enum PM5100Register implements ModbusReference {
 	InfoName(29, StringUtf8, 20),
 
 	/** Meter model, see {@link PM5100Model}. */
-	InfoModel(79, UInt16),
+	InfoModel(89, UInt16),
 
 	/** Manufacturing unit ID. */
 	InfoManufacturingUnitId(128, UInt16),
