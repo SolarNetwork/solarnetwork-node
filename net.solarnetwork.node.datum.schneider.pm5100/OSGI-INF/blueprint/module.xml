@@ -23,7 +23,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.schneider.ion6200.ION6200DatumDataSource</value>
+				<value>net.solarnetwork.node.datum.schneider.pm5100.PM5100DatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>
@@ -44,25 +44,25 @@
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Schneider ION6200 Meter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.schneider.ion6200"/>
+			<property name="displayName" value="Schneider PM5100 Meter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.schneider.pm5100"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.schneider.ion6200" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.schneider.pm5100" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.schneider.ion6200"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.schneider.pm5100"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="ion6200DatumLoggerTrigger"/>
+					<property name="name" value="pm5100DatumLoggerTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -89,13 +89,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="ion6200DatumLoggerJob"/>
+					<property name="name" value="pm5100DatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.schneider.ion6200.ION6200DatumDataSource">
+								<bean class="net.solarnetwork.node.datum.schneider.pm5100.PM5100DatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="modbusNetwork">

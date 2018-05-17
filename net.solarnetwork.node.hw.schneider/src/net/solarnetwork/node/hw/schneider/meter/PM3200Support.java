@@ -32,7 +32,6 @@ import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -60,7 +59,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 
@@ -188,21 +187,11 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 * @param data
 	 *        the data array
 	 * @return the parsed date, or <em>null</em> if not available
+	 * @deprecated use {@link DataUtils#parseDateTime(int[])}
 	 */
+	@Deprecated
 	public static LocalDateTime parseDateTime(final int[] data) {
-		LocalDateTime result = null;
-		if ( data != null && data.length == 4 ) {
-			int year = 2000 + (data[0] & 0x7F);
-			int month = (data[1] & 0xF00) >> 8;
-			int day = (data[1] & 0x1F);
-			int hour = (data[2] & 0x1F00) >> 8;
-			int minute = (data[2] & 0x3F);
-			int ms = (data[3]); // this is really seconds + milliseconds
-			int sec = ms / 1000;
-			ms = ms - (sec * 1000);
-			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
-		}
-		return result;
+		return DataUtils.parseDateTime(data);
 	}
 
 	/**
@@ -344,19 +333,15 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	/**
 	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
 	 * 
-	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
+	 * <p> This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
 	 * create the actual Event, which may be overridden by extending classes.
 	 * </p>
 	 * 
-	 * @param datum
-	 *        the {@link Datum} to post the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @since 1.3
-	 * @deprecated use
-	 *             {@link ModbusDeviceDatumDataSourceSupport#postDatumCapturedEvent(Datum)
+	 * @param datum the {@link Datum} to post the event for @param
+	 * eventDatumType the Datum class to use for the {@link
+	 * DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property @since
+	 * 1.3 @deprecated use {@link
+	 * ModbusDeviceDatumDataSourceSupport#postDatumCapturedEvent(Datum)
 	 */
 	@Deprecated
 	protected final void postDatumCapturedEvent(final Datum datum,
@@ -365,23 +350,18 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	}
 
 	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
+	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link
+	 * Event} object out of a {@link Datum}.
 	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * <p> This method will populate all simple properties of the given {@link
+	 * Datum} into the event properties, along with the {@link
+	 * DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
 	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @return the new Event instance
-	 * @since 1.3
-	 * @deprecated use
-	 *             {@link ModbusDeviceDatumDataSourceSupport#createDatumCapturedEvent(Datum)
+	 * @param datum the datum to create the event for @param eventDatumType the
+	 * Datum class to use for the {@link
+	 * DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property @return the new
+	 * Event instance @since 1.3 @deprecated use {@link
+	 * ModbusDeviceDatumDataSourceSupport#createDatumCapturedEvent(Datum)
 	 */
 	@Deprecated
 	protected Event createDatumCapturedEvent(final Datum datum,

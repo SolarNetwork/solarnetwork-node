@@ -39,7 +39,7 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ModbusDataTests {
 
@@ -425,5 +425,22 @@ public class ModbusDataTests {
 		String str = d.dataDebugString();
 		assertThat("Debug string", str, equalTo(
 				"ModbusData{\n\t    0: 0xABCD, 0xFEDC\n\t    2: 0x1122, 0x3456\n\t    8:       , 0x9999\n\t 1000: 0xFF01, 0xFF02\n\t 1002: 0xFF03, 0xFF04\n\t 1004: 0xFF05\n}"));
+	}
+
+	@Test
+	public void debugStringLeadingOdd() {
+		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { 0xABCD, 0xFEDC, 0x1122 }, 1);
+				return false;
+			}
+		});
+
+		String str = d.dataDebugString();
+		assertThat("Debug string", str,
+				equalTo("ModbusData{\n\t    0:       , 0xABCD\n\t    2: 0xFEDC, 0x1122\n}"));
 	}
 }

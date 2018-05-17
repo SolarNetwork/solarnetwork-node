@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200DataAccessor.java - 15/05/2018 7:28:15 AM
+ * PM5100Model.java - 17/05/2018 3:13:41 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -23,40 +23,68 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 /**
- * API for accessing ION6200 data elements.
+ * Model information from a PM5100 series meter.
  * 
  * @author matt
  * @version 1.0
  * @since 2.4
  */
-public interface ION6200DataAccessor extends MeterDataAccessor {
+public enum PM5100Model {
+
+	EM7230(15255),
+	EM7280(15256),
+	EM7630(15257),
+	EM7680(15258),
+
+	PM5000(15240),
+	PM5010(15241),
+
+	PM5100(15278),
+	PM5110(15270),
+	PM5111(15271),
+
+	PM5200(15242),
+	PM5250(15243),
+
+	PM5310(15272),
+	PM5320(15275),
+	PM5330(15273),
+	PM5331(15274),
+	PM5340(15276),
+	PM5341(15277),
+	PM5350(15244);
+
+	private final int code;
+
+	private PM5100Model(int code) {
+		this.code = code;
+	}
 
 	/**
-	 * Get the device serial number.
+	 * Get the model code.
 	 * 
-	 * @return the serial number
+	 * @return the code
 	 */
-	Long getSerialNumber();
+	public int getCode() {
+		return code;
+	}
 
 	/**
-	 * Get the device firmware revision.
+	 * Get an enumeration for a code.
 	 * 
-	 * @return the firmware revision
+	 * @param code
+	 *        the code to get the enumeration for
+	 * @return the enumeration
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
 	 */
-	Integer getFirmwareRevision();
-
-	/**
-	 * Get the device type, e.g. model number like {@literal 6200}.
-	 * 
-	 * @return the device type
-	 */
-	Integer getDeviceType();
-
-	/**
-	 * Get the volts mode.
-	 * 
-	 * @return the mode
-	 */
-	ION6200VoltsMode getVoltsMode();
+	public static PM5100Model forCode(int code) {
+		for ( PM5100Model e : PM5100Model.values() ) {
+			if ( e.code == code ) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("Unsupported code: " + code);
+	}
 
 }

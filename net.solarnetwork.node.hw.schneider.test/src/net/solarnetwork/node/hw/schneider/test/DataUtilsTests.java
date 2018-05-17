@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200DataAccessor.java - 15/05/2018 7:28:15 AM
+ * DataUtilsTests.java - 17/05/2018 3:49:59 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,43 +20,27 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.schneider.meter;
+package net.solarnetwork.node.hw.schneider.test;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+import org.joda.time.LocalDateTime;
+import org.junit.Test;
+import net.solarnetwork.node.hw.schneider.meter.DataUtils;
 
 /**
- * API for accessing ION6200 data elements.
+ * Test cases for the {@link DataUtils} class.
  * 
  * @author matt
  * @version 1.0
- * @since 2.4
  */
-public interface ION6200DataAccessor extends MeterDataAccessor {
+public class DataUtilsTests {
 
-	/**
-	 * Get the device serial number.
-	 * 
-	 * @return the serial number
-	 */
-	Long getSerialNumber();
-
-	/**
-	 * Get the device firmware revision.
-	 * 
-	 * @return the firmware revision
-	 */
-	Integer getFirmwareRevision();
-
-	/**
-	 * Get the device type, e.g. model number like {@literal 6200}.
-	 * 
-	 * @return the device type
-	 */
-	Integer getDeviceType();
-
-	/**
-	 * Get the volts mode.
-	 * 
-	 * @return the mode
-	 */
-	ION6200VoltsMode getVoltsMode();
+	@Test
+	public void testReadMeterManufactureDate() {
+		LocalDateTime result = DataUtils
+				.parseDateTime(new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
+		assertThat("Date", result, equalTo(new LocalDateTime(2014, 7, 31, 12, 27, 30, 599)));
+	}
 
 }

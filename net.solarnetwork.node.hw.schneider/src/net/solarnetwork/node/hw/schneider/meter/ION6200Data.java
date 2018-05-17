@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import java.math.BigDecimal;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
@@ -40,6 +41,8 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  */
 public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 
+	private static final int MAX_RESULTS = 64;
+
 	private static final BigDecimal MEGA = new BigDecimal(1000000);
 	private static final BigDecimal KILO = new BigDecimal(1000);
 	private static final BigDecimal HECTO = new BigDecimal(100);
@@ -57,7 +60,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	}
 
 	/**
-	 * Default constructor.
+	 * Constructor.
 	 * 
 	 * @boolean megawatt {@literal true} if this data is from the Megawatt
 	 *          version of the 6200 meter
@@ -125,7 +128,8 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
-				updateData(conn, m, ION6200Register.getRegisterAddressSet());
+				updateData(conn, m,
+						combineToReduceSize(ION6200Register.getRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});
@@ -142,7 +146,8 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				updateData(conn, m, ION6200Register.getMeterRegisterAddressSet());
+				updateData(conn, m,
+						combineToReduceSize(ION6200Register.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});
@@ -331,6 +336,16 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	@Override
 	public Long getReactiveEnergyReceived() {
 		return getEnergyValue(ION6200Register.MeterReactiveEnergyReceived);
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
 	}
 
 }

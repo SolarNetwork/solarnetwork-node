@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200Register.java - 14/05/2018 2:38:37 PM
+ * PM5100Register.java - 17/05/2018 3:13:57 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int64;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import bak.pcj.set.IntRangeSet;
@@ -31,129 +33,116 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
- * Enumeration of Modbus register mappings for the ION6200 series meter.
+ * Enumeration of Modbus register mappings for the PM5100 series meter.
  * 
  * @author matt
  * @version 1.0
  * @since 2.4
  */
-public enum ION6200Register implements ModbusReference {
+public enum PM5100Register implements ModbusReference {
+
+	// Information
+
+	/** Meter name. */
+	InfoName(29, StringUtf8, 20),
+
+	/** Meter model, see {@link PM5100Model}. */
+	InfoModel(89, UInt16),
+
+	/** Manufacturing unit ID. */
+	InfoManufacturingUnitId(128, UInt16),
 
 	/** Serial number. */
-	InfoSerialNumber(0, UInt32),
+	InfoSerialNumber(129, UInt32),
 
-	/** Firmware revision. */
-	InfoFirmwareVersion(2, UInt16),
+	/** Manufacture date, in Schneider "date time" format. */
+	InfoManufactureDate(131, UInt16, 4),
 
-	/** Firmware revision. */
-	InfoDeviceType(12, UInt16),
+	/** Firmware major revision. */
+	InfoFirmwareRevisionMajor(1637, UInt16),
 
-	/** Line-to-neutral voltage average, reported in PVS. */
-	MeterVoltageLineNeutralAverage(102, UInt16),
+	/** Firmware minor revision. */
+	InfoFirmwareRevisionMinor(1638, UInt16),
 
-	/** Current average, reported in PCS. */
-	MeterCurrentAverage(110, UInt16),
+	/** Firmware patch revision. */
+	InfoFirmwareRevisionPatch(1640, UInt16),
 
-	/** AC frequency, reported in x100 Hz scale. */
-	MeterFrequency(114, Int16),
+	// Configuration
 
-	/** Power factor total, in x100 decimal scale. */
-	MeterPowerFactorTotal(115, Int16),
+	/** Number of phases. */
+	ConfigNumPhases(2013, UInt16),
 
-	/** Active power total, reported in PPS kW or MW. */
-	MeterActivePowerTotal(119, Int16),
+	/** Number of wires. */
+	ConfigNumWires(2014, UInt16),
 
-	/** Reactive power total, reported in PPS VAR. */
-	MeterReactivePowerTotal(120, Int16),
+	/** Power system, see {@link PM5100PowerSystem}. */
+	ConfigPowerSystem(2015, UInt16),
 
-	/** Apparent power total, reported in PPS VA. */
-	MeterApparentPowerTotal(121, Int16),
+	// Meter data
 
-	/** Total energy delivered, in kWh or MWh. */
-	MeterActiveEnergyDelivered(137, UInt32),
+	/** Current average, reported in A. */
+	MeterCurrentAverage(3009, Float32),
 
-	/** Total energy received, in kWh or MWh. */
-	MeterActiveEnergyReceived(139, UInt32),
+	/** Line-to-neutral voltage average, reported in V. */
+	MeterVoltageLineNeutralAverage(3035, Float32),
 
-	/** Total reactive energy delivered, in kVARh or MVARh. */
-	MeterReactiveEnergyDelivered(141, UInt32),
+	/** Active power total, reported in kW. */
+	MeterActivePowerTotal(3059, Float32),
 
-	/** Total reactive energy received, in kVARh or MVARh. */
-	MeterReactiveEnergyReceived(143, UInt32),
+	/** Reactive power total, reported in kVAR. */
+	MeterReactivePowerTotal(3067, Float32),
 
-	/**
-	 * The voltage mode enumeration.
-	 * 
-	 * <dl>
-	 * <dt>0</dt>
-	 * <dd>4W (4-Wire WYE)</dd>
-	 * <dt>1</dt>
-	 * <dd>dELt (Delta)</dd>
-	 * <dt>2</dt>
-	 * <dd>2W (Single Phase)</dd>
-	 * <dt>3</dt>
-	 * <dd>dEM (Demonstration)</dd>
-	 * <dt>4</dt>
-	 * <dd>3W (3-Wire WYE)</dd>
-	 * <dt>5</dt>
-	 * <dd>dELd (Delta direct)</dd>
-	 * </dl>
-	 */
-	ConfigVoltsMode(4000, UInt16),
+	/** Apparent power total, reported in kVA. */
+	MeterApparentPowerTotal(3075, Float32),
 
-	/**
-	 * The programmable voltage scale (PVS) enumeration.
-	 * 
-	 * <p>
-	 * All programmable scale enumerations follow this definition:
-	 * </p>
-	 * 
-	 * <dl>
-	 * <dt>0</dt>
-	 * <dd>0.001</dd>
-	 * <dt>1</dt>
-	 * <dd>0.01</dd>
-	 * <dt>2</dt>
-	 * <dd>0.1</dd>
-	 * <dt>3</dt>
-	 * <dd>1</dd>
-	 * <dt>4</dt>
-	 * <dd>10</dd>
-	 * <dt>5</dt>
-	 * <dd>100</dd>
-	 * <dt>6</dt>
-	 * <dd>1000</dd>
-	 * </dl>
-	 */
-	ConfigProgrammableVoltageScale(4011, UInt16),
+	/** Power factor total, in 4Q FP PF. */
+	MeterPowerFactorTotal(3083, Float32),
 
-	/** The programmable current scale (PCS) enumeration. */
-	ConfigProgrammableCurrentScale(4012, UInt16),
+	/** AC frequency, reported in Hz. */
+	MeterFrequency(3109, Float32),
 
-	/** The programmable neutral current scale (PnS) enumeration. */
-	ConfigProgrammableNeutralCurrentScale(4013, UInt16),
+	/** Total energy delivered (imported), in Wh. */
+	MeterActiveEnergyDelivered(3203, Int64),
 
-	/** The programmable power scale (PPS) enumeration. */
-	ConfigProgrammablePowerScale(4014, UInt16);
+	/** Total energy received (exported), in Wh. */
+	MeterActiveEnergyReceived(3207, Int64),
+
+	/** Total reactive energy delivered (imported), in VARh. */
+	MeterReactiveEnergyDelivered(3219, Int64),
+
+	/** Total reactive energy received (exported), in VARh. */
+	MeterReactiveEnergyReceived(3223, Int64),
+
+	/** Total apparent energy delivered (imported), in VAh. */
+	MeterApparentEnergyDelivered(3235, Int64),
+
+	/** Total apparent energy received (exported), in VAh. */
+	MeterApparentEnergyReceived(3239, Int64);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createMeterRegisterAddressSet();
 
 	private final int address;
 	private final ModbusDataType dataType;
+	private final int wordLength;
 
-	private ION6200Register(int address, ModbusDataType dataType) {
+	private PM5100Register(int address, ModbusDataType dataType) {
+		this(address, dataType, dataType.getWordLength());
+	}
+
+	private PM5100Register(int address, ModbusDataType dataType, int wordLength) {
 		this.address = address;
 		this.dataType = dataType;
+		this.wordLength = wordLength;
 	}
 
 	private static IntRangeSet createMeterRegisterAddressSet() {
 		IntRangeSet set = new IntRangeSet();
-		for ( ION6200Register r : ION6200Register.values() ) {
+		for ( PM5100Register r : PM5100Register.values() ) {
 			if ( !r.name().startsWith("Meter") ) {
 				continue;
 			}
-			int len = r.getDataType().getWordLength();
+			int len = r.getWordLength();
 			if ( len > 0 ) {
 				set.addAll(r.getAddress(), r.getAddress() + len - 1);
 			}
@@ -163,11 +152,11 @@ public enum ION6200Register implements ModbusReference {
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
 		IntRangeSet set = new IntRangeSet();
-		for ( ION6200Register r : ION6200Register.values() ) {
+		for ( PM5100Register r : PM5100Register.values() ) {
 			if ( !(r.name().startsWith("Info") || r.name().startsWith("Config")) ) {
 				continue;
 			}
-			int len = r.getDataType().getWordLength();
+			int len = r.getWordLength();
 			if ( len > 0 ) {
 				set.addAll(r.getAddress(), r.getAddress() + len - 1);
 			}
@@ -188,6 +177,15 @@ public enum ION6200Register implements ModbusReference {
 	@Override
 	public ModbusReadFunction getFunction() {
 		return ModbusReadFunction.ReadHoldingRegister;
+	}
+
+	/**
+	 * Get the data type word length.
+	 * 
+	 * @return the word length
+	 */
+	public int getWordLength() {
+		return wordLength;
 	}
 
 	/**
