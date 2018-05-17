@@ -63,7 +63,7 @@ public enum ION6200Register implements ModbusReference {
 	/** Active power total, reported in PPS kW or MW. */
 	MeterActivePowerTotal(119, Int16),
 
-	/** Active power total, reported in PPS VAR. */
+	/** Reactive power total, reported in PPS VAR. */
 	MeterReactivePowerTotal(120, Int16),
 
 	/** Apparent power total, reported in PPS VA. */
