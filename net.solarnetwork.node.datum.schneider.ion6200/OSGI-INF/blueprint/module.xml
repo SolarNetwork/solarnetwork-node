@@ -44,7 +44,7 @@
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="ION6200 Meter"/>
+			<property name="displayName" value="Schneider ION6200 Meter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.schneider.ion6200"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
