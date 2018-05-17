@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200DataAccessor.java - 15/05/2018 7:28:15 AM
+ * PM5100DataAccessor.java - 17/05/2018 3:13:41 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -23,13 +23,13 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 /**
- * API for accessing ION6200 data elements.
+ * API for reading PM5100 series meter data.
  * 
  * @author matt
  * @version 1.0
  * @since 2.4
  */
-public interface ION6200DataAccessor extends MeterDataAccessor {
+public interface PM5100DataAccessor extends MeterDataAccessor {
 
 	/**
 	 * Get the device serial number.
@@ -41,22 +41,36 @@ public interface ION6200DataAccessor extends MeterDataAccessor {
 	/**
 	 * Get the device firmware revision.
 	 * 
-	 * @return the firmware revision
+	 * @return the firmware revision, as {@literal X.Y.Z}.
 	 */
-	Integer getFirmwareRevision();
+	String getFirmwareRevision();
 
 	/**
-	 * Get the device type, e.g. model number like {@literal 6200}.
+	 * Get the model.
 	 * 
-	 * @return the device type
+	 * @return the model
 	 */
-	Integer getDeviceType();
+	PM5100Model getModel();
 
 	/**
-	 * Get the volts mode.
+	 * Get the number of phases configured.
 	 * 
-	 * @return the mode
+	 * @return the phase count
 	 */
-	ION6200VoltsMode getVoltsMode();
+	Integer getPhaseCount();
+
+	/**
+	 * Get the number of wires configured.
+	 * 
+	 * @return the wire count
+	 */
+	Integer getWireCount();
+
+	/**
+	 * Get the power system configuration.
+	 * 
+	 * @return the power system
+	 */
+	PM5100PowerSystem getPowerSystem();
 
 }

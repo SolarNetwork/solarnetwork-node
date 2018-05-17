@@ -57,7 +57,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	}
 
 	/**
-	 * Default constructor.
+	 * Constructor.
 	 * 
 	 * @boolean megawatt {@literal true} if this data is from the Megawatt
 	 *          version of the 6200 meter
@@ -331,6 +331,16 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	@Override
 	public Long getReactiveEnergyReceived() {
 		return getEnergyValue(ION6200Register.MeterReactiveEnergyReceived);
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
 	}
 
 }

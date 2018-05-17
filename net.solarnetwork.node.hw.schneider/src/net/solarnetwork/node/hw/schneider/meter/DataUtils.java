@@ -1,5 +1,5 @@
 /* ==================================================================
- * ION6200DataAccessor.java - 15/05/2018 7:28:15 AM
+ * DataUtils.java - 17/05/2018 3:47:31 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -22,41 +22,42 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import org.joda.time.LocalDateTime;
+
 /**
- * API for accessing ION6200 data elements.
+ * Utilities for dealing with Schneider meter data.
  * 
  * @author matt
  * @version 1.0
  * @since 2.4
  */
-public interface ION6200DataAccessor extends MeterDataAccessor {
+public final class DataUtils {
 
 	/**
-	 * Get the device serial number.
+	 * Parse a DateTime value from raw Modbus register values.
 	 * 
-	 * @return the serial number
-	 */
-	Long getSerialNumber();
-
-	/**
-	 * Get the device firmware revision.
+	 * <p>
+	 * The {@code data} array is expected to have a length of {@code 4}.
+	 * </p>
 	 * 
-	 * @return the firmware revision
+	 * @param data
+	 *        the data array
+	 * @return the parsed date, or {@literal null} if not available
 	 */
-	Integer getFirmwareRevision();
-
-	/**
-	 * Get the device type, e.g. model number like {@literal 6200}.
-	 * 
-	 * @return the device type
-	 */
-	Integer getDeviceType();
-
-	/**
-	 * Get the volts mode.
-	 * 
-	 * @return the mode
-	 */
-	ION6200VoltsMode getVoltsMode();
+	public static LocalDateTime parseDateTime(final int[] data) {
+		LocalDateTime result = null;
+		if ( data != null && data.length == 4 ) {
+			int year = 2000 + (data[0] & 0x7F);
+			int month = (data[1] & 0xF00) >> 8;
+			int day = (data[1] & 0x1F);
+			int hour = (data[2] & 0x1F00) >> 8;
+			int minute = (data[2] & 0x3F);
+			int ms = (data[3]); // this is really seconds + milliseconds
+			int sec = ms / 1000;
+			ms = ms - (sec * 1000);
+			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
+		}
+		return result;
+	}
 
 }
