@@ -31,7 +31,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
- * Enumeration of Modbus register mappings for the IOS6200 series meter.
+ * Enumeration of Modbus register mappings for the ION6200 series meter.
  * 
  * @author matt
  * @version 1.0
