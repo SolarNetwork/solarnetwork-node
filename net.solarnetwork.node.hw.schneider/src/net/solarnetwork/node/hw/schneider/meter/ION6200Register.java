@@ -155,7 +155,7 @@ public enum ION6200Register implements ModbusReference {
 			}
 			int len = r.getDataType().getWordLength();
 			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len);
+				set.addAll(r.getAddress(), r.getAddress() + len - 1);
 			}
 		}
 		return set;
@@ -169,7 +169,7 @@ public enum ION6200Register implements ModbusReference {
 			}
 			int len = r.getDataType().getWordLength();
 			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len);
+				set.addAll(r.getAddress(), r.getAddress() + len - 1);
 			}
 		}
 		return set;
@@ -208,7 +208,7 @@ public enum ION6200Register implements ModbusReference {
 	 * 
 	 * <p>
 	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
-	 * and <i>exclusive</i> ending addresses.
+	 * and ending addresses.
 	 * </p>
 	 * 
 	 * @return the range set

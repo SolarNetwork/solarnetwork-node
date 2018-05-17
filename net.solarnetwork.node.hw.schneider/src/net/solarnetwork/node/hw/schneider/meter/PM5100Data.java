@@ -55,6 +55,11 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		super(other);
 	}
 
+	@Override
+	public ModbusData copy() {
+		return new PM5100Data(this);
+	}
+
 	/**
 	 * Get a snapshot copy of the data.
 	 * 
