@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
 import java.util.Arrays;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * An ECB message packet.
@@ -248,7 +249,7 @@ public class Packet {
 	 */
 	public int getCalculatedCrc() {
 		int dataLength = this.header.getDataLength();
-		return DataUtils.crc16(this.data, offset + 1, dataLength + 3);
+		return NumberUtils.crc16(this.data, offset + 1, dataLength + 3);
 	}
 
 	/**

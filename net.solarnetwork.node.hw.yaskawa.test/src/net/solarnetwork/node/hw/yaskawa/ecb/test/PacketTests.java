@@ -31,7 +31,6 @@ import java.math.BigInteger;
 import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
-import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 
 /**
  * Test cases for the {@link Packet} class.
@@ -208,9 +207,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(8));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		BigInteger energy = ModbusDataUtils.parseUnsignedInt64(words[0], words[1], words[2], words[3]);
-		assertThat("Lifetime total energy", energy, equalTo(new BigInteger("3189632")));
+		BigInteger energy = new BigInteger(1, body);
+		assertThat("Lifetime total energy", energy.intValue(), equalTo(3189632));
 	}
 
 	@Test
@@ -219,9 +217,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(8));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		BigInteger energy = ModbusDataUtils.parseUnsignedInt64(words[0], words[1], words[2], words[3]);
-		assertThat("Day total energy", energy, equalTo(new BigInteger("42761")));
+		BigInteger energy = new BigInteger(1, body);
+		assertThat("Day total energy", energy.intValue(), equalTo(42761));
 	}
 
 	@Test
@@ -230,9 +227,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int power = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("PV1 Power", power, equalTo(112));
+		BigInteger power = new BigInteger(1, body);
+		assertThat("PV1 Power", power.intValue(), equalTo(112));
 	}
 
 	@Test
@@ -241,9 +237,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int power = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("PV 2 Power", power, equalTo(40));
+		BigInteger power = new BigInteger(1, body);
+		assertThat("PV 2 Power", power.intValue(), equalTo(40));
 	}
 
 	@Test
@@ -252,9 +247,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int power = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("AC combined avg voltage", power, equalTo(228));
+		BigInteger power = new BigInteger(1, body);
+		assertThat("AC combined avg voltage", power.intValue(), equalTo(228));
 	}
 
 	@Test
@@ -263,9 +257,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int freq = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("AC freq Hz x100", freq, equalTo(6001));
+		BigInteger freq = new BigInteger(1, body);
+		assertThat("AC freq Hz x100", freq.intValue(), equalTo(6001));
 	}
 
 	@Test
@@ -274,9 +267,8 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int freq = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("AC current A x10", freq, equalTo(18));
+		BigInteger current = new BigInteger(1, body);
+		assertThat("AC current A x10", current.intValue(), equalTo(18));
 	}
 
 	@Test
@@ -285,8 +277,7 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		int[] words = ModbusDataUtils.encodeBytes(body);
-		int freq = ModbusDataUtils.parseUnsignedInt16(words[0]);
-		assertThat("AC power W", freq, equalTo(42));
+		BigInteger power = new BigInteger(1, body);
+		assertThat("AC power W", power.intValue(), equalTo(42));
 	}
 }
