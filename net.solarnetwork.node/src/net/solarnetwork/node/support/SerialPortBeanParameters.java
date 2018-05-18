@@ -18,47 +18,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.support;
 
 import java.util.List;
-
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Parameters to configure a serial port with.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>serialPort</dt>
- * <dd>The name of the serial port to use. This is OS-specific, for example
- * <code>/dev/ttyUSB0</code>.</dd>
- * 
- * <dt>commPortAppName</dt>
- * <dd>A user-defined name to associate with the serial port. The serial port
- * can only be used by one application at a time.</dd>
- * 
- * <dt>maxWait</dt>
- * <dd>A maximum number of milliseconds to wait for the serial port to return
- * data, before giving up. This differs from the {@code receiveTimeout} 
- * setting in that this timeout is not set on the port itself, but is managed
- * by the application.</dd>
- * </dl>
- * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class SerialPortBeanParameters extends SerialPortBean {
 
 	private static final SerialPortBeanParameters DEFAULTS = new SerialPortBeanParameters();
-	
+
 	private String serialPort = "/dev/ttyUSB0";
 	private String commPortAppName = "SolarNode";
 	private long maxWait = 0;
@@ -66,7 +43,8 @@ public class SerialPortBeanParameters extends SerialPortBean {
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param prefix the bean prefix to use
+	 * @param prefix
+	 *        the bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(String prefix) {
@@ -76,41 +54,91 @@ public class SerialPortBeanParameters extends SerialPortBean {
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param defaults the default values to use
-	 * @param prefix the bean prefix to use
+	 * @param defaults
+	 *        the default values to use
+	 * @param prefix
+	 *        the bean prefix to use
 	 * @return setting specifiers
 	 */
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers(
-			SerialPortBeanParameters defaults, String prefix) {
-		List<SettingSpecifier> results = SerialPortBean.getDefaultSettingSpecifiers(
-				defaults, prefix);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "commPortAppName", 
+	public static List<SettingSpecifier> getDefaultSettingSpecifiers(SerialPortBeanParameters defaults,
+			String prefix) {
+		List<SettingSpecifier> results = SerialPortBean.getDefaultSettingSpecifiers(defaults, prefix);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "commPortAppName",
 				defaults.getCommPortAppName()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxWait", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxWait",
 				String.valueOf(defaults.getMaxWait())));
 		return results;
 	}
 
+	/**
+	 * Get the maximum wait, in milliseconds.
+	 * 
+	 * @return the maximum wait, or {@literal 0} for no limit
+	 */
 	public long getMaxWait() {
 		return maxWait;
 	}
 
+	/**
+	 * Set a maximum number of milliseconds to wait for the serial port to
+	 * return data, before giving up.
+	 * 
+	 * <p>
+	 * This differs from the {@code receiveTimeout} setting in that this timeout
+	 * is not set on the port itself, but is managed by the application.
+	 * </p>
+	 * 
+	 * @param maxWait
+	 *        the maximum wait time, in milliseconds, or {@literal 0} for no
+	 *        limit
+	 */
 	public void setMaxWait(long maxWait) {
 		this.maxWait = maxWait;
 	}
 
+	/**
+	 * Get the name of the serial port to use.
+	 * 
+	 * @return the serial port name
+	 */
 	public String getSerialPort() {
 		return serialPort;
 	}
 
+	/**
+	 * Set the name of the serial port to use.
+	 * 
+	 * <p>
+	 * This is OS-specific, for example {@literal /dev/ttyUSB0} or
+	 * {@literal COM1}.
+	 * </p>
+	 * 
+	 * @param serialPort
+	 *        the name of the serial port to use
+	 */
 	public void setSerialPort(String serialPort) {
 		this.serialPort = serialPort;
 	}
 
+	/**
+	 * Get the serial port user-defined name.
+	 * 
+	 * @return the app name
+	 */
 	public String getCommPortAppName() {
 		return commPortAppName;
 	}
 
+	/**
+	 * Set a user-defined name to associate with the serial port.
+	 * 
+	 * <p>
+	 * The serial port can only be used by one application at a time.
+	 * </p>
+	 * 
+	 * @param commPortAppName
+	 *        the app name
+	 */
 	public void setCommPortAppName(String commPortAppName) {
 		this.commPortAppName = commPortAppName;
 	}

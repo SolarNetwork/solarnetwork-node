@@ -18,82 +18,32 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.support;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A basic JavaBean class for serial port configuration elements.
  * 
- * <p>The {@code dataBits}, {@code stopBits}, and {@code parity} class properties
+ * <p>
+ * The {@code dataBits}, {@code stopBits}, and {@code parity} class properties
  * should be initialized to values corresponding to the constants defined in the
- * {@link SerialPort} class (e.g. {@link SerialPort#DATABITS_8}, etc.).</p>
+ * {@link gnu.io.SerialPort} class (e.g. {@link gnu.io.SerialPort#DATABITS_8},
+ * etc.).
+ * </p>
  * 
- * <p>The configurable properties of this class are:</p>
- * 
- * <dl class="class-properties">
- *   <dt>baud</dt>
- *   <dd>The SerialPort communication speed. Defaults to {@code 19200}.</dd>
- *   
- *   <dt>dataBits</dt>
- *   <dd>The SerialPort number of data bits. Defaults to 
- *   {@link SerialPort#DATABITS_8}.</dd>
- *   
- *   <dt>stopBits</dt>
- *   <dd>The SerialPort number of stop bits. Defaults to 
- *   {@link SerialPort#STOPBITS_1}.</dd>
- *   
- *   <dt>parity</dt>
- *   <dd>The SerialPort parity setting to use. Defaults to 
- *   {@link SerialPort#PARITY_NONE}.</dd>
- *   
- *   <dt>flowControl</dt>
- *   <dd>The SerialPort flow control setting to use. If less than 0 will not be 
- *   configured. Defaults to -1.</dd>
- *   
- *   <dt>receiveThreshold</dt>
- *   <dd>The SerialPort receive threshold setting. Defaults to {@code 40}. If 
- *   set to anything less than 0 then the receive threshold will be disabled.</dd>
- *   
- *   <dt>receiveTimeout</dt>
- *   <dd>The SerialPort receive timeout setting. Defaults to {@code -1}. If 
- *   set to anything less than 0 then the receive timeout will be disabled.</dd>
- *   
- *   <dt>receiveFraming</dt>
- *   <dd>The SerialPort receive framing setting. Defaults to {@code -1}. If
- *   set to anything less than 0 then the receive framing will be disabled.</dd>
- *   
- *   <dt>dtrFlag</dt>
- *   <dd>The SerialPort DTR setting to use. Defaults to {@code 1}. When set 
- *   to {@code 0} DTR will be set to <em>false</em>. When set to {@code 1}
- *   DTR will be set to <em>true</em>. When configured as less than zero
- *   the DTR setting will not be changed. The {@code dtr} property can
- *   also be used to set this as a boolean.</dd>
- *   
- *   <dt>rtsFlag</dt>
- *   <dd>The SerialPort RTS setting to use. Defaults to {@code 0}. When set 
- *   to {@code 0} RTS will be set to <em>false</em>. When set to {@code 1}
- *   RTS will be set to <em>true</em>. When configured as less than zero
- *   the RTS setting will not be changed. The {@code rts} property can
- *   also be used to set this as a boolean.</dd>
- *   
- * </dl>
- *
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class SerialPortBean implements Cloneable {
 
 	private static final SerialPortBean DEFAULTS = new SerialPortBean();
-	
+
 	private int baud = 19200;
 	private int dataBits = 8;
 	private int stopBits = 1;
@@ -108,7 +58,8 @@ public class SerialPortBean implements Cloneable {
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param prefix bean prefix to use
+	 * @param prefix
+	 *        bean prefix to use
 	 * @return setting specifiers
 	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers(String prefix) {
@@ -118,32 +69,34 @@ public class SerialPortBean implements Cloneable {
 	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
-	 * @param defaults the default values to use
-	 * @param prefix the bean prefix to use
+	 * @param defaults
+	 *        the default values to use
+	 * @param prefix
+	 *        the bean prefix to use
 	 * @return setting specifiers
 	 */
-	public static List<SettingSpecifier> getDefaultSettingSpecifiers(
-			SerialPortBean defaults, String prefix) {
+	public static List<SettingSpecifier> getDefaultSettingSpecifiers(SerialPortBean defaults,
+			String prefix) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "baud", 
-				String.valueOf(defaults.getBaud())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataBits", 
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "baud", String.valueOf(defaults.getBaud())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataBits",
 				String.valueOf(defaults.getDataBits())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "stopBits", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "stopBits",
 				String.valueOf(defaults.getStopBits())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "parity", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "parity",
 				String.valueOf(defaults.getParity())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "flowControl", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "flowControl",
 				String.valueOf(defaults.getFlowControl())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveThreshold", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveThreshold",
 				String.valueOf(defaults.getReceiveThreshold())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveTimeout", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveTimeout",
 				String.valueOf(defaults.getReceiveTimeout())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveFraming", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "receiveFraming",
 				String.valueOf(defaults.getReceiveFraming())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "dtrFlag", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dtrFlag",
 				String.valueOf(defaults.getDtrFlag())));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "rtsFlag", 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "rtsFlag",
 				String.valueOf(defaults.getRtsFlag())));
 		return results;
 	}
@@ -152,7 +105,7 @@ public class SerialPortBean implements Cloneable {
 	public Object clone() {
 		try {
 			return super.clone();
-		} catch (CloneNotSupportedException e) {
+		} catch ( CloneNotSupportedException e ) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -160,73 +113,317 @@ public class SerialPortBean implements Cloneable {
 	public boolean isDtr() {
 		return dtrFlag > 0;
 	}
+
 	public void setDtr(boolean dtr) {
 		this.dtrFlag = (dtr ? 1 : 0);
 	}
+
 	public boolean isRts() {
 		return rtsFlag > 0;
 	}
+
 	public void setRts(boolean rts) {
 		this.rtsFlag = (rts ? 1 : 0);
 	}
 
+	/**
+	 * Get the SerialPort communication speed.
+	 * 
+	 * @return the baud; defaults to {@literal 19200}
+	 */
 	public int getBaud() {
 		return baud;
 	}
+
+	/**
+	 * Set the SerialPort communication speed.
+	 * 
+	 * @param baud
+	 *        the baud to use
+	 */
 	public void setBaud(int baud) {
 		this.baud = baud;
 	}
+
+	/**
+	 * Get the serial port data bits.
+	 * 
+	 * @return the number of data bits; defaults to {@literal 8}
+	 */
 	public int getDataBits() {
 		return dataBits;
 	}
+
+	/**
+	 * Set the serial port number of data bits.
+	 * 
+	 * @param dataBits
+	 *        the number of data bits to use
+	 */
 	public void setDataBits(int dataBits) {
 		this.dataBits = dataBits;
 	}
+
+	/**
+	 * Get the serial port number of stop bits.
+	 * 
+	 * @return the stop bits; defaults to {@literal 1}
+	 */
 	public int getStopBits() {
 		return stopBits;
 	}
+
+	/**
+	 * Set the serial port number of stop bits.
+	 * 
+	 * @param stopBits
+	 *        the number of stop bits to use
+	 */
 	public void setStopBits(int stopBits) {
 		this.stopBits = stopBits;
 	}
+
+	/**
+	 * Get the serial port parity.
+	 * 
+	 * @return the parity; defaults to {@literal 0}
+	 */
 	public int getParity() {
 		return parity;
 	}
+
+	/**
+	 * The serial port parity setting to use.
+	 * 
+	 * <p>
+	 * Valid values are:
+	 * </p>
+	 * 
+	 * <dl>
+	 * <dt>0</dt>
+	 * <dd>None</dd>
+	 * <dt>1</dt>
+	 * <dd>Odd</dd>
+	 * <dt>2</dt>
+	 * <dd>Even</dd>
+	 * <dt>3</dt>
+	 * <dd>Mark</dd>
+	 * <dt>4</dt>
+	 * <dd>Space</dd>
+	 * </dl>
+	 * 
+	 * @param parity
+	 *        the parity
+	 */
 	public void setParity(int parity) {
 		this.parity = parity;
 	}
+
+	/**
+	 * Get the parity as a string value.
+	 * 
+	 * @return the parity, or {@literal null} if not supported
+	 * @see #setParityString(String)
+	 * @since 1.1
+	 */
+	public String getParityString() {
+		switch (getParity()) {
+			case 0:
+				return "none";
+
+			case 1:
+				return "odd";
+
+			case 2:
+				return "even";
+
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Set the parity as a string value.
+	 * 
+	 * <p>
+	 * This method accepts the following values:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>none</li>
+	 * <li>odd</li>
+	 * <li>even</li>
+	 * </ul>
+	 * 
+	 * @param parity
+	 *        the parity value to set
+	 * @since 1.1
+	 */
+	public void setParityString(String parity) {
+		parity = parity.toLowerCase();
+		if ( parity.equals("none") ) {
+			setParity(0);
+		} else if ( parity.equals("odd") ) {
+			setParity(1);
+		} else if ( parity.equals("even") ) {
+			setParity(2);
+		}
+	}
+
+	/**
+	 * Get the receive threshold.
+	 * 
+	 * @return the receive threshold; defaults to {@literal 40}
+	 */
 	public int getReceiveThreshold() {
 		return receiveThreshold;
 	}
+
+	/**
+	 * Set the SerialPort receive threshold setting.
+	 * 
+	 * <p>
+	 * If set to anything less than 0 then the receive threshold will be
+	 * disabled.
+	 * </p>
+	 * 
+	 * @param receiveThreshold
+	 *        the receive threshold to use
+	 */
 	public void setReceiveThreshold(int receiveThreshold) {
 		this.receiveThreshold = receiveThreshold;
 	}
+
+	/**
+	 * Get the SerialPort flow control setting to use.
+	 * 
+	 * @return the flow control; defaults to -1
+	 */
 	public int getFlowControl() {
 		return flowControl;
 	}
+
+	/**
+	 * Set the SerialPort flow control setting to use.
+	 * 
+	 * <p>
+	 * If less than 0 flow control will not be configured. The settings are:
+	 * </p>
+	 * 
+	 * <dl>
+	 * <dt>0</dt>
+	 * <dd>None</dd>
+	 * <dt>1</dt>
+	 * <dd>RTS CTS in</dd>
+	 * <dt>2</dt>
+	 * <dd>RTS CTS out</dd>
+	 * <dt>4</dt>
+	 * <dd>XON XOFF in</dd>
+	 * <dt>8</dt>
+	 * <dd>XON XOFF out</dd>
+	 * </dl>
+	 * 
+	 * @param flowControl
+	 *        the flow control to use
+	 */
 	public void setFlowControl(int flowControl) {
 		this.flowControl = flowControl;
 	}
+
+	/**
+	 * Get the receive timeout.
+	 * 
+	 * @return the receive timeout; defaults to {@literal -1}
+	 */
 	public int getReceiveTimeout() {
 		return receiveTimeout;
 	}
+
+	/**
+	 * Set the SerialPort receive timeout setting.
+	 * 
+	 * <p>
+	 * If set to anything less than 0 then the receive timeout will be disabled.
+	 * </p>
+	 * 
+	 * @param receiveTimeout
+	 *        the receive timeout to use
+	 */
 	public void setReceiveTimeout(int receiveTimeout) {
 		this.receiveTimeout = receiveTimeout;
 	}
+
+	/**
+	 * Get the receive framing.
+	 * 
+	 * @return the receive framing; defaults to {@literal -1}
+	 */
 	public int getReceiveFraming() {
 		return receiveFraming;
 	}
+
+	/**
+	 * Set the SerialPort receive framing setting.
+	 * 
+	 * <p>
+	 * If set to anything less than 0 then the receive framing will be disabled.
+	 * </p>
+	 * 
+	 * @param receiveFraming
+	 *        the receive framing to use
+	 */
 	public void setReceiveFraming(int receiveFraming) {
 		this.receiveFraming = receiveFraming;
 	}
+
+	/**
+	 * Get the DTR flag.
+	 * 
+	 * @return the DTR flag; defaults to {@literal 1}
+	 */
 	public int getDtrFlag() {
 		return dtrFlag;
 	}
+
+	/**
+	 * Set the SerialPort DTR setting to use.
+	 * 
+	 * <p>
+	 * When set to {@code 0} DTR will be set to {@literal false}. When set to
+	 * {@literal 1} DTR will be set to {@literal true}. When configured as less
+	 * than zero the DTR setting will not be changed. The {@code dtr} property
+	 * can also be used to set this as a boolean.
+	 * </p>
+	 * 
+	 * @param dtrFlag
+	 *        the DTR flag to use
+	 */
 	public void setDtrFlag(int dtrFlag) {
 		this.dtrFlag = dtrFlag;
 	}
+
+	/**
+	 * Get the RTS flag.
+	 * 
+	 * @return the RTS flag; defaults to {@literal 0}
+	 */
 	public int getRtsFlag() {
 		return rtsFlag;
 	}
+
+	/**
+	 * Set the SerialPort RTS setting to use.
+	 * 
+	 * <p>
+	 * When set to {@literal 0} RTS will be set to {@literal false}. When set to
+	 * {@literal 1} RTS will be set to {@literal true}. When configured as less
+	 * than zero the RTS setting will not be changed. The {@code rts} property
+	 * can also be used to set this as a boolean.
+	 * </p>
+	 * 
+	 * @param rtsFlag
+	 *        the RTS flag to use
+	 */
 	public void setRtsFlag(int rtsFlag) {
 		this.rtsFlag = rtsFlag;
 	}
