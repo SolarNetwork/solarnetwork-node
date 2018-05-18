@@ -30,12 +30,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
-import net.solarnetwork.node.hw.yaskawa.ecb.PacketEnvelope;
-import net.solarnetwork.node.hw.yaskawa.ecb.PacketHeader;
+import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork;
@@ -122,7 +120,7 @@ public class Cmdline {
 		if ( components.length < 3 ) {
 			throw new IllegalArgumentException("send must provide ADDR CMD SUBCMD HEXBODY arguments");
 		}
-		log.debug("Got cmd components: {}", Arrays.toString(components));
+		log.trace("Got cmd components: {}", Arrays.toString(components));
 		int addr = Integer.parseInt(components[0]);
 		int cmd = Integer.parseInt(components[1]);
 		int subCmd = Integer.parseInt(components[2]);
@@ -132,16 +130,8 @@ public class Cmdline {
 		}
 		try {
 			Packet msg = Packet.forCommand(addr, cmd, subCmd, body);
-			conn.writeMessage(msg.getBytes());
-			byte[] head = conn.readMarkedMessage(new byte[] { PacketEnvelope.Start.getCode() }, 4);
-			System.out.println("Got head: " + Hex.encodeHexString(head));
-			PacketHeader header = new PacketHeader(head);
-			int dataLen = header.getDataLength();
-			byte[] resp = conn.readMarkedMessage(new byte[] { msg.getCommand(), msg.getSubCommand() },
-					dataLen + 3);
-			System.out.println("Got resp: " + Hex.encodeHexString(resp));
-			Packet respMsg = Packet.forData(head, 0, resp, 0);
-			System.out.println("Got packet: " + respMsg);
+			Packet respMsg = PacketUtils.sendPacket(conn, msg);
+			System.out.println(">>> " + respMsg.toDebugString());
 		} catch ( DecoderException e ) {
 			throw new IllegalArgumentException("Error decoding body hex: " + e.getMessage());
 		}
@@ -262,8 +252,6 @@ public class Cmdline {
 					break;
 			}
 		}
-
-		log.debug("One shot: {}", oneShot);
 
 		try {
 			Cmdline app = new Cmdline(serial);

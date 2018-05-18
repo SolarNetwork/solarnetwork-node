@@ -30,10 +30,15 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
  */
 public enum PVI3800Command implements Command {
 
+	/** Read the inverter identification information. */
+	InfoReadIdentification(0, 0, -1),
+
 	/** Read the device serial number. */
 	InfoReadSerialNumber(0, 1, 10),
 
 	NOOP(0, 0, 0);
+
+	private static final byte[] NULL_BODY = new byte[] { 0 };
 
 	private final byte command;
 	private final byte subCommand;
@@ -73,6 +78,31 @@ public enum PVI3800Command implements Command {
 	@Override
 	public int getDataLength() {
 		return dataLength;
+	}
+
+	/**
+	 * Get a request packet for this command.
+	 * 
+	 * @param addr
+	 *        the address of the inverter to address the packet to
+	 * @return the packet
+	 */
+	public Packet request(int addr) {
+		return request(addr, null);
+	}
+
+	/**
+	 * Get a request packet for this command.
+	 * 
+	 * @param addr
+	 *        the address of the inverter to address the packet to
+	 * @param body
+	 *        the request body, or {@literal null} to insert a "null" body of
+	 *        one {@literal 0} byte
+	 * @return the packet
+	 */
+	public Packet request(int addr, byte[] body) {
+		return Packet.forCommand(addr, command, subCommand, (body == null ? NULL_BODY : body));
 	}
 
 	/**

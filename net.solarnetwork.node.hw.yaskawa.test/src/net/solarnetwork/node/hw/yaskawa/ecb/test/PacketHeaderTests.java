@@ -72,6 +72,12 @@ public class PacketHeaderTests {
 		assertThat("Data length", header.getDataLength(), equalTo(0));
 	}
 
+	@Test
+	public void debugString() {
+		PacketHeader header = new PacketHeader(new byte[] { 0x02, 0x05, 0x01, 0x00, 0x03, 0x04 });
+		assertThat("Debug string", header.toDebugString(), equalTo("02 05 01 00"));
+	}
+
 	@Test(expected = IllegalArgumentException.class)
 	public void constructInvalidUnknownEnvelope() {
 		PacketHeader header = new PacketHeader(new byte[] { 0x01, 0x05, 0x01, 0x00, 0x01, 0x01 });

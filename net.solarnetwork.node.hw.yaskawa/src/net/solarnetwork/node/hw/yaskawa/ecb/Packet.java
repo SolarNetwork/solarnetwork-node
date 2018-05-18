@@ -86,6 +86,29 @@ public class Packet {
 		return "Packet{" + Arrays.toString(data) + "}";
 	}
 
+	/**
+	 * Get a debug string for this packet.
+	 * 
+	 * @return a hex-encoded string of the packet bytes, delimited with spaces
+	 */
+	public String toDebugString() {
+		final int dataLength = header.getDataLength();
+		StringBuilder buf = new StringBuilder(header.toDebugString());
+		buf.append(" ");
+		int i = offset + 4;
+		buf.append(String.format("%02x", data[i++])).append(' ');
+		buf.append(String.format("%02x", data[i++])).append(' ');
+		for ( int len = offset + 4 + dataLength; i < len; i++ ) {
+			buf.append(String.format("%02x", data[i]));
+		}
+		if ( dataLength > 2 ) {
+			buf.append(' ');
+		}
+		buf.append(String.format("%02x", data[i++])).append(String.format("%02x", data[i++]));
+		buf.append(' ').append(String.format("%02x", data[i++]));
+		return buf.toString();
+	}
+
 	private static byte[] decodeHex(String hexData) throws DecoderException {
 		if ( hexData == null ) {
 			return null;
@@ -128,14 +151,31 @@ public class Packet {
 	 * @return the packet
 	 */
 	public static Packet forCommand(int address, int cmd, int subCommand, byte[] body) {
+		return forCommand(address, (byte) (cmd & 0xFF), (byte) (subCommand & 0xFF), body);
+	}
+
+	/**
+	 * Construct a packet from components.
+	 * 
+	 * @param address
+	 *        the address to send the packet to
+	 * @param cmd
+	 *        the command
+	 * @param subCommand
+	 *        the sub-command
+	 * @param body
+	 *        the body of the packet
+	 * @return the packet
+	 */
+	public static Packet forCommand(int address, byte cmd, byte subCommand, byte[] body) {
 		int bodyLen = 2 + (body != null ? body.length : 0);
 		byte[] data = new byte[bodyLen + 7];
 		data[0] = PacketEnvelope.Start.getCode();
 		data[1] = PacketType.MasterLinkRequest.getCode();
 		data[2] = (byte) (address & 0xFF);
 		data[3] = (byte) (bodyLen & 0xFF);
-		data[4] = (byte) (cmd & 0xFF);
-		data[5] = (byte) (subCommand & 0xFF);
+		data[4] = cmd;
+		data[5] = subCommand;
 		if ( body != null ) {
 			System.arraycopy(body, 0, data, 6, bodyLen - 2);
 		}

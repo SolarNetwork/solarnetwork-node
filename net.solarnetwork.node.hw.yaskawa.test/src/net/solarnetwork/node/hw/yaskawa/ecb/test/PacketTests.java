@@ -87,6 +87,20 @@ public class PacketTests {
 	}
 
 	@Test
+	public void debugStringWithoutBody() throws DecoderException {
+		Packet p = new Packet("020501020101AC6C03");
+		assertThat("Debug string", p.toDebugString(), equalTo("02 05 01 02 01 01 ac6c 03"));
+	}
+
+	@Test
+	public void debugStringWithBody() throws DecoderException {
+		Packet p = Packet.forData("02060116", "0000137b55533234302f31323053002c000000000000c43f03");
+		assertThat("Debug string", p.toDebugString(),
+				equalTo("02 06 01 16 00 00 137b55533234302f31323053002c000000000000 c43f 03"));
+
+	}
+
+	@Test
 	public void constructFromHexWithWhitespace() throws DecoderException {
 		Packet p = new Packet("02 05 01 02 01 01 AC 6C 03");
 		assertThat("Packet valid", p.isValid(), equalTo(true));

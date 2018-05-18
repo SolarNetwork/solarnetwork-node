@@ -115,6 +115,22 @@ public class PacketHeader {
 	}
 
 	/**
+	 * Get a debug string for this header.
+	 * 
+	 * @return a hex-encoded string of the header bytes, delimited by a space
+	 */
+	public String toDebugString() {
+		StringBuilder buf = new StringBuilder();
+		for ( int i = offset; i < offset + BYTE_LENGTH && i < data.length; i++ ) {
+			if ( i > offset ) {
+				buf.append(' ');
+			}
+			buf.append(String.format("%02x", data[i]));
+		}
+		return buf.toString();
+	}
+
+	/**
 	 * Test if the header data appears to be a properly encoded packet header.
 	 * 
 	 * @return {@literal true} if the header data represents a valid packet
