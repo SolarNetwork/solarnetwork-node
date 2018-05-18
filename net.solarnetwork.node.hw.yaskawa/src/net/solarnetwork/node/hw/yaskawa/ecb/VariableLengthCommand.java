@@ -31,20 +31,20 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
 public class VariableLengthCommand implements Command {
 
 	private final Command delegate;
-	private final int dataLength;
+	private final int bodyLength;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param delegate
 	 *        the command to execute
-	 * @param dataLength
-	 *        the data length
+	 * @param bodyLength
+	 *        the body length
 	 */
-	public VariableLengthCommand(Command delegate, int dataLength) {
+	public VariableLengthCommand(Command delegate, int bodyLength) {
 		super();
 		this.delegate = delegate;
-		this.dataLength = dataLength;
+		this.bodyLength = bodyLength;
 	}
 
 	@Override
@@ -58,8 +58,8 @@ public class VariableLengthCommand implements Command {
 	}
 
 	@Override
-	public int getDataLength() {
-		return this.dataLength;
+	public int getBodyLength() {
+		return this.bodyLength;
 	}
 
 }

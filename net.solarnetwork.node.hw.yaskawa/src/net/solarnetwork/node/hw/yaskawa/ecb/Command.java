@@ -45,10 +45,10 @@ public interface Command {
 	byte getSubCommand();
 
 	/**
-	 * Get the command data length, if known.
+	 * Get the command body length, if known.
 	 * 
-	 * @return the data length, or {@literal -1} if not known (i.e. variable
+	 * @return the body length, or {@literal -1} if not known (i.e. variable
 	 *         length)
 	 */
-	int getDataLength();
+	int getBodyLength();
 }

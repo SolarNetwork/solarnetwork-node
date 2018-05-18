@@ -36,48 +36,39 @@ public enum PVI3800Command implements Command {
 	/** Read the device serial number. */
 	InfoReadSerialNumber(0, 1, 10),
 
+	/** Read the lifetime total energy export, as UInt64 Wh. */
+	MeterReadLifetimeTotalEnergy(24, 1, 8),
+
+	/** Read the AC combined active power, as UInt16 W. */
+	MeterReadAcCombinedActivePower(71, 4, 2),
+
 	NOOP(0, 0, 0);
 
 	private static final byte[] NULL_BODY = new byte[] { 0 };
 
 	private final byte command;
 	private final byte subCommand;
-	private final int dataLength;
+	private final int bodyLength;
 
-	private PVI3800Command(int command, int subCommand, int dataLength) {
+	private PVI3800Command(int command, int subCommand, int bodyLength) {
 		this.command = (byte) (command & 0xFF);
 		this.subCommand = (byte) (subCommand & 0xFF);
-		this.dataLength = dataLength;
+		this.bodyLength = bodyLength;
 	}
 
-	/**
-	 * Get the command value.
-	 * 
-	 * @return the command value
-	 */
 	@Override
 	public byte getCommand() {
 		return command;
 	}
 
-	/**
-	 * Get the sub-command value.
-	 * 
-	 * @return the sub-command value
-	 */
 	@Override
 	public byte getSubCommand() {
 		return subCommand;
 	}
 
-	/**
-	 * Get the command data length, if known.
-	 * 
-	 * @return the data length, or {@literal -1} if not known
-	 */
 	@Override
-	public int getDataLength() {
-		return dataLength;
+	public int getBodyLength() {
+		return bodyLength;
 	}
 
 	/**
