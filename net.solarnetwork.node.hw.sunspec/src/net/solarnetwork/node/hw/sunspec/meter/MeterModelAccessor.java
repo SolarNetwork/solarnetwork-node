@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Set;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
@@ -124,6 +125,15 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * @return the exported apparent energy
 	 */
 	Long getApparentEnergyExported();
+
+	/**
+	 * Get an accessor for phase-specific measurements.
+	 * 
+	 * @param phase
+	 *        the phase to get an accessor for
+	 * @return the accessor
+	 */
+	MeterModelAccessor accessorForPhase(ACPhase phase);
 
 	/**
 	 * Get the active events.

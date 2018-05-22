@@ -30,18 +30,9 @@ package net.solarnetwork.node.hw.sunspec;
  */
 public interface CommonModelAccessor extends ModelAccessor {
 
-	/** The common model fixed block length. */
-	public static final int FIXED_BLOCK_LENGTH = 66;
-
 	@Override
 	default int getFixedBlockLength() {
-		return FIXED_BLOCK_LENGTH;
-	}
-
-	@Override
-	default int getModelLength() {
-		// some implementations return 65; we always want 66 reported here (to include pad)
-		return FIXED_BLOCK_LENGTH;
+		return getModelLength();
 	}
 
 	/**

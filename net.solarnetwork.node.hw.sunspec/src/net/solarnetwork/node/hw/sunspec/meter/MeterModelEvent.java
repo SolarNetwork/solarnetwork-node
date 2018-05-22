@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
@@ -126,6 +128,24 @@ public enum MeterModelEvent implements ModelEvent {
 			}
 		}
 		throw new IllegalArgumentException("Index [" + index + "] not supported");
+	}
+
+	/**
+	 * Get a set of events from a bitmask.
+	 * 
+	 * @param bitmask
+	 *        the bitmask
+	 * @return the active events
+	 */
+	public static Set<ModelEvent> forBitmask(long bitmask) {
+		Set<ModelEvent> result = new LinkedHashSet<>(32);
+		for ( MeterModelEvent e : MeterModelEvent.values() ) {
+			int index = e.getIndex();
+			if ( ((bitmask >> index) & 0x1) == 1 ) {
+				result.add(e);
+			}
+		}
+		return result;
 	}
 
 }

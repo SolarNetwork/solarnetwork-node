@@ -56,7 +56,7 @@ public class ModelDataFactory {
 
 	private int findSunSpecBaseAddress(ModbusConnection conn) {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
-			String s = conn.readString(ModbusReadFunction.ReadInputRegister, r.getAddress(),
+			String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
 					r.getWordLength(), true, ModbusConnection.ASCII_CHARSET);
 			if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
 				return r.getAddress();
@@ -71,31 +71,35 @@ public class ModelDataFactory {
 	 * 
 	 * @param conn
 	 *        the modbus connection
+	 * @param maxReadWordsCount
+	 *        the maxReadWordsCount to set; anything less than {@litearl 1} is
+	 *        ignored
 	 * @return the data
 	 * @throws RuntimeException
 	 *         if no supported model data can be discovered
 	 */
-	public ModelData getModelData(ModbusConnection conn) {
+	public ModelData getModelData(ModbusConnection conn, int maxReadWordsCount) {
 		final int sunSpecBaseAddress = findSunSpecBaseAddress(conn);
 		ModelData data = new ModelData(sunSpecBaseAddress + 2);
+		data.setMaxReadWordsCount(maxReadWordsCount);
 		data.readCommonModelData(conn);
 
-		ModelAccessor currModel = data;
-		Integer nextModelId = null;
+		ModelAccessor model = data;
 		do {
-			int nextModelAddress = currModel.getBaseAddress() + currModel.getModelLength();
-			int[] words = conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, nextModelAddress,
-					2);
+			int nextModelAddress = model.getBlockAddress() + model.getModelLength();
+			int[] words = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+					nextModelAddress, 2);
+			model = null;
 			if ( words != null && words.length > 1 ) {
 				if ( words[0] != ModelId.SUN_SPEC_END_ID ) {
 					ModelAccessor accessor = createAccessor(data, nextModelAddress, words[0], words[1]);
 					data.addModel(words[1], accessor);
+					model = accessor;
 				}
 			}
+		} while ( model != null );
 
-		} while ( nextModelId != null );
-
-		// TODO create instances
+		data.readModelData(conn);
 		return data;
 	}
 

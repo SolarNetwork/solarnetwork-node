@@ -22,7 +22,10 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.util.Collections;
 import java.util.Set;
+import bak.pcj.set.IntRange;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -110,6 +113,14 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	}
 
 	@Override
+	public MeterModelAccessor accessorForPhase(ACPhase phase) {
+		if ( phase == ACPhase.Total ) {
+			return this;
+		}
+		return new PhaseMeterModelAccessor(phase);
+	}
+
+	@Override
 	public Float getFrequency() {
 		return getFrequencyValue(IntegerMeterModelRegister.Frequency);
 	}
@@ -180,8 +191,322 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	@Override
 	public Set<ModelEvent> getEvents() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getData().getNumber(IntegerMeterModelRegister.EventsBitmask, getBlockAddress());
+		if ( n == null ) {
+			return Collections.emptySet();
+		}
+		return MeterModelEvent.forBitmask(n.longValue());
+	}
+
+	private class PhaseMeterModelAccessor implements MeterModelAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterModelAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public IntRange[] getAddressRanges(int maxRangeLength) {
+			return IntegerMeterModelAccessor.this.getAddressRanges(maxRangeLength);
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return IntegerMeterModelAccessor.this.getDataTimestamp();
+		}
+
+		@Override
+		public int getBaseAddress() {
+			return IntegerMeterModelAccessor.this.getBaseAddress();
+		}
+
+		@Override
+		public int getFixedBlockLength() {
+			return IntegerMeterModelAccessor.this.getFixedBlockLength();
+		}
+
+		@Override
+		public int getBlockAddress() {
+			return IntegerMeterModelAccessor.this.getBlockAddress();
+		}
+
+		@Override
+		public ModelId getModelId() {
+			return IntegerMeterModelAccessor.this.getModelId();
+		}
+
+		@Override
+		public int getModelLength() {
+			return IntegerMeterModelAccessor.this.getModelLength();
+		}
+
+		@Override
+		public int getRepeatingBlockInstanceLength() {
+			return IntegerMeterModelAccessor.this.getRepeatingBlockInstanceLength();
+		}
+
+		@Override
+		public MeterModelAccessor accessorForPhase(ACPhase phase) {
+			return IntegerMeterModelAccessor.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public int getRepeatingBlockInstanceCount() {
+			return IntegerMeterModelAccessor.this.getRepeatingBlockInstanceCount();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return IntegerMeterModelAccessor.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			switch (phase) {
+				case PhaseA:
+					return getCurrentValue(IntegerMeterModelRegister.CurrentPhaseA);
+
+				case PhaseB:
+					return getCurrentValue(IntegerMeterModelRegister.CurrentPhaseB);
+
+				case PhaseC:
+					return getCurrentValue(IntegerMeterModelRegister.CurrentPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getCurrent();
+			}
+		}
+
+		@Override
+		public Float getVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseANeutral);
+
+				case PhaseB:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseBNeutral);
+
+				case PhaseC:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseCNeutral);
+
+				default:
+					return IntegerMeterModelAccessor.this.getVoltage();
+			}
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			switch (phase) {
+				case PhaseA:
+					return getPowerFactorValue(IntegerMeterModelRegister.PowerFactorPhaseA);
+
+				case PhaseB:
+					return getPowerFactorValue(IntegerMeterModelRegister.PowerFactorPhaseB);
+
+				case PhaseC:
+					return getPowerFactorValue(IntegerMeterModelRegister.PowerFactorPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getPowerFactor();
+			}
+		}
+
+		@Override
+		public Integer getActivePower() {
+			switch (phase) {
+				case PhaseA:
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+
+				case PhaseB:
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+
+				case PhaseC:
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+
+				default:
+					return IntegerMeterModelAccessor.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			switch (phase) {
+				case PhaseA:
+					return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerPhaseA);
+
+				case PhaseB:
+					return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerPhaseB);
+
+				case PhaseC:
+					return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			switch (phase) {
+				case PhaseA:
+					return getReactivePowerValue(IntegerMeterModelRegister.ReactivePowerPhaseA);
+
+				case PhaseB:
+					return getReactivePowerValue(IntegerMeterModelRegister.ReactivePowerPhaseB);
+
+				case PhaseC:
+					return getReactivePowerValue(IntegerMeterModelRegister.ReactivePowerPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getReactivePower();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyImported() {
+			switch (phase) {
+				case PhaseA:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyImportedPhaseA);
+
+				case PhaseB:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyImportedPhaseB);
+
+				case PhaseC:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyImportedPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getActiveEnergyImported();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyExported() {
+			switch (phase) {
+				case PhaseA:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyExportedPhaseA);
+
+				case PhaseB:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyExportedPhaseB);
+
+				case PhaseC:
+					return getActiveEnergyValue(IntegerMeterModelRegister.ActiveEnergyExportedPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getActiveEnergyExported();
+			}
+		}
+
+		@Override
+		public Long getReactiveEnergyImported() {
+			Long q1 = null;
+			Long q2 = null;
+			switch (phase) {
+				case PhaseA:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ1PhaseA);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ2PhaseA);
+					break;
+
+				case PhaseB:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ1PhaseB);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ2PhaseB);
+					break;
+
+				case PhaseC:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ1PhaseC);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyImportedQ2PhaseC);
+					break;
+
+				default:
+					return IntegerMeterModelAccessor.this.getReactiveEnergyImported();
+			}
+			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+		}
+
+		@Override
+		public Long getReactiveEnergyExported() {
+			Long q1 = null;
+			Long q2 = null;
+			switch (phase) {
+				case PhaseA:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ3PhaseA);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ4PhaseA);
+					break;
+
+				case PhaseB:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ3PhaseB);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ4PhaseB);
+					break;
+
+				case PhaseC:
+					q1 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ3PhaseC);
+					q2 = getReactiveEnergyValue(
+							IntegerMeterModelRegister.ReactiveEnergyExportedQ4PhaseC);
+					break;
+
+				default:
+					return IntegerMeterModelAccessor.this.getReactiveEnergyExported();
+			}
+			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+		}
+
+		@Override
+		public Long getApparentEnergyImported() {
+			switch (phase) {
+				case PhaseA:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyImportedPhaseA);
+
+				case PhaseB:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyImportedPhaseB);
+
+				case PhaseC:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyImportedPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getApparentEnergyImported();
+			}
+		}
+
+		@Override
+		public Long getApparentEnergyExported() {
+			switch (phase) {
+				case PhaseA:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyExportedPhaseA);
+
+				case PhaseB:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyExportedPhaseB);
+
+				case PhaseC:
+					return getApparentEnergyValue(
+							IntegerMeterModelRegister.ApparentEnergyExportedPhaseC);
+
+				default:
+					return IntegerMeterModelAccessor.this.getApparentEnergyExported();
+			}
+		}
+
+		@Override
+		public Set<ModelEvent> getEvents() {
+			return IntegerMeterModelAccessor.this.getEvents();
+		}
+
 	}
 
 }

@@ -62,15 +62,18 @@ public interface ModelAccessor {
 	 * @return a set of all Modbus register addresses referenced by this model
 	 */
 	default IntRange[] getAddressRanges(int maxRangeLength) {
-		int s = getBaseAddress() + 2;
-		int end = getBaseAddress() + getModelLength();
-		IntRange[] result = new IntRange[(int) Math.ceil((end - s) / maxRangeLength)];
+		int s = getBlockAddress();
+		int end = getBlockAddress() + getModelLength();
+		if ( maxRangeLength == Integer.MAX_VALUE ) {
+			return new IntRange[] { new IntRange(s, end - 1) };
+		}
+		IntRange[] result = new IntRange[(int) Math.ceil((end - s) / (double) maxRangeLength)];
 		for ( int i = 0; s < end; s += maxRangeLength, i++ ) {
 			int e = s + maxRangeLength;
 			if ( e > end ) {
 				e = end;
 			}
-			result[i] = new IntRange(i, e - 1);
+			result[i] = new IntRange(s, e - 1);
 		}
 		return result;
 	}
@@ -104,9 +107,7 @@ public interface ModelAccessor {
 	 * 
 	 * @return the overall model length
 	 */
-	default int getModelLength() {
-		return getFixedBlockLength();
-	}
+	int getModelLength();
 
 	/**
 	 * Get the number of Modbus words the model repeating block uses.

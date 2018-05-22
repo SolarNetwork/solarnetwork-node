@@ -44,9 +44,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 public class ModelDataTests {
 
 	// @formatter:off
-	public static final int[] COMMON_MODEL_00 = new int[] {
-			0x5375,
-			0x6E53,
+	public static final int[] COMMON_MODEL_02 = new int[] {
 			0x0001,
 			0x0041,
 			0x5665,
@@ -127,7 +125,7 @@ public class ModelDataTests {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(COMMON_MODEL_00, baseAddress);
+				m.saveDataArray(COMMON_MODEL_02, baseAddress + 2);
 				return true;
 			}
 		});
@@ -145,10 +143,10 @@ public class ModelDataTests {
 		ModelData data = getTestDataInstance();
 		assertThat("Model base address", data.getBaseAddress(), equalTo(40002));
 		assertThat("Model ID", data.getModelId().getId(), equalTo(CommonModelId.CommonModel.getId()));
-		assertThat("Model fixed length", data.getFixedBlockLength(), equalTo(66));
+		assertThat("Model fixed length", data.getFixedBlockLength(), equalTo(65));
 		assertThat("Model repeating instance length", data.getRepeatingBlockInstanceLength(),
 				equalTo(0));
-		assertThat("Model length", data.getModelLength(), equalTo(66));
+		assertThat("Model length", data.getModelLength(), equalTo(65));
 		assertThat("Model length", data.getRepeatingBlockInstanceCount(), equalTo(0));
 	}
 

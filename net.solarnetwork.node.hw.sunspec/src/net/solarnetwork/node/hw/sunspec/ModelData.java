@@ -151,6 +151,11 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 		return CommonModelId.CommonModel;
 	}
 
+	@Override
+	public int getModelLength() {
+		return getNumber(ModelRegister.ModelLength, baseAddress).intValue();
+	}
+
 	/**
 	 * Update a mutable data object with data read from a Modbus connection,
 	 * using the {@link ModbusReadFunction#ReadHoldingRegister} function.
@@ -205,6 +210,10 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
+				// load in our model header to find the common model length (65/66)
+				int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, baseAddress,
+						2);
+				m.saveDataArray(data, baseAddress);
 				updateData(conn, m, getAddressRanges(maxReadWordsCount));
 				return true;
 			}
@@ -235,13 +244,26 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	}
 
 	/**
-	 * Read the model properties from the device.
+	 * Read the model properties from the device for all configured models.
+	 * 
+	 * <p>
+	 * This method will iterate over all {@link ModelAccessor} instances that
+	 * have been added via {@link #addModel(int, ModelAccessor)}, and read the
+	 * data necessary for all their properties.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the connection
 	 */
 	public void readModelData(final ModbusConnection conn) {
-		// to be overridden by extending classes as needed
+		List<ModelAccessor> m = getModels();
+		if ( m == null ) {
+			return;
+		}
+		for ( ModelAccessor ma : m ) {
+			conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, ma.getBlockAddress(),
+					ma.getModelLength());
+		}
 	}
 
 	@Override
