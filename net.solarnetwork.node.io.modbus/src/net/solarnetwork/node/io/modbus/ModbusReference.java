@@ -43,13 +43,20 @@ public interface ModbusReference {
 	 * 
 	 * @return the data type
 	 */
-	public ModbusDataType getDataType();
+	ModbusDataType getDataType();
 
 	/**
 	 * Get the read function for accessing the register.
 	 * 
 	 * @return the read function
 	 */
-	public ModbusReadFunction getFunction();
+	ModbusReadFunction getFunction();
+
+	/**
+	 * Get the number of Modbus words to include.
+	 * 
+	 * @return the word length
+	 */
+	int getWordLength();
 
 }

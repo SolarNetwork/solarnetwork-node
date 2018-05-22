@@ -190,6 +190,11 @@ public enum ION6200Register implements ModbusReference {
 		return ModbusReadFunction.ReadHoldingRegister;
 	}
 
+	@Override
+	public int getWordLength() {
+		return dataType.getWordLength();
+	}
+
 	/**
 	 * Get an address range set that covers all the registers defined in this
 	 * enumeration.
