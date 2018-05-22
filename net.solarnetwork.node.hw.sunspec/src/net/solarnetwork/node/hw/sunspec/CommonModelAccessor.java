@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusReference.java - 15/05/2018 11:04:04 AM
+ * CommonModelAccessor.java - 22/05/2018 9:13:28 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,43 +20,61 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.hw.sunspec;
 
 /**
- * A reference to a Modbus register (or registers).
+ * API for accessing common model data.
  * 
  * @author matt
  * @version 1.0
- * @since 2.8
  */
-public interface ModbusReference {
+public interface CommonModelAccessor extends ModelAccessor {
+
+	@Override
+	default int getFixedBlockLength() {
+		return getModelLength();
+	}
 
 	/**
-	 * Get the register address.
+	 * Get the device manufacturer.
 	 * 
-	 * @return the address
+	 * @return the manufacturer
 	 */
-	int getAddress();
+	String getManufacturer();
 
 	/**
-	 * Get the data type.
+	 * Get the device model name.
 	 * 
-	 * @return the data type
+	 * @return the device model
 	 */
-	ModbusDataType getDataType();
+	String getModelName();
 
 	/**
-	 * Get the read function for accessing the register.
+	 * Get the device options.
 	 * 
-	 * @return the read function
+	 * @return the options
 	 */
-	ModbusReadFunction getFunction();
+	String getOptions();
 
 	/**
-	 * Get the number of Modbus words to include.
+	 * Get the device version.
 	 * 
-	 * @return the word length
+	 * @return the version
 	 */
-	int getWordLength();
+	String getVersion();
+
+	/**
+	 * Get the serial number.
+	 * 
+	 * @return the serial number
+	 */
+	String getSerialNumber();
+
+	/**
+	 * Get the device ID (the Modbus unit ID).
+	 * 
+	 * @return the device address
+	 */
+	Integer getDeviceAddress();
 
 }

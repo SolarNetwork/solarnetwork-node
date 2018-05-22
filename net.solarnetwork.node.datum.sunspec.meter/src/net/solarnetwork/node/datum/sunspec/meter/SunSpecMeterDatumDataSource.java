@@ -1,5 +1,5 @@
 /* ==================================================================
- * PM5100DatumDataSource.java - 15/05/2018 7:02:47 AM
+ * SunSpecMeterDatumDataSource.java - 23/05/2018 6:45:54 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.schneider.pm5100;
+package net.solarnetwork.node.datum.sunspec.meter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,16 +29,17 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
-import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
-import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
-import net.solarnetwork.node.hw.schneider.meter.PM5100PowerSystem;
+import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
+import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
@@ -49,26 +50,26 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} for the PM5100 series meter.
+ * {@link DatumDataSource} for a SunSpec compatible power meter.
  * 
  * @author matt
  * @version 1.0
  */
-public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
+public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private final PM5100Data sample;
+	private final AtomicReference<ModelData> sample;
 
 	private long sampleCacheMs = 5000;
-	private String sourceId = "PM5100";
+	private String sourceId = "SunSpec-Meter";
 	private boolean backwards = false;
 
 	/**
 	 * Default constructor.
 	 */
-	public PM5100DatumDataSource() {
-		this(new PM5100Data());
+	public SunSpecMeterDatumDataSource() {
+		this(new AtomicReference<>());
 	}
 
 	/**
@@ -77,36 +78,42 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public PM5100DatumDataSource(PM5100Data sample) {
+	public SunSpecMeterDatumDataSource(AtomicReference<ModelData> sample) {
 		super();
 		this.sample = sample;
 	}
 
-	private PM5100Data getCurrentSample() {
-		PM5100Data currSample = null;
-		if ( isCachedSampleExpired() ) {
+	private ModelData getCurrentSample() {
+		ModelData currSample = getSample();
+		if ( isCachedSampleExpired(currSample) ) {
 			try {
-				currSample = performAction(new ModbusConnectionAction<PM5100Data>() {
+				final ModelData data = currSample;
+				currSample = performAction(new ModbusConnectionAction<ModelData>() {
 
 					@Override
-					public PM5100Data doWithConnection(ModbusConnection connection) throws IOException {
-						getSample().readMeterData(connection);
-						return getSample().getSnapshot();
+					public ModelData doWithConnection(ModbusConnection connection) throws IOException {
+						if ( data == null ) {
+							ModelData result = ModelDataFactory.getInstance().getModelData(connection);
+							if ( result != null ) {
+								sample.set(result);
+							}
+							return result;
+						}
+						data.readModelData(connection);
+						return data;
 					}
 
 				});
 				if ( log.isTraceEnabled() && currSample != null ) {
 					log.trace(currSample.dataDebugString());
 				}
-				log.debug("Read PM5100 data: {}", currSample);
+				log.debug("Read SunSpec meter data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
-						"Communication problem reading from PM5100 device " + modbusNetwork(), e);
+						"Communication problem reading from SunSpec meter device " + modbusNetwork(), e);
 			}
-		} else {
-			currSample = getSample().getSnapshot();
 		}
-		return currSample;
+		return (currSample != null ? currSample.getSnapshot() : null);
 	}
 
 	@Override
@@ -117,11 +124,12 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final PM5100Data currSample = getCurrentSample();
+		final ModelData currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		PM5100Datum d = new PM5100Datum(currSample, ACPhase.Total, this.backwards);
+		MeterModelAccessor data = currSample.getTypedModel();
+		SunSpecMeterDatum d = new SunSpecMeterDatum(data, ACPhase.Total, this.backwards);
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -145,32 +153,38 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return Collections.emptyList();
 	}
 
-	public PM5100Data getSample() {
-		return sample;
+	public ModelData getSample() {
+		return sample.get();
+	}
+
+	public ModelData getSampleSnapshot() {
+		ModelData data = getSample();
+		return (data != null ? data.getSnapshot() : null);
 	}
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
-		sample.readConfigurationData(conn);
-		PM5100DataAccessor data = (PM5100DataAccessor) sample.copy();
+		CommonModelAccessor data = getCurrentSample();
+		if ( data == null ) {
+			return null;
+		}
 		Map<String, Object> result = new LinkedHashMap<>(4);
-		PM5100Model model = data.getModel();
+		String manufacturer = data.getManufacturer();
+		if ( manufacturer != null ) {
+			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+		}
+		String model = data.getModelName();
 		if ( model != null ) {
-			String firmwareVersion = data.getFirmwareRevision();
-			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
-						String.format("%s (firmware %s)", model, firmwareVersion));
+			String version = data.getVersion();
+			if ( version != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
 			} else {
 				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
-		PM5100PowerSystem wiringMode = data.getPowerSystem();
-		if ( wiringMode != null ) {
-			result.put("Wiring Mode", wiringMode.getDescription());
-		}
-		Long l = data.getSerialNumber();
-		if ( l != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, l);
+		String sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
 		}
 		return result;
 	}
@@ -180,8 +194,11 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * 
 	 * @return {@literal true} if the sample data has expired
 	 */
-	protected boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+	protected boolean isCachedSampleExpired(ModelData data) {
+		if ( data == null ) {
+			return true;
+		}
+		final long lastReadDiff = System.currentTimeMillis() - data.getDataTimestamp();
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -192,24 +209,24 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.schneider.pm5100";
+		return "net.solarnetwork.node.datum.sunspec.meter";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "Schneider PM5100 Meter";
+		return "SunSpec Power Meter";
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(12);
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		PM5100DatumDataSource defaults = new PM5100DatumDataSource();
+		SunSpecMeterDatumDataSource defaults = new SunSpecMeterDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
@@ -228,17 +245,30 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(PM5100Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+	private String getSampleMessage() {
+		return getSampleMessage(getSampleSnapshot());
+	}
+
+	private String getSampleMessage(ModelData sample) {
+		if ( sample == null || sample.getDataTimestamp() < 1 ) {
 			return "N/A";
 		}
+		MeterModelAccessor data;
+		try {
+			data = sample.getTypedModel();
+			if ( data == null ) {
+				return "N/A";
+			}
+		} catch ( RuntimeException e ) {
+			return "Unexpected model: " + sample.getModel();
+		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("W = ").append(sample.getActivePower());
-		buf.append(", VAR = ").append(sample.getReactivePower());
-		buf.append(", Wh rec = ").append(sample.getActiveEnergyReceived());
-		buf.append(", Wh del = ").append(sample.getActiveEnergyDelivered());
+		buf.append("W = ").append(data.getActivePower());
+		buf.append(", freq = ").append(data.getFrequency());
+		buf.append(", Wh imp = ").append(data.getActiveEnergyImported());
+		buf.append(", Wh exp = ").append(data.getActiveEnergyExported());
 		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
 		return buf.toString();
 	}
 

@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusReference.java - 15/05/2018 11:04:04 AM
+ * CommonModelId.java - 22/05/2018 11:26:25 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,43 +20,50 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.hw.sunspec;
 
 /**
- * A reference to a Modbus register (or registers).
+ * {@link ModelId} for the SunSpec common model standard.
  * 
  * @author matt
  * @version 1.0
- * @since 2.8
  */
-public interface ModbusReference {
+public enum CommonModelId implements ModelId {
+
+	CommonModel(1, "Common model");
+
+	final private int id;
+	final private String description;
+
+	private CommonModelId(int id, String description) {
+		this.id = id;
+		this.description = description;
+	}
+
+	@Override
+	public int getId() {
+		return id;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
+	}
 
 	/**
-	 * Get the register address.
+	 * Get an enumeration for an ID value.
 	 * 
-	 * @return the address
+	 * @param id
+	 *        the ID to get the enum value for
+	 * @return the enumeration value
+	 * @throws IllegalArgumentException
+	 *         if {@code id} is not supported
 	 */
-	int getAddress();
-
-	/**
-	 * Get the data type.
-	 * 
-	 * @return the data type
-	 */
-	ModbusDataType getDataType();
-
-	/**
-	 * Get the read function for accessing the register.
-	 * 
-	 * @return the read function
-	 */
-	ModbusReadFunction getFunction();
-
-	/**
-	 * Get the number of Modbus words to include.
-	 * 
-	 * @return the word length
-	 */
-	int getWordLength();
+	public static CommonModelId forId(int id) {
+		if ( id == 1 ) {
+			return CommonModel;
+		}
+		throw new IllegalArgumentException("ID [" + id + "] not supported");
+	}
 
 }

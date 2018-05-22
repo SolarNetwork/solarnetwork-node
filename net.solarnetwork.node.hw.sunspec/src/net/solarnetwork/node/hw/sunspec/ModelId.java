@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusReference.java - 15/05/2018 11:04:04 AM
+ * MeterModelId.java - 22/05/2018 6:21:42 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,43 +20,31 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.hw.sunspec;
 
 /**
- * A reference to a Modbus register (or registers).
+ * API for a model identifier.
  * 
  * @author matt
  * @version 1.0
- * @since 2.8
  */
-public interface ModbusReference {
+public interface ModelId {
+
+	/** The model ID for the "end" identifier. */
+	int SUN_SPEC_END_ID = 0xFFFF;
 
 	/**
-	 * Get the register address.
+	 * Get the model ID.
 	 * 
-	 * @return the address
+	 * @return the model ID
 	 */
-	int getAddress();
+	int getId();
 
 	/**
-	 * Get the data type.
+	 * Get a description of the event.
 	 * 
-	 * @return the data type
+	 * @return a description
 	 */
-	ModbusDataType getDataType();
-
-	/**
-	 * Get the read function for accessing the register.
-	 * 
-	 * @return the read function
-	 */
-	ModbusReadFunction getFunction();
-
-	/**
-	 * Get the number of Modbus words to include.
-	 * 
-	 * @return the word length
-	 */
-	int getWordLength();
+	String getDescription();
 
 }

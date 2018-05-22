@@ -1,5 +1,5 @@
 /* ==================================================================
- * PM5100Datum.java - 15/05/2018 7:39:50 AM
+ * SunSpecMeterDatum.java - 23/05/2018 6:46:30 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,22 +20,22 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.schneider.pm5100;
+package net.solarnetwork.node.datum.sunspec.meter;
 
 import java.util.Date;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
+import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 
 /**
- * Datum for the PM5100 meter.
+ * Datum for a SunSpec compatible meter.
  * 
  * @author matt
  * @version 1.0
  */
-public class PM5100Datum extends GeneralNodeACEnergyDatum {
+public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum {
 
-	private final PM5100DataAccessor data;
+	private final MeterModelAccessor data;
 	private final boolean backwards;
 
 	/**
@@ -53,7 +53,7 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public PM5100Datum(PM5100DataAccessor data, ACPhase phase, boolean backwards) {
+	public SunSpecMeterDatum(MeterModelAccessor data, ACPhase phase, boolean backwards) {
 		super();
 		this.data = data;
 		this.backwards = backwards;
@@ -63,21 +63,21 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 		populateMeasurements(data, phase);
 	}
 
-	private void populateMeasurements(PM5100DataAccessor data, ACPhase phase) {
+	private void populateMeasurements(MeterModelAccessor data, ACPhase phase) {
 		setPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setApparentPower(data.getApparentPower());
-		setReactivePower(data.getReactivePower());
+		setApparentPower((backwards ? -1 : 1) * data.getApparentPower());
+		setReactivePower((backwards ? -1 : 1) * data.getReactivePower());
 		setWatts((backwards ? -1 : 1) * data.getActivePower());
 		if ( backwards ) {
-			setWattHourReading(data.getActiveEnergyReceived());
-			setReverseWattHourReading(data.getActiveEnergyDelivered());
+			setWattHourReading(data.getActiveEnergyExported());
+			setReverseWattHourReading(data.getActiveEnergyImported());
 		} else {
-			setWattHourReading(data.getActiveEnergyDelivered());
-			setReverseWattHourReading(data.getActiveEnergyReceived());
+			setWattHourReading(data.getActiveEnergyImported());
+			setReverseWattHourReading(data.getActiveEnergyExported());
 		}
 	}
 
@@ -86,7 +86,7 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 	 * 
 	 * @return the data
 	 */
-	public PM5100DataAccessor getData() {
+	public MeterModelAccessor getData() {
 		return data;
 	}
 

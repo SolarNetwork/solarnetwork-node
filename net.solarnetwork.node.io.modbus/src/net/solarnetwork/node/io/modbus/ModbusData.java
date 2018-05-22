@@ -108,8 +108,25 @@ public class ModbusData {
 	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
 	 * @throws IllegalArgumentException
 	 *         if the reference data type is not numeric
+	 * @since 1.4
 	 */
 	public final Number getNumber(ModbusReference ref) {
+		return getNumber(ref, 0);
+	}
+
+	/**
+	 * Get a number value from a relative reference.
+	 * 
+	 * @param ref
+	 *        the relative reference to get the number value for
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if the reference data type is not numeric
+	 * @since 1.4
+	 */
+	public final Number getNumber(ModbusReference ref, int offset) {
 		if ( ref == null ) {
 			return null;
 		}
@@ -117,7 +134,7 @@ public class ModbusData {
 		if ( type == null ) {
 			type = ModbusDataType.UInt16;
 		}
-		final int addr = ref.getAddress();
+		final int addr = ref.getAddress() + offset;
 		switch (type) {
 			case Boolean:
 				return getBoolean(addr) ? 1 : 0;
@@ -407,11 +424,11 @@ public class ModbusData {
 	 */
 	public byte[] getBytes(final int addr, final int count) {
 		byte[] result = new byte[count * 2];
-		for ( int i = addr, end = addr + count; i < end; i++ ) {
+		for ( int i = addr, end = addr + count, index = 0; i < end; i++, index += 2 ) {
 			short word = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? dataRegisters.get(i)
 					: dataRegisters.get(end - i - 1));
-			result[i * 2] = (byte) ((word >> 8) & 0xFF);
-			result[i * 2 + 1] = (byte) (word & 0xFF);
+			result[index] = (byte) ((word >> 8) & 0xFF);
+			result[index + 1] = (byte) (word & 0xFF);
 		}
 		return result;
 	}
@@ -484,6 +501,72 @@ public class ModbusData {
 	 */
 	public String getAsciiString(final int addr, final int count, final boolean trim) {
 		return getString(addr, count, trim, ModbusDataUtils.ASCII_CHARSET);
+	}
+
+	/**
+	 * Construct a UTF-8 string from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the string value for
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @return the parsed string
+	 * @since 1.4
+	 */
+	public String getUtf8String(final ModbusReference ref, final boolean trim) {
+		return getUtf8String(ref, 0, trim);
+	}
+
+	/**
+	 * Construct a UTF-8 string from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the string value for
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @return the parsed string
+	 * @since 1.4
+	 */
+	public String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
+				ModbusDataUtils.UTF8_CHARSET);
+	}
+
+	/**
+	 * Construct an ASCII string from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the string value for
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @return the parsed string
+	 * @since 1.4
+	 */
+	public String getAsciiString(final ModbusReference ref, final boolean trim) {
+		return getAsciiString(ref, 0, trim);
+	}
+
+	/**
+	 * Construct an ASCII string from a relative reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the string value for
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @return the parsed string
+	 * @since 1.4
+	 */
+	public String getAsciiString(final ModbusReference ref, int offset, final boolean trim) {
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
+				ModbusDataUtils.ASCII_CHARSET);
 	}
 
 	/**
