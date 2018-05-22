@@ -163,8 +163,8 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
-		CommonModelAccessor data = getCurrentSample();
+	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) {
+		CommonModelAccessor data = ModelDataFactory.getInstance().getModelData(connection);
 		if ( data == null ) {
 			return null;
 		}
