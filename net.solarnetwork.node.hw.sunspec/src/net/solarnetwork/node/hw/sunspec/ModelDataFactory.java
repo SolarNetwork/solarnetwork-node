@@ -69,11 +69,30 @@ public class ModelDataFactory {
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
 	 * 
+	 * <p>
+	 * This method calls {@link #getModelData(ModbusConnection, int)} with an
+	 * unlimited read word count.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the modbus connection
+	 * @return the data
+	 * @throws RuntimeException
+	 *         if no supported model data can be discovered
+	 */
+	public ModelData getModelData(ModbusConnection conn) {
+		return getModelData(conn, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * Create a new model data instance by discovering the model from a device
+	 * via a Modbus connection.
+	 * 
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
-	 *        the maxReadWordsCount to set; anything less than {@litearl 1} is
-	 *        ignored
+	 *        the maxReadWordsCount to set; anything less than {@literal 1} is
+	 *        ignored; pass {@link Integer#MAX_VALUE} for no limit
 	 * @return the data
 	 * @throws RuntimeException
 	 *         if no supported model data can be discovered

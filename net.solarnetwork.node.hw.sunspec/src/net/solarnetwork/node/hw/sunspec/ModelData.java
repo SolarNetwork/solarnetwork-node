@@ -37,9 +37,6 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
-	/** The default value for the {@code maxReadWordsCount} property. */
-	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 64;
-
 	private final int baseAddress;
 	private final int blockAddress;
 	private int maxReadWordsCount;
@@ -50,7 +47,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 */
 	public ModelData(int baseAddress) {
 		super();
-		this.maxReadWordsCount = DEFAULT_MAX_READ_WORDS_COUNT;
+		this.maxReadWordsCount = Integer.MAX_VALUE;
 		this.baseAddress = baseAddress;
 		this.blockAddress = baseAddress + 2;
 		this.models = new ArrayList<>(1);
@@ -69,9 +66,9 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			this.maxReadWordsCount = md.maxReadWordsCount;
 			this.baseAddress = md.baseAddress;
 			this.blockAddress = md.blockAddress;
-			this.models = md.models;
+			this.models = new ArrayList<>(md.models);
 		} else {
-			this.maxReadWordsCount = DEFAULT_MAX_READ_WORDS_COUNT;
+			this.maxReadWordsCount = Integer.MAX_VALUE;
 			this.baseAddress = 0;
 			this.blockAddress = 2;
 			this.models = new ArrayList<>(1);
@@ -81,6 +78,21 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	@Override
 	public ModbusData copy() {
 		return new ModelData(this);
+	}
+
+	/**
+	 * Get a snapshot copy of the model.
+	 * 
+	 * <p>
+	 * This is essentially the same as {@link #copy()} but cast to
+	 * {@code ModelData}.
+	 * </p>
+	 * 
+	 * @return the snapshot
+	 * @see #copy()
+	 */
+	public ModelData getSnapshot() {
+		return (ModelData) this.copy();
 	}
 
 	/**
@@ -116,7 +128,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * Get the maximum number of Modbus registers to read in one request.
 	 * 
 	 * @return the maximum read word count; defaults to
-	 *         {@link #DEFAULT_MAX_READ_WORDS_COUNT}
+	 *         {@link Integer#MAX_VALUE}
 	 */
 	public int getMaxReadWordsCount() {
 		return maxReadWordsCount;
@@ -126,8 +138,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * Set the maximum number of Modbus registers to read in one request.
 	 * 
 	 * @param maxReadWordsCount
-	 *        the maxReadWordsCount to set; anything less than {@litearl 1} is
-	 *        ignored
+	 *        the maxReadWordsCount to set; anything less than {@literal 1} is
+	 *        ignored; set to {@link Integer#MAX_VALUE} for no limit
 	 */
 	public void setMaxReadWordsCount(int maxReadWordsCount) {
 		if ( maxReadWordsCount < 1 ) {
