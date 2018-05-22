@@ -268,14 +268,20 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *        the connection
 	 */
 	public void readModelData(final ModbusConnection conn) {
-		List<ModelAccessor> m = getModels();
-		if ( m == null ) {
+		List<ModelAccessor> accessors = getModels();
+		if ( accessors == null ) {
 			return;
 		}
-		for ( ModelAccessor ma : m ) {
-			conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, ma.getBlockAddress(),
-					ma.getModelLength());
-		}
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				for ( ModelAccessor accessor : accessors ) {
+					updateData(conn, m, accessor.getAddressRanges(maxReadWordsCount));
+				}
+				return true;
+			}
+		});
 	}
 
 	@Override

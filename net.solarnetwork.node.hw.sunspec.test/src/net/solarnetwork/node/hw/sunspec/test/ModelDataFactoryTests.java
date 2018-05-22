@@ -22,9 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec.test;
 
+import static net.solarnetwork.node.domain.ACPhase.PhaseA;
+import static net.solarnetwork.node.domain.ACPhase.PhaseB;
+import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
@@ -85,6 +89,24 @@ public class ModelDataFactoryTests {
 
 		assertThat("Model count", data.getModels(), hasSize(1));
 		assertThat("Meter model", data.getModel(), instanceOf(MeterModelAccessor.class));
+
+		MeterModelAccessor model = data.getTypedModel();
+		assertThat("Energy export Total", model.getActiveEnergyExported(), equalTo(1090000L));
+		assertThat("Energy export Phase A", model.accessorForPhase(PhaseA).getActiveEnergyExported(),
+				equalTo(1009000L));
+		assertThat("Energy export Phase B", model.accessorForPhase(PhaseB).getActiveEnergyExported(),
+				equalTo(33600L));
+		assertThat("Energy export Phase C", model.accessorForPhase(PhaseC).getActiveEnergyExported(),
+				equalTo(47300L));
+
+		assertThat("Energy import Total", model.getActiveEnergyImported(), equalTo(1001509000L));
+		assertThat("Energy import Phase A", model.accessorForPhase(PhaseA).getActiveEnergyImported(),
+				equalTo(350516800L));
+		assertThat("Energy import Phase B", model.accessorForPhase(PhaseB).getActiveEnergyImported(),
+				equalTo(273085000L));
+		assertThat("Energy import Phase C", model.accessorForPhase(PhaseC).getActiveEnergyImported(),
+				equalTo(377907200L));
+
 	}
 
 }
