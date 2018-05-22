@@ -28,7 +28,7 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 
 /**
- * Datum for the ION6200 meter.
+ * Datum for the PM5100 meter.
  * 
  * @author matt
  * @version 1.0
@@ -43,6 +43,8 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param phase
+	 *        the phase to associate with the data
 	 * @param backwards
 	 *        if {@literal true} then treat the meter as being installed
 	 *        backwards with respect to the current direction; in this case

@@ -49,7 +49,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} for the PM5100Data series meter.
+ * {@link DatumDataSource} for the PM5100 series meter.
  * 
  * @author matt
  * @version 1.0
