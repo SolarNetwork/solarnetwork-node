@@ -26,10 +26,14 @@ import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +56,7 @@ import net.solarnetwork.util.OptionalService;
  * file.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.18
  */
 public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResourceProvider {
@@ -150,6 +154,10 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 		try {
 			objectMapper.writerWithDefaultPrettyPrinter().writeValue(tmpFile, data);
 			dataFile.delete();
+			Set<PosixFilePermission> perms = new HashSet<>(2);
+			perms.add(PosixFilePermission.OWNER_READ);
+			perms.add(PosixFilePermission.OWNER_WRITE);
+			Files.setPosixFilePermissions(tmpFile.toPath(), perms);
 			return tmpFile.renameTo(dataFile);
 		} catch ( IOException e ) {
 			log.warn("Error writing identity data to {}: {}", dataFilePath, e.getMessage());

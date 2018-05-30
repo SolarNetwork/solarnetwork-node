@@ -23,10 +23,14 @@
 package net.solarnetwork.node.setup.test;
 
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 import java.util.UUID;
 import org.easymock.EasyMock;
 import org.hamcrest.Matchers;
@@ -42,14 +46,10 @@ import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Test cases for the {@link DefaultSetupIdentityDao} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultSetupIdentityDaoTests {
 
@@ -127,6 +127,9 @@ public class DefaultSetupIdentityDaoTests {
 	private void verifySavedDataFile() {
 		assertThat("Data file exists", dataFile.exists(), equalTo(true));
 		try {
+			Set<PosixFilePermission> perms = Files.getPosixFilePermissions(dataFile.toPath());
+			assertThat("File permissions", perms,
+					containsInAnyOrder(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
 			SetupIdentityInfo info = objectMapper.readValue(dataFile, SetupIdentityInfo.class);
 			verifyInfo("Persisted", info);
 		} catch ( IOException e ) {
