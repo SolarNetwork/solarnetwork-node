@@ -48,7 +48,7 @@ import net.solarnetwork.node.IdentityService;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DeveloperIdentityService implements IdentityService {
 
@@ -56,6 +56,7 @@ public class DeveloperIdentityService implements IdentityService {
 	private String hostName = "localhost";
 	private int port = 8080;
 	private String solarInUrlPrefix = "/solarin";
+	private int mqttPort = 1883;
 
 	@Override
 	public Long getNodeId() {
@@ -88,6 +89,11 @@ public class DeveloperIdentityService implements IdentityService {
 				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
 	}
 
+	@Override
+	public String getSolarInMqttUrl() {
+		return "mqtt://" + hostName + ":" + mqttPort;
+	}
+
 	public void setNodeId(Long nodeId) {
 		this.nodeId = nodeId;
 	}
@@ -102,6 +108,16 @@ public class DeveloperIdentityService implements IdentityService {
 
 	public void setSolarInUrlPrefix(String solarInUrlPrefix) {
 		this.solarInUrlPrefix = solarInUrlPrefix;
+	}
+
+	/**
+	 * Set the MQTT port to use.
+	 * 
+	 * @param mqttPort
+	 *        the port to use
+	 */
+	public void setMqttPort(int mqttPort) {
+		this.mqttPort = mqttPort;
 	}
 
 }
