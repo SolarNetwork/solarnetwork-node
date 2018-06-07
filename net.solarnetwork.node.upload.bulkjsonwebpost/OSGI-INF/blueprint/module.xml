@@ -31,22 +31,14 @@
 	<reference id="identityService" availability="optional"
 		interface="net.solarnetwork.node.IdentityService"/>
 	
-	<reference id="reactorServiceRef" availability="optional"
-		interface="net.solarnetwork.node.reactor.ReactorService">
-		<reference-listener ref="reactorService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-	
-	<bean id="reactorService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="reactorServiceRef"/>
+	<bean id="reactorService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
 	</bean>
-
-	<reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.node.SSLService">
-		<reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
 	
-	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="sslServiceRef"/>
+	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
 	</bean>
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
