@@ -54,12 +54,12 @@
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="serializers">
 			<list>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer">
+				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer">
 					<property name="sampleTransformers" ref="sampleTransformers"/>	
 				</bean>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer"/>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer"/>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer"/>
+				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
+				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
 			</list>
 		</property>
 	</bean>
@@ -80,25 +80,6 @@
 		</interfaces>
 	</service>
 
-	<service interface="net.solarnetwork.node.DatumMetadataService">
-		<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.JsonDatumMetadataService">
-			<property name="objectMapper" ref="objectMapper"/>
-			<property name="identityService" ref="identityService"/>
-			<property name="sslService" ref="sslService"/>
-			<property name="baseUrl" value="/api/v1/sec/datum/meta"/>
-			<property name="settingDao" ref="settingDao"/>
-		</bean>
-	</service>
-	
-	<service interface="net.solarnetwork.node.NodeMetadataService">
-		<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.JsonNodeMetadataService">
-			<property name="objectMapper" ref="objectMapper"/>
-			<property name="identityService" ref="identityService"/>
-			<property name="sslService" ref="sslService"/>
-			<property name="baseUrl" value="/api/v1/sec/nodes/meta"/>
-		</bean>
-	</service>
-	
 	<!-- Supporting Services -->
 	
 	<ctx:property-placeholder properties-ref="cfg"/>
