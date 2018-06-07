@@ -104,6 +104,11 @@ public class FileSystemBackupServiceTest {
 				return null;
 			}
 
+			@Override
+			public String getSolarInMqttUrl() {
+				return null;
+			}
+
 		}));
 		service.removeAllBackups();
 	}
