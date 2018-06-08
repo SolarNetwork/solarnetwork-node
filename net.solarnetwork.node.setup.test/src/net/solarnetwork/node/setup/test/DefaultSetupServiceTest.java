@@ -334,6 +334,6 @@ public class DefaultSetupServiceTest {
 		String url = service.getSolarInMqttUrl();
 
 		// then
-		assertThat("MQTT URL", url, equalTo("mqtt://queue.solarnetwork.net:8883"));
+		assertThat("MQTT URL", url, equalTo("mqtts://queue.solarnetwork.net:8883"));
 	}
 }
