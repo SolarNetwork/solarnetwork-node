@@ -25,6 +25,8 @@ package net.solarnetwork.node.upload.mqtt;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -44,8 +46,12 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -69,6 +75,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	private final IdentityService identityService;
 	private final OptionalService<SSLService> sslServiceOpt;
 	private final OptionalService<ReactorService> reactorServiceOpt;
+	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
 	private final AtomicReference<IMqttClient> clientRef;
 
 	private String persistencePath = "var/mqtt";
@@ -86,14 +93,18 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	 *        the optional SSL service
 	 * @param reactorService
 	 *        the optional reactor service
+	 * @param instructionExecutionService
+	 *        the instruction execution service
 	 */
 	public MqttUploadService(ObjectMapper objectMapper, IdentityService identityService,
-			OptionalService<SSLService> sslService, OptionalService<ReactorService> reactorService) {
+			OptionalService<SSLService> sslService, OptionalService<ReactorService> reactorService,
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
 		super();
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.sslServiceOpt = sslService;
 		this.reactorServiceOpt = reactorService;
+		this.instructionExecutionServiceOpt = instructionExecutionService;
 		this.clientRef = new AtomicReference<IMqttClient>();
 	}
 
@@ -186,6 +197,24 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 				(client != null ? client.getServerURI() : "N/A"), cause.getMessage());
 	}
 
+	private void postInstructionAcks(List<Instruction> instructions) {
+		if ( instructions == null || instructions.isEmpty() ) {
+			return;
+		}
+		IMqttClient client = client();
+		if ( client != null ) {
+			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
+			try {
+				client.publish(topic, objectMapper.writeValueAsBytes(instructions), 1, false);
+				// TODO: if instructions have a local ID, need to store Ack?
+			} catch ( MqttException | IOException e ) {
+				log.warn("Error posting instruction statuses {} via MQTT @ {}: {}", instructions,
+						client.getServerURI(), e.getMessage());
+			}
+		}
+
+	}
+
 	@Override
 	public void messageArrived(String topic, MqttMessage message) throws Exception {
 		// look for and process instructions from message body, as JSON array
@@ -194,9 +223,37 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 			JsonNode root = objectMapper.readTree(message.getPayload());
 			JsonNode instrArray = root.path("instructions");
 			if ( instrArray != null && instrArray.isArray() ) {
-				List<InstructionStatus> status = reactor.processInstruction(
+				InstructionExecutionService executor = (instructionExecutionServiceOpt != null
+						? instructionExecutionServiceOpt.service()
+						: null);
+				List<Instruction> resultInstructions = new ArrayList<>(8);
+				// manually parse instruction, so we can immediately execute
+				List<Instruction> instructions = reactor.parseInstructions(
 						identityService.getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE, null);
-				log.debug("Instructions processed: {}", status);
+				for ( Instruction instr : instructions ) {
+					try {
+						InstructionStatus status = null;
+						if ( executor != null ) {
+							// execute immediately with our executor
+							status = executor.executeInstruction(instr);
+						}
+						if ( status == null ) {
+							// execution didn't happen, so pass to deferred executor
+							status = reactor.processInstruction(instr);
+						}
+						if ( status == null ) {
+							// deferred executor didn't handle, so decline
+							status = new BasicInstructionStatus(instr.getId(),
+									InstructionStatus.InstructionState.Declined, new Date());
+						}
+						resultInstructions.add(new BasicInstruction(instr.getId(), instr.getTopic(),
+								instr.getInstructionDate(), instr.getRemoteInstructionId(),
+								instr.getInstructorId(), status));
+					} catch ( Exception e ) {
+						log.error("Error handling instruction {}", instr, e);
+					}
+				}
+				postInstructionAcks(instructions);
 			}
 		}
 
@@ -205,7 +262,6 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	@Override
 	public void deliveryComplete(IMqttDeliveryToken token) {
 		// nothing to do
-
 	}
 
 	@Override

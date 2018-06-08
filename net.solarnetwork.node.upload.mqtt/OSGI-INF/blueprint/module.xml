@@ -30,6 +30,11 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
 	</bean>
 
+	<bean id="instructionExecutionService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+	</bean>
+
 	<reference-list id="sampleTransformers" availability="optional" 
 		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
 		
@@ -43,6 +48,7 @@
 		<argument ref="identityService"/>
 		<argument ref="sslService"/>
 		<argument ref="reactorService"/>
+		<argument ref="instructionExecutionService"/>
 	</bean>
 
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
