@@ -74,12 +74,17 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 		}
 
 		generator.writeStartObject();
-		generator.writeNumberField("created", datum.getCreated().getTime());
+		if ( datum.getCreated() != null ) {
+			generator.writeNumberField("created", datum.getCreated().getTime());
+		}
 		if ( datum instanceof GeneralLocationDatum ) {
 			GeneralLocationDatum loc = (GeneralLocationDatum) datum;
 			generator.writeNumberField("locationId", loc.getLocationId());
 		}
-		generator.writeStringField("sourceId", datum.getSourceId());
+
+		if ( datum.getSourceId() != null ) {
+			generator.writeStringField("sourceId", datum.getSourceId());
+		}
 
 		generator.writeObjectField("samples", samples);
 
