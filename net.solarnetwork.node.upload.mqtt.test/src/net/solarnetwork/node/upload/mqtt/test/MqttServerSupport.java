@@ -27,6 +27,12 @@ import java.net.ServerSocket;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import org.eclipse.paho.client.mqttv3.IMqttClient;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.junit.After;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +58,7 @@ public class MqttServerSupport {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	protected Server mqttServer;
+	protected MqttClient mqttClient;
 	private Properties mqttServerProperties;
 	private TestingInterceptHandler testingHandler;
 
@@ -72,7 +79,7 @@ public class MqttServerSupport {
 		return p;
 	}
 
-	protected void setupMqttServer(List<InterceptHandler> handlers, IAuthenticator authenticator,
+	public void setupMqttServer(List<InterceptHandler> handlers, IAuthenticator authenticator,
 			IAuthorizator authorizator) {
 		testingHandler = null;
 		if ( handlers == null ) {
@@ -91,7 +98,7 @@ public class MqttServerSupport {
 		}
 	}
 
-	protected void setupMqttServer() {
+	public void setupMqttServer() {
 		setupMqttServer(null, null, null);
 	}
 
@@ -100,7 +107,7 @@ public class MqttServerSupport {
 	 * 
 	 * @return the port
 	 */
-	protected int getMqttServerPort() {
+	public int getMqttServerPort() {
 		if ( mqttServerProperties == null ) {
 			return 1883;
 		}
@@ -114,18 +121,49 @@ public class MqttServerSupport {
 	 * 
 	 * @return the testing handler
 	 */
-	protected TestingInterceptHandler getTestingInterceptHandler() {
+	public TestingInterceptHandler getTestingInterceptHandler() {
 		return testingHandler;
 	}
 
 	/**
 	 * Shut down the embedded MQTT server.
 	 */
-	protected void stopMqttServer() {
+	public void stopMqttServer() {
 		if ( mqttServer != null ) {
 			mqttServer.stopServer();
 			mqttServer = null;
 			mqttServerProperties = null;
+		}
+	}
+
+	public Server getServer() {
+		return mqttServer;
+	}
+
+	public IMqttClient getClient() {
+		return mqttClient;
+	}
+
+	public void setupMqttClient(String clientId, MqttCallback callback) {
+		if ( mqttClient != null ) {
+			try {
+				mqttClient.close(true);
+			} catch ( MqttException e ) {
+				log.info("Exception closing MQTT client: {}", e.getMessage());
+			}
+		}
+		int port = getMqttServerPort();
+		try {
+			MemoryPersistence persistence = new MemoryPersistence();
+			MqttClient client = new MqttClient("tcp://127.0.0.1:" + port, clientId, persistence);
+			client.setCallback(callback);
+			MqttConnectOptions connOptions = new MqttConnectOptions();
+			connOptions.setCleanSession(false);
+			connOptions.setAutomaticReconnect(false);
+			client.connect(connOptions);
+			mqttClient = client;
+		} catch ( MqttException e ) {
+			throw new RuntimeException(e);
 		}
 	}
 

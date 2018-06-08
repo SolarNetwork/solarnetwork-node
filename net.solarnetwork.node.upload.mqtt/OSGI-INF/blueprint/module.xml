@@ -19,6 +19,9 @@
 		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
 		
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
+	
+	<reference id="taskScheduler" filter="(function=node)"
+		interface="org.springframework.scheduling.TaskScheduler"/>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -43,9 +46,10 @@
 		<argument ref="mqttUploadService"/>
 	</bean>
 
-	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService">
+	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" init-method="init">
 		<argument ref="objectMapper"/>
 		<argument ref="identityService"/>
+		<argument ref="taskScheduler"/>
 		<argument ref="sslService"/>
 		<argument ref="reactorService"/>
 		<argument ref="instructionExecutionService"/>

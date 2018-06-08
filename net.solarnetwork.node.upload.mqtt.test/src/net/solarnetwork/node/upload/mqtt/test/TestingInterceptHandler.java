@@ -32,6 +32,7 @@ import io.moquette.interception.messages.InterceptAcknowledgedMessage;
 import io.moquette.interception.messages.InterceptConnectMessage;
 import io.moquette.interception.messages.InterceptConnectionLostMessage;
 import io.moquette.interception.messages.InterceptDisconnectMessage;
+import io.moquette.interception.messages.InterceptMessage;
 import io.moquette.interception.messages.InterceptPublishMessage;
 import io.moquette.interception.messages.InterceptSubscribeMessage;
 import io.moquette.interception.messages.InterceptUnsubscribeMessage;
@@ -56,6 +57,14 @@ public class TestingInterceptHandler extends AbstractInterceptHandler {
 	public final List<InterceptUnsubscribeMessage> unsubscribeMessages = new ArrayList<>(8);
 	public final List<InterceptAcknowledgedMessage> acknowledgedMessages = new ArrayList<>(8);
 
+	public static interface Callback {
+
+		void handleInterceptMessage(InterceptMessage msg);
+
+	}
+
+	private Callback callback;
+
 	@Override
 	public final String getID() {
 		return id;
@@ -64,22 +73,26 @@ public class TestingInterceptHandler extends AbstractInterceptHandler {
 	@Override
 	public void onConnect(InterceptConnectMessage msg) {
 		connectMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	@Override
 	public void onDisconnect(InterceptDisconnectMessage msg) {
 		disconnectMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	@Override
 	public void onConnectionLost(InterceptConnectionLostMessage msg) {
 		connectionLostMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	@Override
 	public void onPublish(InterceptPublishMessage msg) {
 		publishPayloads.add(msg.getPayload().copy());
 		publishMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	/**
@@ -109,16 +122,44 @@ public class TestingInterceptHandler extends AbstractInterceptHandler {
 	@Override
 	public void onSubscribe(InterceptSubscribeMessage msg) {
 		subscribeMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	@Override
 	public void onUnsubscribe(InterceptUnsubscribeMessage msg) {
 		unsubscribeMessages.add(msg);
+		notifiyCallback(msg);
 	}
 
 	@Override
 	public void onMessageAcknowledged(InterceptAcknowledgedMessage msg) {
 		acknowledgedMessages.add(msg);
+		notifiyCallback(msg);
+	}
+
+	private void notifiyCallback(InterceptMessage msg) {
+		if ( callback != null ) {
+			callback.handleInterceptMessage(msg);
+		}
+	}
+
+	/**
+	 * Get the configured callback.
+	 * 
+	 * @return the callback
+	 */
+	public Callback getCallback() {
+		return callback;
+	}
+
+	/**
+	 * Set a callback.
+	 * 
+	 * @param callback
+	 *        the callback
+	 */
+	public void setCallback(Callback callback) {
+		this.callback = callback;
 	}
 
 }
