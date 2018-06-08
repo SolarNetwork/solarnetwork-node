@@ -75,4 +75,14 @@ public interface ReactorService {
 	 */
 	List<InstructionStatus> processInstruction(String instructorId, Object data, String dataType,
 			Map<String, ?> properties);
+
+	/**
+	 * Store an Instruction instance in local storage and return its primary
+	 * key.
+	 * 
+	 * @param instruction
+	 * @return the local primary key
+	 * @since 1.1
+	 */
+	Long storeInstruction(Instruction instruction);
 }

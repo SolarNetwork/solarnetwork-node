@@ -91,6 +91,16 @@ public class SimpleReactorService implements ReactorService {
 		return results;
 	}
 
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public Long storeInstruction(Instruction instruction) {
+		if ( instruction.getId() != null ) {
+			instructionDao.storeInstructionStatus(instruction.getId(), instruction.getStatus());
+			return instruction.getId();
+		}
+		return instructionDao.storeInstruction(instruction);
+	}
+
 	public void setSerializationServices(Collection<ReactorSerializationService> serializationServices) {
 		this.serializationServices = serializationServices;
 	}
