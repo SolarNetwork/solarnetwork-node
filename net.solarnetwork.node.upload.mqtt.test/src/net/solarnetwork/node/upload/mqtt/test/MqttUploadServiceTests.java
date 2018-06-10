@@ -114,6 +114,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Override
 	@After
 	public void teardown() {
+		super.teardown();
 		EasyMock.verify(identityService, reactorService, instructionExecutionService);
 	}
 
