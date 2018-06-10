@@ -73,9 +73,11 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%s/datum";
 
+	private static final long MAX_CONNECT_DELAY_MS = 120000L;
+
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
-	private final TaskScheduler taskExecutor;
+	private final TaskScheduler taskScheduler;
 	private final OptionalService<SSLService> sslServiceOpt;
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
@@ -109,22 +111,20 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		super();
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
-		this.taskExecutor = taskScheduler;
+		this.taskScheduler = taskScheduler;
 		this.sslServiceOpt = sslService;
 		this.reactorServiceOpt = reactorService;
 		this.instructionExecutionServiceOpt = instructionExecutionService;
 		this.clientRef = new AtomicReference<IMqttClient>();
 	}
 
-	private static final long MAX_CONNECT_DELAY_MS = 120000L;
-
 	/**
 	 * Immediately connect.
 	 */
 	public void init() {
-		if ( taskExecutor != null ) {
+		if ( taskScheduler != null ) {
 			final AtomicLong sleep = new AtomicLong(2000);
-			taskExecutor.schedule(new Runnable() {
+			taskScheduler.schedule(new Runnable() {
 
 				@Override
 				public void run() {
@@ -145,7 +145,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 					});
 					log.info("Failed to connect to MQTT server {}, will try again in {}s",
 							identityService.getSolarInMqttUrl(), delay / 1000);
-					taskExecutor.schedule(this, new Date(System.currentTimeMillis() + delay));
+					taskScheduler.schedule(this, new Date(System.currentTimeMillis() + delay));
 				}
 			}, new Date(System.currentTimeMillis() + sleep.get()));
 		} else {
@@ -346,8 +346,8 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 					subscribeToTopics(client, nodeId);
 				} catch ( MqttException e ) {
 					log.error("Error subscribing to node topics: {}", e.getMessage(), e);
-					if ( taskExecutor != null ) {
-						taskExecutor.schedule(new Runnable() {
+					if ( taskScheduler != null ) {
+						taskScheduler.schedule(new Runnable() {
 
 							@Override
 							public void run() {
