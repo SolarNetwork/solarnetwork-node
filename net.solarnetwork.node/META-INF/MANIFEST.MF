@@ -11,7 +11,7 @@ Export-Package:
  net.solarnetwork.node;version="1.24.0",
  net.solarnetwork.node.backup;version="1.6.3",
  net.solarnetwork.node.dao;version="1.8.0",
- net.solarnetwork.node.domain;version="1.12.0",
+ net.solarnetwork.node.domain;version="1.13.0",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.reactor;version="1.4.0",
  net.solarnetwork.node.reactor.support;version="1.4.0",
