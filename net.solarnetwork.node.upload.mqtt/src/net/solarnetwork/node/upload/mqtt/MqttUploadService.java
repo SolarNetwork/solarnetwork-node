@@ -197,7 +197,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		URI uri;
 		try {
 			uri = new URI(identityService.getSolarInMqttUrl());
-		} catch ( URISyntaxException e1 ) {
+		} catch ( NullPointerException | URISyntaxException e1 ) {
 			log.error("Invalid MQTT URL: " + identityService.getSolarInMqttUrl());
 			return null;
 		}
@@ -230,7 +230,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 				return c;
 			}
 		} catch ( MqttException e ) {
-			log.warn("Error configuring MQTT client: {}", e.getMessage());
+			log.warn("Error configuring MQTT client", e);
 			if ( c != null ) {
 				clientRef.compareAndSet(c, null);
 			}
