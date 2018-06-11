@@ -272,7 +272,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// then
 
-		// should have published acknoledgement on datum topic
+		// should have published acknowledgement on datum topic
 		TestingInterceptHandler session = getTestingInterceptHandler();
 		assertThat("Published instruction and ack", session.publishMessages, hasSize(2));
 
