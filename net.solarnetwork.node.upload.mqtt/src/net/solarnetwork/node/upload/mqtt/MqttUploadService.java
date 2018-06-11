@@ -282,51 +282,53 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 				}
 			}
 		}
-
 	}
 
 	@Override
 	public void messageArrived(String topic, MqttMessage message) throws Exception {
-		// look for and process instructions from message body, as JSON array
-		ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
-		if ( reactor != null ) {
-			JsonNode root = objectMapper.readTree(message.getPayload());
-			JsonNode instrArray = root.path("instructions");
-			if ( instrArray != null && instrArray.isArray() ) {
-				InstructionExecutionService executor = (instructionExecutionServiceOpt != null
-						? instructionExecutionServiceOpt.service()
-						: null);
-				List<Instruction> resultInstructions = new ArrayList<>(8);
-				// manually parse instruction, so we can immediately execute
-				List<Instruction> instructions = reactor.parseInstructions(
-						identityService.getSolarInMqttUrl(), instrArray, JSON_MIME_TYPE, null);
-				for ( Instruction instr : instructions ) {
-					try {
-						InstructionStatus status = null;
-						if ( executor != null ) {
-							// execute immediately with our executor
-							status = executor.executeInstruction(instr);
+		try {
+			// look for and process instructions from message body, as JSON array
+			ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
+			if ( reactor != null ) {
+				JsonNode root = objectMapper.readTree(message.getPayload());
+				JsonNode instrArray = root.path("instructions");
+				if ( instrArray != null && instrArray.isArray() ) {
+					InstructionExecutionService executor = (instructionExecutionServiceOpt != null
+							? instructionExecutionServiceOpt.service()
+							: null);
+					List<Instruction> resultInstructions = new ArrayList<>(8);
+					// manually parse instruction, so we can immediately execute
+					List<Instruction> instructions = reactor.parseInstructions(
+							identityService.getSolarInMqttUrl(), instrArray, JSON_MIME_TYPE, null);
+					for ( Instruction instr : instructions ) {
+						try {
+							InstructionStatus status = null;
+							if ( executor != null ) {
+								// execute immediately with our executor
+								status = executor.executeInstruction(instr);
+							}
+							if ( status == null ) {
+								// execution didn't happen, so pass to deferred executor
+								status = reactor.processInstruction(instr);
+							}
+							if ( status == null ) {
+								// deferred executor didn't handle, so decline
+								status = new BasicInstructionStatus(instr.getId(),
+										InstructionStatus.InstructionState.Declined, new Date());
+							}
+							resultInstructions.add(new BasicInstruction(instr.getId(), instr.getTopic(),
+									instr.getInstructionDate(), instr.getRemoteInstructionId(),
+									instr.getInstructorId(), status));
+						} catch ( Exception e ) {
+							log.error("Error handling instruction {}", instr, e);
 						}
-						if ( status == null ) {
-							// execution didn't happen, so pass to deferred executor
-							status = reactor.processInstruction(instr);
-						}
-						if ( status == null ) {
-							// deferred executor didn't handle, so decline
-							status = new BasicInstructionStatus(instr.getId(),
-									InstructionStatus.InstructionState.Declined, new Date());
-						}
-						resultInstructions.add(new BasicInstruction(instr.getId(), instr.getTopic(),
-								instr.getInstructionDate(), instr.getRemoteInstructionId(),
-								instr.getInstructorId(), status));
-					} catch ( Exception e ) {
-						log.error("Error handling instruction {}", instr, e);
 					}
+					postInstructionAcks(resultInstructions);
 				}
-				postInstructionAcks(resultInstructions);
 			}
+		} catch ( RuntimeException e ) {
+			log.error("Error handling MQTT message on topic {}", topic, e);
 		}
-
 	}
 
 	@Override
