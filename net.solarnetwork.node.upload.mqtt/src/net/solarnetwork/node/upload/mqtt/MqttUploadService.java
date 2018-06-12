@@ -230,7 +230,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 				return c;
 			}
 		} catch ( MqttException e ) {
-			log.warn("Error configuring MQTT client", e);
+			log.warn("Error configuring MQTT client: {}", e.toString());
 			if ( c != null ) {
 				clientRef.compareAndSet(c, null);
 			}
