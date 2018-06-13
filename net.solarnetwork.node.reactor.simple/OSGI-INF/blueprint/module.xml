@@ -91,7 +91,7 @@
 	
 	<bean id="instructionAckTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 		<property name="jobDetail" ref="instructionAckJob"/>
-		<property name="name" value="Instruction Acknowlegement Uploader"/>
+		<property name="name" value="Instruction Acknowledgement Uploader"/>
 		<property name="description" value="Post instruction acknowlegements back to the instructor"/>
 		<property name="cronExpression" value="${job.instructionAcknowledgementUploader.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
