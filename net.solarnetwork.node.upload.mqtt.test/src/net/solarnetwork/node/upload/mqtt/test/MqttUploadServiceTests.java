@@ -164,6 +164,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		replayAll();
 
 		// when
+		service.init();
 		String txId = service.uploadDatum(datum);
 
 		stopMqttServer(); // to flush messages
@@ -202,6 +203,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		stopMqttServer(); // shut down server
 
 		// when
+		service.init();
 		String txId = service.uploadDatum(datum);
 
 		// then
@@ -284,8 +286,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
-				equalTo("[{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
-						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Completed\"}]"));
+				equalTo("{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
+						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Completed\"}"));
 	}
 
 	@Test

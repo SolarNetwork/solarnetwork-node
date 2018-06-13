@@ -119,7 +119,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	}
 
 	/**
-	 * Immediately connect.
+	 * Initialize the service after fully configured.
 	 */
 	public void init() {
 		if ( taskScheduler != null ) {
@@ -153,6 +153,21 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		}
 	}
 
+	/**
+	 * Close down the service.
+	 */
+	public void close() {
+		IMqttClient client = clientRef.get();
+		if ( client != null ) {
+			try {
+				client.disconnectForcibly();
+				client.close();
+			} catch ( MqttException e ) {
+				log.warn("Error closing MQTT connection to {}: {}", client.getServerURI(), e.toString());
+			}
+		}
+	}
+
 	@Override
 	public String getKey() {
 		return "MqttUploadService:" + identityService.getSolarInMqttUrl();
@@ -162,7 +177,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	public String uploadDatum(Datum data) {
 		final Long nodeId = identityService.getNodeId();
 		if ( nodeId != null ) {
-			IMqttClient client = client();
+			IMqttClient client = clientRef.get();
 			if ( client != null ) {
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
 				try {
@@ -170,8 +185,8 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 					return DigestUtils.md5DigestAsHex(
 							String.format("%tQ;%s", data.getCreated(), data.getSourceId()).getBytes());
 				} catch ( MqttException | IOException e ) {
-					log.warn("Error posting datum {} via MQTT @ {}: {}", data, client.getServerURI(),
-							e.getMessage());
+					log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
+							data, client.getServerURI(), e.getMessage());
 				}
 			}
 		}
@@ -249,15 +264,22 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		if ( instructions == null || instructions.isEmpty() ) {
 			return;
 		}
-		IMqttClient client = client();
+		IMqttClient client = clientRef.get();
 		ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
-		if ( client != null ) {
+		if ( client == null ) {
+			// save locally for batch upload
+			if ( reactor != null ) {
+				for ( Instruction instr : instructions ) {
+					reactor.storeInstruction(instr);
+				}
+			}
+		} else {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
 			try {
-				client.publish(topic, objectMapper.writeValueAsBytes(instructions), 1, false);
-				if ( reactor != null ) {
-					// if instructions have a local ID, store ack
-					for ( Instruction instr : instructions ) {
+				for ( Instruction instr : instructions ) {
+					client.publish(topic, objectMapper.writeValueAsBytes(instr), 1, false);
+					if ( reactor != null ) {
+						// if instructions have a local ID, store ack
 						if ( instr.getId() != null && instr.getStatus() != null ) {
 							BasicInstruction ackInstr = new BasicInstruction(instr.getId(),
 									instr.getTopic(), instr.getInstructionDate(),

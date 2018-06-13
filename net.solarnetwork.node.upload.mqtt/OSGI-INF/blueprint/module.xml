@@ -46,7 +46,8 @@
 		<argument ref="mqttUploadService"/>
 	</bean>
 
-	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" init-method="init">
+	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
+			init-method="init" destroy-method="close">
 		<argument ref="objectMapper"/>
 		<argument ref="identityService"/>
 		<argument ref="taskScheduler"/>
