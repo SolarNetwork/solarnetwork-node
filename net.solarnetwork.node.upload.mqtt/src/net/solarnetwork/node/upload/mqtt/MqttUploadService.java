@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
@@ -38,6 +39,8 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
@@ -47,6 +50,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.UploadService;
+import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -54,6 +58,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -81,6 +86,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	private final OptionalService<SSLService> sslServiceOpt;
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
+	private final OptionalService<EventAdmin> eventAdminOpt;
 	private final AtomicReference<IMqttClient> clientRef;
 
 	private String persistencePath = "var/mqtt";
@@ -103,11 +109,14 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	 *        the optional reactor service
 	 * @param instructionExecutionService
 	 *        the instruction execution service
+	 * @param eventAdminService
+	 *        the event admin service
 	 */
 	public MqttUploadService(ObjectMapper objectMapper, IdentityService identityService,
 			TaskScheduler taskScheduler, OptionalService<SSLService> sslService,
 			OptionalService<ReactorService> reactorService,
-			OptionalService<InstructionExecutionService> instructionExecutionService) {
+			OptionalService<InstructionExecutionService> instructionExecutionService,
+			OptionalService<EventAdmin> eventAdmin) {
 		super();
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
@@ -115,6 +124,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		this.sslServiceOpt = sslService;
 		this.reactorServiceOpt = reactorService;
 		this.instructionExecutionServiceOpt = instructionExecutionService;
+		this.eventAdminOpt = eventAdmin;
 		this.clientRef = new AtomicReference<IMqttClient>();
 	}
 
@@ -181,7 +191,9 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 			if ( client != null ) {
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
 				try {
-					client.publish(topic, objectMapper.writeValueAsBytes(data), 1, false);
+					JsonNode jsonData = objectMapper.valueToTree(data);
+					client.publish(topic, objectMapper.writeValueAsBytes(jsonData), 1, false);
+					postDatumUploadedEvent(data, jsonData);
 					return DigestUtils.md5DigestAsHex(
 							String.format("%tQ;%s", data.getCreated(), data.getSourceId()).getBytes());
 				} catch ( MqttException | IOException e ) {
@@ -191,6 +203,49 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 			}
 		}
 		return null;
+	}
+
+	// post DATUM_UPLOADED events; but with the (possibly transformed) uploaded data so we show just
+	// what was actually uploaded
+	private void postDatumUploadedEvent(Datum datum, JsonNode node) {
+		Map<String, Object> props = JsonUtils.getStringMapFromTree(node);
+		if ( props != null && !props.isEmpty() ) {
+			if ( !(props.get("samples") instanceof Map<?, ?>) ) {
+				// no sample data; this must have been filtered out via transform
+				return;
+			}
+
+			// convert samples, which can contain nested maps for a/i/s 
+			@SuppressWarnings("unchecked")
+			Map<String, ?> samples = (Map<String, ?>) props.get("samples");
+			props.remove("samples");
+			for ( Map.Entry<String, ?> me : samples.entrySet() ) {
+				Object val = me.getValue();
+				if ( val instanceof Map<?, ?> ) {
+					@SuppressWarnings("unchecked")
+					Map<String, ?> subMap = (Map<String, ?>) val;
+					props.putAll(subMap);
+				} else {
+					props.put(me.getKey(), val);
+				}
+			}
+
+			String[] types = BaseDatum.getDatumTypes(datum.getClass());
+			if ( types != null && types.length > 0 ) {
+				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
+				props.put(Datum.DATUM_TYPES_PROPERTY, types);
+			}
+			log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
+			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
+		}
+	}
+
+	private void postEvent(Event event) {
+		EventAdmin ea = (eventAdminOpt != null ? eventAdminOpt.service() : null);
+		if ( ea == null || event == null ) {
+			return;
+		}
+		ea.postEvent(event);
 	}
 
 	private void subscribeToTopics(IMqttClient client, Long nodeId) throws MqttException {

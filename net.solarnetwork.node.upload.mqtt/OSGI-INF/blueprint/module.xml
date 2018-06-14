@@ -20,6 +20,11 @@
 		
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<reference id="taskScheduler" filter="(function=node)"
 		interface="org.springframework.scheduling.TaskScheduler"/>
 
@@ -54,6 +59,7 @@
 		<argument ref="sslService"/>
 		<argument ref="reactorService"/>
 		<argument ref="instructionExecutionService"/>
+		<argument ref="eventAdmin"/>
 	</bean>
 
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">

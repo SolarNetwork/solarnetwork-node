@@ -43,6 +43,8 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -78,6 +80,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	private IdentityService identityService;
 	private ReactorService reactorService;
 	private InstructionExecutionService instructionExecutionService;
+	private EventAdmin eventAdminService;
 	private ObjectMapper objectMapper;
 	private MqttUploadService service;
 
@@ -102,12 +105,14 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		identityService = EasyMock.createMock(IdentityService.class);
 		reactorService = EasyMock.createMock(ReactorService.class);
 		instructionExecutionService = EasyMock.createMock(InstructionExecutionService.class);
+		eventAdminService = EasyMock.createMock(EventAdmin.class);
 
 		objectMapper = createObjectMapper(null);
 
 		service = new MqttUploadService(objectMapper, identityService, null, null,
 				new StaticOptionalService<ReactorService>(reactorService),
-				new StaticOptionalService<InstructionExecutionService>(instructionExecutionService));
+				new StaticOptionalService<InstructionExecutionService>(instructionExecutionService),
+				new StaticOptionalService<EventAdmin>(eventAdminService));
 		service.setPersistencePath(System.getProperty("java.io.tmpdir"));
 	}
 
@@ -115,11 +120,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@After
 	public void teardown() {
 		super.teardown();
-		EasyMock.verify(identityService, reactorService, instructionExecutionService);
+		EasyMock.verify(identityService, reactorService, instructionExecutionService, eventAdminService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(identityService, reactorService, instructionExecutionService);
+		EasyMock.replay(identityService, reactorService, instructionExecutionService, eventAdminService);
 	}
 
 	private String expectClientStartup() {
@@ -161,6 +166,9 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		Long nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
 		expect(identityService.getNodeId()).andReturn(nodeId).atLeastOnce();
 
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
 		replayAll();
 
 		// when
@@ -185,6 +193,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
 	}
 
 	@Test
