@@ -1,5 +1,5 @@
 /* ==================================================================
- * InstructionSerializer.java - Aug 25, 2014 2:21:07 PM
+ * NodeControlInfoSerializer.java - Aug 25, 2014 1:54:33 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -20,52 +20,49 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.upload.bulkjsonwebpost;
+package net.solarnetwork.node.support;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Map;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
-import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.domain.NodeControlInfo;
 
 /**
- * Serialize {@link Instruction} to JSON.
+ * Serialize {@link NodeControlInfo} to JSON.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.0
+ * @since 1.58
  */
-public class InstructionSerializer extends StdScalarSerializer<Instruction> implements Serializable {
+public class NodeControlInfoSerializer extends StdScalarSerializer<NodeControlInfo>
+		implements Serializable {
 
-	private static final long serialVersionUID = 1968483113822863563L;
+	private static final long serialVersionUID = 3250639159449218754L;
 
 	/**
 	 * Default constructor.
 	 */
-	public InstructionSerializer() {
-		super(Instruction.class);
+	public NodeControlInfoSerializer() {
+		super(NodeControlInfo.class);
 	}
 
 	@Override
-	public void serialize(Instruction instruction, JsonGenerator generator, SerializerProvider provider)
+	public void serialize(NodeControlInfo info, JsonGenerator generator, SerializerProvider provider)
 			throws IOException, JsonGenerationException {
-		if ( instruction.getTopic() == null || instruction.getStatus() == null ) {
-			return;
-		}
 		generator.writeStartObject();
-		generator.writeStringField("__type__", "InstructionStatus");
-		if ( instruction.getId() != null ) {
-			generator.writeStringField("id", instruction.getId().toString());
+		generator.writeStringField("__type__", "NodeControlInfo");
+		generator.writeStringField("controlId", info.getControlId());
+		generator.writeStringField("type", info.getType().toString());
+		if ( info.getPropertyName() != null ) {
+			generator.writeStringField("propertyName", info.getPropertyName());
 		}
-		generator.writeStringField("instructionId", instruction.getRemoteInstructionId());
-		generator.writeStringField("topic", instruction.getTopic());
-		generator.writeStringField("status", instruction.getStatus().getInstructionState().toString());
-		Map<String, ?> resultParams = instruction.getStatus().getResultParameters();
-		if ( resultParams != null && !resultParams.isEmpty() ) {
-			generator.writeObjectField("resultParameters", resultParams);
+		if ( info.getUnit() != null ) {
+			generator.writeStringField("unit", info.getUnit());
 		}
+		generator.writeStringField("value", info.getValue());
 		generator.writeEndObject();
 	}
 

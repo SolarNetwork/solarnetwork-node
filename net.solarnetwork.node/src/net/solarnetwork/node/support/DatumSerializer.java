@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.upload.bulkjsonwebpost;
+package net.solarnetwork.node.support;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,7 +38,8 @@ import net.solarnetwork.util.ClassUtils;
  * Serialize {@link Datum} to JSON.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.0
+ * @since 1.58
  */
 public class DatumSerializer extends StdScalarSerializer<Datum> implements Serializable {
 

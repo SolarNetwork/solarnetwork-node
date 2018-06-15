@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.upload.bulkjsonwebpost;
+package net.solarnetwork.node.metadata.json;
 
 import java.io.IOException;
 import java.io.InputStream;

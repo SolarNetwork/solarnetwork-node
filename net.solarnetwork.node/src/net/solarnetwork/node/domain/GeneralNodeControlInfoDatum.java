@@ -20,19 +20,19 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.control.simple;
+package net.solarnetwork.node.domain;
 
 import java.math.BigDecimal;
 import java.util.Date;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
  * Extension of {@link GeneralNodeDatum} that wraps a {@link NodeControlInfo}
  * instance.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.58
  */
 public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
 

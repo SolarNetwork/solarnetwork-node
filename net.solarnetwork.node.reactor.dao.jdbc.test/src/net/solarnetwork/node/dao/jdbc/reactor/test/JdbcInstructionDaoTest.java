@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.dao.jdbc.reactor.test;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.util.Collections;
 import java.util.Date;
@@ -48,7 +51,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 @ContextConfiguration
 public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
@@ -207,6 +210,35 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		results = dao.findInstructionsForAcknowledgement();
 		assertNotNull(results);
 		assertEquals(0, results.size());
+	}
+
+	@Test
+	public void compareAndSetStatus() {
+		storeNew();
+		InstructionStatus execStatus = lastDatum.getStatus()
+				.newCopyWithState(InstructionState.Executing);
+		boolean updated = dao.compareAndStoreInstructionStatus(lastDatum.getId(),
+				InstructionState.Received, execStatus);
+		assertThat("Status updated", updated, equalTo(true));
+		Instruction instr = dao.getInstruction(lastDatum.getId());
+		assertThat("State", instr.getStatus().getInstructionState(),
+				equalTo(InstructionState.Executing));
+		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
+				nullValue());
+	}
+
+	@Test
+	public void compareAndSetStatusNotChanged() {
+		storeNew();
+		InstructionStatus doneStatus = lastDatum.getStatus()
+				.newCopyWithState(InstructionState.Completed);
+		boolean updated = dao.compareAndStoreInstructionStatus(lastDatum.getId(),
+				InstructionState.Executing, doneStatus);
+		assertThat("Status updated", updated, equalTo(false));
+		Instruction instr = dao.getInstruction(lastDatum.getId());
+		assertThat("State", instr.getStatus().getInstructionState(), equalTo(InstructionState.Received));
+		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
+				nullValue());
 	}
 
 }

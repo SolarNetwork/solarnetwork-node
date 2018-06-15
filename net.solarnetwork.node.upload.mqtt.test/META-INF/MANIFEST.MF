@@ -1,0 +1,31 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode MQTT upload tests
+Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt.test
+Bundle-Version: 0.1.0
+Bundle-Vendor: SolarNetwork
+Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="0.1.0"
+Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ io.moquette;version="[0.11,1.0)",
+ io.moquette.interception;version="[0.11,1.0)",
+ io.moquette.interception.messages;version="[0.11,1.0)",
+ io.moquette.server;version="[0.11,1.0)",
+ io.moquette.server.config;version="[0.11,1.0)",
+ io.moquette.spi.security;version="[0.11,1.0)",
+ io.netty.buffer;version="[4.1.12,5.0)",
+ net.solarnetwork.node.reactor.io.json;version="1.2.0",
+ net.solarnetwork.node.test;version="1.3.0",
+ org.apache.commons.logging;version="[1.1,2.0)",
+ org.easymock;version="[3.0,4.0)",
+ org.hamcrest;version="[1.1,2.0)",
+ org.junit;version="[4.5,5.0)",
+ org.junit.runner;version="[4.5,5.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.test.annotation;version="[4.2,5.0)",
+ org.springframework.test.context;version="[4.2,5.0)",
+ org.springframework.test.context.junit4;version="[4.2,5.0)",
+ org.springframework.test.context.support;version="[4.2,5.0)",
+ org.springframework.test.context.transaction;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"

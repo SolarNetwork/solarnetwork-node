@@ -35,6 +35,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.security.KeyPair;
@@ -65,6 +66,7 @@ import org.junit.Test;
 import org.mortbay.jetty.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
@@ -79,7 +81,7 @@ import net.solarnetwork.support.CertificateException;
  * Test cases for the {@link DefaultSetupService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultSetupServiceTest {
 
@@ -295,5 +297,43 @@ public class DefaultSetupServiceTest {
 		httpServer.addHandler(handler);
 
 		service.renewNetworkCertificate("foobar");
+	}
+
+	@Test
+	public void readSolarInMqttUrl() {
+		// given
+		SetupIdentityInfo info = new SetupIdentityInfo(1L, TEST_CONF_VALUE, TEST_SOLARIN_HOST,
+				getHttpServerPort(), false, TEST_PW_VALUE);
+		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).atLeastOnce();
+
+		AbstractTestHandler handler = new AbstractTestHandler() {
+
+			@Override
+			protected boolean handleInternal(String target, HttpServletRequest request,
+					HttpServletResponse response, int dispatch) throws Exception {
+				assertEquals("GET", request.getMethod());
+				assertEquals("/solarin/identity.do", target);
+				response.setContentType("text/xml");
+
+				byte[] xml = FileCopyUtils.copyToByteArray(
+						DefaultSetupServiceTest.class.getResourceAsStream("identity-01.xml"));
+
+				OutputStream out = response.getOutputStream();
+				FileCopyUtils.copy(xml, out);
+				out.flush();
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		httpServer.addHandler(handler);
+
+		replayAll();
+
+		// when
+		String url = service.getSolarInMqttUrl();
+
+		// then
+		assertThat("MQTT URL", url, equalTo("mqtts://queue.solarnetwork.net:8883"));
 	}
 }

@@ -1,0 +1,18 @@
+{
+	"instructions": [
+		{
+			"id": 4316548,
+			"created": "2015-02-26 21:00:00.000Z",
+			"topic": "SetControlParameter",
+			"instructionDate": "2015-02-26 21:00:00.000Z",
+			"state": "Queued",
+			"parameters": [
+				{
+					"name": "/switch/1",
+					"value": "1"
+				}
+			],
+			"nodeId": 123
+		}
+	]
+}

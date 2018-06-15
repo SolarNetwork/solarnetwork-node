@@ -20,6 +20,7 @@
 		<beans:prop key="SetupService.nodeId">-11</beans:prop>
 		<beans:prop key="SetupService.hostName">localhost</beans:prop>
 		<beans:prop key="SetupService.port">8080</beans:prop>
+		<beans:prop key="SetupService.mqttPort">1883</beans:prop>
 		<beans:prop key="SetupService.solarInUrlPrefix">/solarin</beans:prop>
 	</osgix:cm-properties>
 	
@@ -38,6 +39,7 @@
 		<property name="nodeId" value="${SetupService.nodeId}"/>
 		<property name="hostName" value="${SetupService.hostName}"/>
 		<property name="port" value="${SetupService.port}"/>
+		<property name="mqttPort" value="${SetupService.mqttPort}"/>
 	</bean>
 	
 </blueprint>

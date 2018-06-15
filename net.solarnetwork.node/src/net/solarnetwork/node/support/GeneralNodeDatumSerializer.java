@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.upload.bulkjsonwebpost;
+package net.solarnetwork.node.support;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -35,11 +35,11 @@ import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
- * Serialize {@link GeneralNodeDatum} to JSON. The {@link GeneralLocationDatum}
- * is also supported.
+ * Serialize {@link GeneralNodeDatum} and {@link GeneralLocationDatum} to JSON.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.0
+ * @since 1.58
  */
 public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum>
 		implements Serializable {
@@ -74,12 +74,17 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 		}
 
 		generator.writeStartObject();
-		generator.writeNumberField("created", datum.getCreated().getTime());
+		if ( datum.getCreated() != null ) {
+			generator.writeNumberField("created", datum.getCreated().getTime());
+		}
 		if ( datum instanceof GeneralLocationDatum ) {
 			GeneralLocationDatum loc = (GeneralLocationDatum) datum;
 			generator.writeNumberField("locationId", loc.getLocationId());
 		}
-		generator.writeStringField("sourceId", datum.getSourceId());
+
+		if ( datum.getSourceId() != null ) {
+			generator.writeStringField("sourceId", datum.getSourceId());
+		}
 
 		generator.writeObjectField("samples", samples);
 

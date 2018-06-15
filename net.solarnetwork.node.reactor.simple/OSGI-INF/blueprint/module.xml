@@ -49,17 +49,15 @@
 	
 	<!-- Published Services -->
 
-	<service ref="simpleReactorService" ranking="1"
-		interface="net.solarnetwork.node.reactor.ReactorService"/>
+	<service interface="net.solarnetwork.node.reactor.ReactorService" ranking="1" ref="simpleReactorService"/>
 
-	<service ref="instructionAck" 
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail" ref="instructionAck"/>
 
-	<service ref="instructionExecution" 
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail" ref="instructionExecution"/>
 
-	<service ref="instructionCleaner" 
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail"  ref="instructionCleaner"/>
+
+	<service interface="net.solarnetwork.node.reactor.InstructionExecutionService" ref="instructionExecutionService"/>
 
 	<!-- Supporting Services -->
 	
@@ -76,7 +74,13 @@
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager"/>
-
+	
+	<bean id="instructionExecutionService" class="net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService">
+		<property name="handlers" ref="instructionHandlers"/>
+		<property name="feedbackHandlers" ref="feedbackInstructionHandlers"/>
+		<property name="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
+	</bean>
+	
 	<!-- Instruction Acknowledgement job -->
 	
 	<bean id="instructionAck" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
@@ -87,7 +91,7 @@
 	
 	<bean id="instructionAckTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
 		<property name="jobDetail" ref="instructionAckJob"/>
-		<property name="name" value="Instruction Acknowlegement Uploader"/>
+		<property name="name" value="Instruction Acknowledgement Uploader"/>
 		<property name="description" value="Post instruction acknowlegements back to the instructor"/>
 		<property name="cronExpression" value="${job.instructionAcknowledgementUploader.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
@@ -124,9 +128,7 @@
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="instructionDao" value-ref="instructionDao"/>
-				<entry key="handlers" value-ref="instructionHandlers"/>
-				<entry key="feedbackHandlers" value-ref="feedbackInstructionHandlers"/>
-				<entry key="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
+				<entry key="instructionExecutionService" value-ref="instructionExecutionService"/>
 			</map>
 		</property>
 	</bean>

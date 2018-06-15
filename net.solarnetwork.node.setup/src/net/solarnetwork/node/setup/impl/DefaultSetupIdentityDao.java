@@ -139,7 +139,7 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 			String forceTls = dao.getSetting(KEY_SOLARNETWORK_FORCE_TLS, SETUP_TYPE_KEY);
 			String keyStorePw = dao.getSetting(KEY_KEY_STORE_PASSWORD, SETUP_TYPE_KEY);
 			if ( nodeId != null && confCode != null && hostName != null && hostPort != null
-					&& forceTls != null && keyStorePw != null ) {
+					&& forceTls != null ) {
 				SetupIdentityInfo info = new SetupIdentityInfo(Long.valueOf(nodeId), confCode, hostName,
 						Integer.valueOf(hostPort), Boolean.parseBoolean(forceTls), keyStorePw);
 				return info;

@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode JSON Metadata Service
+Bundle-SymbolicName: net.solarnetwork.node.metadata.json
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.metadata.json
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ com.fasterxml.jackson.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.core;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
+ net.solarnetwork.domain;version="1.14.0",
+ net.solarnetwork.node;version="1.24.0",
+ net.solarnetwork.node.dao;version="1.8.0",
+ net.solarnetwork.node.domain;version="1.12.0",
+ net.solarnetwork.node.support;version="1.15.0",
+ net.solarnetwork.util;version="1.32.0",
+ org.slf4j;version="[1.7,2.0)"

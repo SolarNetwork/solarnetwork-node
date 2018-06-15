@@ -49,6 +49,7 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
+import net.solarnetwork.domain.NetworkIdentity;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupManager;
@@ -105,7 +106,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -163,6 +164,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String VERIFICATION_CODE_FORCE_TLS = "forceTLS";
 	private static final String VERIFICATION_URL_SOLARUSER = "solarUserServiceURL";
 	private static final String VERIFICATION_URL_SOLARQUERY = "solarQueryServiceURL";
+	private static final String VERIFICATION_URL_SOLARIN_MQTT = "solarInMqttServiceURL";
 
 	private static final String SOLAR_NET_IDENTITY_PATH = "/identity.do";
 	private static final String SOLAR_NET_IDENTITY_URL = "/solarin" + SOLAR_NET_IDENTITY_PATH;
@@ -211,6 +213,8 @@ public class DefaultSetupService extends XmlServiceSupport
 				"/*/networkServiceURLs/entry[@key='solaruser']/value/@value");
 		identityXpathMap.put(VERIFICATION_URL_SOLARQUERY,
 				"/*/networkServiceURLs/entry[@key='solarquery']/value/@value");
+		identityXpathMap.put(VERIFICATION_URL_SOLARIN_MQTT,
+				"/*/networkServiceURLs/entry[@key='solarin-mqtt']/value/@value");
 		return getXPathExpressionMap(identityXpathMap);
 	}
 
@@ -270,6 +274,17 @@ public class DefaultSetupService extends XmlServiceSupport
 		}
 		return "http" + (port == 443 || isForceTLS() ? "s" : "") + "://" + host
 				+ (port == 443 || port == 80 ? "" : (":" + port)) + solarInUrlPrefix;
+	}
+
+	@Override
+	public String getSolarInMqttUrl() {
+		String result = null;
+		NodeAppConfiguration config = getAppConfiguration();
+		if ( config != null ) {
+			result = config.getNetworkServiceUrls()
+					.get(NetworkIdentity.SOLARIN_MQTT_NETWORK_SERVICE_KEY);
+		}
+		return result;
 	}
 
 	@Override
@@ -552,6 +567,8 @@ public class DefaultSetupService extends XmlServiceSupport
 					log.warn("Network error fetching SolarUser app configuration: " + e.getMessage());
 				}
 			}
+			// add SolarIn URLs last, which should not be overridden
+			networkServiceUrls.putAll(association.getNetworkServiceURLs());
 			config = new NodeAppConfiguration(networkServiceUrls);
 			this.appConfiguration = config;
 		} catch ( Exception e ) {

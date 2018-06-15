@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.reactor;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService;
 
 /**
  * Job to look for received instructions and pass to handlers for execution.
@@ -64,72 +64,49 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class InstructionExecutionJob extends AbstractJob {
 
 	/** Default value for the {@code executionReceivedHourLimit} property. */
-	public static final int DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT = 24;
+	public static final int DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT = DefaultInstructionExecutionService.DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT;
 
 	private InstructionDao instructionDao;
-	private List<InstructionHandler> handlers;
-	private List<FeedbackInstructionHandler> feedbackHandlers;
-	private int executionReceivedHourLimit = DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT;
+	private InstructionExecutionService service = new DefaultInstructionExecutionService();
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		List<Instruction> instructions = instructionDao
 				.findInstructionsForState(InstructionState.Received);
 		log.debug("Found {} instructions in Received state", instructions.size());
-		final long now = System.currentTimeMillis();
-		final long timeLimitMs = executionReceivedHourLimit * 60 * 60 * 1000;
-		List<InstructionHandler> allHandlers = new ArrayList<InstructionHandler>(handlers);
-		if ( feedbackHandlers != null ) {
-			allHandlers.addAll(feedbackHandlers);
-		}
-		if ( allHandlers.isEmpty() ) {
-			log.trace("No InstructionHandler instances available");
-			return;
-		}
 		for ( Instruction instruction : instructions ) {
-			boolean handled = false;
-			log.trace("Passing instruction {} {} to {} handlers",
-					new Object[] { instruction.getId(), instruction.getTopic(), allHandlers.size() });
-			InstructionStatus currStatus = instruction.getStatus();
-			for ( InstructionHandler handler : allHandlers ) {
-				log.trace("Handler {} handles topic {}: {}", new Object[] { handler,
-						instruction.getTopic(), handler.handlesTopic(instruction.getTopic()) });
-				if ( handler.handlesTopic(instruction.getTopic()) ) {
-					if ( handler instanceof FeedbackInstructionHandler ) {
-						InstructionStatus status = ((FeedbackInstructionHandler) handler)
-								.processInstructionWithFeedback(instruction);
-						if ( status != null && (currStatus == null || !currStatus.equals(status)) ) {
-							log.info("Instruction {} {} status changed to {}", instruction.getId(),
-									instruction.getTopic(), status.getInstructionState());
-							instructionDao.storeInstructionStatus(instruction.getId(), status);
-							handled = true;
-						}
-					} else {
-						InstructionState state = handler.processInstruction(instruction);
-						if ( state != null && !InstructionState.Received.equals(state) ) {
-							log.info("Instruction {} {} state changed to {}", instruction.getId(),
-									instruction.getTopic(), state);
-							instructionDao.storeInstructionStatus(instruction.getId(),
-									instruction.getStatus().newCopyWithState(state));
-							handled = true;
-						}
-					}
+			InstructionStatus receivedStatus = instruction.getStatus();
+
+			final InstructionStatus execStatus = receivedStatus
+					.newCopyWithState(InstructionStatus.InstructionState.Executing);
+			InstructionStatus status = null;
+			boolean canExecute = false;
+			try {
+				// update state to Executing
+				canExecute = instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
+						InstructionState.Received, execStatus);
+				if ( canExecute ) {
+					status = service.executeInstruction(instruction);
 				}
-			}
-			if ( !handled && instruction.getInstructionDate() != null ) {
-				long diffMs = now - instruction.getInstructionDate().getTime();
-				if ( diffMs > timeLimitMs ) {
-					log.info("Instruction {} {} not handled within {} hours; declining",
-							instruction.getId(), instruction.getTopic(), executionReceivedHourLimit);
-					instructionDao.storeInstructionStatus(instruction.getId(),
-							instruction.getStatus().newCopyWithState(InstructionState.Declined));
+			} catch ( Exception e ) {
+				log.error("Execution of instruction {} ({}) threw exception", instruction.getId(),
+						instruction.getTopic(), e);
+			} finally {
+				if ( status == null ) {
+					// roll back to received status to try again later
+					status = receivedStatus;
+				}
+				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
+						InstructionState.Executing, status) ) {
+					log.info("Instruction {} {} status changed to {}", instruction.getId(),
+							instruction.getTopic(), status.getInstructionState());
 				}
 			}
 		}
@@ -151,42 +128,68 @@ public class InstructionExecutionJob extends AbstractJob {
 	}
 
 	public List<InstructionHandler> getHandlers() {
-		return handlers;
+		return null;
+	}
+
+	/**
+	 * Set the instruction execution service to use.
+	 * 
+	 * @param service
+	 *        the service
+	 * @since 2.3
+	 */
+	public void setInstructionExecutionService(InstructionExecutionService service) {
+		if ( service == null ) {
+			throw new IllegalArgumentException("InstructionExecutionService may not be null");
+		}
+		this.service = service;
 	}
 
 	/**
 	 * Set a list of {@link InstructionHandler} instances to process
 	 * instructions with.
 	 * 
-	 * <p>
-	 * Note that {@link FeedbackInstructionHandler} instances <em>are</em>
-	 * allowed to be configured here, and will be treated as such.
-	 * </p>
+	 * <p> Note that {@link FeedbackInstructionHandler} instances <em>are</em>
+	 * allowed to be configured here, and will be treated as such. </p>
 	 * 
-	 * @param handlers
-	 *        the handlers
+	 * @param handlers the handlers @deprecated use {@link
+	 * #setInstructionExecutionService(InstructionExecutionService)
 	 */
+	@Deprecated
 	public void setHandlers(List<InstructionHandler> handlers) {
-		this.handlers = handlers;
+		DefaultInstructionExecutionService s = (service instanceof DefaultInstructionExecutionService
+				? (DefaultInstructionExecutionService) service
+				: null);
+		if ( s != null ) {
+			s.setHandlers(handlers);
+		}
 	}
 
+	@Deprecated
 	public List<FeedbackInstructionHandler> getFeedbackHandlers() {
-		return feedbackHandlers;
+		return null;
 	}
 
 	/**
 	 * Set a list of {@link FeedbackInstructionHandler} instances to process
 	 * instructions with.
 	 * 
-	 * @param feedbackHandlers
-	 *        the feedbackHandlers to set
+	 * @param feedbackHandlers the feedbackHandlers to set @deprecated use
+	 * {@link #setInstructionExecutionService(InstructionExecutionService)
 	 */
+	@Deprecated
 	public void setFeedbackHandlers(List<FeedbackInstructionHandler> feedbackHandlers) {
-		this.feedbackHandlers = feedbackHandlers;
+		DefaultInstructionExecutionService s = (service instanceof DefaultInstructionExecutionService
+				? (DefaultInstructionExecutionService) service
+				: null);
+		if ( s != null ) {
+			s.setFeedbackHandlers(feedbackHandlers);
+		}
 	}
 
+	@Deprecated
 	public int getExecutionReceivedHourLimit() {
-		return executionReceivedHourLimit;
+		return DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT;
 	}
 
 	/**
@@ -195,11 +198,17 @@ public class InstructionExecutionJob extends AbstractJob {
 	 * not handled by any handler from sticking around on the node indefinitely.
 	 * Defaults to {@link #DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT}.
 	 * 
-	 * @param executionReceivedHourLimit
-	 *        the hour limit
+	 * @param executionReceivedHourLimit the hour limit @deprecated use {@link
+	 * #setInstructionExecutionService(InstructionExecutionService)
 	 */
+	@Deprecated
 	public void setExecutionReceivedHourLimit(int executionReceivedHourLimit) {
-		this.executionReceivedHourLimit = executionReceivedHourLimit;
+		DefaultInstructionExecutionService s = (service instanceof DefaultInstructionExecutionService
+				? (DefaultInstructionExecutionService) service
+				: null);
+		if ( s != null ) {
+			s.setExecutionReceivedHourLimit(executionReceivedHourLimit);
+		}
 	}
 
 }

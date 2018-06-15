@@ -15,6 +15,7 @@ Import-Package:
  net.solarnetwork.node.support;version="1.14.0",
  net.solarnetwork.node.util;version="1.7.2",
  net.solarnetwork.util;version="1.28.0",
+ org.osgi.service.event;version="[1.2,2.0)",
  org.quartz;version="[2.2.3,3.0)",
  org.quartz.simpl;version="[2.2.3,3.0)",
  org.slf4j;version="[1.7.24,2.0)",
