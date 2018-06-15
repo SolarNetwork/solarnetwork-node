@@ -18,6 +18,10 @@
 	<reference id="generalNodeDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
 		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
 		
+	<!-- Get GeneralLocationDatumDao, which we'll wrap as a UploadServiceDatumDao -->
+	<reference id="generalLocationDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
+		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
+		
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 	
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -46,11 +50,6 @@
 	<reference-list id="sampleTransformers" availability="optional" 
 		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
 		
-	<bean id="uploadDatumDao" class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
-		<argument ref="generalNodeDatumDao"/>
-		<argument ref="mqttUploadService"/>
-	</bean>
-
 	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
 			init-method="init" destroy-method="close">
 		<argument ref="objectMapper"/>
@@ -78,12 +77,28 @@
 		</property>
 	</bean>
 	
-	<!-- Publish UploadServiceDatumDao with higher rank than generalNodeDatumDao -->
-	<service ref="uploadDatumDao" ranking="100" interface="net.solarnetwork.node.dao.DatumDao">
+	<!-- Publish DatumDao for GeneralNodeDatum with higher rank than generalNodeDatumDao -->
+	<service ranking="100" interface="net.solarnetwork.node.dao.DatumDao">
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
 			<entry key="mqtt" value="true"/>
 		</service-properties>
+		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
+			<argument ref="generalNodeDatumDao"/>
+			<argument ref="mqttUploadService"/>
+		</bean>
+	</service>
+
+	<!-- Publish DatumDao for GeneralLocationDatum with higher rank than generalNodeDatumDao -->
+	<service ranking="100" interface="net.solarnetwork.node.dao.DatumDao">
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+			<entry key="mqtt" value="true"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
+			<argument ref="generalLocationDatumDao"/>
+			<argument ref="mqttUploadService"/>
+		</bean>
 	</service>
 
 </blueprint>

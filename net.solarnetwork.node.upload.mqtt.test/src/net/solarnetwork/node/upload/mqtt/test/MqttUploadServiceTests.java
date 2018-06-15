@@ -54,6 +54,7 @@ import io.moquette.interception.messages.InterceptMessage;
 import io.moquette.interception.messages.InterceptPublishMessage;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.UploadService;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -197,6 +198,55 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		Event datumUploadEvent = eventCaptor.getValue();
 		assertThat("Event topic", datumUploadEvent.getTopic(),
 				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
+	}
+
+	@Test
+	public void uploadLocationDatumWithConnectionToMqttServer() throws IOException {
+		// given
+		Long locationId = Math.abs(UUID.randomUUID().getMostSignificantBits());
+		GeneralLocationDatum datum = new GeneralLocationDatum();
+		datum.setLocationId(locationId);
+		datum.putInstantaneousSampleValue("foo", 123);
+
+		expectClientStartup();
+
+		Long nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
+		expect(identityService.getNodeId()).andReturn(nodeId).atLeastOnce();
+
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
+		replayAll();
+
+		// when
+		service.init();
+		String txId = service.uploadDatum(datum);
+
+		stopMqttServer(); // to flush messages
+
+		// then
+		assertThat("TX ID", txId, notNullValue());
+
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Connected to broker", session.connectMessages, hasSize(1));
+
+		InterceptConnectMessage connMsg = session.connectMessages.get(0);
+		assertThat("Connect client ID", connMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Durable session", connMsg.isCleanSession(), equalTo(false));
+
+		assertThat("Published datum", session.publishMessages, hasSize(1));
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
+				equalTo(objectMapper.writeValueAsString(datum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'locationId'", datumUploadEvent.getProperty("locationId"),
+				equalTo((Object) locationId));
 		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
 	}
 
