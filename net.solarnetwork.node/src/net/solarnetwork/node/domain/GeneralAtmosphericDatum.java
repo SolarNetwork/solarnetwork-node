@@ -30,7 +30,7 @@ import net.solarnetwork.util.SerializeIgnore;
  * GeneralLocationDatum that also implements {@link AtmosphericDatum}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class GeneralAtmosphericDatum extends GeneralLocationDatum implements AtmosphericDatum {
 
@@ -142,6 +142,17 @@ public class GeneralAtmosphericDatum extends GeneralLocationDatum implements Atm
 
 	public void setSnow(Integer value) {
 		putInstantaneousSampleValue(SNOW_KEY, value);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public BigDecimal getIrradiance() {
+		return getInstantaneousSampleBigDecimal(IRRADIANCE_KEY);
+	}
+
+	public void setIrradiance(BigDecimal value) {
+		putInstantaneousSampleValue(IRRADIANCE_KEY, value);
 	}
 
 }

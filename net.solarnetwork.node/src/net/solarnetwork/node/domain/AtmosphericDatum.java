@@ -28,7 +28,7 @@ import java.math.BigDecimal;
  * Standardized API for atmospheric related datum to implement.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface AtmosphericDatum extends Datum {
 
@@ -36,37 +36,37 @@ public interface AtmosphericDatum extends Datum {
 	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
 	 * sample key for {@link AtmosphericDatum#getTemperature()} values.
 	 */
-	static final String TEMPERATURE_KEY = "temp";
+	String TEMPERATURE_KEY = "temp";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
 	 * sample key for {@link AtmosphericDatum#getHumidity()} values.
 	 */
-	static final String HUMIDITY_KEY = "humidity";
+	String HUMIDITY_KEY = "humidity";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
 	 * sample key for {@link AtmosphericDatum#getDewPoint()} values.
 	 */
-	static final String DEW_POINT_KEY = "dew";
+	String DEW_POINT_KEY = "dew";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
 	 * sample key for {@link AtmosphericDatum#getAtmosphericPressure()} values.
 	 */
-	static final String ATMOSPHERIC_PRESSURE_KEY = "atm";
+	String ATMOSPHERIC_PRESSURE_KEY = "atm";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
 	 * sample key for {@link AtmosphericDatum#getAtmosphericPressure()} values.
 	 */
-	static final String VISIBILITY_KEY = "visibility";
+	String VISIBILITY_KEY = "visibility";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
 	 * for {@link AtmosphericDatum#getSkyConditions()} values.
 	 */
-	static final String SKY_CONDITIONS_KEY = "sky";
+	String SKY_CONDITIONS_KEY = "sky";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -74,7 +74,7 @@ public interface AtmosphericDatum extends Datum {
 	 * 
 	 * @since 1.2
 	 */
-	static final String WIND_SPEED_KEY = "wspeed";
+	String WIND_SPEED_KEY = "wspeed";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -82,7 +82,7 @@ public interface AtmosphericDatum extends Datum {
 	 * 
 	 * @since 1.2
 	 */
-	static final String WIND_DIRECTION_KEY = "wdir";
+	String WIND_DIRECTION_KEY = "wdir";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -90,7 +90,7 @@ public interface AtmosphericDatum extends Datum {
 	 * 
 	 * @since 1.2
 	 */
-	static final String RAIN_KEY = "rain";
+	String RAIN_KEY = "rain";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -98,13 +98,21 @@ public interface AtmosphericDatum extends Datum {
 	 * 
 	 * @since 1.2
 	 */
-	static final String SNOW_KEY = "snow";
+	String SNOW_KEY = "snow";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for {@link AtmosphericDatum#getIrradiance()} values.
+	 * 
+	 * @since 1.3
+	 */
+	String IRRADIANCE_KEY = "irradiance";
 
 	/** A tag for an "indoor" atmosphere sample. */
-	static final String TAG_ATMOSPHERE_INDOOR = "indoor";
+	String TAG_ATMOSPHERE_INDOOR = "indoor";
 
 	/** A tag for an "outdoor" atmosphere sample. */
-	static final String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
+	String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
 
 	/**
 	 * A tag for a forecast atmosphere sample, as opposed to an actual
@@ -112,7 +120,7 @@ public interface AtmosphericDatum extends Datum {
 	 * 
 	 * @since 1.2
 	 */
-	static final String TAG_FORECAST = "forecast";
+	String TAG_FORECAST = "forecast";
 
 	/**
 	 * Get the instantaneous temperature, in degrees Celsius.
@@ -189,5 +197,13 @@ public interface AtmosphericDatum extends Datum {
 	 * @since 1.2
 	 */
 	Integer getSnow();
+
+	/**
+	 * Get the solar irradiance level, in watts / square meter.
+	 * 
+	 * @return irradiance level
+	 * @since 1.3
+	 */
+	BigDecimal getIrradiance();
 
 }
