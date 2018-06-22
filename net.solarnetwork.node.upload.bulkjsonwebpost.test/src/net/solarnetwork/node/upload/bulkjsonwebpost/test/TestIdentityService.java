@@ -86,4 +86,9 @@ public class TestIdentityService implements IdentityService {
 		return "http://" + getSolarNetHostName() + ":" + port + getSolarNetSolarInUrlPrefix();
 	}
 
+	@Override
+	public String getSolarInMqttUrl() {
+		return null;
+	}
+
 }
