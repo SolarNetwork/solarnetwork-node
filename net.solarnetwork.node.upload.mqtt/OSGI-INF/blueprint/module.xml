@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- Get GeneralNodeDatumDao, which we'll wrap as a UploadServiceDatumDao -->
+	<reference id="generalNodeDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
+		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
+		
+	<!-- Get GeneralLocationDatumDao, which we'll wrap as a UploadServiceDatumDao -->
+	<reference id="generalLocationDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
+		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
+		
+	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
+	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
+	<reference id="taskScheduler" filter="(function=node)"
+		interface="org.springframework.scheduling.TaskScheduler"/>
+
+	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
+	</bean>
+
+	<bean id="reactorService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
+	</bean>
+
+	<bean id="instructionExecutionService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+	</bean>
+
+	<reference-list id="sampleTransformers" availability="optional" 
+		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
+		
+	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
+			init-method="init" destroy-method="close">
+		<argument ref="objectMapper"/>
+		<argument ref="identityService"/>
+		<argument ref="taskScheduler"/>
+		<argument ref="sslService"/>
+		<argument ref="reactorService"/>
+		<argument ref="instructionExecutionService"/>
+		<argument ref="eventAdmin"/>
+	</bean>
+
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="jsonFactory">
+			<bean class="com.fasterxml.jackson.dataformat.cbor.CBORFactory"/>
+		</property>
+		<property name="serializers">
+			<list>
+				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer">
+					<property name="sampleTransformers" ref="sampleTransformers"/>	
+				</bean>
+				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
+				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- Publish DatumDao for GeneralNodeDatum with higher rank than generalNodeDatumDao -->
+	<service ranking="100" interface="net.solarnetwork.node.dao.DatumDao">
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
+			<entry key="mqtt" value="true"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
+			<argument ref="generalNodeDatumDao"/>
+			<argument ref="mqttUploadService"/>
+		</bean>
+	</service>
+
+	<!-- Publish DatumDao for GeneralLocationDatum with higher rank than generalNodeDatumDao -->
+	<service ranking="100" interface="net.solarnetwork.node.dao.DatumDao">
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
+			<entry key="mqtt" value="true"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
+			<argument ref="generalLocationDatumDao"/>
+			<argument ref="mqttUploadService"/>
+		</bean>
+	</service>
+
+</blueprint>

@@ -30,7 +30,7 @@ import java.security.Principal;
  * API for knowing information about the node's identity.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface IdentityService {
 
@@ -81,5 +81,13 @@ public interface IdentityService {
 	 * @return SolarIn base URL
 	 */
 	String getSolarInBaseUrl();
+
+	/**
+	 * Get the URL to the SolarIn MQTT service.
+	 * 
+	 * @return the SolarIn MQTT URL, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	String getSolarInMqttUrl();
 
 }

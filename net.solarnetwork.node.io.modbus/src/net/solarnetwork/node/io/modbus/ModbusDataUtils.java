@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignificant;
+import static net.solarnetwork.node.io.modbus.ModbusWordOrder.MostToLeastSignificant;
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -29,7 +31,7 @@ import java.util.Arrays;
  * Utilities for converting to/from Modbus 16-bit register values.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.6
  */
 public final class ModbusDataUtils {
@@ -63,20 +65,41 @@ public final class ModbusDataUtils {
 	/**
 	 * Encode a number into raw Modbus register values.
 	 * 
+	 * @param dataType
+	 *        the desired Modbus data type
+	 * @param number
+	 *        the number to encode
+	 * @return the encoded register values, in
+	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
+	 * @throws IllegalArgumentException
+	 *         if {@code dataType} is not supported
+	 * @see #encodeNumber(ModbusDataType, Number, ModbusWordOrder)
+	 */
+	public static int[] encodeNumber(ModbusDataType dataType, Number number) {
+		return encodeNumber(dataType, number, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode a number into raw Modbus register values.
+	 * 
 	 * <p>
-	 * This method always returns a value, even if {@code number} is
-	 * {@literal null} or {@code dataType} is not a supported type. In the event
-	 * of any error, {@li
+	 * This method always returns a value if {@code number} is {@literal null}.
+	 * If {@code dataType} is not a supported type an,
+	 * {@link IllegalArgumentException} will be thrown.
+	 * </p>
 	 * 
 	 * @param dataType
 	 *        the desired Modbus data type
 	 * @param number
 	 *        the number to encode
+	 * @param wordOrder
+	 *        the desired word order
 	 * @return the encoded register values
 	 * @throws IllegalArgumentException
 	 *         if {@code dataType} is not supported
+	 * @since 1.1
 	 */
-	public static int[] encodeNumber(ModbusDataType dataType, Number number) {
+	public static int[] encodeNumber(ModbusDataType dataType, Number number, ModbusWordOrder wordOrder) {
 		int[] result = null;
 		switch (dataType) {
 			case Boolean:
@@ -134,6 +157,9 @@ public final class ModbusDataUtils {
 						"Data type " + dataType + " cannot be converted into a number");
 
 		}
+		if ( result != null && wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(result);
+		}
 		return result;
 	}
 
@@ -169,11 +195,31 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the value to encode
-	 * @return the register values, which will have a length of {@literal 2}
+	 * @return the register values, which will have a length of {@literal 2} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeInt32(Integer value) {
+		return encodeInt32(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode a 32-bit signed integer value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the value to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 2}
+	 * @since 1.1
+	 */
+	public static int[] encodeInt32(Integer value, ModbusWordOrder wordOrder) {
 		int bits = (value != null ? value : 0);
-		return new int[] { (bits >> 16) & 0xFFFF, bits & 0xFFFF };
+		int[] result = new int[] { (bits >> 16) & 0xFFFF, bits & 0xFFFF };
+		if ( wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(result);
+		}
+		return result;
 	}
 
 	/**
@@ -182,11 +228,30 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the value to encode
-	 * @return the register values, which will have a length of {@literal 2}
+	 * @return the register values, which will have a length of {@literal 2} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeUnsignedInt32(Long value) {
-		int[] words = encodeInt64(value);
-		return new int[] { words[2], words[3] };
+		return encodeUnsignedInt32(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode a 32-bit unsigned integer value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the value to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 2}
+	 * @since 1.1
+	 */
+	public static int[] encodeUnsignedInt32(Long value, ModbusWordOrder wordOrder) {
+		int[] words = encodeInt64(value, wordOrder);
+		if ( wordOrder == MostToLeastSignificant ) {
+			return new int[] { words[2], words[3] };
+		}
+		return new int[] { words[0], words[1] };
 	}
 
 	/**
@@ -195,12 +260,32 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the value to encode
-	 * @return the register values, which will have a length of {@literal 4}
+	 * @return the register values, which will have a length of {@literal 4} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeInt64(Long value) {
+		return encodeInt64(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode a 64-bit signed integer value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the value to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 4}
+	 * @since 1.1
+	 */
+	public static int[] encodeInt64(Long value, ModbusWordOrder wordOrder) {
 		long bits = (value != null ? value : 0);
-		return new int[] { (int) ((bits >> 48) & 0xFFFF), (int) ((bits >> 32) & 0xFFFF),
+		int[] result = new int[] { (int) ((bits >> 48) & 0xFFFF), (int) ((bits >> 32) & 0xFFFF),
 				(int) ((bits >> 16) & 0xFFFF), (int) (bits & 0xFFFF) };
+		if ( wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(result);
+		}
+		return result;
 	}
 
 	/**
@@ -209,9 +294,25 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the integer to encode
-	 * @return the register values, which will have a length of {@literal 4}
+	 * @return the register values, which will have a length of {@literal 4} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeUnsignedInt64(BigInteger value) {
+		return encodeUnsignedInt64(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode an 64-bit unsigned integer value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the integer to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 4}
+	 * @since 1.1
+	 */
+	public static int[] encodeUnsignedInt64(BigInteger value, ModbusWordOrder wordOrder) {
 		byte[] bytes = value.toByteArray();
 
 		// drop sign byte, if present and not already an even number of bytes
@@ -231,17 +332,21 @@ public final class ModbusDataUtils {
 			bytes = tmp;
 		}
 
-		int[] unsigned = new int[4];
+		int[] words = new int[4];
 		int offset = (8 - bytes.length) / 2;
 		for ( int i = 0; i < bytes.length; i += 2 ) {
 			int v = ((bytes[i] & 0xFF) << 8);
 			if ( i + 1 < bytes.length ) {
 				v |= (bytes[i + 1] & 0xFF);
 			}
-			unsigned[offset + i / 2] = v;
+			words[offset + i / 2] = v;
 		}
 
-		return unsigned;
+		if ( wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(words);
+		}
+
+		return words;
 	}
 
 	/**
@@ -251,9 +356,26 @@ public final class ModbusDataUtils {
 	 * @param value
 	 *        the integer to encode
 	 * @return the register values, which will have a length equal to the number
-	 *         of registers required to store the full value
+	 *         of registers required to store the full value and use
+	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeUnsignedInteger(BigInteger value) {
+		return encodeUnsignedInteger(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode an unsigned integer value into raw Modbus unsigned short register
+	 * values.
+	 * 
+	 * @param value
+	 *        the integer to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length equal to the number
+	 *         of registers required to store the full value
+	 * @since 1.1
+	 */
+	public static int[] encodeUnsignedInteger(BigInteger value, ModbusWordOrder wordOrder) {
 		byte[] bytes = value.toByteArray();
 
 		// drop sign byte, if present and not already an even number of bytes
@@ -268,16 +390,39 @@ public final class ModbusDataUtils {
 			bytes = tmp;
 		}
 
-		int[] unsigned = new int[bytes.length / 2];
+		int[] words = new int[bytes.length / 2];
 		for ( int i = 0; i < bytes.length; i += 2 ) {
 			int v = ((bytes[i] & 0xFF) << 8);
 			if ( i + 1 < bytes.length ) {
 				v |= (bytes[i + 1] & 0xFF);
 			}
-			unsigned[i / 2] = v;
+			words[i / 2] = v;
 		}
 
-		return unsigned;
+		if ( wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(words);
+		}
+
+		return words;
+	}
+
+	/**
+	 * Swap the order of an array of register values.
+	 * 
+	 * <p>
+	 * This essentially reverses the array. The array is modified in-place.
+	 * </p>
+	 * 
+	 * @param array
+	 *        the data to swap
+	 * @since 1.1
+	 */
+	public static void swapWordOrder(int[] array) {
+		for ( int i = 0; i < array.length / 2; i++ ) {
+			int temp = array[i];
+			array[i] = array[array.length - i - 1];
+			array[array.length - i - 1] = temp;
+		}
 	}
 
 	/**
@@ -286,11 +431,11 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the float to encode
-	 * @return the register values, which will have a length of {@literal 2}
+	 * @return the register values, which will have a length of {@literal 2} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeFloat32(Float value) {
-		int bits = Float.floatToIntBits(value != null ? value : 0f);
-		return encodeInt32(bits);
+		return encodeFloat32(value, MostToLeastSignificant);
 	}
 
 	/**
@@ -299,11 +444,44 @@ public final class ModbusDataUtils {
 	 * 
 	 * @param value
 	 *        the float to encode
-	 * @return the register values, which will have a length of {@literal 4}
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 2}
+	 * @since 1.1
+	 */
+	public static int[] encodeFloat32(Float value, ModbusWordOrder wordOrder) {
+		int bits = Float.floatToIntBits(value != null ? value : 0f);
+		return encodeInt32(bits, wordOrder);
+	}
+
+	/**
+	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the float to encode
+	 * @return the register values, which will have a length of {@literal 4} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeFloat64(Double value) {
+		return encodeFloat64(value, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
+	 * register values.
+	 * 
+	 * @param value
+	 *        the float to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of {@literal 4} and
+	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
+	 * @since 1.1
+	 */
+	public static int[] encodeFloat64(Double value, ModbusWordOrder wordOrder) {
 		long bits = Double.doubleToLongBits(value != null ? value : 0.0);
-		return encodeInt64(bits);
+		return encodeInt64(bits, wordOrder);
 	}
 
 	/**
@@ -316,30 +494,67 @@ public final class ModbusDataUtils {
 	 * @param data
 	 *        the data to encode
 	 * @return the register values, which will have a length of
-	 *         {@code data.length / 2}
+	 *         {@code data.length / 2} and use
+	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
 	public static int[] encodeBytes(byte[] data) {
+		return encodeBytes(data, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode an array of bytes into 16-bit raw Modbus register values.
+	 * 
+	 * <p>
+	 * Each register value will hold up to two bytes.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the data to encode
+	 * @param wordOrder
+	 *        the resulting word order
+	 * @return the register values, which will have a length of
+	 *         {@code data.length / 2}
+	 * @since 1.1
+	 */
+	public static int[] encodeBytes(byte[] data, ModbusWordOrder wordOrder) {
 		if ( data == null || data.length < 1 ) {
 			return new int[0];
 		}
-		int[] result = new int[(int) Math.ceil(data.length / 2.0)];
+		int[] words = new int[(int) Math.ceil(data.length / 2.0)];
 		for ( int i = 0, p = 0; i < data.length; i += 2, p += 1 ) {
 			int n = ((data[i] & 0xFF) << 8);
 			if ( i + 1 < data.length ) {
 				n = n | (data[i + 1] & 0xFF);
 			}
-			result[p] = n;
+			words[p] = n;
 		}
-		return result;
+		if ( wordOrder == LeastToMostSignificant ) {
+			swapWordOrder(words);
+		}
+		return words;
 	}
 
 	/**
 	 * Encode a number into raw Modbus register values.
 	 * 
-	 * <p>
-	 * This method always returns a value, even if {@code number} is
-	 * {@literal null} or {@code dataType} is not a supported type. In the event
-	 * of any error, {@li
+	 * @param dataType
+	 *        the desired Modbus data type
+	 * @param words
+	 *        an array of Modbus register values using
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
+	 * @param offset
+	 *        an offset within {@code words} to start reading from
+	 * @return the parsed number, or {@literal null} if {@code words} is
+	 *         {@literal null} or not long enough for the requested data type
+	 * @throws IllegalArgumentException
+	 *         if {@code dataType} is not supported
+	 */
+	public static Number parseNumber(ModbusDataType dataType, int[] words, int offset) {
+		return parseNumber(dataType, words, offset, MostToLeastSignificant);
+	}
+
+	/**
+	 * Encode a number into raw Modbus register values.
 	 * 
 	 * @param dataType
 	 *        the desired Modbus data type
@@ -347,11 +562,16 @@ public final class ModbusDataUtils {
 	 *        an array of Modbus register values
 	 * @param offset
 	 *        an offset within {@code words} to start reading from
-	 * @return the parsed number
+	 * @param wordOrder
+	 *        the word order of {@code words}
+	 * @return the parsed number, or {@literal null} if {@code words} is
+	 *         {@literal null} or not long enough for the requested data type
 	 * @throws IllegalArgumentException
 	 *         if {@code dataType} is not supported
+	 * @since 1.1
 	 */
-	public static Number parseNumber(ModbusDataType dataType, int[] words, int offset) {
+	public static Number parseNumber(ModbusDataType dataType, int[] words, int offset,
+			ModbusWordOrder wordOrder) {
 		Number result = null;
 		switch (dataType) {
 			case Boolean:
@@ -362,14 +582,23 @@ public final class ModbusDataUtils {
 
 			case Float32:
 				if ( offset + 1 < words.length ) {
-					result = parseFloat32(words[offset], words[offset + 1]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseFloat32(words[offset], words[offset + 1]);
+					} else {
+						result = parseFloat32(words[offset + 1], words[offset]);
+					}
 				}
 				break;
 
 			case Float64:
 				if ( offset + 3 < words.length ) {
-					result = parseFloat64(words[offset], words[offset + 1], words[offset + 2],
-							words[offset + 3]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseFloat64(words[offset], words[offset + 1], words[offset + 2],
+								words[offset + 3]);
+					} else {
+						result = parseFloat64(words[offset + 3], words[offset + 2], words[offset + 1],
+								words[offset]);
+					}
 				}
 				break;
 
@@ -387,27 +616,45 @@ public final class ModbusDataUtils {
 
 			case Int32:
 				if ( offset + 1 < words.length ) {
-					result = parseInt32(words[offset], words[offset + 1]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseInt32(words[offset], words[offset + 1]);
+					} else {
+						result = parseInt32(words[offset + 1], words[offset]);
+					}
 				}
 				break;
 
 			case UInt32:
 				if ( offset + 1 < words.length ) {
-					result = parseUnsignedInt32(words[offset], words[offset + 1]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseUnsignedInt32(words[offset], words[offset + 1]);
+					} else {
+						result = parseUnsignedInt32(words[offset + 1], words[offset]);
+					}
 				}
 				break;
 
 			case Int64:
 				if ( offset + 3 < words.length ) {
-					result = parseInt64(words[offset], words[offset + 1], words[offset + 2],
-							words[offset + 3]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseInt64(words[offset], words[offset + 1], words[offset + 2],
+								words[offset + 3]);
+					} else {
+						result = parseInt64(words[offset + 3], words[offset + 2], words[offset + 1],
+								words[offset]);
+					}
 				}
 				break;
 
 			case UInt64:
 				if ( offset + 3 < words.length ) {
-					result = parseUnsignedInt64(words[offset], words[offset + 1], words[offset + 2],
-							words[offset + 3]);
+					if ( wordOrder == MostToLeastSignificant ) {
+						result = parseUnsignedInt64(words[offset], words[offset + 1], words[offset + 2],
+								words[offset + 3]);
+					} else {
+						result = parseUnsignedInt64(words[offset + 3], words[offset + 2],
+								words[offset + 1], words[offset]);
+					}
 				}
 				break;
 
@@ -564,18 +811,36 @@ public final class ModbusDataUtils {
 	 * Parse any number of Modbus register values as a series of bytes.
 	 * 
 	 * @param words
-	 *        the words to read as bytes
+	 *        the words to read as bytes, in
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 * @param offset
 	 *        the word offset to start from
 	 * @return the parsed bytes
 	 */
 	public static byte[] parseBytes(int[] words, int offset) {
+		return parseBytes(words, offset, MostToLeastSignificant);
+	}
+
+	/**
+	 * Parse any number of Modbus register values as a series of bytes.
+	 * 
+	 * @param words
+	 *        the words to read as bytes
+	 * @param offset
+	 *        the word offset to start from
+	 * @param wordOrder
+	 *        the word order of {@code words}
+	 * @return the parsed bytes
+	 * @since 1.1
+	 */
+	public static byte[] parseBytes(int[] words, int offset, ModbusWordOrder wordOrder) {
 		byte[] bytes = new byte[2
 				* (words == null || offset >= words.length ? 0 : (words.length - offset))];
 		if ( bytes.length > 0 ) {
 			for ( int i = offset, p = 0; i < words.length; i++, p += 2 ) {
-				bytes[p] = (byte) ((words[i] >> 8) & 0xFF);
-				bytes[p + 1] = (byte) ((words[i] & 0xFF));
+				int idx = (wordOrder == MostToLeastSignificant ? p : bytes.length - p - 2);
+				bytes[idx] = (byte) ((words[i] >> 8) & 0xFF);
+				bytes[idx + 1] = (byte) ((words[i] & 0xFF));
 			}
 		}
 		return bytes;
@@ -586,13 +851,31 @@ public final class ModbusDataUtils {
 	 * {@link BigInteger}.
 	 * 
 	 * @param words
-	 *        the words to parse
+	 *        the words to parse, in
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 * @param offset
 	 *        the offset within words to start reading from
 	 * @return the integer value
 	 */
 	public static BigInteger parseUnsignedInteger(int[] words, int offset) {
-		byte[] bytes = parseBytes(words, offset);
+		return parseUnsignedInteger(words, offset, MostToLeastSignificant);
+	}
+
+	/**
+	 * Parse any number of Modbus register values as a series of bytes into a
+	 * {@link BigInteger}.
+	 * 
+	 * @param words
+	 *        the words to parse
+	 * @param offset
+	 *        the offset within words to start reading from
+	 * @param wordOrder
+	 *        the word order of {@code words}
+	 * @return the integer value
+	 * @since 1.1
+	 */
+	public static BigInteger parseUnsignedInteger(int[] words, int offset, ModbusWordOrder wordOrder) {
+		byte[] bytes = parseBytes(words, offset, wordOrder);
 		if ( bytes.length > 0 && bytes[0] != (byte) 0 ) {
 			byte[] tmp = new byte[bytes.length + 1];
 			System.arraycopy(bytes, 0, tmp, 1, bytes.length);

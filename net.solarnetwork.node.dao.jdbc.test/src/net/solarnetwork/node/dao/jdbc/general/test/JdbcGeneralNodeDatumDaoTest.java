@@ -54,6 +54,7 @@ import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.EnergyDatum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
@@ -149,13 +150,14 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		assertThat("Event captured", captor.hasCaptured(), equalTo(true));
 		Event event = captor.getValue();
-		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum, new String[] {
-				ACEnergyDatum.class.getName(), EnergyDatum.class.getName(), Datum.class.getName() });
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
+				new String[] { ACEnergyDatum.class.getName(), EnergyDatum.class.getName(),
+						Datum.class.getName(), GeneralDatum.class.getName() });
 	}
 
 	private void assertDatumStoredEventEqualsDatum(Event event, GeneralNodeDatum datum) {
 		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
-				new String[] { Datum.class.getName() });
+				new String[] { Datum.class.getName(), GeneralDatum.class.getName() });
 	}
 
 	private void assertDatumEventEqualsDatum(Event event, String topic, GeneralNodeDatum datum,

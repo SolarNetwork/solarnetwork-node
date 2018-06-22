@@ -24,15 +24,16 @@ package net.solarnetwork.node.reactor.simple;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorSerializationService;
 import net.solarnetwork.node.reactor.ReactorService;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Simple implementation of {@link ReactorService}.
@@ -59,8 +60,7 @@ public class SimpleReactorService implements ReactorService {
 	}
 
 	@Override
-	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public List<InstructionStatus> processInstruction(String instructorId, Object data, String dataType,
+	public List<Instruction> parseInstructions(String instructorId, Object data, String dataType,
 			Map<String, ?> properties) {
 		List<Instruction> instructions = null;
 		for ( ReactorSerializationService rss : serializationServices ) {
@@ -73,6 +73,14 @@ public class SimpleReactorService implements ReactorService {
 				break;
 			}
 		}
+		return (instructions != null ? instructions : Collections.<Instruction> emptyList());
+	}
+
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public List<InstructionStatus> processInstruction(String instructorId, Object data, String dataType,
+			Map<String, ?> properties) {
+		List<Instruction> instructions = parseInstructions(instructorId, data, dataType, properties);
 		List<InstructionStatus> results = new ArrayList<InstructionStatus>(instructions.size());
 		for ( Instruction instruction : instructions ) {
 			InstructionStatus status = processInstruction(instruction);
@@ -81,6 +89,16 @@ public class SimpleReactorService implements ReactorService {
 			}
 		}
 		return results;
+	}
+
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public Long storeInstruction(Instruction instruction) {
+		if ( instruction.getId() != null ) {
+			instructionDao.storeInstructionStatus(instruction.getId(), instruction.getStatus());
+			return instruction.getId();
+		}
+		return instructionDao.storeInstruction(instruction);
 	}
 
 	public void setSerializationServices(Collection<ReactorSerializationService> serializationServices) {

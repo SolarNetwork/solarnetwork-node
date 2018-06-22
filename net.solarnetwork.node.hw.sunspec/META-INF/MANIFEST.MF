@@ -1,0 +1,35 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Veris Support
+Bundle-SymbolicName: net.solarnetwork.node.hw.sunspec
+Bundle-Description: Hardware support for SunSpec devices.
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.hw.sunspec
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: 
+ net.solarnetwork.node.hw.sunspec;version="1.0.0",
+ net.solarnetwork.node.hw.sunspec.meter;version="1.0.0"
+Import-Package: 
+ bak.pcj;version="[1.2,2.0)",
+ bak.pcj.hash;version="[1.2,2.0)",
+ bak.pcj.list;version="[1.2,2.0)",
+ bak.pcj.map;version="[1.2,2.0)",
+ bak.pcj.set;version="[1.2,2.0)",
+ bak.pcj.util;version="[1.2,2.0)",
+ gnu.trove.map;version="[3.0,4.0)",
+ gnu.trove.map.hash;version="[3.0,4.0)",
+ net.solarnetwork.domain;version="1.13.0",
+ net.solarnetwork.node;version="1.23.0",
+ net.solarnetwork.node.domain;version="1.12.0",
+ net.solarnetwork.node.io.modbus;version="2.7.1",
+ net.solarnetwork.node.settings;version="1.10.0",
+ net.solarnetwork.node.settings.support;version="1.8.1",
+ net.solarnetwork.node.support;version="1.14.1",
+ net.solarnetwork.node.util;version="1.7.2",
+ net.solarnetwork.util;version="1.30.0",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.base;version="[2.4,3.0)",
+ org.joda.time.format;version="[2.4,3.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)"

@@ -112,6 +112,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		this.lastsample.compareAndSet(prev, datum);
 
+		postDatumCapturedEvent(datum);
+
 		return datum;
 	}
 

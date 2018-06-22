@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- Service References -->
+	
+	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
+	</bean>
+	
+	<reference id="identityService" availability="optional"
+		interface="net.solarnetwork.node.IdentityService"/>
+	
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.util.ObjectMapperService"
+		filter="(function=node)"/>
+	
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
+	<!-- Published Services -->
+	
+	<service interface="net.solarnetwork.node.DatumMetadataService">
+		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService">
+			<property name="objectMapper" ref="objectMapper"/>
+			<property name="identityService" ref="identityService"/>
+			<property name="sslService" ref="sslService"/>
+			<property name="baseUrl" value="/api/v1/sec/datum/meta"/>
+			<property name="settingDao" ref="settingDao"/>
+		</bean>
+	</service>
+	
+	<service interface="net.solarnetwork.node.NodeMetadataService">
+		<bean class="net.solarnetwork.node.metadata.json.JsonNodeMetadataService">
+			<property name="objectMapper" ref="objectMapper"/>
+			<property name="identityService" ref="identityService"/>
+			<property name="sslService" ref="sslService"/>
+			<property name="baseUrl" value="/api/v1/sec/nodes/meta"/>
+		</bean>
+	</service>
+	
+</blueprint>

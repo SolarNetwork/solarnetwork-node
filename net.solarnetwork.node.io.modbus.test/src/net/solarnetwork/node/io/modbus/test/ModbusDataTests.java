@@ -33,12 +33,13 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 
 /**
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public class ModbusDataTests {
 
@@ -192,6 +193,25 @@ public class ModbusDataTests {
 	}
 
 	@Test
+	public void readFloat32LeastToMostSignificant() {
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+		final float f = RNG.nextFloat();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				int intFloat = Float.floatToIntBits(f);
+				m.saveDataArray(new short[] { (short) ((intFloat >> 0) & 0xFFFF),
+						(short) ((intFloat >> 16) & 0xFFFF) }, 0);
+				return false;
+			}
+		});
+
+		assertThat("32-bit floating point", d.getFloat32(0), equalTo(f));
+	}
+
+	@Test
 	public void readInt64() {
 		ModbusData d = new ModbusData();
 		final long l = RNG.nextLong();
@@ -201,6 +221,24 @@ public class ModbusDataTests {
 			public boolean updateModbusData(MutableModbusData m) {
 				m.saveDataArray(new short[] { (short) ((l >> 48) & 0xFFFF), (short) ((l >> 32) & 0xFFFF),
 						(short) ((l >> 16) & 0xFFFF), (short) ((l >> 0) & 0xFFFF) }, 0);
+				return false;
+			}
+		});
+
+		assertThat("Updated data", d.getInt64(0), equalTo(l));
+	}
+
+	@Test
+	public void readInt64LeastToMostSignificant() {
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+		final long l = RNG.nextLong();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new short[] { (short) ((l >> 0) & 0xFFFF), (short) ((l >> 16) & 0xFFFF),
+						(short) ((l >> 32) & 0xFFFF), (short) ((l >> 48) & 0xFFFF) }, 0);
 				return false;
 			}
 		});
@@ -228,11 +266,50 @@ public class ModbusDataTests {
 	}
 
 	@Test
+	public void readFloat64LeastToMostSignificant() {
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+		final double f = RNG.nextDouble();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				long longFloat = Double.doubleToLongBits(f);
+				m.saveDataArray(new short[] { (short) ((longFloat >> 0) & 0xFFFF),
+						(short) ((longFloat >> 16) & 0xFFFF), (short) ((longFloat >> 32) & 0xFFFF),
+						(short) ((longFloat >> 48) & 0xFFFF) }, 0);
+				return false;
+			}
+		});
+
+		assertThat("64-bit floating point", d.getFloat64(0), equalTo(f));
+	}
+
+	@Test
 	public void readBytes() {
 		final int len = 2 + 2 * RNG.nextInt(8); // ensures even number > 2
 		final byte[] b = new byte[len];
 		RNG.nextBytes(b);
 		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveBytes(b, 0);
+				return false;
+			}
+		});
+
+		assertThat("Byte array", d.getBytes(0, (int) Math.ceil(b.length / 2.0)), equalTo(b));
+	}
+
+	@Test
+	public void readBytesLeastToMostSignificant() {
+		final int len = 2 + 2 * RNG.nextInt(8); // ensures even number > 2
+		final byte[] b = new byte[len];
+		RNG.nextBytes(b);
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		d.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -263,10 +340,46 @@ public class ModbusDataTests {
 	}
 
 	@Test
+	public void readUtf8StringLeastToMostSignificant() throws Exception {
+		final String str = "Four score and seven years ago...";
+		final byte[] b = str.getBytes(ModbusHelper.UTF8_CHARSET);
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveBytes(b, 0);
+				return false;
+			}
+		});
+
+		assertThat("String", d.getUtf8String(0, (int) Math.ceil(b.length / 2.0), true), equalTo(str));
+	}
+
+	@Test
 	public void readAsciiString() throws Exception {
 		final String str = "To be or not to be...";
 		final byte[] b = str.getBytes(ModbusHelper.ASCII_CHARSET);
 		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveBytes(b, 0);
+				return false;
+			}
+		});
+
+		assertThat("String", d.getUtf8String(0, (int) Math.ceil(b.length / 2.0), true), equalTo(str));
+	}
+
+	@Test
+	public void readAsciiStringLeastToMostSignificant() throws Exception {
+		final String str = "To be or not to be...";
+		final byte[] b = str.getBytes(ModbusHelper.ASCII_CHARSET);
+		ModbusData d = new ModbusData();
+		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		d.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -312,5 +425,22 @@ public class ModbusDataTests {
 		String str = d.dataDebugString();
 		assertThat("Debug string", str, equalTo(
 				"ModbusData{\n\t    0: 0xABCD, 0xFEDC\n\t    2: 0x1122, 0x3456\n\t    8:       , 0x9999\n\t 1000: 0xFF01, 0xFF02\n\t 1002: 0xFF03, 0xFF04\n\t 1004: 0xFF05\n}"));
+	}
+
+	@Test
+	public void debugStringLeadingOdd() {
+		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { 0xABCD, 0xFEDC, 0x1122 }, 1);
+				return false;
+			}
+		});
+
+		String str = d.dataDebugString();
+		assertThat("Debug string", str,
+				equalTo("ModbusData{\n\t    0:       , 0xABCD\n\t    2: 0xFEDC, 0x1122\n}"));
 	}
 }

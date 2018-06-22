@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Setup Test
 Bundle-SymbolicName: net.solarnetwork.node.setup.test
-Bundle-Version: 1.4.0
+Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.setup;bundle-version="1.18"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Fragment-Host: net.solarnetwork.node.setup;bundle-version="1.19"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  javax.servlet;version="3.0.0",
  javax.servlet.http;version="3.0.0",
