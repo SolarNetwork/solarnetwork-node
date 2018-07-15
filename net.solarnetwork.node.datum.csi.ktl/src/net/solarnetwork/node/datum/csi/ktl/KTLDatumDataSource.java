@@ -50,27 +50,22 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 
 	private String sourceId = "CSI";
 
-	private KTLData getCurrentSample() {
+	private KTLData getCurrentSample() throws IOException {
 		KTLData currSample = null;
 		if ( isCachedSampleExpired() ) {
-			try {
-				currSample = performAction(new ModbusConnectionAction<KTLData>() {
+			currSample = performAction(new ModbusConnectionAction<KTLData>() {
 
-					@Override
-					public KTLData doWithConnection(ModbusConnection connection) throws IOException {
-						getSample().readInverterData(connection);
-						return getSample().getSnapshot();
-					}
-
-				});
-				if ( log.isTraceEnabled() && currSample != null ) {
-					log.trace(currSample.dataDebugString());
+				@Override
+				public KTLData doWithConnection(ModbusConnection connection) throws IOException {
+					getSample().readInverterData(connection);
+					return getSample().getSnapshot();
 				}
-				log.debug("Read KTL data: {}", currSample);
-			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from Modbus device " + modbusNetwork(), e);
+
+			});
+			if ( log.isTraceEnabled() && currSample != null ) {
+				log.trace(currSample.dataDebugString());
 			}
+			log.debug("Read KTL data: {}", currSample);
 		} else {
 			currSample = getSample().getSnapshot();
 		}
@@ -85,17 +80,23 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final KTLData currSample = getCurrentSample();
-		if ( currSample == null ) {
+		try {
+			final KTLData currSample = getCurrentSample();
+			if ( currSample == null ) {
+				return null;
+			}
+			KTLDatum d = new KTLDatum(currSample);
+			d.setSourceId(this.sourceId);
+			if ( currSample.getInverterDataTimestamp() >= start ) {
+				// we read from the inverter
+				postDatumCapturedEvent(d);
+			}
+			return d;
+		} catch ( IOException e ) {
+			log.error("Communication problem reading from Modbus device {}: {}", modbusNetwork(),
+					e.getMessage());
 			return null;
 		}
-		KTLDatum d = new KTLDatum(currSample);
-		d.setSourceId(this.sourceId);
-		if ( currSample.getInverterDataTimestamp() >= start ) {
-			// we read from the inverter
-			postDatumCapturedEvent(d);
-		}
-		return d;
 	}
 
 	@Override
