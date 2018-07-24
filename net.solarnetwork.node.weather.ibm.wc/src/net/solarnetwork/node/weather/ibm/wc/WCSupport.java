@@ -1,13 +1,11 @@
+
 package net.solarnetwork.node.weather.ibm.wc;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.context.MessageSource;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
@@ -15,9 +13,16 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
-public abstract class WCSupport<T extends Datum> implements SettingSpecifierProvider,
-DatumDataSource<T>, MultiDatumDataSource<T>{
-	
+/**
+ * Simplifies the datum data source classes by providing shared methods.
+ * 
+ * @author matt frost
+ *
+ * @param <T>
+ */
+public abstract class WCSupport<T extends Datum>
+		implements SettingSpecifierProvider, DatumDataSource<T>, MultiDatumDataSource<T> {
+
 	private String uid;
 	private String groupUID;
 	private String locationIdentifier;
@@ -31,9 +36,9 @@ DatumDataSource<T>, MultiDatumDataSource<T>{
 		locationIdentifier = "";
 		client = new BasicWCClient();
 	}
-	
+
 	//TODO add a dropdown specifier for the period of the data (ie. 7day, 10day)
-	
+
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -49,23 +54,23 @@ DatumDataSource<T>, MultiDatumDataSource<T>{
 	public void setUid(String uid) {
 		this.uid = uid;
 	}
-	
+
 	public String getApiKey() {
 		return this.apiKey;
 	}
-	
+
 	public void setApiKey(String apiKey) {
 		this.apiKey = apiKey;
 	}
-	
+
 	public String getDatumPeriod() {
 		return this.datumPeriod;
 	}
-	
+
 	public void setDatumPeriod(String datumPeriod) {
 		this.datumPeriod = datumPeriod;
 	}
-	
+
 	/**
 	 * Get a {@link MessageSource} for supporting message resolution.
 	 * 
@@ -74,11 +79,11 @@ DatumDataSource<T>, MultiDatumDataSource<T>{
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}
-	
+
 	public WCClient getClient() {
 		return this.client;
 	}
-	
+
 	public void setClient(WCClient client) {
 		this.client = client;
 	}
@@ -90,7 +95,7 @@ DatumDataSource<T>, MultiDatumDataSource<T>{
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
 	}
-	
+
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		if ( client instanceof BasicWCClient ) {
 			((BasicWCClient) client).setObjectMapper(objectMapper);
@@ -100,17 +105,17 @@ DatumDataSource<T>, MultiDatumDataSource<T>{
 	public String getLocationIdentifier() {
 		return locationIdentifier;
 	}
-	
+
 	public void setLocationIdentifier(String locationIdentifier) {
 		this.locationIdentifier = locationIdentifier;
 	}
-	
+
 	public String getLanguage() {
 		return language;
 	}
+
 	public void setLanguage(String language) {
 		this.language = language;
 	}
-	
 
 }
