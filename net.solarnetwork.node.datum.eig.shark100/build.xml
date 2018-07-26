@@ -1,0 +1,8 @@
+<project basedir=".">
+
+	<property name="compile.source" value="1.8"/>
+	<property name="compile.target" value="1.8"/>
+	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>
+	<import file="${dir.osgi.base}/lib-build.xml"/>
+	
+</project>
