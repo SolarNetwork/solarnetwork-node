@@ -94,45 +94,30 @@ public class Shark100DataTests {
 	};
 	
 	private static final int[] TEST_DATA_REG_900 = new int[] {
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
+			0xC972, 0x1400, // W total
+			0xC884, 0x894C, // VAR total
+			0x497A, 0xFC0B, // VA total
 	};
 	
 	private static final int[] TEST_DATA_REG_1000 = new int[] {
-			0x438D,
-			0x0AAF,
-			0x4393,
-			0x52F1,
-			0x4392,
-			0x6927,
-			0x43F9,
-			0xC05C,
-			0x43FE,
-			0x60F5,
-			0x43F8,
-			0xF119,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x3F80,
-			0x0000,
-			0x4270,
-			0x1584,
-			0x0000,
-			0x0000,			
+			0x438B, 0xD7F3, // Volts A-N
+			0x4391, 0x8AC7,
+			0x4390, 0x43B3,
+			0x43F7, 0x1F60, // Volts A-B
+			0x43FA, 0xF4C4,
+			0x43F6, 0x0475,
+			0x4494, 0xD80F, // Amps A
+			0x4494, 0x4ECA, // Amps B
+			0x4494, 0xEFCA, // Amps C
+			0xC970, 0x9B74, // Active power total
+			0xC883, 0x81A0, // Reactive power total
+			0x4979, 0x6E21, // Apparent power total
+			0xBF76,
+			0xEBF3,
+			0x426F,
+			0xEDE2,
+			0x425E,
+			0x2970,
 	};
 	
 	private static final int[] TEST_DATA_REG_1100 = new int[] {
@@ -148,26 +133,26 @@ public class Shark100DataTests {
 	};
 	
 	private static final int[] TEST_DATA_REG_2000 = new int[] {
+			0x449E,
+			0x020F,
+			0x449D,
+			0x676B,
+			0x449D,
+			0xF050,
 			0x0000,
 			0x0000,
 			0x0000,
 			0x0000,
+			0xC97E,
+			0x4105,
+			0xC891,
+			0x644B,
+			0x4984,
+			0x39F8,
 			0x0000,
 			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x8000,
-			0x0000,
-			0x8000,
-			0x0000,
-			0x0000,
-			0x0000,
-			0x3F80,
-			0x0000,
-			0x3F80,
-			0x0000,
+			0xBF76,
+			0x2089,
 	};
 	
 	private static final int[] TEST_DATA_REG_30000 = new int[] {
@@ -322,10 +307,13 @@ public class Shark100DataTests {
 	@Test
 	public void interpretBasic() {
 		Shark100DataAccessor data = getTestDataInstance();
-		assertThat("Frequency", data.getFrequency(), equalTo(60.02101f));
-		assertThat("Voltage", data.getVoltage(), equalTo(289.85098f));
-		assertThat("Current", data.getCurrent(), equalTo(0f));
-		assertThat("Power factor", data.getPowerFactor(), equalTo(1.0f));
+		assertThat("Frequency", data.getFrequency(), equalTo(59.982307f));
+		assertThat("Voltage", data.getVoltage(), equalTo(286.43338f));
+		assertThat("Current", data.getCurrent(), equalTo(3568.7073f));
+		assertThat("Active power", data.getActivePower(), equalTo(-991552));
+		assertThat("Reactive power", data.getReactivePower(), equalTo(-271434));
+		assertThat("Apparent power", data.getApparentPower(), equalTo(1028032));
+		assertThat("Power factor", data.getPowerFactor(), equalTo(-0.9645378f));
 		assertThat("Energy received", data.getActiveEnergyReceived(), equalTo(-14647760000L));
 		assertThat("Energy delivered", data.getActiveEnergyDelivered(), equalTo(7000000L));
 		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), equalTo(559020000L));
