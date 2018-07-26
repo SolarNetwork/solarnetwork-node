@@ -20,44 +20,23 @@ import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatum;
 import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource;
 
 public class WCClientTests extends AbstractHttpClientTests{
-
-
-	private WCDayDatumDataSource dailyService;
-	private WCHourlyDatumDataSource hourlyService;
+	
+	private BasicWCClient c;
 	private static final String RESOURCE_NAME = "7day_daily.json";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private WCClient createClient() {
-
-		BasicWCClient client = new BasicWCClient();
-		client.setBaseUrl(getHttpServerBaseUrl());
-		client.setHourlyForecastUrl("%s_hourly.json");
-		client.setDailyForecastUrl("%s_daily.json");
-
-		return client;
-	}
-	
-
 	@Before
 	public void additionalSetup() {
-		ObjectMapper o = new ObjectMapper();
-		WCClient c = createClient();
-
-		dailyService = new WCDayDatumDataSource();
-		dailyService.setClient(c);
-		dailyService.setDatumPeriod("7day");
-		dailyService.setApiKey("a");
-		dailyService.setObjectMapper(o);
-		
-		hourlyService = new WCHourlyDatumDataSource();
-		hourlyService.setClient(c);
-		hourlyService.setDatumPeriod("2day");
-		hourlyService.setObjectMapper(o);
+		c = new BasicWCClient();
+		c.setBaseUrl(getHttpServerBaseUrl());
+		c.setHourlyForecastUrl("%s_hourly.json");
+		c.setDailyForecastUrl("%s_daily.json");
+		c.setObjectMapper(new ObjectMapper());
 	}
 
 	@Test
-	public void getHourlyDatum() {
+	public void readHourlyForecast() {
 
 		TestHttpHandler handler = new TestHttpHandler() {
 			@Override
@@ -70,8 +49,7 @@ public class WCClientTests extends AbstractHttpClientTests{
 			}
 		};
 		getHttpServer().addHandler(handler);
-
-		Collection<WCHourlyDatum> datum = hourlyService.readMultipleDatum();
+		Collection<WCHourlyDatum> datum = c.readHourlyForecast("", "", "");
 		log.debug(datum.toString());
 		WCHourlyDatum first = (WCHourlyDatum) datum.toArray()[0];
 		SimpleDateFormat day = new SimpleDateFormat("d MMMM yyyy");
@@ -80,7 +58,6 @@ public class WCClientTests extends AbstractHttpClientTests{
 
 		assertNotNull(first.getCreated());
 
-		// log.debug(hour.format(first.getCreated()), "12:00 Tue 10 July 2018");
 
 		assertEquals(hour.format(first.getCreated()), "12:00 Tue 10 July 2018");
 
@@ -98,7 +75,7 @@ public class WCClientTests extends AbstractHttpClientTests{
 	}
 
 	@Test
-	public void getDailyDatum() {
+	public void readDailyForecast() {
 		
 		TestHttpHandler handler = new TestHttpHandler() {
 			@Override
@@ -112,7 +89,7 @@ public class WCClientTests extends AbstractHttpClientTests{
 		};
 		
 		getHttpServer().addHandler(handler);
-		Collection<GeneralDayDatum> datum = dailyService.readMultipleDatum();
+		Collection<GeneralDayDatum> datum = c.readDailyForecast("", "", "");
 		log.debug(datum.toString());
 		GeneralDayDatum first = (GeneralDayDatum) datum.toArray()[1];
 		SimpleDateFormat day = new SimpleDateFormat("d MMMM yyyy");

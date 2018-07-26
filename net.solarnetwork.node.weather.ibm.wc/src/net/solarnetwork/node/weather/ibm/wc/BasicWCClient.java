@@ -10,11 +10,10 @@ import java.util.Date;
 import java.util.List;
 import org.joda.time.LocalTime;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.support.HttpClientSupport;
+import net.solarnetwork.node.support.JsonHttpClientSupport;
 
-public class BasicWCClient extends HttpClientSupport implements WCClient {
+public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 
 	/** The default value for the {@code baseUrl} property. */
 	public static final String DEFAULT_BASE_URL = "https://api.weather.com";
@@ -40,6 +39,8 @@ public class BasicWCClient extends HttpClientSupport implements WCClient {
 	/** The default value for the {@code units} property. */
 	public static final String DEFAULT_UNITS = "units=e";
 
+	public static final boolean DEFAULT_COMPRESSION = true;
+
 	private String baseUrl;
 	private String dailyForecastUrl;
 	private String hourlyForecastUrl;
@@ -49,8 +50,6 @@ public class BasicWCClient extends HttpClientSupport implements WCClient {
 	private String languageTemplate;
 	private String units;
 	private Boolean test;
-
-	private ObjectMapper objectMapper;
 
 	public BasicWCClient() {
 		this.baseUrl = DEFAULT_BASE_URL;
@@ -62,6 +61,9 @@ public class BasicWCClient extends HttpClientSupport implements WCClient {
 		this.languageTemplate = DEFAULT_LANGUAGE_TEMPLATE;
 		this.units = DEFAULT_UNITS;
 		this.test = false;
+
+		// set default compression
+		this.setCompress(DEFAULT_COMPRESSION);
 	}
 
 	private String getURL(String requestURL, String location, String apiKey, String datumPeriod) {
@@ -176,8 +178,7 @@ public class BasicWCClient extends HttpClientSupport implements WCClient {
 		final String url = getURL(this.hourlyForecastUrl, locationIdentifier, apiKey, datumPeriod);
 		JsonNode root;
 		try {
-			log.debug("opening IBM Weather API connection");
-			log.debug(url);
+			log.debug("opening IBM Weather API connection URL: [{}]", url);
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
 			root = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
 		} catch ( IOException e ) {
@@ -231,20 +232,6 @@ public class BasicWCClient extends HttpClientSupport implements WCClient {
 
 		log.debug("Finished IBM Hourly Weather retrieval");
 		return result;
-	}
-
-	public ObjectMapper getObjectMapper() {
-		return objectMapper;
-	}
-
-	/**
-	 * Set the {@link ObjectMapper} to use for parsing JSON.
-	 * 
-	 * @param objectMapper
-	 *        The object mapper.
-	 */
-	public void setObjectMapper(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
 	}
 
 	public String getBaseUrl() {

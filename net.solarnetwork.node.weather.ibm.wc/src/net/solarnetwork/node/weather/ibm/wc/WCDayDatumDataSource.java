@@ -3,19 +3,32 @@ package net.solarnetwork.node.weather.ibm.wc;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum> {
+
+	private static final String[] DEFAULT_MENU = new String[] { "6hour", "12hour", "1day", "2day",
+			"3day", "10day", "15day" };
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(1);
 		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("apiKey", null));
-		result.add(new BasicTextFieldSettingSpecifier("datumPeriod", "7day"));
+		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("datumPeriod",
+				"7day");
+		Map<String, String> menuValues = new LinkedHashMap<String, String>(DEFAULT_MENU.length);
+		for ( String s : DEFAULT_MENU ) {
+			menuValues.put(s, s);
+		}
+		menuSpec.setValueTitles(menuValues);
+		result.add(menuSpec);
 		result.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
 		return result;
 	}

@@ -33,7 +33,7 @@ import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource;
  * @author matt frost
  *
  */
-public class WCHourlyDatumDataSourceTests extends AbstractHttpClientTests {
+public class WCHourlyDatumDataSourceTests{
 	private static final String TEST_SOURCE_ID = "src.test";
 	private static final String TEST_PERIOD = "period.test";
 	private static final String TEST_KEY = "key.test";

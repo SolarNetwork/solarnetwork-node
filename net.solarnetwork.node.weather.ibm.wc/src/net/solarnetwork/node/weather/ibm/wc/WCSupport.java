@@ -1,17 +1,12 @@
 
 package net.solarnetwork.node.weather.ibm.wc;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Simplifies the datum data source classes by providing shared methods.
