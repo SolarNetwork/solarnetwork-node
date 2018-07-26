@@ -134,10 +134,41 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		if ( phase == ACPhase.Total ) {
 			return this;
 		}
-		// TODO
-		throw new UnsupportedOperationException("Phase measurements not supported yet.");
+		return new PhaseMeterDataAccessor(phase);
 	}
 
+	/**
+	 * Get an accessor that reverses the current direction of the data, turning
+	 * received into delivered and vice versa.
+	 * 
+	 * @return the accessor
+	 */
+	public Shark100DataAccessor reversedDataAccessor() {
+		return new ReversedMeterDataAccessor(this);
+	}
+
+	@Override
+	public MeterDataAccessor accessorForPhase(ACPhase phase) {
+		return dataAccessorForPhase(phase);
+	}
+
+	@Override
+	public MeterDataAccessor reversed() {
+		return reversedDataAccessor();
+	}
+
+	/**
+	 * Get a scaled energy value for a specific register.
+	 * 
+	 * <p>
+	 * Note that the returned value will always be posative, even when the meter
+	 * reports the values as negative based on it's directional configuration.
+	 * </p>
+	 * 
+	 * @param reg
+	 *        the register to get the energy reading for
+	 * @return the value, or {@literal null} if not available
+	 */
 	private Long getEnergyValue(Shark100Register reg) {
 		Number n = getNumber(reg);
 		if ( n == null ) {
@@ -147,7 +178,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		if ( pef != null ) {
 			n = pef.energyValue(n);
 		}
-		return (n != null ? n.longValue() : null);
+		return (n != null ? Math.abs(n.longValue()) : null);
 	}
 
 	@Override
@@ -254,4 +285,251 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		return getEnergyValue(Shark100Register.MeterReactiveEnergyReceived);
 	}
 
+	private class PhaseMeterDataAccessor implements Shark100DataAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterDataAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public String getName() {
+			return Shark100Data.this.getName();
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return Shark100Data.this.getSerialNumber();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return Shark100Data.this.getFirmwareRevision();
+		}
+
+		@Override
+		public SharkPowerSystem getPowerSystem() {
+			return Shark100Data.this.getPowerSystem();
+		}
+
+		@Override
+		public SharkPowerEnergyFormat getPowerEnergyFormat() {
+			return Shark100Data.this.getPowerEnergyFormat();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return Shark100Data.this.getDataTimestamp();
+		}
+
+		@Override
+		public MeterDataAccessor accessorForPhase(ACPhase phase) {
+			return Shark100Data.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public MeterDataAccessor reversed() {
+			return Shark100Data.this.reversed();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return Shark100Data.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(Shark100Register.MeterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getNumber(Shark100Register.MeterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getNumber(Shark100Register.MeterCurrentPhaseC);
+					break;
+
+				default:
+					return Shark100Data.this.getCurrent();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getVoltage() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(Shark100Register.MeterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getNumber(Shark100Register.MeterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getNumber(Shark100Register.MeterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					return Shark100Data.this.getVoltage();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return Shark100Data.this.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			return Shark100Data.this.getActivePower();
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return Shark100Data.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return Shark100Data.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return Shark100Data.this.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return Shark100Data.this.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return Shark100Data.this.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return Shark100Data.this.getReactiveEnergyReceived();
+		}
+
+	}
+
+	private static class ReversedMeterDataAccessor implements Shark100DataAccessor {
+
+		private final Shark100DataAccessor delegate;
+
+		private ReversedMeterDataAccessor(Shark100DataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public MeterDataAccessor accessorForPhase(ACPhase phase) {
+			return delegate.accessorForPhase(phase);
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return delegate.getSerialNumber();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return delegate.getFirmwareRevision();
+		}
+
+		@Override
+		public MeterDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public SharkPowerSystem getPowerSystem() {
+			return delegate.getPowerSystem();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public SharkPowerEnergyFormat getPowerEnergyFormat() {
+			return delegate.getPowerEnergyFormat();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+	}
 }

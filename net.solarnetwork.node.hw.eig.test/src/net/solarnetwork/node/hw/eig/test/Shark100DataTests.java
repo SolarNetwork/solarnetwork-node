@@ -314,11 +314,26 @@ public class Shark100DataTests {
 		assertThat("Reactive power", data.getReactivePower(), equalTo(-271434));
 		assertThat("Apparent power", data.getApparentPower(), equalTo(1028032));
 		assertThat("Power factor", data.getPowerFactor(), equalTo(-0.9645378f));
-		assertThat("Energy received", data.getActiveEnergyReceived(), equalTo(-14647760000L));
+		assertThat("Energy received", data.getActiveEnergyReceived(), equalTo(14647760000L));
 		assertThat("Energy delivered", data.getActiveEnergyDelivered(), equalTo(7000000L));
 		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), equalTo(559020000L));
-		assertThat("Reactive energy delivered", data.getReactiveEnergyDelivered(),
-				equalTo(-1371050000L));
+		assertThat("Reactive energy delivered", data.getReactiveEnergyDelivered(), equalTo(1371050000L));
+	}
+
+	@Test
+	public void interpretBasicReversed() {
+		Shark100DataAccessor data = getTestDataInstance().reversedDataAccessor();
+		assertThat("Frequency", data.getFrequency(), equalTo(59.982307f));
+		assertThat("Voltage", data.getVoltage(), equalTo(286.43338f));
+		assertThat("Current", data.getCurrent(), equalTo(3568.7073f));
+		assertThat("Active power", data.getActivePower(), equalTo(991552));
+		assertThat("Reactive power", data.getReactivePower(), equalTo(271434));
+		assertThat("Apparent power", data.getApparentPower(), equalTo(1028032));
+		assertThat("Power factor", data.getPowerFactor(), equalTo(-0.9645378f));
+		assertThat("Energy received", data.getActiveEnergyReceived(), equalTo(7000000L));
+		assertThat("Energy delivered", data.getActiveEnergyDelivered(), equalTo(14647760000L));
+		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), equalTo(1371050000L));
+		assertThat("Reactive energy delivered", data.getReactiveEnergyDelivered(), equalTo(559020000L));
 	}
 
 }

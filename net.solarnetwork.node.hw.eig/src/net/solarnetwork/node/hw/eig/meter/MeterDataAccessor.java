@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.eig.meter;
 
+import net.solarnetwork.node.domain.ACPhase;
+
 /**
  * Common API for accessing meter data.
  * 
@@ -29,6 +31,23 @@ package net.solarnetwork.node.hw.eig.meter;
  * @version 1.0
  */
 public interface MeterDataAccessor {
+
+	/**
+	 * Get an accessor for phase-specific measurements.
+	 * 
+	 * @param phase
+	 *        the phase to get an accessor for
+	 * @return the accessor
+	 */
+	MeterDataAccessor accessorForPhase(ACPhase phase);
+
+	/**
+	 * Get an accessor that reverses the current direction of the data, turning
+	 * received into delivered and vice versa.
+	 * 
+	 * @return the accessor
+	 */
+	MeterDataAccessor reversed();
 
 	/**
 	 * Gets the time stamp of the data.
