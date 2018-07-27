@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Advanced Energy Hardware Support
+Bundle-SymbolicName: net.solarnetwork.node.hw.ae
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.hw.ae
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: 
+ net.solarnetwork.node.hw.ae.inverter;version="1.0.0"
+Import-Package: 
+ bak.pcj;version="[1.2,2.0)",
+ bak.pcj.hash;version="[1.2,2.0)",
+ bak.pcj.map;version="[1.2,2.0)",
+ bak.pcj.set;version="[1.2,2.0)",
+ net.solarnetwork.domain;version="1.14.0",
+ net.solarnetwork.node;version="1.24.0",
+ net.solarnetwork.node.domain;version="1.13.0",
+ net.solarnetwork.node.io.modbus;version="2.7.0",
+ net.solarnetwork.node.settings;version="1.10.0",
+ net.solarnetwork.node.settings.support;version="1.8.1",
+ net.solarnetwork.node.support;version="1.15.0",
+ net.solarnetwork.node.util;version="1.7.2",
+ net.solarnetwork.util;version="1.32.0",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)"
