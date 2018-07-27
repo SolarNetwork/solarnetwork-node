@@ -38,6 +38,7 @@ public abstract class WCSupport<T extends Datum>
 		this.messageSource = messageSource;
 	}
 
+	@Override
 	public String getUID() {
 		return getUid();
 	}
@@ -71,6 +72,7 @@ public abstract class WCSupport<T extends Datum>
 	 * 
 	 * @return the message source
 	 */
+	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}
@@ -83,6 +85,7 @@ public abstract class WCSupport<T extends Datum>
 		this.client = client;
 	}
 
+	@Override
 	public String getGroupUID() {
 		return groupUID;
 	}

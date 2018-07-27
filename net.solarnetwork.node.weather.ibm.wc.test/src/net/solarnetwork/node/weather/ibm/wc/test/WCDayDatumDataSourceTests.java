@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import java.sql.Date;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -28,7 +27,7 @@ import net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource;
 public class WCDayDatumDataSourceTests{
 
 	private static final String TEST_SOURCE_ID = "src.test";
-	private static final String TEST_PERIOD = "period.test";
+	private static final String TEST_PERIOD = "7day";
 	private static final String TEST_KEY = "key.test";
 	private static final String TEST_LOC = "loc.test";
 
@@ -77,11 +76,11 @@ public class WCDayDatumDataSourceTests{
 		final GeneralDayDatum datum = new GeneralDayDatum();
 		datum.setCreated(new Date(System.currentTimeMillis()));
 		datum.setSourceId(TEST_SOURCE_ID);
-		final Collection<GeneralDayDatum> datumList = Arrays.asList((GeneralDayDatum) datum);
+		final Collection<GeneralDayDatum> datumList = Arrays.asList(datum);
 
 
 		// followed by forecast
-		expect(client.readDailyForecast(TEST_LOC, TEST_KEY, TEST_PERIOD)).andReturn(datumList);
+		expect(dailyService.readMultipleDatum()).andReturn(datumList);
 
 		replayAll();
 

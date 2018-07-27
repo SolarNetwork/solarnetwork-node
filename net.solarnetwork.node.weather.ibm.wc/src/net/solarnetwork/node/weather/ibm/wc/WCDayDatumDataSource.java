@@ -13,8 +13,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum> {
 
-	private static final String[] DEFAULT_MENU = new String[] { "6hour", "12hour", "1day", "2day",
-			"3day", "10day", "15day" };
+	private static final String[] DEFAULT_MENU = new String[] { "3day", "5day", "7day", "10day",
+			"15day" };
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -64,7 +64,7 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum> {
 	public Collection<GeneralDayDatum> readMultipleDatum() {
 
 		return this.getClient().readDailyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				this.getDatumPeriod());
+				DailyDatumPeriod.getValue(this.getDatumPeriod()));
 	}
 
 }

@@ -14,23 +14,27 @@ import net.solarnetwork.node.domain.GeneralDayDatum;
 public interface WCClient {
 
 	/**
-	 * Read the daily forecast data for a location
-	 * 
 	 * @param locationIdentifier
-	 *        The location for which the forecast is retrieved
-	 * @return A collection of {@link GeneralDayDatum} that will be utilized.
+	 *        - The location for which the forecast is retrieved
+	 * @param apiKey
+	 *        - the api key for connecting to IBM Weather
+	 * @param datumPeriod
+	 *        - the period over which the datum can be retrieved from
+	 * @return
 	 */
 	Collection<GeneralDayDatum> readDailyForecast(String locationIdentifier, String apiKey,
-			String datumPeriod);
+			DailyDatumPeriod datumPeriod);
 
 	/**
-	 * Read the hourly forecast for a location
-	 * 
 	 * @param locationIdentifier
-	 *        The location for which the forecast is retrieved
-	 * @return A collection of {@link GeneralDayDatum} that will be utilized.
+	 *        - The location for which the forecast is retrieved
+	 * @param apiKey
+	 *        - the api key for connecting to IBM Weather
+	 * @param datumPeriod
+	 *        - the period over which the datum can be retrieved from
+	 * @return
 	 */
 	Collection<WCHourlyDatum> readHourlyForecast(String locationIdentifier, String apiKey,
-			String datumPeriod);
+			HourlyDatumPeriod datumPeriod);
 
 }

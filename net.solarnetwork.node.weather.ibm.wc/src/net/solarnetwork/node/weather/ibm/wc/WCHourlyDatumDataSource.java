@@ -12,8 +12,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> {
 
-	private static final String[] DEFAULT_MENU = new String[] { "3day", "5day", "7day", "10day",
-			"15day" };
+	private static final String[] DEFAULT_MENU = new String[] { "6hour", "12hour", "1day", "2day",
+			"3day", "10day", "15day" };
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -49,9 +49,8 @@ public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> {
 
 	@Override
 	public Collection<WCHourlyDatum> readMultipleDatum() {
-		// TODO Auto-generated method stub
 		return this.getClient().readHourlyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				this.getDatumPeriod());
+				HourlyDatumPeriod.getValue(this.getDatumPeriod()));
 	}
 
 	@Override

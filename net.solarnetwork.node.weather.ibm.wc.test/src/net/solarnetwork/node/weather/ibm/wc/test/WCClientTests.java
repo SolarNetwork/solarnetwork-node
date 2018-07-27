@@ -14,10 +14,9 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.weather.ibm.wc.BasicWCClient;
-import net.solarnetwork.node.weather.ibm.wc.WCClient;
-import net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource;
+import net.solarnetwork.node.weather.ibm.wc.DailyDatumPeriod;
+import net.solarnetwork.node.weather.ibm.wc.HourlyDatumPeriod;
 import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatum;
-import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource;
 
 public class WCClientTests extends AbstractHttpClientTests{
 	
@@ -49,7 +48,7 @@ public class WCClientTests extends AbstractHttpClientTests{
 			}
 		};
 		getHttpServer().addHandler(handler);
-		Collection<WCHourlyDatum> datum = c.readHourlyForecast("", "", "");
+		Collection<WCHourlyDatum> datum = c.readHourlyForecast("NZDA", "abc1234", HourlyDatumPeriod.ONEDAY);
 		log.debug(datum.toString());
 		WCHourlyDatum first = (WCHourlyDatum) datum.toArray()[0];
 		SimpleDateFormat day = new SimpleDateFormat("d MMMM yyyy");
@@ -89,7 +88,7 @@ public class WCClientTests extends AbstractHttpClientTests{
 		};
 		
 		getHttpServer().addHandler(handler);
-		Collection<GeneralDayDatum> datum = c.readDailyForecast("", "", "");
+		Collection<GeneralDayDatum> datum = c.readDailyForecast("NZDA", "abc1234", DailyDatumPeriod.TENDAY);
 		log.debug(datum.toString());
 		GeneralDayDatum first = (GeneralDayDatum) datum.toArray()[1];
 		SimpleDateFormat day = new SimpleDateFormat("d MMMM yyyy");
