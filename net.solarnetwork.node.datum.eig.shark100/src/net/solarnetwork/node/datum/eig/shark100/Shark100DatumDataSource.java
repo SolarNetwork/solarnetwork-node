@@ -48,11 +48,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
  * @version 1.0
