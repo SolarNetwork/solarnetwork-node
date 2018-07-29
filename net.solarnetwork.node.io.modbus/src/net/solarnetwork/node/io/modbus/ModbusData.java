@@ -41,7 +41,7 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 2.3
  */
 public class ModbusData {
@@ -188,7 +188,7 @@ public class ModbusData {
 	 */
 	public final Integer getInt16(final int addr) {
 		short s = dataRegisters.get(addr);
-		return Short.toUnsignedInt(s);
+		return s & 0xFFFF;
 	}
 
 	/**
