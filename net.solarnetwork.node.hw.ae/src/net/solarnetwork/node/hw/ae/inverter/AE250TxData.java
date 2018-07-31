@@ -22,9 +22,10 @@
 
 package net.solarnetwork.node.hw.ae.inverter;
 
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -71,6 +72,33 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		return (AE250TxData) copy();
 	}
 
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		AE250TxDataAccessor data = getSnapshot();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		AEInverterType type = data.getInverterType();
+		if ( type != null ) {
+			String firmwareVersion = data.getFirmwareRevision();
+			if ( firmwareVersion != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL,
+						String.format("%s (firmware %s)", type.getDescription(), firmwareVersion));
+			} else {
+				result.put(INFO_KEY_DEVICE_MODEL, type.getDescription());
+			}
+		}
+		AEInverterConfiguration config = data.getInverterConfiguration();
+		if ( config != null ) {
+			result.put("Configuration", String.format("%s; %s; tap = %s; meter installed = %s",
+					config.getVoltageType().getDescription(), config.getWiringType().getDescription(),
+					config.getTapType().getDescription(), config.isMeterInstalled() ? "yes" : "no"));
+		}
+		String s = data.getSerialNumber();
+		if ( s != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		return result;
+	}
+
 	/**
 	 * Read the configuration and information registers from the device.
 	 * 
@@ -78,16 +106,9 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 *        the connection
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) {
-		performUpdates(new ModbusDataUpdateAction() {
-
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				// we actually read ALL registers here, so our snapshot timestamp includes everything
-				updateData(conn, m,
-						combineToReduceSize(AE250TxRegister.getRegisterAddressSet(), MAX_RESULTS));
-				return true;
-			}
-		});
+		// we actually read ALL registers here, so our snapshot timestamp includes everything
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				AE250TxRegister.getRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -97,15 +118,8 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 *        the connection
 	 */
 	public final void readInverterData(final ModbusConnection conn) {
-		performUpdates(new ModbusDataUpdateAction() {
-
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				updateData(conn, m, combineToReduceSize(AE250TxRegister.getInverterRegisterAddressSet(),
-						MAX_RESULTS));
-				return true;
-			}
-		});
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				AE250TxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -115,24 +129,18 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 *        the connection
 	 */
 	public final void readStatusData(final ModbusConnection conn) {
-		performUpdates(new ModbusDataUpdateAction() {
-
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				updateData(conn, m,
-						combineToReduceSize(AE250TxRegister.getStatusRegisterAddressSet(), MAX_RESULTS));
-				return true;
-			}
-		});
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				AE250TxRegister.getStatusRegisterAddressSet(), MAX_RESULTS);
 	}
 
-	private void updateData(ModbusConnection conn, MutableModbusData m, IntRangeSet rangeSet) {
-		IntRange[] ranges = rangeSet.ranges();
-		for ( IntRange r : ranges ) {
-			int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, r.first(),
-					r.length());
-			m.saveDataArray(data, r.first());
-		}
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -208,6 +216,58 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	public Long getActiveEnergyDelivered() {
 		Number n = getNumber(AE250TxRegister.InverterActiveEnergyDelivered);
 		return (n != null ? n.longValue() : null);
+	}
+
+	@Override
+	public Float getDCVoltage() {
+		Number n = getNumber(AE250TxRegister.InverterDcVoltage);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Integer getDCPower() {
+		Number n = getNumber(AE250TxRegister.InverterDcPower);
+		return (n != null ? (int) (n.doubleValue() * 1000) : null);
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		return null;
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return null;
 	}
 
 }

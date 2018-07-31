@@ -22,13 +22,15 @@
 
 package net.solarnetwork.node.hw.eig.meter;
 
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+
 /**
  * API for reading Shark 100 meter data.
  * 
  * @author matt
  * @version 1.0
  */
-public interface Shark100DataAccessor extends MeterDataAccessor {
+public interface Shark100DataAccessor extends ACEnergyDataAccessor {
 
 	/**
 	 * Get the assigned meter name.

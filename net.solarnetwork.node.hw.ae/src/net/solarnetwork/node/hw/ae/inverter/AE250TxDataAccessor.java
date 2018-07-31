@@ -22,13 +22,16 @@
 
 package net.solarnetwork.node.hw.ae.inverter;
 
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+
 /**
  * API for reading AE 250TX data.
  * 
  * @author matt
  * @version 1.0
  */
-public interface AE250TxDataAccessor extends InverterDataAccessor {
+public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
 	/**
 	 * Get the inverter type.

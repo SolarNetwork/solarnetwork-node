@@ -43,7 +43,9 @@ public class TransformerTapTypeTests {
 
 	@Test
 	public void forRegisterValue() {
-		assertThat("265 volts", TransformerTapType.forCode(0xFF), equalTo(TransformerTapType.V_265));
-		assertThat("295 volts", TransformerTapType.forCode(0xF1), equalTo(TransformerTapType.V_295));
+		assertThat("265 volts", TransformerTapType.forRegisterValue(0xFF),
+				equalTo(TransformerTapType.V_265));
+		assertThat("295 volts", TransformerTapType.forRegisterValue(0xF1),
+				equalTo(TransformerTapType.V_295));
 	}
 }
