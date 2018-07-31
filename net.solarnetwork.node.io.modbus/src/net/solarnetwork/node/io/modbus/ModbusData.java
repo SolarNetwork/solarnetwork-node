@@ -22,12 +22,17 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import bak.pcj.map.IntKeyShortMap;
 import bak.pcj.map.IntKeyShortOpenHashMap;
+import bak.pcj.set.IntRange;
+import bak.pcj.set.IntRangeSet;
+import net.solarnetwork.node.domain.DataAccessor;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
@@ -41,10 +46,10 @@ import bak.pcj.map.IntKeyShortOpenHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 2.3
  */
-public class ModbusData {
+public class ModbusData implements DataAccessor {
 
 	private final IntKeyShortMap dataRegisters;
 	private long dataTimestamp = 0;
@@ -77,13 +82,14 @@ public class ModbusData {
 		}
 	}
 
-	/**
-	 * Get the data update timestamp.
-	 * 
-	 * @return the update timestamp, as an epoch value
-	 */
+	@Override
 	public long getDataTimestamp() {
 		return dataTimestamp;
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return Collections.emptyMap();
 	}
 
 	/**
@@ -841,6 +847,54 @@ public class ModbusData {
 			return;
 		}
 		this.wordOrder = wordOrder;
+	}
+
+	/**
+	 * Refresh a range of data from the Modbus device into this object.
+	 * 
+	 * <p>
+	 * This method uses the {@link ModbusReadFunction#ReadHoldingRegister} with
+	 * a maximum of {@literal 64} addresses read per transaction.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param rangeSet
+	 *        the Modbus registers to read, where each {@link IntRange} in the
+	 *        set defines <i>inclusive</i> address ranges to read
+	 * @since 1.6
+	 */
+	public final void refreshData(final ModbusConnection conn, final IntRangeSet rangeSet) {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, rangeSet, 64);
+	}
+
+	/**
+	 * Refresh a range of data from the Modbus device into this object.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param readFunction
+	 *        the Modbus read function to use
+	 * @param rangeSet
+	 *        the Modbus registers to read, where each {@link IntRange} in the
+	 *        set defines <i>inclusive</i> address ranges to read
+	 * @since 1.6
+	 */
+	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
+			final IntRangeSet rangeSet, final int maxResults) {
+		final IntRangeSet reducedRangeSet = combineToReduceSize(rangeSet, maxResults);
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				IntRange[] ranges = reducedRangeSet.ranges();
+				for ( IntRange r : ranges ) {
+					int[] data = conn.readUnsignedShorts(readFunction, r.first(), r.length());
+					m.saveDataArray(data, r.first());
+				}
+				return true;
+			}
+		});
 	}
 
 }
