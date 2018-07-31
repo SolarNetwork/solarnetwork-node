@@ -50,7 +50,7 @@ public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> {
 	@Override
 	public Collection<WCHourlyDatum> readMultipleDatum() {
 		return this.getClient().readHourlyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				HourlyDatumPeriod.getValue(this.getDatumPeriod()));
+				HourlyDatumPeriod.forPeriod(this.getDatumPeriod()));
 	}
 
 	@Override

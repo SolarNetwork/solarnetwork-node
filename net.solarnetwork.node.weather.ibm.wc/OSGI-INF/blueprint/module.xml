@@ -95,8 +95,11 @@
 	<service ref="hourSettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 	<service ref="daySettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
 
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
-	
+	<bean id="basicClient" class="net.solarnetwork.node.weather.ibm.wc.BasicWCClient">
+	<property name="objectMapper">
+		<bean class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+	</property>
+	</bean>
 	
 	<!-- publish a "service factory" that each  component instance can be
 	     configured in the GUI, along with a periodic job to collect datum from it -->
@@ -160,7 +163,7 @@
 									<property name="messageSource" ref="dayJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource">
-											<property name="objectMapper" ref="objectMapper"/>
+											<property name="client" ref="basicClient"/>
 											<property name="messageSource" ref="dayMessageSource"/>
 										</bean>
 									</property>
@@ -240,7 +243,7 @@
 									<property name="messageSource" ref="hourlyJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource">
-											<property name="objectMapper" ref="objectMapper"/>
+											<property name="client" ref="basicClient"/>
 											<property name="messageSource" ref="hourlyMessageSource"/>
 										</bean>
 									</property>

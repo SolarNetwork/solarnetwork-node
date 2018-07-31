@@ -3,6 +3,8 @@ package net.solarnetwork.node.weather.ibm.wc;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -40,6 +42,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	/** The default value for the {@code units} property. */
 	public static final String DEFAULT_UNITS = "e";
 
+	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
+
 	public static final boolean DEFAULT_COMPRESSION = true;
 
 	private String baseUrl;
@@ -48,6 +52,7 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	private String format;
 	private String language;
 	private String units;
+	private SimpleDateFormat tsFormat;
 
 	public BasicWCClient() {
 		this.baseUrl = DEFAULT_BASE_URL;
@@ -55,6 +60,7 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		this.hourlyForecastUrl = DEFAULT_HOURLY_FORECAST_URL;
 		this.format = DEFAULT_FORMAT;
 		this.language = DEFAULT_LANGUAGE;
+		this.tsFormat = new SimpleDateFormat(DEFAULT_TIMESTAMP_DATE_FORMAT);
 		this.units = DEFAULT_UNITS;
 
 		// set default compression
@@ -77,14 +83,32 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		if ( n.isNull() ) {
 			return null;
 		}
-		return new BigDecimal(n.asLong());
+		return n.decimalValue();
 	}
 
 	private LocalTime parseTimeValue(JsonNode n) {
 		if ( n == null || n.isNull() ) {
 			return null;
 		}
-		return new LocalTime(n.asLong() * 1000);
+		try {
+			return new LocalTime(this.tsFormat.parse(n.asText()));
+		} catch ( ParseException e ) {
+			return null;
+		}
+
+	}
+
+	private Date parseDateValue(JsonNode n) {
+		if ( n == null || n.isNull() ) {
+			return null;
+		}
+		try {
+			log.info(n.asText());
+			log.info(this.tsFormat.parse(n.asText()).toString());
+			return this.tsFormat.parse(n.asText());
+		} catch ( ParseException e ) {
+			return null;
+		}
 
 	}
 
@@ -105,7 +129,7 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		}
 		final List<GeneralDayDatum> result = new ArrayList<GeneralDayDatum>();
 		final String url = getURL(this.dailyForecastUrl, locationIdentifier, apiKey,
-				datumPeriod.toString());
+				datumPeriod.getPeriod());
 		JsonNode root;
 		try {
 			log.debug("opening IBM Weather API connection at URL {}", url);
@@ -115,30 +139,30 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 			return result;
 		}
 
-		for ( int i = 0; i < root.get("sunriseTimeUtc").size(); i++ ) {
+		for ( int i = 0; i < root.get("sunriseTimeLocal").size(); i++ ) {
 
 			GeneralDayDatum current = new GeneralDayDatum();
-			JsonNode data = root.get("sunriseTimeUtc");
+			JsonNode data = root.get("sunriseTimeLocal");
 			if ( data.isArray() ) {
-
 				current.setSunrise(parseTimeValue(data.get(i)));
 			}
-			data = root.get("sunsetTimeUtc");
+			data = root.get("sunsetTimeLocal");
 			if ( data.isArray() ) {
+
 				current.setSunset(parseTimeValue(data.get(i)));
 
 			}
-			data = root.get("moonriseTimeUtc");
+			data = root.get("moonriseTimeLocal");
 			if ( data.isArray() ) {
 				current.setMoonrise(parseTimeValue(data.get(i)));
 			}
-			data = root.get("moonsetTimeUtc");
+			data = root.get("moonsetTimeLocal");
 			if ( data.isArray() ) {
 				current.setMoonset(parseTimeValue(data.get(i)));
 			}
-			data = root.get("validTimeUtc");
+			data = root.get("validTimeLocal");
 			if ( data.isArray() ) {
-				current.setCreated(new Date(data.get(i).asLong() * 1000));
+				current.setCreated(parseDateValue(data.get(i)));
 			}
 			data = root.get("temperatureMax");
 			if ( data.isArray() ) {
@@ -164,7 +188,7 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		}
 		final List<WCHourlyDatum> result = new ArrayList<WCHourlyDatum>();
 		final String url = getURL(this.hourlyForecastUrl, locationIdentifier, apiKey,
-				datumPeriod.toString());
+				datumPeriod.getPeriod());
 		JsonNode root;
 		try {
 			log.debug("opening IBM Weather API connection URL: [{}]", url);
@@ -174,12 +198,12 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 			return result;
 		}
 
-		for ( int i = 0; i < root.get("validTimeUtc").size(); i++ ) {
+		for ( int i = 0; i < root.get("validTimeLocal").size(); i++ ) {
 
 			WCHourlyDatum current = new WCHourlyDatum();
-			JsonNode data = root.get("validTimeUtc");
+			JsonNode data = root.get("validTimeLocal");
 			if ( data.isArray() ) {
-				current.setCreated(new Date(data.get(i).asLong() * 1000));
+				current.setCreated(parseDateValue(data.get(i)));
 			}
 			data = root.get("temperature");
 			if ( data.isArray() ) {

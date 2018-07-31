@@ -1,14 +1,14 @@
 
 package net.solarnetwork.node.weather.ibm.wc;
 
-public enum DailyDatumPeriod implements DatumPeriod {
+public enum DailyDatumPeriod {
 	THREEDAY("3day"),
 	FIVEDAY("5day"),
 	SEVENDAY("7day"),
 	TENDAY("10day"),
 	FIFTEENDAY("15day");
 
-	private String period;
+	private final String period;
 
 	DailyDatumPeriod(String period) {
 		this.period = period;
@@ -23,9 +23,9 @@ public enum DailyDatumPeriod implements DatumPeriod {
 		return this.getPeriod();
 	}
 
-	static DailyDatumPeriod getValue(String period) {
+	public static DailyDatumPeriod forPeriod(String period) {
 		for ( DailyDatumPeriod e : DailyDatumPeriod.values() ) {
-			if ( e.getPeriod() == period ) {
+			if ( e.getPeriod().equalsIgnoreCase(period) ) {
 				return e;
 			}
 		}

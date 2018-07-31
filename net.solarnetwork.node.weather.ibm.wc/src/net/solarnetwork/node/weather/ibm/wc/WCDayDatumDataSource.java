@@ -64,7 +64,7 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum> {
 	public Collection<GeneralDayDatum> readMultipleDatum() {
 
 		return this.getClient().readDailyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				DailyDatumPeriod.getValue(this.getDatumPeriod()));
+				DailyDatumPeriod.forPeriod(this.getDatumPeriod()));
 	}
 
 }

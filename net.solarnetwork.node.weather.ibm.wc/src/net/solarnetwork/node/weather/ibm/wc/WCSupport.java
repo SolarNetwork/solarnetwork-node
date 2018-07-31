@@ -2,7 +2,6 @@
 package net.solarnetwork.node.weather.ibm.wc;
 
 import org.springframework.context.MessageSource;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
@@ -92,12 +91,6 @@ public abstract class WCSupport<T extends Datum>
 
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
-	}
-
-	public void setObjectMapper(ObjectMapper objectMapper) {
-		if ( client instanceof BasicWCClient ) {
-			((BasicWCClient) client).setObjectMapper(objectMapper);
-		}
 	}
 
 	public String getLocationIdentifier() {

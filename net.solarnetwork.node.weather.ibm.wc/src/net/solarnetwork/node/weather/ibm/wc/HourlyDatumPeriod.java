@@ -1,7 +1,7 @@
 
 package net.solarnetwork.node.weather.ibm.wc;
 
-public enum HourlyDatumPeriod implements DatumPeriod {
+public enum HourlyDatumPeriod {
 
 	SIXHOUR("6hour"),
 	TWELVEHOUR("12hour"),
@@ -11,7 +11,7 @@ public enum HourlyDatumPeriod implements DatumPeriod {
 	TENDAY("10day"),
 	FIFTEENDAY("15day");
 
-	private String period;
+	private final String period;
 
 	HourlyDatumPeriod(String period) {
 		this.period = period;
@@ -26,9 +26,9 @@ public enum HourlyDatumPeriod implements DatumPeriod {
 		return this.getPeriod();
 	}
 
-	static HourlyDatumPeriod getValue(String period) {
+	public static HourlyDatumPeriod forPeriod(String period) {
 		for ( HourlyDatumPeriod e : HourlyDatumPeriod.values() ) {
-			if ( e.getPeriod() == period ) {
+			if ( e.getPeriod().equalsIgnoreCase(period) ) {
 				return e;
 			}
 		}

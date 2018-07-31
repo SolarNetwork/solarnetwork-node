@@ -48,7 +48,7 @@ public class WCDayDatumDataSourceTests{
 		dailyService.setDatumPeriod(TEST_PERIOD);
 		dailyService.setApiKey(TEST_KEY);
 		dailyService.setLocationIdentifier(TEST_LOC);
-		dailyService.setObjectMapper(new ObjectMapper());
+		//dailyService.setObjectMapper(new ObjectMapper());
 
 	}
 
