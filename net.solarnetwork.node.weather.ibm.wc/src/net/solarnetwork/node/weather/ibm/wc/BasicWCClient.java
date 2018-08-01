@@ -3,13 +3,13 @@ package net.solarnetwork.node.weather.ibm.wc;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import org.joda.time.LocalTime;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
@@ -52,7 +52,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	private String format;
 	private String language;
 	private String units;
-	private SimpleDateFormat tsFormat;
+	//private SimpleDateFormat tsFormat;
+	private DateTimeFormatter dateFormat;
 
 	public BasicWCClient() {
 		this.baseUrl = DEFAULT_BASE_URL;
@@ -60,7 +61,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		this.hourlyForecastUrl = DEFAULT_HOURLY_FORECAST_URL;
 		this.format = DEFAULT_FORMAT;
 		this.language = DEFAULT_LANGUAGE;
-		this.tsFormat = new SimpleDateFormat(DEFAULT_TIMESTAMP_DATE_FORMAT);
+		this.dateFormat = ISODateTimeFormat.dateTimeParser().withOffsetParsed();
+		//this.tsFormat = new SimpleDateFormat(DEFAULT_TIMESTAMP_DATE_FORMAT);
 		this.units = DEFAULT_UNITS;
 
 		// set default compression
@@ -90,11 +92,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		if ( n == null || n.isNull() ) {
 			return null;
 		}
-		try {
-			return new LocalTime(this.tsFormat.parse(n.asText()));
-		} catch ( ParseException e ) {
-			return null;
-		}
+		//log.info(this.dateFormat.parseDateTime(n.asText()).toLocalTime().toString());
+		return this.dateFormat.parseDateTime(n.asText()).toLocalTime();
 
 	}
 
@@ -102,13 +101,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		if ( n == null || n.isNull() ) {
 			return null;
 		}
-		try {
-			log.info(n.asText());
-			log.info(this.tsFormat.parse(n.asText()).toString());
-			return this.tsFormat.parse(n.asText());
-		} catch ( ParseException e ) {
-			return null;
-		}
+
+		return this.dateFormat.parseDateTime(n.asText()).toDate();
 
 	}
 

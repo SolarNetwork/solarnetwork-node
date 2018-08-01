@@ -57,7 +57,6 @@ public class WCClientTests extends AbstractHttpClientTests{
 
 		assertNotNull(first.getCreated());
 
-
 		assertEquals(hour.format(first.getCreated()), "12:00 Tue 10 July 2018");
 
 		assertEquals(first.getTemperature(), new BigDecimal(86));
@@ -106,13 +105,13 @@ public class WCClientTests extends AbstractHttpClientTests{
 
 		assertEquals(first.getTemperatureMinimum().intValue(), 64);
 
-		assertEquals(time.format(first.getSunrise().toDateTimeToday().toDate()), "23:37");
+		assertEquals(time.format(first.getSunrise().toDateTimeToday().toDate()), "05:37");
 
-		assertEquals(time.format(first.getSunset().toDateTimeToday().toDate()), "14:29");
+		assertEquals(time.format(first.getSunset().toDateTimeToday().toDate()), "20:29");
 
-		assertEquals(time.format(first.getMoonrise().toDateTimeToday().toDate()), "18:57");
+		assertEquals(time.format(first.getMoonrise().toDateTimeToday().toDate()), "00:57");
 
-		assertEquals(time.format(first.getMoonset().toDateTimeToday().toDate()), "07:33");
+		assertEquals(time.format(first.getMoonset().toDateTimeToday().toDate()), "13:33");
 
 	}
 

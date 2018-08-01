@@ -42,13 +42,11 @@ public class WCDayDatumDataSourceTests{
 
 		client = EasyMock.createMock(WCClient.class);
 
-
 		dailyService = new WCDayDatumDataSource();
 		dailyService.setClient(client);
 		dailyService.setDatumPeriod(TEST_PERIOD);
 		dailyService.setApiKey(TEST_KEY);
 		dailyService.setLocationIdentifier(TEST_LOC);
-		//dailyService.setObjectMapper(new ObjectMapper());
 
 	}
 

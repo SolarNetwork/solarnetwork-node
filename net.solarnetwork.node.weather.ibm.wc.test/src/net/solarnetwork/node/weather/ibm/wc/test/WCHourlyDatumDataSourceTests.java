@@ -45,7 +45,6 @@ public class WCHourlyDatumDataSourceTests{
 		hourlyService.setDatumPeriod(TEST_PERIOD);
 		hourlyService.setApiKey(TEST_KEY);
 		hourlyService.setLocationIdentifier(TEST_LOC);
-		//hourlyService.setObjectMapper(new ObjectMapper());
 
 	}
 
