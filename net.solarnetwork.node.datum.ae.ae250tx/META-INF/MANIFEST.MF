@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Advanced Energy 250TX Inverter Data Source
+Bundle-Description: Collect data from Advanced Energy 250TX series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.ae.ae250tx
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
@@ -9,9 +10,9 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.domain;version="1.14.0",
  net.solarnetwork.node;version="1.24.0",
- net.solarnetwork.node.domain;version="1.13.0",
+ net.solarnetwork.node.domain;version="1.15.0",
  net.solarnetwork.node.hw.ae.inverter;version="1.0.0",
- net.solarnetwork.node.io.modbus;version="2.7.0",
+ net.solarnetwork.node.io.modbus;version="2.8.0",
  net.solarnetwork.node.job;version="1.13.0",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.1",
