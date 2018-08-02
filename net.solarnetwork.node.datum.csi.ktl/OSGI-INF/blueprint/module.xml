@@ -24,7 +24,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.csi.ktl.KTLDatumDataSource</value>
-				<value>net.solarnetwork.node.hw.csi.inverter.KTLSupport</value>
+				<value>net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>
@@ -35,13 +35,6 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="KTL Inverter"/>
-		<property name="factoryUID" value="net.solarnetwork.node.datum.csi.ktl"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
@@ -49,7 +42,13 @@
 	
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean  class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="KTL Inverter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.csi.ktl"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.csi.ktl" autowire-on-update="true">
 		<osgix:interfaces>
@@ -81,7 +80,7 @@
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.ACEnergyDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.PVEnergyDatum"/>
 								</map>
 							</property>
 						</bean>
@@ -102,8 +101,7 @@
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="Modbus Port"/>
