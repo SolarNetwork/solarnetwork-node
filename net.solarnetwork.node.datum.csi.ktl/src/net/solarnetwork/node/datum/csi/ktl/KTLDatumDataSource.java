@@ -23,19 +23,24 @@
 package net.solarnetwork.node.datum.csi.ktl;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.csi.inverter.KTLData;
-import net.solarnetwork.node.hw.csi.inverter.KTLSupport;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.hw.csi.inverter.KTLCTData;
+import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
@@ -45,68 +50,74 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @author maxieduncan
  * @version 1.0
  */
-public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData>
+		implements DatumDataSource<GeneralNodePVEnergyDatum>,
+		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
 	private String sourceId = "CSI";
 
-	private KTLData getCurrentSample() throws IOException {
-		KTLData currSample = null;
-		if ( isCachedSampleExpired() ) {
-			currSample = performAction(new ModbusConnectionAction<KTLData>() {
+	/**
+	 * Default constructor.
+	 */
+	public KTLDatumDataSource() {
+		this(new KTLCTData());
+	}
 
-				@Override
-				public KTLData doWithConnection(ModbusConnection connection) throws IOException {
-					getSample().readInverterData(connection);
-					return getSample().getSnapshot();
-				}
-
-			});
-			if ( log.isTraceEnabled() && currSample != null ) {
-				log.trace(currSample.dataDebugString());
-			}
-			log.debug("Read KTL data: {}", currSample);
-		} else {
-			currSample = getSample().getSnapshot();
-		}
-		return currSample;
+	/**
+	 * Construct with a specific sample data instance.
+	 * 
+	 * @param sample
+	 *        the sample data to use
+	 */
+	public KTLDatumDataSource(KTLCTData sample) {
+		super(sample);
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	protected void refreshDeviceInfo(ModbusConnection connection, KTLCTData sample) {
+		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	protected void refreshDeviceData(ModbusConnection connection, KTLCTData sample) {
+		sample.readInverterData(connection);
+	}
+
+	@Override
+	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
+		return KTLDatum.class;
+	}
+
+	@Override
+	public GeneralNodePVEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
 		try {
-			final KTLData currSample = getCurrentSample();
+			final KTLCTData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
 			KTLDatum d = new KTLDatum(currSample);
 			d.setSourceId(this.sourceId);
-			if ( currSample.getInverterDataTimestamp() >= start ) {
-				// we read from the inverter
+			if ( currSample.getDataTimestamp() >= start ) {
+				// we read from the device
 				postDatumCapturedEvent(d);
 			}
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from Modbus device {}: {}", modbusNetwork(),
+			log.error("Communication problem reading from KTL device {}: {}", modbusNetwork(),
 					e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
+		return KTLDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
+		GeneralNodePVEnergyDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -127,12 +138,46 @@ public class KTLDatumDataSource extends KTLSupport implements DatumDataSource<Ge
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		List<SettingSpecifier> results = new ArrayList<>(12);
+		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
+
+		results.addAll(getIdentifiableSettingSpecifiers());
+		results.addAll(getModbusNetworkSettingSpecifiers());
 
 		KTLDatumDataSource defaults = new KTLDatumDataSource();
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
 		return results;
+	}
+
+	private String getInfoMessage() {
+		String msg = null;
+		try {
+			msg = getDeviceInfoMessage();
+		} catch ( RuntimeException e ) {
+			log.debug("Error reading info: {}", e.getMessage());
+		}
+		return (msg == null ? "N/A" : msg);
+	}
+
+	private String getSampleMessage(KTLCTDataAccessor data) {
+		if ( data.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+		StringBuilder buf = new StringBuilder();
+		buf.append("Hz = ").append(data.getFrequency());
+		buf.append(", PV1 V = ").append(data.getPv1Voltage());
+		buf.append(", PV2 V = ").append(data.getPv2Voltage());
+		buf.append(", PV3 V = ").append(data.getPv3Voltage());
+		buf.append(", W = ").append(data.getActivePower());
+		buf.append(", Wh today = ").append(data.getActiveEnergyDeliveredToday());
+		buf.append(", Wh total = ").append(data.getActiveEnergyDelivered());
+		buf.append("; sampled at ")
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		return buf.toString();
 	}
 
 	/**

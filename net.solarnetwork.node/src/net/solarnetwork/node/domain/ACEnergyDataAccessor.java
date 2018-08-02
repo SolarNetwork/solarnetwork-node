@@ -1,5 +1,5 @@
 /* ==================================================================
- * MeterDataAccessor.java - 17/05/2018 7:16:42 PM
+ * ACEnergyDataAccessor.java - 30/07/2018 9:17:39 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,17 +20,16 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.eig.meter;
-
-import net.solarnetwork.node.domain.ACPhase;
+package net.solarnetwork.node.domain;
 
 /**
- * Common API for accessing meter data.
+ * API for accessing AC energy data from an object, such as a power meter.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.60
  */
-public interface MeterDataAccessor {
+public interface ACEnergyDataAccessor extends DataAccessor {
 
 	/**
 	 * Get an accessor for phase-specific measurements.
@@ -39,7 +38,7 @@ public interface MeterDataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	MeterDataAccessor accessorForPhase(ACPhase phase);
+	ACEnergyDataAccessor accessorForPhase(ACPhase phase);
 
 	/**
 	 * Get an accessor that reverses the current direction of the data, turning
@@ -47,14 +46,7 @@ public interface MeterDataAccessor {
 	 * 
 	 * @return the accessor
 	 */
-	MeterDataAccessor reversed();
-
-	/**
-	 * Gets the time stamp of the data.
-	 * 
-	 * @return the data time stamp
-	 */
-	long getDataTimestamp();
+	ACEnergyDataAccessor reversed();
 
 	/**
 	 * Get the AC frequency value, in Hz.
@@ -92,11 +84,39 @@ public interface MeterDataAccessor {
 	Integer getActivePower();
 
 	/**
+	 * Get the active energy delivered (imported), in Wh.
+	 * 
+	 * @return the delivered active energy
+	 */
+	Long getActiveEnergyDelivered();
+
+	/**
+	 * Get the active energy received (exported), in Wh.
+	 * 
+	 * @return the received active energy
+	 */
+	Long getActiveEnergyReceived();
+
+	/**
 	 * Get the apparent power, in VA.
 	 * 
 	 * @return the apparent power
 	 */
 	Integer getApparentPower();
+
+	/**
+	 * Get the apparent energy delivered (imported), in VAh.
+	 * 
+	 * @return the delivered apparent energy
+	 */
+	Long getApparentEnergyDelivered();
+
+	/**
+	 * Get the apparent energy received (exported), in VAh.
+	 * 
+	 * @return the received apparent energy
+	 */
+	Long getApparentEnergyReceived();
 
 	/**
 	 * Get the reactive power, in VAR.
@@ -106,31 +126,16 @@ public interface MeterDataAccessor {
 	Integer getReactivePower();
 
 	/**
-	 * Get the active energy imported (delivered), in Wh.
+	 * Get the reactive energy delivered (imported), in VARh.
 	 * 
-	 * @return the imported active energy
-	 */
-	Long getActiveEnergyDelivered();
-
-	/**
-	 * Get the active energy exported (received), in Wh.
-	 * 
-	 * @return the exported active energy
-	 */
-	Long getActiveEnergyReceived();
-
-	/**
-	 * Get the reactive energy imported (delivered), in VARh.
-	 * 
-	 * @return the imported reactive energy
+	 * @return the delivered reactive energy
 	 */
 	Long getReactiveEnergyDelivered();
 
 	/**
-	 * Get the reactive energy exported (received), in VARh.
+	 * Get the reactive energy received (exported), in VARh.
 	 * 
-	 * @return the exported reactive energy
+	 * @return the received reactive energy
 	 */
 	Long getReactiveEnergyReceived();
-
 }

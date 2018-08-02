@@ -26,9 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
@@ -37,10 +35,8 @@ import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.eig.meter.Shark100Data;
 import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
-import net.solarnetwork.node.hw.eig.meter.SharkPowerSystem;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -48,22 +44,15 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
  * @version 1.0
  */
-public class Shark100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
+public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private final Shark100Data sample;
-
-	private long sampleCacheMs = 5000;
 	private String sourceId = "Shark 100";
 	private boolean backwards = false;
 
@@ -81,30 +70,17 @@ public class Shark100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *        the sample data to use
 	 */
 	public Shark100DatumDataSource(Shark100Data sample) {
-		super();
-		this.sample = sample;
+		super(sample);
 	}
 
-	private Shark100Data getCurrentSample() throws IOException {
-		Shark100Data currSample = null;
-		if ( isCachedSampleExpired() ) {
-			currSample = performAction(new ModbusConnectionAction<Shark100Data>() {
+	@Override
+	protected void refreshDeviceInfo(ModbusConnection connection, Shark100Data sample) {
+		sample.readConfigurationData(connection);
+	}
 
-				@Override
-				public Shark100Data doWithConnection(ModbusConnection connection) throws IOException {
-					getSample().readMeterData(connection);
-					return getSample().getSnapshot();
-				}
-
-			});
-			if ( log.isTraceEnabled() && currSample != null ) {
-				log.trace(currSample.dataDebugString());
-			}
-			log.debug("Read Shark 100 data: {}", currSample);
-		} else {
-			currSample = getSample().getSnapshot();
-		}
-		return currSample;
+	@Override
+	protected void refreshDeviceData(ModbusConnection connection, Shark100Data sample) {
+		sample.readMeterData(connection);
 	}
 
 	@Override
@@ -150,49 +126,6 @@ public class Shark100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return Collections.emptyList();
 	}
 
-	public Shark100Data getSample() {
-		return sample;
-	}
-
-	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
-		sample.readConfigurationData(conn);
-		Shark100DataAccessor data = (Shark100DataAccessor) sample.copy();
-		Map<String, Object> result = new LinkedHashMap<>(4);
-		String name = data.getName();
-		if ( name != null ) {
-			String firmwareVersion = data.getFirmwareRevision();
-			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
-						String.format("%s (firmware %s)", name, firmwareVersion));
-			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, name);
-			}
-		}
-		SharkPowerSystem wiringMode = data.getPowerSystem();
-		if ( wiringMode != null ) {
-			result.put("Wiring Mode", wiringMode.getDescription());
-		}
-		String s = data.getSerialNumber();
-		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
-		}
-		return result;
-	}
-
-	/**
-	 * Test if the sample data has expired.
-	 * 
-	 * @return {@literal true} if the sample data has expired
-	 */
-	protected boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
-		if ( lastReadDiff > sampleCacheMs ) {
-			return true;
-		}
-		return false;
-	}
-
 	// SettingSpecifierProvider
 
 	@Override
@@ -209,7 +142,7 @@ public class Shark100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(12);
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
@@ -233,37 +166,18 @@ public class Shark100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(Shark100Data data) {
+	private String getSampleMessage(Shark100DataAccessor data) {
 		if ( data.getDataTimestamp() < 1 ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("W = ").append(sample.getActivePower());
-		buf.append(", VAR = ").append(sample.getReactivePower());
-		buf.append(", Wh rec = ").append(sample.getActiveEnergyReceived());
-		buf.append(", Wh del = ").append(sample.getActiveEnergyDelivered());
+		buf.append("W = ").append(data.getActivePower());
+		buf.append(", VAR = ").append(data.getReactivePower());
+		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
+		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
 		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
 		return buf.toString();
-	}
-
-	/**
-	 * Get the sample cache maximum age, in milliseconds.
-	 * 
-	 * @return the cache milliseconds
-	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheSecondsMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
 	}
 
 	/**

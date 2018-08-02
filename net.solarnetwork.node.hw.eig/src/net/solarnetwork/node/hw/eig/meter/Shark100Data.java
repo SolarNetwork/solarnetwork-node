@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.eig.meter;
 
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -72,6 +72,31 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		return (Shark100Data) copy();
 	}
 
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		Shark100DataAccessor data = getSnapshot();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String name = data.getName();
+		if ( name != null ) {
+			String firmwareVersion = data.getFirmwareRevision();
+			if ( firmwareVersion != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL,
+						String.format("%s (firmware %s)", name, firmwareVersion));
+			} else {
+				result.put(INFO_KEY_DEVICE_MODEL, name);
+			}
+		}
+		SharkPowerSystem wiringMode = data.getPowerSystem();
+		if ( wiringMode != null ) {
+			result.put("Wiring Mode", wiringMode.getDescription());
+		}
+		String s = data.getSerialNumber();
+		if ( s != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		return result;
+	}
+
 	/**
 	 * Read the configuration and information registers from the device.
 	 * 
@@ -79,16 +104,9 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 *        the connection
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) {
-		performUpdates(new ModbusDataUpdateAction() {
-
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				// we actually read ALL registers here, so our snapshot timestamp includes everything
-				updateData(conn, m,
-						combineToReduceSize(Shark100Register.getRegisterAddressSet(), MAX_RESULTS));
-				return true;
-			}
-		});
+		// we actually read ALL registers here, so our snapshot timestamp includes everything
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				Shark100Register.getRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -98,24 +116,8 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 *        the connection
 	 */
 	public final void readMeterData(final ModbusConnection conn) {
-		performUpdates(new ModbusDataUpdateAction() {
-
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				updateData(conn, m,
-						combineToReduceSize(Shark100Register.getMeterRegisterAddressSet(), MAX_RESULTS));
-				return true;
-			}
-		});
-	}
-
-	private void updateData(ModbusConnection conn, MutableModbusData m, IntRangeSet rangeSet) {
-		IntRange[] ranges = rangeSet.ranges();
-		for ( IntRange r : ranges ) {
-			int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, r.first(),
-					r.length());
-			m.saveDataArray(data, r.first());
-		}
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				Shark100Register.getMeterRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -148,12 +150,12 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	}
 
 	@Override
-	public MeterDataAccessor accessorForPhase(ACPhase phase) {
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public MeterDataAccessor reversed() {
+	public ACEnergyDataAccessor reversed() {
 		return reversedDataAccessor();
 	}
 
@@ -285,6 +287,16 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		return getEnergyValue(Shark100Register.MeterReactiveEnergyReceived);
 	}
 
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
 	private class PhaseMeterDataAccessor implements Shark100DataAccessor {
 
 		private final ACPhase phase;
@@ -292,6 +304,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		private PhaseMeterDataAccessor(ACPhase phase) {
 			super();
 			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return Shark100Data.this.getDeviceInfo();
 		}
 
 		@Override
@@ -325,12 +342,12 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public MeterDataAccessor accessorForPhase(ACPhase phase) {
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
 			return Shark100Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public MeterDataAccessor reversed() {
+		public ACEnergyDataAccessor reversed() {
 			return Shark100Data.this.reversed();
 		}
 
@@ -423,6 +440,16 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 			return Shark100Data.this.getReactiveEnergyReceived();
 		}
 
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return Shark100Data.this.getApparentEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return Shark100Data.this.getActiveEnergyReceived();
+		}
+
 	}
 
 	private static class ReversedMeterDataAccessor implements Shark100DataAccessor {
@@ -435,12 +462,17 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
 		public String getName() {
 			return delegate.getName();
 		}
 
 		@Override
-		public MeterDataAccessor accessorForPhase(ACPhase phase) {
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
 			return delegate.accessorForPhase(phase);
 		}
 
@@ -455,7 +487,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public MeterDataAccessor reversed() {
+		public ACEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
@@ -529,6 +561,16 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		@Override
 		public Long getReactiveEnergyReceived() {
 			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
 		}
 
 	}
