@@ -84,7 +84,7 @@ public interface ACEnergyDataAccessor extends DataAccessor {
 	Integer getActivePower();
 
 	/**
-	 * /** Get the active energy delivered (imported), in Wh.
+	 * Get the active energy delivered (imported), in Wh.
 	 * 
 	 * @return the delivered active energy
 	 */
