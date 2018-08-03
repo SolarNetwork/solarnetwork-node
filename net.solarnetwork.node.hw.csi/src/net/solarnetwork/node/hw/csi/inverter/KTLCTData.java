@@ -62,6 +62,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		return new KTLCTData(this);
 	}
 
+	@Override
+	public ModbusData copy() {
+		return getSnapshot();
+	}
+
 	/**
 	 * Read the configuration and information registers from the device.
 	 * 
