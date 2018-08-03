@@ -22,12 +22,23 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static java.util.Arrays.copyOfRange;
+import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.test.DataUtils;
 
 /**
  * Unit tests for the {@link KTLCTData} class.
@@ -37,13 +48,19 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  */
 public class KTLCTDataTests {
 
-	// TODO replace this with actual data read from an active device
-	private static final int[] TEST_DATA = new int[] { 0x4031, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0001, 0x0002, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-			0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000 };
+	private static final int[] TEST_DATA = parseTestData("data-01.txt");
+
+	private static final Logger log = LoggerFactory.getLogger(KTLCTDataTests.class);
+
+	private static int[] parseTestData(String resource) {
+		try {
+			return DataUtils.parseModbusHexRegisterLines(new BufferedReader(
+					new InputStreamReader(KTLCTDataTests.class.getResourceAsStream(resource))));
+		} catch ( IOException e ) {
+			log.error("Error reading modbus data resource [{}]", resource, e);
+			return new int[0];
+		}
+	}
 
 	private final KTLCTData data = new KTLCTData();
 
@@ -60,18 +77,48 @@ public class KTLCTDataTests {
 	}
 
 	@Test
+	public void readConfigurationData() {
+		// given
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		KTLCTData data = new KTLCTData();
+
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 1))
+				.andReturn(copyOfRange(TEST_DATA, 0, 1));
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 6, 42))
+				.andReturn(copyOfRange(TEST_DATA, 6, 42));
+
+		// when
+		EasyMock.replay(conn);
+		data.readConfigurationData(conn);
+
+		// then
+
+		EasyMock.verify(conn);
+	}
+
+	@Test
 	public void getDeviceModel() {
 		assertThat("Inveter type", data.getInverterType(), equalTo(KTLCTInverterType.CSI_50KTL_CT));
 	}
 
 	@Test
+	public void getModelName() {
+		assertThat("Model name", data.getModelName(), equalTo("PVI36TL-480"));
+	}
+
+	@Test
+	public void getSerialNumber() {
+		assertThat("Serial number", data.getSerialNumber(), equalTo("282791139098658"));
+	}
+
+	@Test
 	public void getActivePower() {
-		assertThat("Active power", data.getActivePower(), equalTo(100));
+		assertThat("Active power", data.getActivePower(), equalTo(15600));
 	}
 
 	@Test
 	public void getApparentPower() {
-		assertThat("Apparent power", data.getApparentPower(), equalTo(200));
+		assertThat("Apparent power", data.getApparentPower(), equalTo(15700));
 	}
 
 	// TODO test other values when populated

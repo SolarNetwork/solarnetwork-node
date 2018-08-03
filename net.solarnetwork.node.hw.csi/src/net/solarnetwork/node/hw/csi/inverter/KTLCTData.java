@@ -274,9 +274,22 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		}
 	}
 
+	private String getNullTerminatedString(String s) {
+		if ( s == null || s.isEmpty() ) {
+			return s;
+		}
+		char[] c = s.toCharArray();
+		for ( int i = 0; i < c.length; i++ ) {
+			if ( c[i] == 0 ) {
+				return s.substring(0, i);
+			}
+		}
+		return s;
+	}
+
 	@Override
 	public String getModelName() {
-		return getAsciiString(KTLCTRegister.InfoInverterModelName, true);
+		return getNullTerminatedString(getAsciiString(KTLCTRegister.InfoInverterModelName, true));
 	}
 
 	@Override
