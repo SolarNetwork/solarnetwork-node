@@ -2,10 +2,7 @@
 package net.solarnetwork.node.weather.ibm.wc;
 
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
  * Simplifies the datum data source classes by providing shared methods.
@@ -14,8 +11,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  *
  * @param <T>
  */
-public abstract class WCSupport<T extends Datum>
-		implements SettingSpecifierProvider, DatumDataSource<T>, MultiDatumDataSource<T> {
+public abstract class WCSupport<T extends Datum> {
 
 	private String uid;
 	private String groupUID;
@@ -37,7 +33,6 @@ public abstract class WCSupport<T extends Datum>
 		this.messageSource = messageSource;
 	}
 
-	@Override
 	public String getUID() {
 		return getUid();
 	}
@@ -71,7 +66,7 @@ public abstract class WCSupport<T extends Datum>
 	 * 
 	 * @return the message source
 	 */
-	@Override
+
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}
@@ -84,7 +79,6 @@ public abstract class WCSupport<T extends Datum>
 		this.client = client;
 	}
 
-	@Override
 	public String getGroupUID() {
 		return groupUID;
 	}

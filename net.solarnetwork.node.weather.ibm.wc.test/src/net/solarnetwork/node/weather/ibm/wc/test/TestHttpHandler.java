@@ -51,12 +51,7 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	@Override
 	public final void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
 			throws IOException, ServletException {
-		// log.trace("HTTP target {} request {}", target, request.getRequestURI());
-		Enumeration<String> headerNames = request.getHeaderNames();
-		while (headerNames.hasMoreElements()) {
-			String headerName = headerNames.nextElement();
-			// log.trace("HTTP header {} = {}", headerName, request.getHeader(headerName));
-		}
+		
 		try {
 			handled = handleInternal(request, response);
 			((Request) request).setHandled(handled);

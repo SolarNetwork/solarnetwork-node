@@ -14,7 +14,6 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<!-- provides access to local database storage for our datum -->
 	<bean id="generalLocationDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -26,27 +25,24 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
 	</bean>	
 
-	<!-- support localized strings for the settings in the GUI -->
 	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames">
+		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.weather.ibm.wc.MetserviceSupport</value>
+				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource</value>
 			</list>
 		</property>
 	</bean>
 	
-		<!-- support localized strings for the settings in the GUI -->
 	<bean id="hourlyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.weather.ibm.wc.MetserviceSupport</value>
+				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource</value>
 			</list>
 		</property>
 	</bean>
 
-	<!-- support localized strings for the periodic job settings in the GUI -->
 	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
@@ -62,7 +58,6 @@
 		</property>
 	</bean>
 	
-		<!-- support localized strings for the periodic job settings in the GUI -->
 	<bean id="hourlyJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
@@ -78,44 +73,31 @@
 		</property>
 	</bean>
 
-	<!-- publish a "component factory" so our Plugin appears in the settings GUI -->
-	<bean id="daySettingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value=" Weather Channel Plugin - Daily"/>
-		<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.day"/>
-		<property name="messageSource" ref="dayMessageSource"/>
-	</bean>
-		
-	<!-- publish a "component factory" so our Plugin appears in the settings GUI -->
-	<bean id="hourSettingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value=" Weather Channel Plugin - Hourly"/>
-		<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.hour"/>
-		<property name="messageSource" ref="hourlyMessageSource"/>
-	</bean>
-	
-	<service ref="hourSettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
-	<service ref="daySettingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
-
 	<bean id="basicClient" class="net.solarnetwork.node.weather.ibm.wc.BasicWCClient">
-	<property name="objectMapper">
-		<bean class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
-	</property>
+		<property name="objectMapper">
+			<bean class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
+		</property>
 	</bean>
 	
-	<!-- publish a "service factory" that each  component instance can be
-	     configured in the GUI, along with a periodic job to collect datum from it -->
+	<!-- daily data source -->
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value=" Weather Channel Plugin - Daily"/>
+			<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.day"/>
+			<property name="messageSource" ref="dayMessageSource"/>
+		</bean>
+	</service>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.ibm.wc.day" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.ibm.wc.day"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-
-			<!-- the trigger defines when the periodic job runs; in this case
-			     we define a cron style trigger, that by default runs once/minute -->
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 					<property name="name" value="WCDayDatumLoggerTrigger"/>
@@ -124,33 +106,6 @@
 					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
-
-			<!-- we can also publish the FoobarDatumDataSource instance itself as a service
-			     by configuring serviceProviderConfigurations here... this is optional but
-			     generally a good idea -->
-			<property name="serviceProviderConfigurations">
-				<map>
-					<entry key="datumDataSource">
-						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
-							<property name="interfaces">
-								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
-								</list>
-							</property>
-							<property name="properties">
-								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralDayDatum"/>
-								</map>
-							</property>
-						</bean>
-					</entry>
-				</map>
-			</property>
-
-			<!-- the jobDetail defines what job should be executed periodically by the
-			     trigger; here we define a  net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob
-			     job which will invoke the readCurrentDatum() method on a DatumDataSource, which
-			     is what FoobarDatumDataSource is! -->
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 					<property name="name" value="WCDayDatumLoggerJob"/>
@@ -178,24 +133,27 @@
 				</bean>
 			</property>
 		</bean>
-		
-	</osgix:managed-service-factory>
+	</osgix:managed-service-factory>	
 	
-	
-	<!-- second factory for the hourly one -->
+	<!-- hourly data source -->
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value=" Weather Channel Plugin - Hourly"/>
+			<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.hour"/>
+			<property name="messageSource" ref="hourlyMessageSource"/>
+		</bean>
+	</service>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.ibm.wc.hour" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.ibm.wc.hour"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-
-			<!-- the trigger defines when the periodic job runs; in this case
-			     we define a cron style trigger, that by default runs once/minute -->
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 					<property name="name" value="WCHourlyDatumLoggerTrigger"/>
@@ -204,33 +162,6 @@
 					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
-
-			<!-- we can also publish the FoobarDatumDataSource instance itself as a service
-			     by configuring serviceProviderConfigurations here... this is optional but
-			     generally a good idea -->
-			<property name="serviceProviderConfigurations">
-				<map>
-					<entry key="datumDataSource">
-						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
-							<property name="interfaces">
-								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
-								</list>
-							</property>
-							<property name="properties">
-								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralAtmosphericDatum"/>
-								</map>
-							</property>
-						</bean>
-					</entry>
-				</map>
-			</property>
-
-			<!-- the jobDetail defines what job should be executed periodically by the
-			     trigger; here we define a  net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob
-			     job which will invoke the readCurrentDatum() method on a DatumDataSource, which
-			     is what FoobarDatumDataSource is! -->
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 					<property name="name" value="WCHourlyDatumLoggerJob"/>
