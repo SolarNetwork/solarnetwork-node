@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.os.stat;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -35,8 +37,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.joda.time.Duration;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
@@ -44,6 +51,7 @@ import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.CachedResult;
@@ -111,7 +119,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
 	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
 	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0", "wlan0"));
-	private long sampleCacheMs = 5000;
+	private long sampleCacheMs = 20000;
+	private String sourceId = "OS Stats";
 	private OptionalService<NodeMetadataService> nodeMetadataService;
 
 	@Override
@@ -122,7 +131,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
 		long start = System.currentTimeMillis();
-		GeneralNodeDatum d = getCurrentSamples();
+		GeneralNodeDatum d = getCurrentSample();
 		if ( d != null ) {
 			if ( d.getCreated() != null && d.getCreated().getTime() > start ) {
 				postDatumCapturedEvent(d);
@@ -132,7 +141,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		return d;
 	}
 
-	private GeneralNodeDatum getCurrentSamples() {
+	private GeneralNodeDatum getCurrentSample() {
 		// First check for a cached sample
 		CachedResult<GeneralNodeDatum> cache = sampleCache.get();
 		if ( cache != null && cache.isValid() ) {
@@ -142,6 +151,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		// Cache has expired so initiate new instance and cache
 		GeneralNodeDatum result = new GeneralNodeDatum();
 		result.setCreated(new Date());
+		result.setSourceId(sourceId);
 
 		for ( StatAction action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);
@@ -169,6 +179,10 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 				populateFilesystemUse(data, result);
 				break;
 
+			case MemoryUse:
+				populateMemoryUse(data, result);
+				break;
+
 			case NetworkTraffic:
 				populateNetworkTraffic(data, result);
 				break;
@@ -179,10 +193,6 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 			case SystemUptime:
 				populateSystemUptime(data, result);
-				break;
-
-			default:
-				// nothing
 				break;
 		}
 	}
@@ -196,6 +206,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 				d = d.multiply(scaleFactor);
 			}
 			result.putInstantaneousSampleValue(propName, d);
+		} catch ( NullPointerException e ) {
+			// ignore, property not available
 		} catch ( NumberFormatException e ) {
 			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
 					e.getMessage());
@@ -211,6 +223,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 				d = d.multiply(scaleFactor);
 			}
 			result.putAccumulatingSampleValue(propName, d);
+		} catch ( NullPointerException e ) {
+			// ignore, property not available
 		} catch ( NumberFormatException e ) {
 			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
 					e.getMessage());
@@ -219,18 +233,10 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	private void populateCpuUse(List<Map<String, String>> data, GeneralNodeDatum result) {
 		// use only last available row, ignore date,period-secs
-		Map<String, String> d = data.get(data.size() - 1);
-		for ( Map.Entry<String, String> me : d.entrySet() ) {
-			if ( "date".equalsIgnoreCase(me.getKey()) || "period-secs".equalsIgnoreCase(me.getKey()) ) {
-				continue;
-			}
-			try {
-				result.putInstantaneousSampleValue("cpu_" + me.getKey(), new BigDecimal(me.getValue()));
-			} catch ( NumberFormatException e ) {
-				log.debug("Error parsing {} action {} value [{}]: {}", StatAction.CpuUse.getAction(),
-						me.getKey(), me.getValue(), e.getMessage());
-			}
-		}
+		Map<String, String> row = data.get(data.size() - 1);
+		populateInstantaneousValue(StatAction.CpuUse, row, "user", "cpu_user", result, null);
+		populateInstantaneousValue(StatAction.CpuUse, row, "system", "cpu_system", result, null);
+		populateInstantaneousValue(StatAction.CpuUse, row, "idle", "cpu_idle", result, null);
 	}
 
 	private void populateFilesystemUse(List<Map<String, String>> data, GeneralNodeDatum result) {
@@ -246,6 +252,20 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 					result, kb);
 			populateInstantaneousValue(StatAction.FilesystemUse, row, "used-percent",
 					"fs_used_percent_" + mount, result, null);
+		}
+	}
+
+	private void populateMemoryUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+		final BigDecimal kb = new BigDecimal("1024");
+		Map<String, String> row = data.get(0);
+		populateInstantaneousValue(StatAction.MemoryUse, row, "total-kb", "ram_total", result, kb);
+		populateInstantaneousValue(StatAction.MemoryUse, row, "avail-kb", "ram_avail", result, kb);
+		BigDecimal total = result.getInstantaneousSampleBigDecimal("ram_total");
+		BigDecimal avail = result.getInstantaneousSampleBigDecimal("ram_avail");
+		if ( total != null && avail != null ) {
+			result.putInstantaneousSampleValue("ram_used_percent",
+					total.subtract(avail).divide(total, 3, RoundingMode.HALF_UP)
+							.multiply(new BigDecimal("100"), new MathContext(3)));
 		}
 	}
 
@@ -336,6 +356,11 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = getIdentifiableSettingSpecifiers();
 
+		String info = getInfoMessage();
+		if ( info != null ) {
+			result.add(0, new BasicTitleSettingSpecifier("info", info, true));
+		}
+
 		OsStatDatumDataSource defaults = new OsStatDatumDataSource();
 		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
@@ -359,6 +384,47 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 
 		return result;
+	}
+
+	private String getInfoMessage() {
+		GeneralNodeDatum d = getCurrentSample();
+		if ( d == null ) {
+			return null;
+		}
+		GeneralDatumSamples s = d.getSamples();
+		if ( s == null ) {
+			return null;
+		}
+		Map<String, Object> data = new LinkedHashMap<>(4);
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "cpu_user") ) {
+			data.put("CPU", String.format("%s%%", s.getInstantaneousSampleBigDecimal("cpu_user")));
+		}
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "ram_used_percent") ) {
+			data.put("RAM used",
+					String.format("%s%%", s.getInstantaneousSampleBigDecimal("ram_used_percent")));
+		}
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "sys_load_5min") ) {
+			data.put("Load (5 min)",
+					String.format("%s", s.getInstantaneousSampleBigDecimal("sys_load_5min")));
+		}
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "fs_used_percent_/") ) {
+			data.put("Root disk use",
+					String.format("%s%%", s.getInstantaneousSampleBigDecimal("fs_used_percent_/")));
+		}
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "fs_used_percent_/run") ) {
+			data.put("RAM disk use",
+					String.format("%s%%", s.getInstantaneousSampleBigDecimal("fs_used_percent_/run")));
+		}
+		if ( s.hasSampleValue(GeneralDatumSamplesType.Accumulating, "sys_up") ) {
+			BigDecimal upSecs = s.getAccumulatingSampleBigDecimal("sys_up");
+			long now = System.currentTimeMillis();
+			long start = now - TimeUnit.SECONDS.toMillis(upSecs.longValue());
+			Duration dur = new Duration(now = start, now);
+			DateTimeFormatter fmt = DateTimeFormat.mediumDateTime();
+			data.put("Up since", String.format("%s (%d days)", fmt.print(start), dur.getStandardDays()));
+		}
+		return StringUtils.delimitedStringFromMap(data, " = ", ", ");
+
 	}
 
 	/**
@@ -533,5 +599,18 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setNetDevicesValue(String devices) {
 		setNetDevices(net.solarnetwork.util.StringUtils.commaDelimitedStringToSet(devices));
+	}
+
+	/**
+	 * Set the source ID to assign to captured datum.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 */
+	public void setSourceId(String sourceId) {
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			throw new IllegalArgumentException("The sourceId property is required");
+		}
+		this.sourceId = sourceId;
 	}
 }

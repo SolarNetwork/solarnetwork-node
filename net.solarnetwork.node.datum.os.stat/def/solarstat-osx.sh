@@ -7,7 +7,7 @@ VERBOSE=""
 do_help () {
 	echo "Usage: $0 <action>" 1>&2
 	echo 1>&2
-	echo "<action> is one of: cpu-use, fs-use, net-traffic, sys-load, sys-up" 1>&2
+	echo "<action> is one of: cpu-use, fs-use, mem-use, net-traffic, sys-load, sys-up" 1>&2
 }
 
 while getopts ":v" opt; do
@@ -48,6 +48,22 @@ do_fs_use_inst () {
 	BLOCKSIZE=1024 df -P |awk 'NR > 1 && $1 !~ /^map/ { sub("%","",$5); print $6","$2","$3","$5 }'
 }
 
+# print out memory use, e.g.
+#
+#   total-kb,avail-kb
+#   1000184,756380
+#
+do_mem_use_inst () {
+	echo "total-kb,avail-kb"
+	FREE_BLOCKS=$(vm_stat | awk '/^Pages free/ { sub("\\.","",$3); print $3 }')
+	SPECULATIVE_BLOCKS=$(vm_stat | awk '/^Pages speculative/ { sub("\\.","",$3); print $3 }')
+
+	FREE=$(( FREE_BLOCKS + SPECULATIVE_BLOCKS ))
+	TOTAL=$(sysctl hw.memsize |awk '{print $2}')
+	echo "$(( TOTAL / 1024 )),$(( FREE * 4 ))"
+}
+
+
 # print out network device accumulated traffic, e.g.
 #
 #   wlan0 373064 110099 5086 549
@@ -82,6 +98,8 @@ case $ACTION in
 	cpu-use) do_cpu_use_inst;;
 
 	fs-use) do_fs_use_inst "$@";;
+
+	mem-use) do_mem_use_inst;;
 
 	net-traffic) do_net_traffic_acc;;
 

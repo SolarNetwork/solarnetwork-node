@@ -7,7 +7,7 @@ VERBOSE=""
 do_help () {
 	echo "Usage: $0 <action>" 1>&2
 	echo 1>&2
-	echo "<action> is one of: cpu-use, fs-use, net-traffic, sys-load, sys-up" 1>&2
+	echo "<action> is one of: cpu-use, fs-use, mem-use, net-traffic, sys-load, sys-up" 1>&2
 }
 
 while getopts ":v" opt; do
@@ -35,7 +35,12 @@ fi
 #
 do_cpu_use_inst () {
 	echo 'date,period-secs,user,system,idle'
-	sadf -d -s $(date "+%H"):00 |awk -F";" 'NR > 1 { print $3","$2","$5","$7","$10 }'
+	hour=$(date +"%H")
+	min=$(date +"%M")
+	if [ "$min" -lt 10 ]; then
+		hour=$(( hour - 1 ))
+	fi
+	sadf -d -s $hour:00 |awk -F";" 'NR > 1 { print $3","$2","$5","$7","$10 }'
 }
 
 # print out file system use, e.g.
@@ -46,6 +51,16 @@ do_cpu_use_inst () {
 do_fs_use_inst () {
 	echo 'mount,size-kb,used-kb,used-percent'
 	BLOCKSIZE=1024 df |awk 'NR > 1 { sub("%","",$5); print $6","$2","$3","$5 }'
+}
+
+# print out memory use, e.g.
+#
+#   total-kb,avail-kb
+#   1000184,756380
+#
+do_mem_use_inst () {
+	echo "total-kb,avail-kb"
+	free |awk '/^Mem/ { print $2","$7 }'
 }
 
 # print out network device accumulated traffic, e.g.
@@ -82,6 +97,8 @@ case $ACTION in
 	cpu-use) do_cpu_use_inst;;
 
 	fs-use) do_fs_use_inst "$@";;
+
+	mem-use) do_mem_use_inst;;
 
 	net-traffic) do_net_traffic_acc;;
 

@@ -34,6 +34,8 @@ public enum StatAction {
 
 	FilesystemUse("fs-use"),
 
+	MemoryUse("mem-use"),
+
 	NetworkTraffic("net-traffic"),
 
 	SystemLoad("sys-load"),

@@ -180,6 +180,26 @@ public class OsStatDatumDataSourceTests {
 	}
 
 	@Test
+	public void populateMemoryUse() throws IOException {
+		// given
+		List<Map<String, String>> rows = ProcessActionCommandRunner
+				.parseActionCommandCsvOutput(getClass().getResourceAsStream("mem-use-01.csv"));
+		expect(runner.executeAction(StatAction.MemoryUse)).andReturn(rows);
+
+		// when
+		replayAll();
+		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.MemoryUse));
+		GeneralNodeDatum result = ds.readCurrentDatum();
+
+		// then
+		assertThat("Result returned", result, notNullValue());
+		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		assertThat("Total", iData, hasEntry("ram_total", new BigDecimal("34359738368")));
+		assertThat("Avail", iData, hasEntry("ram_avail", new BigDecimal("9733586944")));
+		assertThat("Used percent", iData, hasEntry("ram_used_percent", new BigDecimal("71.7")));
+	}
+
+	@Test
 	public void populateSystemLoad() throws IOException {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
