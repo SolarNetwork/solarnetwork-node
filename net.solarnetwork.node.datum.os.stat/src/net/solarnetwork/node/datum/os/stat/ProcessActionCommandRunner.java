@@ -49,7 +49,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class ProcessActionCommandRunner implements ActionCommandRunner, SettingSpecifierProvider {
 
 	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = "solarstat";
+	public static final String DEFAULT_COMMAND = "/home/solar/bin/solarstat";
 
 	private String command = DEFAULT_COMMAND;
 	private MessageSource messageSource;

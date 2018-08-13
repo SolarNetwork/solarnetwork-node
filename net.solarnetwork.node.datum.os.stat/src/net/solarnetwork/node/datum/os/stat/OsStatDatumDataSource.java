@@ -110,15 +110,12 @@ import net.solarnetwork.util.StringUtils;
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
 
-	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = "solarstat";
-
 	private final AtomicReference<CachedResult<GeneralNodeDatum>> sampleCache = new AtomicReference<>();
 
 	private Set<StatAction> actions = EnumSet.allOf(StatAction.class);
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
 	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
-	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0", "wlan0"));
+	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0"));
 	private long sampleCacheMs = 20000;
 	private String sourceId = "OS Stats";
 	private OptionalService<NodeMetadataService> nodeMetadataService;
@@ -356,9 +353,13 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = getIdentifiableSettingSpecifiers();
 
-		String info = getInfoMessage();
-		if ( info != null ) {
-			result.add(0, new BasicTitleSettingSpecifier("info", info, true));
+		try {
+			String info = getInfoMessage();
+			if ( info != null ) {
+				result.add(0, new BasicTitleSettingSpecifier("info", info, true));
+			}
+		} catch ( RuntimeException e ) {
+			// ignore this
 		}
 
 		OsStatDatumDataSource defaults = new OsStatDatumDataSource();
