@@ -50,6 +50,12 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
+
+
+	<bean id="nodeMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+	</bean>
 	
 	<!-- Published Services -->
 	
@@ -88,6 +94,7 @@
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.os.stat.OsStatDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="nodeMetadataService" ref="nodeMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="commandRunner" ref="commandRunner"/>
 								</bean>

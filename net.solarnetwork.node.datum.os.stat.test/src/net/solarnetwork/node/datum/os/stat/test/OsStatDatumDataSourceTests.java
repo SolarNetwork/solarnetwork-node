@@ -23,24 +23,33 @@
 package net.solarnetwork.node.datum.os.stat.test;
 
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.datum.os.stat.ActionCommandRunner;
 import net.solarnetwork.node.datum.os.stat.OsStatDatumDataSource;
 import net.solarnetwork.node.datum.os.stat.ProcessActionCommandRunner;
 import net.solarnetwork.node.datum.os.stat.StatAction;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link OsStatDatumDataSource} class.
@@ -51,19 +60,21 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 public class OsStatDatumDataSourceTests {
 
 	private ActionCommandRunner runner;
+	private NodeMetadataService nodeMetadataService;
 
 	@Before
 	public void setup() {
 		runner = EasyMock.createMock(ActionCommandRunner.class);
+		nodeMetadataService = EasyMock.createMock(NodeMetadataService.class);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(runner);
+		EasyMock.verify(runner, nodeMetadataService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(runner);
+		EasyMock.replay(runner, nodeMetadataService);
 	}
 
 	private OsStatDatumDataSource dataSourceInstance(Set<StatAction> actions) {
@@ -164,6 +175,7 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.NetworkTraffic));
+		ds.setNetDevices(new HashSet<>(Arrays.asList("eth0", "wlan0")));
 		GeneralNodeDatum result = ds.readCurrentDatum();
 
 		// then
@@ -235,5 +247,63 @@ public class OsStatDatumDataSourceTests {
 		assertThat("Result returned", result, notNullValue());
 		Map<String, Number> aData = result.getSamples().getAccumulating();
 		assertThat("Uptime", aData, hasEntry("sys_up", new BigDecimal("26483.63")));
+	}
+
+	@Test
+	public void cachedSample() throws IOException, InterruptedException {
+		// given
+		List<Map<String, String>> rows = ProcessActionCommandRunner
+				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-up-01.csv"));
+		expect(runner.executeAction(StatAction.SystemUptime)).andReturn(rows);
+
+		// when
+		replayAll();
+		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.SystemUptime));
+		ds.setSampleCacheMs(TimeUnit.DAYS.toMillis(7));
+		GeneralNodeDatum result = ds.readCurrentDatum();
+
+		Thread.sleep(20);
+
+		GeneralNodeDatum cachedResult = ds.readCurrentDatum();
+
+		// then
+		assertThat("Result returned", result, notNullValue());
+		Map<String, Number> aData = result.getSamples().getAccumulating();
+		assertThat("Uptime", aData, hasEntry("sys_up", new BigDecimal("26483.63")));
+
+		assertThat("Cached result returned", cachedResult, sameInstance(result));
+	}
+
+	@Test
+	public void metadataPostedOncePerSample() throws IOException, InterruptedException {
+		// given
+		List<Map<String, String>> rows = ProcessActionCommandRunner
+				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-up-01.csv"));
+		expect(runner.executeAction(StatAction.SystemUptime)).andReturn(rows);
+
+		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
+		nodeMetadataService.addNodeMetadata(EasyMock.capture(metadataCaptor));
+
+		// when
+		replayAll();
+		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.SystemUptime));
+		ds.setSampleCacheMs(TimeUnit.DAYS.toMillis(7));
+		ds.setNodeMetadataService(new StaticOptionalService<NodeMetadataService>(nodeMetadataService));
+		ds.readCurrentDatum();
+
+		Thread.sleep(20);
+
+		// to verify metadata posted just once
+		ds.readCurrentDatum();
+
+		// then
+		assertThat("Metadata posted", metadataCaptor.hasCaptured(), equalTo(true));
+		GeneralDatumMetadata meta = metadataCaptor.getValue();
+		Map<String, Map<String, Object>> pm = meta.getPropertyInfo();
+		assertThat("OS metadata", pm.get("os"), notNullValue(Map.class));
+		Map<String, Object> os = pm.get("os");
+		assertThat("OS name", os, hasEntry("name", System.getProperty("os.name")));
+		assertThat("OS arch", os, hasEntry("arch", System.getProperty("os.arch")));
+		assertThat("OS version", os, hasEntry("version", System.getProperty("os.version")));
 	}
 }

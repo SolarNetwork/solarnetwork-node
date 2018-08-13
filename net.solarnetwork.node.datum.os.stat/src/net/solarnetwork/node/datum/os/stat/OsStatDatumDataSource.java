@@ -130,7 +130,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		long start = System.currentTimeMillis();
 		GeneralNodeDatum d = getCurrentSample();
 		if ( d != null ) {
-			if ( d.getCreated() != null && d.getCreated().getTime() > start ) {
+			if ( d.getCreated() != null && d.getCreated().getTime() >= start ) {
 				postDatumCapturedEvent(d);
 				updateNodeMetadata();
 			}
