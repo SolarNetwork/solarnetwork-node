@@ -1,35 +1,34 @@
 # SolarNode OS Statistics Datum Source
 
-This project provides SolarNode plugin that can collect data from an external
-helper program that provides OS statistic information in CSV form.
+This project provides SolarNode plugin that can collect data from an external helper
+program that provides OS statistic information in CSV form.
 
 ![](docs/solarnode-os-stats-settings.png)
 
 # Install
 
-The plugin can be installed via the **Plugins** page on your SolarNode. It
-appears under the **Datum** category as **OS Statistics Data Source**.
+The plugin can be installed via the **Plugins** page on your SolarNode. It appears under
+the **Datum** category as **OS Statistics Data Source**.
 
 # Use
 
-Once installed, a new **OS Statistics** component will appear on the 
-**Settings** page on your SolarNode. Click on the**Manage** button to configure
-sources.
+Once installed, a new **OS Statistics** component will appear on the **Settings** page on
+your SolarNode. Click on the **Manage** button to configure sources.
 
 ## Overall settings
 
 Each configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
-| Statistics         | A list of statistic types to collect.                                            |
-| Filesystems        | A list of filesystem paths to collect statistics from.                           |
-| Network Devices    | A list of network device names to collect statistics from.                       |
-| Command            | The external command to execute that provides the statistic data.                |
+| Setting            | Description                                                       |
+|--------------------|-------------------------------------------------------------------|
+| Schedule           | A cron schedule that determines when data is collected.           |
+| Service Name       | A unique name to identify this data source with.                  |
+| Service Group      | A group name to associate this data source with.                  |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.    |
+| Statistics         | A list of statistic types to collect.                             |
+| Filesystems        | A list of filesystem paths to collect statistics from.            |
+| Network Devices    | A list of network device names to collect statistics from.        |
+| Command            | The external command to execute that provides the statistic data. |
 
 ## Overall device settings notes
 
@@ -43,17 +42,76 @@ Each configuration contains the following overall settings:
 	formatted data of the expected format.</dd>
 </dl>
 
+# Node metadata
 
-## Command statistic types
+This plugin will publish some OS information as node metadata, under the `os` property
+metadata key. The metadata is:
 
-The external helper command must support the following statistic types and return data in the
-following formats. The output must always include a header row before any data rows. Extra
-columns are allowed; they will simply be ignored.
+| Key          | Description          |
+|--------------|----------------------|
+| `os.arch`    | The OS architecture. |
+| `os.name`    | The OS name.         |
+| `os.version` | The OS version.      |
 
-### `cpu-use`
+For example:
 
-Average CPU utilization information, inspired by `sysstat`. Any number of rows of data may be
-returned, but only the last row of data may be used.
+```json
+{
+	"pm": {
+		"os": {
+			"name": "Linux",
+			"arch": "arm",
+			"version": "4.14.34-v7+"
+		}
+	}
+}
+```
+
+
+# Example datum
+
+Here's an example datum collected by this plugin:
+
+```json
+{
+	"created": "2018-08-13 18:25:21.014Z",
+	"nodeId": 344,
+	"sourceId": "OS Stats",
+	"localDate": "2018-08-14",
+	"localTime": "06:25",
+	"cpu_idle": 98.27,
+	"cpu_user": 1.59,
+	"cpu_system": 0.13,
+	"fs_size_/": 1887322112,
+	"fs_used_/": 793722880,
+	"fs_used_percent_/": 45,
+	"fs_size_/run": 512094208,
+	"fs_used_/run": 15802368,
+	"fs_used_percent_/run": 4,
+	"sys_load_1min": 0.35,
+	"sys_load_5min": 0.14,
+	"sys_load_15min": 0.11,
+	"ram_avail": 743899136,
+	"ram_total": 1024188416,
+	"ram_used_percent": 27.4,
+	"sys_up": 2923.77,
+	"net_bytes_in_eth0": 528719,
+	"net_bytes_out_eth0": 459475,
+	"net_packets_in_eth0": 2312,
+	"net_packets_out_eth0": 1848
+}
+```
+
+# Command statistic types
+
+The external helper command must support the following statistic types and return data in
+the following formats. The output must always include a header row before any data rows.
+Extra columns are allowed; they will simply be ignored.
+
+## `cpu-use`
+
+Average CPU utilization information, inspired by `sysstat`. Any number of rows of data may
+be returned, but only the last row of data may be used.
 
 | Column | Property | Description |
 |--------|----------|-------------|
@@ -68,11 +126,11 @@ date,period-secs,user,system,idle
 2018-08-12 23:15:01 UTC,600,0.03,0.03,99.93
 ```
 
-### `fs-use`
+## `fs-use`
 
 Filesystem utilization information. Each row represents a single mount point. Each
-property has the mount point appended to the end. For example the root mount point
-`/` would have a percentage used property named `fs_used_percent_/`.
+property has the mount point appended to the end. For example the root mount point `/`
+would have a percentage used property named `fs_used_percent_/`.
 
 | Column | Property | Description |
 |--------|----------|-------------|
@@ -91,7 +149,7 @@ mount,size-kb,used-kb,used-percent
 /boot,233191,36370,17
 ```
 
-### `mem-use`
+## `mem-use`
 
 RAM utilization information.
 
@@ -108,7 +166,7 @@ total-kb,avail-kb
 33554432,9505456
 ```
 
-### ` net-traffic`
+## ` net-traffic`
 
 Network use information. Each row represents a single network device. Each
 property has the device name appended to the end. For example the WiFi device
@@ -130,7 +188,7 @@ eth0,9348,10031,80,81
 usb0,0,0,0,0
 ```
 
-### `sys-load`
+## `sys-load`
 
 System load information.
 
@@ -147,7 +205,7 @@ An example output looks like:
 0.09,0.10,0.07
 ```
 
-### `sys-up`
+## `sys-up`
 
 System uptime information.
 
