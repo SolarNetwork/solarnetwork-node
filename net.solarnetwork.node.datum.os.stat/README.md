@@ -3,7 +3,7 @@
 This project provides SolarNode plugin that can collect data from an external
 helper program that provides OS statistic information in CSV form.
 
-![](solarnode-os-stats-settings.png)
+![](docs/solarnode-os-stats-settings.png)
 
 # Install
 
@@ -47,24 +47,19 @@ Each configuration contains the following overall settings:
 ## Command statistic types
 
 The external helper command must support the following statistic types and return data in the
-following formats. The output must always include a header row before any data rows.
+following formats. The output must always include a header row before any data rows. Extra
+columns are allowed; they will simply be ignored.
 
 ### `cpu-use`
 
-Average CPU utilization information, inspired by `sysstat`, returning the following columns:
+Average CPU utilization information, inspired by `sysstat`. Any number of rows of data may be
+returned, but only the last row of data may be used.
 
-<dl>
-  <dt>date</dt>
-  <dd>The date of the data, in <code>YYYY-MM-DD HH:MM:SS UTC</code> form.</dd>
-  <dt>period-secs</dt>
-  <dd>The length of time, in seconds, the data was averaged over.</dd>
-  <dt>user</dt>
-  <dd>Percentage of CPU time in user programs, from 0-100.</dd>
-  <dt>system</dt>
-  <dd>Percentage of CPU time in the kernel, from 0-100.</dd>
-  <dt>idle</dt>
-  <dd>Percentage of idle CPU time, from 0-100.</dd>
-</dl>
+| Column | Property | Description |
+|--------|----------|-------------|
+| user | `cpu_user` | Percentage of CPU time in user programs, from 0-100. |
+| system | `cpu_system` | Percentage of CPU time in the kernel, from 0-100. |
+| idle | `cpu_idle` | Percentage of idle CPU time, from 0-100. |
 
 An example output looks like:
 
@@ -73,5 +68,97 @@ date,period-secs,user,system,idle
 2018-08-12 23:15:01 UTC,600,0.03,0.03,99.93
 ```
 
-Any number of rows of data may be returned, but only the last row of data may be used.
+### `fs-use`
+
+Filesystem utilization information. Each row represents a single mount point. Each
+property has the mount point appended to the end. For example the root mount point
+`/` would have a percentage used property named `fs_used_percent_/`.
+
+| Column | Property | Description |
+|--------|----------|-------------|
+| mount | | Used in other property names. |
+| size-kb | `fs_size_{mount}` | Size of filesystem, in kilobytes. Property stored as bytes. |
+| used-kb | `fs_used_{mount}` | Allocated use of filesystem, in kilobytes. Property stored as bytes. |
+| used-percent | `fs_used_percent_{mount}` | Percentage of filesystem used, from 0-100. |
+
+An example output looks like:
+
+```
+mount,size-kb,used-kb,used-percent
+/dev,2003748,0,0
+/run,403224,12268,4
+/,19880876,12383500,66
+/boot,233191,36370,17
+```
+
+### `mem-use`
+
+RAM utilization information.
+
+| Column | Property | Description |
+|--------|----------|-------------|
+| total-kb | `ram_total` | Amount of RAM installed in the system, in kilobytes. Property stored as bytes. |
+| avail-kb | `ram_avail` | Amount of unused RAM avaialble, in kilobytes. Property stored as bytes. |
+| | `ram_used_percent` | Percentage of RAM used, from 0-100. Derived from `ram_total` and `ram_avail`. |
+
+An example output looks like:
+
+```
+total-kb,avail-kb
+33554432,9505456
+```
+
+### ` net-traffic`
+
+Network use information. Each row represents a single network device. Each
+property has the device name appended to the end. For example the WiFi device
+`wlan0` would have a bytes out property named `net_bytes_out_wlan0`.
+
+| Column | Property | Description |
+|--------|----------|-------------|
+| name | | Used in other property names. |
+| bytes-in | `net_bytes_in_{name}` | Count of bytes receivied. |
+| bytes-out | `net_bytes_out_{name}` | Count of bytes sent. |
+| packets-in | `net_packets_out_{name}` | Count of packets received. |
+| packets-out | `net_packets_out_{name}` | Count of packets sent. |
+
+```
+device,bytes-in,bytes-out,packets-in,packets-out
+wlan0,9161,5970,86,38
+lo,1242,1242,12,12
+eth0,9348,10031,80,81
+usb0,0,0,0,0
+```
+
+### `sys-load`
+
+System load information.
+
+| Column | Property | Description |
+|--------|----------|-------------|
+| 1min | `sys_load_1min` | Average load over past minute. |
+| 5min | `sys_load_5min` | Average load over past 5 minutes. |
+| 15min | `sys_load_15min` | Average load over past 15 minutes. |
+
+An example output looks like:
+
+```
+1min,5min,15min
+0.09,0.10,0.07
+```
+
+### `sys-up`
+
+System uptime information.
+
+| Column | Property | Description |
+|--------|----------|-------------|
+| up-sec | `sys_up` | Number of seconds the system has been running. |
+
+An example output looks like:
+
+```
+up-sec
+26483.63
+```
 
