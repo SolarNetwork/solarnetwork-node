@@ -1,0 +1,537 @@
+/* ==================================================================
+ * OsStatDatumDataSource.java - 10/08/2018 9:27:02 AM
+ * 
+ * Copyright 2018 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.datum.os.stat;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.NodeMetadataService;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.settings.MappableSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
+
+/**
+ * {@link DatumDataSource} for OS statistics obtained from a helper command.
+ * 
+ * <p>
+ * The command-line helper program this has been designed for is the
+ * {@literal solarstats.sh} bash script, but any program will work as long as it
+ * follows this syntax:
+ * </p>
+ * 
+ * <pre>
+ * prog action
+ * </pre>
+ * 
+ * <p>
+ * Each invocation should return a comma-delimited list of header names followed
+ * by any number of comma-delimited lines of data.
+ * </p>
+ * 
+ * <p>
+ * The following actions are assumed:
+ * </p>
+ * 
+ * <dl>
+ * <dt>{@literal cpu-use}</dt>
+ * <dd>print CPU utilization statistics, with the following columns supported:
+ * date, period-secs, user, system, idle. The date is assumed to be in
+ * {@literal YYYY-MM-dd HH:mm:ss UTC} form. The remaining columns are decimal
+ * numbers representing percentage utilization.</dd>
+ * 
+ * <dt>{@literal fs-use}</dt>
+ * <dd>print file system utilization, with the following columns supported:
+ * mount, size-kb, used-kb, used-percent.</dd>
+ * 
+ * <dt>{@literal net-traffic}</dt>
+ * <dd>print network traffic statistics, with the following columns supported:
+ * device, bytes-in, bytes-out, packets-in, packets-out</dd>
+ * 
+ * <dt>{@literal sys-load}</dt>
+ * <dd>print system average load information, with the following columns
+ * supported: 1min, 5min, 15min</dd>
+ * 
+ * <dt>{@literal sys-up}</dt>
+ * <dd>print the system uptime, with the following columns supported:
+ * up-sec</dd>
+ * </dl>
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public class OsStatDatumDataSource extends DatumDataSourceSupport
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+
+	/** The default value for the {@code command} property. */
+	public static final String DEFAULT_COMMAND = "solarstat";
+
+	private final AtomicReference<CachedResult<GeneralNodeDatum>> sampleCache = new AtomicReference<>();
+
+	private Set<StatAction> actions = EnumSet.allOf(StatAction.class);
+	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
+	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
+	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0", "wlan0"));
+	private long sampleCacheMs = 5000;
+	private OptionalService<NodeMetadataService> nodeMetadataService;
+
+	@Override
+	public Class<? extends GeneralNodeDatum> getDatumType() {
+		return GeneralNodeDatum.class;
+	}
+
+	@Override
+	public GeneralNodeDatum readCurrentDatum() {
+		long start = System.currentTimeMillis();
+		GeneralNodeDatum d = getCurrentSamples();
+		if ( d != null ) {
+			if ( d.getCreated() != null && d.getCreated().getTime() > start ) {
+				postDatumCapturedEvent(d);
+				updateNodeMetadata();
+			}
+		}
+		return d;
+	}
+
+	private GeneralNodeDatum getCurrentSamples() {
+		// First check for a cached sample
+		CachedResult<GeneralNodeDatum> cache = sampleCache.get();
+		if ( cache != null && cache.isValid() ) {
+			return cache.getResult();
+		}
+
+		// Cache has expired so initiate new instance and cache
+		GeneralNodeDatum result = new GeneralNodeDatum();
+		result.setCreated(new Date());
+
+		for ( StatAction action : actions ) {
+			List<Map<String, String>> data = commandRunner.executeAction(action);
+			populateActionData(action, data, result);
+		}
+
+		if ( result != null ) {
+			sampleCache.compareAndSet(cache,
+					new CachedResult<>(result, sampleCacheMs, TimeUnit.MILLISECONDS));
+		}
+		return result;
+	}
+
+	private void populateActionData(StatAction action, List<Map<String, String>> data,
+			GeneralNodeDatum result) {
+		if ( data == null || data.isEmpty() ) {
+			return;
+		}
+		switch (action) {
+			case CpuUse:
+				populateCpuUse(data, result);
+				break;
+
+			case FilesystemUse:
+				populateFilesystemUse(data, result);
+				break;
+
+			case NetworkTraffic:
+				populateNetworkTraffic(data, result);
+				break;
+
+			case SystemLoad:
+				populateSystemLoad(data, result);
+				break;
+
+			case SystemUptime:
+				populateSystemUptime(data, result);
+				break;
+
+			default:
+				// nothing
+				break;
+		}
+	}
+
+	private void populateInstantaneousValue(StatAction action, Map<String, String> row, String key,
+			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+		BigDecimal d = null;
+		try {
+			d = new BigDecimal(row.get(key));
+			if ( scaleFactor != null ) {
+				d = d.multiply(scaleFactor);
+			}
+			result.putInstantaneousSampleValue(propName, d);
+		} catch ( NumberFormatException e ) {
+			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
+					e.getMessage());
+		}
+	}
+
+	private void populateAccumulatingValue(StatAction action, Map<String, String> row, String key,
+			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+		BigDecimal d = null;
+		try {
+			d = new BigDecimal(row.get(key));
+			if ( scaleFactor != null ) {
+				d = d.multiply(scaleFactor);
+			}
+			result.putAccumulatingSampleValue(propName, d);
+		} catch ( NumberFormatException e ) {
+			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
+					e.getMessage());
+		}
+	}
+
+	private void populateCpuUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+		// use only last available row, ignore date,period-secs
+		Map<String, String> d = data.get(data.size() - 1);
+		for ( Map.Entry<String, String> me : d.entrySet() ) {
+			if ( "date".equalsIgnoreCase(me.getKey()) || "period-secs".equalsIgnoreCase(me.getKey()) ) {
+				continue;
+			}
+			try {
+				result.putInstantaneousSampleValue("cpu_" + me.getKey(), new BigDecimal(me.getValue()));
+			} catch ( NumberFormatException e ) {
+				log.debug("Error parsing {} action {} value [{}]: {}", StatAction.CpuUse.getAction(),
+						me.getKey(), me.getValue(), e.getMessage());
+			}
+		}
+	}
+
+	private void populateFilesystemUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+		final BigDecimal kb = new BigDecimal("1024");
+		for ( Map<String, String> row : data ) {
+			String mount = row.get("mount");
+			if ( mount == null || !fsUseMounts.contains(mount) ) {
+				continue;
+			}
+			populateInstantaneousValue(StatAction.FilesystemUse, row, "size-kb", "fs_size_" + mount,
+					result, kb);
+			populateInstantaneousValue(StatAction.FilesystemUse, row, "used-kb", "fs_used_" + mount,
+					result, kb);
+			populateInstantaneousValue(StatAction.FilesystemUse, row, "used-percent",
+					"fs_used_percent_" + mount, result, null);
+		}
+	}
+
+	private void populateSystemLoad(List<Map<String, String>> data, GeneralNodeDatum result) {
+		Map<String, String> row = data.get(0);
+		populateInstantaneousValue(StatAction.SystemLoad, row, "1min", "sys_load_1min", result, null);
+		populateInstantaneousValue(StatAction.SystemLoad, row, "5min", "sys_load_5min", result, null);
+		populateInstantaneousValue(StatAction.SystemLoad, row, "15min", "sys_load_15min", result, null);
+	}
+
+	private void populateSystemUptime(List<Map<String, String>> data, GeneralNodeDatum result) {
+		Map<String, String> row = data.get(0);
+		populateAccumulatingValue(StatAction.SystemUptime, row, "up-sec", "sys_up", result, null);
+	}
+
+	private void populateNetworkTraffic(List<Map<String, String>> data, GeneralNodeDatum result) {
+		for ( Map<String, String> row : data ) {
+			String dev = row.get("device");
+			if ( dev == null || !netDevices.contains(dev) ) {
+				continue;
+			}
+			populateAccumulatingValue(StatAction.NetworkTraffic, row, "bytes-in", "net_bytes_in_" + dev,
+					result, null);
+			populateAccumulatingValue(StatAction.NetworkTraffic, row, "bytes-out",
+					"net_bytes_out_" + dev, result, null);
+			populateAccumulatingValue(StatAction.NetworkTraffic, row, "packets-in",
+					"net_packets_in_" + dev, result, null);
+			populateAccumulatingValue(StatAction.NetworkTraffic, row, "packets-out",
+					"net_packets_out_" + dev, result, null);
+		}
+	}
+
+	private void updateNodeMetadata() {
+		NodeMetadataService service = nodeMetadataService();
+		if ( service == null ) {
+			return;
+		}
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		Map<String, String> props = getJavaOsSystemProperties();
+		for ( Map.Entry<String, String> me : props.entrySet() ) {
+			meta.putInfoValue("os", me.getKey(), me.getValue());
+		}
+		service.addNodeMetadata(meta);
+	}
+
+	private NodeMetadataService nodeMetadataService() {
+		return (this.nodeMetadataService != null ? this.nodeMetadataService.service() : null);
+	}
+
+	private Map<String, String> getJavaOsSystemProperties() {
+		Map<String, String> result = new LinkedHashMap<>();
+		result.put("name", System.getProperty("os.name"));
+		result.put("arch", System.getProperty("os.arch"));
+		result.put("version", System.getProperty("os.version"));
+		return result;
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.datum.os.stat";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "OS Statistics Data Source";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		MessageSource source = super.getMessageSource();
+		if ( source != null ) {
+			if ( commandRunner instanceof SettingSpecifierProvider ) {
+				SettingSpecifierProvider runProvider = (SettingSpecifierProvider) commandRunner;
+				MessageSource runSource = runProvider.getMessageSource();
+				if ( runSource != null ) {
+					PrefixedMessageSource pSource = new PrefixedMessageSource();
+					pSource.setPrefix("commandRunner.");
+					pSource.setDelegate(runSource);
+					pSource.setParentMessageSource(source);
+					source = pSource;
+				}
+			}
+		}
+		return source;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> result = getIdentifiableSettingSpecifiers();
+
+		OsStatDatumDataSource defaults = new OsStatDatumDataSource();
+		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.sampleCacheMs)));
+		result.add(new BasicTextFieldSettingSpecifier("actionsValue", defaults.getActionsValue()));
+		result.add(
+				new BasicTextFieldSettingSpecifier("fsUseMountsValue", defaults.getFsUseMountsValue()));
+		result.add(new BasicTextFieldSettingSpecifier("netDevicesValue", defaults.getNetDevicesValue()));
+
+		if ( commandRunner instanceof SettingSpecifierProvider ) {
+			SettingSpecifierProvider runProvider = (SettingSpecifierProvider) commandRunner;
+			List<SettingSpecifier> runSpecifiers = runProvider.getSettingSpecifiers();
+			if ( runSpecifiers != null && runSpecifiers.size() > 0 ) {
+				for ( SettingSpecifier spec : runSpecifiers ) {
+					if ( spec instanceof MappableSpecifier ) {
+						result.add(((MappableSpecifier) spec).mappedTo("commandRunner."));
+					} else {
+						result.add(spec);
+					}
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Get the command runner.
+	 * 
+	 * @return the command runner; defaults to a
+	 *         {@link ProcessActionCommandRunner} instance
+	 */
+	public ActionCommandRunner getCommandRunner() {
+		return commandRunner;
+	}
+
+	/**
+	 * Set the command runner to use.
+	 * 
+	 * @param commandRunner
+	 *        the runner to use
+	 * @throws IllegalArgumentException
+	 *         if {@code commandRunner} is {@literal null}
+	 */
+	public void setCommandRunner(ActionCommandRunner commandRunner) {
+		if ( commandRunner == null ) {
+			throw new IllegalArgumentException("The commandRunner is required.");
+		}
+		this.commandRunner = commandRunner;
+	}
+
+	/**
+	 * Set the maximum time to cache sampled data for.
+	 * 
+	 * @param sampleCacheMs
+	 *        the sample cache time, in milliseconds
+	 */
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
+	}
+
+	/**
+	 * Configure a {@link NodeMetadataService} to publish OS system information
+	 * to.
+	 * 
+	 * @param nodeMetadataService
+	 *        the node metadata service to use
+	 */
+	public void setNodeMetadataService(OptionalService<NodeMetadataService> nodeMetadataService) {
+		this.nodeMetadataService = nodeMetadataService;
+	}
+
+	/**
+	 * Set the list of actions to perform and gather statistics from.
+	 * 
+	 * @param actions
+	 *        the actions to perform
+	 */
+	public void setActions(Set<StatAction> actions) {
+		if ( actions == null ) {
+			actions = Collections.emptySet();
+		}
+		this.actions = actions;
+	}
+
+	/**
+	 * Get the list of actions to perform and gather statistics from, as a
+	 * comma-delimited string.
+	 * 
+	 * @return actions the actions to perform, as a comma-delimited string
+	 */
+	public String getActionsValue() {
+		return StringUtils.commaDelimitedStringFromCollection(
+				actions.stream().map(StatAction::getAction).collect(Collectors.toSet()));
+	}
+
+	/**
+	 * Set the actions to include, in the form of a comma-delimited list.
+	 * 
+	 * @param keys
+	 *        the action values, as a comma-delimited list
+	 * @see #setActions(Set)
+	 */
+	public void setActionsValue(String keys) {
+		Set<String> actionValues = StringUtils.commaDelimitedStringToSet(keys);
+		Set<StatAction> actions = new LinkedHashSet<>(actionValues.size());
+		for ( String value : actionValues ) {
+			try {
+				actions.add(StatAction.forAction(value));
+			} catch ( IllegalArgumentException e ) {
+				log.warn(e.getMessage());
+			}
+		}
+		if ( actions.isEmpty() ) {
+			actions = Collections.emptySet();
+		} else {
+			actions = EnumSet.copyOf(actions);
+		}
+		setActions(actions);
+	}
+
+	/**
+	 * Set the filesystem mount points (paths) to include in filesystem
+	 * statistics.
+	 * 
+	 * <p>
+	 * This value defaults to a set with {@literal /}, {@literal /run}.
+	 * </p>
+	 * 
+	 * @param fsUseMounts
+	 *        the filesystem mount points to include
+	 */
+	public void setFsUseMounts(Set<String> fsUseMounts) {
+		if ( fsUseMounts == null ) {
+			fsUseMounts = Collections.emptySet();
+		}
+		this.fsUseMounts = fsUseMounts;
+	}
+
+	/**
+	 * Get the network filesystem mount points (paths) to include in filesystem
+	 * statistics, as a comma-delimited string.
+	 * 
+	 * @return the comma-delimited list of filesystem mount points
+	 */
+	public String getFsUseMountsValue() {
+		return StringUtils.commaDelimitedStringFromCollection(fsUseMounts);
+	}
+
+	/**
+	 * Set the filesystem mount points (paths) to include in filesystem
+	 * statistics, in the form of a comma-delimited list.
+	 * 
+	 * @param mounts
+	 *        the comma-delimited list of mounts to include
+	 * @see #setFsUseMounts(Set)
+	 */
+	public void setFsUseMountsValue(String mounts) {
+		setFsUseMounts(net.solarnetwork.util.StringUtils.commaDelimitedStringToSet(mounts));
+	}
+
+	/**
+	 * Set the network device names to include in network traffic statistics.
+	 * 
+	 * <p>
+	 * This value defaults to a set with {@literal eht0}, {@literal wlan0}.
+	 * </p>
+	 * 
+	 * @param netDevices
+	 *        the devices to include
+	 */
+	public void setNetDevices(Set<String> netDevices) {
+		if ( netDevices == null ) {
+			netDevices = Collections.emptySet();
+		}
+		this.netDevices = netDevices;
+	}
+
+	/**
+	 * Get the network device names to include in network traffic statistics, as
+	 * a comma-delimited string.
+	 * 
+	 * @return the comma-delimited list of network device names
+	 */
+	public String getNetDevicesValue() {
+		return StringUtils.commaDelimitedStringFromCollection(netDevices);
+	}
+
+	/**
+	 * Set the network device names to include in network traffic statistics, in
+	 * the form of a comma-delimited list.
+	 * 
+	 * @param devices
+	 *        the comma-delimited list of devices to include
+	 * @see #setNetDevices(Set)
+	 */
+	public void setNetDevicesValue(String devices) {
+		setNetDevices(net.solarnetwork.util.StringUtils.commaDelimitedStringToSet(devices));
+	}
+}

@@ -1,0 +1,56 @@
+{"sysstat": {
+	"sysdata-version": 2.19,
+	"hosts": [
+		{
+			"nodename": "cgyapps",
+			"sysname": "Linux",
+			"release": "4.9.35-v7+",
+			"machine": "armv7l",
+			"number-of-cpus": 4,
+			"file-date": "2018-08-10",
+			"file-utc-time": "12:00:01",
+			"statistics": [
+				{
+				},
+				{
+					"timestamp": {"date": "2018-08-09", "time": "12:15:02", "utc": 1, "interval": 901},
+					"cpu-load-all": [
+						{"cpu": "all", "usr": 27.31, "nice": 0.00, "sys": 1.20, "iowait": 1.74, "steal": 0.00, "irq": 0.00, "soft": 0.32, "guest": 0.00, "gnice": 0.00, "idle": 69.43},
+						{"cpu": "0", "usr": 28.37, "nice": 0.00, "sys": 1.36, "iowait": 1.80, "steal": 0.00, "irq": 0.00, "soft": 0.59, "guest": 0.00, "gnice": 0.00, "idle": 67.88},
+						{"cpu": "1", "usr": 26.56, "nice": 0.00, "sys": 1.17, "iowait": 1.88, "steal": 0.00, "irq": 0.00, "soft": 0.24, "guest": 0.00, "gnice": 0.00, "idle": 70.15},
+						{"cpu": "2", "usr": 27.27, "nice": 0.00, "sys": 1.11, "iowait": 1.65, "steal": 0.00, "irq": 0.00, "soft": 0.22, "guest": 0.00, "gnice": 0.00, "idle": 69.74},
+						{"cpu": "3", "usr": 27.06, "nice": 0.00, "sys": 1.17, "iowait": 1.62, "steal": 0.00, "irq": 0.00, "soft": 0.22, "guest": 0.00, "gnice": 0.00, "idle": 69.93}
+					],
+					"process-and-context-switch": {"proc": 0.76, "cswch": 779.98},
+					"swap-pages": {"pswpin": 0.00, "pswpout": 0.00},
+					"paging": {"pgpgin": 55.65, "pgpgout": 88.54, "fault": 254.44, "majflt": 0.34, "pgfree": 157.70, "pgscank": 0.00, "pgscand": 0.00, "pgsteal": 13.46, "vmeff-percent": 0.00},
+					"io": {"tps": 14.93, "io-reads": {"rtps": 4.55, "bread": 111.35}, "io-writes": {"wtps": 10.38, "bwrtn": 177.09}},
+					"memory": {"memfree": 21324, "memused": 972908, "memused-percent": 97.86, "buffers": 8476, "cached": 94420, "commit": 956896, "commit-percent": 96.24, "active": 894548, "inactive": 34464, "dirty": 12, "swpfree": 0, "swpused": 0, "swpused-percent": 0.00, "swpcad": 0, "swpcad-percent": 0.00, "frmpg": -3.55, "bufpg": 0.31, "campg": 3.31},
+					"hugepages": {"hugfree": 0, "hugused": 0, "hugused-percent": 0.00},
+					"kernel": {"dentunusd": 7092, "file-nr": 2080, "inode-nr": 14236, "pty-nr": 1},
+					"queue": {"runq-sz": 1, "plist-sz": 245, "ldavg-1": 0.75, "ldavg-5": 1.08, "ldavg-15": 1.18, "blocked": 0},
+					"disk": [
+						{"disk-device": "dev179-0", "tps": 14.93, "rd_sec": 111.31, "wr_sec": 177.09, "avgrq-sz": 19.31, "avgqu-sz": 0.15, "await": 10.03, "svctm": 6.32, "util-percent": 9.44}
+					],
+					"network": {
+						"net-dev": [
+							{"iface": "lo", "rxpck": 200.78, "txpck": 200.78, "rxkB": 30.32, "txkB": 30.32, "rxcmp": 0.00, "txcmp": 0.00, "rxmcst": 0.00, "ifutil-percent": 0.00},
+							{"iface": "wlan0", "rxpck": 0.00, "txpck": 0.00, "rxkB": 0.00, "txkB": 0.00, "rxcmp": 0.00, "txcmp": 0.00, "rxmcst": 0.00, "ifutil-percent": 0.00},
+							{"iface": "eth0", "rxpck": 25.05, "txpck": 25.16, "rxkB": 4.01, "txkB": 3.37, "rxcmp": 0.00, "txcmp": 0.00, "rxmcst": 0.00, "ifutil-percent": 0.03}
+						],
+						"net-edev": [
+							{"iface": "lo", "rxerr": 0.00, "txerr": 0.00, "coll": 0.00, "rxdrop": 0.00, "txdrop": 0.00, "txcarr": 0.00, "rxfram": 0.00, "rxfifo": 0.00, "txfifo": 0.00},
+							{"iface": "wlan0", "rxerr": 0.00, "txerr": 0.00, "coll": 0.00, "rxdrop": 0.00, "txdrop": 0.00, "txcarr": 0.00, "rxfram": 0.00, "rxfifo": 0.00, "txfifo": 0.00},
+							{"iface": "eth0", "rxerr": 0.00, "txerr": 0.00, "coll": 0.00, "rxdrop": 0.00, "txdrop": 0.00, "txcarr": 0.00, "rxfram": 0.00, "rxfifo": 0.00, "txfifo": 0.00}
+						],
+						"net-nfs": {"call": 0.00, "retrans": 0.00, "read": 0.00, "write": 0.00, "access": 0.00, "getatt": 0.00},
+						"net-nfsd": {"scall": 0.00, "badcall": 0.00, "packet": 0.00, "udp": 0.00, "tcp": 0.00, "hit": 0.00, "miss": 0.00, "sread": 0.00, "swrite": 0.00, "saccess": 0.00, "sgetatt": 0.00},
+						"net-sock": {"totsck": 372, "tcpsck": 35, "udpsck": 2, "rawsck": 0, "ip-frag": 0, "tcp-tw": 100}
+					}
+				}
+			],
+			"restarts": [
+			]
+		}
+	]
+}}
