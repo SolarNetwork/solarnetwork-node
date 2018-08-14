@@ -122,8 +122,8 @@ be returned, but only the last row of data may be used.
 An example output looks like:
 
 ```
-date,period-secs,user,system,idle
-2018-08-12 23:15:01 UTC,600,0.03,0.03,99.93
+user,system,idle
+0.03,0.03,99.93
 ```
 
 ## `fs-use`

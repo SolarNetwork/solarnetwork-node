@@ -29,13 +29,13 @@ fi
 
 # print out average CPU utilization for current hour reported by sar, e.g.
 #
-#  2018-08-10 03:15:01 UTC,600,0.42,0.06,99.51
-#  2018-08-10 03:25:01 UTC,600,0.40,0.07,99.52
-#  2018-08-10 03:35:01 UTC,601,0.48,0.06,99.45
+#  0.42,0.06,99.51
+#  0.40,0.07,99.52
+#  0.48,0.06,99.45
 #
 do_cpu_use_inst () {
-	echo 'date,period-secs,user'
-	echo $(date -u +"%Y-%m-%d %H:%M:%S UTC"),0,$(ps -A -o %cpu | awk '{s+=$1} END {print s}')
+	echo 'user'
+	echo $(ps -A -o %cpu | awk '{s+=$1} END {print s}')
 }
 
 # print out file system use, e.g.
