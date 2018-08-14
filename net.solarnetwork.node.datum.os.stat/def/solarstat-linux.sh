@@ -29,18 +29,14 @@ fi
 
 # print out average CPU utilization for current hour reported by sar, e.g.
 #
-#  2018-08-10 03:15:01 UTC,600,0.42,0.06,99.51
-#  2018-08-10 03:25:01 UTC,600,0.40,0.07,99.52
-#  2018-08-10 03:35:01 UTC,601,0.48,0.06,99.45
+#  0.42,0.06,99.51
+#  0.40,0.07,99.52
+#  0.48,0.06,99.45
 #
 do_cpu_use_inst () {
-	echo 'date,period-secs,user,system,idle'
-	hour=$(date +"%H")
-	min=$(date +"%M")
-	if [ "$min" -lt 10 ]; then
-		hour=$(( hour - 1 ))
-	fi
-	sadf -d -s $hour:00 |awk -F";" 'NR > 1 { print $3","$2","$5","$7","$10 }'
+	echo 'user,system,idle'
+	# take 3 vmstat samples, but skip the first to ignore cost of launching this command with awk
+	vmstat -n 1 3 |awk 'BEGIN { c=0; u=0; s=0; i=0 } NR > 3 { c++; u+=$13; s+=$14; i+=$15 } END { print u/c","s/c","i/c }'
 }
 
 # print out file system use, e.g.
