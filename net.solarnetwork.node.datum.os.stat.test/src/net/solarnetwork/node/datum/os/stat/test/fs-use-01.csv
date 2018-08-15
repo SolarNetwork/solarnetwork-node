@@ -1,0 +1,8 @@
+mount,size-kb,used-kb,used-percent
+/dev,2003748,0,0
+/run,403224,12268,4
+/,19880876,12383500,66
+/dev/shm,2016108,0,0
+/run/lock,5120,4,1
+/sys/fs/cgroup,2016108,0,0
+/boot,233191,36370,17

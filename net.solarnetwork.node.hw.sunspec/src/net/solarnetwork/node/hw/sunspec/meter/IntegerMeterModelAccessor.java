@@ -343,7 +343,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 					return getApparentPowerValue(IntegerMeterModelRegister.ApparentPowerPhaseC);
 
 				default:
-					return IntegerMeterModelAccessor.this.getActivePower();
+					return IntegerMeterModelAccessor.this.getApparentPower();
 			}
 		}
 

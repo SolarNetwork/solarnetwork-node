@@ -23,20 +23,22 @@
 package net.solarnetwork.node.datum.csi.ktl;
 
 import java.util.Date;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.csi.inverter.KTLData;
+import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
+ * Extension of {@link GeneralNodePVEnergyDatum} with additional properties
  * supported by the KTL series inverters.
  * 
  * @author matt
  * @author maxieduncan
  * @version 1.0
  */
-public class KTLDatum extends GeneralNodeACEnergyDatum {
+public class KTLDatum extends GeneralNodePVEnergyDatum {
 
-	private final KTLData sample;
+	private final KTLCTDataAccessor sample;
 
 	/**
 	 * Construct with a sample.
@@ -44,13 +46,33 @@ public class KTLDatum extends GeneralNodeACEnergyDatum {
 	 * @param sample
 	 *        the sample
 	 */
-	public KTLDatum(KTLData sample) {
+	public KTLDatum(KTLCTDataAccessor sample) {
 		super();
 		this.sample = sample;
-		if ( sample.getInverterDataTimestamp() > 0 ) {
-			setCreated(new Date(sample.getInverterDataTimestamp()));
+		if ( sample.getDataTimestamp() > 0 ) {
+			setCreated(new Date(sample.getDataTimestamp()));
 		}
-		sample.populateMeasurements(this);
+		populateMeasurements(sample);
+	}
+
+	private void populateMeasurements(KTLCTDataAccessor data) {
+		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
+		setWatts(data.getActivePower());
+		setWattHourReading(data.getActiveEnergyDelivered());
+		putInstantaneousSampleValue(ACEnergyDatum.APPARENT_POWER_KEY, data.getApparentPower());
+
+		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "1", data.getPv1Voltage());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "1",
+				data.getPv1Voltage() * data.getPv1Current());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "2", data.getPv2Voltage());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "2",
+				data.getPv2Voltage() * data.getPv2Current());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "3", data.getPv3Voltage());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "3",
+				data.getPv3Voltage() * data.getPv3Current());
+
+		putInstantaneousSampleValue("temp", data.getModuleTemperature());
+		putInstantaneousSampleValue("ambientTemp", data.getInternalTemperature());
 	}
 
 	/**
@@ -67,7 +89,7 @@ public class KTLDatum extends GeneralNodeACEnergyDatum {
 	 * 
 	 * @return the sample data
 	 */
-	public KTLData getSample() {
+	public KTLCTDataAccessor getSample() {
 		return sample;
 	}
 

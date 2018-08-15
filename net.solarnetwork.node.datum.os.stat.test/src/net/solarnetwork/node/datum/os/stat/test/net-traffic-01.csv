@@ -1,0 +1,5 @@
+device,bytes-in,bytes-out,packets-in,packets-out
+wlan0,9161,5970,86,38
+lo,1242,1242,12,12
+eth0,9348,10031,80,81
+usb0,0,0,0,0

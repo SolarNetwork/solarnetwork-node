@@ -82,6 +82,7 @@
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
 			<entry key="mqtt" value="true"/>
+			<entry key="upload" value="false"/>
 		</service-properties>
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalNodeDatumDao"/>
@@ -94,6 +95,7 @@
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum"/>
 			<entry key="mqtt" value="true"/>
+			<entry key="upload" value="false"/>
 		</service-properties>
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalLocationDatumDao"/>
