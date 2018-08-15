@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.joda.time.LocalTime;
@@ -34,11 +35,10 @@ import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 
 /**
- * This client implemetation connects to the IBM Weather Channel endpoints, and
- * stores the information in datum.
+ * This client implementation connects to the IBM Weather Channel endpoints, and
+ * parses the information as datum.
  * 
  * @author matt frost
- *
  */
 public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 
@@ -68,10 +68,6 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	/** The default value for the {@code units} property. */
 	public static final String DEFAULT_UNITS = "e";
 
-	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssX";
-
-	public static final boolean DEFAULT_COMPRESSION = true;
-
 	private String baseUrl;
 	private String dailyForecastUrl;
 	private String hourlyForecastUrl;
@@ -90,7 +86,7 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		this.units = DEFAULT_UNITS;
 
 		// set default compression
-		this.setCompress(DEFAULT_COMPRESSION);
+		this.setCompress(true);
 	}
 
 	private String getURL(String requestURL, String location, String apiKey, String datumPeriod) {
@@ -140,27 +136,31 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		return n.asInt();
 	}
 
+	private JsonNode requestWcUrl(String url) {
+		log.debug("Querying IBM Weather API with URL {}", url);
+
+		try {
+			return getObjectMapper().readTree(jsonGET(url));
+		} catch ( IOException e ) {
+			log.warn("Communication error requesting IBM Weather API URL [{}]: {}", url, e.getMessage());
+			return null;
+		}
+	}
+
 	@Override
 	public Collection<GeneralDayDatum> readDailyForecast(String locationIdentifier, String apiKey,
 			DailyDatumPeriod datumPeriod) {
-
-		if ( locationIdentifier == null ) {
-			return null;
+		if ( locationIdentifier == null || locationIdentifier.isEmpty() || apiKey == null
+				|| apiKey.isEmpty() || datumPeriod == null ) {
+			return Collections.emptyList();
 		}
+
 		final List<GeneralDayDatum> result = new ArrayList<GeneralDayDatum>();
 		final String url = getURL(this.dailyForecastUrl, locationIdentifier, apiKey,
 				datumPeriod.getPeriod());
-		JsonNode root;
-		try {
-			log.debug("opening IBM Weather API connection at URL {}", url);
-			root = getObjectMapper().readTree(jsonGET(url));
-		} catch ( IOException e ) {
-			log.warn("Error reading WC URL [{}]: {}", url, e.getMessage());
-			return result;
-		}
+		final JsonNode root = requestWcUrl(url);
 
 		for ( int i = 0; i < root.get("sunriseTimeLocal").size(); i++ ) {
-
 			GeneralDayDatum current = new GeneralDayDatum();
 			JsonNode data = root.get("sunriseTimeLocal");
 			if ( data.isArray() ) {
@@ -209,33 +209,26 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 				current.setTemperatureMinimum(parseBigDecimal(data.get(i)));
 			}
 			result.add(current);
-
 		}
 
-		log.debug("Finished IBM Weather retrieval");
+		log.debug("Finished IBM Weather API retrieval for {}", url);
 		return result;
 	}
 
 	@Override
 	public Collection<WCHourlyDatum> readHourlyForecast(String locationIdentifier, String apiKey,
 			HourlyDatumPeriod datumPeriod) {
-		if ( locationIdentifier == null ) {
-			return null;
+		if ( locationIdentifier == null || locationIdentifier.isEmpty() || apiKey == null
+				|| apiKey.isEmpty() || datumPeriod == null ) {
+			return Collections.emptyList();
 		}
+
 		final List<WCHourlyDatum> result = new ArrayList<WCHourlyDatum>();
 		final String url = getURL(this.hourlyForecastUrl, locationIdentifier, apiKey,
 				datumPeriod.getPeriod());
-		JsonNode root;
-		try {
-			log.debug("opening IBM Weather API connection URL: [{}]", url);
-			root = getObjectMapper().readTree(jsonGET(url));
-		} catch ( IOException e ) {
-			log.warn("Error reading WC URL [{}]: {}", url, e.getMessage());
-			return result;
-		}
+		final JsonNode root = requestWcUrl(url);
 
 		for ( int i = 0; i < root.get("validTimeLocal").size(); i++ ) {
-
 			WCHourlyDatum current = new WCHourlyDatum();
 			JsonNode data = root.get("validTimeLocal");
 			if ( data.isArray() ) {
@@ -269,10 +262,9 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 				current.setCloudCover(parseBigDecimal(data.get(i)));
 			}
 			result.add(current);
-
 		}
 
-		log.debug("Finished IBM Hourly Weather retrieval");
+		log.debug("Finished IBM Weather API retrieval for {}", url);
 		return result;
 	}
 
