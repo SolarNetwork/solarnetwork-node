@@ -28,8 +28,8 @@
 	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource</value>
+				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -37,8 +37,8 @@
 	<bean id="hourlyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource</value>
+				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
 			</list>
 		</property>
 	</bean>
