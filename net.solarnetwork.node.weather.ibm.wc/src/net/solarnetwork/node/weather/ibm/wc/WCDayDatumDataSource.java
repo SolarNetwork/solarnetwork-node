@@ -44,8 +44,10 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum>
 		implements DatumDataSource<GeneralDayDatum>, MultiDatumDataSource<GeneralDayDatum>,
 		SettingSpecifierProvider {
 
-	private static final String[] DEFAULT_MENU = new String[] { "3day", "5day", "7day", "10day",
-			"15day" };
+	public WCDayDatumDataSource() {
+		super();
+		setDatumPeriod(DailyDatumPeriod.SEVENDAY.getPeriod());
+	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -53,10 +55,11 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum>
 		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("apiKey", null));
 		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("datumPeriod",
-				"7day");
-		Map<String, String> menuValues = new LinkedHashMap<String, String>(DEFAULT_MENU.length);
-		for ( String s : DEFAULT_MENU ) {
-			menuValues.put(s, s);
+				DailyDatumPeriod.SEVENDAY.getPeriod());
+		Map<String, String> menuValues = new LinkedHashMap<String, String>(
+				DailyDatumPeriod.values().length);
+		for ( DailyDatumPeriod p : DailyDatumPeriod.values() ) {
+			menuValues.put(p.getPeriod(), p.getPeriod());
 		}
 		menuSpec.setValueTitles(menuValues);
 		result.add(menuSpec);

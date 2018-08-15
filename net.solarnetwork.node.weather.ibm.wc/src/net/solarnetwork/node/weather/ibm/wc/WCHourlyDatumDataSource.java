@@ -42,8 +42,10 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> implements
 		SettingSpecifierProvider, DatumDataSource<WCHourlyDatum>, MultiDatumDataSource<WCHourlyDatum> {
 
-	private static final String[] DEFAULT_MENU = new String[] { "6hour", "12hour", "1day", "2day",
-			"3day", "10day", "15day" };
+	public WCHourlyDatumDataSource() {
+		super();
+		setDatumPeriod(HourlyDatumPeriod.TWODAY.getPeriod());
+	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -51,10 +53,11 @@ public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> implements
 		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("apiKey", null));
 		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("datumPeriod",
-				"2day");
-		Map<String, String> menuValues = new LinkedHashMap<String, String>(DEFAULT_MENU.length);
-		for ( String s : DEFAULT_MENU ) {
-			menuValues.put(s, s);
+				HourlyDatumPeriod.TWODAY.getPeriod());
+		Map<String, String> menuValues = new LinkedHashMap<String, String>(
+				HourlyDatumPeriod.values().length);
+		for ( HourlyDatumPeriod p : HourlyDatumPeriod.values() ) {
+			menuValues.put(p.getPeriod(), p.getPeriod());
 		}
 		menuSpec.setValueTitles(menuValues);
 		result.add(menuSpec);
