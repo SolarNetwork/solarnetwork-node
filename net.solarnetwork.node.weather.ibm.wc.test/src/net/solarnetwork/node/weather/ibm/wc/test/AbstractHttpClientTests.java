@@ -1,7 +1,7 @@
 /* ==================================================================
- * AbstractHttpClientTests.java - 19/05/2017 4:10:22 PM
+ * AbstractHttpClientTests.java
  * 
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2018 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 

@@ -1,3 +1,22 @@
+/* ===================================================================
+ * Copyright 2018 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ===================================================================
+ */
 
 package net.solarnetwork.node.weather.ibm.wc;
 
@@ -14,6 +33,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 
+/**
+ * This client implemetation connects to the IBM Weather Channel endpoints, and
+ * stores the information in datum.
+ * 
+ * @author matt frost
+ *
+ */
 public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 
 	/** The default value for the {@code baseUrl} property. */
@@ -102,11 +128,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 		if ( n == null || n.isNull() ) {
 			return null;
 		}
-		try {
-			return this.dateFormat.parseDateTime(n.asText()).toDate();
-		} catch ( IllegalArgumentException e ) {
-			return null;
-		}
+
+		return this.dateFormat.parseDateTime(n.asText()).toDate();
 
 	}
 
@@ -125,7 +148,6 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 			return null;
 		}
 		final List<GeneralDayDatum> result = new ArrayList<GeneralDayDatum>();
-		log.info(datumPeriod.getPeriod());
 		final String url = getURL(this.dailyForecastUrl, locationIdentifier, apiKey,
 				datumPeriod.getPeriod());
 		JsonNode root;
@@ -142,23 +164,41 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 			GeneralDayDatum current = new GeneralDayDatum();
 			JsonNode data = root.get("sunriseTimeLocal");
 			if ( data.isArray() ) {
-				current.setSunrise(parseTimeValue(data.get(i)));
+				LocalTime t = parseTimeValue(data.get(i));
+				if ( t != null ) {
+					current.setSunrise(t);
+				}
+
 			}
 			data = root.get("sunsetTimeLocal");
 			if ( data.isArray() ) {
-				current.setSunset(parseTimeValue(data.get(i)));
+				LocalTime t = parseTimeValue(data.get(i));
+				if ( t != null ) {
+					current.setSunset(t);
+				}
+
 			}
 			data = root.get("moonriseTimeLocal");
 			if ( data.isArray() ) {
-				current.setMoonrise(parseTimeValue(data.get(i)));
+				LocalTime t = parseTimeValue(data.get(i));
+				if ( t != null ) {
+					current.setMoonrise(t);
+				}
+
 			}
 			data = root.get("moonsetTimeLocal");
 			if ( data.isArray() ) {
-				current.setMoonset(parseTimeValue(data.get(i)));
+				LocalTime t = parseTimeValue(data.get(i));
+				if ( t != null ) {
+					current.setMoonset(t);
+				}
 			}
 			data = root.get("validTimeLocal");
 			if ( data.isArray() ) {
-				current.setCreated(parseDateValue(data.get(i)));
+				Date t = parseDateValue(data.get(i));
+				if ( t != null ) {
+					current.setCreated(t);
+				}
 			}
 			data = root.get("temperatureMax");
 			if ( data.isArray() ) {
@@ -199,7 +239,10 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 			WCHourlyDatum current = new WCHourlyDatum();
 			JsonNode data = root.get("validTimeLocal");
 			if ( data.isArray() ) {
-				current.setCreated(parseDateValue(data.get(i)));
+				Date t = parseDateValue(data.get(i));
+				if ( t != null ) {
+					current.setCreated(t);
+				}
 			}
 			data = root.get("temperature");
 			if ( data.isArray() ) {
