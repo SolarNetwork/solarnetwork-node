@@ -34,12 +34,6 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="Modbus device"/>
-		<property name="factoryUID" value="net.solarnetwork.node.datum.modbus"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -48,7 +42,13 @@
 	
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Modbus device"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.modbus"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.modbus" autowire-on-update="true">
 		<osgix:interfaces>
