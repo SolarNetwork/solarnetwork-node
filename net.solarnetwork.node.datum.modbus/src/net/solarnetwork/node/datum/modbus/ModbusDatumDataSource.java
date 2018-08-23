@@ -228,9 +228,14 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	private GeneralDatumMetadata metadata(DatumMetadataService service) {
 		GeneralDatumMetadata metadata = sourceMetadata.get();
 		if ( metadata == null ) {
+			log.info("Requesting datum metadata for source [{}]", this.sourceId);
 			metadata = service.getSourceMetadata(this.sourceId);
 			if ( metadata == null ) {
+				log.info("No existing datum metadata found for source [{}]", this.sourceId);
 				metadata = new GeneralDatumMetadata();
+			} else if ( log.isInfoEnabled() ) {
+				log.info("Existing datum metadata found for source [{}]: {}", this.sourceId,
+						metadata.getPropertyInfo());
 			}
 			if ( !sourceMetadata.compareAndSet(null, metadata) ) {
 				metadata = sourceMetadata.get();
@@ -247,11 +252,13 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		final DatumMetadataService service = datumMetadataService();
 		if ( service == null ) {
 			// the metadata service is required for virtual meters
+			log.warn("DatumMetadataService is required for vitual meters, but not available");
 			return;
 		}
 		final GeneralDatumMetadata metadata = metadata(service);
 		if ( metadata == null ) {
 			// should not happen, more to let the compiler know what we're expecting
+			log.error("Metadata not available for virtual meters");
 			return;
 		}
 
@@ -274,6 +281,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			}
 			BigDecimal currVal = d.getInstantaneousSampleBigDecimal(config.getPropertyKey());
 			if ( currVal == null ) {
+				log.warn(
+						"Instantaneous property [{}] not available, cannot populate virtual meter reading",
+						config.getPropertyKey());
 				continue;
 			}
 
