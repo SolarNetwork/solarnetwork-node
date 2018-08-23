@@ -125,16 +125,20 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 
 	@Override
 	public void addSourceMetadata(String sourceId, GeneralDatumMetadata meta) {
+		log.debug("Adding metadata to source {}: {}", sourceId, meta.getPm());
 		GeneralDatumMetadata currMeta = cachedMetadata(sourceId);
 		if ( currMeta != null ) {
-			currMeta.merge(meta, true);
-			if ( currMeta.equals(meta) ) {
-				log.debug("Metadta has not changed for source {}", sourceId);
+			log.debug("Merging metadata for source {} into {}", sourceId, currMeta.getPm());
+			GeneralDatumMetadata mergedMeta = new GeneralDatumMetadata(currMeta);
+			mergedMeta.merge(meta, true);
+			if ( currMeta.equals(mergedMeta) ) {
+				log.debug("Metadata has not changed for source {}", sourceId);
 				return;
 			}
-			meta = currMeta;
+			meta = mergedMeta;
 		}
 		final String url = nodeSourceMetadataUrl(sourceId);
+		log.info("Posting metadata for source {}", sourceId);
 		try {
 			final InputStream in = jsonPOST(url, meta);
 			verifyResponseSuccess(in);
