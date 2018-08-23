@@ -73,6 +73,33 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	}
 
 	/**
+	 * Get the datum property name used for this configuration.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyKey()}.
+	 * </p>
+	 * 
+	 * @return the property name
+	 */
+	public String getName() {
+		return getPropertyKey();
+	}
+
+	/**
+	 * Set the datum property name to use.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyKey(String)}.
+	 * </p>
+	 * 
+	 * @param name
+	 *        the property name
+	 */
+	public void setName(String name) {
+		setPropertyKey(name);
+	}
+
+	/**
 	 * Get the meter reading as a string.
 	 * 
 	 * <p>
