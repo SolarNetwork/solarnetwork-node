@@ -320,18 +320,33 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
 					unitMs.setScale(VIRTUAL_METER_SCALE);
 					BigDecimal meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff)
-							.divide(unitMs);
+							.divide(unitMs, VIRTUAL_METER_SCALE, RoundingMode.HALF_UP);
 					BigDecimal currReading = prevReading.add(meterValue);
 					d.putAccumulatingSampleValue(meterPropName, currReading);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							meterValue.toString());
+							currReading.toString());
 					log.info(
 							"Virtual meter {} adds {} from instantaneous value {} -> {} over {}ms to reach {}",
 							meterPropName, meterValue, prevVal, currVal, msDiff, currReading);
 				}
-				service.addSourceMetadata(this.sourceId, metadata);
+				try {
+					service.addSourceMetadata(this.sourceId, metadata);
+				} catch ( RuntimeException e ) {
+					// catch IO errors and let slide
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					if ( root instanceof IOException ) {
+						log.warn(
+								"Communication error posting metadata for source {} virutal meter {}: {}",
+								this.sourceId, meterPropName, root.toString());
+					} else {
+						throw e;
+					}
+				}
 			}
 		}
 	}
