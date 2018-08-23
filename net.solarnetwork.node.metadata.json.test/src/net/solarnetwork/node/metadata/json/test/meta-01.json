@@ -1,0 +1,16 @@
+{
+  "data": {
+    "created": "2018-08-23 03:22:59.605Z", 
+    "nodeId": 338, 
+    "pm": {
+      "irradianceHours": {
+        "vm-date": 1535065709013, 
+        "vm-reading": "558.857455", 
+        "vm-value": "61"
+      }
+    }, 
+    "sourceId": "/D2/WH/S1/PYR/2", 
+    "updated": "2018-08-23 23:08:32.984Z"
+  }, 
+  "success": true
+}
