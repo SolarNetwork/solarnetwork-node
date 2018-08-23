@@ -108,3 +108,59 @@ Each property configuration contains the following settings:
 	to <code>0</code> rounds decimals to whole numbers. Setting to <code>-1</code> disables
 	rounding completely.</dd>
 </dl>
+
+## Virtual meter settings
+
+Since version **1.3** you can ask SolarNode to generate accumulating property values derived
+from instantaneous properties extrapolated across time. For example, if you have an
+irradiance sensor that allows you to capture instantaneous <code>W / m<sup>2</sup></code>
+power values, you could configure a virtual meter to generate <code>Wh /
+m<sup>2</sup></code> energy values. You can configure as many virtual meters as you like,
+using the <kbd>+</kbd> and <kbd>-</kbd> buttons to add/remove meter configurations.
+
+![virtual-meter](docs/solarnode-virtual-meter-settings.png)
+
+Each virtual meter works with a single instantaneous datum property. The derived
+accumulating datum property will be named after that property with the time unit suffix
+appended. For example, an instantaneous `irradiance` property using the `Hours` time unit
+would result in an accumulating `irradianceHours` property. The value is calculated as
+an **average** between the current instantaneous value and the previously captured
+instantaneous value, multiplied by the amount of time that has elapsed between the two
+samples.
+
+Virtual meters require keeping track of the meter reading value over time along with the
+previously captured value. This plugin uses the [SolarNetwork datum metadata
+API][meta-api] for this, storing three metadata properties under a property key named for
+the virtual meter property name. For example, continuing the `irradianceHours` example, an
+example set of datum metadata would look like:
+
+```json
+{
+  "pm": {
+    "irradianceHours": {
+      "vm-date": 123123123123,
+      "vm-value": "1361",
+      "vm-reading": "12390980.1231"
+    }
+  }
+}
+```
+
+Each virtual meter configuration contains the following settings:
+
+| Setting         | Description                                                                           |
+|-----------------|---------------------------------------------------------------------------------------|
+| Property        | The name of the instantaneous datum property to derive the virtual meter values from. |
+| Time Unit       | The time unit to record meter readings as.                                            |
+| Meter Reading   | The current meter reading value.                                                      |
+
+## Virtual meter settings notes
+
+<dl>
+	<dt>Meter Reading</dt>
+	<dd>Generally this should <b>not</b> be changed, because it can impact how the values are aggregated and
+	interpreted by SolarNetwork and applications using the data.</dd>
+</dl>
+
+
+ [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarQuery-API#add-node-datum-metadata
