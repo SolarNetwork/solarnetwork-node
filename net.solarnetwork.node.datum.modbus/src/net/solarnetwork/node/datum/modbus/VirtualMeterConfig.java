@@ -48,6 +48,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
 
 	private TimeUnit timeUnit = TimeUnit.HOURS;
+	private long maxAgeSeconds = TimeUnit.HOURS.toSeconds(1);
 
 	public static List<SettingSpecifier> settings(String prefix, String meterReading) {
 		VirtualMeterConfig defaults = new VirtualMeterConfig();
@@ -65,6 +66,9 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 		}
 		timeUnitSpec.setValueTitles(timeUnitTitles);
 		results.add(timeUnitSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxAgeSeconds",
+				String.valueOf(defaults.maxAgeSeconds)));
 
 		// meter reading has "live" data, not static default
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
@@ -212,4 +216,26 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 			// ignore
 		}
 	}
+
+	/**
+	 * Get the maximum age between readings where time aggregation can be
+	 * applied.
+	 * 
+	 * @return the maximum reading age, in seconds; defaults to 1 hour
+	 */
+	public long getMaxAgeSeconds() {
+		return maxAgeSeconds;
+	}
+
+	/**
+	 * Set the maximum age between readings where time aggregation can be
+	 * applied.
+	 * 
+	 * @param maxAgeSeconds
+	 *        the maximum reading age, in seconds
+	 */
+	public void setMaxAgeSeconds(long maxAgeSeconds) {
+		this.maxAgeSeconds = maxAgeSeconds;
+	}
+
 }

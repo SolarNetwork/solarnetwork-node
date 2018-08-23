@@ -152,11 +152,23 @@ Each virtual meter configuration contains the following settings:
 |-----------------|---------------------------------------------------------------------------------------|
 | Property        | The name of the instantaneous datum property to derive the virtual meter values from. |
 | Time Unit       | The time unit to record meter readings as.                                            |
+| Max Age         | The maximum time allowed between samples where the meter reading can advance.         |
 | Meter Reading   | The current meter reading value.                                                      |
 
 ## Virtual meter settings notes
 
 <dl>
+	<dt>Time Unit</dt>
+	<dd>This value affects the name of the virtual meter reading property: it will be appended to the
+	end of the property name. It also affects the virtual meter reading values, as they will be calculated in
+	this time unit.</dd>
+	<dt>Max Age</dt>
+	<dd>In case the node isn't collecting samples for a period of time, this setting prevents the plugin
+	from calculating an unexpectedly large reading value jump. For example if a node was turned off for
+	a day, the first sample it captures when turned back on would otherwise advance the reading as if the
+	associated instantaneous property had been active over that entire time. With this restriction, the
+	node will record the new sample date and value, but not advance the meter reading until another sample
+	is captured within this time period.</dd>
 	<dt>Meter Reading</dt>
 	<dd>Generally this should <b>not</b> be changed, because it can impact how the values are aggregated and
 	interpreted by SolarNetwork and applications using the data.</dd>

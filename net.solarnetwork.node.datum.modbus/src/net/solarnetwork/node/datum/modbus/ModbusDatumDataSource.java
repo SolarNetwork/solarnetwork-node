@@ -308,6 +308,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 							"Virtual meter reading date {} for {} not older than current time, will not populate reading",
 							new Date(prevDate), meterPropName);
 					continue;
+				} else if ( (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
+					log.warn(
+							"Virtual meter previous reading date {} for {} greater than allowed age {}s, will not populate reading",
+							new Date(prevDate), meterPropName);
+					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
+					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 				} else {
 					BigDecimal msDiff = new BigDecimal(date - prevDate);
 					msDiff.setScale(VIRTUAL_METER_SCALE);

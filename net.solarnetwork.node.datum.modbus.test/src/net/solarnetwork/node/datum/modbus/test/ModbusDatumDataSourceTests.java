@@ -668,4 +668,82 @@ public class ModbusDatumDataSourceTests {
 						ModbusDatumDataSource.VIRTUAL_METER_READING_KEY),
 				equalTo(datum2.getAccumulatingSampleBigDecimal(meterPropName).toString()));
 	}
+
+	@Test
+	public void readDatumWithVirtualMeterExpiredPreviousReading() throws IOException {
+		// GIVEN
+		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
+		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
+		propConfig.setAddress(0);
+		propConfig.setDataType(Float32);
+		propConfig.setPropertyType(Instantaneous);
+		propConfig.setDecimalScale(-1);
+		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
+
+		VirtualMeterConfig meterConfig = new VirtualMeterConfig();
+		meterConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
+		meterConfig.setTimeUnit(TimeUnit.SECONDS);
+		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0x44f6, 0xc614 }; // 1974.1900
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+				.andReturn(range1);
+
+		final long now = System.currentTimeMillis();
+
+		// prev metadata to start with; 2 hours old
+		final String meterPropName = TEST_FLOAT32_PROP_NAME + "Seconds";
+		GeneralDatumMetadata metadata = new GeneralDatumMetadata();
+		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY,
+				now - TimeUnit.HOURS.toMillis(2));
+		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY, "1974.1974");
+		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_READING_KEY, "100");
+		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(metadata);
+
+		// but we will save initial metadata
+		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
+		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE_ID), capture(metadataCaptor));
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		BigDecimal expectedPropValue = new BigDecimal("1974.19");
+		BigDecimal expectedMeterValue = new BigDecimal("100");
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+				equalTo(expectedPropValue));
+		assertThat("Virtual meter value not populated",
+				datum.getAccumulatingSampleBigDecimal(meterPropName), nullValue());
+
+		assertThat("Metadata saved", metadataCaptor.hasCaptured(), equalTo(true));
+		GeneralDatumMetadata savedMetadata = metadataCaptor.getValue();
+		assertThat("Virtual meter metadata date",
+				savedMetadata.getInfoLong(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY),
+				greaterThanOrEqualTo(now));
+		assertThat("Virtual meter metadata value",
+				savedMetadata.getInfoString(meterPropName,
+						ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY),
+				equalTo(expectedPropValue.toString()));
+		assertThat("Virtual meter metadata reading",
+				savedMetadata.getInfoString(meterPropName,
+						ModbusDatumDataSource.VIRTUAL_METER_READING_KEY),
+				equalTo(expectedMeterValue.toString()));
+	}
+
 }
