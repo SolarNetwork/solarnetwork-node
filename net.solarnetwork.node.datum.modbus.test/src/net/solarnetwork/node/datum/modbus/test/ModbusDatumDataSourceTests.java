@@ -530,7 +530,7 @@ public class ModbusDatumDataSourceTests {
 		GeneralDatumMetadata metadata = new GeneralDatumMetadata();
 		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY, now - 500); // 0.5 seconds ago
 		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY, "1974.1974");
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_READING_KEY, "0");
+		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_READING_KEY, "1000");
 		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(metadata);
 
 		// but we will save initial metadata
@@ -544,7 +544,7 @@ public class ModbusDatumDataSourceTests {
 
 		// THEN
 		BigDecimal expectedPropValue = new BigDecimal("1974.19");
-		BigDecimal expectedMeterValue = new BigDecimal("996.9678185");
+		BigDecimal expectedMeterValue = new BigDecimal("1996.9678185");
 		assertThat("Datum returned", datum, notNullValue());
 		assertThat("Created", datum.getCreated(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
