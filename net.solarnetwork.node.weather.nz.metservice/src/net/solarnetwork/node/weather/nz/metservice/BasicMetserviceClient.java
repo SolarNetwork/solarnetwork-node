@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
-import static net.solarnetwork.util.JsonNodeUtils.parseBigDecimalAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseDateAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseIntegerAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
+import static net.solarnetwork.util.JsonUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.util.JsonUtils.parseDateAttribute;
+import static net.solarnetwork.util.JsonUtils.parseIntegerAttribute;
+import static net.solarnetwork.util.JsonUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -52,12 +52,12 @@ import net.solarnetwork.node.support.UnicodeReader;
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
 	/** The default value for the {@code baseUrl} property. */
-	public static final String DEFAULT_BASE_URL = "http://www.metservice.com/publicData";
+	public static final String DEFAULT_BASE_URL = "https://www.metservice.com/publicData";
 
 	/** The default value for the {@code locationKey} property. */
 	public static final String DEFAULT_LOCATION_KEY = "wellington-city";
