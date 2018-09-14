@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Settings Developer Playpen
 Bundle-SymbolicName: net.solarnetwork.node.settings.playpen
-Bundle-Version: 1.10.0
+Bundle-Version: 1.10.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
