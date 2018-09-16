@@ -22,7 +22,7 @@
 	/js-lib/d3v4.js
 </pack:script>
 <pack:script context="${basePath}"> 
-	/js-lib/jquery-1.12.4.js
+	/js-lib/jquery-2.2.4.js
 	/js-lib/bootstrap.js
 	/js-lib/crypto-js.js
 	/js-lib/ladda.js
