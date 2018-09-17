@@ -15,12 +15,12 @@ $(function() {
 	
 	function offsetSettingId(settingId, offset) {
 		var match = settingId.match(/^(.*i)(\d+)$/);
-		return match[1] + String(Number(match[2]) - offset);
+		return match[1] + String(Number(match[2]) + offset);
 	}
 	
 	function timeZoneSettingTextField() {
 		// this is tied directly to the settings order returned by ConfigurableOwmClientService, unfortunately 
-		return $('#settings :text:eq(4)');
+		return $('#settings :text:eq(-2)');
 	}
 	
 	function activeApiKey() {
