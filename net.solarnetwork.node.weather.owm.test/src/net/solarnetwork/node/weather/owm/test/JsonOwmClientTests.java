@@ -192,7 +192,7 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 		assertThat("Rain", datum.getRain(), nullValue());
 
 		assertThat("Forecast tag",
-				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST), equalTo(true));
+				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST), equalTo(false));
 	}
 
 }

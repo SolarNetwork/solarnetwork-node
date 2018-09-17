@@ -127,6 +127,9 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			// remove min/max temps, which for conditions data is not what we want
 			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MINIMUM_KEY, null);
 			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MAXIMUM_KEY, null);
+
+			// remove forecast tag
+			datum.removeTag(AtmosphericDatum.TAG_FORECAST);
 		}
 		return datum;
 	}
