@@ -16,5 +16,6 @@
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.2.6.RELEASE"/>
 		<dependency org="org.springframework" name="spring-context" rev="4.2.6.RELEASE"/>
+		<dependency org="org.springframework" name="spring-web" rev="4.2.9.RELEASE"/>
 	</dependencies>
 </ivy-module>

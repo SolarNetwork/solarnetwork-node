@@ -20,6 +20,7 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.6.0,2.0.0)"/>
 		
 		<!-- Testing support -->
+		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
 		
 		<!-- SolarNetwork -->
 
