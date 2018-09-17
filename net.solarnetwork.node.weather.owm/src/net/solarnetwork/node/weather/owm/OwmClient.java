@@ -57,6 +57,15 @@ public interface OwmClient {
 	DayDatum getCurrentDay(String identifier, String timeZoneId);
 
 	/**
+	 * Lookup the current conditions for a specific OWM location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup conditions for.
+	 * @return The conditions, or {@code null} if not available
+	 */
+	AtmosphericDatum getCurrentConditions(String identifier);
+
+	/**
 	 * Lookup the current hourly forecast information for a specific OWM
 	 * location identifier.
 	 * 
@@ -65,4 +74,5 @@ public interface OwmClient {
 	 * @return The weather information, never {@code null}
 	 */
 	public Collection<AtmosphericDatum> getHourlyForecast(String identifier);
+
 }

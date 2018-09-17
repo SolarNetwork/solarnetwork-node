@@ -106,6 +106,32 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 	}
 
 	@Override
+	public AtmosphericDatum getCurrentConditions(String identifier) {
+		if ( identifier == null ) {
+			return null;
+		}
+		final String url = uriForLocation(identifier, "/data/2.5/weather").build().toUriString();
+		GeneralAtmosphericDatum result = null;
+		try {
+			JsonNode data = getObjectMapper().readTree(jsonGET(url));
+			result = parseWeatherData(data);
+		} catch ( IOException e ) {
+			log.warn("Error reading OpenWeatherMap URL [{}]: {}", url, e.getMessage());
+		}
+		return result;
+	}
+
+	private GeneralAtmosphericDatum parseWeatherData(JsonNode node) {
+		GeneralAtmosphericDatum datum = parseForecastData(node);
+		if ( datum != null ) {
+			// remove min/max temps, which for conditions data is not what we want
+			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MINIMUM_KEY, null);
+			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MAXIMUM_KEY, null);
+		}
+		return datum;
+	}
+
+	@Override
 	public Collection<AtmosphericDatum> getHourlyForecast(String identifier) {
 		if ( identifier == null ) {
 			return Collections.emptyList();
@@ -129,43 +155,6 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		return results;
 	}
 
-	/*-
-		{
-			"dt": 1537142400,
-			"main": {
-				"temp": 15.44,
-				"temp_min": 13.72,
-				"temp_max": 15.44,
-				"pressure": 1025.13,
-				"sea_level": 1029.38,
-				"grnd_level": 1025.13,
-				"humidity": 88,
-				"temp_kf": 1.72
-			},
-			"weather": [
-				{
-					"id": 500,
-					"main": "Rain",
-					"description": "light rain",
-					"icon": "10d"
-				}
-			],
-			"clouds": {
-				"all": 44
-			},
-			"wind": {
-				"speed": 10.31,
-				"deg": 340.502
-			},
-			"rain": {
-				"3h": 0.18
-			},
-			"sys": {
-				"pod": "d"
-			},
-			"dt_txt": "2018-09-17 00:00:00"
-		}
-	*/
 	private GeneralAtmosphericDatum parseForecastData(JsonNode node) {
 		if ( node == null || !node.isObject() ) {
 			return null;
@@ -186,6 +175,8 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		}
 		d.setHumidity(parseIntegerAttribute(main, "humidity"));
 
+		d.setVisibility(parseIntegerAttribute(node, "visibility"));
+
 		JsonNode weather = node.path("weather");
 		if ( weather.isArray() && weather.size() > 0 ) {
 			weather = weather.iterator().next();
@@ -199,6 +190,10 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			d.setWindDirection(wdir.setScale(0, RoundingMode.HALF_UP).intValue());
 		}
 		d.setWindSpeed(parseBigDecimalAttribute(wind, "speed"));
+		d.putInstantaneousSampleValue("wgust", parseBigDecimalAttribute(wind, "gust"));
+
+		JsonNode clouds = node.path("clouds");
+		d.putInstantaneousSampleValue("cloudiness", parseIntegerAttribute(clouds, "all"));
 
 		JsonNode rain = node.path("rain");
 		BigDecimal threeHourRain = parseBigDecimalAttribute(rain, "3h");

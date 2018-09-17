@@ -22,9 +22,10 @@
 
 package net.solarnetwork.node.weather.owm.test;
 
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
@@ -87,7 +88,7 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 
 		DayDatum datum = client.getCurrentDay(owmLocationId, "Pacific/Auckland");
 		assertThat("Request handled", handler.isHandled(), equalTo(true));
-		assertThat("GeneralDayDatum", datum instanceof GeneralDayDatum, equalTo(true));
+		assertThat("GeneralDayDatum", datum, instanceOf(GeneralDayDatum.class));
 
 		assertThat("Created", datum.getCreated(), equalTo(
 				new DateTime(2018, 9, 17, 0, 0, DateTimeZone.forID("Pacific/Auckland")).toDate()));
@@ -124,11 +125,10 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 
 		Collection<AtmosphericDatum> results = client.getHourlyForecast(owmLocationId);
 		assertTrue("Request handled", handler.isHandled());
-		assertNotNull("Result available", results);
-
 		assertThat("Forecast resultcount", results, hasSize(40));
 
 		AtmosphericDatum datum = results.iterator().next();
+		assertThat("GeneralAtmosphericDatum", datum, instanceOf(GeneralAtmosphericDatum.class));
 		assertThat("Created", datum.getCreated(), equalTo(new Date(1537142400000L)));
 		assertThat("Temperature", datum.getTemperature(), equalTo(new BigDecimal("15.44")));
 		assertThat("Temperature min", datum.getSampleData().get("tempMin"),
@@ -141,12 +141,58 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 		assertThat("Icon ID", datum.getSampleData().get("iconId"), equalTo("10d"));
 		assertThat("WindSpeed", datum.getWindSpeed(), equalTo(new BigDecimal("10.31")));
 		assertThat("WindDirection", datum.getWindDirection(), equalTo(341));
+		assertThat("Visibility", datum.getVisibility(), nullValue());
 
 		assertThat("Rain", datum.getRain(), equalTo(0));
 
-		assertTrue("GeneralAtmosphericDatum", datum instanceof GeneralAtmosphericDatum);
-		assertTrue("Forecast tag",
-				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST));
+		assertThat("Forecast tag",
+				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST), equalTo(true));
+	}
+
+	@Test
+	public void readConditions() throws Exception {
+		final String owmLocationId = "foobar.loc.id";
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), equalTo("GET"));
+				assertThat("Request path", request.getPathInfo(), equalTo("/data/2.5/weather"));
+				assertThat("API key", request.getParameter("appid"), equalTo(TEST_API_KEY));
+				assertThat("Location ID", request.getParameter("id"), equalTo(owmLocationId));
+				assertThat("Units", request.getParameter("units"), equalTo("metric"));
+				assertThat("Mode", request.getParameter("mode"), equalTo("json"));
+				respondWithJsonResource(response, "weather-01.json");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		AtmosphericDatum datum = client.getCurrentConditions(owmLocationId);
+		assertTrue("Request handled", handler.isHandled());
+
+		assertThat("GeneralAtmosphericDatum", datum, instanceOf(GeneralAtmosphericDatum.class));
+		assertThat("Created", datum.getCreated(), equalTo(new Date(1537138800000L)));
+		assertThat("Temperature", datum.getTemperature(), equalTo(new BigDecimal("14.0")));
+		assertThat("Temperature min", datum.getSampleData().get("tempMin"), nullValue());
+		assertThat("Temperature min", datum.getSampleData().get("tempMax"), nullValue());
+		assertThat("AtmosphericPressure", datum.getAtmosphericPressure(), equalTo(101600));
+		assertThat("Humidity", datum.getHumidity(), equalTo(87));
+		assertThat("SkyConditions", datum.getSkyConditions(), equalTo("Rain"));
+		assertThat("Icon ID", datum.getSampleData().get("iconId"), equalTo("10n"));
+		assertThat("WindSpeed", datum.getWindSpeed(), equalTo(new BigDecimal("9.8")));
+		assertThat("WindDirection", datum.getWindDirection(), equalTo(350));
+		assertThat("Wind gust", datum.getSampleData().get("wgust"), equalTo(new BigDecimal("14.9")));
+		assertThat("Visibility", datum.getVisibility(), equalTo(10000));
+
+		assertThat("Rain", datum.getRain(), nullValue());
+
+		assertThat("Forecast tag",
+				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST), equalTo(true));
 	}
 
 }
