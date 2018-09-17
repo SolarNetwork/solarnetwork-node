@@ -77,7 +77,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		if ( identifier == null ) {
 			return null;
 		}
-		final String url = uriForLocation(identifier, "/api/data/2.5/weather").build().toUriString();
+		final String url = uriForLocation(identifier, "/data/2.5/weather").build().toUriString();
 		GeneralDayDatum result = null;
 		try {
 			JsonNode data = getObjectMapper().readTree(jsonGET(url));
@@ -110,7 +110,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		if ( identifier == null ) {
 			return Collections.emptyList();
 		}
-		final String url = uriForLocation(identifier, "/api/data/2.5/forecast").build().toUriString();
+		final String url = uriForLocation(identifier, "/data/2.5/forecast").build().toUriString();
 		List<AtmosphericDatum> results = new ArrayList<>(50);
 		try {
 			JsonNode data = getObjectMapper().readTree(jsonGET(url));

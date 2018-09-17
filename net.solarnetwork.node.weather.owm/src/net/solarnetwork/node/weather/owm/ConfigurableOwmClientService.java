@@ -49,9 +49,13 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
 
+	/** The default value for the {@code timeZoneId} property. */
+	public static final String DEFAULT_TIME_ZONE_ID = "UTC";
+
 	private String uid;
 	private String groupUID;
 	private String locationIdentifier;
+	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
 	private OwmClient client;
 	private MessageSource messageSource;
 	private SetupResourceProvider locationSettingResourceProvider;
@@ -75,6 +79,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
 		results.add(new BasicTextFieldSettingSpecifier("client.apiKey", null));
+		results.add(new BasicTextFieldSettingSpecifier("timeZoneId", DEFAULT_TIME_ZONE_ID));
 		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
 		if ( locationSettingResourceProvider != null ) {
 			Map<String, Object> setupProps = new HashMap<String, Object>();
@@ -204,6 +209,29 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	public void setLocationSettingResourceProvider(
 			SetupResourceProvider locationSettingResourceProvider) {
 		this.locationSettingResourceProvider = locationSettingResourceProvider;
+	}
+
+	/**
+	 * Get the time zone ID to apply to local date/time values.
+	 * 
+	 * @return the time zone ID to apply
+	 */
+	public String getTimeZoneId() {
+		return timeZoneId;
+	}
+
+	/**
+	 * Set the time zone ID to apply to local date/time values.
+	 * 
+	 * @param timeZoneId
+	 *        the time zone ID to apply; {@literal null} will be treated as
+	 *        {@literal UTC}
+	 */
+	public void setTimeZoneId(String timeZoneId) {
+		if ( timeZoneId == null ) {
+			timeZoneId = "UTC";
+		}
+		this.timeZoneId = timeZoneId;
 	}
 
 }

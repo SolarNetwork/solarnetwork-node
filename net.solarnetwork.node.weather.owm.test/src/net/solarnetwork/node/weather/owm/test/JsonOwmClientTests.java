@@ -72,7 +72,7 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/data/2.5/weather"));
+				assertThat("Request path", request.getPathInfo(), equalTo("/data/2.5/weather"));
 				assertThat("API key", request.getParameter("appid"), equalTo(TEST_API_KEY));
 				assertThat("Location ID", request.getParameter("id"), equalTo(owmLocationId));
 				assertThat("Units", request.getParameter("units"), equalTo("metric"));
@@ -109,7 +109,7 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(), equalTo("/api/data/2.5/forecast"));
+				assertThat("Request path", request.getPathInfo(), equalTo("/data/2.5/forecast"));
 				assertThat("API key", request.getParameter("appid"), equalTo(TEST_API_KEY));
 				assertThat("Location ID", request.getParameter("id"), equalTo(owmLocationId));
 				assertThat("Units", request.getParameter("units"), equalTo("metric"));

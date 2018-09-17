@@ -13,18 +13,22 @@ $(function() {
 	
 	var activeContainer;
 	
+	function offsetSettingId(settingId, offset) {
+		var match = settingId.match(/^(.*i)(\d+)$/);
+		return match[1] + String(Number(match[2]) - offset);
+	}
+	
+	function timeZoneSettingTextField() {
+		// this is tied directly to the settings order returned by ConfigurableOwmClientService, unfortunately 
+		return $('#settings :text:eq(4)');
+	}
+	
 	function activeApiKey() {
 		var currParams = modal.data('params'),
-			settingId,
-			match,
 			apiKeySettingId,
 			apiKey;
 		if ( currParams && currParams.settingId ) {
-			settingId = currParams.settingId;
-			
-			// the API key text field comes 2 before this ID, so subtract 2
-			match = settingId.match(/^(.*i)(\d+)$/);
-			apiKeySettingId = match[1] + String(Number(match[2]) - 2);
+			apiKeySettingId = offsetSettingId(currParams.settingId, -3);
 			
 			return $('input#'+apiKeySettingId).val();
 		}
@@ -117,10 +121,7 @@ $(function() {
 			currParams = modal.data('params');
 		if ( selectedLocation !== undefined ) {
 			var locNameEl = activeContainer.find('.owm-loc-id'),
-				settingId = currParams.settingId,
-				// the location ID text field comes immediately before this ID, so subtract one
-				match = settingId.match(/^(.*i)(\d+)$/),
-				locSettingId = match[1] + String(Number(match[2]) - 1);
+				locSettingId = offsetSettingId(currParams.settingId, -1);
 			showLocationNameResult(selectedLocation, locNameEl);
 			$('input#'+locSettingId).val(selectedLocation.id).trigger('change');
 		}
@@ -155,5 +156,15 @@ $(function() {
 			});
 		}
 		return locId;
+	});
+	
+	// hook into location change, to pick up time zone population
+	$('.sn-loc-lookup-modal button.choose').on('click', function() {
+		var me = $(this);
+		var l = me.data('locationMeta');
+		var tzTextField = timeZoneSettingTextField();
+		if ( tzTextField && l && l.location && l.location.timeZoneId ) {
+			tzTextField.val(l.location.timeZoneId).trigger('change');
+		}
 	});
 });

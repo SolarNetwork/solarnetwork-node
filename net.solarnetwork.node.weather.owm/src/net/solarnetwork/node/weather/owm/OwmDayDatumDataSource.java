@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.weather.owm;
 
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import net.solarnetwork.node.DatumDataSource;
@@ -46,8 +47,29 @@ public class OwmDayDatumDataSource extends ConfigurableOwmClientService<DayDatum
 
 	@Override
 	public DayDatum readCurrentDatum() {
-		// TODO: not supported yet
-		return null;
+		// first see if we have cached data
+		DayDatum result = datumCache.get(LAST_DATUM_CACHE_KEY);
+		if ( result != null && result.getCreated() != null ) {
+			Calendar now = Calendar.getInstance();
+			Calendar datumCal = Calendar.getInstance();
+			datumCal.setTime(result.getCreated());
+			if ( now.get(Calendar.YEAR) == datumCal.get(Calendar.YEAR)
+					&& now.get(Calendar.DAY_OF_YEAR) == datumCal.get(Calendar.DAY_OF_YEAR) ) {
+				// cached data is for same date, so return that
+				return result;
+			}
+
+			// invalid cached data, remove now
+			datumCache.remove(LAST_DATUM_CACHE_KEY);
+		}
+
+		result = getClient().getCurrentDay(getLocationIdentifier(), getTimeZoneId());
+
+		if ( result != null ) {
+			datumCache.put(LAST_DATUM_CACHE_KEY, result);
+		}
+
+		return result;
 	}
 
 	@Override
@@ -57,8 +79,7 @@ public class OwmDayDatumDataSource extends ConfigurableOwmClientService<DayDatum
 
 	@Override
 	public Collection<DayDatum> readMultipleDatum() {
-		// TODO
-		return Collections.emptyList();
+		return Collections.singleton(readCurrentDatum());
 	}
 
 	@Override
