@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.weather.owm;
 
+import java.util.Collection;
+import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.node.domain.DayDatum;
+
 /**
  * API for accessing OWM information.
  * 
@@ -37,4 +41,28 @@ public interface OwmClient {
 	 */
 	String getApiKey();
 
+	/**
+	 * Lookup the current day information for a specific OWM location
+	 * identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup day information for.
+	 * @param timeZoneId
+	 *        The time zone ID to use for local date/time values. The OWM API
+	 *        does not return the local time zone the weather data is in, so
+	 *        this value is used to interpret things like sunrise/sunset into
+	 *        local times.
+	 * @return The day information, or {@code null} if not available
+	 */
+	DayDatum getCurrentDay(String identifier, String timeZoneId);
+
+	/**
+	 * Lookup the current hourly forecast information for a specific OWM
+	 * location identifier.
+	 * 
+	 * @param identifier
+	 *        The location identifier value to lookup day information for.
+	 * @return The weather information, never {@code null}
+	 */
+	public Collection<AtmosphericDatum> getHourlyForecast(String identifier);
 }
