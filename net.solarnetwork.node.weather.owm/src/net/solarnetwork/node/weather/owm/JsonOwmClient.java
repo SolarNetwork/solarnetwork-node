@@ -128,8 +128,8 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MINIMUM_KEY, null);
 			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MAXIMUM_KEY, null);
 
-			// remove forecast tag
-			datum.removeTag(AtmosphericDatum.TAG_FORECAST);
+			// remove forecast tag (all tags)
+			datum.getSamples().setTags(null);
 		}
 		return datum;
 	}
