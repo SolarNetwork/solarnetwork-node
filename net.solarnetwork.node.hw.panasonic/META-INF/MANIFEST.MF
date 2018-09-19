@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Panasonic Support
+Bundle-Name: Panasonic Device Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.panasonic
 Bundle-Version: 0.2.1
 Bundle-Vendor: SoalrNetwork

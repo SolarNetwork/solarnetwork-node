@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Command Line System Service
+Bundle-Name: Command Line System Service
 Bundle-SymbolicName: net.solarnetwork.node.system.cmdline
 Bundle-Description: Provides core system services such as restart and reboot features.
 Bundle-Version: 1.0.0

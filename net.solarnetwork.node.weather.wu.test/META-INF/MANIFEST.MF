@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Weather Underground Test
+Bundle-Name: Weather Underground Tests
 Bundle-SymbolicName: net.solarnetwork.node.weather.wu.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

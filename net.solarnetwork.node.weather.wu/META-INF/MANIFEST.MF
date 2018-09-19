@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Weather Underground Weather
+Bundle-Name: Weather Underground Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.wu
 Bundle-Description: Collect weather data from the Weather Underground.
 Bundle-Version: 1.1.0

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode MQTT integration
-Bundle-Description: Integrate with the SolarIn MQTT service to publish data 
+Bundle-Name: MQTT integration
+Bundle-Description: Integrate with the SolarIn MQTT service to publish data
  and receive instructions in real time.
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt
 Bundle-Version: 0.1.1

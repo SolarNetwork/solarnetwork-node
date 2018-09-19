@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Setup S3
+Bundle-Name: S3 Setup
 Bundle-SymbolicName: net.solarnetwork.node.setup.s3
 Bundle-Description: Sync vendor-specific resources from Amazon S3.
 Bundle-Version: 0.3.0

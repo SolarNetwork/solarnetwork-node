@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OCPP Authorization Support
+Bundle-Name: OCPP Authorization Support
+Bundle-Description: Authorize scanned OCPP ID tags with OCPP central system.
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.auth
 Bundle-Version: 0.3.0
 Bundle-Vendor: SolarNetwork

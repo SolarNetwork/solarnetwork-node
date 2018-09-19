@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode JDBC Reactor DAO Test
+Bundle-Name: JDBC Reactor DAO Tests
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc.test
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork

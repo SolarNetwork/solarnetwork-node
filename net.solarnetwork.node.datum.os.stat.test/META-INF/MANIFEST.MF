@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OS Statistics Test
+Bundle-Name: OS Statistics Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.os.stat.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

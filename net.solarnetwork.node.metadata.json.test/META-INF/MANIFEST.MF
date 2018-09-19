@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode JSON Metadata Tests
+Bundle-Name: JSON Metadata Tests
 Bundle-SymbolicName: net.solarnetwork.node.metadata.json.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

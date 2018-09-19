@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode RFID Reader
+Bundle-Name: RFID Reader
 Bundle-Description: Support for scanning RFID cards.
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfid
 Bundle-Version: 1.1.3

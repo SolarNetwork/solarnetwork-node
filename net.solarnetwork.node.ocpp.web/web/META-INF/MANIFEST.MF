@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OCPP ChargePoint Web Service
+Bundle-Name: OCPP ChargePoint Web Service
+Bundle-Description: OCPP server for OCPP server push message support.
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.web
 Bundle-Version: 0.5.0
 Bundle-ClassPath: WEB-INF/classes/

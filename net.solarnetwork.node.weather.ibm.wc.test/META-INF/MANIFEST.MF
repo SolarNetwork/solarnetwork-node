@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Test
+Bundle-Name: Tests
 Bundle-SymbolicName: net.solarnetwork.node.weather.ibm.wc.test
 Automatic-Module-Name: net.solarnetwork.node.weather.ibm.wc.test
 Bundle-Version: 1.0.0

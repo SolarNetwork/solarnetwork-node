@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Datum Sample Filter Test
+Bundle-Name: Datum Sample Filter Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.samplefilter.test
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

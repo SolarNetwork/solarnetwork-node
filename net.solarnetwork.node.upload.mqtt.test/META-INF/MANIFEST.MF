@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode MQTT upload tests
+Bundle-Name: MQTT upload tests
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt.test
 Bundle-Version: 0.1.0
 Bundle-Vendor: SolarNetwork

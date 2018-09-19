@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Canadian Solar INC  Hardware Support Test
+Bundle-Name: Canadian Solar INC  Hardware Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.csi.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

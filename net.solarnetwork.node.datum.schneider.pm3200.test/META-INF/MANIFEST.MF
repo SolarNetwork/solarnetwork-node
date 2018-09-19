@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Schneider PM3200 Consumption Test
+Bundle-Name: Schneider PM3200 Consumption Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.schneider.pm3200.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

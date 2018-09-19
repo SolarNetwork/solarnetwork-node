@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Panasonic Battery API Datum Test
+Bundle-Name: Panasonic Battery API Datum Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.panasonic.battery.test
 Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork

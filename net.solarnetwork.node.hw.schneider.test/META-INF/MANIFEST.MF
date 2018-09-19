@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Schneider Electric Support Test
+Bundle-Name: Schneider Electric Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.schneider.test
 Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork

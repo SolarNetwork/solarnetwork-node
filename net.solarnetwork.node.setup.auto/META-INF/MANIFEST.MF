@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Auto Setup
+Bundle-Name: Auto Setup
 Bundle-SymbolicName: net.solarnetwork.node.setup.auto
-Bundle-Description: Apply vendor-specific settings when SolarNode starts up. 
+Bundle-Description: Apply vendor-specific settings when SolarNode starts up.
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

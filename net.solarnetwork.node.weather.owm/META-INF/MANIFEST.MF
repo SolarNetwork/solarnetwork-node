@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: OpenWeatherMap Weather
+Bundle-Description: Collect weather data from the OpenWeatherMap.
 Bundle-SymbolicName: net.solarnetwork.node.weather.owm
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
