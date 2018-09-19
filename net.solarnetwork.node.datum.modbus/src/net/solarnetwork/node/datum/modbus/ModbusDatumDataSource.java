@@ -301,8 +301,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					Map<String, Object> meterPropMap = new LinkedHashMap<>(3);
 					meterPropMap.put(VIRTUAL_METER_DATE_KEY, date);
 					meterPropMap.put(VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					meterPropMap.put(VIRTUAL_METER_READING_KEY, config.getMeterReading());
+					meterPropMap.put(VIRTUAL_METER_READING_KEY,
+							prevReading != null ? prevReading.toString() : config.getMeterReading());
 					pm.put(meterPropName, meterPropMap);
+					log.info("Virtual meter {} status: {}", meterPropName, meterPropMap);
 				} else if ( prevDate >= date ) {
 					log.warn(
 							"Virtual meter reading date {} for {} not older than current time, will not populate reading",
