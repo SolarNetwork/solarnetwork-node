@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Yr Weather
+Bundle-Name: Yr Weather
 Bundle-SymbolicName: net.solarnetwork.node.weather.yr
 Bundle-Description: Collect weather data from Yr.
-Bundle-Version: 0.2.0
+Bundle-Version: 0.2.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 

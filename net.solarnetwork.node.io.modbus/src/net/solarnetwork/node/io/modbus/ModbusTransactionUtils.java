@@ -55,7 +55,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.4
  */
 public class ModbusTransactionUtils {
@@ -772,7 +772,7 @@ public class ModbusTransactionUtils {
 		int len = values.length;
 		int[] unsigned = new int[len];
 		for ( int i = 0; i < len; i += 1 ) {
-			unsigned[i] = Short.toUnsignedInt(values[i]);
+			unsigned[i] = values[i] & 0xFFFF;
 		}
 		writeUnsignedShorts(trans, unitId, headless, function, address, unsigned);
 	}

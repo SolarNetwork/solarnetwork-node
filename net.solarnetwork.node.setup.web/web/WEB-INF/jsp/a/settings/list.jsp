@@ -114,7 +114,7 @@
  					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.now.caption'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -149,7 +149,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.backups.info'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -165,7 +165,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.import.info'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -218,7 +218,7 @@
 										<button type="button" class="help-popover help-icon" tabindex="-1"
 												data-content="<fmt:message key='settings.autobackup.info'/>"
 												data-html="true">
-											<i class="icon-question-sign"></i>
+											<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 										</button>
 									</c:if>
 								</li>

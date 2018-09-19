@@ -12,7 +12,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.1.0"/>
-    	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.35,2.0)"/>
+    	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.36,2.0)"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.37,2.0)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.2.6.RELEASE"/>

@@ -31,9 +31,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
-import net.solarnetwork.node.RemoteServiceException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.RemoteServiceException;
 
 /**
  * An abstract class to support HTTP based services that use JSON.
@@ -52,7 +52,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
@@ -89,8 +89,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 			}
 
 			if ( log.isDebugEnabled() ) {
-				log.debug("Posting JSON data: {}", objectMapper.writerWithDefaultPrettyPrinter()
-						.writeValueAsString(data));
+				log.debug("Posting JSON data: {}",
+						objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(data));
 			}
 			objectMapper.writeValue(out, data);
 			out.flush();
@@ -169,14 +169,14 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	/**
 	 * Parse a standard {@code Response} HTTP response and return the
-	 * {@code data} object as the provided type.
+	 * {@code data} array as a collection of objects of the provided type.
 	 * 
 	 * @param in
 	 *        the InputStream to read, which will be closed before returning
 	 *        from this method
 	 * @param dataType
 	 *        the type of object to extract from the response
-	 * @return the extracted object, or <em>null</em>
+	 * @return the extracted object, or {@literal null}
 	 * @throws RemoteServiceException
 	 *         if the response does not include the success flag
 	 * @throws IOException
@@ -191,6 +191,56 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
 					child = root.get("data");
+					if ( child != null && child.isArray() ) {
+						Iterator<JsonNode> children = child.iterator();
+						List<T> result = new ArrayList<T>();
+						while ( children.hasNext() ) {
+							child = children.next();
+							result.add(objectMapper.treeToValue(child, dataType));
+						}
+						return result;
+					}
+					log.debug("Server returned no data for request.");
+					return null;
+				}
+			}
+			throw new RemoteServiceException(
+					"Server response not successful: " + root.get("message") == null ? "(no message)"
+							: root.get("message").asText());
+		} finally {
+			if ( in != null ) {
+				in.close();
+			}
+		}
+	}
+
+	/**
+	 * Parse a standard {@code Response} HTTP response and return the
+	 * {@code data.results} array as objects of the provided type.
+	 * 
+	 * @param in
+	 *        the InputStream to read, which will be closed before returning
+	 *        from this method
+	 * @param dataType
+	 *        the type of object to extract from the response
+	 * @return the extracted objects, or {@literal null}
+	 * @throws RemoteServiceException
+	 *         if the response does not include the success flag
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.2
+	 */
+	protected <T> Collection<T> extractFilterResultsCollectionResponseData(InputStream in,
+			Class<T> dataType) throws RemoteServiceException, IOException {
+		try {
+			JsonNode root = getObjectMapper().readTree(in);
+			if ( root.isObject() ) {
+				JsonNode child = root.get("success");
+				if ( child != null && child.asBoolean() ) {
+					child = root.get("data");
+					if ( child != null ) {
+						child = child.get("results");
+					}
 					if ( child != null && child.isArray() ) {
 						Iterator<JsonNode> children = child.iterator();
 						List<T> result = new ArrayList<T>();

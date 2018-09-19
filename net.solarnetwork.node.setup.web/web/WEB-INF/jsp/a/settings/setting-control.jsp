@@ -97,7 +97,7 @@
 								<button type="button" class=" help-popover help-icon" tabindex="-1"
 										data-content="${fn:escapeXml(help)}"
 										data-html="true">
-									<i class="icon-question-sign"></i>
+									<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 								</button>
 							</c:if>
 							<br/>
@@ -204,7 +204,7 @@
 					<button type="button" class=" help-popover help-icon" tabindex="-1"
 							data-content="${fn:escapeXml(help)}"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 				</c:if>
 				
@@ -260,7 +260,7 @@
 							<button type="button" class=" help-popover help-icon" tabindex="-1"
 									data-content="${fn:escapeXml(help)}"
 									data-html="true">
-								<i class="icon-question-sign"></i>
+								<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 							</button>
 						</c:if>
 					</div>

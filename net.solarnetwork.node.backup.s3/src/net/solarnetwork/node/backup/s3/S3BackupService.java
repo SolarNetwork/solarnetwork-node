@@ -279,7 +279,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				if ( backupsForNode.size() > additionalBackupCount + 1 ) {
 					Set<String> keysToDelete = backupsForNode.stream()
 							.limit(backupsForNode.size() - additionalBackupCount - 1)
-							.collect(Collectors.toSet());
+							.map(k -> canonicalObjectKeyForBackupKey(k)).collect(Collectors.toSet());
 					log.info("Deleting {} expired backups for node {}: {}", keysToDelete.size(), nodeId,
 							keysToDelete);
 					client.deleteObjects(keysToDelete);

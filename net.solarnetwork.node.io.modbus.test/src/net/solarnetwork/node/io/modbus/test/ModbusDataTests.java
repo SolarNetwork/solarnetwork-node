@@ -26,7 +26,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import java.math.BigInteger;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -39,16 +38,12 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ModbusDataTests {
 
 	private static SecureRandom rng() {
-		try {
-			return SecureRandom.getInstanceStrong();
-		} catch ( NoSuchAlgorithmException e ) {
-			throw new RuntimeException(e);
-		}
+		return new SecureRandom();
 	}
 
 	private static final SecureRandom RNG = rng();

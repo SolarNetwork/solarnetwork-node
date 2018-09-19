@@ -175,7 +175,7 @@ public class PM5100DataTests {
 	};
 	// @formatter:on
 
-	private static final Logger log = LoggerFactory.getLogger(ION6200DataTests.class);
+	private static final Logger log = LoggerFactory.getLogger(PM5100DataTests.class);
 
 	private PM5100Data getTestDataInstance() {
 		PM5100Data data = new PM5100Data();
