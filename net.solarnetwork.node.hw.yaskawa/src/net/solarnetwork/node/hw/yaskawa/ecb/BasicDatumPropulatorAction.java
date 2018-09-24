@@ -27,18 +27,18 @@ import static net.solarnetwork.node.domain.EnergyDatum.WATT_HOUR_READING_KEY;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 
 /**
  * Serial port connection action to populate values onto a new
- * {@link GeneralNodeACEnergyDatum} object.
+ * {@link GeneralNodePVEnergyDatum} object.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class BasicDatumPropulatorAction implements SerialConnectionAction<GeneralNodeACEnergyDatum> {
+public class BasicDatumPropulatorAction implements SerialConnectionAction<GeneralNodePVEnergyDatum> {
 
 	private final int unitId;
 
@@ -48,8 +48,8 @@ public class BasicDatumPropulatorAction implements SerialConnectionAction<Genera
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
+	public GeneralNodePVEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
+		GeneralNodePVEnergyDatum d = new GeneralNodePVEnergyDatum();
 		d.setCreated(new Date());
 
 		Packet power = PacketUtils.sendPacket(conn,

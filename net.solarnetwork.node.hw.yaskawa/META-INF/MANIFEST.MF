@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Yaskawa Device Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.yaskawa
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: net.solarnetwork.node.hw.yaskawa
 Main-Class: net.solarnetwork.node.hw.yaskawa.ecb.app.Cmdline
 Export-Package: 
- net.solarnetwork.node.hw.yaskawa.ecb;version="1.0.0",
+ net.solarnetwork.node.hw.yaskawa.ecb;version="1.1.0",
  net.solarnetwork.node.hw.yaskawa.mb.inverter;version="1.0.0"
 Import-Package: 
  bak.pcj;version="[1.2,2.0)",

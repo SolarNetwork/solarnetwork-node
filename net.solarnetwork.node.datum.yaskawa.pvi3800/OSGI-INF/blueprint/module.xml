@@ -44,7 +44,7 @@
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Solectria PVI-3800 Meter"/>
+			<property name="displayName" value="Solectria PVI-3800 Inverter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.yaskawa.pvi3800"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
@@ -80,7 +80,7 @@
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.ACEnergyDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.PVEnergyDatum"/>
 								</map>
 							</property>
 						</bean>
