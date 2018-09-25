@@ -24,23 +24,29 @@ package net.solarnetwork.node.weather.owm;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
+import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 
 /**
  * OpenWeatherMap implementation of a {@link AtmosphericDatum}
  * {@link DatumDataSource}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService<AtmosphericDatum>
 		implements SettingSpecifierProvider, DatumDataSource<AtmosphericDatum>,
 		MultiDatumDataSource<AtmosphericDatum> {
+
+	private DataCollectionMode dataCollectionMode = DataCollectionMode.Mixed;
 
 	@Override
 	public String getSettingUID() {
@@ -64,19 +70,74 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService<Atmo
 
 	@Override
 	public AtmosphericDatum readCurrentDatum() {
+		if ( dataCollectionMode == DataCollectionMode.Forecast ) {
+			// only forecast desired
+			return null;
+		}
 		return getClient().getCurrentConditions(getLocationIdentifier());
 	}
 
 	@Override
 	public Collection<AtmosphericDatum> readMultipleDatum() {
 		AtmosphericDatum curr = readCurrentDatum();
-		Collection<AtmosphericDatum> forecast = getClient().getHourlyForecast(getLocationIdentifier());
-		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>(forecast.size() + 1);
+		Collection<AtmosphericDatum> forecast = null;
+		if ( dataCollectionMode != DataCollectionMode.Observation ) {
+			forecast = getClient().getHourlyForecast(getLocationIdentifier());
+		}
+		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>(
+				(forecast != null ? forecast.size() : 0) + 1);
 		if ( curr != null ) {
 			results.add(curr);
 		}
-		results.addAll(forecast);
+		if ( forecast != null ) {
+			results.addAll(forecast);
+		}
 		return results;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = super.getSettingSpecifiers();
+
+		// drop-down menu for data collection mode
+		BasicMultiValueSettingSpecifier modeSpec = new BasicMultiValueSettingSpecifier(
+				"dataCollectionModeKey", String.valueOf(DataCollectionMode.Mixed.getKey()));
+		Map<String, String> modeTitles = new LinkedHashMap<String, String>(2);
+		for ( DataCollectionMode e : DataCollectionMode.values() ) {
+			modeTitles.put(String.valueOf(e.getKey()), e.toDisplayString());
+		}
+		modeSpec.setValueTitles(modeTitles);
+		results.add(modeSpec);
+
+		return results;
+	}
+
+	/**
+	 * Set the data collection mode.
+	 * 
+	 * @param dataCollectionMode
+	 *        the data collection mode
+	 * @since 1.1
+	 */
+	public void setDataCollectionMode(DataCollectionMode dataCollectionMode) {
+		this.dataCollectionMode = dataCollectionMode;
+	}
+
+	/**
+	 * Set the data collection mode as a key value.
+	 * 
+	 * @param key
+	 *        the {@link DataCollectionMode#getKey()} value to set
+	 * @since 1.1
+	 */
+	public void setDataCollectionModeKey(int key) {
+		DataCollectionMode mode = DataCollectionMode.Mixed;
+		try {
+			mode = DataCollectionMode.forKey(key);
+		} catch ( IllegalArgumentException e ) {
+			// ignore and fall back to Mixed
+		}
+		setDataCollectionMode(mode);
 	}
 
 }

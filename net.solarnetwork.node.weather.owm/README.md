@@ -33,6 +33,7 @@ Each configuration contains the following overall settings:
 | API Key            | The OpenWeatherMap API key to authenticate with.                                 |
 | Time zone          | A time zone to use for location-specific dates and times.                        |
 | OWM location       | The OpenWeatherMap ID of the location to collect data from.                      |
+| Collection Mode    | The type of data to collect: observation or forecast.                            |
 
 ## Overall settings notes
 
@@ -45,4 +46,8 @@ Each configuration contains the following overall settings:
 	<dd>Use the <b>Lookup</b> button to find the location ID value, which will present a
 	search form to easily find the location ID: <img alt="OpenWeatherMap location lookup" 
 	src="docs/solarnode-owm-location-lookup-settings.png"></dd>
+	<dt>Collection Mode</dt>
+	<dd>The observation and forecast data can be split into different source IDs by 
+	configuring two separate components and setting one to <code>Observation</code> and the other
+	to <code>Forecast</code>.</dd>
 </dl>
