@@ -70,6 +70,10 @@ public enum ModelRegister implements ModbusReference {
 	/**
 	 * The ASCII string content that must be in the base address to adhere to
 	 * the SunSpec standard.
+	 * 
+	 * <p>
+	 * In hex, this is {@literal 0x5375 6E53}.
+	 * </p>
 	 */
 	public static final String BASE_ADDRESS_MAGIC_STRING = "SunS";
 
