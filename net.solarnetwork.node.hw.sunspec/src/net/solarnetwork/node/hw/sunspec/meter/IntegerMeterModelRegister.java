@@ -121,7 +121,7 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	/** Active power total, reported in W. */
 	ActivePowerPhaseC(19, Int16),
 
-	/** Frequency scale factor, as *10^X. */
+	/** Active power scale factor, as *10^X. */
 	ScaleFactorActivePower(20, Int16),
 
 	// Apparent Power (VA)
