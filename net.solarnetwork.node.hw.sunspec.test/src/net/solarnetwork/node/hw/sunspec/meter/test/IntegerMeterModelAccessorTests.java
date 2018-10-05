@@ -26,6 +26,7 @@ import static net.solarnetwork.node.domain.ACPhase.PhaseA;
 import static net.solarnetwork.node.domain.ACPhase.PhaseB;
 import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import java.util.BitSet;
 import java.util.Set;
@@ -209,6 +210,13 @@ public class IntegerMeterModelAccessorTests {
 		assertThat("Version", data.getVersion(), equalTo("2.103"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("4E390476"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(10));
+	}
+
+	@Test
+	public void findTypedModel() {
+		ModelData data = getTestDataInstance();
+		MeterModelAccessor meterAccessor = data.findTypedModel(MeterModelAccessor.class);
+		assertThat(meterAccessor, instanceOf(IntegerMeterModelAccessor.class));
 	}
 
 	@Test

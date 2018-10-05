@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Base object for model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -113,6 +113,33 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 		@SuppressWarnings("unchecked")
 		T result = (T) getModel();
 		return result;
+	}
+
+	/**
+	 * Find the first-available model of a specific type.
+	 * 
+	 * @param type
+	 *        the type of model to get
+	 * @return the found model, or {@literal null} if not found
+	 * @since 1.1
+	 */
+	public <T extends ModelAccessor> T findTypedModel(Class<T> type) {
+		if ( CommonModelAccessor.class.isAssignableFrom(type) ) {
+			@SuppressWarnings("unchecked")
+			T result = (T) this;
+			return result;
+		}
+		List<ModelAccessor> list = getModels();
+		if ( list != null ) {
+			for ( ModelAccessor ma : list ) {
+				if ( type.isAssignableFrom(ma.getClass()) ) {
+					@SuppressWarnings("unchecked")
+					T result = (T) ma;
+					return result;
+				}
+			}
+		}
+		return null;
 	}
 
 	/**
