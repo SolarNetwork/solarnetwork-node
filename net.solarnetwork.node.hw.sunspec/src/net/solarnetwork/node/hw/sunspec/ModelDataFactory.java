@@ -34,9 +34,17 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * discovery of SunSpec properties on a device.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModelDataFactory {
+
+	/**
+	 * The default value for the maximum number of Modbus words to read at one
+	 * time.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 124;
 
 	/**
 	 * Get a factory instance.
@@ -72,8 +80,8 @@ public class ModelDataFactory {
 	 * via a Modbus connection.
 	 * 
 	 * <p>
-	 * This method calls {@link #getModelData(ModbusConnection, int)} with an
-	 * unlimited read word count.
+	 * This method calls {@link #getModelData(ModbusConnection, int)} with a
+	 * {@link #DEFAULT_MAX_READ_WORDS_COUNT} maximum read word count.
 	 * </p>
 	 * 
 	 * @param conn
@@ -83,7 +91,7 @@ public class ModelDataFactory {
 	 *         if no supported model data can be discovered
 	 */
 	public ModelData getModelData(ModbusConnection conn) {
-		return getModelData(conn, Integer.MAX_VALUE);
+		return getModelData(conn, DEFAULT_MAX_READ_WORDS_COUNT);
 	}
 
 	/**
