@@ -62,6 +62,8 @@ public class ModelDataFactoryTests {
 
 	@Test
 	public void createIntegerMeterModel() {
+		expect(conn.getUnitId()).andReturn(1).anyTimes();
+
 		// find base address
 		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister, 40000, 2, true,
 				ModbusConnection.ASCII_CHARSET)).andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);

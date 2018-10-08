@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.sunspec;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import bak.pcj.set.IntRange;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -81,6 +83,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * type.
 	 */
 	public static final int NAN_SUNSSF16 = 0x8000;
+
+	private static final Logger LOG = LoggerFactory.getLogger(ModelData.class);
 
 	private final int baseAddress;
 	private final int blockAddress;
@@ -278,6 +282,10 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	protected static void updateData(ModbusConnection conn, MutableModbusData m,
 			ModbusReadFunction function, IntRange[] ranges) {
 		for ( IntRange r : ranges ) {
+			if ( LOG.isDebugEnabled() ) {
+				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.first(),
+						r.first() + r.length());
+			}
 			int[] data = conn.readUnsignedShorts(function, r.first(), r.length());
 			m.saveDataArray(data, r.first());
 		}
@@ -319,6 +327,10 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
+				if ( LOG.isDebugEnabled() ) {
+					LOG.debug("Discovered {} @ {}, length {}", accessor.getModelId(),
+							accessor.getBaseAddress(), modelLength);
+				}
 				m.saveDataArray(new int[] { accessor.getModelId().getId(), modelLength },
 						accessor.getBaseAddress());
 				models.add(accessor);
