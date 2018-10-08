@@ -26,6 +26,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
@@ -59,16 +60,16 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	// Current
 
 	/** Current total, in A. */
-	CurrentTotal(0, Int16),
+	CurrentTotal(0, UInt16),
 
 	/** Current on phase A, in A. */
-	CurrentPhaseA(1, Int16),
+	CurrentPhaseA(1, UInt16),
 
 	/** Current on phase B, in A. */
-	CurrentPhaseB(2, Int16),
+	CurrentPhaseB(2, UInt16),
 
 	/** Current on phase C, in A. */
-	CurrentPhaseC(3, Int16),
+	CurrentPhaseC(3, UInt16),
 
 	/** Current scale factor, as *10^X. */
 	ScaleFactorCurrent(4, Int16, ScaleFactor),
@@ -76,22 +77,22 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	// Voltage
 
 	/** Phase A-to-Phase C voltage, reported in V. */
-	VoltagePhaseAPhaseB(5, Int16),
+	VoltagePhaseAPhaseB(5, UInt16),
 
 	/** Phase B-to-Phase C voltage, reported in V. */
-	VoltagePhaseBPhaseC(6, Int16),
+	VoltagePhaseBPhaseC(6, UInt16),
 
 	/** Phase C-to-Phase A voltage, reported in V. */
-	VoltagePhaseCPhaseA(7, Int16),
+	VoltagePhaseCPhaseA(7, UInt16),
 
 	/** Phase A-to-neutral voltage, reported in V. */
-	VoltagePhaseANeutral(8, Int16),
+	VoltagePhaseANeutral(8, UInt16),
 
 	/** Phase B-to-neutral voltage, reported in V. */
-	VoltagePhaseBNeutral(9, Int16),
+	VoltagePhaseBNeutral(9, UInt16),
 
 	/** Phase C-to-neutral voltage, reported in V. */
-	VoltagePhaseCNeutral(10, Int16),
+	VoltagePhaseCNeutral(10, UInt16),
 
 	/** Voltage scale factor, as *10^X. */
 	ScaleFactorVoltage(11, Int16, ScaleFactor),
@@ -107,7 +108,7 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	// Frequency
 
 	/** AC frequency, reported in Hz. */
-	Frequency(14, Int16),
+	Frequency(14, UInt16),
 
 	/** Frequency scale factor, as *10^X. */
 	ScaleFactorFrequency(15, Int16, ScaleFactor),
@@ -147,7 +148,7 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	// DC current
 
 	/** DC current total, in A. */
-	DcCurrentTotal(25, Int16),
+	DcCurrentTotal(25, UInt16),
 
 	/** DC current scale factor, as *10^X. */
 	ScaleFactorDcCurrent(26, Int16, ScaleFactor),
@@ -155,7 +156,7 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	// DC voltage
 
 	/** DC voltage total, in V. */
-	DcVoltageTotal(27, Int16),
+	DcVoltageTotal(27, UInt16),
 
 	/** DC voltage scale factor, as *10^X. */
 	ScaleFactorDcVoltage(28, Int16, ScaleFactor),
