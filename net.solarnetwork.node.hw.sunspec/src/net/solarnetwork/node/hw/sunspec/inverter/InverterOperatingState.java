@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 
 /**
@@ -78,6 +79,9 @@ public enum InverterOperatingState implements OperatingState {
 	 *         if {@code index} is not supported
 	 */
 	public static InverterOperatingState forCode(int code) {
+		if ( (code & ModelData.NAN_ENUM16) == ModelData.NAN_ENUM16 ) {
+			return Normal;
+		}
 		for ( InverterOperatingState e : InverterOperatingState.values() ) {
 			if ( e.code == code ) {
 				return e;

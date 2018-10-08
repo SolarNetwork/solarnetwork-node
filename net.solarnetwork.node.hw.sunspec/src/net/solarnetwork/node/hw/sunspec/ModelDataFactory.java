@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
 import net.solarnetwork.node.hw.sunspec.meter.IntegerMeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.meter.MeterModelId;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -123,6 +125,23 @@ public class ModelDataFactory {
 	}
 
 	private ModelAccessor createAccessor(ModelData data, int baseAddress, int modelId, int modelLength) {
+		// 100 series: inverter
+		try {
+			InverterModelId id = InverterModelId.forId(modelId);
+			switch (id) {
+				case SinglePhaseInverterInteger:
+				case SplitPhaseInverterInteger:
+				case ThreePhaseInverterInteger:
+					return new IntegerInverterModelAccessor(data, baseAddress, id);
+
+				default:
+					return null;
+			}
+		} catch ( IllegalArgumentException e ) {
+			// ignore
+		}
+
+		// 200 series: meter
 		try {
 			MeterModelId id = MeterModelId.forId(modelId);
 			switch (id) {

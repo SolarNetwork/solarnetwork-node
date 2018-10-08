@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
-import java.util.Collections;
 import java.util.Set;
 import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
@@ -36,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Data object for an integer meter model.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessor extends BaseModelAccessor implements MeterModelAccessor {
 
@@ -191,10 +190,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	@Override
 	public Set<ModelEvent> getEvents() {
-		Number n = getData().getNumber(IntegerMeterModelRegister.EventsBitmask, getBlockAddress());
-		if ( n == null ) {
-			return Collections.emptySet();
-		}
+		Number n = getBitfield(IntegerMeterModelRegister.EventsBitmask);
 		return MeterModelEvent.forBitmask(n.longValue());
 	}
 

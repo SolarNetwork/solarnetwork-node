@@ -22,11 +22,15 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
+import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
+import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import net.solarnetwork.node.hw.sunspec.DataClassification;
+import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Enumeration of Modbus register mappings for SunSpec compliant integer
@@ -50,7 +54,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * @author matt
  * @version 1.0
  */
-public enum IntegerInverterModelRegister implements ModbusReference {
+public enum IntegerInverterModelRegister implements SunspecModbusReference {
 
 	// Current
 
@@ -67,7 +71,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	CurrentPhaseC(3, Int16),
 
 	/** Current scale factor, as *10^X. */
-	ScaleFactorCurrent(4, Int16),
+	ScaleFactorCurrent(4, Int16, ScaleFactor),
 
 	// Voltage
 
@@ -90,7 +94,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	VoltagePhaseCNeutral(10, Int16),
 
 	/** Voltage scale factor, as *10^X. */
-	ScaleFactorVoltage(11, Int16),
+	ScaleFactorVoltage(11, Int16, ScaleFactor),
 
 	// Active (Real) Power (W)
 
@@ -98,7 +102,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	ActivePowerTotal(12, Int16),
 
 	/** Active power scale factor, as *10^X. */
-	ScaleFactorActivePower(13, Int16),
+	ScaleFactorActivePower(13, Int16, ScaleFactor),
 
 	// Frequency
 
@@ -106,7 +110,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	Frequency(14, Int16),
 
 	/** Frequency scale factor, as *10^X. */
-	ScaleFactorFrequency(15, Int16),
+	ScaleFactorFrequency(15, Int16, ScaleFactor),
 
 	// Apparent Power (VA)
 
@@ -114,7 +118,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	ApparentPowerTotal(16, Int16),
 
 	/** Apparent power scale factor, as *10^X. */
-	ScaleFactorApparentPower(17, Int16),
+	ScaleFactorApparentPower(17, Int16, ScaleFactor),
 
 	// Reactive Power (VAR)
 
@@ -122,7 +126,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	ReactivePowerTotal(18, Int16),
 
 	/** Reactive power scale factor, as *10^X. */
-	ScaleFactorReactivePower(19, Int16),
+	ScaleFactorReactivePower(19, Int16, ScaleFactor),
 
 	// Power factor
 
@@ -130,15 +134,15 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	PowerFactorAverage(20, Int16),
 
 	/** Reactive power scale factor, as *10^X. */
-	ScaleFactorPowerFactor(21, Int16),
+	ScaleFactorPowerFactor(21, Int16, ScaleFactor),
 
 	// Active energy
 
 	/** Total active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedTotal(22, UInt32),
+	ActiveEnergyExportedTotal(22, UInt32, Accumulator),
 
 	/** Active (real) energy scale factor, as *10^X. */
-	ScaleFactorActiveEnergy(24, Int16),
+	ScaleFactorActiveEnergy(24, Int16, ScaleFactor),
 
 	// DC current
 
@@ -146,7 +150,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	DcCurrentTotal(25, Int16),
 
 	/** DC current scale factor, as *10^X. */
-	ScaleFactorDcCurrent(26, Int16),
+	ScaleFactorDcCurrent(26, Int16, ScaleFactor),
 
 	// DC voltage
 
@@ -154,7 +158,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	DcVoltageTotal(27, Int16),
 
 	/** DC voltage scale factor, as *10^X. */
-	ScaleFactorDcVoltage(28, Int16),
+	ScaleFactorDcVoltage(28, Int16, ScaleFactor),
 
 	// Active (Real) Power (W)
 
@@ -162,7 +166,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	DcPowerTotal(29, Int16),
 
 	/** DC power scale factor, as *10^X. */
-	ScaleFactorDcPower(30, Int16),
+	ScaleFactorDcPower(30, Int16, ScaleFactor),
 
 	// Temperatures (degrees C)
 
@@ -179,7 +183,7 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	TemperatureOther(34, Int16),
 
 	/** Temperature scale factor, as *10^X. */
-	ScaleFactorTemperature(35, Int16),
+	ScaleFactorTemperature(35, Int16, ScaleFactor),
 
 	/** Operating state, see {@link InverterOperatingState}. */
 	OperatingState(36, Int16),
@@ -188,35 +192,47 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 	OperatingStateVendor(37, Int16),
 
 	/** Events bitmask, see {@link InverterModelEvent}. */
-	EventsBitmask(38, UInt32),
+	EventsBitmask(38, UInt32, Bitfield),
 
 	/** Events bitmask 2, reserved for future use. */
-	Events2Bitmask(40, UInt32),
+	Events2Bitmask(40, UInt32, Bitfield),
 
 	/** Vendor events bitmask. */
-	EventsVendorBitmask(42, UInt32),
+	EventsVendorBitmask(42, UInt32, Bitfield),
 
 	/** Vendor events bitmask 2. */
-	Events2VendorBitmask(44, UInt32),
+	Events2VendorBitmask(44, UInt32, Bitfield),
 
 	/** Vendor events bitmask 2. */
-	Events3VendorBitmask(46, UInt32),
+	Events3VendorBitmask(46, UInt32, Bitfield),
 
 	/** Vendor events bitmask 2. */
-	Events4VendorBitmask(48, UInt32);
+	Events4VendorBitmask(48, UInt32, Bitfield);
 
 	private final int address;
 	private final ModbusDataType dataType;
 	private final int wordLength;
+	private final DataClassification classification;
 
 	private IntegerInverterModelRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
+	private IntegerInverterModelRegister(int address, ModbusDataType dataType,
+			DataClassification classification) {
+		this(address, dataType, dataType.getWordLength(), classification);
+	}
+
 	private IntegerInverterModelRegister(int address, ModbusDataType dataType, int wordLength) {
+		this(address, dataType, wordLength, null);
+	}
+
+	private IntegerInverterModelRegister(int address, ModbusDataType dataType, int wordLength,
+			DataClassification classification) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
+		this.classification = classification;
 	}
 
 	@Override
@@ -244,4 +260,8 @@ public enum IntegerInverterModelRegister implements ModbusReference {
 		return wordLength;
 	}
 
+	@Override
+	public DataClassification getClassification() {
+		return classification;
+	}
 }

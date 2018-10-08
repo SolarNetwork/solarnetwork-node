@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
@@ -142,6 +144,9 @@ public enum InverterModelEvent implements ModelEvent {
 	 * @return the active events
 	 */
 	public static Set<ModelEvent> forBitmask(long bitmask) {
+		if ( bitmask == 0 || (bitmask & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
+			return Collections.emptySet();
+		}
 		Set<ModelEvent> result = new LinkedHashSet<>(32);
 		for ( InverterModelEvent e : InverterModelEvent.values() ) {
 			int index = e.getIndex();

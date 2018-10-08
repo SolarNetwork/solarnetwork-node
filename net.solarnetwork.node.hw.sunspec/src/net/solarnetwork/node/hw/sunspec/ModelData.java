@@ -37,6 +37,51 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
+	/** The "not implemented" value for a SunSpec "int16" data type. */
+	public static final int NAN_INT16 = 0x8000;
+
+	/** The "not implemented" value for a SunSpec "uint16" data type. */
+	public static final int NAN_UINT16 = 0xFFFF;
+
+	/** The "not accumulated" value for a SunSpec "acc16" data type. */
+	public static final int NAN_ACC16 = 0x0000;
+
+	/** The "not implemented" value for a SunSpec "enum16" data type. */
+	public static final int NAN_ENUM16 = 0xFFFF;
+
+	/** The "not implemented" value for a SunSpec "bitfield16" data type. */
+	public static final int NAN_BITFIELD16 = 0xFFFF;
+
+	/** The "not implemented" value for a SunSpec "int32" data type. */
+	public static final int NAN_INT32 = 0x80000000;
+
+	/** The "not implemented" value for a SunSpec "uint32" data type. */
+	public static final long NAN_UINT32 = 0xFFFFFFFF;
+
+	/** The "not accumulated" value for a SunSpec "acc32" data type. */
+	public static final long NAN_ACC32 = 0x00000000;
+
+	/** The "not implemented" value for a SunSpec "enum32" data type. */
+	public static final long NAN_ENUM32 = 0xFFFFFFFF;
+
+	/** The "not implemented" value for a SunSpec "bitfield32" data type. */
+	public static final long NAN_BITFIELD32 = 0xFFFFFFFF;
+
+	/** The "not implemented" value for a SunSpec "int64" data type. */
+	public static final long NAN_INT64 = 0x8000000000000000L;
+
+	/** The "not accumulated" value for a SunSpec "acc64" data type. */
+	public static final long NAN_ACC64 = 0x0000000000000000L;
+
+	/** The "not implemented" value for a SunSpec "float32" data type. */
+	public static final float NAN_FLOAT32 = Float.NaN;
+
+	/**
+	 * The "not implemented" value for a SunSpec "sunssf" (scale factor) data
+	 * type.
+	 */
+	public static final int NAN_SUNSSF16 = 0x8000;
+
 	private final int baseAddress;
 	private final int blockAddress;
 	private int maxReadWordsCount;

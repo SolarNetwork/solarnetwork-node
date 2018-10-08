@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import java.util.Collections;
 import java.util.Set;
 import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
@@ -231,10 +230,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 	@Override
 	public Set<ModelEvent> getEvents() {
-		Number n = getData().getNumber(IntegerInverterModelRegister.EventsBitmask, getBlockAddress());
-		if ( n == null ) {
-			return Collections.emptySet();
-		}
+		Number n = getBitfield(IntegerInverterModelRegister.EventsBitmask);
 		return InverterModelEvent.forBitmask(n.longValue());
 	}
 
