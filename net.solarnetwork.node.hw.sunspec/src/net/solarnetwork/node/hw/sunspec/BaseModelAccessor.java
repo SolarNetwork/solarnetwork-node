@@ -187,19 +187,19 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 
 		switch (dataRef.getDataType()) {
 			case Int16:
-				if ( v.intValue() == ModelData.NAN_INT16 ) {
+				if ( (v.intValue() & 0xFFFF) == ModelData.NAN_INT16 ) {
 					return null;
 				}
 				break;
 
 			case Int32:
-				if ( v.intValue() == ModelData.NAN_INT32 ) {
+				if ( (v.intValue() & 0xFFFFFFFF) == ModelData.NAN_INT32 ) {
 					return null;
 				}
 				break;
 
 			case Int64:
-				if ( v.longValue() == ModelData.NAN_INT64 ) {
+				if ( (v.longValue() & 0xFFFFFFFFFFFFFFFFL) == ModelData.NAN_INT64 ) {
 					return null;
 				}
 				break;
