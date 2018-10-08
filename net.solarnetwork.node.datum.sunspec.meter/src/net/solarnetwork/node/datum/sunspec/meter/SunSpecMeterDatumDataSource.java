@@ -53,7 +53,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -128,7 +128,7 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 		if ( currSample == null ) {
 			return null;
 		}
-		MeterModelAccessor data = currSample.getTypedModel();
+		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
 		SunSpecMeterDatum d = new SunSpecMeterDatum(data, ACPhase.Total, this.backwards);
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
