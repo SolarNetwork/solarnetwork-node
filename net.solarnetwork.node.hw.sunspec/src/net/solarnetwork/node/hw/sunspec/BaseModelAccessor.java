@@ -51,10 +51,18 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public BaseModelAccessor(ModelData data, int baseAddress, ModelId modelId) {
 		super();
+		if ( modelId == null ) {
+			throw new IllegalArgumentException("ModelId value is required");
+		}
 		this.baseAddress = baseAddress;
 		this.blockAddress = baseAddress + 2;
 		this.data = data;
 		this.modelId = modelId;
+	}
+
+	@Override
+	public String toString() {
+		return modelId.getDescription();
 	}
 
 	@Override

@@ -80,6 +80,10 @@ public class IntegerInverterModelAccessorTests {
 		return getTestDataInstance(0, "test-data-103-01.txt");
 	}
 
+	private ModelData getTestDataInstance2() {
+		return getTestDataInstance(0, "test-data-101-01.txt");
+	}
+
 	@Test
 	public void dataDebugString() {
 		ModelData data = getTestDataInstance1();
@@ -140,4 +144,16 @@ public class IntegerInverterModelAccessorTests {
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getCurrent(), equalTo(0f));
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getCurrent(), equalTo(0f));
 	}
+
+	@Test
+	public void commonModelProperties2() {
+		CommonModelAccessor data = getTestDataInstance2();
+		assertThat("Manufacturer", data.getManufacturer(), equalTo("Fronius"));
+		assertThat("Model name", data.getModelName(), equalTo("IG+V11.4"));
+		assertThat("Options", data.getOptions(), equalTo("2.1.18"));
+		assertThat("Version", data.getVersion(), equalTo("5.10.0"));
+		assertThat("Serial number", data.getSerialNumber(), equalTo("50.213262"));
+		assertThat("Device address", data.getDeviceAddress(), equalTo(5));
+	}
+
 }

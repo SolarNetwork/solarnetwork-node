@@ -157,7 +157,9 @@ public class ModelDataFactory {
 		} catch ( IllegalArgumentException e ) {
 			// ignore
 		}
-		return null;
+
+		// fall back to generic
+		return new GenericModelAccessor(data, baseAddress, new GenericModelId(modelId));
 	}
 
 }
