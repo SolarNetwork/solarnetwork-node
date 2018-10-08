@@ -270,9 +270,9 @@ public class IntegerMeterModelAccessorTests {
 				equalTo(211.9f));
 		assertThat("Phase A", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseAPhaseB),
 				equalTo(212.0f));
-		assertThat("Phase B", imm.getCurrentValue(IntegerMeterModelRegister.VoltagePhaseBPhaseC),
+		assertThat("Phase B", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseBPhaseC),
 				equalTo(211.2f));
-		assertThat("Phase C", imm.getCurrentValue(IntegerMeterModelRegister.VoltagePhaseCPhaseA),
+		assertThat("Phase C", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseCPhaseA),
 				equalTo(212.6f));
 	}
 
