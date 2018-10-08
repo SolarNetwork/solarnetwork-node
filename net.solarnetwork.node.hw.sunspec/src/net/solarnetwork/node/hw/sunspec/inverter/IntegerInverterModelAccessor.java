@@ -399,17 +399,41 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 		@Override
 		public Float getDcCurrent() {
-			return IntegerInverterModelAccessor.this.getDcCurrent();
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return IntegerInverterModelAccessor.this.getDcCurrent();
+			}
 		}
 
 		@Override
 		public Float getDcVoltage() {
-			return IntegerInverterModelAccessor.this.getDcVoltage();
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return IntegerInverterModelAccessor.this.getDcVoltage();
+			}
 		}
 
 		@Override
 		public Integer getDcPower() {
-			return IntegerInverterModelAccessor.this.getDcPower();
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return IntegerInverterModelAccessor.this.getDcPower();
+			}
 		}
 
 		@Override
