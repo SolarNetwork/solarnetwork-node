@@ -316,10 +316,10 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
 
 				case PhaseB:
-					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseB);
 
 				case PhaseC:
-					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseC);
 
 				default:
 					return IntegerMeterModelAccessor.this.getActivePower();
@@ -423,7 +423,8 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 				default:
 					return IntegerMeterModelAccessor.this.getReactiveEnergyImported();
 			}
-			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+			return (q1 == null && q2 == null ? null
+					: (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0));
 		}
 
 		@Override
@@ -455,7 +456,8 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 				default:
 					return IntegerMeterModelAccessor.this.getReactiveEnergyExported();
 			}
-			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+			return (q1 == null && q2 == null ? null
+					: (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0));
 		}
 
 		@Override
