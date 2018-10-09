@@ -164,19 +164,19 @@ public enum IntegerMeterModelRegister implements SunspecModbusReference {
 
 	// Power factor
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorAverage(31, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseA(32, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseB(33, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseC(34, Int16),
 
-	/** Reactive power scale factor, as *10^X. */
+	/** Power factor factor, as *10^X. */
 	ScaleFactorPowerFactor(35, Int16, ScaleFactor),
 
 	// Active energy
