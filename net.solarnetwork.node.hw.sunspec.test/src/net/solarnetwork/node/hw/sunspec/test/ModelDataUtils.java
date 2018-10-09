@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
-import net.solarnetwork.node.hw.sunspec.inverter.test.IntegerInverterModelAccessor_103_01Tests;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataReadonlyModbusConnection;
@@ -62,8 +61,8 @@ public final class ModelDataUtils {
 	 */
 	public static int[] parseTestData(Class<?> clazz, String resource) {
 		try {
-			return DataUtils.parseModbusHexRegisterLines(new BufferedReader(new InputStreamReader(
-					IntegerInverterModelAccessor_103_01Tests.class.getResourceAsStream(resource))));
+			return DataUtils.parseModbusHexRegisterLines(
+					new BufferedReader(new InputStreamReader(clazz.getResourceAsStream(resource))));
 		} catch ( IOException e ) {
 			log.error("Error reading modbus data resource [{}]", resource, e);
 			return new int[0];
