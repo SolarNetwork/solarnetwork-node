@@ -131,10 +131,10 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 
 	// Power factor
 
-	/** Reactive power total, reported in VAR. */
+	/** AC power factor, reported as integer percentage -100..100. */
 	PowerFactorAverage(20, Int16),
 
-	/** Reactive power scale factor, as *10^X. */
+	/** AC power factor scale factor, as *10^X. */
 	ScaleFactorPowerFactor(21, Int16, ScaleFactor),
 
 	// Active energy
