@@ -79,7 +79,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 	public Float getPowerFactorValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorPowerFactor);
-		return (n != null ? n.floatValue() : null);
+		return (n != null ? n.floatValue() / 100.0f : null);
 	}
 
 	public Integer getActivePowerValue(ModbusReference ref) {

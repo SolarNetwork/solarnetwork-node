@@ -175,7 +175,7 @@ public class IntegerInverterModelAccessor_101_02Tests {
 		assertThat("Phase A", model.accessorForPhase(PhaseA).getPowerFactor(), nullValue());
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getPowerFactor(), nullValue());
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getPowerFactor(), nullValue());
-		assertThat("Average", model.getPowerFactor(), equalTo(99.7f));
+		assertThat("Average", model.getPowerFactor(), equalTo(0.997f));
 	}
 
 	@Test
