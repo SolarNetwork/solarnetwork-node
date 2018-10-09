@@ -71,7 +71,7 @@ public class SunSpecInverterDatumDataSource extends ModbusDeviceDatumDataSourceS
 	private String sourceId = "SunSpec-Inverter";
 	private Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
 			InverterOperatingState.Sleeping, InverterOperatingState.Standby,
-			InverterOperatingState.Starting);
+			InverterOperatingState.Starting, InverterOperatingState.ShuttingDown);
 
 	/**
 	 * Default constructor.
@@ -147,6 +147,7 @@ public class SunSpecInverterDatumDataSource extends ModbusDeviceDatumDataSourceS
 				InverterOperatingState invState = InverterOperatingState.forCode(opState.getCode());
 				if ( ignoreStates.contains(invState) ) {
 					log.info("Ignoring data from inverter in {} state", invState);
+					return null;
 				}
 			} catch ( IllegalArgumentException e ) {
 				// ignore this
