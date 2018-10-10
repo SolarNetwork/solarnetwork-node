@@ -24,6 +24,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
 			</list>
 		</property>

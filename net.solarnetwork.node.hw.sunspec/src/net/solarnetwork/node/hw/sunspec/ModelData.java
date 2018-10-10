@@ -352,7 +352,24 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *        the connection
 	 */
 	public void readModelData(final ModbusConnection conn) {
-		List<ModelAccessor> accessors = getModels();
+		readModelData(conn, getModels());
+	}
+
+	/**
+	 * Read the model properties from the device for specific models.
+	 * 
+	 * <p>
+	 * This method will iterate over the provided {@link ModelAccessor}
+	 * instances and read the data necessary for each of their properties.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param accessors
+	 *        the models to read data for
+	 * @since 1.1
+	 */
+	public void readModelData(final ModbusConnection conn, final List<ModelAccessor> accessors) {
 		if ( accessors == null ) {
 			return;
 		}
