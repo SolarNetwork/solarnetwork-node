@@ -95,6 +95,8 @@
 [89]:   0xCFC2
 [90]:   0xFFFF
 [91]:   0xD8FD
+
+# PF scale factor is -2 but incorrect according to specification, should be -4
 [92]:   0xFFFE
 [93]:   0x010B
 [94]:   0x8DB0

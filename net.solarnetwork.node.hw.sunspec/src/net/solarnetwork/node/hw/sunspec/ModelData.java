@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.sunspec;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import bak.pcj.set.IntRange;
@@ -91,6 +93,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	private int maxReadWordsCount;
 	private List<ModelAccessor> models;
 
+	private volatile ConcurrentMap<String, Object> metadata;
+
 	/**
 	 * Constructor.
 	 */
@@ -100,6 +104,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 		this.baseAddress = baseAddress;
 		this.blockAddress = baseAddress + 2;
 		this.models = new ArrayList<>(1);
+		this.metadata = null;
 	}
 
 	/**
@@ -116,11 +121,18 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			this.baseAddress = md.baseAddress;
 			this.blockAddress = md.blockAddress;
 			this.models = new ArrayList<>(md.models);
+			if ( md.metadata != null ) {
+				this.metadata = new ConcurrentHashMap<>(8, 0.9f, 1);
+				this.metadata.putAll(md.metadata);
+			} else {
+				this.metadata = null;
+			}
 		} else {
 			this.maxReadWordsCount = Integer.MAX_VALUE;
 			this.baseAddress = 0;
 			this.blockAddress = 2;
 			this.models = new ArrayList<>(1);
+			this.metadata = null;
 		}
 	}
 
@@ -413,6 +425,54 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	@Override
 	public Integer getDeviceAddress() {
 		return getNumber(CommonModelRegister.DeviceAddress, blockAddress).intValue();
+	}
+
+	/**
+	 * Get a metadata value.
+	 * 
+	 * @param key
+	 *        the key of the metadata to get
+	 * @return the metadata value, or {@literal null}
+	 * @since 1.1
+	 */
+	public Object getMetadataValue(String key) {
+		ConcurrentMap<String, Object> m = this.metadata;
+		Object result = null;
+		if ( m != null ) {
+			result = m.get(key);
+		}
+		return result;
+	}
+
+	/**
+	 * Set/remove a metadata value.
+	 * 
+	 * @param key
+	 *        the key of the value to set/remove
+	 * @param value
+	 *        the value to set, or {@literal null} to remove the value
+	 *        associated with {@code key}
+	 * @since 1.1
+	 */
+	public void putMetadataValue(String key, Object value) {
+		ConcurrentMap<String, Object> m = this.metadata;
+		if ( value == null ) {
+			if ( m != null ) {
+				m.remove(key);
+			}
+		} else {
+			if ( m == null ) {
+				synchronized ( this ) {
+					if ( this.metadata == null ) {
+						m = new ConcurrentHashMap<>(8, 0.9f, 1);
+						this.metadata = m;
+					} else {
+						m = this.metadata;
+					}
+				}
+			}
+			m.put(key, value);
+		}
 	}
 
 }

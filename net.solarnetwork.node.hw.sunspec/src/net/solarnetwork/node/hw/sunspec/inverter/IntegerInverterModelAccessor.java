@@ -44,6 +44,14 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 	public static final int FIXED_BLOCK_LENGTH = 50;
 
 	/**
+	 * A metadata key prefix used to hold a {@code Boolean} flag that, when
+	 * {@literal true} signifies that the power factor values are encoded as
+	 * integer percentage values (from -100...100) rather than the decimal form
+	 * of the specification (-1...1).
+	 */
+	public static final String INTEGER_PF_PCT = "IntPfPct";
+
+	/**
 	 * Constructor.
 	 * 
 	 * @param data
@@ -79,7 +87,24 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 	public Float getPowerFactorValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorPowerFactor);
-		return (n != null ? n.floatValue() / 100.0f : null);
+		if ( n == null ) {
+			return null;
+		}
+		// check if we've seen this data as integer percentage before
+		Object intPct = getData().getMetadataValue(INTEGER_PF_PCT);
+		boolean integerForm = false;
+		if ( intPct instanceof Boolean && ((Boolean) intPct).booleanValue() ) {
+			integerForm = true;
+		} else if ( n.intValue() < -1 || n.intValue() > 1 ) {
+			// the data looks like it must be an integer percent, not decimal
+			getData().putMetadataValue(INTEGER_PF_PCT, true);
+			integerForm = true;
+		}
+		float f = n.floatValue();
+		if ( integerForm ) {
+			f /= 100.0f;
+		}
+		return f;
 	}
 
 	public Integer getActivePowerValue(ModbusReference ref) {

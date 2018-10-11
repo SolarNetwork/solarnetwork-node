@@ -47,6 +47,8 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
+import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
+import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 
 /**
  * Test cases for the {@link IntegerInverterModelAccessor} class.
@@ -171,11 +173,63 @@ public class IntegerInverterModelAccessor_103_02Tests {
 
 	@Test
 	public void powerFactor() {
-		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
+		ModelData data = getTestDataInstance();
+		InverterModelAccessor model = data.findTypedModel(InverterModelAccessor.class);
 		assertThat("Phase A", model.accessorForPhase(PhaseA).getPowerFactor(), nullValue());
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getPowerFactor(), nullValue());
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getPowerFactor(), nullValue());
 		assertThat("Average", model.getPowerFactor(), equalTo(-0.9987f));
+		assertThat("Integer PF flag", data.getMetadataValue(IntegerInverterModelAccessor.INTEGER_PF_PCT),
+				equalTo(true));
+	}
+
+	@Test
+	public void powerFactorWithDecimalScale() {
+		ModelData data = getTestDataInstance();
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				// force PF scale to -4
+				m.saveDataArray(new int[] { 0xFFFC }, 92);
+				return false;
+			}
+		});
+		InverterModelAccessor model = data.findTypedModel(InverterModelAccessor.class);
+		assertThat("Average", model.getPowerFactor(), equalTo(-0.9987f));
+		assertThat("Integer PF flag", data.getMetadataValue(IntegerInverterModelAccessor.INTEGER_PF_PCT),
+				nullValue());
+	}
+
+	@Test
+	public void powerFactorWithIntegerScaleChangesToDecimal() {
+		ModelData data = getTestDataInstance();
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				// force PF value to 100e-2 to seem like decimal scale
+				m.saveDataArray(new int[] { 0x0064 }, 91);
+				return false;
+			}
+		});
+		InverterModelAccessor model = data.findTypedModel(InverterModelAccessor.class);
+		assertThat("Average", model.getPowerFactor(), equalTo(1.0f));
+		assertThat("Integer PF flag", data.getMetadataValue(IntegerInverterModelAccessor.INTEGER_PF_PCT),
+				nullValue());
+
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				// force PF value to 1000e-2 to become integer scale
+				m.saveDataArray(new int[] { 0x03E8 }, 91);
+				return false;
+			}
+		});
+		assertThat("Average", model.getPowerFactor(), equalTo(0.1f));
+		assertThat("Integer PF flag", data.getMetadataValue(IntegerInverterModelAccessor.INTEGER_PF_PCT),
+				equalTo(true));
 	}
 
 	@Test
