@@ -58,8 +58,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	private Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
-			InverterOperatingState.Sleeping, InverterOperatingState.Standby,
-			InverterOperatingState.Starting, InverterOperatingState.ShuttingDown);
+			InverterOperatingState.Sleeping, InverterOperatingState.Standby);
 
 	/**
 	 * Default constructor.
