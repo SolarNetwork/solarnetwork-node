@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Data object for an integer meter model.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class IntegerMeterModelAccessor extends BaseModelAccessor implements MeterModelAccessor {
 
@@ -54,6 +54,26 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	 */
 	public IntegerMeterModelAccessor(ModelData data, int baseAddress, ModelId modelId) {
 		super(data, baseAddress, modelId);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@link MeterModelId} class will be used as the {@code ModelId}
+	 * instance.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the overall data object
+	 * @param baseAddress
+	 *        the base address for this model's data
+	 * @param modelId
+	 *        the model ID
+	 * @since 1.2
+	 */
+	public IntegerMeterModelAccessor(ModelData data, int baseAddress, int modelId) {
+		this(data, baseAddress, MeterModelId.forId(modelId));
 	}
 
 	@Override

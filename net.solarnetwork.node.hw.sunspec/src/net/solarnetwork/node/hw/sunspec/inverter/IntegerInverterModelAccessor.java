@@ -36,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Data access object for an integer inverter model.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerInverterModelAccessor extends BaseModelAccessor implements InverterModelAccessor {
 
@@ -63,6 +63,26 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 	 */
 	public IntegerInverterModelAccessor(ModelData data, int baseAddress, ModelId modelId) {
 		super(data, baseAddress, modelId);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@link InverterModelId} class will be used as the {@code ModelId}
+	 * instance.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the overall data object
+	 * @param baseAddress
+	 *        the base address for this model's data
+	 * @param modelId
+	 *        the model ID
+	 * @since 1.1
+	 */
+	public IntegerInverterModelAccessor(ModelData data, int baseAddress, int modelId) {
+		this(data, baseAddress, InverterModelId.forId(modelId));
 	}
 
 	@Override

@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -164,7 +164,10 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) {
-		CommonModelAccessor data = ModelDataFactory.getInstance().getModelData(connection);
+		CommonModelAccessor data = getSample();
+		if ( data == null ) {
+			data = ModelDataFactory.getInstance().getModelData(connection);
+		}
 		if ( data == null ) {
 			return null;
 		}
