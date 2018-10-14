@@ -76,7 +76,7 @@ public enum InverterOperatingState implements OperatingState {
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 * @throws IllegalArgumentException
-	 *         if {@code index} is not supported
+	 *         if {@code code} is not supported
 	 */
 	public static InverterOperatingState forCode(int code) {
 		if ( (code & ModelData.NAN_ENUM16) == ModelData.NAN_ENUM16 ) {
@@ -87,7 +87,7 @@ public enum InverterOperatingState implements OperatingState {
 				return e;
 			}
 		}
-		throw new IllegalArgumentException("Index [" + code + "] not supported");
+		throw new IllegalArgumentException("Code [" + code + "] not supported");
 	}
 
 }
