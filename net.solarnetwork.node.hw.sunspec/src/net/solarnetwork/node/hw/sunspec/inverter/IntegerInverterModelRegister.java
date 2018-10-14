@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec.inverter;
 
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
+import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
@@ -53,7 +54,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum IntegerInverterModelRegister implements SunspecModbusReference {
 
@@ -187,10 +188,10 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	ScaleFactorTemperature(35, Int16, ScaleFactor),
 
 	/** Operating state, see {@link InverterOperatingState}. */
-	OperatingState(36, Int16),
+	OperatingState(36, UInt16, Enumeration),
 
 	/** Vendor specific operating state. */
-	OperatingStateVendor(37, Int16),
+	OperatingStateVendor(37, UInt16, Enumeration),
 
 	/** Events bitmask, see {@link InverterModelEvent}. */
 	EventsBitmask(38, UInt32, Bitfield),
