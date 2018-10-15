@@ -163,7 +163,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 * Get a scaled energy value for a specific register.
 	 * 
 	 * <p>
-	 * Note that the returned value will always be posative, even when the meter
+	 * Note that the returned value will always be positive, even when the meter
 	 * reports the values as negative based on it's directional configuration.
 	 * </p>
 	 * 
