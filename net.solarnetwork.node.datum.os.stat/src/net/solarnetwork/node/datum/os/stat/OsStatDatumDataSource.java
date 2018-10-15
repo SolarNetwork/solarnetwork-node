@@ -365,6 +365,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		OsStatDatumDataSource defaults = new OsStatDatumDataSource();
 		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		result.add(new BasicTextFieldSettingSpecifier("actionsValue", defaults.getActionsValue()));
 		result.add(
 				new BasicTextFieldSettingSpecifier("fsUseMountsValue", defaults.getFsUseMountsValue()));
