@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
@@ -98,15 +98,26 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	}
 
 	/**
+	 * Read all information registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @since 1.1
+	 */
+	public final void readAllData(final ModbusConnection conn) {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				Shark100Register.getRegisterAddressSet(), MAX_RESULTS);
+	}
+
+	/**
 	 * Read the configuration and information registers from the device.
 	 * 
 	 * @param conn
 	 *        the connection
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) {
-		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				Shark100Register.getRegisterAddressSet(), MAX_RESULTS);
+				Shark100Register.getConfigRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
