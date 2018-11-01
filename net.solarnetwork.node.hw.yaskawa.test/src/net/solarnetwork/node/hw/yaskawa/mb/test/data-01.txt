@@ -1,39 +1,61 @@
-# CSI register data
-[0]:    0x4031
-[1]:    0x0632
-[2]:    0x01F0
+solar@solarnode:~$ mbpoll -m rtu -b 19200 -P none -t 3:hex -0 -a 1 -r 0 -c 48 -1 /dev/ttyUSB0
+mbpoll 0.1-23 - FieldTalk(tm) Modbus(R) Master Simulator
+Copyright (c) 2015 epsilonRT, All rights reserved.
+This software is governed by the CeCILL license <http://www.cecill.info>
+
+Protocol configuration: Modbus RTU
+Slave configuration...: address = [1]
+                        start reference = 0, count = 48
+Communication.........: /dev/ttyUSB0,      19200-8N1
+                        t/o 1.00 s, poll rate 1000 ms
+Data type.............: 16-bit register, input register table
+
+-- Polling slave 1...
+[0]:    0x4032
+[1]:    0x0000
+[2]:    0xFFFF
 [3]:    0x0037
 [4]:    0x0005
-[5]:    0x2832
-[6]:    0x0001
-[7]:    0x0132
-[8]:    0x7164
-[9]:    0x4022
+[5]:    0x0706
+[6]:    0x0000
+[7]:    0x0114
+[8]:    0x9133
+[9]:    0x8014
 [10]:   0x5056
-[11]:   0x4933
-[12]:   0x3654
+[11]:   0x4931
+[12]:   0x3454
 [13]:   0x4C2D
-[14]:   0x3438
-[15]:   0x3000
+[14]:   0x3230
+[15]:   0x3800
 [16]:   0x0000
 [17]:   0x0000
 [18]:   0x0000
 [19]:   0x0000
-[20]:   0x0048
+[20]:   0x0033
 [21]:   0x1000
-[22]:   0x0000
-[23]:   0x5A4F
-[24]:   0x0488
-[25]:   0xFFFF
-[26]:   0x03E6
-[27]:   0x016B
-[28]:   0x1A7F
-[29]:   0x009C
-[30]:   0x009D
-[31]:   0x132A
-[32]:   0x1324
-[33]:   0x1333
-[34]:   0x008E
-[35]:   0x0091
-[36]:   0x008B
-[37]:   0x163A
+[22]:   0x0001
+[23]:   0x9F9A
+[24]:   0x015B
+[25]:   0x261E
+[26]:   0xFC27
+[27]:   0x0078
+[28]:   0x10E5
+[29]:   0x001F
+[30]:   0x0140
+[31]:   0x082F
+[32]:   0x083A
+[33]:   0x0840
+[34]:   0x0056
+[35]:   0x0058
+[36]:   0x0055
+[37]:   0x0E5F
+[38]:   0x0000
+[39]:   0x0E7B
+[40]:   0x0056
+[41]:   0xFFFF
+[42]:   0xFFFF
+[43]:   0x0257
+[44]:   0x0191
+[45]:   0x013C
+[46]:   0x8000
+[47]:   0x1000

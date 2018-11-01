@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.yaskawa.mb.test;
 
 import static java.util.Arrays.copyOfRange;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,7 +35,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
+import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLInverterType;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
+import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.test.DataUtils;
 
@@ -63,16 +68,14 @@ public class PVITLDataTests {
 
 	@Before
 	public void setup() {
-		/*-
 		data.performUpdates(new ModbusDataUpdateAction() {
-		
+
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				m.saveDataArray(TEST_DATA, 0);
 				return true;
 			}
 		});
-		*/
 	}
 
 	@Test
@@ -89,7 +92,115 @@ public class PVITLDataTests {
 		data.readConfigurationData(conn);
 
 		// then
-
 		EasyMock.verify(conn);
 	}
+
+	@Test
+	public void readInverterData() {
+		// given
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		PVITLData data = new PVITLData();
+
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0x16, (0x2F - 0x16) + 1))
+				.andReturn(copyOfRange(TEST_DATA, 0x16, (0x2F - 0x16) + 1));
+
+		// when
+		EasyMock.replay(conn);
+		data.readInverterData(conn);
+
+		// then
+		EasyMock.verify(conn);
+	}
+
+	@Test
+	public void getDeviceModel() {
+		assertThat("Inveter type", data.getInverterType(), equalTo(PVITLInverterType.PVI_14TL));
+	}
+
+	@Test
+	public void getModelName() {
+		assertThat("Model name", data.getModelName(), equalTo("PVI14TL-208"));
+	}
+
+	@Test
+	public void getSerialNumber() {
+		assertThat("Serial number", data.getSerialNumber(), equalTo("1187847045140"));
+	}
+
+	@Test
+	public void getDspFirmwareVersion() {
+		assertThat("DSP version", data.getDspFirmwareVersion(), equalTo("1.93"));
+	}
+
+	@Test
+	public void getLcdFirmwareVersion() {
+		assertThat("LCD version", data.getLcdFirmwareVersion(), equalTo("0.06"));
+	}
+
+	@Test
+	public void getModuleTemperature() {
+		assertThat("Module temperature", data.getModuleTemperature(), equalTo(40.1f));
+	}
+
+	@Test
+	public void getInternalTemperature() {
+		assertThat("Internal temperature", data.getInternalTemperature(), equalTo(31.6f));
+	}
+
+	@Test
+	public void getPv1Voltage() {
+		assertThat("PV 1 voltage", data.getPv1Voltage(), equalTo(367.9f));
+	}
+
+	@Test
+	public void getPv1Power() {
+		assertThat("PV 1 power", data.getPv1Power(), equalTo(0));
+	}
+
+	@Test
+	public void getPv2Voltage() {
+		assertThat("PV 2 voltage", data.getPv2Voltage(), equalTo(370.7f));
+	}
+
+	@Test
+	public void getPv2Power() {
+		assertThat("PV 2 power", data.getPv2Power(), equalTo(3188));
+	}
+
+	@Test
+	public void getActivePower() {
+		assertThat("Active power", data.getActivePower(), equalTo(3100));
+	}
+
+	@Test
+	public void getApparentPower() {
+		assertThat("Apparent power", data.getApparentPower(), equalTo(32000));
+	}
+
+	@Test
+	public void getActiveEnergyDelivered() {
+		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(106394000L));
+	}
+
+	@Test
+	public void getActiveEnergyDeliveredToday() {
+		assertThat("Active energy delivered today", data.getActiveEnergyDeliveredToday(),
+				equalTo(34700L));
+	}
+
+	@Test
+	public void getFrequency() {
+		assertThat("Frequency", data.getFrequency(), equalTo(59.9f));
+	}
+
+	@Test
+	public void getDCVoltage() {
+		assertThat("DC voltage", data.getDCVoltage(), equalTo(369.3f));
+	}
+
+	@Test
+	public void getDCPower() {
+		assertThat("DC power", data.getDCPower(), equalTo(3188));
+	}
+
 }
