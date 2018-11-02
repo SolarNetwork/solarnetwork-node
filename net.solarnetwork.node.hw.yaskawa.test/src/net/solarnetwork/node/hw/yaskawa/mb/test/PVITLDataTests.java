@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
+import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLInverterState;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLInverterType;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -145,6 +146,11 @@ public class PVITLDataTests {
 	@Test
 	public void getInternalTemperature() {
 		assertThat("Internal temperature", data.getInternalTemperature(), equalTo(31.6f));
+	}
+
+	@Test
+	public void foo() {
+		assertThat("Operating state", data.getOperatingState(), equalTo(PVITLInverterState.Running));
 	}
 
 	@Test

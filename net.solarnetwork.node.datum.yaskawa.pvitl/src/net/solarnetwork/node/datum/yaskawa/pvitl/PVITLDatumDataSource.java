@@ -166,7 +166,8 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("Hz = ").append(data.getFrequency());
+		buf.append("State = ").append(data.getOperatingState());
+		buf.append(", Hz = ").append(data.getFrequency());
 		buf.append(", PV1 V = ").append(data.getPv1Voltage());
 		buf.append(", PV2 V = ").append(data.getPv2Voltage());
 		buf.append(", W = ").append(data.getActivePower());

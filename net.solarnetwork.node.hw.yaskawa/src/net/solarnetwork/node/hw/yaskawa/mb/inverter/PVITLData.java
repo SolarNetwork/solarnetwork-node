@@ -302,6 +302,19 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
+	public PVITLInverterState getOperatingState() {
+		Number n = getNumber(PVITLRegister.StatusMode);
+		if ( n == null ) {
+			return null;
+		}
+		try {
+			return PVITLInverterState.forCode(n.intValue());
+		} catch ( IllegalArgumentException e ) {
+			return null;
+		}
+	}
+
+	@Override
 	public PVITLInverterType getInverterType() {
 		String s = getModelName();
 		try {
