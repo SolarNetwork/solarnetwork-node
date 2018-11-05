@@ -345,7 +345,8 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	@Override
 	public String getSerialNumber() {
 		Number n = getNumber(PVITLRegister.InfoSerialNumber);
-		return (n != null ? n.toString() : null);
+		long s = n.longValue();
+		return (n != null ? Long.toHexString(s) : null);
 	}
 
 	@Override

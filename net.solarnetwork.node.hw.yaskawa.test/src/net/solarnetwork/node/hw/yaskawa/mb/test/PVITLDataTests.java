@@ -125,7 +125,7 @@ public class PVITLDataTests {
 
 	@Test
 	public void getSerialNumber() {
-		assertThat("Serial number", data.getSerialNumber(), equalTo("1187847045140"));
+		assertThat("Serial number", data.getSerialNumber(), equalTo("11491338014"));
 	}
 
 	@Test
