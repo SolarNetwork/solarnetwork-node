@@ -40,18 +40,15 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.CachedResult;
 
 /**
- * Web service based support for eGauge inverters. Needs to be configured with
- * an {@link EGaugeClient} such as {@link XmlEGaugeClient} to retrieve the
- * content to be stored.
+ * Web service based support for eGauge inverters.
  * 
  * <p>
- * If the {@code client} configuration is the same, it should be possible to
- * share a single client between multiple instances and just configure the
- * {@code host} and {@code sourceId} properties to use different sources.
+ * Needs to be configured with an {@link EGaugeClient} such as
+ * {@link XmlEGaugeClient} to retrieve the content to be stored.
  * </p>
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {

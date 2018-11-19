@@ -20,10 +20,6 @@
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
 	
-	<bean id="xmlClient" class="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient" init-method="init">
-		<property name="messageSource" ref="xmlClientMessageSource"/>
-	</bean>
-
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
@@ -92,7 +88,11 @@
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="client" ref="xmlClient"/>
+									<property name="client">
+										<bean class="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient" init-method="init">
+											<property name="messageSource" ref="xmlClientMessageSource"/>
+										</bean>
+									</property>
 								</bean>
 							</entry>
 						</map>
