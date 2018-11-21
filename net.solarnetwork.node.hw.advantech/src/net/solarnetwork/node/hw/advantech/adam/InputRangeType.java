@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.advantech.adam;
 
+import java.math.BigDecimal;
+
 /**
  * Enumeration of input range types.
  * 
@@ -96,6 +98,33 @@ public enum InputRangeType {
 	}
 
 	/**
+	 * Get an enumeration for a given code value.
+	 * 
+	 * @param code
+	 *        the code to get the enum value for
+	 * @return the enumeration value
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
+	 */
+	public static InputRangeType forCode(int code) {
+		for ( InputRangeType e : values() ) {
+			if ( code == e.getCode() ) {
+				return e;
+			}
+		}
+		throw new IllegalArgumentException("Unsupported code value: " + code);
+	}
+
+	/**
+	 * Get a more verbose description of this type.
+	 * 
+	 * @return the description
+	 */
+	public String toStringDescription() {
+		return String.format("%s (%02X)");
+	}
+
+	/**
 	 * Get the input range code value.
 	 * 
 	 * @return the code
@@ -147,6 +176,34 @@ public enum InputRangeType {
 	 */
 	public float getMax() {
 		return max;
+	}
+
+	public static final int MAX_FULL_SCALE = 32767;
+
+	public static final int MIN_FULL_SCALE = -32768;
+
+	/**
+	 * Get a normalized decimal value for a given raw data value.
+	 * 
+	 * @param dataValue
+	 *        the data value from the device (in 16-bit signed form)
+	 * @return the normalized decimal value, in base units
+	 */
+	public BigDecimal normalizedDataValue(int dataValue) {
+		BigDecimal result = null;
+		double spanPercent;
+		if ( unit == InputUnit.DegreeCelsius ) {
+			float rangeTop = Math.max(Math.abs(min), Math.abs(max));
+			if ( dataValue < 0 ) {
+				spanPercent = (double) dataValue / -MIN_FULL_SCALE;
+			} else {
+				spanPercent = (double) dataValue / MAX_FULL_SCALE;
+			}
+			result = new BigDecimal(spanPercent * rangeTop);
+		} else {
+			// TODO
+		}
+		return result;
 	}
 
 }
