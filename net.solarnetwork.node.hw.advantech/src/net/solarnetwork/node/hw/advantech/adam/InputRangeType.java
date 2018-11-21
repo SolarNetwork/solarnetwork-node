@@ -191,17 +191,21 @@ public enum InputRangeType {
 	 */
 	public BigDecimal normalizedDataValue(int dataValue) {
 		BigDecimal result = null;
-		double spanPercent;
+		float spanPercent;
 		if ( unit == InputUnit.DegreeCelsius ) {
 			float rangeTop = Math.max(Math.abs(min), Math.abs(max));
 			if ( dataValue < 0 ) {
-				spanPercent = (double) dataValue / -MIN_FULL_SCALE;
+				spanPercent = (float) dataValue / -MIN_FULL_SCALE;
 			} else {
-				spanPercent = (double) dataValue / MAX_FULL_SCALE;
+				spanPercent = (float) dataValue / MAX_FULL_SCALE;
 			}
 			result = new BigDecimal(spanPercent * rangeTop);
 		} else {
-			// TODO
+			spanPercent = (dataValue - MIN_FULL_SCALE) / (float) (MAX_FULL_SCALE - MIN_FULL_SCALE);
+			result = new BigDecimal(min + (spanPercent * (max - min)));
+		}
+		if ( unitScale != 1 ) {
+			result = result.scaleByPowerOfTen(unitScale);
 		}
 		return result;
 	}
