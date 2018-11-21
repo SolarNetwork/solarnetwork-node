@@ -50,7 +50,7 @@ import net.solarnetwork.util.OptionalService;
  * messages as {@link EventAdmin} events.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class RfidSocketReaderService implements SettingSpecifierProvider, Runnable {
 
@@ -86,15 +86,18 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	private String uid;
 	private String groupUID;
 	private int connectRetryMinutes = 1;
+	private int watchdogSeconds = 0;
 
 	private Thread readerThread;
 	private Thread tryLaterThread;
+	private Thread watchdogThread;
 
 	// stats
 	private boolean initialized = false;
 	private long lastHeartbeatDate;
 	private long lastMessageDate;
 	private long messageCount = 0;
+	private boolean watchdogKeepGoing = true;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -103,6 +106,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	 */
 	public void init() {
 		initialized = true;
+		configureWatchdog();
 		tryStartReaderLater();
 	}
 
@@ -111,6 +115,53 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	 */
 	public void destroy() {
 		stopReader(false);
+		stopWatchdog();
+	}
+
+	private synchronized void configureWatchdog() {
+		if ( this.watchdogSeconds < 1 || watchdogThread != null ) {
+			return;
+		}
+		log.info("Configuring RFID watchdog for {} seconds", watchdogSeconds);
+		watchdogKeepGoing = true;
+		watchdogThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				while ( watchdogKeepGoing ) {
+					final long sleepMs = TimeUnit.SECONDS.toMillis(watchdogSeconds);
+					try {
+						Thread.sleep(sleepMs);
+
+						synchronized ( RfidSocketReaderService.this ) {
+							if ( readerThread != null && readerThread.isAlive() ) {
+								long expired = System.currentTimeMillis() - sleepMs;
+								if ( lastHeartbeatDate < expired && lastMessageDate < expired ) {
+									log.info(
+											"RFID watchdog timer tripped: no message received in {} seconds",
+											watchdogSeconds);
+									stopReader(true);
+								}
+							}
+						}
+
+					} catch ( InterruptedException e ) {
+						// ignore this;
+					}
+				}
+			}
+		});
+		watchdogThread.setDaemon(true);
+		watchdogThread.setName("RFID Server Watchdog");
+		watchdogThread.start();
+	}
+
+	private synchronized void stopWatchdog() {
+		watchdogKeepGoing = false;
+		if ( watchdogThread != null ) {
+			watchdogThread.interrupt();
+			watchdogThread = null;
+		}
 	}
 
 	private synchronized void startReader() {
@@ -189,13 +240,15 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 					break;
 				}
 				// the first line read is a status line...
-				if ( readSomething && !HEARTBEAT_MSG.equalsIgnoreCase(line) ) {
-					lastMessageDate = System.currentTimeMillis();
-					messageCount += 1;
-					postRfidMessageReceivedEvent(line);
-				} else {
-					lastHeartbeatDate = System.currentTimeMillis();
-					log.debug("RFID status message: {}", line);
+				synchronized ( this ) {
+					if ( readSomething && !HEARTBEAT_MSG.equalsIgnoreCase(line) ) {
+						lastMessageDate = System.currentTimeMillis();
+						messageCount += 1;
+						postRfidMessageReceivedEvent(line);
+					} else {
+						lastHeartbeatDate = System.currentTimeMillis();
+						log.debug("RFID status message: {}", line);
+					}
 				}
 				readSomething = true;
 			}
@@ -363,6 +416,26 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 			return;
 		}
 		this.connectRetryMinutes = connectRetryMinutes;
+	}
+
+	/**
+	 * Set the number of seconds to configure a "watch dog" timer for.
+	 * 
+	 * <p>
+	 * When greater than {@literal 0} and no message has been received from the
+	 * RFID server in this amount of time, the connection will be closed and the
+	 * re-connection logic will be executed. This can be used to detect a lost
+	 * connection from the server more quickly than the TCP socket timeout,
+	 * which is often around 2 hours.
+	 * </p>
+	 * 
+	 * @param watchdogSeconds
+	 *        the seconds to configure the watch dog timer for; defaults to
+	 *        {@literal 0} (disabled)
+	 * @since 1.1
+	 */
+	public void setWatchdogSeconds(int watchdogSeconds) {
+		this.watchdogSeconds = watchdogSeconds;
 	}
 
 	public String getUid() {
