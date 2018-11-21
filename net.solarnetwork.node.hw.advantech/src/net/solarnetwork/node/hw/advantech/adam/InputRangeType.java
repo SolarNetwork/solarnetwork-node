@@ -78,6 +78,18 @@ public enum InputRangeType {
 
 	ZeroToTenVolts(0x48, "0 ~ 10 V", InputUnit.Volts, 1, 0f, 10f),
 
+	ZeroToFiveVolts(0x48, "0 ~ 5 V", InputUnit.Volts, 1, 0f, 5f),
+
+	ZeroToOneVolts(0x4A, "0 ~ 1 V", InputUnit.Volts, 1, 0f, 1f),
+
+	ZeroToFiveHundredMilliVolts(0x4B, "0 ~ 500 mV", InputUnit.Volts, -3, 0f, 500f),
+
+	ZeroToOneHundredFiftyMilliVolts(0x4C, "0 ~ 150 mV", InputUnit.Volts, -3, 0f, 150f),
+
+	ZeroToTwentyMilliAmps(0x4D, "0 ~ 20 mA", InputUnit.Amps, -3, 0f, 20f),
+
+	ZeroToFifteenVolts(0x55, "0 ~ 15 V", InputUnit.Volts, 1, 0f, 15f),
+
 	Unknown(-1, "Unknown", InputUnit.Unknown, 1, 0f, 0f);
 
 	private final int code;

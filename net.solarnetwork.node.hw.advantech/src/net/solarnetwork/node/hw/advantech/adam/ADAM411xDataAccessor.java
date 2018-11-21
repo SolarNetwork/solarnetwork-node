@@ -45,7 +45,7 @@ public interface ADAM411xDataAccessor {
 	 * 
 	 * @return the revision number
 	 */
-	String getRevision();
+	String getFirmwareRevision();
 
 	/**
 	 * Get the complete set of enabled channel numbers.

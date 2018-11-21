@@ -79,9 +79,10 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String modelName = data.getModelName();
 		if ( modelName != null ) {
-			String version = data.getRevision();
+			String version = data.getFirmwareRevision();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (revision %s)", modelName, version));
+				result.put(INFO_KEY_DEVICE_MODEL,
+						String.format("%s (firmware revision %s)", modelName, version));
 			} else {
 				result.put(INFO_KEY_DEVICE_MODEL, modelName);
 			}
@@ -121,14 +122,14 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 
 	@Override
 	public String getModelName() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(ADAM411xRegister.InfoModelName1);
+		return (n != null ? Integer.toString(n.intValue(), 16) : null);
 	}
 
 	@Override
-	public String getRevision() {
-		// TODO Auto-generated method stub
-		return null;
+	public String getFirmwareRevision() {
+		Number n = getNumber(ADAM411xRegister.InfoVersion1);
+		return (n != null ? Integer.toString(n.intValue(), 16).toUpperCase() : null);
 	}
 
 	@Override
@@ -236,7 +237,8 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 
 		}
 		Number n = getNumber(reg);
-		return null;
+		InputRangeType type = getChannelType(channelNumber);
+		return type.normalizedDataValue(n.intValue());
 	}
 
 }

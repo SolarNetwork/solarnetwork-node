@@ -40,63 +40,63 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  */
 public enum ADAM411xRegister implements ModbusReference {
 
-	Channel0BurnOut(200, ModbusDataType.UInt16),
+	CoilChannel0BurnOut(0, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel1BurnOut(201, ModbusDataType.UInt16),
+	CoilChannel1BurnOut(1, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel2BurnOut(202, ModbusDataType.UInt16),
+	CoilChannel2BurnOut(2, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel3BurnOut(203, ModbusDataType.UInt16),
+	CoilChannel3BurnOut(3, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel4BurnOut(204, ModbusDataType.UInt16),
+	CoilChannel4BurnOut(4, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel5BurnOut(205, ModbusDataType.UInt16),
+	CoilChannel5BurnOut(5, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel6BurnOut(206, ModbusDataType.UInt16),
+	CoilChannel6BurnOut(6, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel7BurnOut(207, ModbusDataType.UInt16),
+	CoilChannel7BurnOut(7, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel0(40000, ModbusDataType.Int16),
+	Channel0(0, ModbusDataType.Int16),
 
-	Channel1(40001, ModbusDataType.Int16),
+	Channel1(1, ModbusDataType.Int16),
 
-	Channel2(40002, ModbusDataType.Int16),
+	Channel2(2, ModbusDataType.Int16),
 
-	Channel3(40003, ModbusDataType.Int16),
+	Channel3(3, ModbusDataType.Int16),
 
-	Channel4(40004, ModbusDataType.Int16),
+	Channel4(4, ModbusDataType.Int16),
 
-	Channel5(40005, ModbusDataType.Int16),
+	Channel5(5, ModbusDataType.Int16),
 
-	Channel6(40006, ModbusDataType.Int16),
+	Channel6(6, ModbusDataType.Int16),
 
-	Channel7(40007, ModbusDataType.Int16),
+	Channel7(7, ModbusDataType.Int16),
 
-	ConfigChannel0InputType(40200, ModbusDataType.UInt16),
+	ConfigChannel0InputType(200, ModbusDataType.UInt16),
 
-	ConfigChannel1InputType(40201, ModbusDataType.UInt16),
+	ConfigChannel1InputType(201, ModbusDataType.UInt16),
 
-	ConfigChannel2InputType(40202, ModbusDataType.UInt16),
+	ConfigChannel2InputType(202, ModbusDataType.UInt16),
 
-	ConfigChannel3InputType(40203, ModbusDataType.UInt16),
+	ConfigChannel3InputType(203, ModbusDataType.UInt16),
 
-	ConfigChannel4InputType(40204, ModbusDataType.UInt16),
+	ConfigChannel4InputType(204, ModbusDataType.UInt16),
 
-	ConfigChannel5InputType(40205, ModbusDataType.UInt16),
+	ConfigChannel5InputType(205, ModbusDataType.UInt16),
 
-	ConfigChannel6InputType(40206, ModbusDataType.UInt16),
+	ConfigChannel6InputType(206, ModbusDataType.UInt16),
 
-	ConfigChannel7InputType(40207, ModbusDataType.UInt16),
+	ConfigChannel7InputType(207, ModbusDataType.UInt16),
 
-	InfoModelName1(40210, ModbusDataType.UInt16),
+	InfoModelName1(210, ModbusDataType.UInt16),
 
-	InfoModelName2(40211, ModbusDataType.UInt16),
+	InfoModelName2(211, ModbusDataType.UInt16),
 
-	InfoVersion1(40212, ModbusDataType.UInt16),
+	InfoVersion1(212, ModbusDataType.UInt16),
 
-	InfoVersion2(40213, ModbusDataType.UInt16),
+	InfoVersion2(213, ModbusDataType.UInt16),
 
-	ConfigChannelEnable(40220, ModbusDataType.UInt16);
+	ConfigChannelEnable(220, ModbusDataType.UInt16);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createChannelRegisterAddressSet();
@@ -104,15 +104,22 @@ public enum ADAM411xRegister implements ModbusReference {
 	private final int address;
 	private final int length;
 	private final ModbusDataType dataType;
+	private final ModbusReadFunction function;
 
 	private ADAM411xRegister(int address, ModbusDataType dataType) {
-		this(address, 0, dataType);
+		this(address, 0, dataType, ModbusReadFunction.ReadHoldingRegister);
 	}
 
-	private ADAM411xRegister(int address, int length, ModbusDataType dataType) {
+	private ADAM411xRegister(int address, ModbusDataType dataType, ModbusReadFunction function) {
+		this(address, 0, dataType, function);
+	}
+
+	private ADAM411xRegister(int address, int length, ModbusDataType dataType,
+			ModbusReadFunction function) {
 		this.address = address;
 		this.length = length;
 		this.dataType = dataType;
+		this.function = function;
 	}
 
 	private static IntRangeSet createRegisterAddressSet(Set<String> prefixes) {
@@ -151,7 +158,7 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	@Override
 	public ModbusReadFunction getFunction() {
-		return ModbusReadFunction.ReadHoldingRegister;
+		return function;
 	}
 
 	@Override
@@ -160,8 +167,8 @@ public enum ADAM411xRegister implements ModbusReference {
 	}
 
 	/**
-	 * Get an address range set that covers all the registers defined in this
-	 * enumeration.
+	 * Get an address range set that covers all the non-coil registers defined
+	 * in this enumeration.
 	 * 
 	 * @return the range set
 	 */
