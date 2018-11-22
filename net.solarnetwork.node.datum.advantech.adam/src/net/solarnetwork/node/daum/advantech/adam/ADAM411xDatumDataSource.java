@@ -23,18 +23,22 @@
 package net.solarnetwork.node.daum.advantech.adam;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.hw.advantech.adam.ADAM411xData;
 import net.solarnetwork.node.hw.advantech.adam.ADAM411xDataAccessor;
+import net.solarnetwork.node.hw.advantech.adam.InputRangeType;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -204,7 +208,27 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("TODO = ");
+		Set<Integer> enabledChannelSet = data.getEnabledChannelNumbers();
+		if ( enabledChannelSet == null || enabledChannelSet.isEmpty() ) {
+			buf.append("No channels enabled");
+		} else {
+			for ( Integer channel : enabledChannelSet ) {
+				InputRangeType type = data.getChannelType(channel);
+				if ( buf.length() > 0 ) {
+					buf.append("; ");
+				}
+				buf.append("Channel ").append(channel).append(": ");
+				BigDecimal val = data.getChannelValue(channel);
+				if ( val != null ) {
+					val = val.setScale(5, RoundingMode.HALF_UP);
+					buf.append(val);
+				} else {
+					buf.append("?");
+				}
+				buf.append(" ").append(type.getUnit().getKey());
+			}
+
+		}
 		buf.append("; sampled at ")
 				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
 		return buf.toString();

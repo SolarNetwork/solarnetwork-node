@@ -39,7 +39,8 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  */
 public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 
-	private static final int MAX_RESULTS = 64;
+	// ADAM devices fail if attempting to read a undocumented register value
+	private static final int MAX_COMBINE_REGISTERS = 1;
 
 	/**
 	 * Constructor.
@@ -91,7 +92,7 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 		if ( enabledChannels != null && !enabledChannels.isEmpty() ) {
 			for ( final int channel : enabledChannels ) {
 				InputRangeType type = data.getChannelType(channel);
-				result.put("Channel " + channel, type.toStringDescription());
+				result.put("Channel " + channel, "Channel " + channel + ": " + type.getDescription());
 			}
 		}
 		return result;
@@ -104,20 +105,23 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 	 *        the connection
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) {
-		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				ADAM411xRegister.getRegisterAddressSet(), MAX_RESULTS);
+				ADAM411xRegister.getConfigRegisterAddressSet(), MAX_COMBINE_REGISTERS);
 	}
 
 	/**
 	 * Read the channel registers from the device.
+	 * 
+	 * <p>
+	 * This also reads the channel configuration registers.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the connection
 	 */
 	public final void readDeviceData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				ADAM411xRegister.getChannelRegisterAddressSet(), MAX_RESULTS);
+				ADAM411xRegister.getChannelWithConfigRegisterAddressSet(), MAX_COMBINE_REGISTERS);
 	}
 
 	@Override

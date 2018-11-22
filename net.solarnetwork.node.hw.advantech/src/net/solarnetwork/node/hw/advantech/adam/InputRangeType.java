@@ -133,7 +133,7 @@ public enum InputRangeType {
 	 * @return the description
 	 */
 	public String toStringDescription() {
-		return String.format("%s (%02X)");
+		return String.format("%s (%02X)", description, code);
 	}
 
 	/**

@@ -100,6 +100,7 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createChannelRegisterAddressSet();
+	private static final IntRangeSet CHANNEL_CONFIG_REGISTER_ADDRESS_SET = createChannelConfigRegisterAddressSet();
 
 	private final int address;
 	private final int length;
@@ -144,6 +145,19 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
 		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Info", "Config")));
+	}
+
+	private static IntRangeSet createChannelConfigRegisterAddressSet() {
+		IntRangeSet set = new IntRangeSet();
+		ADAM411xRegister[] regs = new ADAM411xRegister[] { ConfigChannel0InputType,
+				ConfigChannel1InputType, ConfigChannel2InputType, ConfigChannel3InputType,
+				ConfigChannel4InputType, ConfigChannel5InputType, ConfigChannel6InputType,
+				ConfigChannel7InputType };
+		for ( ADAM411xRegister r : regs ) {
+			int len = r.getWordLength();
+			set.addAll(r.getAddress(), r.getAddress() + len - 1);
+		}
+		return set;
 	}
 
 	@Override
@@ -206,6 +220,23 @@ public enum ADAM411xRegister implements ModbusReference {
 	 */
 	public static IntRangeSet getChannelRegisterAddressSet() {
 		return (IntRangeSet) CHANNEL_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the channel registers defined in
+	 * this enumeration, along with their configuration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getChannelWithConfigRegisterAddressSet() {
+		IntRangeSet s = new IntRangeSet(CHANNEL_REGISTER_ADDRESS_SET);
+		s.addAll(CHANNEL_CONFIG_REGISTER_ADDRESS_SET);
+		return s;
 	}
 
 }
