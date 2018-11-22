@@ -33,7 +33,7 @@ import net.solarnetwork.node.domain.DataAccessor;
  * object.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -64,22 +64,50 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *         if a communication error occurs
 	 */
 	protected T getCurrentSample() throws IOException {
+		return getCurrentSample(null);
+	}
+
+	/**
+	 * Get an up-to-date snapshot of the device data.
+	 * 
+	 * <p>
+	 * If the sample data has expired, or never been read, this method will
+	 * refresh it from the device by calling
+	 * {@link #refreshDeviceData(ModbusConnection, ModbusData)}. If the data has
+	 * never been read, it will also first call
+	 * {@link #refreshDeviceInfo(ModbusConnection, ModbusData)}. A copy of the
+	 * sample data is returned via {@link #createSampleSnapshot(ModbusData)}.
+	 * </p>
+	 * 
+	 * @param connection
+	 *        an optional existing connection to use; otherwise a new connection
+	 *        will be acquired
+	 * @return the sample data copy
+	 * @throws IOException
+	 *         if a communication error occurs
+	 */
+	protected T getCurrentSample(ModbusConnection connection) throws IOException {
 		T currSample = null;
 		if ( isCachedSampleExpired() ) {
-			currSample = performAction(new ModbusConnectionAction<T>() {
+			ModbusConnectionAction<T> action = new ModbusConnectionAction<T>() {
 
 				@Override
-				public T doWithConnection(ModbusConnection connection) throws IOException {
+				public T doWithConnection(ModbusConnection conn) throws IOException {
 					T sample = getSample();
 					if ( sample.getDataTimestamp() == 0 ) {
 						// first time also load info
-						readDeviceInfoFirstTime(connection, sample);
+						readDeviceInfoFirstTime(conn, sample);
 					}
-					refreshDeviceData(connection, sample);
+					refreshDeviceData(conn, sample);
 					return createSampleSnapshot(sample);
 				}
 
-			});
+			};
+			if ( connection != null ) {
+				currSample = action.doWithConnection(connection);
+			} else {
+				currSample = performAction(action);
+			}
 			if ( log.isTraceEnabled() && currSample != null ) {
 				log.trace(currSample.dataDebugString());
 			}
@@ -174,7 +202,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		try {
-			T sample = getCurrentSample();
+			T sample = getCurrentSample(conn);
 			return sample.getDeviceInfo();
 		} catch ( IOException e ) {
 			log.error("Communication problem reading from device {}: {}", modbusNetwork(),

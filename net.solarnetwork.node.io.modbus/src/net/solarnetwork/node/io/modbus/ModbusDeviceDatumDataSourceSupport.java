@@ -39,7 +39,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -82,7 +82,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
-	 * service, or <em>null</em> if not available or not configured.
+	 * service, or {@literal null} if not available or not configured.
 	 * 
 	 * @return ModbusNetwork
 	 */
@@ -91,9 +91,12 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Read general device info and return a map of the results. See the various
-	 * {@code INFO_KEY_*} constants for information on the values returned in
-	 * the result map.
+	 * Read general device info and return a map of the results.
+	 * 
+	 * <p>
+	 * See the various {@code INFO_KEY_*} constants for information on the
+	 * values returned in the result map.
+	 * </p>
 	 * 
 	 * @param conn
 	 *        the connection to use
@@ -108,7 +111,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *        the data array
 	 * @param offset
 	 *        the offset within the array to parse the value from
-	 * @return the float, or <em>null</em> if not available
+	 * @return the float, or {@literal null} if not available
 	 */
 	public static Float parseBigEndianFloat32(Integer[] data, int offset) {
 		Float result = null;
@@ -125,7 +128,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 *        the data array
 	 * @param offset
 	 *        the offset within the array to parse the value from
-	 * @return the long, or <em>null</em> if not available
+	 * @return the long, or {@literal null} if not available
 	 */
 	public static Long parseBigEndianInt64(Integer[] data, int offset) {
 		Long result = null;
@@ -137,10 +140,13 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Return an informational message composed of general device info. This
-	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or <em>null</em> if that
-	 * method returns <em>null</em>.
+	 * Return an informational message composed of general device info.
+	 * 
+	 * <p>
+	 * This method will call {@link #getDeviceInfo()} and return a {@code /}
+	 * (forward slash) delimited string of the resulting values, or
+	 * {@literal null} if that method returns {@literal null}.
+	 * </p>
 	 * 
 	 * @return info message
 	 */
@@ -153,12 +159,15 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Get the device info data as a Map. This method will call
-	 * {@link #readMeterInfo(ModbusConnection)}. The map is cached so subsequent
-	 * calls will not attempt to read from the device. Note the returned map
-	 * cannot be modified.
+	 * Get the device info data as a Map.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * <p>
+	 * This method will call {@link #readMeterInfo(ModbusConnection)}. The map
+	 * is cached so subsequent calls will not attempt to read from the device.
+	 * Note the returned map cannot be modified.
+	 * </p>
+	 * 
+	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
 	public Map<String, ?> getDeviceInfo() {
@@ -182,15 +191,18 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Perform some work with a Modbus {@link ModbusConnection}. This method
-	 * attempts to obtain a {@link ModbusNetwork} from the configured
-	 * {@code modbusNetwork} service, calling
+	 * Perform some work with a Modbus {@link ModbusConnection}.
+	 * 
+	 * <p>
+	 * This method attempts to obtain a {@link ModbusNetwork} from the
+	 * configured {@code modbusNetwork} service, calling
 	 * {@link ModbusNetwork#performAction(ModbusConnectionAction)} if one can be
 	 * obtained.
+	 * </p>
 	 * 
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or <em>null</em> if the action is
+	 * @return the result of the callback, or {@literal null} if the action is
 	 *         never invoked
 	 */
 	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
@@ -205,18 +217,21 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Get direct access to the device info data.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to <em>null</em>
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data.
+	 * 
+	 * <p>
+	 * Setting the {@code deviceInfo} to {@literal null} will force the next
+	 * call to {@link #getDeviceInfo()} to read from the device to populate this
+	 * data, and setting this to anything else will force all subsequent calls
+	 * to {@link #getDeviceInfo()} to simply return that map.
+	 * </p>
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
