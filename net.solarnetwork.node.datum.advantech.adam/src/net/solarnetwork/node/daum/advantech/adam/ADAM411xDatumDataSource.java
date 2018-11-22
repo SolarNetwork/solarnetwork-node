@@ -94,6 +94,10 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
+		final String sourceId = this.sourceId;
+		if ( sourceId == null ) {
+			return null;
+		}
 		final long start = System.currentTimeMillis();
 		try {
 			final ADAM411xData currSample = getCurrentSample();
@@ -104,7 +108,9 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 			d.setSourceId(this.sourceId);
 			d.setCreated(new Date(currSample.getDataTimestamp()));
 
-			populateDatumProperties(currSample, d, getPropConfigs());
+			if ( !populateDatumProperties(currSample, d, getPropConfigs()) ) {
+				return null;
+			}
 
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
@@ -118,11 +124,12 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 		}
 	}
 
-	private void populateDatumProperties(ADAM411xData sample, GeneralNodeDatum d,
+	private boolean populateDatumProperties(ADAM411xData sample, GeneralNodeDatum d,
 			ChannelPropertyConfig[] propConfs) {
-		if ( propConfs == null ) {
-			return;
+		if ( propConfs == null || propConfs.length < 1 ) {
+			return false;
 		}
+		boolean result = false;
 		for ( ChannelPropertyConfig conf : propConfs ) {
 			// skip configurations without a property to set
 			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
@@ -133,8 +140,10 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 
 			if ( propVal != null ) {
 				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
+				result = true;
 			}
 		}
+		return result;
 	}
 
 	// SettingSpecifierProvider
