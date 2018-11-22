@@ -27,9 +27,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -50,10 +52,12 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
+import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.util.OptionalService;
@@ -63,7 +67,7 @@ import net.solarnetwork.web.domain.Response;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -132,7 +136,19 @@ public class SettingsController {
 			ModelMap model) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
-			model.put(KEY_PROVIDERS, service.getProvidersForFactory(factoryUID));
+			Map<String, List<FactorySettingSpecifierProvider>> providers = service
+					.getProvidersForFactory(factoryUID);
+			if ( providers != null && providers.size() > 1 ) {
+				// sort map keys numerically
+				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
+				Arrays.sort(instanceIds, FactoryInstanceIdComparator.INSTANCE);
+				Map<String, List<FactorySettingSpecifierProvider>> orderedProviders = new LinkedHashMap<>();
+				for ( String id : instanceIds ) {
+					orderedProviders.put(id, providers.get(id));
+				}
+				providers = orderedProviders;
+			}
+			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
