@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.advantech.adam;
 
 import java.math.BigDecimal;
 import java.util.Set;
+import net.solarnetwork.node.domain.DataAccessor;
 
 /**
  * API for reading ADAM 411x data.
@@ -31,7 +32,7 @@ import java.util.Set;
  * @author matt
  * @version 1.0
  */
-public interface ADAM411xDataAccessor {
+public interface ADAM411xDataAccessor extends DataAccessor {
 
 	/**
 	 * Get the device model name.

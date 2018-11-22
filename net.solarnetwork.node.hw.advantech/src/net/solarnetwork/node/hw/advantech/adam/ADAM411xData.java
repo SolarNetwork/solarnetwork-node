@@ -115,7 +115,7 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 	 * @param conn
 	 *        the connection
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				ADAM411xRegister.getChannelRegisterAddressSet(), MAX_RESULTS);
 	}
