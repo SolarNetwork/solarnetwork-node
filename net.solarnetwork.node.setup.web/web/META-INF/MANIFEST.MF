@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Setup Web App
 Bundle-Description: Provides the core SolarNode setup web application.
 Bundle-SymbolicName: net.solarnetwork.node.setup.web
-Bundle-Version: 1.36.0
+Bundle-Version: 1.37.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-ClassPath: WEB-INF/classes/
 Web-ContextPath: /
 Eclipse-ExtensibleAPI: true
@@ -39,6 +39,7 @@ Import-Package:
  net.solarnetwork.node.reactor;version="1.1",
  net.solarnetwork.node.reactor.support;version="1.2",
  net.solarnetwork.node.settings;version="1.10",
+ net.solarnetwork.node.settings.support;version="1.9.0",
  net.solarnetwork.node.setup;version="1.12",
  net.solarnetwork.node.support;version="1.13",
  net.solarnetwork.support;version="1.2",
