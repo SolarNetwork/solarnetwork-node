@@ -92,6 +92,8 @@ public enum InputRangeType {
 
 	Unknown(-1, "Unknown", InputUnit.Unknown, 1, 0f, 0f);
 
+	private static final float MAX_VALUE = 0xFFFF;
+
 	private final int code;
 	private final String description;
 	private final InputUnit unit;
@@ -190,32 +192,18 @@ public enum InputRangeType {
 		return max;
 	}
 
-	public static final int MAX_FULL_SCALE = 32767;
-
-	public static final int MIN_FULL_SCALE = -32768;
-
 	/**
 	 * Get a normalized decimal value for a given raw data value.
 	 * 
 	 * @param dataValue
-	 *        the data value from the device (in 16-bit signed form)
+	 *        the data value from the device (in 16-bit unsigned "engineering
+	 *        unit" form)
 	 * @return the normalized decimal value, in base units
 	 */
 	public BigDecimal normalizedDataValue(int dataValue) {
 		BigDecimal result = null;
-		float spanPercent;
-		if ( unit == InputUnit.DegreeCelsius ) {
-			float rangeTop = Math.max(Math.abs(min), Math.abs(max));
-			if ( dataValue < 0 ) {
-				spanPercent = (float) dataValue / -MIN_FULL_SCALE;
-			} else {
-				spanPercent = (float) dataValue / MAX_FULL_SCALE;
-			}
-			result = new BigDecimal(spanPercent * rangeTop);
-		} else {
-			spanPercent = (dataValue - MIN_FULL_SCALE) / (float) (MAX_FULL_SCALE - MIN_FULL_SCALE);
-			result = new BigDecimal(min + (spanPercent * (max - min)));
-		}
+		float spanPercent = dataValue / MAX_VALUE;
+		result = new BigDecimal(min + (spanPercent * (max - min)));
 		if ( unitScale != 1 ) {
 			result = result.scaleByPowerOfTen(unitScale);
 		}

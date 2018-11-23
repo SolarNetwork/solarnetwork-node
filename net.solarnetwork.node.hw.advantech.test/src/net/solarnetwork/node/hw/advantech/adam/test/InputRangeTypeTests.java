@@ -40,63 +40,62 @@ public class InputRangeTypeTests {
 	@Test
 	public void plusMinusFifteenMilliVolts() {
 		InputRangeType type = InputRangeType.PlusMinusFifteenMilliVolts;
-		assertThat("Small value", type.normalizedDataValue((short) 0x8000),
-				equalTo(new BigDecimal("-0.015")));
-		assertThat("Middle value", type.normalizedDataValue(0x0000).setScale(3, RoundingMode.HALF_UP),
+		assertThat("Small value", type.normalizedDataValue(0x0000), equalTo(new BigDecimal("-0.015")));
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
 				equalTo(new BigDecimal("0.000")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("0.015")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("0.015")));
 
 	}
 
 	@Test
 	public void plusMinusOneVolts() {
 		InputRangeType type = InputRangeType.PlusMinusOneVolts;
-		assertThat("Small value", type.normalizedDataValue((short) 0x8000),
+		assertThat("Small value", type.normalizedDataValue((short) 0x0000),
 				equalTo(new BigDecimal("-1")));
-		assertThat("Middle value", type.normalizedDataValue(0x0000).setScale(3, RoundingMode.HALF_UP),
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
 				equalTo(new BigDecimal("0.000")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("1")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("1")));
 
 	}
 
 	@Test
 	public void fourToTwentyMilliAmps() {
 		InputRangeType type = InputRangeType.FourToTwentyMilliAmps;
-		assertThat("Small value", type.normalizedDataValue((short) 0x8000),
+		assertThat("Small value", type.normalizedDataValue((short) 0x0000),
 				equalTo(new BigDecimal("0.004")));
-		assertThat("Middle value", type.normalizedDataValue(0x0000).setScale(3, RoundingMode.HALF_UP),
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
 				equalTo(new BigDecimal("0.012")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("0.020")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("0.020")));
 
 	}
 
 	@Test
 	public void thermNormalizedValue_J() {
 		InputRangeType type = InputRangeType.TypeJThermocouple;
-		assertThat("Small value", type.normalizedDataValue(0x0), equalTo(new BigDecimal("0")));
-		assertThat("Middle value", type.normalizedDataValue(0x4000).setScale(3, RoundingMode.HALF_UP),
-				equalTo(new BigDecimal("380.012")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("760")));
+		assertThat("Small value", type.normalizedDataValue(0x0000), equalTo(new BigDecimal("0")));
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
+				equalTo(new BigDecimal("380.006")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("760")));
 	}
 
 	@Test
 	public void thermNormalizedValue_R() {
 		InputRangeType type = InputRangeType.TypeRThermocouple;
-		assertThat("Small value", type.normalizedDataValue(0x2492).setScale(3, RoundingMode.HALF_UP),
+		assertThat("Small value", type.normalizedDataValue(0x0000).setScale(3, RoundingMode.HALF_UP),
 				equalTo(new BigDecimal("500.000")));
-		assertThat("Middle value", type.normalizedDataValue(0x5249).setScale(3, RoundingMode.HALF_UP),
-				equalTo(new BigDecimal("1125.027")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("1750")));
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
+				equalTo(new BigDecimal("1125.010")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("1750")));
 	}
 
 	@Test
 	public void thermNormalizedValue_T() {
 		InputRangeType type = InputRangeType.TypeTThermocouple;
-		assertThat("Small value", type.normalizedDataValue((short) 0xE000),
+		assertThat("Small value", type.normalizedDataValue((short) 0x0000),
 				equalTo(new BigDecimal("-100")));
-		assertThat("Middle value", type.normalizedDataValue(0x3000).setScale(3, RoundingMode.HALF_UP),
-				equalTo(new BigDecimal("150.005")));
-		assertThat("Big value", type.normalizedDataValue(0x7FFF), equalTo(new BigDecimal("400")));
+		assertThat("Middle value", type.normalizedDataValue(0x8000).setScale(3, RoundingMode.HALF_UP),
+				equalTo(new BigDecimal("150.004")));
+		assertThat("Big value", type.normalizedDataValue(0xFFFF), equalTo(new BigDecimal("400")));
 	}
 
 }
