@@ -17,6 +17,7 @@
  * 02111-1307 USA
  * ===================================================================
  */
+
 package net.solarnetwork.node.weather.ibm.wc.test;
 
 import static org.easymock.EasyMock.expect;
@@ -29,36 +30,33 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.weather.ibm.wc.BasicWCClient;
 import net.solarnetwork.node.weather.ibm.wc.WCClient;
 import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatum;
 import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource;
 
 /**
- * Tests the parsing for hourly forecasts using downloaded JSON
+ * Tests the parsing for hourly forecasts using downloaded JSON.
  * 
  * @author matt frost
  *
  */
-public class WCHourlyDatumDataSourceTests{
+public class WCHourlyDatumDataSourceTests {
+
 	private static final String TEST_SOURCE_ID = "src.test";
 	private static final String TEST_PERIOD = "1day";
 	private static final String TEST_KEY = "key.test";
 	private static final String TEST_LOC = "loc.test";
-	
+
 	private WCHourlyDatumDataSource hourlyService;
 
 	private WCClient client;
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Before
 	public void additionalSetup() {
 
 		client = EasyMock.createMock(WCClient.class);
-		
+
 		hourlyService = new WCHourlyDatumDataSource();
 		hourlyService.setClient(client);
 		hourlyService.setDatumPeriod(TEST_PERIOD);
@@ -76,14 +74,13 @@ public class WCHourlyDatumDataSourceTests{
 		EasyMock.replay(client);
 	}
 
-
 	@Test
 	public void defaultValues() {
 		replayAll();
 		WCHourlyDatumDataSource ds = new WCHourlyDatumDataSource();
 		assertTrue("Client available", ds.getClient() instanceof BasicWCClient);
 	}
-	
+
 	@Test
 	public void readMultipleDatum() {
 

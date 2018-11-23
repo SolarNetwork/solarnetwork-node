@@ -25,7 +25,6 @@ package net.solarnetwork.node.weather.ibm.wc.test;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,19 +48,19 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public final void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch)
-			throws IOException, ServletException {
-		
+	public final void handle(String target, HttpServletRequest request, HttpServletResponse response,
+			int dispatch) throws IOException, ServletException {
+
 		try {
 			handled = handleInternal(request, response);
 			((Request) request).setHandled(handled);
-		} catch (Throwable e) {
+		} catch ( Throwable e ) {
 			exception = e;
-			if (e instanceof IOException) {
+			if ( e instanceof IOException ) {
 				throw (IOException) e;
-			} else if (e instanceof ServletException) {
+			} else if ( e instanceof ServletException ) {
 				throw (ServletException) e;
-			} else if (e instanceof Error) {
+			} else if ( e instanceof Error ) {
 				throw (Error) e;
 			} else {
 				throw new RuntimeException(e);
@@ -73,18 +72,19 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	 * HTTP invocation.
 	 * 
 	 * @param request
-	 *            the request
+	 *        the request
 	 * @param response
-	 *            the response
+	 *        the response
 	 * @return <em>true</em> if the request was handled successfully, and as
 	 *         expected.
 	 * @throws Exception
-	 *             If any problem occurs.
+	 *         If any problem occurs.
 	 */
 	protected abstract boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
 			throws Exception;
 
-	protected void respondWithResource(HttpServletResponse response, String resource) throws IOException {
+	protected void respondWithResource(HttpServletResponse response, String resource)
+			throws IOException {
 		respondWithResource(response, resource, "text/json); charset=utf-8");
 	}
 
@@ -92,8 +92,9 @@ public abstract class TestHttpHandler extends AbstractHandler {
 			throws IOException {
 		response.setContentType(contentType);
 		InputStream in = getClass().getResourceAsStream(resource);
-		if (in == null) {
-			throw new FileNotFoundException("Resource [" + resource + "] not found from class " + getClass().getName());
+		if ( in == null ) {
+			throw new FileNotFoundException(
+					"Resource [" + resource + "] not found from class " + getClass().getName());
 		}
 		FileCopyUtils.copy(in, response.getOutputStream());
 	}
@@ -103,13 +104,13 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	 * 
 	 * @return boolean
 	 * @throws Throwable
-	 *             if the handler threw an exception or JUnit assertion
+	 *         if the handler threw an exception or JUnit assertion
 	 */
 	public boolean isHandled() throws Exception {
-		if (exception != null) {
-			if (exception instanceof Error) {
+		if ( exception != null ) {
+			if ( exception instanceof Error ) {
 				throw (Error) exception;
-			} else if (exception instanceof Exception) {
+			} else if ( exception instanceof Exception ) {
 				throw (Exception) exception;
 			}
 			throw new RuntimeException(exception);

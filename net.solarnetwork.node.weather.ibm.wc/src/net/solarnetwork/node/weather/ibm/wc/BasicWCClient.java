@@ -39,6 +39,7 @@ import net.solarnetwork.node.support.JsonHttpClientSupport;
  * parses the information as datum.
  * 
  * @author matt frost
+ * @version 1.1
  */
 public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 
@@ -66,15 +67,15 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	public static final String DEFAULT_LANGUAGE = "en-US";
 
 	/** The default value for the {@code units} property. */
-	public static final String DEFAULT_UNITS = "e";
+	public static final MeasurementUnit DEFAULT_UNITS = MeasurementUnit.Metric;
 
 	private String baseUrl;
 	private String dailyForecastUrl;
 	private String hourlyForecastUrl;
-	private String format;
-	private String language;
-	private String units;
-	private DateTimeFormatter dateFormat;
+	private final String format;
+	private final String language;
+	private MeasurementUnit units;
+	private final DateTimeFormatter dateFormat;
 
 	public BasicWCClient() {
 		this.baseUrl = DEFAULT_BASE_URL;
@@ -90,9 +91,8 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 	}
 
 	private String getURL(String requestURL, String location, String apiKey, String datumPeriod) {
-
-		return this.baseUrl + "/"
-				+ String.format(requestURL, datumPeriod, location, language, format, units, apiKey);
+		return this.baseUrl + "/" + String.format(requestURL, datumPeriod, location, language, format,
+				units.getKey(), apiKey);
 	}
 
 	/**
@@ -290,6 +290,51 @@ public class BasicWCClient extends JsonHttpClientSupport implements WCClient {
 
 	public void setHourlyForecastUrl(String hourlyForecastUrl) {
 		this.hourlyForecastUrl = hourlyForecastUrl;
+	}
+
+	/**
+	 * Get the measurement unit to use.
+	 * 
+	 * @return the measurement unit
+	 */
+	public MeasurementUnit getUnits() {
+		return units;
+	}
+
+	/**
+	 * Set the measurement unit to use.
+	 * 
+	 * @param units
+	 *        the unit to use
+	 */
+	public void setUnits(MeasurementUnit units) {
+		this.units = units;
+	}
+
+	/**
+	 * Get the measurement unit key value.
+	 * 
+	 * @return the measurement unit key value
+	 */
+	public String getUnitsKey() {
+		return units.getKey();
+	}
+
+	/**
+	 * Set the measurement unit via a key value.
+	 * 
+	 * @param key
+	 *        the key value to set; {@link MeasurementUnit#Metric} will be set
+	 *        if {@code key} is not supported
+	 */
+	public void setUnitsKey(String key) {
+		MeasurementUnit u;
+		try {
+			u = MeasurementUnit.forKey(key);
+		} catch ( IllegalArgumentException e ) {
+			u = DEFAULT_UNITS;
+		}
+		setUnits(u);
 	}
 
 }
