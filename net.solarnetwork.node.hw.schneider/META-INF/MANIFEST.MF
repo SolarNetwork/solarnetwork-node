@@ -3,11 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider Electric Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.schneider
 Bundle-Description: Hardware support for Schneider Electric devices.
-Bundle-Version: 2.4.0
+Bundle-Version: 2.4.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: 
- net.solarnetwork.node.hw.schneider.meter;version="2.3.0"
+ net.solarnetwork.node.hw.schneider.meter;version="2.3.1"
 Import-Package: 
  bak.pcj;version="[1.2,2.0)",
  bak.pcj.hash;version="[1.2,2.0)",

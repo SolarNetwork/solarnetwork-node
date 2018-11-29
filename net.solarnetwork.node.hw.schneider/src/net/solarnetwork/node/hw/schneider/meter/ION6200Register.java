@@ -150,7 +150,7 @@ public enum ION6200Register implements ModbusReference {
 	private static IntRangeSet createMeterRegisterAddressSet() {
 		IntRangeSet set = new IntRangeSet();
 		for ( ION6200Register r : ION6200Register.values() ) {
-			if ( !r.name().startsWith("Meter") ) {
+			if ( !(r.name().startsWith("Meter") || r.name().startsWith("ConfigProgrammable")) ) {
 				continue;
 			}
 			int len = r.getDataType().getWordLength();
@@ -223,8 +223,8 @@ public enum ION6200Register implements ModbusReference {
 	}
 
 	/**
-	 * Get an address range set that covers all the meter registers defined in
-	 * this enumeration.
+	 * Get an address range set that covers all the meter and programmable scale
+	 * registers defined in this enumeration.
 	 * 
 	 * <p>
 	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
