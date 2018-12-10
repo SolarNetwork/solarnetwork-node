@@ -58,14 +58,15 @@ buttons to add/remove property configurations.
 
 Each property configuration contains the following settings:
 
-| Setting         | Description                                                                                             |
-|-----------------|---------------------------------------------------------------------------------------------------------|
-| Name            | An arbitrary name used only for reference.                                                              |
-| Property        | The name of the datum property to save the channel value as.                                            |
-| Property Type   | The type of datum property to use.                                                                      |
-| Channel         | The ADAM channel to read from (zero-based).                                                             |
-| Unit Multiplier | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
-| Decimal Scale   | For numeric data types, a maximum number of decimal places to round decimal numbers to.                 |
+| Setting         | Description                                                                     |
+|-----------------|---------------------------------------------------------------------------------|
+| Name            | An arbitrary name used only for reference.                                      |
+| Property        | The name of the datum property to save the channel value as.                    |
+| Property Type   | The type of datum property to use.                                              |
+| Channel         | The ADAM channel to read from (zero-based).                                     |
+| Offset          | An offset to apply to the Modbus value to shift the output range.               |
+| Unit Multiplier | A multiplier to apply to the Modbus value to normalize it into a standard unit. |
+| Decimal Scale   | A maximum number of decimal places to round decimal numbers to.                 |
 
 ## Datum property settings notes
 
@@ -83,11 +84,15 @@ Each property configuration contains the following settings:
 	a power meter. <b>Instantaneous</b> is used for properties that capture values
 	that record independent values over time, such as <code>watts</code>. <b>Status</b>
 	is used for non-numeric values such as string status messages.</dd>
+	<dt>Offset</dt>
+	<dd>This can be used to shift a sensor's input range into a different output range. For example
+	for a ±15mV sensor, configure <code>0.015</code> to shift the output to 0-30mV. Note how the
+	offsets are specified in <b>standard channel units</b>, so <code>V</code> in this example.</dd>
 	<dt>Unit Multiplier</dt>
 	<dd>The property values stored in SolarNetwork should be normalized into standard
 	base units if possible. For example if a power meter reports power in <i>kilowattts</i>
 	then a unit multiplier of <code>1000</code> can be used to convert the values into
-	<i>watts</i>.</dd>
+	<i>watts</i>. This transformation is applied <b>after</b> the configured <b>Offset</b> value.</dd>
 	<dt>Decimal Scale</dt>
 	<dd>This setting will round decimal numbers to at most this number of decimal places. Setting
 	to <code>0</code> rounds decimals to whole numbers. Setting to <code>-1</code> disables

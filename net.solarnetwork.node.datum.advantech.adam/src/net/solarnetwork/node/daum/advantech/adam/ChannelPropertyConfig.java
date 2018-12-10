@@ -43,7 +43,7 @@ import net.solarnetwork.util.NumberUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
 
@@ -53,6 +53,9 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	/** The default value for the {@code propertyType} property. */
 	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
 
+	/** The default value for the {@code offset} property. */
+	public static final BigDecimal DEFAULT_OFFSET = BigDecimal.ZERO;
+
 	/** The default value for the {@code unitMultiplier} property. */
 	public static final BigDecimal DEFAULT_UNIT_MULTIPLIER = BigDecimal.ONE;
 
@@ -60,6 +63,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	public static final int DEFAULT_DECIMAL_SCALE = 5;
 
 	private String name;
+	private BigDecimal offset;
 	private BigDecimal unitMultiplier;
 	private int decimalScale;
 
@@ -83,6 +87,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	public ChannelPropertyConfig(String propertyKey, GeneralDatumSamplesType propertyType,
 			Integer channelNumber) {
 		super(propertyKey, propertyType, channelNumber);
+		offset = DEFAULT_OFFSET;
 		unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
 		decimalScale = DEFAULT_DECIMAL_SCALE;
 	}
@@ -123,6 +128,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 		channelSpec.setValueTitles(channelTitles);
 		results.add(channelSpec);
 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "offset", DEFAULT_OFFSET.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier",
 				DEFAULT_UNIT_MULTIPLIER.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
@@ -149,6 +155,24 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
 		}
 		return v;
+	}
+
+	/**
+	 * Apply the offset to a number value.
+	 * 
+	 * @param value
+	 *        the number to apply the offset to
+	 * @return the value
+	 * @throws NullPointerException
+	 *         if {@code value} is {@literal null}
+	 * @since 1.1
+	 */
+	public Number applyOffset(Number value) {
+		if ( BigDecimal.ZERO.compareTo(offset) == 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		return v.add(offset);
 	}
 
 	/**
@@ -181,6 +205,23 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 			return null;
 		}
 		return applyDecimalScale(applyUnitMultiplier(value));
+	}
+
+	/**
+	 * Apply the configured offset, unit multiplier, and decimal scale to a
+	 * number value.
+	 * 
+	 * @param value
+	 *        the number to apply the settings to
+	 * @return the result, or {@literal null} if {@code value} is
+	 *         {@literal null}
+	 * @since 1.1
+	 */
+	public Number applyTransformations(Number value) {
+		if ( value == null ) {
+			return null;
+		}
+		return applyDecimalScale(applyUnitMultiplier(applyOffset(value)));
 	}
 
 	/**
@@ -232,9 +273,37 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	}
 
 	/**
+	 * Get the offset.
+	 * 
+	 * @return the offset; defaults to {@link #DEFAULT_OFFSET}
+	 * @since 1.1
+	 */
+	public BigDecimal getOffset() {
+		return offset;
+	}
+
+	/**
+	 * Set the offset.
+	 * 
+	 * <p>
+	 * This value represents an offset value to add to values collected for this
+	 * property so that a standardized range is captured. For example a channel
+	 * might have a +/- 15 range, but the desired output is 0-30. Configuring
+	 * {@literal 15} as the offset would shift the values into that range.
+	 * </p>
+	 * 
+	 * @param offset
+	 *        the offset to set
+	 * @since 1.1
+	 */
+	public void setOffset(BigDecimal offset) {
+		this.offset = offset;
+	}
+
+	/**
 	 * Get the unit multiplier.
 	 * 
-	 * @return the multiplier
+	 * @return the multiplier; defaults to {@link #DEFAULT_UNIT_MULTIPLIER}
 	 */
 	public BigDecimal getUnitMultiplier() {
 		return unitMultiplier;
@@ -261,7 +330,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	/**
 	 * Get the decimal scale to round decimal numbers to.
 	 * 
-	 * @return the decimal scale
+	 * @return the decimal scale; defaults to {@link #DEFAULT_DECIMAL_SCALE}
 	 */
 	public int getDecimalScale() {
 		return decimalScale;
