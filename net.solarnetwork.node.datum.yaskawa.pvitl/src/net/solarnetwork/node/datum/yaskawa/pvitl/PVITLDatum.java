@@ -23,7 +23,9 @@
 package net.solarnetwork.node.datum.yaskawa.pvitl;
 
 import java.util.Date;
+import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
 
 /**
@@ -52,9 +54,20 @@ public class PVITLDatum extends GeneralNodePVEnergyDatum {
 		populateMeasurements(sample);
 	}
 
-	private void populateMeasurements(PVITLDataAccessor sample2) {
-		// TODO Auto-generated method stub
+	private void populateMeasurements(PVITLDataAccessor data) {
+		setDCPower(data.getDCPower());
+		setDCVoltage(data.getDCVoltage());
+		setVoltage(data.getVoltage());
+		setWattHourReading(data.getActiveEnergyDelivered());
+		setWatts(data.getActivePower());
 
+		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
+		putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY, data.getCurrent());
+
+		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "1", data.getPv1Voltage());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "1", data.getPv1Power());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "2", data.getPv2Voltage());
+		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());
 	}
 
 	/**
