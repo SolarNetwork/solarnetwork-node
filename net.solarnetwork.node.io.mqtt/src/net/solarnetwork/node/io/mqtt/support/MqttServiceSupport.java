@@ -225,7 +225,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	}
 
 	/**
-	 * Get the MQTT client.
+	 * Get the MQTT client, creating it if not already created.
 	 * 
 	 * <p>
 	 * This method will create the client and connect if not already done,
@@ -234,7 +234,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	 * 
 	 * @return the MQTT client
 	 */
-	protected synchronized IMqttClient client() {
+	protected synchronized final IMqttClient client() {
 		IMqttClient client = clientRef.get();
 		if ( client != null ) {
 			return client;
@@ -272,6 +272,15 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 		return null;
 	}
 
+	/**
+	 * Get the MQTT client.
+	 * 
+	 * @return the client, or {@literal null} if it has not been created
+	 */
+	protected final IMqttClient getClient() {
+		return clientRef.get();
+	}
+
 	@Override
 	public void connectionLost(Throwable cause) {
 		IMqttClient client = clientRef.get();
@@ -299,8 +308,26 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	 * 
 	 * @return the mapper
 	 */
-	protected ObjectMapper getObjectMapper() {
+	public ObjectMapper getObjectMapper() {
 		return objectMapper;
+	}
+
+	/**
+	 * Get the configured task scheduler.
+	 * 
+	 * @return the task scheduler
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Get the configured optional SSL service.
+	 * 
+	 * @return the service
+	 */
+	public OptionalService<SSLService> getSslServiceOpt() {
+		return sslServiceOpt;
 	}
 
 	/**
