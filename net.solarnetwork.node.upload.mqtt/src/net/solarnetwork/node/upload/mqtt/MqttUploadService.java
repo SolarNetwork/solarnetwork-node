@@ -29,20 +29,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallbackExtended;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +45,7 @@ import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.io.mqtt.support.MqttServiceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -67,7 +61,8 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.0
  */
-public class MqttUploadService implements UploadService, MqttCallbackExtended {
+public class MqttUploadService extends MqttServiceSupport
+		implements UploadService, MqttCallbackExtended {
 
 	/** The JSON MIME type. */
 	public static final String JSON_MIME_TYPE = "application/json";
@@ -78,20 +73,10 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%s/datum";
 
-	private static final long MAX_CONNECT_DELAY_MS = 120000L;
-
-	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
-	private final TaskScheduler taskScheduler;
-	private final OptionalService<SSLService> sslServiceOpt;
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
 	private final OptionalService<EventAdmin> eventAdminOpt;
-	private final AtomicReference<IMqttClient> clientRef;
-
-	private String persistencePath = "var/mqtt";
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Constructor.
@@ -117,65 +102,34 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 			OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService,
 			OptionalService<EventAdmin> eventAdmin) {
-		super();
-		this.objectMapper = objectMapper;
+		super(objectMapper, taskScheduler, sslService);
 		this.identityService = identityService;
-		this.taskScheduler = taskScheduler;
-		this.sslServiceOpt = sslService;
 		this.reactorServiceOpt = reactorService;
 		this.instructionExecutionServiceOpt = instructionExecutionService;
 		this.eventAdminOpt = eventAdmin;
-		this.clientRef = new AtomicReference<IMqttClient>();
 	}
 
-	/**
-	 * Initialize the service after fully configured.
-	 */
-	public void init() {
-		if ( taskScheduler != null ) {
-			final AtomicLong sleep = new AtomicLong(2000);
-			taskScheduler.schedule(new Runnable() {
+	@Override
+	protected String getMqttClientId() {
+		final Long nodeId = identityService.getNodeId();
+		return (nodeId != null ? nodeId.toString() : null);
+	}
 
-				@Override
-				public void run() {
-					try {
-						IMqttClient client = client();
-						if ( client != null ) {
-							return;
-						}
-					} catch ( RuntimeException e ) {
-						// ignore
-					}
-					long delay = sleep.accumulateAndGet(sleep.get() / 2000, (c, s) -> {
-						long d = (s * 2) * 2000;
-						if ( d > MAX_CONNECT_DELAY_MS ) {
-							d = MAX_CONNECT_DELAY_MS;
-						}
-						return d;
-					});
-					log.info("Failed to connect to MQTT server {}, will try again in {}s",
-							identityService.getSolarInMqttUrl(), delay / 1000);
-					taskScheduler.schedule(this, new Date(System.currentTimeMillis() + delay));
-				}
-			}, new Date(System.currentTimeMillis() + sleep.get()));
-		} else {
-			client();
+	@Override
+	protected URI getMqttUri() {
+		try {
+			return new URI(identityService.getSolarInMqttUrl());
+		} catch ( NullPointerException | URISyntaxException e1 ) {
+			log.error("Invalid MQTT URL: " + identityService.getSolarInMqttUrl());
+			return null;
 		}
 	}
 
-	/**
-	 * Close down the service.
-	 */
-	public void close() {
-		IMqttClient client = clientRef.get();
-		if ( client != null ) {
-			try {
-				client.disconnectForcibly();
-				client.close();
-			} catch ( MqttException e ) {
-				log.warn("Error closing MQTT connection to {}: {}", client.getServerURI(), e.toString());
-			}
-		}
+	@Override
+	protected MqttConnectOptions createMqttConnectOptions(URI uri) {
+		MqttConnectOptions options = super.createMqttConnectOptions(uri);
+		options.setCleanSession(false);
+		return options;
 	}
 
 	@Override
@@ -187,7 +141,8 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	public String uploadDatum(Datum data) {
 		final Long nodeId = identityService.getNodeId();
 		if ( nodeId != null ) {
-			IMqttClient client = clientRef.get();
+			IMqttClient client = getClient();
+			ObjectMapper objectMapper = getObjectMapper();
 			if ( client != null ) {
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
 				try {
@@ -253,73 +208,11 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		client.subscribe(instructionTopic);
 	}
 
-	private IMqttClient client() {
-		IMqttClient client = clientRef.get();
-		if ( client != null ) {
-			return client;
-		}
-
-		final Long nodeId = identityService.getNodeId();
-		if ( nodeId == null ) {
-			return null;
-		}
-
-		URI uri;
-		try {
-			uri = new URI(identityService.getSolarInMqttUrl());
-		} catch ( NullPointerException | URISyntaxException e1 ) {
-			log.error("Invalid MQTT URL: " + identityService.getSolarInMqttUrl());
-			return null;
-		}
-
-		int port = uri.getPort();
-		String scheme = uri.getScheme();
-		boolean useSsl = (port == 8883 || "mqtts".equalsIgnoreCase(scheme)
-				|| "ssl".equalsIgnoreCase(scheme));
-
-		final String serverUri = (useSsl ? "ssl" : "tcp") + "://" + uri.getHost()
-				+ (port > 0 ? ":" + uri.getPort() : "");
-
-		MqttConnectOptions connOptions = new MqttConnectOptions();
-		connOptions.setCleanSession(false);
-		connOptions.setAutomaticReconnect(true);
-
-		final SSLService sslService = (sslServiceOpt != null ? sslServiceOpt.service() : null);
-		if ( useSsl && sslService != null ) {
-			connOptions.setSocketFactory(sslService.getSolarInSocketFactory());
-		}
-
-		MqttDefaultFilePersistence persistence = new MqttDefaultFilePersistence(persistencePath);
-		MqttClient c = null;
-		try {
-			c = new MqttClient(serverUri, nodeId.toString(), persistence);
-			c.setCallback(this);
-			if ( clientRef.compareAndSet(null, c) ) {
-				c.connect(connOptions);
-				subscribeToTopics(c, nodeId);
-				return c;
-			}
-		} catch ( MqttException e ) {
-			log.warn("Error configuring MQTT client: {}", e.toString());
-			if ( c != null ) {
-				clientRef.compareAndSet(c, null);
-			}
-		}
-		return null;
-	}
-
-	@Override
-	public void connectionLost(Throwable cause) {
-		IMqttClient client = clientRef.get();
-		log.info("Connection to MQTT server @ {} lost: {}",
-				(client != null ? client.getServerURI() : "N/A"), cause.getMessage());
-	}
-
 	private void postInstructionAcks(List<Instruction> instructions) {
 		if ( instructions == null || instructions.isEmpty() ) {
 			return;
 		}
-		IMqttClient client = clientRef.get();
+		IMqttClient client = getClient();
 		ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
 		if ( client == null ) {
 			// save locally for batch upload
@@ -331,6 +224,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 		} else {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
 			try {
+				ObjectMapper objectMapper = getObjectMapper();
 				for ( Instruction instr : instructions ) {
 					client.publish(topic, objectMapper.writeValueAsBytes(instr), 1, false);
 					if ( reactor != null ) {
@@ -367,7 +261,7 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 			// look for and process instructions from message body, as JSON array
 			ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
 			if ( reactor != null ) {
-				JsonNode root = objectMapper.readTree(message.getPayload());
+				JsonNode root = getObjectMapper().readTree(message.getPayload());
 				JsonNode instrArray = root.path("instructions");
 				if ( instrArray != null && instrArray.isArray() ) {
 					InstructionExecutionService executor = (instructionExecutionServiceOpt != null
@@ -409,53 +303,33 @@ public class MqttUploadService implements UploadService, MqttCallbackExtended {
 	}
 
 	@Override
-	public void deliveryComplete(IMqttDeliveryToken token) {
-		// nothing to do
-	}
-
-	@Override
 	public void connectComplete(boolean reconnect, String serverURI) {
-		log.info("{} to MQTT server @ {}", (reconnect ? "Reconnected" : "Connected"), serverURI);
-		if ( reconnect ) {
-			// re-subscribe
-			final Long nodeId = identityService.getNodeId();
-			final IMqttClient client = clientRef.get();
-			if ( nodeId != null && client != null ) {
-				try {
-					subscribeToTopics(client, nodeId);
-				} catch ( MqttException e ) {
-					log.error("Error subscribing to node topics: {}", e.getMessage(), e);
-					if ( taskScheduler != null ) {
-						taskScheduler.schedule(new Runnable() {
+		super.connectComplete(reconnect, serverURI);
+		// re-subscribe
+		final Long nodeId = identityService.getNodeId();
+		final IMqttClient client = getClient();
+		if ( nodeId != null && client != null ) {
+			try {
+				subscribeToTopics(client, nodeId);
+			} catch ( MqttException e ) {
+				log.error("Error subscribing to node topics: {}", e.getMessage(), e);
+				TaskScheduler taskScheduler = getTaskScheduler();
+				if ( taskScheduler != null ) {
+					taskScheduler.schedule(new Runnable() {
 
-							@Override
-							public void run() {
-								try {
-									client.disconnect();
-								} catch ( MqttException e ) {
-									log.warn("Error disconnecting from MQTT server @ {}: {}", serverURI,
-											e.getMessage());
-								}
+						@Override
+						public void run() {
+							try {
+								client.disconnect();
+							} catch ( MqttException e ) {
+								log.warn("Error disconnecting from MQTT server @ {}: {}", serverURI,
+										e.getMessage());
 							}
-						}, new Date(System.currentTimeMillis() + 20));
-					}
+						}
+					}, new Date(System.currentTimeMillis() + 20));
 				}
 			}
 		}
-	}
-
-	/**
-	 * Set the path to store persisted MQTT data.
-	 * 
-	 * <p>
-	 * This directory will be created if it does not already exist.
-	 * </p>
-	 * 
-	 * @param persistencePath
-	 *        the path to set; defaults to {@literal var/mqtt}
-	 */
-	public void setPersistencePath(String persistencePath) {
-		this.persistencePath = persistencePath;
 	}
 
 }
