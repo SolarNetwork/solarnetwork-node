@@ -144,7 +144,7 @@ public class MqttUploadService extends MqttServiceSupport
 			IMqttClient client = getClient();
 			ObjectMapper objectMapper = getObjectMapper();
 			if ( client != null ) {
-				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
+				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId);
 				try {
 					JsonNode jsonData = objectMapper.valueToTree(data);
 					client.publish(topic, objectMapper.writeValueAsBytes(jsonData), 1, false);
