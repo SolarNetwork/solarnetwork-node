@@ -27,6 +27,11 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
+	
+	<bean id="settingDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
+	</bean>
 
 	<reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" availability="optional">
 		<reference-listener bind-method="onBind" unbind-method="onUnbind">
@@ -267,5 +272,19 @@
 			<property name="messageSendingOperations" ref="messageSendingOperations"/>
 		</bean>
 	</service>
+	
+	<!-- OperationalModesService -->
 
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.OperationalModesService</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init">
+			<argument ref="settingDao"/>
+			<argument ref="eventAdmin"/>
+			<property name="taskScheduler" ref="taskScheduler"/>
+		</bean>
+	</service>
+	
 </blueprint>
