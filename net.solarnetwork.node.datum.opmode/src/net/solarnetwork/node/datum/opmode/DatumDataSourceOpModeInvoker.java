@@ -144,7 +144,7 @@ public class DatumDataSourceOpModeInvoker
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Set<String> activeOpModes = (Set) opModes;
 		boolean active = activeOpModes.contains(myOpMode);
-		log.info("DatumDataSource scheduler config {} operational mode {} {}",
+		log.info("DatumDataSource scheduler config [{}] operational mode [{}] {}",
 				this.uid != null ? this.uid : this.toString(), myOpMode, active ? "active" : "inactive");
 		Runnable task = new Runnable() {
 
