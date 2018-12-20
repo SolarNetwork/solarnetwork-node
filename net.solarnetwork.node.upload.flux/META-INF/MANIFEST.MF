@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -16,10 +16,10 @@ Import-Package:
  javax.net,
  javax.net.ssl,
  net.solarnetwork.domain;version="1.14.0",
- net.solarnetwork.node;version="1.24.0",
+ net.solarnetwork.node;version="1.25.0",
  net.solarnetwork.node.dao;version="1.8.0",
  net.solarnetwork.node.domain;version="1.12.0",
- net.solarnetwork.node.io.mqtt.support;version="1.0.0",
+ net.solarnetwork.node.io.mqtt.support;version="1.0.1",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.1",
  net.solarnetwork.node.support;version="1.15.0",
