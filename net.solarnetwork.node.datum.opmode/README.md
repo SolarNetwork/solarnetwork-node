@@ -45,6 +45,9 @@ Each data source configuration defines a schedule and which data sources to samp
 properties are joined logically as "and" conditions, meaning all conditions must be met for a data 
 source to be included with the schedule.
 
+**Note** if a configuration property is left empty, it matchs *all* values. Thus if all conditions
+are left empty all data sources will be included in the configuration.
+
 | Setting | Description |
 |---------|-------------|
 | Service Name | The service name of a data source to match. |
