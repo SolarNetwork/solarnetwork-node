@@ -165,12 +165,16 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		}
 		if ( modes != null && !modes.isEmpty() ) {
 			for ( String mode : modes ) {
+				if ( mode == null ) {
+					continue;
+				}
+				mode = mode.toLowerCase();
 				dao.storeSetting(SETTING_OP_MODE, mode, mode);
 			}
 		}
 		Set<String> active = activeModesFromSettings(dao);
 		if ( log.isInfoEnabled() ) {
-			log.info("Enabled operational modes {}; active modes now {}",
+			log.info("Enabled operational modes [{}]; active modes now [{}]",
 					commaDelimitedStringFromCollection(modes),
 					commaDelimitedStringFromCollection(active));
 		}
@@ -186,12 +190,16 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		}
 		if ( modes != null && !modes.isEmpty() ) {
 			for ( String mode : modes ) {
+				if ( mode == null ) {
+					continue;
+				}
+				mode = mode.toLowerCase();
 				dao.deleteSetting(SETTING_OP_MODE, mode);
 			}
 		}
 		Set<String> active = activeModesFromSettings(dao);
 		if ( log.isInfoEnabled() ) {
-			log.info("Disabled operational modes {}; active modes now {}",
+			log.info("Disabled operational modes [{}]; active modes now [{}]",
 					commaDelimitedStringFromCollection(modes),
 					commaDelimitedStringFromCollection(active));
 		}
