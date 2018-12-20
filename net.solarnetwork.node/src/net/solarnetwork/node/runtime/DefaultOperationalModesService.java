@@ -95,6 +95,10 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 			public void run() {
 				Set<String> modes = activeOperationalModes();
 				if ( !modes.isEmpty() ) {
+					if ( log.isInfoEnabled() ) {
+						log.info("Initial active operational modes [{}]",
+								commaDelimitedStringFromCollection(modes));
+					}
 					postOperationalModesChangedEvent(modes);
 				}
 			}
@@ -137,6 +141,20 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 
 		}
 		return InstructionState.Completed;
+	}
+
+	@Override
+	public boolean isOperationalModeActive(String mode) {
+		if ( mode == null || mode.isEmpty() ) {
+			return true;
+		}
+		mode = mode.toLowerCase();
+		SettingDao dao = settingDao.service();
+		if ( dao == null ) {
+			return false;
+		}
+		String active = dao.getSetting(SETTING_OP_MODE, mode);
+		return active != null;
 	}
 
 	@Override

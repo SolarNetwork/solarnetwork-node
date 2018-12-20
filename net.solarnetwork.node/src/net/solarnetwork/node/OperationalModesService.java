@@ -23,6 +23,7 @@
 package net.solarnetwork.node;
 
 import java.util.Set;
+import org.osgi.service.event.Event;
 
 /**
  * API for operational mode management.
@@ -77,11 +78,26 @@ public interface OperationalModesService {
 	 * Event parameter with a {@link Set} of active operational modes.
 	 * 
 	 * <p>
-	 * If no user-defined modes are active, a "default" mode is assumed and an
-	 * empty {@link Set} must be provided.
+	 * If no user-defined modes are active, a <i>default</i> mode is assumed and
+	 * an empty {@link Set} must be provided.
 	 * </p>
 	 */
 	String EVENT_PARAM_ACTIVE_OPERATIONAL_MODES = "ActiveOpModes";
+
+	/**
+	 * Test if a specific mode is active.
+	 * 
+	 * <p>
+	 * Note that a {@literal null} or empty {@code mode} argument will be
+	 * treated as testing if the <i>default</i> mode is active, which is always
+	 * {@literal true}.
+	 * </p>
+	 * 
+	 * @param mode
+	 *        the mode to test
+	 * @return {@literal true} if {@code mode} is active
+	 */
+	boolean isOperationalModeActive(String mode);
 
 	/**
 	 * Get the set of active operational modes.
@@ -109,5 +125,35 @@ public interface OperationalModesService {
 	 *         never {@literal null}
 	 */
 	Set<String> disableOperationalModes(Set<String> modes);
+
+	/**
+	 * Test if an event has an active mode parameter value.
+	 * 
+	 * <p>
+	 * This method will look for a {@link #EVENT_PARAM_ACTIVE_OPERATIONAL_MODES}
+	 * event parameter in the provided {@code event}. If the parameter is a
+	 * {@link Set}, and it contains {@code mode} or {@code mode} is
+	 * {@literal null} or empty, then {@literal true} will be returned.
+	 * </p>
+	 * 
+	 * @param event
+	 *        the event to inspect
+	 * @param mode
+	 *        the mode to test for
+	 * @return {@literal true} if {@code mode} is included in the active modes
+	 *         included in the event
+	 */
+	static boolean hasActiveOperationalMode(Event event, String mode) {
+		Object v = (event != null ? event.getProperty(EVENT_PARAM_ACTIVE_OPERATIONAL_MODES) : null);
+		if ( !(v instanceof Set<?>) ) {
+			return false;
+		}
+		if ( mode == null || mode.isEmpty() ) {
+			// default mode is always active
+			return true;
+		}
+		mode = mode.toLowerCase();
+		return ((Set<?>) v).contains(mode);
+	}
 
 }
