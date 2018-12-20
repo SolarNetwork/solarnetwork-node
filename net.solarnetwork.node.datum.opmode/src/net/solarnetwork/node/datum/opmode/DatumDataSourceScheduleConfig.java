@@ -62,7 +62,7 @@ public class DatumDataSourceScheduleConfig {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUID", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "datumType", ""));
-		results.add(new BasicCronExpressionSettingSpecifier("schedule", DEFAULT_SCHEDULE));
+		results.add(new BasicCronExpressionSettingSpecifier(prefix + "schedule", DEFAULT_SCHEDULE));
 
 		return results;
 	}
