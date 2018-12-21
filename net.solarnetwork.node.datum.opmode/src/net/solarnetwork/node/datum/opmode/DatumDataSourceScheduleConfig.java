@@ -68,17 +68,18 @@ public class DatumDataSourceScheduleConfig {
 	}
 
 	private boolean matchesIdentifiable(Identifiable identifiable) {
-		if ( uid != null && !uid.equalsIgnoreCase(identifiable.getUID()) ) {
+		if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(identifiable.getUID()) ) {
 			return false;
 		}
-		if ( groupUID != null && !groupUID.equalsIgnoreCase(identifiable.getGroupUID()) ) {
+		if ( groupUID != null && !groupUID.isEmpty()
+				&& !groupUID.equalsIgnoreCase(identifiable.getGroupUID()) ) {
 			return false;
 		}
 		return true;
 	}
 
 	private boolean matchesDatumType(Class<?> dataSourceDatumType) {
-		if ( datumType != null ) {
+		if ( datumType != null && !datumType.isEmpty() ) {
 			if ( dataSourceDatumType == null ) {
 				return false;
 			}
