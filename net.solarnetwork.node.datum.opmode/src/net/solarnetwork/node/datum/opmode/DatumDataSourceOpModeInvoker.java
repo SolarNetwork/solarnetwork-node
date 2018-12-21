@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.quartz.CronTrigger;
@@ -290,7 +291,9 @@ public class DatumDataSourceOpModeInvoker
 			try {
 				JobDetail jobDetail = getJobDetail(scheduler);
 				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobDetail.getKey())
-						.startAt(new Date(System.currentTimeMillis() + interval)).usingJobData(jobData)
+						.startAt(new Date(
+								System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(interval)))
+						.usingJobData(jobData)
 						.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(interval)
 								.withMisfireHandlingInstructionNextWithExistingCount())
 						.build();
