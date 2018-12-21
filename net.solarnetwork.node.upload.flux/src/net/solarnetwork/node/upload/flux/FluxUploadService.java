@@ -75,13 +75,18 @@ public class FluxUploadService extends MqttServiceSupport
 	/** The default value for the {@code mqttUsername} property. */
 	public static final String DEFAULT_MQTT_USERNAME = "solarnode";
 
+	/**
+	 * The default value for the {@code excludePropertyNamesPattern} property.
+	 */
+	public static final Pattern DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN = Pattern.compile("_.*");
+
 	private final IdentityService identityService;
 	private MessageSource messageSource;
 	private String mqttHost = DEFAULT_MQTT_HOST;
 	private String mqttUsername = DEFAULT_MQTT_USERNAME;
-	private String mqttPassword = null;
-	private String requiredOperationalMode = null;
-	private Pattern excludePropertyNamesPattern;
+	private String mqttPassword;
+	private String requiredOperationalMode;
+	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
 	private OperationalModesService opModesService;
 	private TaskExecutor taskExecutor;
 
@@ -271,7 +276,8 @@ public class FluxUploadService extends MqttServiceSupport
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("mqttUsername", DEFAULT_MQTT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("mqttPassword", "", true));
-		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex", ""));
+		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
+				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
 		return results;
 	}
