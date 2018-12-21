@@ -173,6 +173,7 @@ public class DatumDataSourceOpModeInvoker
 		int i = 0;
 		for ( DatumDataSourceScheduleConfig config : configs ) {
 			if ( config.getSchedule() == null || config.getSchedule().isEmpty() ) {
+				log.debug("Config {} has no schedule: cannot activate", i);
 				continue;
 			}
 			JobDataMap props = new JobDataMap();
@@ -183,9 +184,13 @@ public class DatumDataSourceOpModeInvoker
 			Trigger trigger = null;
 			try {
 				int freq = Integer.parseInt(config.getSchedule());
+				log.info("Scheduling config {} data source collection for every {}s as {}", i, freq,
+						triggerKey);
 				trigger = scheduleIntervalJob(scheduler, freq, triggerKey, props, jobDesc);
 			} catch ( NumberFormatException e ) {
 				// assume cron
+				log.info("Scheduling config {} data source collection for cron [{}] as {}", i,
+						config.getSchedule(), triggerKey);
 				trigger = scheduleCronJob(scheduler, config.getSchedule(), triggerKey, props, jobDesc);
 			}
 			activeConfigurations.put(++i, new ScheduledDatumDataSourceConfig(config, trigger));
