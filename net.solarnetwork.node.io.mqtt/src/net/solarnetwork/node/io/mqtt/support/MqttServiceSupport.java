@@ -155,11 +155,22 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 				if ( this.connectOptions != null ) {
 					this.connectOptions.setAutomaticReconnect(false);
 				}
-				client.disconnectForcibly();
-				client.close();
-				clientRef.set(null);
+				client.disconnect();
 			} catch ( MqttException e ) {
 				log.warn("Error closing MQTT connection to {}: {}", client.getServerURI(), e.toString());
+				try {
+					client.disconnectForcibly();
+				} catch ( MqttException e2 ) {
+					// ignore
+				}
+			} finally {
+				try {
+					client.close();
+				} catch ( MqttException e ) {
+					// ignore
+				} finally {
+					clientRef.set(null);
+				}
 			}
 		}
 	}
