@@ -59,6 +59,8 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	private final TaskScheduler taskScheduler;
 	private final OptionalService<SSLService> sslServiceOpt;
 	private final AtomicReference<IMqttClient> clientRef;
+	private Runnable initTask;
+	private MqttConnectOptions connectOptions;
 
 	private String persistencePath = DEFAULT_PERSISTENCE_PATH;
 
@@ -91,18 +93,30 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
 	/**
 	 * Initialize the service after fully configured.
+	 * 
+	 * <p>
+	 * It is safe to call this method multiple times over the life of this
+	 * service, e.g. after calling {@link #close()} this method can be called
+	 * again to re-connect to the MQTT broker.
+	 * </p>
 	 */
-	public void init() {
+	public synchronized void init() {
 		if ( taskScheduler != null ) {
+			if ( initTask != null ) {
+				return;
+			}
 			final AtomicLong sleep = new AtomicLong(2000);
-			taskScheduler.schedule(new Runnable() {
+			initTask = new Runnable() {
 
 				@Override
 				public void run() {
 					try {
-						IMqttClient client = client();
-						if ( client != null ) {
-							return;
+						synchronized ( MqttServiceSupport.this ) {
+							IMqttClient client = client();
+							if ( client != null ) {
+								initTask = null;
+								return;
+							}
 						}
 					} catch ( RuntimeException e ) {
 						// ignore
@@ -118,7 +132,9 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 							delay / 1000);
 					taskScheduler.schedule(this, new Date(System.currentTimeMillis() + delay));
 				}
-			}, new Date(System.currentTimeMillis() + sleep.get()));
+			};
+			taskScheduler.schedule(initTask, new Date(System.currentTimeMillis() + sleep.get()));
+
 		} else {
 			client();
 		}
@@ -126,15 +142,35 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
 	/**
 	 * Close down the service.
+	 * 
+	 * <p>
+	 * The {@link #init()} method can be called later to re-connect to the MQTT
+	 * service.
+	 * </p>
 	 */
-	public void close() {
+	public synchronized void close() {
 		IMqttClient client = clientRef.get();
 		if ( client != null ) {
 			try {
-				client.disconnectForcibly();
-				client.close();
+				if ( this.connectOptions != null ) {
+					this.connectOptions.setAutomaticReconnect(false);
+				}
+				client.disconnect();
 			} catch ( MqttException e ) {
 				log.warn("Error closing MQTT connection to {}: {}", client.getServerURI(), e.toString());
+				try {
+					client.disconnectForcibly();
+				} catch ( MqttException e2 ) {
+					// ignore
+				}
+			} finally {
+				try {
+					client.close();
+				} catch ( MqttException e ) {
+					// ignore
+				} finally {
+					clientRef.set(null);
+				}
 			}
 		}
 	}
@@ -252,6 +288,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 		final String serverUri = (useSsl ? "ssl" : "tcp") + "://" + uri.getHost()
 				+ (port > 0 ? ":" + uri.getPort() : "");
 
+		this.connectOptions = null;
 		MqttConnectOptions connOptions = createMqttConnectOptions(uri);
 
 		MqttClientPersistence persistence = createMqttClientPersistence();
@@ -261,6 +298,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 			c.setCallback(this);
 			if ( clientRef.compareAndSet(null, c) ) {
 				c.connect(connOptions);
+				this.connectOptions = connOptions;
 				return c;
 			}
 		} catch ( MqttException e ) {
@@ -277,7 +315,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	 * 
 	 * @return the client, or {@literal null} if it has not been created
 	 */
-	protected final IMqttClient getClient() {
+	protected final synchronized IMqttClient getClient() {
 		return clientRef.get();
 	}
 

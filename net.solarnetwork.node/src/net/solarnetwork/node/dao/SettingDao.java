@@ -46,6 +46,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * @author matt
  * @version 1.2
  */
+@SuppressWarnings("deprecation")
 public interface SettingDao extends BatchableDao<Setting> {
 
 	/**

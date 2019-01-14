@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.upload.flux;
 
+import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,18 +30,23 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.apache.commons.codec.binary.Hex;
 import org.eclipse.paho.client.mqttv3.IMqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.osgi.service.event.Event;
+import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
 import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.io.mqtt.support.MqttServiceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -52,7 +58,7 @@ import net.solarnetwork.util.OptionalService;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FluxUploadService extends MqttServiceSupport
 		implements EventHandler, SettingSpecifierProvider {
@@ -69,11 +75,19 @@ public class FluxUploadService extends MqttServiceSupport
 	/** The default value for the {@code mqttUsername} property. */
 	public static final String DEFAULT_MQTT_USERNAME = "solarnode";
 
+	/**
+	 * The default value for the {@code excludePropertyNamesPattern} property.
+	 */
+	public static final Pattern DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN = Pattern.compile("_.*");
+
 	private final IdentityService identityService;
 	private MessageSource messageSource;
 	private String mqttHost = DEFAULT_MQTT_HOST;
 	private String mqttUsername = DEFAULT_MQTT_USERNAME;
-	private String mqttPassword = null;
+	private String mqttPassword;
+	private String requiredOperationalMode;
+	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
+	private OperationalModesService opModesService;
 	private TaskExecutor taskExecutor;
 
 	/**
@@ -94,6 +108,21 @@ public class FluxUploadService extends MqttServiceSupport
 		super(objectMapper, taskScheduler, sslService);
 		setPersistencePath(DEFAULT_PERSISTENCE_PATH);
 		this.identityService = identityService;
+	}
+
+	@Override
+	public void init() {
+		if ( requiredOperationalMode != null && !requiredOperationalMode.isEmpty() ) {
+			if ( opModesService == null
+					|| !opModesService.isOperationalModeActive(requiredOperationalMode) ) {
+				// don't connect to MQTT because required operational state not active
+				log.info(
+						"Not connecting to SolarFlux because required operational state [{}] not active",
+						requiredOperationalMode);
+				return;
+			}
+		}
+		super.init();
 	}
 
 	@Override
@@ -124,6 +153,31 @@ public class FluxUploadService extends MqttServiceSupport
 
 	@Override
 	public void handleEvent(Event event) {
+		String topic = event.getTopic();
+		if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
+			if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
+				return;
+			}
+			log.trace("Operational modes changed; required = [{}]; active = {}", requiredOperationalMode,
+					event.getProperty(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES));
+			if ( hasActiveOperationalMode(event, requiredOperationalMode) ) {
+				// operational mode is active, bring up MQTT connection
+				init();
+			} else {
+				// operational mode is no longer active, shut down MQTT connection
+				close();
+			}
+			return;
+		} else if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
+			return;
+		}
+		if ( requiredOperationalMode != null && !requiredOperationalMode.isEmpty()
+				&& (opModesService == null
+						|| !opModesService.isOperationalModeActive(requiredOperationalMode)) ) {
+			log.trace("Not posting to SolarFlux because operational mode [{}] not active",
+					requiredOperationalMode);
+			return;
+		}
 		Map<String, Object> data = mapForEvent(event);
 		if ( data == null ) {
 			return;
@@ -187,7 +241,15 @@ public class FluxUploadService extends MqttServiceSupport
 			return null;
 		}
 		Map<String, Object> map = new LinkedHashMap<>(propNames.length);
+		Pattern exPattern = this.excludePropertyNamesPattern;
 		for ( String propName : propNames ) {
+			if ( exPattern != null && exPattern.matcher(propName).matches() ) {
+				// exclude this property
+				continue;
+			} else if ( EventConstants.EVENT_TOPIC.equals(propName) ) {
+				// exclude event topic
+				continue;
+			}
 			map.put(propName, event.getProperty(propName));
 		}
 		return map;
@@ -214,6 +276,9 @@ public class FluxUploadService extends MqttServiceSupport
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("mqttUsername", DEFAULT_MQTT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("mqttPassword", "", true));
+		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
+				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
+		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
 		return results;
 	}
 
@@ -276,6 +341,85 @@ public class FluxUploadService extends MqttServiceSupport
 	 */
 	public void setTaskExecutor(TaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
+	}
+
+	/**
+	 * Set an operational mode that must be active for a connection to SolarFlux
+	 * to be established.
+	 * 
+	 * @param requiredOperationalMode
+	 *        the mode to require, or {@literal null} to enable by default
+	 */
+	public void setRequiredOperationalMode(String requiredOperationalMode) {
+		if ( requiredOperationalMode == this.requiredOperationalMode
+				|| (this.requiredOperationalMode != null
+						&& this.requiredOperationalMode.equals(requiredOperationalMode)) ) {
+			return;
+		}
+		this.requiredOperationalMode = requiredOperationalMode;
+		Runnable task = new Runnable() {
+
+			@Override
+			public void run() {
+				IMqttClient client = getClient();
+				if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
+					if ( client == null ) {
+						// start up client now
+						init();
+					}
+				} else if ( client != null ) {
+					if ( opModesService == null
+							|| !opModesService.isOperationalModeActive(requiredOperationalMode) ) {
+						// shut down client, op mode no longer active
+						close();
+					}
+				}
+			}
+		};
+		if ( taskExecutor != null ) {
+			taskExecutor.execute(task);
+		} else {
+			task.run();
+		}
+	}
+
+	/**
+	 * Set the operational modes service to use.
+	 * 
+	 * @param opModesService
+	 *        the service to use
+	 * @since 1.1
+	 */
+	public void setOpModesService(OperationalModesService opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Set a regular expression of pattern names to exclude from posting to
+	 * SolarFlux.
+	 * 
+	 * <p>
+	 * You can use this to exclude internal properties with a regular expression
+	 * like <code>_.*</code>. The pattern will automatically use
+	 * case-insensitive matching.
+	 * </p>
+	 * 
+	 * @param regex
+	 *        the regular expression or {@literal null} for no filter; pattern
+	 *        syntax errors are ignored and result in no regular expression
+	 *        being used
+	 * @since 1.1
+	 */
+	public void setExcludePropertyNamesRegex(String regex) {
+		Pattern p = null;
+		try {
+			if ( regex != null && !regex.isEmpty() ) {
+				p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+			}
+		} catch ( PatternSyntaxException e ) {
+			// ignore
+		}
+		this.excludePropertyNamesPattern = p;
 	}
 
 }

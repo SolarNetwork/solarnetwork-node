@@ -118,7 +118,13 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public EGaugePowerDatum readCurrentDatum() {
-		return getCurrentSample();
+		final long start = System.currentTimeMillis();
+		EGaugePowerDatum d = getCurrentSample();
+		if ( d.getCreated() != null && d.getCreated().getTime() >= start ) {
+			// we read from the device
+			postDatumCapturedEvent(d);
+		}
+		return d;
 	}
 
 	public void init() {
