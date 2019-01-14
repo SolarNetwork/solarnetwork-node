@@ -17,6 +17,7 @@
  * 02111-1307 USA
  * ===================================================================
  */
+
 package net.solarnetwork.node.weather.ibm.wc.test;
 
 import static org.easymock.EasyMock.expect;
@@ -29,21 +30,17 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.weather.ibm.wc.BasicWCClient;
 import net.solarnetwork.node.weather.ibm.wc.WCClient;
 import net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource;
 
-
 /**
- * Tests the parsing for daily forecasts using downloaded JSON
+ * Tests the parsing for daily forecasts using downloaded JSON.
  * 
  * @author matt frost
  */
-public class WCDayDatumDataSourceTests{
+public class WCDayDatumDataSourceTests {
 
 	private static final String TEST_SOURCE_ID = "src.test";
 	private static final String TEST_PERIOD = "7day";
@@ -53,8 +50,6 @@ public class WCDayDatumDataSourceTests{
 	private WCDayDatumDataSource dailyService;
 
 	private WCClient client;
-	private final Logger log = LoggerFactory.getLogger(getClass());
-
 
 	@Before
 	public void additionalSetup() {
@@ -85,8 +80,6 @@ public class WCDayDatumDataSourceTests{
 		assertTrue("Client available", ds.getClient() instanceof BasicWCClient);
 	}
 
-
-
 	@Test
 	public void readMultipleDatum() {
 
@@ -94,7 +87,6 @@ public class WCDayDatumDataSourceTests{
 		datum.setCreated(new Date(System.currentTimeMillis()));
 		datum.setSourceId(TEST_SOURCE_ID);
 		final Collection<GeneralDayDatum> datumList = Arrays.asList(datum);
-
 
 		// followed by forecast
 		expect(dailyService.readMultipleDatum()).andReturn(datumList);
@@ -104,6 +96,5 @@ public class WCDayDatumDataSourceTests{
 		Collection<GeneralDayDatum> result = dailyService.readMultipleDatum();
 		assertEquals("Forecast list", Arrays.asList(datum), result);
 	}
-
 
 }

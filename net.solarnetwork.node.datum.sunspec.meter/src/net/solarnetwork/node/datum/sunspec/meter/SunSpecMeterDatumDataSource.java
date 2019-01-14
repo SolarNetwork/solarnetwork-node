@@ -22,13 +22,9 @@
 
 package net.solarnetwork.node.datum.sunspec.meter;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -36,33 +32,24 @@ import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupport
+public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
-	private final AtomicReference<ModelData> sample;
-
-	private long sampleCacheMs = 5000;
-	private String sourceId = "SunSpec-Meter";
 	private boolean backwards = false;
 
 	/**
@@ -79,41 +66,18 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 	 *        the sample data to use
 	 */
 	public SunSpecMeterDatumDataSource(AtomicReference<ModelData> sample) {
-		super();
-		this.sample = sample;
+		super(sample);
+		setSourceId("SunSpec-Meter");
 	}
 
-	private ModelData getCurrentSample() {
-		ModelData currSample = getSample();
-		if ( isCachedSampleExpired(currSample) ) {
-			try {
-				final ModelData data = currSample;
-				currSample = performAction(new ModbusConnectionAction<ModelData>() {
+	@Override
+	protected Class<? extends ModelAccessor> getPrimaryModelAccessorType() {
+		return MeterModelAccessor.class;
+	}
 
-					@Override
-					public ModelData doWithConnection(ModbusConnection connection) throws IOException {
-						if ( data == null ) {
-							ModelData result = ModelDataFactory.getInstance().getModelData(connection);
-							if ( result != null ) {
-								sample.set(result);
-							}
-							return result;
-						}
-						data.readModelData(connection);
-						return data;
-					}
-
-				});
-				if ( log.isTraceEnabled() && currSample != null ) {
-					log.trace(currSample.dataDebugString());
-				}
-				log.debug("Read SunSpec meter data: {}", currSample);
-			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from SunSpec meter device " + modbusNetwork(), e);
-			}
-		}
-		return (currSample != null ? currSample.getSnapshot() : null);
+	@Override
+	protected SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance() {
+		return new SunSpecMeterDatumDataSource();
 	}
 
 	@Override
@@ -128,9 +92,9 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 		if ( currSample == null ) {
 			return null;
 		}
-		MeterModelAccessor data = currSample.getTypedModel();
+		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
 		SunSpecMeterDatum d = new SunSpecMeterDatum(data, ACPhase.Total, this.backwards);
-		d.setSourceId(this.sourceId);
+		d.setSourceId(getSourceId());
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
@@ -153,58 +117,6 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 		return Collections.emptyList();
 	}
 
-	public ModelData getSample() {
-		return sample.get();
-	}
-
-	public ModelData getSampleSnapshot() {
-		ModelData data = getSample();
-		return (data != null ? data.getSnapshot() : null);
-	}
-
-	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) {
-		CommonModelAccessor data = ModelDataFactory.getInstance().getModelData(connection);
-		if ( data == null ) {
-			return null;
-		}
-		Map<String, Object> result = new LinkedHashMap<>(4);
-		String manufacturer = data.getManufacturer();
-		if ( manufacturer != null ) {
-			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
-		}
-		String model = data.getModelName();
-		if ( model != null ) {
-			String version = data.getVersion();
-			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
-			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
-			}
-		}
-		String sn = data.getSerialNumber();
-		if ( sn != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
-		}
-		return result;
-	}
-
-	/**
-	 * Test if the sample data has expired.
-	 * 
-	 * @return {@literal true} if the sample data has expired
-	 */
-	protected boolean isCachedSampleExpired(ModelData data) {
-		if ( data == null ) {
-			return true;
-		}
-		final long lastReadDiff = System.currentTimeMillis() - data.getDataTimestamp();
-		if ( lastReadDiff > sampleCacheMs ) {
-			return true;
-		}
-		return false;
-	}
-
 	// SettingSpecifierProvider
 
 	@Override
@@ -218,24 +130,20 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 	}
 
 	@Override
-	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<>(12);
-		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
+	protected List<SettingSpecifier> getSettingSpecifiersWithDefaults(
+			SunSpecDeviceDatumDataSourceSupport defaults) {
+		List<SettingSpecifier> results = super.getSettingSpecifiersWithDefaults(defaults);
 
-		results.addAll(getIdentifiableSettingSpecifiers());
-		results.addAll(getModbusNetworkSettingSpecifiers());
-
-		SunSpecMeterDatumDataSource defaults = new SunSpecMeterDatumDataSource();
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
+		if ( defaults instanceof SunSpecMeterDatumDataSource ) {
+			SunSpecMeterDatumDataSource mDefaults = (SunSpecMeterDatumDataSource) defaults;
+			results.add(new BasicToggleSettingSpecifier("backwards", mDefaults.backwards));
+		}
 
 		return results;
 	}
 
-	private String getInfoMessage() {
+	@Override
+	protected String getInfoMessage() {
 		String msg = null;
 		try {
 			msg = getDeviceInfoMessage();
@@ -245,22 +153,14 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage() {
-		return getSampleMessage(getSampleSnapshot());
-	}
-
-	private String getSampleMessage(ModelData sample) {
+	@Override
+	protected String getSampleMessage(ModelData sample) {
 		if ( sample == null || sample.getDataTimestamp() < 1 ) {
 			return "N/A";
 		}
-		MeterModelAccessor data;
-		try {
-			data = sample.getTypedModel();
-			if ( data == null ) {
-				return "N/A";
-			}
-		} catch ( RuntimeException e ) {
-			return "Unexpected model: " + sample.getModel();
+		MeterModelAccessor data = sample.findTypedModel(MeterModelAccessor.class);
+		if ( data == null ) {
+			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
 		buf.append("W = ").append(data.getActivePower());
@@ -273,32 +173,13 @@ public class SunSpecMeterDatumDataSource extends ModbusDeviceDatumDataSourceSupp
 	}
 
 	/**
-	 * Get the sample cache maximum age, in milliseconds.
+	 * Get the "backwards" current direction flag.
 	 * 
-	 * @return the cache milliseconds
+	 * @return {@literal true} to swap energy delivered and received values in
+	 *         returned datum
 	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheSecondsMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
-	}
-
-	/**
-	 * Set the source ID to use for returned datum.
-	 * 
-	 * @param soruceId
-	 *        the source ID to use; defaults to {@literal modbus}
-	 */
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
+	public boolean isBackwards() {
+		return backwards;
 	}
 
 	/**

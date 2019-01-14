@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SMA Test
+Bundle-Name: SMA Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.sma.test
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

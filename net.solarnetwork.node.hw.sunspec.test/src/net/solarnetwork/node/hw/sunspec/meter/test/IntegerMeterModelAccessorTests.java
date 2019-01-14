@@ -26,6 +26,7 @@ import static net.solarnetwork.node.domain.ACPhase.PhaseA;
 import static net.solarnetwork.node.domain.ACPhase.PhaseB;
 import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import java.util.BitSet;
 import java.util.Set;
@@ -212,6 +213,13 @@ public class IntegerMeterModelAccessorTests {
 	}
 
 	@Test
+	public void findTypedModel() {
+		ModelData data = getTestDataInstance();
+		MeterModelAccessor meterAccessor = data.findTypedModel(MeterModelAccessor.class);
+		assertThat(meterAccessor, instanceOf(IntegerMeterModelAccessor.class));
+	}
+
+	@Test
 	public void block() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
 		assertThat("Model base address", model.getBaseAddress(), equalTo(40069));
@@ -262,9 +270,9 @@ public class IntegerMeterModelAccessorTests {
 				equalTo(211.9f));
 		assertThat("Phase A", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseAPhaseB),
 				equalTo(212.0f));
-		assertThat("Phase B", imm.getCurrentValue(IntegerMeterModelRegister.VoltagePhaseBPhaseC),
+		assertThat("Phase B", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseBPhaseC),
 				equalTo(211.2f));
-		assertThat("Phase C", imm.getCurrentValue(IntegerMeterModelRegister.VoltagePhaseCPhaseA),
+		assertThat("Phase C", imm.getVoltageValue(IntegerMeterModelRegister.VoltagePhaseCPhaseA),
 				equalTo(212.6f));
 	}
 

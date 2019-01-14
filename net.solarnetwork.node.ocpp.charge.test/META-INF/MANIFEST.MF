@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OCPP Charge Test
+Bundle-Name: OCPP Charge Tests
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge.test
 Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork

@@ -28,7 +28,6 @@ Each device configuration contains the following overall settings:
 | Service Group      | A group name to associate this data source with.                                 |
 | Modbus Connection  | The service name of the Modbus port to use.                                      |
 | Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.                  |
-| Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device. |
 | Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
 | Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
 

@@ -22,11 +22,15 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import static net.solarnetwork.node.hw.sunspec.DataClassification.Accumulator;
+import static net.solarnetwork.node.hw.sunspec.DataClassification.Bitfield;
+import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import net.solarnetwork.node.hw.sunspec.DataClassification;
+import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Enumeration of Modbus register mappings for SunSpec compliant integer meter
@@ -49,9 +53,9 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public enum IntegerMeterModelRegister implements ModbusReference {
+public enum IntegerMeterModelRegister implements SunspecModbusReference {
 
 	// Current
 
@@ -68,7 +72,7 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	CurrentPhaseC(3, Int16),
 
 	/** Current scale factor, as *10^X. */
-	ScaleFactorCurrent(4, Int16),
+	ScaleFactorCurrent(4, Int16, ScaleFactor),
 
 	// Voltage
 
@@ -97,7 +101,7 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	VoltagePhaseCPhaseA(12, Int16),
 
 	/** Voltage scale factor, as *10^X. */
-	ScaleFactorVoltage(13, Int16),
+	ScaleFactorVoltage(13, Int16, ScaleFactor),
 
 	// Frequency
 
@@ -105,7 +109,7 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	Frequency(14, Int16),
 
 	/** Frequency scale factor, as *10^X. */
-	ScaleFactorFrequency(15, Int16),
+	ScaleFactorFrequency(15, Int16, ScaleFactor),
 
 	// Active (Real) Power (W)
 
@@ -121,8 +125,8 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	/** Active power total, reported in W. */
 	ActivePowerPhaseC(19, Int16),
 
-	/** Frequency scale factor, as *10^X. */
-	ScaleFactorActivePower(20, Int16),
+	/** Active power scale factor, as *10^X. */
+	ScaleFactorActivePower(20, Int16, ScaleFactor),
 
 	// Apparent Power (VA)
 
@@ -139,7 +143,7 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	ApparentPowerPhaseC(24, Int16),
 
 	/** Apparent power scale factor, as *10^X. */
-	ScaleFactorApparentPower(25, Int16),
+	ScaleFactorApparentPower(25, Int16, ScaleFactor),
 
 	// Reactive Power (VAR)
 
@@ -156,151 +160,163 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	ReactivePowerPhaseC(29, Int16),
 
 	/** Reactive power scale factor, as *10^X. */
-	ScaleFactorReactivePower(30, Int16),
+	ScaleFactorReactivePower(30, Int16, ScaleFactor),
 
 	// Power factor
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorAverage(31, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseA(32, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseB(33, Int16),
 
-	/** Reactive power total, reported in VAR. */
+	/** Power factor total average, reported in percentage. */
 	PowerFactorPhaseC(34, Int16),
 
-	/** Reactive power scale factor, as *10^X. */
-	ScaleFactorPowerFactor(35, Int16),
+	/** Power factor factor, as *10^X. */
+	ScaleFactorPowerFactor(35, Int16, ScaleFactor),
 
 	// Active energy
 
 	/** Total active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedTotal(36, UInt32),
+	ActiveEnergyExportedTotal(36, UInt32, Accumulator),
 
 	/** Phase A active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedPhaseA(38, UInt32),
+	ActiveEnergyExportedPhaseA(38, UInt32, Accumulator),
 
 	/** Phase B active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedPhaseB(40, UInt32),
+	ActiveEnergyExportedPhaseB(40, UInt32, Accumulator),
 
 	/** Phase C active (real) energy exported (received), in Wh. */
-	ActiveEnergyExportedPhaseC(42, UInt32),
+	ActiveEnergyExportedPhaseC(42, UInt32, Accumulator),
 
 	/** Total active (real) energy imported (delivered), in Wh. */
-	ActiveEnergyImportedTotal(44, UInt32),
+	ActiveEnergyImportedTotal(44, UInt32, Accumulator),
 
 	/** Phase A active (real) energy imported (delivered), in Wh. */
-	ActiveEnergyImportedPhaseA(46, UInt32),
+	ActiveEnergyImportedPhaseA(46, UInt32, Accumulator),
 
 	/** Phase B active (real) energy imported (delivered), in Wh. */
-	ActiveEnergyImportedPhaseB(48, UInt32),
+	ActiveEnergyImportedPhaseB(48, UInt32, Accumulator),
 
 	/** Phase C active (real) energy imported (delivered), in Wh. */
-	ActiveEnergyImportedPhaseC(50, UInt32),
+	ActiveEnergyImportedPhaseC(50, UInt32, Accumulator),
 
 	/** Active (real) energy scale factor, as *10^X. */
-	ScaleFactorActiveEnergy(52, Int16),
+	ScaleFactorActiveEnergy(52, Int16, ScaleFactor),
 
 	// Apparent energy
 
 	/** Total apparent energy exported (received), in VAh. */
-	ApparentEnergyExportedTotal(53, UInt32),
+	ApparentEnergyExportedTotal(53, UInt32, Accumulator),
 
 	/** Phase A apparent energy exported (received), in VAh. */
-	ApparentEnergyExportedPhaseA(55, UInt32),
+	ApparentEnergyExportedPhaseA(55, UInt32, Accumulator),
 
 	/** Phase B apparent energy exported (received), in VAh. */
-	ApparentEnergyExportedPhaseB(57, UInt32),
+	ApparentEnergyExportedPhaseB(57, UInt32, Accumulator),
 
 	/** Phase C apparent energy exported (received), in VAh. */
-	ApparentEnergyExportedPhaseC(59, UInt32),
+	ApparentEnergyExportedPhaseC(59, UInt32, Accumulator),
 
 	/** Total apparent energy imported (delivered), in VAh. */
-	ApparentEnergyImportedTotal(61, UInt32),
+	ApparentEnergyImportedTotal(61, UInt32, Accumulator),
 
 	/** Phase A apparent energy imported (delivered), in VAh. */
-	ApparentEnergyImportedPhaseA(63, UInt32),
+	ApparentEnergyImportedPhaseA(63, UInt32, Accumulator),
 
 	/** Phase B apparent energy imported (delivered), in VAh. */
-	ApparentEnergyImportedPhaseB(65, UInt32),
+	ApparentEnergyImportedPhaseB(65, UInt32, Accumulator),
 
 	/** Phase C apparent energy imported (delivered), in VAh. */
-	ApparentEnergyImportedPhaseC(67, UInt32),
+	ApparentEnergyImportedPhaseC(67, UInt32, Accumulator),
 
 	/** Apparent energy scale factor, as *10^X. */
-	ScaleFactorApparentEnergy(69, Int16),
+	ScaleFactorApparentEnergy(69, Int16, ScaleFactor),
 
 	// Reactive energy
 
 	/** Total reactive energy imported Q1, in VARh. */
-	ReactiveEnergyImportedQ1Total(70, UInt32),
+	ReactiveEnergyImportedQ1Total(70, UInt32, Accumulator),
 
 	/** Phase A reactive energy imported Q1, in VARh. */
-	ReactiveEnergyImportedQ1PhaseA(72, UInt32),
+	ReactiveEnergyImportedQ1PhaseA(72, UInt32, Accumulator),
 
 	/** Phase B reactive energy imported Q1, in VARh. */
-	ReactiveEnergyImportedQ1PhaseB(74, UInt32),
+	ReactiveEnergyImportedQ1PhaseB(74, UInt32, Accumulator),
 
 	/** Phase C reactive energy imported Q1, in VARh. */
-	ReactiveEnergyImportedQ1PhaseC(76, UInt32),
+	ReactiveEnergyImportedQ1PhaseC(76, UInt32, Accumulator),
 
 	/** Total reactive energy imported Q2, in VARh. */
-	ReactiveEnergyImportedQ2Total(78, UInt32),
+	ReactiveEnergyImportedQ2Total(78, UInt32, Accumulator),
 
 	/** Phase A reactive energy imported Q2, in VARh. */
-	ReactiveEnergyImportedQ2PhaseA(80, UInt32),
+	ReactiveEnergyImportedQ2PhaseA(80, UInt32, Accumulator),
 
 	/** Phase B reactive energy imported Q2, in VARh. */
-	ReactiveEnergyImportedQ2PhaseB(82, UInt32),
+	ReactiveEnergyImportedQ2PhaseB(82, UInt32, Accumulator),
 
 	/** Phase C reactive energy imported Q2, in VARh. */
-	ReactiveEnergyImportedQ2PhaseC(84, UInt32),
+	ReactiveEnergyImportedQ2PhaseC(84, UInt32, Accumulator),
 
 	/** Total reactive energy exported Q3, in VARh. */
-	ReactiveEnergyExportedQ3Total(86, UInt32),
+	ReactiveEnergyExportedQ3Total(86, UInt32, Accumulator),
 
 	/** Phase A reactive energy exported Q3, in VARh. */
-	ReactiveEnergyExportedQ3PhaseA(88, UInt32),
+	ReactiveEnergyExportedQ3PhaseA(88, UInt32, Accumulator),
 
 	/** Phase B reactive energy exported Q3, in VARh. */
-	ReactiveEnergyExportedQ3PhaseB(90, UInt32),
+	ReactiveEnergyExportedQ3PhaseB(90, UInt32, Accumulator),
 
 	/** Phase C reactive energy exported Q3, in VARh. */
-	ReactiveEnergyExportedQ3PhaseC(92, UInt32),
+	ReactiveEnergyExportedQ3PhaseC(92, UInt32, Accumulator),
 
 	/** Total reactive energy exported Q4, in VARh. */
-	ReactiveEnergyExportedQ4Total(94, UInt32),
+	ReactiveEnergyExportedQ4Total(94, UInt32, Accumulator),
 
 	/** Phase A reactive energy exported Q4, in VARh. */
-	ReactiveEnergyExportedQ4PhaseA(96, UInt32),
+	ReactiveEnergyExportedQ4PhaseA(96, UInt32, Accumulator),
 
 	/** Phase B reactive energy exported Q4, in VARh. */
-	ReactiveEnergyExportedQ4PhaseB(98, UInt32),
+	ReactiveEnergyExportedQ4PhaseB(98, UInt32, Accumulator),
 
 	/** Phase C reactive energy exported Q4, in VARh. */
-	ReactiveEnergyExportedQ4PhaseC(100, UInt32),
+	ReactiveEnergyExportedQ4PhaseC(100, UInt32, Accumulator),
 
 	/** Reactive energy scale factor, as *10^X. */
-	ScaleFactorReactiveEnergy(102, Int16),
+	ScaleFactorReactiveEnergy(102, Int16, ScaleFactor),
 
 	/** Events bitmask, see {@link MeterModelEvent}. */
-	EventsBitmask(103, UInt32);
+	EventsBitmask(103, UInt32, Bitfield);
 
 	private final int address;
 	private final ModbusDataType dataType;
 	private final int wordLength;
+	private final DataClassification classification;
 
 	private IntegerMeterModelRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
+	private IntegerMeterModelRegister(int address, ModbusDataType dataType,
+			DataClassification classification) {
+		this(address, dataType, dataType.getWordLength(), classification);
+	}
+
 	private IntegerMeterModelRegister(int address, ModbusDataType dataType, int wordLength) {
+		this(address, dataType, wordLength, null);
+	}
+
+	private IntegerMeterModelRegister(int address, ModbusDataType dataType, int wordLength,
+			DataClassification classification) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
+		this.classification = classification;
 	}
 
 	@Override
@@ -327,4 +343,10 @@ public enum IntegerMeterModelRegister implements ModbusReference {
 	public int getWordLength() {
 		return wordLength;
 	}
+
+	@Override
+	public DataClassification getClassification() {
+		return classification;
+	}
+
 }

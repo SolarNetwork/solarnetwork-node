@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.test;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -31,7 +32,6 @@ import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.CommonModelId;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelRegister;
-import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 
@@ -116,7 +116,7 @@ public class ModelDataTests {
 		
 	// @formatter:on
 
-	private static final Logger log = LoggerFactory.getLogger(IntegerMeterModelAccessorTests.class);
+	private static final Logger log = LoggerFactory.getLogger(ModelData.class);
 
 	private ModelData getTestDataInstance() {
 		final int baseAddress = ModelRegister.BaseAddress.getAddress();
@@ -136,6 +136,13 @@ public class ModelDataTests {
 	public void dataDebugString() {
 		ModelData data = getTestDataInstance();
 		log.debug("Got test data: " + data.dataDebugString());
+	}
+
+	@Test
+	public void findTypedModel() {
+		ModelData data = getTestDataInstance();
+		CommonModelAccessor commonAccessor = data.findTypedModel(CommonModelAccessor.class);
+		assertThat(commonAccessor, instanceOf(ModelData.class));
 	}
 
 	@Test

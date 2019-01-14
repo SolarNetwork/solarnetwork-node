@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Yr Weather Tests
+Bundle-Name: Yr Weather Tests
 Bundle-SymbolicName: net.solarnetwork.node.weather.yr.test
 Bundle-Version: 0.1.0
 Bundle-Vendor: SolarNetwork

@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OCPP Core Support
+Bundle-Name: OCPP Core Support
 Bundle-SymbolicName: net.solarnetwork.node.ocpp
 Bundle-Description: Provides core Open Charge Point Protocol (OCPP) support.
 Bundle-Version: 0.9.0

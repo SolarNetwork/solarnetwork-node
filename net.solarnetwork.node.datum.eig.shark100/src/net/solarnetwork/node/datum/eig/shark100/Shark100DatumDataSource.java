@@ -75,11 +75,12 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	@Override
 	protected void refreshDeviceInfo(ModbusConnection connection, Shark100Data sample) {
-		sample.readConfigurationData(connection);
+		sample.readAllData(connection);
 	}
 
 	@Override
 	protected void refreshDeviceData(ModbusConnection connection, Shark100Data sample) {
+		sample.readConfigurationData(connection);
 		sample.readMeterData(connection);
 	}
 

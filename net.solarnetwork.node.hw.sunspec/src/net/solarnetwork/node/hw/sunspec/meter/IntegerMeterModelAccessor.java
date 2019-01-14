@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
-import java.util.Collections;
 import java.util.Set;
 import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
@@ -36,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Data object for an integer meter model.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class IntegerMeterModelAccessor extends BaseModelAccessor implements MeterModelAccessor {
 
@@ -55,6 +54,26 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	 */
 	public IntegerMeterModelAccessor(ModelData data, int baseAddress, ModelId modelId) {
 		super(data, baseAddress, modelId);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@link MeterModelId} class will be used as the {@code ModelId}
+	 * instance.
+	 * </p>
+	 * 
+	 * @param data
+	 *        the overall data object
+	 * @param baseAddress
+	 *        the base address for this model's data
+	 * @param modelId
+	 *        the model ID
+	 * @since 1.2
+	 */
+	public IntegerMeterModelAccessor(ModelData data, int baseAddress, int modelId) {
+		this(data, baseAddress, MeterModelId.forId(modelId));
 	}
 
 	@Override
@@ -191,10 +210,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	@Override
 	public Set<ModelEvent> getEvents() {
-		Number n = getData().getNumber(IntegerMeterModelRegister.EventsBitmask, getBlockAddress());
-		if ( n == null ) {
-			return Collections.emptySet();
-		}
+		Number n = getBitfield(IntegerMeterModelRegister.EventsBitmask);
 		return MeterModelEvent.forBitmask(n.longValue());
 	}
 
@@ -320,10 +336,10 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
 
 				case PhaseB:
-					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseB);
 
 				case PhaseC:
-					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseA);
+					return getActivePowerValue(IntegerMeterModelRegister.ActivePowerPhaseC);
 
 				default:
 					return IntegerMeterModelAccessor.this.getActivePower();
@@ -427,7 +443,8 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 				default:
 					return IntegerMeterModelAccessor.this.getReactiveEnergyImported();
 			}
-			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+			return (q1 == null && q2 == null ? null
+					: (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0));
 		}
 
 		@Override
@@ -459,7 +476,8 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 				default:
 					return IntegerMeterModelAccessor.this.getReactiveEnergyExported();
 			}
-			return (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0);
+			return (q1 == null && q2 == null ? null
+					: (q1 != null ? q1.longValue() : 0) + (q2 != null ? q2.longValue() : 0));
 		}
 
 		@Override

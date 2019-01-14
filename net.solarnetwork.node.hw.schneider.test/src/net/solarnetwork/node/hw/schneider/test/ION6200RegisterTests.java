@@ -64,11 +64,12 @@ public class ION6200RegisterTests {
 	public void meterIntRangeSet() {
 		IntRangeSet set = ION6200Register.getMeterRegisterAddressSet();
 		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(5));
+		assertThat("Register set length", set.ranges(), arrayWithSize(6));
 		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
 		IntRange[] ranges = reduced.ranges();
-		assertThat("Register set length", ranges, arrayWithSize(1));
+		assertThat("Register set length", ranges, arrayWithSize(2));
 		assertThat("Range 0", ranges[0], equalTo(new IntRange(102, 144)));
+		assertThat("Range 1", ranges[1], equalTo(new IntRange(4011, 4014)));
 	}
 
 	@Test

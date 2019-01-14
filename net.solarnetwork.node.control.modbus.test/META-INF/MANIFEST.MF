@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Modbus Control Test
+Bundle-Name: Modbus Control Tests
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus.test
 Automatic-Module-Name: net.solarnetwork.node.control.modbus.test
 Bundle-Version: 1.0.0

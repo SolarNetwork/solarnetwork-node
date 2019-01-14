@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode OCPP Mock
+Bundle-Name: OCPP Mock
+Bundle-Description: Mock OCPP services for development testing.
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.mock
 Bundle-Version: 0.2.0
 Bundle-Vendor: SolarNetwork

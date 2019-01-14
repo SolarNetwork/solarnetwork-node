@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Settings Developer Playpen
+Bundle-Description: Explore the SolarNode Settings system to learn how SolarNode components can be configured at runtime.
 Bundle-SymbolicName: net.solarnetwork.node.settings.playpen
 Bundle-Version: 1.10.1
 Bundle-Vendor: SolarNetwork

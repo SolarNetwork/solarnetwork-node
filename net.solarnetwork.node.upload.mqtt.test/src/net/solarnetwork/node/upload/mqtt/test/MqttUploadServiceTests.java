@@ -328,6 +328,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		// when
 		service.init();
 
+		Thread.sleep(1000); // allow time for subscription to take
+
 		String instrTopic = instructionTopic(nodeId);
 		mqttClient.publish(instrTopic, testInstructions.getBytes("UTF-8"), 1, false);
 
@@ -398,6 +400,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// when
 		service.init();
+
+		Thread.sleep(1000); // allow time for subscription to take
 
 		String instrTopic = instructionTopic(nodeId);
 		mqttClient.publish(instrTopic, testInstructions.getBytes("UTF-8"), 1, false);

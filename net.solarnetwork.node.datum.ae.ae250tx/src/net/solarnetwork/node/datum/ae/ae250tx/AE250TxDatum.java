@@ -55,7 +55,7 @@ public class AE250TxDatum extends GeneralNodePVEnergyDatum {
 	private void populateMeasurements(AE250TxDataAccessor data) {
 		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		setVoltage(data.getVoltage());
-		putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY, data.getFrequency());
+		putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY, data.getCurrent());
 		setDCVoltage(data.getDCVoltage());
 		setDCPower(data.getDCPower());
 		setWatts(data.getActivePower());

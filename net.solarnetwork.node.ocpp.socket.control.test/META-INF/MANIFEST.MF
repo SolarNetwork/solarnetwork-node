@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: OCPP Socket Controller Test
+Bundle-Name: OCPP Socket Controller Tests
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.socket.control.test
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork

@@ -302,6 +302,19 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
+	public PVITLInverterState getOperatingState() {
+		Number n = getNumber(PVITLRegister.StatusMode);
+		if ( n == null ) {
+			return null;
+		}
+		try {
+			return PVITLInverterState.forCode(n.intValue());
+		} catch ( IllegalArgumentException e ) {
+			return null;
+		}
+	}
+
+	@Override
 	public PVITLInverterType getInverterType() {
 		String s = getModelName();
 		try {
@@ -332,7 +345,8 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	@Override
 	public String getSerialNumber() {
 		Number n = getNumber(PVITLRegister.InfoSerialNumber);
-		return (n != null ? n.toString() : null);
+		long s = n.longValue();
+		return (n != null ? Long.toHexString(s) : null);
 	}
 
 	@Override

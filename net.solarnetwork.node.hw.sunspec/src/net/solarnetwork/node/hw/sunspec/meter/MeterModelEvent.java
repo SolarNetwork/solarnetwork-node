@@ -22,15 +22,17 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
  * Meter type events.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum MeterModelEvent implements ModelEvent {
 
@@ -138,6 +140,9 @@ public enum MeterModelEvent implements ModelEvent {
 	 * @return the active events
 	 */
 	public static Set<ModelEvent> forBitmask(long bitmask) {
+		if ( bitmask == 0 || (bitmask & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
+			return Collections.emptySet();
+		}
 		Set<ModelEvent> result = new LinkedHashSet<>(32);
 		for ( MeterModelEvent e : MeterModelEvent.values() ) {
 			int index = e.getIndex();

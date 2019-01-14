@@ -1,11 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode RFID Reader
+Bundle-Name: RFID Reader
 Bundle-Description: Support for scanning RFID cards.
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfid
-Bundle-Version: 1.1.3
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Main-Class: net.solarnetwork.node.hw.rfid.RfidSocketReader
 Import-Package: 
  javax.net,

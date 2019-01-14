@@ -38,14 +38,6 @@ public interface PlatformService {
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a the platform
 	 * state has changed.
-	 * 
-	 * <p>
-	 * The properties of the event shall be any of the JavaBean properties of
-	 * the Datum supported by events (i.e. any simple Java property such as
-	 * numbers and strings). In addition, the
-	 * {@link #EVENT_DATUM_CAPTURED_DATUM_TYPE} property shall be populated with
-	 * the name of the <em>core</em> class name of the datum type.
-	 * </p>
 	 */
 	String EVENT_TOPIC_PLATFORM_STATE_CHANGED = "net/solarnetwork/node/PlatformService/STATE_CHANGED";
 

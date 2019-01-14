@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import java.util.Set;
+
 /**
  * API for a model event.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface ModelEvent {
 
@@ -43,5 +45,36 @@ public interface ModelEvent {
 	 * @return a description
 	 */
 	String getDescription();
+
+	/**
+	 * Get a SunSpec "bitfield16" value from a set of events.
+	 * 
+	 * @param events
+	 *        the events to get the bit field value for; can be {@literal null}
+	 * @return the bit field value
+	 * @since 1.1
+	 */
+	static int bitField16Value(Set<ModelEvent> events) {
+		return (int) (bitField32Value(events) & 0xFFFF);
+	}
+
+	/**
+	 * Get a SunSpec "bitfield32" value from a set of events.
+	 * 
+	 * @param events
+	 *        the events to get the bit field value for; can be {@literal null}
+	 * @return the bit field value
+	 * @since 1.1
+	 */
+	static long bitField32Value(Set<ModelEvent> events) {
+		long b = 0;
+		if ( events != null ) {
+			for ( ModelEvent event : events ) {
+				int idx = event.getIndex();
+				b |= (1 << idx);
+			}
+		}
+		return b;
+	}
 
 }

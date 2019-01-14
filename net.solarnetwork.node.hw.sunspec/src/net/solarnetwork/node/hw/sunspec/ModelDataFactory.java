@@ -22,8 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
-import net.solarnetwork.node.hw.sunspec.meter.IntegerMeterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.meter.MeterModelId;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
@@ -31,20 +36,74 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * A factory for creating concrete {@link ModelData} instances based on
  * discovery of SunSpec properties on a device.
  * 
+ * <p>
+ * This factory looks for a
+ * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
+ * resource that contains a mapping of SunSpec model IDs to associated
+ * {@link ModalAccessor} classes. The classes are expected to provide a public
+ * constructor that accepts the following arguments:
+ * </p>
+ * 
+ * <ol>
+ * <li>a {@link ModalData} instance</li>
+ * <li>an {@code int} base Modbus address for the associated model data</li>
+ * <li>an {@code int} model ID value</li>
+ * </ol>
+ * 
+ * <p>
+ * If no {@literal model-accessors.properties} resource is available, the
+ * factory falls back to using the
+ * {@literal net/solarnetwork/node/hw/sunspec/model-accessors-default.properties}
+ * resource provided by this bundle.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class ModelDataFactory {
 
 	/**
+	 * The default value for the maximum number of Modbus words to read at one
+	 * time.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 124;
+
+	/**
+	 * The name of the class-path resource with the {@code ModelAccessor}
+	 * properties mapping.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME = "net/solarnetwork/node/hw/sunspec/model-accessors.properties";
+
+	/**
+	 * The name of the class-path resource with the built-in default
+	 * {@code ModelAccessor} properties mapping.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String DEFAULT_MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME = "net/solarnetwork/node/hw/sunspec/model-accessors-default.properties";
+
+	private static final Logger log = LoggerFactory.getLogger(ModelDataFactory.class);
+
+	private Properties accessorProperties = null;
+
+	/**
 	 * Get a factory instance.
+	 * 
+	 * <p>
+	 * This will trigger the loading of the model accessor properties resource,
+	 * as described in {@link #getModelAccessorProperties()}.
+	 * </p>
 	 * 
 	 * @return the factory
 	 */
 	public static ModelDataFactory getInstance() {
-		// right now this is simple and uses hard-coded lookups for model instances;
-		// in the future we could use some sort of lookup strategy to discover instances to use
-		return new ModelDataFactory();
+		ModelDataFactory factory = new ModelDataFactory();
+		factory.loadModelAccessorProperties();
+		return factory;
 	}
 
 	/**
@@ -70,8 +129,8 @@ public class ModelDataFactory {
 	 * via a Modbus connection.
 	 * 
 	 * <p>
-	 * This method calls {@link #getModelData(ModbusConnection, int)} with an
-	 * unlimited read word count.
+	 * This method calls {@link #getModelData(ModbusConnection, int)} with a
+	 * {@link #DEFAULT_MAX_READ_WORDS_COUNT} maximum read word count.
 	 * </p>
 	 * 
 	 * @param conn
@@ -81,7 +140,7 @@ public class ModelDataFactory {
 	 *         if no supported model data can be discovered
 	 */
 	public ModelData getModelData(ModbusConnection conn) {
-		return getModelData(conn, Integer.MAX_VALUE);
+		return getModelData(conn, DEFAULT_MAX_READ_WORDS_COUNT);
 	}
 
 	/**
@@ -122,23 +181,99 @@ public class ModelDataFactory {
 		return data;
 	}
 
-	private ModelAccessor createAccessor(ModelData data, int baseAddress, int modelId, int modelLength) {
-		try {
-			MeterModelId id = MeterModelId.forId(modelId);
-			switch (id) {
-				case SinglePhaseMeterInteger:
-				case SplitSinglePhaseMeterInteger:
-				case WyeConnectThreePhaseMeterInteger:
-				case DeltaConnectThreePhaseMeterInteger:
-					return new IntegerMeterModelAccessor(data, baseAddress, id);
+	private void loadModelAccessorProperties() {
+		accessorProperties = getModelAccessorProperties();
+	}
 
-				default:
-					return null;
+	/**
+	 * Load the {@link ModalAccessor} properties.
+	 * 
+	 * <p>
+	 * This factory looks for a
+	 * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
+	 * resource that contains a mapping of SunSpec model IDs to associated
+	 * {@link ModalAccessor} classes. If that resource is not available, then
+	 * the
+	 * {@literal net/solarnetwork/node/hw/sunspec/model-accessors-default.properties}
+	 * resource provided by this bundle will be used. Here's an example of the
+	 * format of this resource:
+	 * </p>
+	 * 
+	 * <pre>
+	 * 101 = net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor
+	 * 201 = net.solarnetwork.node.hw.sunspec.meter.IntegerMeterModelAccessor
+	 * </pre>
+	 * 
+	 * @return the model accessor properties
+	 */
+	protected Properties getModelAccessorProperties() {
+		Properties props = null;
+
+		// try to load mapping with context class loader, if available
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if ( cl != null ) {
+			props = propertiesWithClassLoader(cl);
+		}
+
+		// fall back to this class' class loader if not found
+		if ( props == null ) {
+			cl = getClass().getClassLoader();
+			props = propertiesWithClassLoader(cl);
+		}
+
+		return props;
+	}
+
+	private Properties propertiesWithClassLoader(ClassLoader cl) {
+		for ( String rsrcName : new String[] { MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME,
+				DEFAULT_MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME } ) {
+			try (InputStream in = cl.getResourceAsStream(rsrcName)) {
+				if ( in != null ) {
+					Properties props = new Properties();
+					props.load(in);
+					log.debug("Loaded SunSpec ModelAccessor mappings from {}", rsrcName);
+					return props;
+				}
+			} catch ( IOException e ) {
+				// ignore
 			}
-		} catch ( IllegalArgumentException e ) {
-			// ignore
 		}
 		return null;
+	}
+
+	private ModelAccessor createAccessor(ModelData data, int baseAddress, int modelId, int modelLength) {
+		Properties props = accessorProperties;
+		if ( props != null ) {
+			String accessorClassName = props.getProperty(String.valueOf(modelId));
+			if ( accessorClassName != null ) {
+				for ( ClassLoader cl : new ClassLoader[] {
+						Thread.currentThread().getContextClassLoader(),
+						data.getClass().getClassLoader() } ) {
+					if ( cl == null ) {
+						continue;
+					}
+					try {
+						Class<?> clazz = cl.loadClass(accessorClassName);
+						if ( clazz != null ) {
+							Class<? extends ModelAccessor> maClass = clazz
+									.asSubclass(ModelAccessor.class);
+							Constructor<? extends ModelAccessor> constr = maClass
+									.getConstructor(ModelData.class, Integer.TYPE, Integer.TYPE);
+							return constr.newInstance(data, baseAddress, modelId);
+						}
+					} catch ( ClassNotFoundException | NoSuchMethodException | SecurityException
+							| InstantiationException | IllegalAccessException | IllegalArgumentException
+							| InvocationTargetException e ) {
+						log.error(
+								"Error loading SunSpec ModelAccessor class {} for model {} using class loader {}",
+								accessorClassName, modelId, cl, e);
+					}
+				}
+			}
+		}
+
+		// fall back to generic
+		return new GenericModelAccessor(data, baseAddress, new GenericModelId(modelId));
 	}
 
 }

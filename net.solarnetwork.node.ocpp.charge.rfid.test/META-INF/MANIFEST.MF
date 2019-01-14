@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Test
+Bundle-Name: Tests
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge.rfid.test
 Bundle-Version: 1.1.0
 Fragment-Host: net.solarnetwork.node.ocpp.charge.rfid;bundle-version="1.1.0"

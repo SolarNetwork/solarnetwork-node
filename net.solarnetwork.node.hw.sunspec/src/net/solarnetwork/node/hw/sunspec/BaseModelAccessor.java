@@ -30,7 +30,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Base class for {@link ModelAccessor} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class BaseModelAccessor implements ModelAccessor {
 
@@ -51,10 +51,18 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 */
 	public BaseModelAccessor(ModelData data, int baseAddress, ModelId modelId) {
 		super();
+		if ( modelId == null ) {
+			throw new IllegalArgumentException("ModelId value is required");
+		}
 		this.baseAddress = baseAddress;
 		this.blockAddress = baseAddress + 2;
 		this.data = data;
 		this.modelId = modelId;
+	}
+
+	@Override
+	public String toString() {
+		return modelId.getDescription();
 	}
 
 	@Override
@@ -106,10 +114,41 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 			return BigDecimal.ONE;
 		}
 		int factor = n.intValue();
-		if ( factor == 0 ) {
+		if ( factor == 0 || factor == ModelData.NAN_SUNSSF16 ) {
 			return BigDecimal.ONE;
 		}
 		return new BigDecimal(BigInteger.ONE, -factor);
+	}
+
+	/**
+	 * Get a bitfield register value.
+	 * 
+	 * @param ref
+	 *        the block address relative reference to the bitfield register(s)
+	 * @return the value, never {@literal null}
+	 * @since 1.1
+	 */
+	protected Number getBitfield(ModbusReference ref) {
+		Number v = data.getNumber(ref, blockAddress);
+		if ( v == null ) {
+			return 0;
+		}
+
+		if ( ref instanceof SunspecModbusReference ) {
+			DataClassification classification = ((SunspecModbusReference) ref).getClassification();
+			if ( DataClassification.Bitfield == classification ) {
+				// for bit fields, if the most significant bit is set, it is NaN
+				if ( ref.getWordLength() == 1
+						&& (v.intValue() & ModelData.NAN_BITFIELD16) == ModelData.NAN_BITFIELD16 ) {
+					return 0;
+				} else if ( ref.getWordLength() == 2
+						&& (v.intValue() & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
+					return 0;
+				}
+			}
+		}
+
+		return v;
 	}
 
 	/**
@@ -126,6 +165,67 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 		if ( v == null ) {
 			return null;
 		}
+
+		DataClassification classification = null;
+		if ( dataRef instanceof SunspecModbusReference ) {
+			classification = ((SunspecModbusReference) dataRef).getClassification();
+		}
+
+		// check for NaN
+		if ( DataClassification.Accumulator == classification && v.intValue() == 0 ) {
+			return null;
+		} else if ( DataClassification.Bitfield == classification ) {
+			// for bit fields, if the most significant bit is set, it is NaN
+			if ( dataRef.getWordLength() == 1
+					&& (v.intValue() & ModelData.NAN_BITFIELD16) == ModelData.NAN_BITFIELD16 ) {
+				return null;
+			} else if ( dataRef.getWordLength() == 2
+					&& (v.intValue() & ModelData.NAN_BITFIELD32) == ModelData.NAN_BITFIELD32 ) {
+				return null;
+			}
+		}
+
+		switch (dataRef.getDataType()) {
+			case Int16:
+				if ( (v.intValue() & 0xFFFF) == ModelData.NAN_INT16 ) {
+					return null;
+				}
+				break;
+
+			case Int32:
+				if ( (v.intValue() & 0xFFFFFFFF) == ModelData.NAN_INT32 ) {
+					return null;
+				}
+				break;
+
+			case Int64:
+				if ( (v.longValue() & 0xFFFFFFFFFFFFFFFFL) == ModelData.NAN_INT64 ) {
+					return null;
+				}
+				break;
+
+			case UInt16:
+				if ( v.intValue() == ModelData.NAN_UINT16 ) {
+					return null;
+				}
+				break;
+
+			case UInt32:
+				if ( v.longValue() == ModelData.NAN_UINT32 ) {
+					return null;
+				}
+				break;
+
+			case Float32:
+				if ( v.floatValue() == ModelData.NAN_FLOAT32 ) {
+					return null;
+				}
+				break;
+
+			default:
+				// continue
+		}
+
 		BigDecimal sf = getScaleFactor(scaleRef);
 		BigDecimal d = new BigDecimal(v.toString());
 		if ( sf.equals(BigDecimal.ONE) || d.compareTo(BigDecimal.ZERO) == 0 ) {

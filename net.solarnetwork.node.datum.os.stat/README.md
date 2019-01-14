@@ -25,6 +25,7 @@ Each configuration contains the following overall settings:
 | Service Name       | A unique name to identify this data source with.                  |
 | Service Group      | A group name to associate this data source with.                  |
 | Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.    |
+| Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
 | Statistics         | A list of statistic types to collect.                             |
 | Filesystems        | A list of filesystem paths to collect statistics from.            |
 | Network Devices    | A list of network device names to collect statistics from.        |
@@ -33,6 +34,9 @@ Each configuration contains the following overall settings:
 ## Overall device settings notes
 
 <dl>
+	<dt>Source ID</dt>
+	<dd>This value unique identifies the data collected from this device, by this node,
+	 on SolarNetwork. Each configured device should use a different value.</dd>
 	<dt>Statistics</dt>
 	<dd>This is a list of pre-determined statistic types to collect. Each one will be passed
 	to the external helper program as an argument.</dd>

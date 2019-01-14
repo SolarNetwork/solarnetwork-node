@@ -34,6 +34,13 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 public interface PVITLDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
 	/**
+	 * Get the inverter operating state.
+	 * 
+	 * @return the state
+	 */
+	PVITLInverterState getOperatingState();
+
+	/**
 	 * Get the inverter device type.
 	 * 
 	 * @return the device type

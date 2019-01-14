@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode CurrentCost Test
+Bundle-Name: CurrentCost Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost.test
 Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
