@@ -275,16 +275,16 @@
 	
 	<!-- OperationalModesService -->
 
-	<service>
+	<service ref="opModesService">
 		<interfaces>
 			<value>net.solarnetwork.node.OperationalModesService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
-		<bean class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init">
-			<argument ref="settingDao"/>
-			<argument ref="eventAdmin"/>
-			<property name="taskScheduler" ref="taskScheduler"/>
-		</bean>
 	</service>
+	<bean id="opModesService" class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init" destroy-method="close">
+		<argument ref="settingDao"/>
+		<argument ref="eventAdmin"/>
+		<property name="taskScheduler" ref="taskScheduler"/>
+	</bean>
 	
 </blueprint>

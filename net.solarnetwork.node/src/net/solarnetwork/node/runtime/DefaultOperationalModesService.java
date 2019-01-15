@@ -27,12 +27,15 @@ import static java.util.Collections.singletonMap;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.joda.time.DateTime;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -51,7 +54,7 @@ import net.solarnetwork.util.OptionalService;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @SuppressWarnings("deprecation")
 public class DefaultOperationalModesService implements OperationalModesService, InstructionHandler {
@@ -59,13 +62,26 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	/** The setting key for operational modes. */
 	public static final String SETTING_OP_MODE = "solarnode.opmode";
 
+	/**
+	 * The setting key for operational mode expiration dates.
+	 *
+	 * @since 1.1
+	 */
+	public static final String SETTING_OP_MODE_EXPIRE = "solarnode.opmode.expire";
+
 	/** The default startup delay value. */
 	public static final long DEFAULT_STARTUP_DELAY = TimeUnit.SECONDS.toMillis(10);
+
+	/** The default rate at which to look for auto-expired modes, in seconds. */
+	public static final int DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY = 20;
 
 	private final OptionalService<SettingDao> settingDao;
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelay = DEFAULT_STARTUP_DELAY;
 	private TaskScheduler taskScheduler;
+	private int autoExpireModesFrequency = DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY;
+
+	private ScheduledFuture<?> autoExpireScheduledFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -87,7 +103,7 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	/**
 	 * Call to initialize the service after properties configured.
 	 */
-	public void init() {
+	public synchronized void init() {
 		// post current modes, i.e. shift from "default" to whatever is active
 		Runnable task = new Runnable() {
 
@@ -107,6 +123,55 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 			taskScheduler.schedule(task, new Date(System.currentTimeMillis() + startupDelay));
 		} else {
 			task.run();
+		}
+		if ( taskScheduler != null && autoExpireScheduledFuture == null ) {
+			autoExpireScheduledFuture = taskScheduler.scheduleWithFixedDelay(new AutoExpireModesTask(),
+					new Date(System.currentTimeMillis() + this.autoExpireModesFrequency * 1000L),
+					this.autoExpireModesFrequency * 1000L);
+		}
+	}
+
+	private final class AutoExpireModesTask implements Runnable {
+
+		@Override
+		public void run() {
+			SettingDao dao = settingDao.service();
+			if ( dao == null ) {
+				return;
+			}
+			List<KeyValuePair> modes = dao.getSettings(SETTING_OP_MODE);
+			if ( modes == null || modes.isEmpty() ) {
+				return;
+			}
+			Set<String> removed = new LinkedHashSet<>(8);
+			for ( Iterator<KeyValuePair> itr = modes.iterator(); itr.hasNext(); ) {
+				KeyValuePair mode = itr.next();
+				if ( isModeExpired(dao, mode.getValue()) ) {
+					dao.deleteSetting(SETTING_OP_MODE, mode.getValue());
+					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode.getValue());
+					itr.remove();
+					removed.add(mode.getValue());
+				}
+			}
+			if ( !removed.isEmpty() ) {
+				Set<String> newActive = modes.stream().map(m -> m.getValue())
+						.sorted(String::compareToIgnoreCase)
+						.collect(Collectors.toCollection(LinkedHashSet::new));
+				log.info("Expired operational modes [{}]; active modes now [{}]",
+						commaDelimitedStringFromCollection(removed),
+						commaDelimitedStringFromCollection(newActive));
+				postOperationalModesChangedEvent(newActive);
+			}
+		}
+	}
+
+	/**
+	 * Call to close internal resources.
+	 */
+	public synchronized void close() {
+		if ( autoExpireScheduledFuture != null ) {
+			autoExpireScheduledFuture.cancel(true);
+			autoExpireScheduledFuture = null;
 		}
 	}
 
@@ -129,10 +194,11 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		if ( modes == null || modes.length < 1 ) {
 			return InstructionState.Declined;
 		}
+		DateTime expire = OperationalModesService.expirationDate(instruction);
 		Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
 		switch (topic) {
 			case TOPIC_ENABLE_OPERATIONAL_MODES:
-				enableOperationalModes(opModes);
+				enableOperationalModes(opModes, expire);
 				break;
 
 			case TOPIC_DISABLE_OPERATIONAL_MODES:
@@ -166,17 +232,41 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		return activeModesFromSettings(dao);
 	}
 
+	private boolean isModeExpired(SettingDao dao, String mode) {
+		if ( dao == null ) {
+			return false;
+		}
+		String exp = dao.getSetting(SETTING_OP_MODE_EXPIRE, mode);
+		if ( exp != null ) {
+			try {
+				long date = Long.parseLong(exp);
+				if ( date < System.currentTimeMillis() ) {
+					return true;
+				}
+			} catch ( NumberFormatException e ) {
+				// ignore
+			}
+		}
+		return false;
+	}
+
 	private Set<String> activeModesFromSettings(SettingDao dao) {
 		List<KeyValuePair> modes = dao.getSettings(SETTING_OP_MODE);
 		if ( modes == null || modes.isEmpty() ) {
 			return emptySet();
 		}
-		return modes.stream().map(m -> m.getValue()).sorted(String::compareToIgnoreCase)
+		return modes.stream().map(m -> m.getValue()).filter(m -> !isModeExpired(dao, m))
+				.sorted(String::compareToIgnoreCase)
 				.collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	@Override
 	public Set<String> enableOperationalModes(Set<String> modes) {
+		return enableOperationalModes(modes, null);
+	}
+
+	@Override
+	public Set<String> enableOperationalModes(Set<String> modes, DateTime expire) {
 		SettingDao dao = settingDao.service();
 		if ( dao == null ) {
 			return emptySet();
@@ -188,12 +278,17 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 				}
 				mode = mode.toLowerCase();
 				dao.storeSetting(SETTING_OP_MODE, mode, mode);
+				if ( expire != null ) {
+					dao.storeSetting(SETTING_OP_MODE_EXPIRE, mode, String.valueOf(expire.getMillis()));
+				} else {
+					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
+				}
 			}
 		}
 		Set<String> active = activeModesFromSettings(dao);
 		if ( log.isInfoEnabled() ) {
-			log.info("Enabled operational modes [{}]; active modes now [{}]",
-					commaDelimitedStringFromCollection(modes),
+			log.info("Enabled operational modes [{}], expiring [{}]; active modes now [{}]",
+					commaDelimitedStringFromCollection(modes), (expire != null ? expire : "never"),
 					commaDelimitedStringFromCollection(active));
 		}
 		postOperationalModesChangedEvent(active);
@@ -269,7 +364,8 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	 * Configure a task scheduler.
 	 * 
 	 * <p>
-	 * This is required by {@link #setStartupDelay(long)}.
+	 * This is required by {@link #setStartupDelay(long)} as well as for
+	 * supporting auto-expiring modes.
 	 * </p>
 	 * 
 	 * @param taskScheduler
@@ -278,6 +374,23 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	 */
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Set the frequency, in seconds, at which to look for auto-expired
+	 * operational modes.
+	 * 
+	 * @param autoExpireModesFrequency
+	 *        the frequency, in seconds
+	 * @throws IllegalArgumentException
+	 *         if {@code autoExpireModesFrequency} is less than {@literal 1}
+	 * @since 1.1
+	 */
+	public void setAutoExpireModesFrequency(int autoExpireModesFrequency) {
+		if ( autoExpireModesFrequency < 1 ) {
+			throw new IllegalArgumentException("autoExpireModesFrequency must be > 0");
+		}
+		this.autoExpireModesFrequency = autoExpireModesFrequency;
 	}
 
 }

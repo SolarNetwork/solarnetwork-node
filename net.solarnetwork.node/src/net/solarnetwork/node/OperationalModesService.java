@@ -23,13 +23,15 @@
 package net.solarnetwork.node;
 
 import java.util.Set;
+import org.joda.time.DateTime;
 import org.osgi.service.event.Event;
+import net.solarnetwork.node.reactor.Instruction;
 
 /**
  * API for operational mode management.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.62
  */
 public interface OperationalModesService {
@@ -60,6 +62,13 @@ public interface OperationalModesService {
 	 * Instruction parameter for an operational mode name.
 	 */
 	String INSTRUCTION_PARAM_OPERATIONAL_MODE = "OpMode";
+
+	/**
+	 * Instruction parameter for an expiration time.
+	 * 
+	 * @since 1.1
+	 */
+	String INSTRUCTION_PARAM_EXPIRATION = "Expiration";
 
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a the active
@@ -117,6 +126,20 @@ public interface OperationalModesService {
 	Set<String> enableOperationalModes(Set<String> modes);
 
 	/**
+	 * Enable a set of operational modes.
+	 * 
+	 * @param modes
+	 *        the modes to enable
+	 * @param exipre
+	 *        a date after which {@code modes} should be automatically disabled,
+	 *        or {@literal null} for no expiration
+	 * @return the active operational modes, after activating {@code modes},
+	 *         never {@literal null}
+	 * @since 1.1
+	 */
+	Set<String> enableOperationalModes(Set<String> modes, DateTime expire);
+
+	/**
 	 * Disable a set of operational modes.
 	 * 
 	 * @param modes
@@ -154,6 +177,33 @@ public interface OperationalModesService {
 		}
 		mode = mode.toLowerCase();
 		return ((Set<?>) v).contains(mode);
+	}
+
+	/**
+	 * Parse an expiration value from an instruction parameter.
+	 * 
+	 * <p>
+	 * The {@link #INSTRUCTION_PARAM_EXPIRATION} parameter is inspected for an
+	 * epoch String value, which will be parsed and returned as a date instance
+	 * if available.
+	 * </p>
+	 * 
+	 * @param instruction
+	 *        the instruction to parse the expiration parameter from
+	 * @return the expiration date, or {@literal null} if none available
+	 * @since 1.1
+	 */
+	static DateTime expirationDate(Instruction instruction) {
+		String s = (instruction != null ? instruction.getParameterValue(INSTRUCTION_PARAM_EXPIRATION)
+				: null);
+		if ( s == null ) {
+			return null;
+		}
+		try {
+			return new DateTime(Long.parseLong(s));
+		} catch ( NumberFormatException e ) {
+			return null;
+		}
 	}
 
 }
