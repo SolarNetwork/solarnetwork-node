@@ -151,6 +151,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public static final int PURGE_POSTED_CHARGE_SESSIONS_JOB_INTERVAL = 1800;
 
+	/**
+	 * The default value for the {@code sessionMeterReadingExpirationSeconds}
+	 * property.
+	 */
+	public static final int DEFAULT_SESSION_METER_READING_EXPIRATION_SECONDS = 15 * 60;
+
 	private OptionalService<EventAdmin> eventAdmin;
 	private AuthorizationManager authManager;
 	private ChargeConfigurationDao chargeConfigurationDao;
@@ -166,6 +172,7 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	private SimpleTrigger closeCompletedChargeSessionsTrigger;
 	private SimpleTrigger postActiveChargeSessionsMeterValuesTrigger;
 	private SimpleTrigger purgePostedChargeSessionsTrigger;
+	private int sessionMeterReadingExpirationSeconds;
 
 	private final ConcurrentMap<String, Object> socketReadingsIgnoreMap = new ConcurrentHashMap<String, Object>(
 			8);
@@ -685,11 +692,12 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	}
 
 	private boolean configureCloseCompletedChargeSessionJob(final int seconds) {
+		JobDataMap jobData = new JobDataMap(standardJobMap());
+		jobData.put("maxAgeLastReading", sessionMeterReadingExpirationSeconds * 1000L);
 		closeCompletedChargeSessionsTrigger = scheduleIntervalJob(scheduler, seconds,
 				closeCompletedChargeSessionsTrigger,
 				new JobKey(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_NAME, SCHEDULER_GROUP),
-				CloseCompletedChargeSessionsJob.class, new JobDataMap(standardJobMap()),
-				"OCPP close completed charge sessions");
+				CloseCompletedChargeSessionsJob.class, jobData, "OCPP close completed charge sessions");
 		return ((seconds > 0 && closeCompletedChargeSessionsTrigger != null)
 				|| (seconds < 1 && closeCompletedChargeSessionsTrigger == null));
 	}
@@ -723,22 +731,26 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 		}
 		Iterable<DatumDataSource<ACEnergyDatum>> dataSources = service.services();
 		for ( DatumDataSource<ACEnergyDatum> dataSource : dataSources ) {
-			if ( dataSource instanceof MultiDatumDataSource<?> ) {
-				@SuppressWarnings("unchecked")
-				Collection<ACEnergyDatum> datums = ((MultiDatumDataSource<ACEnergyDatum>) dataSource)
-						.readMultipleDatum();
-				if ( datums != null ) {
-					for ( ACEnergyDatum datum : datums ) {
-						if ( sourceId.equals(datum.getSourceId()) ) {
-							return datum;
+			try {
+				if ( dataSource instanceof MultiDatumDataSource<?> ) {
+					@SuppressWarnings("unchecked")
+					Collection<ACEnergyDatum> datums = ((MultiDatumDataSource<ACEnergyDatum>) dataSource)
+							.readMultipleDatum();
+					if ( datums != null ) {
+						for ( ACEnergyDatum datum : datums ) {
+							if ( sourceId.equals(datum.getSourceId()) ) {
+								return datum;
+							}
 						}
 					}
+				} else {
+					ACEnergyDatum datum = dataSource.readCurrentDatum();
+					if ( datum != null && sourceId.equals(sourceId) ) {
+						return datum;
+					}
 				}
-			} else {
-				ACEnergyDatum datum = dataSource.readCurrentDatum();
-				if ( datum != null && sourceId.equals(sourceId) ) {
-					return datum;
-				}
+			} catch ( RuntimeException e ) {
+				log.error("Error reading meter for source {}: {}", sourceId, e.toString());
 			}
 		}
 		log.warn("Meter reading unavailable for source {}", sourceId);
@@ -953,6 +965,8 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 				defaults.getSocketMeterSourceMappingValue()));
 		results.add(new BasicTextFieldSettingSpecifier("socketConnectorMappingValue",
 				defaults.getSocketConnectorMappingValue()));
+		results.add(new BasicTextFieldSettingSpecifier("sessionMeterReadingExpirationSeconds",
+				String.valueOf(DEFAULT_SESSION_METER_READING_EXPIRATION_SECONDS)));
 		return results;
 	}
 
@@ -1239,6 +1253,23 @@ public class ChargeSessionManager_v15 extends CentralSystemServiceFactorySupport
 	 */
 	public void setEventExecutor(Executor executor) {
 		this.executor = executor;
+	}
+
+	/**
+	 * Set the minimum number of seconds to elapse without any significant
+	 * change in the meter reading associated with a charge session before
+	 * automatically closing the session.
+	 * 
+	 * @param sessionMeterReadingExpirationSeconds
+	 *        the expiration seconds; defaults to
+	 *        {@link #DEFAULT_SESSION_METER_READING_EXPIRATION_SECONDS}
+	 */
+	public void setSessionMeterReadingExpirationSeconds(int sessionMeterReadingExpirationSeconds) {
+		this.sessionMeterReadingExpirationSeconds = sessionMeterReadingExpirationSeconds;
+		if ( closeCompletedChargeSessionsTrigger != null ) {
+			configureCloseCompletedChargeSessionJob(0);
+			configureCloseCompletedChargeSessionJob(CLOSE_COMPLETED_CHARGE_SESSIONS_JOB_INTERVAL);
+		}
 	}
 
 }

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OCPP Charge Support
 Bundle-Description: Support for OCPP charge sessions.
 Bundle-SymbolicName: net.solarnetwork.node.ocpp.charge
-Bundle-Version: 0.6.0
+Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
@@ -22,6 +22,7 @@ Import-Package:
  org.osgi.service.event;version="[1.2,2.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
+ org.quartz.utils;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.aop;version="[4.2,5.0)",
  org.springframework.aop.framework;version="[4.2,5.0)",
