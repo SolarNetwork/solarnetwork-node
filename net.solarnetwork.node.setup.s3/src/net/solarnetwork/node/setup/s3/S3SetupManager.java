@@ -243,7 +243,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			log.warn("Error accessing S3: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM001", e.getMessage());
 		} catch ( IOException e ) {
-			log.warn("Communication error apply S3 setup: {}", e.getMessage());
+			log.warn("Communication error applying S3 setup: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM002", e.getMessage());
 		}
 	}
