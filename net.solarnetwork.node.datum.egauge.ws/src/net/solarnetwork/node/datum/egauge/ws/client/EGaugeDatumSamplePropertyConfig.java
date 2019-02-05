@@ -23,13 +23,14 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.support.ExpressionService;;
 
 /**
  * eGauge typed extension to GeneralDatumSamplePropertyConfig
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class EGaugeDatumSamplePropertyConfig
 		extends GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> {
@@ -61,6 +62,32 @@ public class EGaugeDatumSamplePropertyConfig
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Get the appropriate {@link ExpressionService} to use for this property
+	 * configuration, if an expression is configured and the appropriate service
+	 * is available.
+	 * 
+	 * @param services
+	 *        the available services
+	 * @return the service, or {@literal null} if no expression configured or
+	 *         the appropriate service is not found
+	 * @since 1.1
+	 */
+	public ExpressionService getExpressionService(Iterable<ExpressionService> services) {
+		EGaugePropertyConfig config = getConfig();
+		if ( services != null && config != null && config.getExpression() != null
+				&& !config.getExpression().isEmpty() && config.getExpressionServiceId() != null
+				&& !config.getExpressionServiceId().isEmpty() ) {
+			String id = config.getExpressionServiceId();
+			for ( ExpressionService service : services ) {
+				if ( service != null && id.equalsIgnoreCase(service.getUid()) ) {
+					return service;
+				}
+			}
+		}
+		return null;
 	}
 
 }

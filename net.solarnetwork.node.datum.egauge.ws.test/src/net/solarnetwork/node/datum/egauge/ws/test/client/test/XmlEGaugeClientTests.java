@@ -31,20 +31,26 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Test;
+import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugeDatumSamplePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugePropertyConfig;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
 import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the XmlEGaugeClient.
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class XmlEGaugeClientTests {
 
@@ -52,6 +58,39 @@ public class XmlEGaugeClientTests {
 	public static final String TEST_FILE_TOTAL = "total.xml";
 
 	private static final String SOURCE_ID = "test-source";
+
+	public static void checkInstantaneousGenerationReadings(EGaugePowerDatum datum) {
+		assertNotNull(datum);
+		assertEquals(Integer.valueOf(0), datum.getInstantaneousSampleInteger("generationWatts"));
+		assertEquals(Long.valueOf(196366), datum.getAccumulatingSampleLong("generationWattHourReading"));
+	}
+
+	public static void checkInstantaneousConsumptionReadings(EGaugePowerDatum datum) {
+		assertNotNull(datum);
+		assertEquals(Integer.valueOf(20733), datum.getInstantaneousSampleInteger("consumptionWatts"));
+		assertEquals(Long.valueOf(13993341),
+				datum.getAccumulatingSampleLong("consumptionWattHourReading"));
+	}
+
+	public static XmlEGaugeClient getTestClient(String path) {
+		XmlEGaugeClient client = new XmlEGaugeClient() {
+
+			@Override
+			public String getBaseUrl() {
+				return "";
+			}
+
+			@Override
+			public String getUrl() {
+				// Return the path to a local file containing test content
+				return getClass().getResource(path).toString();
+			}
+
+		};
+		client.init();
+		client.setSourceId(SOURCE_ID);
+		return client;
+	}
 
 	@Test
 	public void getUrl() {
@@ -201,37 +240,62 @@ public class XmlEGaugeClientTests {
 		assertThat(info, equalTo("wattHours (a) = 190823741982"));
 	}
 
-	public static void checkInstantaneousGenerationReadings(EGaugePowerDatum datum) {
-		assertNotNull(datum);
-		assertEquals(Integer.valueOf(0), datum.getInstantaneousSampleInteger("generationWatts"));
-		assertEquals(Long.valueOf(196366), datum.getAccumulatingSampleLong("generationWattHourReading"));
+	private OptionalServiceCollection<ExpressionService> spelExpressionService() {
+		return new StaticOptionalServiceCollection<>(
+				Collections.singletonList(new SpelExpressionService()));
 	}
 
-	public static void checkInstantaneousConsumptionReadings(EGaugePowerDatum datum) {
-		assertNotNull(datum);
-		assertEquals(Integer.valueOf(20733), datum.getInstantaneousSampleInteger("consumptionWatts"));
-		assertEquals(Long.valueOf(13993341),
-				datum.getAccumulatingSampleLong("consumptionWattHourReading"));
+	@Test
+	public void instantaneousDerivedDataListAccess() {
+		XmlEGaugeClient client = getTestClient("instantaneous-2.xml");
+		client.setExpressionServices(spelExpressionService());
+
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("whr", GeneralDatumSamplesType.Accumulating,
+						new EGaugePropertyConfig(
+								"data.?[name == 'Grid+' || name == 'Grid'].size() == 2 ? (data.?[name == 'Grid+'][0].value - data.?[name == 'Grid'][0].value) / -3600 : null",
+								SpelExpressionService.class.getName())) };
+
+		client.setPropertyConfigs(defaultConfigs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat("Evaluated property value", datum.getAccumulatingSampleBigDecimal("whr"),
+				equalTo(new BigDecimal("74548565")));
 	}
 
-	public static XmlEGaugeClient getTestClient(String path) {
-		XmlEGaugeClient client = new XmlEGaugeClient() {
+	@Test
+	public void instantaneousDerivedDataMapAccess() {
+		XmlEGaugeClient client = getTestClient("instantaneous-2.xml");
+		client.setExpressionServices(spelExpressionService());
 
-			@Override
-			public String getBaseUrl() {
-				return "";
-			}
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("whr", GeneralDatumSamplesType.Accumulating,
+						new EGaugePropertyConfig(
+								"(registers['Grid+']?.value - registers['Grid']?.value) / -3600",
+								SpelExpressionService.class.getName())) };
 
-			@Override
-			public String getUrl() {
-				// Return the path to a local file containing test content
-				return getClass().getResource(path).toString();
-			}
+		client.setPropertyConfigs(defaultConfigs);
 
-		};
-		client.init();
-		client.setSourceId(SOURCE_ID);
-		return client;
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat("Evaluated property value", datum.getAccumulatingSampleBigDecimal("whr"),
+				equalTo(new BigDecimal("74548565")));
 	}
 
+	@Test
+	public void instantaneousDerivedMissingValue() {
+		XmlEGaugeClient client = getTestClient("instantaneous-2.xml");
+		client.setExpressionServices(spelExpressionService());
+
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("whr", GeneralDatumSamplesType.Accumulating,
+						new EGaugePropertyConfig(
+								"((registers['Grid_NOT']?.value ?: 0) - (registers['Grid']?.value) ?: 0) / -3600",
+								SpelExpressionService.class.getName())) };
+
+		client.setPropertyConfigs(defaultConfigs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat("Evaluated property value", datum.getAccumulatingSampleBigDecimal("whr"),
+				equalTo(new BigDecimal("80917310")));
+	}
 }
