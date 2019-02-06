@@ -30,7 +30,7 @@ import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
  * Basic implementation of {@link TextFieldSettingSpecifier}.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier
 		implements TextFieldSettingSpecifier {
@@ -70,6 +70,7 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier
 				String.format(template, getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
+		spec.setDescriptionArguments(getDescriptionArguments());
 		spec.secureTextEntry = isSecureTextEntry();
 		return spec;
 	}
@@ -87,6 +88,7 @@ public class BasicTextFieldSettingSpecifier extends BasicTitleSettingSpecifier
 				getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
+		spec.setDescriptionArguments(getDescriptionArguments());
 		spec.secureTextEntry = isSecureTextEntry();
 		return spec;
 	}
