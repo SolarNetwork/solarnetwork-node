@@ -298,4 +298,35 @@ public class XmlEGaugeClientTests {
 		assertThat("Evaluated property value", datum.getAccumulatingSampleBigDecimal("whr"),
 				equalTo(new BigDecimal("80917310")));
 	}
+
+	@Test
+	public void instantaneousDerivedBadExpressionParse() {
+		XmlEGaugeClient client = getTestClient("instantaneous-2.xml");
+		client.setExpressionServices(spelExpressionService());
+
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("whr", GeneralDatumSamplesType.Accumulating,
+						new EGaugePropertyConfig("reg - !!", SpelExpressionService.class.getName())) };
+
+		client.setPropertyConfigs(defaultConfigs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat("Evaluated data", datum, nullValue());
+	}
+
+	@Test
+	public void instantaneousDerivedBadExpressionEvaluation() {
+		XmlEGaugeClient client = getTestClient("instantaneous-2.xml");
+		client.setExpressionServices(spelExpressionService());
+
+		EGaugeDatumSamplePropertyConfig[] defaultConfigs = new EGaugeDatumSamplePropertyConfig[] {
+				new EGaugeDatumSamplePropertyConfig("whr", GeneralDatumSamplesType.Accumulating,
+						new EGaugePropertyConfig("reg[Grid].foo",
+								SpelExpressionService.class.getName())) };
+
+		client.setPropertyConfigs(defaultConfigs);
+
+		EGaugePowerDatum datum = client.getCurrent();
+		assertThat("Evaluated datum", datum, nullValue());
+	}
 }

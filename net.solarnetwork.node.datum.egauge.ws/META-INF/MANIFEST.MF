@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: eGauge Datum DataSource
+Bundle-Name: eGauge Datum Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.egauge.ws
 Bundle-Description: Collect generation data from eGauge devices.
 Bundle-Version: 1.1.0
@@ -11,7 +11,7 @@ Export-Package:
  net.solarnetwork.node.datum.egauge.ws.client;version="1.1.0"
 Import-Package: 
  javax.xml.xpath,
- net.solarnetwork.domain;version="1.12.0",
+ net.solarnetwork.domain;version="1.15.0",
  net.solarnetwork.node;version="1.23.0",
  net.solarnetwork.node.dao;version="1.8.0",
  net.solarnetwork.node.domain;version="1.12.0",

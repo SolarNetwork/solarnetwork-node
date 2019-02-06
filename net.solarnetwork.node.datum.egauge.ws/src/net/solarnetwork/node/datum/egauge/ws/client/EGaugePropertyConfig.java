@@ -22,14 +22,22 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
+import static net.solarnetwork.support.ExpressionService.getGeneralExpressionReferenceLink;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import org.springframework.expression.Expression;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
 
 /**
  * Stores the configuration for accessing an eGauge register.
@@ -42,6 +50,8 @@ public class EGaugePropertyConfig {
 	private String registerName;
 	private String expression;
 	private String expressionServiceId;
+
+	private Expression cachedExpression;
 
 	public EGaugePropertyConfig() {
 		super();
@@ -67,6 +77,17 @@ public class EGaugePropertyConfig {
 		this.expressionServiceId = expressionServiceId;
 	}
 
+	/**
+	 * Get a list of settings for this configuration.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param registerNames
+	 *        the available eGauge register names
+	 * @param expressionServices
+	 *        the available {@link ExpressionService}
+	 * @return the list of settings, never {@literal null}
+	 */
 	public static List<SettingSpecifier> settings(String prefix, List<String> registerNames,
 			Iterable<ExpressionService> expressionServices) {
 		List<SettingSpecifier> results = new ArrayList<>();
@@ -97,12 +118,46 @@ public class EGaugePropertyConfig {
 
 			// only populate settings for expressions if we have at least one ExpressionService available
 			if ( !exprServiceTitles.isEmpty() ) {
+				BasicTextFieldSettingSpecifier exprSetting = new BasicTextFieldSettingSpecifier(
+						prefix + "expression", "");
+				exprSetting.setDescriptionArguments(
+						new Object[] { getGeneralExpressionReferenceLink(), expressionReferenceLink() });
+				results.add(exprSetting);
 				results.add(expressionServiceId);
-				results.add(new BasicTextFieldSettingSpecifier(prefix + "expression", ""));
 			}
 		}
 
 		return results;
+	}
+
+	/**
+	 * Get a link to a general expression service guide.
+	 * 
+	 * @return a link to a general guide
+	 */
+	public static URI expressionReferenceLink() {
+		String result = "https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.egauge.ws#expressions";
+		Properties props = new Properties();
+		try (InputStream in = EGaugePropertyConfig.class
+				.getResourceAsStream("EGaugePropertyConfig.properties")) {
+			if ( in != null ) {
+				props.load(in);
+				if ( props.containsKey("expressions.url") ) {
+					result = props.getProperty("expressions.url");
+				}
+			}
+		} catch ( IOException e ) {
+			// ignore this
+		}
+		URI uri = null;
+		if ( result != null ) {
+			try {
+				uri = new URI(result);
+			} catch ( URISyntaxException e ) {
+				throw new RuntimeException(e);
+			}
+		}
+		return uri;
 	}
 
 	/**
@@ -119,6 +174,35 @@ public class EGaugePropertyConfig {
 		return (registerName != null && !registerName.trim().isEmpty())
 				|| (expression != null && !expression.trim().isEmpty() && expressionServiceId != null
 						&& !expressionServiceId.trim().isEmpty());
+	}
+
+	/**
+	 * Get the appropriate {@link Expression} to use for this property
+	 * configuration, if an expression is configured and the appropriate service
+	 * is available.
+	 * 
+	 * @param services
+	 *        the available services
+	 * @return the expression instance, or {@literal null} if no expression
+	 *         configured or the appropriate service is not found
+	 * @since 1.1
+	 */
+	public synchronized ExpressionServiceExpression getExpression(Iterable<ExpressionService> services) {
+		for ( ExpressionService service : services ) {
+			if ( service != null && expressionServiceId.equalsIgnoreCase(service.getUid()) ) {
+				Expression expr = cachedExpression;
+				if ( expr == null ) {
+					expr = service.parseExpression(expression);
+					if ( expr != null ) {
+						cachedExpression = expr;
+					}
+				}
+				if ( expr != null ) {
+					return new ExpressionServiceExpression(service, expr);
+				}
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -173,8 +257,9 @@ public class EGaugePropertyConfig {
 	 *        the expression
 	 * @since 1.1
 	 */
-	public void setExpression(String expression) {
+	public synchronized void setExpression(String expression) {
 		this.expression = expression;
+		this.cachedExpression = null;
 	}
 
 	/**
@@ -196,8 +281,9 @@ public class EGaugePropertyConfig {
 	 *        the service ID, or {@literal null} to not evaluate
 	 * @since 1.1
 	 */
-	public void setExpressionServiceId(String expressionServiceId) {
+	public synchronized void setExpressionServiceId(String expressionServiceId) {
 		this.expressionServiceId = expressionServiceId;
+		this.cachedExpression = null;
 	}
 
 }

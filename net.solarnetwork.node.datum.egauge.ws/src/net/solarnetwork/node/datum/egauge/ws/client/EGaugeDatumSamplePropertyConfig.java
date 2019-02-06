@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
+import org.springframework.expression.Expression;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.support.ExpressionService;;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;;
 
 /**
  * eGauge typed extension to GeneralDatumSamplePropertyConfig
@@ -65,27 +67,20 @@ public class EGaugeDatumSamplePropertyConfig
 	}
 
 	/**
-	 * Get the appropriate {@link ExpressionService} to use for this property
+	 * Get the appropriate {@link Expression} to use for this property
 	 * configuration, if an expression is configured and the appropriate service
 	 * is available.
 	 * 
 	 * @param services
 	 *        the available services
-	 * @return the service, or {@literal null} if no expression configured or
-	 *         the appropriate service is not found
+	 * @return the expression instance, or {@literal null} if no expression
+	 *         configured or the appropriate service is not found
 	 * @since 1.1
 	 */
-	public ExpressionService getExpressionService(Iterable<ExpressionService> services) {
+	public ExpressionServiceExpression getExpression(Iterable<ExpressionService> services) {
 		EGaugePropertyConfig config = getConfig();
-		if ( services != null && config != null && config.getExpression() != null
-				&& !config.getExpression().isEmpty() && config.getExpressionServiceId() != null
-				&& !config.getExpressionServiceId().isEmpty() ) {
-			String id = config.getExpressionServiceId();
-			for ( ExpressionService service : services ) {
-				if ( service != null && id.equalsIgnoreCase(service.getUid()) ) {
-					return service;
-				}
-			}
+		if ( services != null && config != null ) {
+			return config.getExpression(services);
 		}
 		return null;
 	}

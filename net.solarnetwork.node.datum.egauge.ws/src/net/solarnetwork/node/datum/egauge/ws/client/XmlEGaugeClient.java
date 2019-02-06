@@ -40,6 +40,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import org.springframework.expression.ExpressionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -56,6 +57,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalServiceCollection;
 
@@ -156,8 +158,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		try {
 			populateDatum(datum);
-			Map<String, ?> sampleData = datum.getSampleData();
-			if ( sampleData == null || sampleData.isEmpty() ) {
+			if ( datum.getSamples() == null || datum.getSamples().isEmpty() ) {
 				// not configured probably
 				return null;
 			}
@@ -228,15 +229,29 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		}
 
 		final GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
-		final ExpressionService exprService = propertyConfig
-				.getExpressionService(expressionServices != null ? expressionServices.services() : null);
+		final ExpressionServiceExpression expr;
+		try {
+			expr = propertyConfig
+
+					.getExpression(expressionServices != null ? expressionServices.services() : null);
+		} catch ( ExpressionException e ) {
+			log.warn("Error parsing property [{}] expression `{}`: {}", propertyConfig.getPropertyKey(),
+					propertyConfig.getConfig().getExpression(), e.getMessage());
+			return;
+		}
 
 		Number propValue = null;
 
-		if ( exprService != null ) {
+		if ( expr != null ) {
 			ExpressionRoot root = new ExpressionRoot(registers);
-			propValue = exprService.evaluateExpression(propertyConfig.getConfig().getExpression(), null,
-					root, null, BigDecimal.class);
+			try {
+				propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root, null,
+						BigDecimal.class);
+			} catch ( ExpressionException e ) {
+				log.warn("Error evaluating property [{}] expression `{}`: {}",
+						propertyConfig.getPropertyKey(), propertyConfig.getConfig().getExpression(),
+						e.getMessage());
+			}
 		} else {
 			final String regName = propertyConfig.getConfig().getRegisterName();
 			DataRegister reg = registers.stream().filter(r -> regName.equalsIgnoreCase(r.getName()))
