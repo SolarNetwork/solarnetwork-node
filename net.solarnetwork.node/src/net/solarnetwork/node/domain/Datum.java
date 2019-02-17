@@ -31,7 +31,7 @@ import java.util.Map;
  * Basic persistable domain object API.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public interface Datum {
 
@@ -75,6 +75,22 @@ public interface Datum {
 	 * @since 1.3
 	 */
 	String DATUM_TYPES_PROPERTY = "_DatumTypes";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} sample key for
+	 * a {@link net.solarnetwork.domain.DeviceOperatingState#getCode()} value.
+	 * 
+	 * @since 1.4
+	 */
+	String OP_STATE = "opState";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} sample key for
+	 * a bitmask of hardware-specific operating state values.
+	 * 
+	 * @since 1.4
+	 */
+	String OP_STATES = "opStates";
 
 	/**
 	 * Get the date this object was created, which is often equal to either the
