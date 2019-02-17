@@ -28,7 +28,7 @@ import java.math.BigDecimal;
  * Standardized API for atmospheric related datum to implement.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public interface AtmosphericDatum extends Datum {
 
@@ -67,6 +67,15 @@ public interface AtmosphericDatum extends Datum {
 	 * for {@link AtmosphericDatum#getSkyConditions()} values.
 	 */
 	String SKY_CONDITIONS_KEY = "sky";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for a bitmask of {@link net.solarnetwork.domain.SkyCondition#getCode()}
+	 * values.
+	 * 
+	 * @since 1.4
+	 */
+	String SKY_CONDITION_CODES_KEY = "skies";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key

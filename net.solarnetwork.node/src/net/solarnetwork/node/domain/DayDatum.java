@@ -29,7 +29,7 @@ import org.joda.time.LocalTime;
  * Solar day related datum.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface DayDatum extends Datum {
 
@@ -82,6 +82,15 @@ public interface DayDatum extends Datum {
 	 * for {@link DayDatum#getSkyConditions()} values.
 	 */
 	static final String SKY_CONDITIONS_KEY = "sky";
+
+	/**
+	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * for a bitmask of {@link net.solarnetwork.domain.SkyCondition#getCode()}
+	 * values.
+	 * 
+	 * @since 1.3
+	 */
+	String SKY_CONDITION_CODES_KEY = "skies";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
