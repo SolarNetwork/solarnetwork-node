@@ -1,6 +1,6 @@
 # HTTP Ping control
 
-This project provides SolarNode plugin that can periodically check that a HTTP URL can be reached,
+This project provides a SolarNode plugin that can periodically check that a HTTP URL can be reached,
 thus verifying network connectivity to that host. If a network problem is detected, another control
 can be toggled and/or a script can be executed. This can be useful to deal with unreliable network
 connections, such as wireless connections that do not automatically reconnect after they go down.
