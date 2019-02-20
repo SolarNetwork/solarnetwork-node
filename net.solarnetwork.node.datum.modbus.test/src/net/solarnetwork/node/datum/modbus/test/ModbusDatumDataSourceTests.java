@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
@@ -55,8 +56,10 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.datum.modbus.ExpressionConfig;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
 import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
 import net.solarnetwork.node.datum.modbus.VirtualMeterConfig;
@@ -68,7 +71,10 @@ import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link ModbusDatumDataSource} class.
@@ -93,6 +99,11 @@ public class ModbusDatumDataSourceTests {
 
 	private ModbusDatumDataSource dataSource;
 
+	private OptionalServiceCollection<ExpressionService> spelExpressionServices() {
+		return new StaticOptionalServiceCollection<>(
+				Collections.singletonList(new SpelExpressionService()));
+	}
+
 	@Before
 	public void setup() {
 		modbusNetwork = EasyMock.createMock(ModbusNetwork.class);
@@ -104,6 +115,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbusNetwork));
 		dataSource.setDatumMetadataService(
 				new StaticOptionalService<DatumMetadataService>(datumMetadataService));
+		dataSource.setExpressionServices(spelExpressionServices());
 	}
 
 	private void replayAll() {
@@ -746,4 +758,118 @@ public class ModbusDatumDataSourceTests {
 				equalTo(expectedMeterValue.toString()));
 	}
 
+	@Test
+	public void readDatumWithExpressions() throws IOException {
+		// GIVEN
+
+		// we will collect 2 ranges of data; 0 - 7 for some integers; 200 - 205 for some floating points
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT16_PROP_NAME, Instantaneous, UInt16, 0),
+				new ModbusPropertyConfig(TEST_SINT16_PROP_NAME, Instantaneous, Int16, 1),
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 2),
+				new ModbusPropertyConfig(TEST_INT64_PROP_NAME, Instantaneous, Int64, 4),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200,
+						BigDecimal.ONE, -1),
+				new ModbusPropertyConfig(TEST_FLOAT64_PROP_NAME, Instantaneous, Float64, 202,
+						BigDecimal.ONE, -1), };
+		dataSource.setPropConfigs(propConfigs);
+
+		ExpressionConfig[] exprConfigs = new ExpressionConfig[] {
+				new ExpressionConfig("int-add", Instantaneous, "props['i32'] + props['i64']",
+						SpelExpressionService.class.getName()),
+				new ExpressionConfig("float-add", Instantaneous, "props['f32'] + props['f64']",
+						SpelExpressionService.class.getName()),
+				new ExpressionConfig("raw-add", Instantaneous, "regs[0] + sample.getInt32(2)",
+						SpelExpressionService.class.getName()), };
+		dataSource.setExpressionConfigs(exprConfigs);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512,
+				0xdfee };
+		final int[] range2 = new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 };
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+				.andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+				.andReturn(range2);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("int-add value", datum.getInstantaneousSampleLong("int-add"),
+				equalTo(584347834048494L + 48457959));
+		assertThat("float-add value", datum.getInstantaneousSampleDouble("float-add"),
+				closeTo(19741974.1974 + 1974.1974f, 0.001));
+		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+				equalTo(0xfc1eL + ((0x02e3L << 16) | 0x68e7L)));
+	}
+
+	@Test
+	public void readDatumWithExpressionsWithAdditionalRegisters() throws IOException {
+		// GIVEN
+
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT16_PROP_NAME, Instantaneous, UInt16, 0),
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 2),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200,
+						BigDecimal.ONE, -1), };
+		dataSource.setPropConfigs(propConfigs);
+
+		ExpressionConfig[] exprConfigs = new ExpressionConfig[] {
+				new ExpressionConfig("raw-add", Instantaneous, "regs[8] + sample.getInt32(10, 11)",
+						SpelExpressionService.class.getName()), };
+		dataSource.setExpressionConfigs(exprConfigs);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final int[] range1 = new int[] { 0xfc1e, 0x0000, 0x02e3, 0x68e7 };
+		final int[] range2 = new int[] { 0x44f6, 0xc651 };
+		final int[] range3 = new int[] { 0x3330, 0x0000, 0x3340, 0x3341 };
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 4))
+				.andReturn(range1);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 2))
+				.andReturn(range2);
+		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 8, 4))
+				.andReturn(range3);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
+				equalTo(64542));
+		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
+				equalTo(48457959));
+		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
+	}
 }

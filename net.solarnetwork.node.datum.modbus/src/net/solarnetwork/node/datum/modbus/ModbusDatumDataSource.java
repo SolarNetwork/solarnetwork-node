@@ -31,13 +31,16 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import org.springframework.expression.ExpressionException;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.domain.GeneralDatumMetadata;
@@ -60,16 +63,19 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
@@ -91,7 +97,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	private long sampleCacheMs;
 	private int maxReadWordCount;
 	private ModbusPropertyConfig[] propConfigs;
+	private ExpressionConfig[] expressionConfigs;
 	private VirtualMeterConfig[] virtualMeterConfigs;
+	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	private final ModbusData sample;
 
@@ -129,6 +137,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		d.setSourceId(sourceId);
 		populateDatumProperties(currSample, d, propConfigs);
 		populateDatumProperties(currSample, d, virtualMeterConfigs);
+		populateDatumProperties(currSample, d, expressionConfigs);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
@@ -353,6 +362,46 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		}
 	}
 
+	private void populateDatumProperties(ModbusData sample, GeneralNodeDatum d,
+			ExpressionConfig[] expressionConfs) {
+		Iterable<ExpressionService> services = (expressionServices != null
+				? expressionServices.services()
+				: null);
+		if ( services == null || expressionConfs == null || expressionConfs.length < 1 || sample == null
+				|| d == null ) {
+			return;
+		}
+		for ( ExpressionConfig config : expressionConfs ) {
+			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
+					|| config.getExpression().isEmpty() ) {
+				continue;
+			}
+			final ExpressionServiceExpression expr;
+			try {
+				expr = config.getExpression(services);
+			} catch ( ExpressionException e ) {
+				log.warn("Error parsing property [{}] expression `{}`: {}", config.getName(),
+						config.getExpression(), e.getMessage());
+				return;
+			}
+
+			Object propValue = null;
+			if ( expr != null ) {
+				ExpressionRoot root = new ExpressionRoot(d, sample);
+				try {
+					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
+							null, Object.class);
+				} catch ( ExpressionException e ) {
+					log.warn("Error evaluating property [{}] expression `{}`: {}", config.getName(),
+							config.getExpression(), e.getMessage());
+				}
+			}
+			if ( propValue != null ) {
+				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
+			}
+		}
+	}
+
 	private DatumMetadataService datumMetadataService() {
 		OptionalService<DatumMetadataService> opt = getDatumMetadataService();
 		return (opt != null ? opt.service() : null);
@@ -469,6 +518,26 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					}
 				}));
 
+		Iterable<ExpressionService> exprServices = (expressionServices != null
+				? expressionServices.services()
+				: null);
+		if ( exprServices != null ) {
+			ExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
+					: Collections.<ExpressionConfig> emptyList());
+			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+									ExpressionConfig.settings(key + ".", exprServices));
+							return Collections.<SettingSpecifier> singletonList(configGroup);
+						}
+					}));
+		}
+
 		return results;
 	}
 
@@ -509,6 +578,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				final int maxReadLen = maxReadWordCount;
 				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getReadFunctionSets(
 						propConfigs);
+				Map<ModbusReadFunction, IntRangeSet> functionRangeMap = new HashMap<>(
+						functionMap.size());
 				for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap
 						.entrySet() ) {
 					ModbusReadFunction function = me.getKey();
@@ -517,6 +588,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					// into single calls, but limited to at most maxReadWordCount addresses at a time
 					// because some devices have trouble returning large word counts
 					IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
+					functionRangeMap.put(function, addressRangeSet);
 					log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
 					IntRange[] ranges = addressRangeSet.ranges();
 					for ( IntRange range : ranges ) {
@@ -551,6 +623,33 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 						}
 					}
 				}
+
+				// handle expression references
+				ExpressionConfig[] exprConfigs = getExpressionConfigs();
+				if ( exprConfigs != null && exprConfigs.length > 0 ) {
+					IntRangeSet readHoldingRegSet = functionRangeMap
+							.get(ModbusReadFunction.ReadHoldingRegister);
+					IntRangeSet exprAddressRangeSet = new IntRangeSet();
+					for ( ExpressionConfig config : exprConfigs ) {
+						Set<Integer> addrSet = config.registerAddressReferences();
+						for ( Integer addr : addrSet ) {
+							// don't add addresses already read
+							if ( !readHoldingRegSet.contains(addr) ) {
+								exprAddressRangeSet.addAll(addr, addr + 1);
+							}
+						}
+					}
+					IntRange[] ranges = exprAddressRangeSet.ranges();
+					for ( IntRange range : ranges ) {
+						for ( int start = range.first(); start < range.last(); ) {
+							int len = Math.min(range.last() - start, maxReadLen);
+							m.saveDataArray(conn.readUnsignedShorts(
+									ModbusReadFunction.ReadHoldingRegister, start, len), start);
+							start += len;
+						}
+					}
+				}
+
 				return true;
 			}
 		});
@@ -786,6 +885,71 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	public void setVirtualMeterConfigsCount(int count) {
 		this.virtualMeterConfigs = ArrayUtils.arrayWithLength(this.virtualMeterConfigs, count,
 				VirtualMeterConfig.class, null);
+	}
+
+	/**
+	 * Get the expression configurations.
+	 * 
+	 * @return the expression configurations
+	 * @since 1.5
+	 */
+	public ExpressionConfig[] getExpressionConfigs() {
+		return expressionConfigs;
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 * 
+	 * @param expressionConfigs
+	 *        the configs to use
+	 * @since 1.5
+	 */
+	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+		this.expressionConfigs = expressionConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code expressionConfigs} elements.
+	 * 
+	 * @return the number of {@code expressionConfigs} elements
+	 * @since 1.5
+	 */
+	public int getExpressionConfigsCount() {
+		ExpressionConfig[] confs = this.expressionConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ExpressionConfig} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ExpressionConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 * @since 1.5
+	 */
+	public void setExpressionConfigsCount(int count) {
+		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
+				ExpressionConfig.class, null);
+	}
+
+	/**
+	 * Configure an optional collection of {@link ExpressionService}.
+	 * 
+	 * <p>
+	 * Configuring these services allows expressions to be defined to calculate
+	 * dynamic datum property values at runtime.
+	 * </p>
+	 * 
+	 * @param expressionServices
+	 *        the optional {@link ExpressionService} collection to use
+	 * @since 1.5
+	 */
+	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
+		this.expressionServices = expressionServices;
 	}
 
 }

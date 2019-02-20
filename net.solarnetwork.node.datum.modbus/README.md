@@ -32,6 +32,7 @@ Each device configuration contains the following overall settings:
 | Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device. |
 | Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
 | Max Read Length    | The maximum number of Modbus registers to request at once.                       |
+| Word Order         | For multi-register data types, the ordering to use when combining them.          |
 
 ## Overall device settings notes
 
@@ -175,4 +176,49 @@ Each virtual meter configuration contains the following settings:
 </dl>
 
 
- [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarQuery-API#add-node-datum-metadata
+## Expressions
+
+Since version **1.5** properties can be defined using [expressions][expr]. Expressions allow you to
+configure datum properties that are dynamically calculated from other properties or raw Modbus
+register values.
+
+![expressions-config](docs/solarnode-modbus-device-expression-settings.png)
+
+### Expression root object
+
+The root object is a [ExpressionRoot][ExpressionRoot] object, which has the following properties:
+
+| Property | Type | Description |
+|:---------|:-----|:------------|
+| `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
+| `props` | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions. |
+| `sample` | `ModbusData` | A [`ModbusData`][ModbusData] object, populated with the raw Modbus data read from the device. |
+| `regs` | `Map<Integer,Integer>` | Simple Map based access to the register data in `sample`, to simplify expressions. |
+
+
+### Expression examples
+
+Given raw Modbus data like the following:
+
+```
+[000]: 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee
+[200]: 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7
+```
+
+and assuming a property config that maps register **202** to a 64-bit floating point property `bigFloat`:
+
+Then here are some example expressions and the results they would produce:
+
+| Expression | Result | Comment |
+|:-----------|:-------|:--------|
+| `regs[0]` | `64542` | Returns register **0** directly, which is `0xfc1e`. |
+| `sample.getInt32(regs[2])` | `48457959` | Returns registers **2** and **3** combined as a unsigned 32-bit integer `0x02e368e7`. |
+| `sample.getFloat32(regs[200])` | `1974.1974` | Returns registers **200** and **201** as a IEEE-754 32-bit floating point: `0x44f6c651`. |
+| `props['bigFloat'] - regs[0]` | `19677432.1974` | Returns difference of register **0** (`0xfc1e`) from datum property `bigFloat` (`0x4172d3d163288ce7`). |
+
+
+[expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
+[ExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.modbus/src/net/solarnetwork/node/datum/modbus/ExpressionRoot.java
+[GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
+[ModbusData]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.io.modbus/src/net/solarnetwork/node/io/modbus/ModbusData.java
+[meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarQuery-API#add-node-datum-metadata
