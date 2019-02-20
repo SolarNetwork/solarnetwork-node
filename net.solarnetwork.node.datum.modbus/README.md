@@ -193,7 +193,7 @@ The root object is a [ExpressionRoot][ExpressionRoot] object, which has the foll
 | `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
 | `props` | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions. |
 | `sample` | `ModbusData` | A [`ModbusData`][ModbusData] object, populated with the raw Modbus data read from the device. |
-| `regs` | `Map<Integer,Integer>` | Simple Map based access to the register data in `sample`, to simplify expressions. |
+| `regs` | `Map<Integer,Integer>` | Simple Map based access to the register data in `sample`, to simplify expressions all register values are returned as unsigned 16-bit integers. |
 
 
 ### Expression examples
