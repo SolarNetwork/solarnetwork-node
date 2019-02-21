@@ -25,14 +25,13 @@ package net.solarnetwork.node.io.dnp3.impl;
 import java.util.ArrayList;
 import java.util.List;
 import com.automatak.dnp3.Channel;
-import com.automatak.dnp3.ChannelListener;
 import com.automatak.dnp3.ChannelRetry;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
-import net.solarnetwork.dnp3.util.Slf4jChannelListener;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * TCP based server (outstation) channel service.
@@ -61,14 +60,15 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 	public Channel createChannel(TcpServerChannelConfiguration configuration) throws DNP3Exception {
 		ChannelRetry retryConfig = new ChannelRetry(configuration.getMinRetryDelay(),
 				configuration.getMaxRetryDelay());
-		ChannelListener listener = new Slf4jChannelListener(getUid());
 		return getManager().addTCPServer(getUid(), configuration.getLogLevels(), retryConfig,
-				configuration.getBindAddress(), configuration.getPort(), listener);
+				configuration.getBindAddress(), configuration.getPort(), this);
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(8);
+
+		result.add(new BasicTitleSettingSpecifier("status", getChannelStatusMessage(), true));
 
 		result.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
 		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));

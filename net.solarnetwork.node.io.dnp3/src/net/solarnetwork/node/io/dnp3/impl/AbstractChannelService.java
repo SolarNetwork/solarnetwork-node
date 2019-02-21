@@ -26,8 +26,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import com.automatak.dnp3.Channel;
+import com.automatak.dnp3.ChannelListener;
+import com.automatak.dnp3.ChannelStatistics;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
+import com.automatak.dnp3.LinkStatistics;
+import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 
 /**
@@ -39,7 +43,7 @@ import net.solarnetwork.node.io.dnp3.ChannelService;
  * @version 1.0
  */
 public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
-		implements ChannelService {
+		implements ChannelService, ChannelListener {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -51,6 +55,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	private MessageSource messageSource;
 
 	private Channel channel;
+	private ChannelState channelState = ChannelState.CLOSED;
 
 	/**
 	 * Constructor.
@@ -127,6 +132,36 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	 * @return the channel
 	 */
 	protected abstract Channel createChannel(C configuration) throws DNP3Exception;
+
+	@Override
+	public void onStateChange(ChannelState state) {
+		log.info("Channel [{}] state changed to {}", getUid(), state);
+		this.channelState = state;
+	}
+
+	/**
+	 * Get a simple string status message.
+	 * 
+	 * @return the message, never {@literal null}
+	 */
+	protected synchronized String getChannelStatusMessage() {
+		StringBuilder buf = new StringBuilder();
+		if ( channel == null ) {
+			buf.append("N/A");
+		} else {
+			buf.append(channelState);
+			LinkStatistics linkStats = channel.getStatistics();
+			ChannelStatistics stats = (linkStats != null ? linkStats.channel : null);
+			if ( stats != null ) {
+				buf.append("; ").append(stats.numOpen).append(" open");
+				buf.append("; ").append(stats.numClose).append(" close");
+				buf.append("; ").append(stats.numOpenFail).append(" open fail");
+				buf.append("; ").append(stats.numBytesRx / 1024).append(" KB in");
+				buf.append("; ").append(stats.numBytesTx / 1024).append("KB out");
+			}
+		}
+		return buf.toString();
+	}
 
 	/**
 	 * Alias for the {@link #getUID()} method.
