@@ -84,8 +84,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	}
 
 	/**
-	 * Call to inform the service that the channel configuration has changed,
-	 * and thus the channel should be recreated.
+	 * Shutdown the channel.
 	 */
 	public synchronized void shutdown() {
 		if ( channel != null ) {
@@ -157,7 +156,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 				buf.append("; ").append(stats.numClose).append(" close");
 				buf.append("; ").append(stats.numOpenFail).append(" open fail");
 				buf.append("; ").append(stats.numBytesRx / 1024).append(" KB in");
-				buf.append("; ").append(stats.numBytesTx / 1024).append("KB out");
+				buf.append("; ").append(stats.numBytesTx / 1024).append(" KB out");
 			}
 		}
 		return buf.toString();

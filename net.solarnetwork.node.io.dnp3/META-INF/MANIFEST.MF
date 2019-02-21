@@ -24,4 +24,6 @@ Import-Package:
  org.springframework.beans;version="[4.2,5.0)",
  org.springframework.context;version="[4.2,5.0)",
  org.springframework.context.support;version="[4.2,5.0)",
- org.springframework.core;version="[4.2,5.0)"
+ org.springframework.core;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
+ org.springframework.scheduling;version="[4.2,5.0)"

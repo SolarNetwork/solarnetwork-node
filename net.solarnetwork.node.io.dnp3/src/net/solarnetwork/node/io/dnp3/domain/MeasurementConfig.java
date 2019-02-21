@@ -22,7 +22,14 @@
 
 package net.solarnetwork.node.io.dnp3.domain;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A configuration for a DNP3 measurement integration with a
@@ -37,10 +44,13 @@ import net.solarnetwork.node.DatumDataSource;
  */
 public class MeasurementConfig {
 
+	/** The default measurement type. */
+	public static final MeasurementType DEFAULT_TYPE = MeasurementType.AnalogInput;
+
 	private String dataSourceUid;
 	private String sourceId;
 	private String propertyName;
-	private MeasurementType type;
+	private MeasurementType type = DEFAULT_TYPE;
 
 	/**
 	 * Default constructor.
@@ -70,6 +80,33 @@ public class MeasurementConfig {
 		this.sourceId = sourceId;
 		this.propertyName = propertyName;
 		this.type = type;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @return the settings, never {@literal null}
+	 */
+	public static List<SettingSpecifier> settings(String prefix) {
+		List<SettingSpecifier> results = new ArrayList<>(3);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyName", ""));
+
+		// drop-down menu for measurement type
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "typeKey", Character.toString(DEFAULT_TYPE.getCode()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
+		for ( MeasurementType e : MeasurementType.values() ) {
+			propTypeTitles.put(Character.toString(e.getCode()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
+		return results;
 	}
 
 	public String getDataSourceUid() {
@@ -104,4 +141,49 @@ public class MeasurementConfig {
 		this.type = type;
 	}
 
+	/**
+	 * Get the measurement type key.
+	 * 
+	 * <p>
+	 * This returns the configured {@link #getType()}
+	 * {@link MeasurementType#getCode()} value as a string. If the type is not
+	 * available, {@link MeasurementType#AnalogInput} will be returned.
+	 * </p>
+	 * 
+	 * @return the measurement type key
+	 */
+	public String getTypeKey() {
+		MeasurementType type = getType();
+		if ( type == null ) {
+			type = MeasurementType.AnalogInput;
+		}
+		return Character.toString(type.getCode());
+	}
+
+	/**
+	 * Set the measurement type via a key value.
+	 * 
+	 * <p>
+	 * This uses the first character of {@code key} as a {@link MeasurementType}
+	 * code value to call {@link #setType(MeasurementType)}. If there is any
+	 * problem parsing the type, {@link MeasurementType#AnalogInput} is set.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the measurement type key to set
+	 */
+	public void setTypeKey(String key) {
+		MeasurementType type = null;
+		if ( key != null && key.length() > 0 ) {
+			try {
+				type = MeasurementType.forCode(key.charAt(0));
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		}
+		if ( type == null ) {
+			type = MeasurementType.AnalogInput;
+		}
+		setType(type);
+	}
 }
