@@ -68,8 +68,27 @@ public abstract class AbstractApplicationService implements OutstationService {
 
 	/**
 	 * Configure and start the service.
+	 * 
+	 * <p>
+	 * This method calls {@link #configurationChanged(Map)} with a
+	 * {@literal null} argument.
+	 * </p>
 	 */
 	public synchronized void startup() {
+		configurationChanged(null);
+	}
+
+	/**
+	 * Callback after properties have been changed.
+	 * 
+	 * <p>
+	 * This method calls {@link #shutdown()}.
+	 * </p>
+	 * 
+	 * @param properties
+	 *        the changed properties
+	 */
+	public synchronized void configurationChanged(Map<String, Object> properties) {
 		shutdown();
 	}
 

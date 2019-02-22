@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -75,6 +76,16 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	 * Configure and start the channel.
 	 */
 	public synchronized void startup() {
+		configurationChanged(null);
+	}
+
+	/**
+	 * Callback after properties have been changed.
+	 * 
+	 * @param properties
+	 *        the changed properties
+	 */
+	public void configurationChanged(Map<String, Object> properties) {
 		shutdown();
 		try {
 			channel = createChannel(config);

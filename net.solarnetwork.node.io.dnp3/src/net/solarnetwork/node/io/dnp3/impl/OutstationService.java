@@ -28,20 +28,38 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.core.task.TaskExecutor;
+import com.automatak.dnp3.AnalogInput;
+import com.automatak.dnp3.AnalogOutputStatus;
+import com.automatak.dnp3.BinaryInput;
+import com.automatak.dnp3.BinaryOutputStatus;
 import com.automatak.dnp3.Channel;
+import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DatabaseConfig;
+import com.automatak.dnp3.DoubleBitBinaryInput;
 import com.automatak.dnp3.EventBufferConfig;
+import com.automatak.dnp3.FrozenCounter;
 import com.automatak.dnp3.Outstation;
+import com.automatak.dnp3.OutstationChangeSet;
 import com.automatak.dnp3.OutstationStackConfig;
 import com.automatak.dnp3.StackStatistics;
+import com.automatak.dnp3.enums.AnalogOutputStatusQuality;
+import com.automatak.dnp3.enums.AnalogQuality;
+import com.automatak.dnp3.enums.BinaryOutputStatusQuality;
+import com.automatak.dnp3.enums.BinaryQuality;
 import com.automatak.dnp3.enums.CommandStatus;
+import com.automatak.dnp3.enums.CounterQuality;
+import com.automatak.dnp3.enums.DoubleBit;
+import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
+import com.automatak.dnp3.enums.FrozenCounterQuality;
 import com.automatak.dnp3.enums.LinkStatus;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
@@ -53,6 +71,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A DNP3 "outstation" server service that publishes SolarNode datum/control
@@ -67,6 +86,9 @@ public class OutstationService extends AbstractApplicationService
 	/** The default event buffer size. */
 	private static final int DEFAULT_EVENT_BUFFER_SIZE = 30;
 
+	/** The default startup delay. */
+	private static final int DEFAULT_STARTUP_DELAY_SECONDS = 5;
+
 	/** The default uid value. */
 	public static final String DEFAULT_UID = "DNP3 Outstation";
 
@@ -75,8 +97,10 @@ public class OutstationService extends AbstractApplicationService
 
 	private MeasurementConfig[] measurementConfigs;
 	private int eventBufferSize = DEFAULT_EVENT_BUFFER_SIZE;
+	private int startupDelaySecs = DEFAULT_STARTUP_DELAY_SECONDS;
 
 	private Outstation outstation;
+	private Runnable initTask;
 
 	/**
 	 * Constructor.
@@ -94,24 +118,78 @@ public class OutstationService extends AbstractApplicationService
 	@Override
 	public synchronized void startup() {
 		super.startup();
-		outstation = createOutstation();
-		outstation.enable();
+	}
+
+	/**
+	 * Callback after properties have been changed.
+	 * 
+	 * @param properties
+	 *        the changed properties
+	 */
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		super.configurationChanged(properties);
+		if ( initTask != null ) {
+			// init task already underway
+			return;
+		}
+		TaskExecutor executor = getTaskExecutor();
+		if ( executor != null ) {
+			initTask = new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						log.info("Waiting {}s to start DNP3 outstation [{}]", getStartupDelaySecs(),
+								getUid());
+						Thread.sleep(getStartupDelaySecs() * 1000L);
+					} catch ( InterruptedException e ) {
+						// ignore
+					} finally {
+						synchronized ( OutstationService.this ) {
+							initTask = null;
+							getOutstation();
+						}
+					}
+				}
+			};
+			executor.execute(initTask);
+		} else {
+			// no executor; init immediately
+			getOutstation();
+		}
 	}
 
 	@Override
 	public synchronized void shutdown() {
 		super.shutdown();
 		if ( outstation != null ) {
+			log.info("Shutting down DNP3 outstation [{}]", getUid());
 			outstation.shutdown();
 			this.outstation = null;
+			log.info("DNP3 outstation [{}] shutdown", getUid());
 		}
+	}
+
+	private synchronized Outstation getOutstation() {
+		if ( outstation != null || initTask != null ) {
+			return outstation;
+		}
+		outstation = createOutstation();
+		if ( outstation != null ) {
+			outstation.enable();
+			log.info("DNP3 outstation [{}] enabled", getUid());
+		}
+		return outstation;
 	}
 
 	private Outstation createOutstation() {
 		Channel channel = channel();
 		if ( channel == null ) {
+			log.info("DNP3 channel not available for outstation [{}]", getUid());
 			return null;
 		}
+		log.info("Initializing DNP3 outstation [{}]", getUid());
 		try {
 			return channel.addOutstation(getUid(), commandHandler, app, createOutstationStackConfig());
 		} catch ( DNP3Exception e ) {
@@ -133,7 +211,7 @@ public class OutstationService extends AbstractApplicationService
 		if ( configs != null ) {
 			for ( MeasurementConfig config : configs ) {
 				MeasurementType type = config.getType();
-				if ( type != null ) {
+				if ( type != null && config.getPropertyName() != null ) {
 					map.computeIfAbsent(type, k -> new ArrayList<>(4)).add(config);
 				}
 			}
@@ -248,22 +326,141 @@ public class OutstationService extends AbstractApplicationService
 		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
 		}
-		// TODO Auto-generated method stub
 	}
 
 	private void handleDatumCapturedEvent(Event event) {
-		Map<String, Object> data = mapForEvent(event);
+		Object sourceId = event.getProperty(Datum.SOURCE_ID);
+		if ( sourceId == null ) {
+			return;
+		}
+
 		TaskExecutor executor = getTaskExecutor();
 		if ( executor != null ) {
 			executor.execute(new Runnable() {
 
 				@Override
 				public void run() {
-					// TODO post prop changes
+					applyDatumCapturedUpdates(sourceId.toString(), event);
 				}
 			});
 		} else {
-			// TODO post prop changes
+			applyDatumCapturedUpdates(sourceId.toString(), event);
+		}
+	}
+
+	private void applyDatumCapturedUpdates(String sourceId, Event event) {
+		OutstationChangeSet changes = changeSetForDatumCapturedEvent(sourceId.toString(), event);
+		if ( changes == null ) {
+			return;
+		}
+		synchronized ( this ) {
+			Outstation station = getOutstation();
+			if ( station != null ) {
+				station.apply(changes);
+			}
+		}
+	}
+
+	private OutstationChangeSet changeSetForDatumCapturedEvent(String sourceId, Event event) {
+		Map<MeasurementType, List<MeasurementConfig>> map = measurementTypeMap(getMeasurementConfigs());
+		if ( map == null || map.isEmpty() || event == null ) {
+			return null;
+		}
+		Object timestamp = event.getProperty(Datum.TIMESTAMP);
+		if ( timestamp == null || !(timestamp instanceof Number) ) {
+			return null;
+		}
+		final long ts = ((Number) timestamp).longValue();
+		OutstationChangeSet changes = null;
+		for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : map.entrySet() ) {
+			MeasurementType type = me.getKey();
+			List<MeasurementConfig> list = me.getValue();
+			for ( ListIterator<MeasurementConfig> itr = list.listIterator(); itr.hasNext(); ) {
+				MeasurementConfig config = itr.next();
+				if ( sourceId.equals(config.getSourceId()) ) {
+					Object propVal = event.getProperty(config.getPropertyName());
+					if ( propVal != null ) {
+						if ( changes == null ) {
+							changes = new OutstationChangeSet();
+						}
+						log.debug("Updating DNP3 {}[{}] from [{}].{} -> {}", type, itr.previousIndex(),
+								sourceId, config.getPropertyName(), propVal);
+						switch (type) {
+							case AnalogInput:
+								if ( propVal instanceof Number ) {
+									changes.update(
+											new AnalogInput(((Number) propVal).doubleValue(),
+													(byte) AnalogQuality.ONLINE.toType(), ts),
+											itr.previousIndex());
+								}
+								break;
+
+							case AnalogOutputStatus:
+								if ( propVal instanceof Number ) {
+									changes.update(
+											new AnalogOutputStatus(((Number) propVal).doubleValue(),
+													(byte) AnalogOutputStatusQuality.ONLINE.toType(),
+													ts),
+											itr.previousIndex());
+								}
+								break;
+
+							case BinaryInput:
+								changes.update(
+										new BinaryInput(booleanPropertyValue(propVal),
+												(byte) BinaryQuality.ONLINE.toType(), ts),
+										itr.previousIndex());
+								break;
+
+							case BinaryOutputStatus:
+								changes.update(
+										new BinaryOutputStatus(booleanPropertyValue(propVal),
+												(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
+										itr.previousIndex());
+								break;
+
+							case Counter:
+								if ( propVal instanceof Number ) {
+									changes.update(
+											new Counter(((Number) propVal).longValue(),
+													(byte) CounterQuality.ONLINE.toType(), ts),
+											itr.previousIndex());
+								}
+								break;
+
+							case DoubleBitBinaryInput:
+								changes.update(
+										new DoubleBitBinaryInput(
+												booleanPropertyValue(propVal) ? DoubleBit.DETERMINED_ON
+														: DoubleBit.DETERMINED_OFF,
+												(byte) DoubleBitBinaryQuality.ONLINE.toType(), ts),
+										itr.previousIndex());
+								break;
+
+							case FrozenCounter:
+								if ( propVal instanceof Number ) {
+									changes.update(
+											new FrozenCounter(((Number) propVal).longValue(),
+													(byte) FrozenCounterQuality.ONLINE.toType(), ts),
+											itr.previousIndex());
+								}
+								break;
+						}
+					}
+				}
+			}
+		}
+
+		return changes;
+	}
+
+	private boolean booleanPropertyValue(Object propVal) {
+		if ( propVal instanceof Boolean ) {
+			return ((Boolean) propVal).booleanValue();
+		} else if ( propVal instanceof Number ) {
+			return ((Number) propVal).intValue() == 0 ? false : true;
+		} else {
+			return StringUtils.parseBoolean(propVal.toString());
 		}
 	}
 
@@ -414,7 +611,7 @@ public class OutstationService extends AbstractApplicationService
 	 * This buffer is used by DNP3 to hold updated values.
 	 * </p>
 	 * 
-	 * @return the buffer size
+	 * @return the buffer size, defaults to {@link #DEFAULT_EVENT_BUFFER_SIZE}
 	 */
 	public int getEventBufferSize() {
 		return eventBufferSize;
@@ -431,6 +628,30 @@ public class OutstationService extends AbstractApplicationService
 			return;
 		}
 		this.eventBufferSize = eventBufferSize;
+	}
+
+	/**
+	 * Get the startup delay, in seconds.
+	 * 
+	 * @return the delay; defaults to {@link #DEFAULT_STARTUP_DELAY_SECONDS}
+	 */
+	public int getStartupDelaySecs() {
+		return startupDelaySecs;
+	}
+
+	/**
+	 * Set the startup delay, in seconds.
+	 * 
+	 * <p>
+	 * This delay is used to allow the class to be configured fully before
+	 * starting.
+	 * </p>
+	 * 
+	 * @param startupDelaySecs
+	 *        the delay
+	 */
+	public void setStartupDelaySecs(int startupDelaySecs) {
+		this.startupDelaySecs = startupDelaySecs;
 	}
 
 }

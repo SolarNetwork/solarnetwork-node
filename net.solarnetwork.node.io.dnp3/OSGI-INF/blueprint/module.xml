@@ -68,7 +68,7 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.tcp" autowire-on-update="true" update-method="startup">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.tcp" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.dnp3.ChannelService</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
@@ -76,7 +76,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.tcp"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService">
+		<bean class="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService" init-method="startup" destroy-method="shutdown">
 			<argument ref="manager"/>
 			<property name="messageSource" ref="serverTcpMessageSource"/>
 		</bean>
@@ -106,7 +106,7 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.outstation" autowire-on-update="true" update-method="startup">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.outstation" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.dnp3.OutstationService</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
@@ -114,6 +114,11 @@
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.outstation"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+				</beans:array>
+			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.dnp3.impl.OutstationService" init-method="startup" destroy-method="shutdown">
 			<argument>
