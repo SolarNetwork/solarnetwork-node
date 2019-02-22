@@ -155,7 +155,7 @@ public class MeasurementConfig {
 	public String getTypeKey() {
 		MeasurementType type = getType();
 		if ( type == null ) {
-			type = MeasurementType.AnalogInput;
+			type = DEFAULT_TYPE;
 		}
 		return Character.toString(type.getCode());
 	}
@@ -182,7 +182,7 @@ public class MeasurementConfig {
 			}
 		}
 		if ( type == null ) {
-			type = MeasurementType.AnalogInput;
+			type = DEFAULT_TYPE;
 		}
 		setType(type);
 	}
