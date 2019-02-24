@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.dnp3.test;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.time.Duration;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.ChannelRetry;
 import com.automatak.dnp3.CommandTaskResult;
@@ -76,7 +75,7 @@ public class MasterDemo {
 				DefaultMasterApplication.getInstance(), config);
 
 		// do an integrity scan every 2 seconds
-		master.addPeriodicScan(Duration.ofSeconds(2), Header.getIntegrity());
+		//master.addPeriodicScan(Duration.ofSeconds(2), Header.getIntegrity());
 
 		master.enable();
 
