@@ -38,6 +38,7 @@ import com.automatak.dnp3.AnalogOutputStatus;
 import com.automatak.dnp3.BinaryInput;
 import com.automatak.dnp3.BinaryOutputStatus;
 import com.automatak.dnp3.Channel;
+import com.automatak.dnp3.ControlRelayOutputBlock;
 import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DatabaseConfig;
@@ -58,6 +59,7 @@ import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
 import com.automatak.dnp3.enums.FrozenCounterQuality;
 import com.automatak.dnp3.enums.LinkStatus;
+import com.automatak.dnp3.enums.OperateType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
@@ -484,6 +486,20 @@ public class OutstationService extends AbstractApplicationService
 
 		private CommandHandler() {
 			super(CommandStatus.SUCCESS);
+		}
+
+		@Override
+		public CommandStatus selectCROB(ControlRelayOutputBlock command, int index) {
+			// TODO Auto-generated method stub
+			return super.selectCROB(command, index);
+		}
+
+		@Override
+		public CommandStatus operateCROB(ControlRelayOutputBlock command, int index,
+				OperateType opType) {
+			log.info("DNP3 outstation [{}] received CROB request {}: count = {}, on = {}, off = {}",
+					command.function, command.count, command.onTimeMs, command.offTimeMs);
+			return CommandStatus.SUCCESS;
 		}
 	}
 
