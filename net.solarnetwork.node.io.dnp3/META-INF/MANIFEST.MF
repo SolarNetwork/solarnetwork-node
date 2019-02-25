@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode DNP3 Integration
+Bundle-SymbolicName: net.solarnetwork.node.io.dnp3
+Bundle-Description: Integration with DNP3 based networks.
+Automatic-Module-Name: net.solarnetwork.node.io.dnp3
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ com.automatak.dnp3;version="2.2.0",
+ com.automatak.dnp3.enums;version="2.2.0",
+ com.automatak.dnp3.impl;version="2.2.0",
+ net.solarnetwork.dnp3.util;version="1.0.0",
+ net.solarnetwork.domain;version="1.16.0",
+ net.solarnetwork.node;version="1.26.0",
+ net.solarnetwork.node.domain;version="1.16.0",
+ net.solarnetwork.node.settings;version="1.10.0",
+ net.solarnetwork.node.settings.support;version="1.9.1",
+ net.solarnetwork.node.util;version="1.7.2",
+ net.solarnetwork.util;version="1.34.0",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
+ org.springframework.scheduling;version="[4.2,5.0)"

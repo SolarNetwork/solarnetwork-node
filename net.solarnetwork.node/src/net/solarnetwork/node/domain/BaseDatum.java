@@ -36,7 +36,7 @@ import net.solarnetwork.util.ClassUtils;
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
@@ -84,10 +84,10 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	protected Map<String, Object> createSimpleMap() {
 		Map<String, Object> map = new LinkedHashMap<String, Object>();
 		if ( created != null ) {
-			map.put("created", created.getTime());
+			map.put(TIMESTAMP, created.getTime());
 		}
 		if ( sourceId != null ) {
-			map.put("sourceId", sourceId);
+			map.put(SOURCE_ID, sourceId);
 		}
 		String[] datumTypes = getDatumTypes(getClass());
 		if ( datumTypes != null && datumTypes.length > 0 ) {
@@ -95,7 +95,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 			map.put(DATUM_TYPES_PROPERTY, datumTypes);
 		}
 		if ( uploaded != null ) {
-			map.put("uploaded", uploaded.getTime());
+			map.put(TIMESTAMP_UPLOAD, uploaded.getTime());
 		}
 		Map<String, ?> sampleData = getSampleData();
 		if ( sampleData != null ) {

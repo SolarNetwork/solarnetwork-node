@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>net.solarnetwork.node.control.mock</name>
+	<name>net.solarnetwork.node.io.dnp3.test</name>
 	<comment></comment>
 	<projects>
 	</projects>
