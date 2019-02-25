@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the ION6200 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public enum ION6200Register implements ModbusReference {
@@ -48,8 +48,38 @@ public enum ION6200Register implements ModbusReference {
 	/** Firmware revision. */
 	InfoDeviceType(12, UInt16),
 
+	/** Line-to-neutral voltage phase A, reported in PVS. */
+	MeterVoltageLineNeutralPhaseA(99, UInt16),
+
+	/** Line-to-neutral voltage phase B, reported in PVS. */
+	MeterVoltageLineNeutralPhaseB(100, UInt16),
+
+	/** Line-to-neutral voltage phase C, reported in PVS. */
+	MeterVoltageLineNeutralPhaseC(101, UInt16),
+
 	/** Line-to-neutral voltage average, reported in PVS. */
 	MeterVoltageLineNeutralAverage(102, UInt16),
+
+	/** Line-to-line voltage average, reported in PVS. */
+	MeterVoltageLineLinePhaseAPhaseB(103, UInt16),
+
+	/** Line-to-neutral voltage average, reported in PVS. */
+	MeterVoltageLineLinePhaseBPhaseC(104, UInt16),
+
+	/** Line-to-neutral voltage average, reported in PVS. */
+	MeterVoltageLineLinePhaseCPhaseA(105, UInt16),
+
+	/** Line-to-neutral voltage average, reported in PVS. */
+	MeterVoltageLineLineAverage(106, UInt16),
+
+	/** Current phase A, reported in PCS. */
+	MeterCurrentPhaseA(107, UInt16),
+
+	/** Current phase B, reported in PCS. */
+	MeterCurrentPhaseB(108, UInt16),
+
+	/** Current phase C, reported in PCS. */
+	MeterCurrentPhaseC(109, UInt16),
 
 	/** Current average, reported in PCS. */
 	MeterCurrentAverage(110, UInt16),
@@ -68,6 +98,15 @@ public enum ION6200Register implements ModbusReference {
 
 	/** Apparent power total, reported in PPS VA. */
 	MeterApparentPowerTotal(121, Int16),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseA(122, Int16),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseB(123, Int16),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseC(124, Int16),
 
 	/** Total energy delivered, in kWh or MWh. */
 	MeterActiveEnergyDelivered(137, UInt32),

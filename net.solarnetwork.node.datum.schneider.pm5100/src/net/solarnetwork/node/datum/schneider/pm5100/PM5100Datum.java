@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.schneider.pm5100;
 
 import java.util.Date;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
@@ -31,9 +33,9 @@ import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
  * Datum for the PM5100 meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class PM5100Datum extends GeneralNodeACEnergyDatum {
+public class PM5100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
 	private final PM5100DataAccessor data;
 	private final boolean backwards;
@@ -60,10 +62,11 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 		if ( data.getDataTimestamp() > 0 ) {
 			setCreated(new Date(data.getDataTimestamp()));
 		}
-		populateMeasurements(data, phase);
+		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
+		populateMeasurements(phaseData, phase);
 	}
 
-	private void populateMeasurements(PM5100DataAccessor data, ACPhase phase) {
+	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
 		setPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
@@ -71,14 +74,9 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 		setPowerFactor(data.getPowerFactor());
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
-		setWatts((backwards ? -1 : 1) * data.getActivePower());
-		if ( backwards ) {
-			setWattHourReading(data.getActiveEnergyReceived());
-			setReverseWattHourReading(data.getActiveEnergyDelivered());
-		} else {
-			setWattHourReading(data.getActiveEnergyDelivered());
-			setReverseWattHourReading(data.getActiveEnergyReceived());
-		}
+		setWatts(data.getActivePower());
+		setWattHourReading(data.getActiveEnergyDelivered());
+		setReverseWattHourReading(data.getActiveEnergyReceived());
 	}
 
 	/**
@@ -88,6 +86,65 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum {
 	 */
 	public PM5100DataAccessor getData() {
 		return data;
+	}
+
+	@Override
+	public long getDataTimestamp() {
+		return data.getDataTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return data.getDeviceInfo();
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
+		}
+		return phaseData;
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return data.reversed();
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return data.getActivePower();
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return data.getActiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return data.getActiveEnergyReceived();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return data.getApparentEnergyDelivered();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return data.getApparentEnergyReceived();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return data.getReactiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return data.getReactiveEnergyReceived();
 	}
 
 }

@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -195,6 +195,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public Float getVoltage() {
+		return getLineVoltage();
+	}
+
+	@Override
+	public Float getLineVoltage() {
 		Number a = getNumber(KTLCTRegister.InverterVoltageLineLinePhaseAPhaseB);
 		Number b = getNumber(KTLCTRegister.InverterVoltageLineLinePhaseBPhaseC);
 		Number c = getNumber(KTLCTRegister.InverterVoltageLineLinePhaseCPhaseA);

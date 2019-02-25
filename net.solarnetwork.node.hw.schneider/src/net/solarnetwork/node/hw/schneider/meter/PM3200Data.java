@@ -22,17 +22,18 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import java.util.Arrays;
 import gnu.trove.map.TIntIntMap;
 import gnu.trove.map.hash.TIntIntHashMap;
-import java.util.Arrays;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusDataUtils;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PM3200Data {
 
@@ -156,8 +157,8 @@ public class PM3200Data {
 	 * Get a string of data values, useful for debugging. The generated string
 	 * will contain a register address followed by two register values per line,
 	 * printed as hexidecimal integers, with a prefix and suffix line. The
-	 * register addresses will be printed as {@bold 1-based} values, to
-	 * match Schneider's documentation. For example:
+	 * register addresses will be printed as {@bold 1-based} values, to match
+	 * Schneider's documentation. For example:
 	 * 
 	 * <pre>
 	 * PM3200Data{
@@ -227,7 +228,8 @@ public class PM3200Data {
 	}
 
 	private void readIntData(final ModbusConnection conn, final int startAddr, final int endAddr) {
-		int[] data = conn.readInts(startAddr, (endAddr - startAddr + 1));
+		int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, startAddr,
+				(endAddr - startAddr + 1));
 		saveDataArray(data, startAddr);
 	}
 
@@ -251,11 +253,11 @@ public class PM3200Data {
 	}
 
 	private Float getFloat32(final int addr) {
-		return ModbusHelper.parseFloat32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
+		return ModbusDataUtils.parseFloat32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
 	}
 
 	private Long getInt64(final int addr) {
-		return ModbusHelper.parseInt64(dataRegisters.get(addr), dataRegisters.get(addr + 1),
+		return ModbusDataUtils.parseInt64(dataRegisters.get(addr), dataRegisters.get(addr + 1),
 				dataRegisters.get(addr + 2), dataRegisters.get(addr + 3));
 	}
 
@@ -325,7 +327,8 @@ public class PM3200Data {
 		if ( tangentPhi == null ) {
 			return null;
 		}
-		float result = (float) (1.0 / Math.sqrt(1 + tangentPhi.doubleValue() * tangentPhi.doubleValue()));
+		float result = (float) (1.0
+				/ Math.sqrt(1 + tangentPhi.doubleValue() * tangentPhi.doubleValue()));
 		if ( tangentPhi.floatValue() < 0 ) {
 			result = -result;
 		}

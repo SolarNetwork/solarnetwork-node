@@ -22,14 +22,14 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.util.SerializeIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.util.SerializeIgnore;
 
 /**
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
 
@@ -123,6 +123,30 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	}
 
 	@Override
+	public Float getCurrent(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withKey(CURRENT_KEY));
+	}
+
+	/**
+	 * Set a phase voltage (to neutral) value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#CURRENT_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase key.
+	 * </p>
+	 * 
+	 * @param current
+	 *        the phase current
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setCurrent(Float current, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withKey(CURRENT_KEY), current);
+	}
+
+	@Override
 	@JsonIgnore
 	@SerializeIgnore
 	public Float getPhaseVoltage() {
@@ -131,6 +155,69 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 
 	public void setPhaseVoltage(Float phaseVoltage) {
 		putInstantaneousSampleValue(PHASE_VOLTAGE_KEY, phaseVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getPhaseVoltage(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withKey(VOLTAGE_KEY));
+	}
+
+	/**
+	 * Set a phase voltage (to neutral) value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#VOLTAGE_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase key.
+	 * </p>
+	 * 
+	 * @param phaseVoltage
+	 *        the phase voltage
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setPhaseVoltage(Float phaseVoltage, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withKey(VOLTAGE_KEY), phaseVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getLineVoltage() {
+		return getInstantaneousSampleFloat(LINE_VOLTAGE_KEY);
+	}
+
+	public void setLineVoltage(Float lineVoltage) {
+		putInstantaneousSampleValue(LINE_VOLTAGE_KEY, lineVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getLineVoltage(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withLineKey(VOLTAGE_KEY));
+	}
+
+	/**
+	 * Set a line voltage value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#VOLTAGE_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase line key.
+	 * </p>
+	 * 
+	 * @param phaseVoltage
+	 *        the phase voltage
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setLineVoltage(Float lineVoltage, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withLineKey(VOLTAGE_KEY), lineVoltage);
 	}
 
 	@Override

@@ -22,11 +22,16 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
+import static net.solarnetwork.node.domain.ACPhase.PhaseA;
+import static net.solarnetwork.node.domain.ACPhase.PhaseB;
+import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
@@ -94,21 +99,26 @@ public class PM5100DataTests {
 			0x0004, 0x000B,
 	};
 
-	private static final int[] TEST_DATA_REG_3008 = {
-			0x0000, 0x42DB,
+	private static final int[] TEST_DATA_REG_2998 = {
+			0x3E11, 0x42db, // , I a
+			0x6b85, 0x42d8, // , I b
+			0x570a, 0x42dc, // , I c 
+			0x6b85, 0x8000, // , I n
+			0x8000, 0x0000, // , I g
+			0x0000, 0x42DB, // , I avg
 			0x6A20, 0x3FDA,
 			0x90FE, 0x3EAB,
 			0x06E0, 0x3FAF,
 			0xCF0B, 0x3FDA,
-			0x90FE, 0x43F8,
-			0x0A73, 0x43F6,
-			0xC5B1, 0x43F6,
-			0xEA0F, 0x43F7,
-			0x3E11, 0x438E,
-			0x86AF, 0x438E,
-			0xF30F, 0x438E,
+			0x90FE, 0x43F8, // , Vll ab
+			0x0A73, 0x43F6, // , Vll bc
+			0xC5B1, 0x43F6, // , Vll ca
+			0xEA0F, 0x43F7, // , Vll avg
+			0x3E11, 0x438E, // , Vln a
+			0x86AF, 0x438E, // , Vln b
+			0xF30F, 0x438E, // , Vln c 
 			0xCED0, 0x8000,
-			0x8000, 0x438E,
+			0x8000, 0x438E, // , Vln avg
 			0xC2DA, 0x3EA5,
 			0x5473, 0x3E42,
 			0xBF84, 0x3E07,
@@ -117,10 +127,10 @@ public class PM5100DataTests {
 			0x9567, 0x3E07,
 			0x1209, 0x3D06,
 			0x0D76, 0x3E28,
-			0x9567, 0x41F5,
-			0x8370, 0x41FB,
-			0x2E41, 0x41FD,
-			0xAEF4, 0x42BB,
+			0x9567, 0x41F5, // , Active power A
+			0x8370, 0x41FB, // , Active power B
+			0x2E41, 0x41FD, // , Active power C
+			0xAEF4, 0x42BB, // , Active power total
 			0x9829, 0xBFDE,
 			0x601E, 0x4008,
 			0x8510, 0xBFED,
@@ -151,10 +161,10 @@ public class PM5100DataTests {
 	};
 	
 	private static final int[] TEST_DATA_REG_3202 = {
-			0x0000, 0x0000,
-			0x0000, 0x046E,
-			0x73EA, 0x0000,
-			0x0000, 0x0001,
+			0x0000, 0x0000, // , Wh del
+			0x0000, 0x046E, // 
+			0x73EA, 0x0000, // , Wh rec
+			0x0000, 0x0001, 
 			0x6481, 0x0000,
 			0x0000, 0x046F,
 			0xD86B, 0x0000,
@@ -187,7 +197,7 @@ public class PM5100DataTests {
 				m.saveDataArray(TEST_DATA_REG_128, 128);
 				m.saveDataArray(TEST_DATA_REG_1636, 1636);
 				m.saveDataArray(TEST_DATA_REG_2012, 2012);
-				m.saveDataArray(TEST_DATA_REG_3008, 3008);
+				m.saveDataArray(TEST_DATA_REG_2998, 2998);
 				m.saveDataArray(TEST_DATA_REG_3074, 3074);
 				m.saveDataArray(TEST_DATA_REG_3202, 3202);
 				return true;
@@ -215,6 +225,107 @@ public class PM5100DataTests {
 		assertThat("Frequency", data.getFrequency(), equalTo(60.00688f));
 		assertThat("Voltage", data.getVoltage(), equalTo(285.52228f));
 		assertThat("Current", data.getCurrent(), equalTo(109.707275f));
+		assertThat("Power", data.getActivePower(), equalTo(93797));
 		assertThat("Power factor", data.getPowerFactor(), equalTo(1.0018685f));
 	}
+
+	@Test
+	public void activePower() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Power", data.getActivePower(), equalTo(93797));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase power a", phaseData.getActivePower(), equalTo(30689));
+
+		phaseData = data.accessorForPhase(PhaseB);
+		assertThat("Phase power b", phaseData.getActivePower(), equalTo(31398));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase power c", phaseData.getActivePower(), equalTo(31710));
+	}
+
+	@Test
+	public void activePowerReversed() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Power reversed", data.reversed().getActivePower(), equalTo(-93797));
+
+		assertThat("Reversed phase power a", data.reversed().accessorForPhase(PhaseA).getActivePower(),
+				equalTo(-30689));
+		assertThat("Phase power a reversed", data.accessorForPhase(PhaseA).reversed().getActivePower(),
+				equalTo(-30689));
+
+		assertThat("Reversed phase power b", data.reversed().accessorForPhase(PhaseB).getActivePower(),
+				equalTo(-31398));
+		assertThat("Phase power b reversed", data.accessorForPhase(PhaseB).reversed().getActivePower(),
+				equalTo(-31398));
+
+		assertThat("Reversed phase power c", data.reversed().accessorForPhase(PhaseC).getActivePower(),
+				equalTo(-31710));
+		assertThat("Phase power c reversed", data.accessorForPhase(PhaseC).reversed().getActivePower(),
+				equalTo(-31710));
+	}
+
+	@Test
+	public void energyDelivered() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Active energy delievered", data.getActiveEnergyDelivered(), equalTo(74347498L));
+
+		assertThat("Active energy delivered reversed", data.reversed().getActiveEnergyDelivered(),
+				equalTo(91265L));
+	}
+
+	@Test
+	public void energyReceived() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Active energy receieved", data.getActiveEnergyReceived(), equalTo(91265L));
+
+		assertThat("Active energy received reversed", data.reversed().getActiveEnergyReceived(),
+				equalTo(74347498L));
+	}
+
+	@Test
+	public void current() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Current", data.getCurrent(), equalTo(109.707275f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase current a", phaseData.getCurrent(), equalTo(109.71f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Phase current b", phaseData.getCurrent(), equalTo(108.17f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase current c", phaseData.getCurrent(), equalTo(110.21f));
+	}
+
+	@Test
+	public void voltage() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Voltage", data.getVoltage(), equalTo(285.52228f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase voltage a", phaseData.getVoltage(), equalTo(285.05222f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Phase voltage b", phaseData.getVoltage(), equalTo(285.8989f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase voltage c", phaseData.getVoltage(), equalTo(285.61572f));
+	}
+
+	@Test
+	public void lineVoltage() {
+		PM5100DataAccessor data = getTestDataInstance();
+		assertThat("Line voltage", data.getLineVoltage(), equalTo(494.4849f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Line voltage ab", phaseData.getLineVoltage(), equalTo(496.08163f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Line voltage bc", phaseData.getLineVoltage(), equalTo(493.54446f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Line voltage ca", phaseData.getLineVoltage(), equalTo(493.82858f));
+	}
+
 }

@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
@@ -279,6 +279,16 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	}
 
 	@Override
+	public Float getLineVoltage() {
+		Number a = getNumber(Shark100Register.MeterVoltageLineLinePhaseAPhaseB);
+		Number b = getNumber(Shark100Register.MeterVoltageLineLinePhaseBPhaseC);
+		Number c = getNumber(Shark100Register.MeterVoltageLineLinePhaseCPhaseA);
+		return (a != null && b != null && c != null
+				? (a.floatValue() + b.floatValue() + c.floatValue()) / 3.0f
+				: null);
+	}
+
+	@Override
 	public Long getActiveEnergyDelivered() {
 		return getEnergyValue(Shark100Register.MeterActiveEnergyDelivered);
 	}
@@ -412,6 +422,28 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
+		public Float getLineVoltage() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(Shark100Register.MeterVoltageLineLinePhaseAPhaseB);
+					break;
+
+				case PhaseB:
+					n = getNumber(Shark100Register.MeterVoltageLineLinePhaseBPhaseC);
+					break;
+
+				case PhaseC:
+					n = getNumber(Shark100Register.MeterVoltageLineLinePhaseCPhaseA);
+					break;
+
+				default:
+					return Shark100Data.this.getLineVoltage();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
 		public Float getPowerFactor() {
 			return Shark100Data.this.getPowerFactor();
 		}
@@ -530,6 +562,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		@Override
 		public Float getVoltage() {
 			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
 		}
 
 		@Override

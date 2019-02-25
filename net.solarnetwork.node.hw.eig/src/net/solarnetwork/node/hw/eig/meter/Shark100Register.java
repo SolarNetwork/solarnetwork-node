@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum Shark100Register implements ModbusReference {
 
@@ -94,6 +94,27 @@ public enum Shark100Register implements ModbusReference {
 
 	/** Line-to-neutral voltage phase C, reported in V. */
 	MeterVoltageLineNeutralPhaseC(0x03EB, Float32),
+
+	/**
+	 * Line-to-line voltage phase A - phase B, reported in V.
+	 * 
+	 * @since 1.1
+	 */
+	MeterVoltageLineLinePhaseAPhaseB(0x03ED, Float32),
+
+	/**
+	 * Line-to-line voltage phase B - phase C, reported in V.
+	 * 
+	 * @since 1.1
+	 */
+	MeterVoltageLineLinePhaseBPhaseC(0x03EF, Float32),
+
+	/**
+	 * Line-to-line voltage phase C - phase A, reported in V.
+	 * 
+	 * @since 1.1
+	 */
+	MeterVoltageLineLinePhaseCPhaseA(0x03F1, Float32),
 
 	/** Current phase A, reported in A. */
 	MeterCurrentPhaseA(0x3F3, Float32),
