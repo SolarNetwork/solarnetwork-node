@@ -23,8 +23,10 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
+import java.util.Map;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -34,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public class PM5100Data extends ModbusData implements PM5100DataAccessor {
@@ -135,8 +137,17 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		if ( phase == ACPhase.Total ) {
 			return this;
 		}
-		// TODO
-		throw new UnsupportedOperationException("Phase measurements not supported yet.");
+		return new PhaseMeterDataAccessor(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		return dataAccessorForPhase(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return new ReversedMeterDataAccessor(this);
 	}
 
 	public Integer getPowerValue(PM5100Register reg) {
@@ -251,6 +262,11 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	}
 
 	@Override
+	public Float getLineVoltage() {
+		return getVoltageValue(PM5100Register.MeterVoltageLineLineAverage);
+	}
+
+	@Override
 	public Long getActiveEnergyDelivered() {
 		return getEnergyValue(PM5100Register.MeterActiveEnergyDelivered);
 	}
@@ -280,4 +296,335 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		return getEnergyValue(PM5100Register.MeterApparentEnergyReceived);
 	}
 
+	private class PhaseMeterDataAccessor implements PM5100DataAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterDataAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return PM5100Data.this.getDeviceInfo();
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return PM5100Data.this.getSerialNumber();
+		}
+
+		@Override
+		public PM5100Model getModel() {
+			return PM5100Data.this.getModel();
+		}
+
+		@Override
+		public Integer getPhaseCount() {
+			return PM5100Data.this.getPhaseCount();
+		}
+
+		@Override
+		public Integer getWireCount() {
+			return PM5100Data.this.getWireCount();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return PM5100Data.this.getFirmwareRevision();
+		}
+
+		@Override
+		public PM5100PowerSystem getPowerSystem() {
+			return PM5100Data.this.getPowerSystem();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return PM5100Data.this.getDataTimestamp();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return PM5100Data.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return new ReversedMeterDataAccessor(this);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return PM5100Data.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getCurrentValue(PM5100Register.MeterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getCurrentValue(PM5100Register.MeterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getCurrentValue(PM5100Register.MeterCurrentPhaseC);
+					break;
+
+				default:
+					n = PM5100Data.this.getCurrent();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					n = PM5100Data.this.getVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineLinePhaseAPhaseB);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineLinePhaseBPhaseC);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(PM5100Register.MeterVoltageLineLinePhaseCPhaseA);
+					break;
+
+				default:
+					n = PM5100Data.this.getLineVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return PM5100Data.this.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getPowerValue(PM5100Register.MeterActivePowerPhaseA);
+					break;
+
+				case PhaseB:
+					n = getPowerValue(PM5100Register.MeterActivePowerPhaseB);
+					break;
+
+				case PhaseC:
+					n = getPowerValue(PM5100Register.MeterActivePowerPhaseC);
+					break;
+
+				default:
+					n = PM5100Data.this.getActivePower();
+			}
+			return n;
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return PM5100Data.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return PM5100Data.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return PM5100Data.this.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return PM5100Data.this.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return PM5100Data.this.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return PM5100Data.this.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return PM5100Data.this.getApparentEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return PM5100Data.this.getActiveEnergyReceived();
+		}
+
+	}
+
+	private static class ReversedMeterDataAccessor implements PM5100DataAccessor {
+
+		private final PM5100DataAccessor delegate;
+
+		private ReversedMeterDataAccessor(PM5100DataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return new ReversedMeterDataAccessor((PM5100DataAccessor) delegate.accessorForPhase(phase));
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return delegate.getSerialNumber();
+		}
+
+		@Override
+		public PM5100Model getModel() {
+			return delegate.getModel();
+		}
+
+		@Override
+		public Integer getPhaseCount() {
+			return delegate.getPhaseCount();
+		}
+
+		@Override
+		public Integer getWireCount() {
+			return delegate.getWireCount();
+		}
+
+		@Override
+		public PM5100PowerSystem getPowerSystem() {
+			return delegate.getPowerSystem();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return delegate.getFirmwareRevision();
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
+		}
+
+	}
 }

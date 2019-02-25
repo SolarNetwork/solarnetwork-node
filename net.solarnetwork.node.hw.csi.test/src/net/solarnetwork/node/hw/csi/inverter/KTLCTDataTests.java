@@ -119,6 +119,14 @@ public class KTLCTDataTests {
 		assertThat("Apparent power", data.getApparentPower(), equalTo(15700));
 	}
 
-	// TODO test other values when populated
+	@Test
+	public void getVoltage() {
+		assertThat("Voltage", data.getVoltage(), equalTo(490.7f));
+	}
+
+	@Test
+	public void getLineVoltage() {
+		assertThat("Voltage", data.getLineVoltage(), equalTo(490.7f));
+	}
 
 }

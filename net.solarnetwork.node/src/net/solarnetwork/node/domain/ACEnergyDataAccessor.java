@@ -26,7 +26,7 @@ package net.solarnetwork.node.domain;
  * API for accessing AC energy data from an object, such as a power meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.60
  */
 public interface ACEnergyDataAccessor extends DataAccessor {
@@ -68,6 +68,14 @@ public interface ACEnergyDataAccessor extends DataAccessor {
 	 * @return the voltage
 	 */
 	Float getVoltage();
+
+	/**
+	 * Get the line voltage, in V.
+	 * 
+	 * @return the voltage
+	 * @since 1.1
+	 */
+	Float getLineVoltage();
 
 	/**
 	 * Get the power factor, as a decimal from -1.0 to 1.0.

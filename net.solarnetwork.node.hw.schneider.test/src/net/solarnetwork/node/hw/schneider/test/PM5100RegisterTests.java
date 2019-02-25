@@ -42,10 +42,10 @@ public class PM5100RegisterTests {
 
 	@Test
 	public void intRangeSet() {
-		// [29-48,79-79,128-134,1637-1638,1640-1640,2013-2015,3009-3010,3035-3036,3059-3060,3067-3068,3075-3076,3083-3084,3109-3110,3203-3210,3219-3226,3235-3242]
+		// [29-48,79-79,128-134,1637-1638,1640-1640,2013-2015,2999-3004,3009-3010,3019-3032,3035-3036,3059-3060,3067-3068,3075-3076,3083-3084,3109-3110,3203-3210,3219-3226,3235-3242]
 		IntRangeSet set = PM5100Register.getRegisterAddressSet();
 		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(16));
+		assertThat("Register set length", set.ranges(), arrayWithSize(18));
 	}
 
 	@Test
@@ -66,12 +66,12 @@ public class PM5100RegisterTests {
 	public void meterIntRangeSet() {
 		IntRangeSet set = PM5100Register.getMeterRegisterAddressSet();
 		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(10));
+		assertThat("Register set length", set.ranges(), arrayWithSize(12));
 		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
 		IntRange[] ranges = reduced.ranges();
 		assertThat("Reduced register set length", ranges, arrayWithSize(3));
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(3009, 3068)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(3075, 3110)));
+		assertThat("Range 0", ranges[0], equalTo(new IntRange(2999, 3060)));
+		assertThat("Range 1", ranges[1], equalTo(new IntRange(3067, 3110)));
 		assertThat("Range 2", ranges[2], equalTo(new IntRange(3203, 3242)));
 	}
 
@@ -87,8 +87,8 @@ public class PM5100RegisterTests {
 		assertThat("Range 1", ranges[1], equalTo(new IntRange(128, 134)));
 		assertThat("Range 3", ranges[2], equalTo(new IntRange(1637, 1640)));
 		assertThat("Range 2", ranges[3], equalTo(new IntRange(2013, 2015)));
-		assertThat("Range 0", ranges[4], equalTo(new IntRange(3009, 3068)));
-		assertThat("Range 1", ranges[5], equalTo(new IntRange(3075, 3110)));
-		assertThat("Range 2", ranges[6], equalTo(new IntRange(3203, 3242)));
+		assertThat("Range 4", ranges[4], equalTo(new IntRange(2999, 3060)));
+		assertThat("Range 5", ranges[5], equalTo(new IntRange(3067, 3110)));
+		assertThat("Range 6", ranges[6], equalTo(new IntRange(3203, 3242)));
 	}
 }
