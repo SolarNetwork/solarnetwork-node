@@ -36,6 +36,10 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.core.task.TaskExecutor;
 import com.automatak.dnp3.AnalogInput;
+import com.automatak.dnp3.AnalogOutputDouble64;
+import com.automatak.dnp3.AnalogOutputFloat32;
+import com.automatak.dnp3.AnalogOutputInt16;
+import com.automatak.dnp3.AnalogOutputInt32;
 import com.automatak.dnp3.AnalogOutputStatus;
 import com.automatak.dnp3.BinaryInput;
 import com.automatak.dnp3.BinaryOutputStatus;
@@ -70,6 +74,9 @@ import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -79,6 +86,8 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.util.StaticOptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -102,6 +111,7 @@ public class OutstationService extends AbstractApplicationService
 
 	private final Application app;
 	private final CommandHandler commandHandler;
+	private final OptionalServiceCollection<InstructionHandler> instructionHandlers;
 
 	private MeasurementConfig[] measurementConfigs;
 	private ControlConfig[] controlConfigs;
@@ -116,12 +126,18 @@ public class OutstationService extends AbstractApplicationService
 	 * 
 	 * @param dnp3Channel
 	 *        the channel to use
+	 * @param instructionHandlers
+	 *        the collection of instruction handlers to handle control
+	 *        operations
 	 */
-	public OutstationService(OptionalService<ChannelService> dnp3Channel) {
+	public OutstationService(OptionalService<ChannelService> dnp3Channel,
+			OptionalServiceCollection<InstructionHandler> instructionHandlers) {
 		super(dnp3Channel);
 		setUid(DEFAULT_UID);
 		this.app = new Application();
 		this.commandHandler = new CommandHandler();
+		this.instructionHandlers = (instructionHandlers != null ? instructionHandlers
+				: new StaticOptionalServiceCollection<>(Collections.emptyList()));
 	}
 
 	@Override
@@ -662,18 +678,138 @@ public class OutstationService extends AbstractApplicationService
 		}
 
 		@Override
-		public CommandStatus selectCROB(ControlRelayOutputBlock command, int index) {
-			// TODO Auto-generated method stub
-			return super.selectCROB(command, index);
+		public CommandStatus operateCROB(ControlRelayOutputBlock command, int index,
+				OperateType opType) {
+			ControlConfig config = controlConfigForIndex(ControlType.Binary, index);
+			if ( config == null ) {
+				return CommandStatus.NOT_AUTHORIZED;
+			}
+			log.info("DNP3 outstation [{}] received CROB operation request {} on {}[{}] control [{}]",
+					getUid(), command.function, config.getType(), index, config.getControlId());
+			TaskExecutor executor = getTaskExecutor();
+			if ( executor != null ) {
+				executor.execute(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							operateBinaryControl(command, index, opType, config);
+						} catch ( Exception e ) {
+							log.error(
+									"Error processing DNP3 outstation [{}] operate request {} on {}[{}] control [{}]",
+									getUid(), command.function, config.getType(), index,
+									config.getControlId(), e);
+						}
+					}
+				});
+			} else {
+				operateBinaryControl(command, index, opType, config);
+			}
+			return CommandStatus.SUCCESS;
 		}
 
 		@Override
-		public CommandStatus operateCROB(ControlRelayOutputBlock command, int index,
-				OperateType opType) {
-			log.info("DNP3 outstation [{}] received CROB request {}: count = {}, on = {}, off = {}",
-					command.function, command.count, command.onTimeMs, command.offTimeMs);
+		public CommandStatus operateAOI16(AnalogOutputInt16 command, int index, OperateType opType) {
+			return handleAnalogOperation(command, index, "AnalogOutputInt16", command.value);
+		}
+
+		@Override
+		public CommandStatus operateAOI32(AnalogOutputInt32 command, int index, OperateType opType) {
+			return handleAnalogOperation(command, index, "AnalogOutputInt32", command.value);
+		}
+
+		@Override
+		public CommandStatus operateAOF32(AnalogOutputFloat32 command, int index, OperateType opType) {
+			return handleAnalogOperation(command, index, "AnalogOutputFloat32", command.value);
+		}
+
+		@Override
+		public CommandStatus operateAOD64(AnalogOutputDouble64 command, int index, OperateType opType) {
+			return handleAnalogOperation(command, index, "AnalogOutputDouble64", command.value);
+		}
+
+		private CommandStatus handleAnalogOperation(Object command, int index, String opDescription,
+				Number value) {
+			ControlConfig config = controlConfigForIndex(ControlType.Binary, index);
+			if ( config == null ) {
+				return CommandStatus.NOT_AUTHORIZED;
+			}
+			log.info("DNP3 outstation [{}] received analog operation request {} on {}[{}] control [{}]",
+					getUid(), opDescription, config.getType(), index, config.getControlId());
+			TaskExecutor executor = getTaskExecutor();
+			if ( executor != null ) {
+				executor.execute(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							operateAnalogControl(command, index, opDescription, config, value);
+						} catch ( Exception e ) {
+							log.error(
+									"Error processing DNP3 outstation [{}] analog operation request {} on {}[{}] control [{}]",
+									getUid(), opDescription, config.getType(), index,
+									config.getControlId(), e);
+						}
+					}
+				});
+			} else {
+				operateAnalogControl(command, index, opDescription, config, value);
+			}
 			return CommandStatus.SUCCESS;
 		}
+
+	}
+
+	private ControlConfig controlConfigForIndex(ControlType controlType, int index) {
+		MeasurementType measType = (controlType == ControlType.Analog
+				? MeasurementType.AnalogOutputStatus
+				: MeasurementType.BinaryOutputStatus);
+		int binaryStatusOffset = typeConfigCount(measType, measurementTypeMap(getMeasurementConfigs()));
+		int controlConfigIndex = index - binaryStatusOffset;
+		ControlConfig[] configs = getControlConfigs();
+		if ( configs != null && controlConfigIndex < configs.length ) {
+			return configs[controlConfigIndex];
+		}
+		return null;
+	}
+
+	private InstructionState operateBinaryControl(ControlRelayOutputBlock command, int index,
+			OperateType opType, ControlConfig config) {
+		InstructionState result = InstructionState.Declined;
+		try {
+			switch (command.function) {
+				case LATCH_ON:
+					result = InstructionUtils.setControlParameter(instructionHandlers.services(),
+							config.getControlId(), Boolean.TRUE.toString());
+					break;
+
+				case LATCH_OFF:
+					result = InstructionUtils.setControlParameter(instructionHandlers.services(),
+							config.getControlId(), Boolean.FALSE.toString());
+					break;
+
+				default:
+					// nothing
+			}
+		} finally {
+			log.info("DNP3 outstation [{}] CROB operation request {} on {}[{}] control [{}] result: {}",
+					getUid(), command.function, config.getType(), index, config.getControlId(), result);
+		}
+		return result;
+	}
+
+	private InstructionState operateAnalogControl(Object command, int index, String opDescription,
+			ControlConfig config, Number value) {
+		InstructionState result = InstructionState.Declined;
+		try {
+			result = InstructionUtils.setControlParameter(instructionHandlers.services(),
+					config.getControlId(), value.toString());
+		} finally {
+			log.info(
+					"DNP3 outstation [{}] analog operation request {} on {}[{}] control [{}] result: {}",
+					getUid(), opDescription, config.getType(), index, config.getControlId(), result);
+		}
+		return result;
 	}
 
 	/*
@@ -762,6 +898,20 @@ public class OutstationService extends AbstractApplicationService
 	 * Accessors
 	 * =========================================================================
 	 */
+
+	/**
+	 * Get the internal {@link com.automatak.dnp3.CommandHandler}
+	 * implementation.
+	 * 
+	 * <p>
+	 * This is exposed primarily for testing purposes.
+	 * </p>
+	 * 
+	 * @return the handler, never {@literal null}
+	 */
+	protected com.automatak.dnp3.CommandHandler getCommandHandler() {
+		return commandHandler;
+	}
 
 	/**
 	 * Get the measurement configurations.
