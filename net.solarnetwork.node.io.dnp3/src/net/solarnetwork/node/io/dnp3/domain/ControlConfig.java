@@ -95,7 +95,7 @@ public class ControlConfig {
 				prefix + "typeKey", Character.toString(DEFAULT_TYPE.getCode()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
 		for ( ControlType e : ControlType.values() ) {
-			propTypeTitles.put(Character.toString(e.getCode()), e.toString());
+			propTypeTitles.put(Character.toString(e.getCode()), e.getTitle());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);

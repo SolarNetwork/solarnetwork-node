@@ -30,24 +30,26 @@ package net.solarnetwork.node.io.dnp3.domain;
  */
 public enum MeasurementType {
 
-	AnalogInput('a'),
+	AnalogInput('a', "Analog input"),
 
-	AnalogOutputStatus('A'),
+	AnalogOutputStatus('A', "Analog output status"),
 
-	BinaryInput('b'),
+	BinaryInput('b', "Binary input"),
 
-	BinaryOutputStatus('B'),
+	BinaryOutputStatus('B', "Binary output status"),
 
-	Counter('c'),
+	Counter('c', "Counter"),
 
-	DoubleBitBinaryInput('d'),
+	DoubleBitBinaryInput('d', "Double bit binary input"),
 
-	FrozenCounter('f');
+	FrozenCounter('f', "Frozen counter");
 
 	private final char code;
+	private final String title;
 
-	private MeasurementType(char code) {
+	private MeasurementType(char code, String title) {
 		this.code = code;
+		this.title = title;
 	}
 
 	/**
@@ -57,6 +59,15 @@ public enum MeasurementType {
 	 */
 	public char getCode() {
 		return code;
+	}
+
+	/**
+	 * Get the title.
+	 * 
+	 * @return the title
+	 */
+	public String getTitle() {
+		return title;
 	}
 
 	/**

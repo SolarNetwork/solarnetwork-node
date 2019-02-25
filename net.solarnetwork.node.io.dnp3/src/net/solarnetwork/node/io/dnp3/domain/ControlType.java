@@ -30,14 +30,16 @@ package net.solarnetwork.node.io.dnp3.domain;
  */
 public enum ControlType {
 
-	Analog('A'),
+	Analog('A', "Analog"),
 
-	Binary('B');
+	Binary('B', "Binary");
 
 	private final char code;
+	private final String title;
 
-	private ControlType(char code) {
+	private ControlType(char code, String title) {
 		this.code = code;
+		this.title = title;
 	}
 
 	/**
@@ -47,6 +49,15 @@ public enum ControlType {
 	 */
 	public char getCode() {
 		return code;
+	}
+
+	/**
+	 * Get the title.
+	 * 
+	 * @return the title
+	 */
+	public String getTitle() {
+		return title;
 	}
 
 	/**
