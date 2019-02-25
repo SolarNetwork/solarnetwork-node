@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.dnp3.domain;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,19 +45,30 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class MeasurementConfig {
 
-	/** The default measurement type. */
+	/** The default measurement type: {@code AnalogInput}. */
 	public static final MeasurementType DEFAULT_TYPE = MeasurementType.AnalogInput;
+
+	/** The default unit multiplier: {@literal 1}. */
+	public static final BigDecimal DEFAULT_UNIT_MULTIPLIER = BigDecimal.ONE;
+
+	/** The default decimal scale: {@literal 0}. */
+	public static final int DEFAULT_DECIMAL_SCALE = 0;
 
 	private String dataSourceUid;
 	private String sourceId;
 	private String propertyName;
-	private MeasurementType type = DEFAULT_TYPE;
+	private MeasurementType type;
+	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
+	private int decimalScale;
 
 	/**
 	 * Default constructor.
 	 */
 	public MeasurementConfig() {
 		super();
+		setType(DEFAULT_TYPE);
+		setUnitMultiplier(DEFAULT_UNIT_MULTIPLIER);
+		setDecimalScale(DEFAULT_DECIMAL_SCALE);
 	}
 
 	/**
@@ -76,10 +88,12 @@ public class MeasurementConfig {
 	public MeasurementConfig(String dataSourceUid, String sourceId, String propertyName,
 			MeasurementType type) {
 		super();
-		this.dataSourceUid = dataSourceUid;
-		this.sourceId = sourceId;
-		this.propertyName = propertyName;
-		this.type = type;
+		setDataSourceUid(dataSourceUid);
+		setSourceId(sourceId);
+		setPropertyName(propertyName);
+		setType(type);
+		setUnitMultiplier(DEFAULT_UNIT_MULTIPLIER);
+		setDecimalScale(DEFAULT_DECIMAL_SCALE);
 	}
 
 	/**
@@ -90,7 +104,7 @@ public class MeasurementConfig {
 	 * @return the settings, never {@literal null}
 	 */
 	public static List<SettingSpecifier> settings(String prefix) {
-		List<SettingSpecifier> results = new ArrayList<>(3);
+		List<SettingSpecifier> results = new ArrayList<>(6);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "dataSourceUid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "sourceId", ""));
@@ -105,6 +119,11 @@ public class MeasurementConfig {
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier",
+				DEFAULT_UNIT_MULTIPLIER.toString()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
+				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
 	}
@@ -185,5 +204,58 @@ public class MeasurementConfig {
 			type = DEFAULT_TYPE;
 		}
 		setType(type);
+	}
+
+	/**
+	 * Get the unit multiplier.
+	 * 
+	 * @return the multiplier; defaults to {@link #DEFAULT_UNIT_MULTIPLIER}
+	 */
+	public BigDecimal getUnitMultiplier() {
+		return unitMultiplier;
+	}
+
+	/**
+	 * Set the unit multiplier.
+	 * 
+	 * <p>
+	 * This value represents a multiplication factor to apply to values
+	 * collected for this property so that a standardized unit is captured. For
+	 * example, a power meter might report power as <i>killowatts</i>, in which
+	 * case {@code multiplier} can be configured as {@literal .001} to convert
+	 * the value to <i>watts</i>.
+	 * </p>
+	 * 
+	 * @param unitMultiplier
+	 *        the mutliplier to set
+	 */
+	public void setUnitMultiplier(BigDecimal unitMultiplier) {
+		this.unitMultiplier = unitMultiplier;
+	}
+
+	/**
+	 * Get the decimal scale to round decimal numbers to.
+	 * 
+	 * @return the decimal scale; defaults to {@link #DEFAULT_DECIMAL_SCALE}
+	 */
+	public int getDecimalScale() {
+		return decimalScale;
+	}
+
+	/**
+	 * Set the decimal scale to round decimal numbers to.
+	 * 
+	 * <p>
+	 * This is a <i>maximum</i> scale value that decimal values should be
+	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
+	 * applied. A scale of {@literal 0} would round all decimals to integer
+	 * values.
+	 * </p>
+	 * 
+	 * @param decimalScale
+	 *        the scale to set, or {@literal -1} to disable rounding completely
+	 */
+	public void setDecimalScale(int decimalScale) {
+		this.decimalScale = decimalScale;
 	}
 }

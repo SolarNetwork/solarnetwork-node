@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -72,6 +74,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -382,6 +385,15 @@ public class OutstationService extends AbstractApplicationService
 				if ( sourceId.equals(config.getSourceId()) ) {
 					Object propVal = event.getProperty(config.getPropertyName());
 					if ( propVal != null ) {
+						if ( propVal instanceof Number ) {
+							if ( config.getUnitMultiplier() != null ) {
+								propVal = applyUnitMultiplier((Number) propVal,
+										config.getUnitMultiplier());
+							}
+							if ( config.getDecimalScale() >= 0 ) {
+								propVal = applyDecimalScale((Number) propVal, config.getDecimalScale());
+							}
+						}
 						if ( changes == null ) {
 							changes = new OutstationChangeSet();
 						}
@@ -464,6 +476,25 @@ public class OutstationService extends AbstractApplicationService
 		} else {
 			return StringUtils.parseBoolean(propVal.toString());
 		}
+	}
+
+	private Number applyDecimalScale(Number value, int decimalScale) {
+		if ( decimalScale < 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		if ( v.scale() > decimalScale ) {
+			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
+		}
+		return v;
+	}
+
+	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		return v.multiply(multiplier);
 	}
 
 	/*
