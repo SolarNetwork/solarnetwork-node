@@ -88,11 +88,19 @@
 		<property name="basenames" value="net.solarnetwork.node.io.dnp3.impl.OutstationService"/>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
-				<property name="prefix" value="measurementConfigsItem."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.MeasurementConfig"/>
-					</bean>
+				<property name="delegates">
+					<map>
+						<entry key="controlConfigsItem.">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.ControlConfig"/>
+							</bean>
+						</entry>
+						<entry key="measurementConfigsItem.">
+							<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+								<property name="basenames" value="net.solarnetwork.node.io.dnp3.domain.MeasurementConfig"/>
+							</bean>
+						</entry>
+					</map>
 				</property>
 			</bean>
 		</property>
@@ -117,6 +125,7 @@
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
 					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>

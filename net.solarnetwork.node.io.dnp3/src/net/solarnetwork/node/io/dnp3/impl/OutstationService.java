@@ -63,8 +63,11 @@ import com.automatak.dnp3.enums.FrozenCounterQuality;
 import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.OperateType;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
+import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
+import net.solarnetwork.node.io.dnp3.domain.ControlType;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -101,6 +104,7 @@ public class OutstationService extends AbstractApplicationService
 	private final CommandHandler commandHandler;
 
 	private MeasurementConfig[] measurementConfigs;
+	private ControlConfig[] controlConfigs;
 	private int eventBufferSize = DEFAULT_EVENT_BUFFER_SIZE;
 	private int startupDelaySecs = DEFAULT_STARTUP_DELAY_SECONDS;
 
@@ -206,7 +210,9 @@ public class OutstationService extends AbstractApplicationService
 	private OutstationStackConfig createOutstationStackConfig() {
 		Map<MeasurementType, List<MeasurementConfig>> configs = measurementTypeMap(
 				getMeasurementConfigs());
-		return new OutstationStackConfig(createDatabaseConfig(configs), createEventBufferConig(configs));
+		Map<ControlType, List<ControlConfig>> controlConfigs = controlTypeMap(getControlConfigs());
+		return new OutstationStackConfig(createDatabaseConfig(configs, controlConfigs),
+				createEventBufferConfig(configs, controlConfigs));
 	}
 
 	private Map<MeasurementType, List<MeasurementConfig>> measurementTypeMap(
@@ -216,7 +222,8 @@ public class OutstationService extends AbstractApplicationService
 		if ( configs != null ) {
 			for ( MeasurementConfig config : configs ) {
 				MeasurementType type = config.getType();
-				if ( type != null && config.getPropertyName() != null ) {
+				if ( type != null && config.getPropertyName() != null
+						&& !config.getPropertyName().isEmpty() ) {
 					map.computeIfAbsent(type, k -> new ArrayList<>(4)).add(config);
 				}
 			}
@@ -224,7 +231,23 @@ public class OutstationService extends AbstractApplicationService
 		return map;
 	}
 
-	private DatabaseConfig createDatabaseConfig(Map<MeasurementType, List<MeasurementConfig>> configs) {
+	private Map<ControlType, List<ControlConfig>> controlTypeMap(ControlConfig[] configs) {
+		Map<ControlType, List<ControlConfig>> map = new LinkedHashMap<>(
+				configs != null ? configs.length : 0);
+		if ( configs != null ) {
+			for ( ControlConfig config : configs ) {
+				ControlType type = config.getType();
+				if ( type != null && config.getControlId() != null
+						&& !config.getControlId().isEmpty() ) {
+					map.computeIfAbsent(type, k -> new ArrayList<>(4)).add(config);
+				}
+			}
+		}
+		return map;
+	}
+
+	private DatabaseConfig createDatabaseConfig(Map<MeasurementType, List<MeasurementConfig>> configs,
+			Map<ControlType, List<ControlConfig>> controlConfigs) {
 		int analogCount = 0;
 		int aoStatusCount = 0;
 		int binaryCount = 0;
@@ -270,12 +293,32 @@ public class OutstationService extends AbstractApplicationService
 				}
 			}
 		}
+		if ( controlConfigs != null ) {
+			for ( Map.Entry<ControlType, List<ControlConfig>> me : controlConfigs.entrySet() ) {
+				ControlType type = me.getKey();
+				List<ControlConfig> list = me.getValue();
+				if ( type == null || list == null || list.isEmpty() ) {
+					continue;
+				}
+				switch (type) {
+					case Analog:
+						aoStatusCount += list.size();
+						break;
+
+					case Binary:
+						boStatusCount += list.size();
+						break;
+
+				}
+			}
+		}
 		return new DatabaseConfig(binaryCount, doubleBinaryCount, analogCount, counterCount,
 				frozenCounterCount, boStatusCount, aoStatusCount);
 	}
 
-	private EventBufferConfig createEventBufferConig(
-			Map<MeasurementType, List<MeasurementConfig>> configs) {
+	private EventBufferConfig createEventBufferConfig(
+			Map<MeasurementType, List<MeasurementConfig>> configs,
+			Map<ControlType, List<ControlConfig>> controlConfigs) {
 		EventBufferConfig config = EventBufferConfig.allTypes(0);
 		final int size = getEventBufferSize();
 		if ( configs != null ) {
@@ -316,6 +359,25 @@ public class OutstationService extends AbstractApplicationService
 				}
 			}
 		}
+		if ( controlConfigs != null ) {
+			for ( Map.Entry<ControlType, List<ControlConfig>> me : controlConfigs.entrySet() ) {
+				ControlType type = me.getKey();
+				List<ControlConfig> list = me.getValue();
+				if ( type == null || list == null || list.isEmpty() ) {
+					continue;
+				}
+				switch (type) {
+					case Analog:
+						config.maxAnalogOutputStatusEvents = size;
+						break;
+
+					case Binary:
+						config.maxBinaryOutputStatusEvents = size;
+						break;
+
+				}
+			}
+		}
 		return config;
 	}
 
@@ -330,10 +392,32 @@ public class OutstationService extends AbstractApplicationService
 		String topic = (event != null ? event.getTopic() : null);
 		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
+		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic) ) {
+			handleControlInfoCapturedEvent(event);
 		}
 	}
 
 	private void handleDatumCapturedEvent(Event event) {
+		Object sourceId = event.getProperty(Datum.SOURCE_ID);
+		if ( sourceId == null ) {
+			return;
+		}
+
+		TaskExecutor executor = getTaskExecutor();
+		if ( executor != null ) {
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					applyDatumCapturedUpdates(sourceId.toString(), event);
+				}
+			});
+		} else {
+			applyDatumCapturedUpdates(sourceId.toString(), event);
+		}
+	}
+
+	private void handleControlInfoCapturedEvent(Event event) {
 		Object sourceId = event.getProperty(Datum.SOURCE_ID);
 		if ( sourceId == null ) {
 			return;
@@ -366,9 +450,12 @@ public class OutstationService extends AbstractApplicationService
 		}
 	}
 
-	private OutstationChangeSet changeSetForDatumCapturedEvent(String sourceId, Event event) {
+	private OutstationChangeSet changeSetForDatumCapturedEvent(final String sourceId,
+			final Event event) {
 		Map<MeasurementType, List<MeasurementConfig>> map = measurementTypeMap(getMeasurementConfigs());
-		if ( map == null || map.isEmpty() || event == null ) {
+		Map<ControlType, List<ControlConfig>> controlMap = controlTypeMap(getControlConfigs());
+		if ( event == null
+				|| ((map == null || map.isEmpty()) && (controlMap == null || controlMap.isEmpty())) ) {
 			return null;
 		}
 		Object timestamp = event.getProperty(Datum.TIMESTAMP);
@@ -377,95 +464,150 @@ public class OutstationService extends AbstractApplicationService
 		}
 		final long ts = ((Number) timestamp).longValue();
 		OutstationChangeSet changes = null;
-		for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : map.entrySet() ) {
-			MeasurementType type = me.getKey();
-			List<MeasurementConfig> list = me.getValue();
-			for ( ListIterator<MeasurementConfig> itr = list.listIterator(); itr.hasNext(); ) {
-				MeasurementConfig config = itr.next();
-				if ( sourceId.equals(config.getSourceId()) ) {
-					Object propVal = event.getProperty(config.getPropertyName());
-					if ( propVal != null ) {
-						if ( propVal instanceof Number ) {
-							if ( config.getUnitMultiplier() != null ) {
-								propVal = applyUnitMultiplier((Number) propVal,
-										config.getUnitMultiplier());
+		if ( map != null ) {
+			for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : map.entrySet() ) {
+				MeasurementType type = me.getKey();
+				List<MeasurementConfig> list = me.getValue();
+				for ( ListIterator<MeasurementConfig> itr = list.listIterator(); itr.hasNext(); ) {
+					MeasurementConfig config = itr.next();
+					if ( sourceId.equals(config.getSourceId()) ) {
+						Object propVal = event.getProperty(config.getPropertyName());
+						if ( propVal != null ) {
+							if ( propVal instanceof Number ) {
+								if ( config.getUnitMultiplier() != null ) {
+									propVal = applyUnitMultiplier((Number) propVal,
+											config.getUnitMultiplier());
+								}
+								if ( config.getDecimalScale() >= 0 ) {
+									propVal = applyDecimalScale((Number) propVal,
+											config.getDecimalScale());
+								}
 							}
-							if ( config.getDecimalScale() >= 0 ) {
-								propVal = applyDecimalScale((Number) propVal, config.getDecimalScale());
+							if ( changes == null ) {
+								changes = new OutstationChangeSet();
 							}
-						}
-						if ( changes == null ) {
-							changes = new OutstationChangeSet();
-						}
-						log.debug("Updating DNP3 {}[{}] from [{}].{} -> {}", type, itr.previousIndex(),
-								sourceId, config.getPropertyName(), propVal);
-						switch (type) {
-							case AnalogInput:
-								if ( propVal instanceof Number ) {
+							log.debug("Updating DNP3 {}[{}] from [{}].{} -> {}", type,
+									itr.previousIndex(), sourceId, config.getPropertyName(), propVal);
+							switch (type) {
+								case AnalogInput:
+									if ( propVal instanceof Number ) {
+										changes.update(
+												new AnalogInput(((Number) propVal).doubleValue(),
+														(byte) AnalogQuality.ONLINE.toType(), ts),
+												itr.previousIndex());
+									}
+									break;
+
+								case AnalogOutputStatus:
+									if ( propVal instanceof Number ) {
+										changes.update(
+												new AnalogOutputStatus(((Number) propVal).doubleValue(),
+														(byte) AnalogOutputStatusQuality.ONLINE.toType(),
+														ts),
+												itr.previousIndex());
+									}
+									break;
+
+								case BinaryInput:
 									changes.update(
-											new AnalogInput(((Number) propVal).doubleValue(),
-													(byte) AnalogQuality.ONLINE.toType(), ts),
+											new BinaryInput(booleanPropertyValue(propVal),
+													(byte) BinaryQuality.ONLINE.toType(), ts),
 											itr.previousIndex());
-								}
-								break;
+									break;
 
-							case AnalogOutputStatus:
-								if ( propVal instanceof Number ) {
-									changes.update(
-											new AnalogOutputStatus(((Number) propVal).doubleValue(),
-													(byte) AnalogOutputStatusQuality.ONLINE.toType(),
-													ts),
+								case BinaryOutputStatus:
+									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
+											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
 											itr.previousIndex());
-								}
-								break;
+									break;
 
-							case BinaryInput:
-								changes.update(
-										new BinaryInput(booleanPropertyValue(propVal),
-												(byte) BinaryQuality.ONLINE.toType(), ts),
-										itr.previousIndex());
-								break;
+								case Counter:
+									if ( propVal instanceof Number ) {
+										changes.update(
+												new Counter(((Number) propVal).longValue(),
+														(byte) CounterQuality.ONLINE.toType(), ts),
+												itr.previousIndex());
+									}
+									break;
 
-							case BinaryOutputStatus:
-								changes.update(
-										new BinaryOutputStatus(booleanPropertyValue(propVal),
-												(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
-										itr.previousIndex());
-								break;
-
-							case Counter:
-								if ( propVal instanceof Number ) {
-									changes.update(
-											new Counter(((Number) propVal).longValue(),
-													(byte) CounterQuality.ONLINE.toType(), ts),
+								case DoubleBitBinaryInput:
+									changes.update(new DoubleBitBinaryInput(
+											booleanPropertyValue(propVal) ? DoubleBit.DETERMINED_ON
+													: DoubleBit.DETERMINED_OFF,
+											(byte) DoubleBitBinaryQuality.ONLINE.toType(), ts),
 											itr.previousIndex());
-								}
-								break;
+									break;
 
-							case DoubleBitBinaryInput:
-								changes.update(
-										new DoubleBitBinaryInput(
-												booleanPropertyValue(propVal) ? DoubleBit.DETERMINED_ON
-														: DoubleBit.DETERMINED_OFF,
-												(byte) DoubleBitBinaryQuality.ONLINE.toType(), ts),
-										itr.previousIndex());
-								break;
-
-							case FrozenCounter:
-								if ( propVal instanceof Number ) {
-									changes.update(
-											new FrozenCounter(((Number) propVal).longValue(),
-													(byte) FrozenCounterQuality.ONLINE.toType(), ts),
-											itr.previousIndex());
-								}
-								break;
+								case FrozenCounter:
+									if ( propVal instanceof Number ) {
+										changes.update(
+												new FrozenCounter(((Number) propVal).longValue(),
+														(byte) FrozenCounterQuality.ONLINE.toType(), ts),
+												itr.previousIndex());
+									}
+									break;
+							}
 						}
 					}
 				}
 			}
+			if ( controlMap != null ) {
+				int analogStatusOffset = typeConfigCount(MeasurementType.AnalogOutputStatus, map);
+				int binaryStatusOffset = typeConfigCount(MeasurementType.BinaryOutputStatus, map);
+				for ( Map.Entry<ControlType, List<ControlConfig>> me : controlMap.entrySet() ) {
+					ControlType type = me.getKey();
+					List<ControlConfig> list = me.getValue();
+					for ( ListIterator<ControlConfig> itr = list.listIterator(); itr.hasNext(); ) {
+						ControlConfig config = itr.next();
+						if ( sourceId.equals(config.getControlId()) ) {
+							if ( changes == null ) {
+								changes = new OutstationChangeSet();
+							}
+							Object propVal = event.getProperty("value");
+							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type,
+									itr.previousIndex(), sourceId, propVal);
+							switch (type) {
+								case Analog:
+									try {
+										Number n = null;
+										if ( propVal instanceof Number ) {
+											n = (Number) propVal;
+										} else {
+											n = new BigDecimal(propVal.toString());
+										}
+										changes.update(new AnalogOutputStatus(n.doubleValue(),
+												(byte) AnalogOutputStatusQuality.ONLINE.toType(), ts),
+												itr.previousIndex() + analogStatusOffset);
+									} catch ( NumberFormatException e ) {
+										log.warn("Cannot convert control [{}] value [{}] to number: {}",
+												sourceId, propVal, e.getMessage());
+									}
+									break;
+
+								case Binary:
+									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
+											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
+											itr.previousIndex() + binaryStatusOffset);
+									break;
+
+							}
+						}
+					}
+				}
+			}
+
 		}
 
 		return changes;
+
+	}
+
+	private <T, C> int typeConfigCount(T key, Map<T, List<C>> map) {
+		if ( map == null || map.isEmpty() ) {
+			return 0;
+		}
+		List<?> list = map.get(key);
+		return (list != null ? list.size() : 0);
 	}
 
 	private boolean booleanPropertyValue(Object propVal) {
@@ -566,6 +708,21 @@ public class OutstationService extends AbstractApplicationService
 					}
 				}));
 
+		ControlConfig[] cntrlConfs = getControlConfigs();
+		List<ControlConfig> cntrlConfsList = (cntrlConfs != null ? Arrays.asList(cntrlConfs)
+				: Collections.<ControlConfig> emptyList());
+		result.add(SettingsUtil.dynamicListSettingSpecifier("controlConfigs", cntrlConfsList,
+				new SettingsUtil.KeyedListCallback<ControlConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(ControlConfig value, int index,
+							String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								ControlConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
+
 		return result;
 	}
 
@@ -649,6 +806,51 @@ public class OutstationService extends AbstractApplicationService
 	public void setMeasurementConfigsCount(int count) {
 		this.measurementConfigs = ArrayUtils.arrayWithLength(this.measurementConfigs, count,
 				MeasurementConfig.class, null);
+	}
+
+	/**
+	 * Get the control configurations.
+	 * 
+	 * @return the control configurations
+	 */
+	public ControlConfig[] getControlConfigs() {
+		return controlConfigs;
+	}
+
+	/**
+	 * Set the control configurations to use.
+	 * 
+	 * @param controlConfigs
+	 *        the configs to use
+	 */
+	public void setControlConfigs(ControlConfig[] controlConfigs) {
+		this.controlConfigs = controlConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code controlConfigs} elements.
+	 * 
+	 * @return the number of {@code controlConfigs} elements
+	 */
+	public int getControlConfigsCount() {
+		ControlConfig[] confs = this.controlConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ControlConfig} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new {@link ControlConfig}
+	 * instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code controlConfigs} elements.
+	 */
+	public void setControlConfigsCount(int count) {
+		this.controlConfigs = ArrayUtils.arrayWithLength(this.controlConfigs, count, ControlConfig.class,
+				null);
 	}
 
 	/**
