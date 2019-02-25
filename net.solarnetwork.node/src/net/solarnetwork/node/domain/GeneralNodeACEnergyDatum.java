@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.domain;
 
+import java.util.EnumSet;
+import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.solarnetwork.util.SerializeIgnore;
 
@@ -32,6 +34,35 @@ import net.solarnetwork.util.SerializeIgnore;
  * @version 1.2
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
+
+	/**
+	 * Populate phase-specific property values given a data accessor.
+	 * 
+	 * <p>
+	 * This method will populate the following values for phases A, B, and C:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>{@link #setCurrent(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getCurrent()}</li>
+	 * <li>{@link #setVoltage(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getVoltage()}</li>
+	 * <li>{@link #setLineVoltage(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getLineVoltage()}</li>
+	 * </ul>
+	 * 
+	 * @param data
+	 *        the data accessor
+	 */
+	public void populatePhaseMeasurementProperties(ACEnergyDataAccessor data) {
+		Set<ACPhase> phases = EnumSet.of(ACPhase.PhaseA, ACPhase.PhaseB, ACPhase.PhaseC);
+		for ( ACPhase phase : phases ) {
+			ACEnergyDataAccessor acc = data.accessorForPhase(phase);
+			setCurrent(acc.getCurrent(), phase);
+			setVoltage(acc.getVoltage(), phase);
+			setLineVoltage(acc.getLineVoltage(), phase);
+		}
+	}
 
 	@Override
 	@JsonIgnore
@@ -160,7 +191,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	@Override
 	@JsonIgnore
 	@SerializeIgnore
-	public Float getPhaseVoltage(ACPhase phase) {
+	public Float getVoltage(ACPhase phase) {
 		return getInstantaneousSampleFloat(phase.withKey(VOLTAGE_KEY));
 	}
 
@@ -179,7 +210,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	 *        the phase
 	 * @since 1.2
 	 */
-	public void setPhaseVoltage(Float phaseVoltage, ACPhase phase) {
+	public void setVoltage(Float phaseVoltage, ACPhase phase) {
 		putInstantaneousSampleValue(phase.withKey(VOLTAGE_KEY), phaseVoltage);
 	}
 

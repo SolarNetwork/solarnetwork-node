@@ -157,6 +157,16 @@ public interface ACEnergyDatum extends EnergyDatum {
 	Float getVoltage();
 
 	/**
+	 * Get the instantaneous phase-to-neutral line voltage for a specific phase.
+	 * 
+	 * @param phase
+	 *        the phase
+	 * @return the volts, or {@literal null} if not known
+	 * @since 1.2
+	 */
+	Float getVoltage(ACPhase phase);
+
+	/**
 	 * Get the instantaneous current, in amps.
 	 * 
 	 * <p>
@@ -189,16 +199,6 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * @return the volts, or {@literal null} if not known
 	 */
 	Float getPhaseVoltage();
-
-	/**
-	 * Get the instantaneous phase-to-neutral line voltage for a specific phase.
-	 * 
-	 * @param phase
-	 *        the phase
-	 * @return the volts, or {@literal null} if not known
-	 * @since 1.2
-	 */
-	Float getPhaseVoltage(ACPhase phase);
 
 	/**
 	 * Get the instantaneous phase-to-phase line voltage.
