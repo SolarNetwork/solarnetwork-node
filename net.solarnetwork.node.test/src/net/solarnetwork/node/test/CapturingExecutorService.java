@@ -29,6 +29,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -36,8 +38,14 @@ import java.util.concurrent.TimeoutException;
  * Delegate all methods to a provided {@link ExecutorService} and capture all
  * returned {@link Future} instances for later inspection.
  * 
+ * <p>
+ * The {@link #execute(Runnable)} method will create a {@link RunnableFuture}
+ * instance and proxy the given runnable so that a future is captured for those
+ * tasks as well.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CapturingExecutorService implements ExecutorService {
 
@@ -62,7 +70,9 @@ public class CapturingExecutorService implements ExecutorService {
 
 	@Override
 	public void execute(Runnable command) {
-		delegate.execute(command);
+		RunnableFuture<Boolean> proxy = new FutureTask<Boolean>(command, Boolean.TRUE);
+		futures.add(proxy);
+		delegate.execute(proxy);
 	}
 
 	@Override
