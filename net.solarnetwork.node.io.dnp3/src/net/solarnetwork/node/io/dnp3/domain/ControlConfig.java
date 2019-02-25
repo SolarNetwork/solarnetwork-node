@@ -65,15 +65,15 @@ public class ControlConfig {
 	 * @param controlProviderUid
 	 *        the {@link NodeControlProvider#getUID()} to collect from
 	 * @param controlId
-	 *        the source ID a {@link NodeControlInfo#getControlId()} to collect
+	 *        the control ID a {@link NodeControlInfo#getControlId()} to collect
 	 *        from
 	 * @param type
 	 *        the DNP3 control type
 	 */
-	public ControlConfig(String dataSourceUid, String sourceId, ControlType type) {
+	public ControlConfig(String dataSourceUid, String controlId, ControlType type) {
 		super();
 		this.controlProviderUid = dataSourceUid;
-		this.controlId = sourceId;
+		this.controlId = controlId;
 		this.type = type;
 	}
 
