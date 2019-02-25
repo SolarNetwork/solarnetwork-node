@@ -96,16 +96,16 @@ public class GeneralNodeACEnergyDatumTests {
 	@Test
 	public void phaseVoltagePhased() {
 		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-		d.setPhaseVoltage(Fa, PhaseA);
-		d.setPhaseVoltage(Fb, PhaseB);
-		d.setPhaseVoltage(Fc, PhaseC);
-		d.setPhaseVoltage(F, Total);
+		d.setVoltage(Fa, PhaseA);
+		d.setVoltage(Fb, PhaseB);
+		d.setVoltage(Fc, PhaseC);
+		d.setVoltage(F, Total);
 
 		assertThat("Accessor non-phased", d.getPhaseVoltage(), nullValue());
-		assertThat("Accessor a", d.getPhaseVoltage(PhaseA), equalTo(Fa));
-		assertThat("Accessor b", d.getPhaseVoltage(PhaseB), equalTo(Fb));
-		assertThat("Accessor c", d.getPhaseVoltage(PhaseC), equalTo(Fc));
-		assertThat("Accessor t", d.getPhaseVoltage(Total), equalTo(F));
+		assertThat("Accessor a", d.getVoltage(PhaseA), equalTo(Fa));
+		assertThat("Accessor b", d.getVoltage(PhaseB), equalTo(Fb));
+		assertThat("Accessor c", d.getVoltage(PhaseC), equalTo(Fc));
+		assertThat("Accessor t", d.getVoltage(Total), equalTo(F));
 
 		assertThat("Direct non-phased", d.getInstantaneousSampleFloat(ACEnergyDatum.PHASE_VOLTAGE_KEY),
 				nullValue());
