@@ -92,4 +92,31 @@ public final class ModelDataUtils {
 		return ModelDataFactory.getInstance().getModelData(conn);
 	}
 
+	/**
+	 * Get a static, read-only model data instance using a class-path resource
+	 * of modbus test data.
+	 * 
+	 * <p>
+	 * This calls {@link #parseTestData(Class, String)} to parse a modbus data
+	 * text file and then
+	 * {@link ModelDataFactory#getModelData(ModbusConnection)} to read the data
+	 * into a {@link ModelData} instance.
+	 * </p>
+	 * 
+	 * @param clazz
+	 *        the class to load the resource from
+	 * @param resource
+	 *        the data resource to load
+	 * @param parseOffsets
+	 *        if {@literal true} then parse the test data with
+	 *        {@literal [addr]:} prefixes, otherwise ignore address prefixes and
+	 *        treat the data as starting from zero
+	 * @return the model data
+	 * @see #parseTestData(Class, String)
+	 */
+	public static ModelData getModelDataInstance(Class<?> clazz, String resource, boolean parseOffsets) {
+		ModbusConnection conn = new StaticDataReadonlyModbusConnection(parseTestData(clazz, resource));
+		return ModelDataFactory.getInstance().getModelData(conn);
+	}
+
 }
