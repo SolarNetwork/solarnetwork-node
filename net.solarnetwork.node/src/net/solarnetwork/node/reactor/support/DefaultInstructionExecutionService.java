@@ -39,7 +39,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * Default implementation of {@link InstructionExecutionService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.58
  */
 public class DefaultInstructionExecutionService implements InstructionExecutionService {
@@ -109,7 +109,10 @@ public class DefaultInstructionExecutionService implements InstructionExecutionS
 			if ( diffMs > timeLimitMs ) {
 				log.info("Instruction {} {} not handled within {} hours; declining", instruction.getId(),
 						topic, executionReceivedHourLimit);
-				return startingStatus.newCopyWithState(InstructionState.Declined);
+				return (startingStatus != null
+						? startingStatus.newCopyWithState(InstructionState.Declined)
+						: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
+								new Date()));
 			}
 		}
 
