@@ -341,7 +341,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have published acknowledgement on datum topic
 		TestingInterceptHandler session = getTestingInterceptHandler();
-		assertThat("Published instruction and ack", session.publishMessages, hasSize(2));
+		assertThat("Published instruction and acks", session.publishMessages, hasSize(3));
 
 		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
 		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));
@@ -351,6 +351,13 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
+				equalTo("{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
+						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Executing\"}"));
+
+		pubMsg = session.publishMessages.get(2);
+		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(2),
 				equalTo("{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
 						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Completed\"}"));
 	}
