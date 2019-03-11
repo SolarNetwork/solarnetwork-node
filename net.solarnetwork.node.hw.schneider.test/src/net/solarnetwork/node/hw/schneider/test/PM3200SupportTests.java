@@ -38,6 +38,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200Support;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -46,7 +47,7 @@ import net.solarnetwork.util.StringUtils;
  * Test cases for the {@link PM3200Support} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PM3200SupportTests extends AbstractNodeTest {
 
@@ -76,8 +77,9 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void readMeterName() throws IOException {
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_NAME);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_NAME);
 
 		replay(conn);
 
@@ -90,8 +92,9 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void readMeterModel() {
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_MODEL);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_MODEL);
 		replay(conn);
 
 		String result = support.getMeterName(conn);
@@ -103,8 +106,9 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void readMeterManufacturer() {
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_MANF);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_MANF);
 		replay(conn);
 
 		String result = support.getMeterManufacturer(conn);
@@ -116,8 +120,8 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void readMeterSerialNumber() {
-		expect(conn.readValues(PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2))
-				.andReturn(new Integer[] { 1, 57920 });
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2)).andReturn(new int[] { 1, 57920 });
 
 		replay(conn);
 
@@ -129,8 +133,9 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 	@Test
 	public void testReadMeterManufactureDate() {
-		expect(conn.readInts(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4))
-				.andReturn(new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4)).andReturn(
+						new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
 
 		replay(conn);
 
@@ -162,16 +167,20 @@ public class PM3200SupportTests extends AbstractNodeTest {
 
 		conn.open();
 
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_NAME);
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_MODEL, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_MODEL);
-		expect(conn.readString(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true,
-				ModbusConnection.UTF8_CHARSET)).andReturn(METER_MANF);
-		expect(conn.readInts(PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4))
-				.andReturn(new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
-		expect(conn.readValues(PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2))
-				.andReturn(new Integer[] { 1, 57920 });
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_NAME);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_MODEL, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_MODEL);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_MANUFACTURER, 20, true, ModbusConnection.UTF8_CHARSET))
+						.andReturn(METER_MANF);
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4)).andReturn(
+						new int[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				PM3200Support.ADDR_SYSTEM_METER_SERIAL_NUMBER, 2)).andReturn(new int[] { 1, 57920 });
 
 		conn.close();
 

@@ -49,6 +49,11 @@
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
 	
+	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -110,6 +115,7 @@
 									<property name="client">
 										<bean class="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient" init-method="init">
 											<property name="messageSource" ref="xmlClientMessageSource"/>
+											<property name="expressionServices" ref="expressionServices"/>
 										</bean>
 									</property>
 								</bean>

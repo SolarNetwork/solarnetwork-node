@@ -58,7 +58,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ModelDataFactory {
 
@@ -115,10 +115,16 @@ public class ModelDataFactory {
 
 	private int findSunSpecBaseAddress(ModbusConnection conn) {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
-			String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
-					r.getWordLength(), true, ModbusConnection.ASCII_CHARSET);
-			if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
-				return r.getAddress();
+			try {
+				String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
+						r.getWordLength(), true, ModbusConnection.ASCII_CHARSET);
+				if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
+					return r.getAddress();
+				}
+			} catch ( RuntimeException e ) {
+				// in case device throws error reading from address that is not base address, keep looking
+				log.warn("Error looking for SunSpec ID at base address {}: {}", r.getAddress(),
+						e.toString());
 			}
 		}
 		throw new RuntimeException("SunSpec ID 'SunS' not found at any known base address.");

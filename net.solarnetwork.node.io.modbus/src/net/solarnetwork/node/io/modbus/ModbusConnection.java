@@ -278,7 +278,7 @@ public interface ModbusConnection {
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
 	 * @deprecated use
-	 *             {@link #readSignedShorts(ModbusReadFunction, Integer, int)}
+	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
 	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
 	 */
 	@Deprecated

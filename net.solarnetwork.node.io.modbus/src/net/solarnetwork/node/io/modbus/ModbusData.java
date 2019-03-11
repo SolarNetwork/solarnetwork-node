@@ -25,10 +25,16 @@ package net.solarnetwork.node.io.modbus;
 import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import bak.pcj.map.IntKeyShortMap;
+import bak.pcj.map.IntKeyShortMapIterator;
 import bak.pcj.map.IntKeyShortOpenHashMap;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
@@ -46,7 +52,7 @@ import net.solarnetwork.node.domain.DataAccessor;
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -895,6 +901,74 @@ public class ModbusData implements DataAccessor {
 				return true;
 			}
 		});
+	}
+
+	/**
+	 * Get a read-only Map view of all modbus registers as unsigned integer
+	 * values.
+	 * 
+	 * @return the data map, never {@literal null}
+	 * @since 1.7
+	 */
+	public Map<Integer, Integer> getUnsignedDataMap() {
+		final ModbusData copy = this.copy();
+		final IntKeyShortMap data = copy.dataRegisters;
+		Set<Entry<Integer, Integer>> entrySet = new AbstractSet<Map.Entry<Integer, Integer>>() {
+
+			@Override
+			public Iterator<Entry<Integer, Integer>> iterator() {
+				IntKeyShortMapIterator itr = data.entries();
+				return new Iterator<Map.Entry<Integer, Integer>>() {
+
+					@Override
+					public boolean hasNext() {
+						return itr.hasNext();
+					}
+
+					@Override
+					public Entry<Integer, Integer> next() {
+						itr.next();
+						return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(itr.getKey(),
+								Short.toUnsignedInt(itr.getValue()));
+					}
+				};
+			}
+
+			@Override
+			public int size() {
+				return data.size();
+			}
+		};
+		return new AbstractMap<Integer, Integer>() {
+
+			@Override
+			public boolean containsKey(Object key) {
+				boolean result = false;
+				if ( key instanceof Number ) {
+					final int r = ((Number) key).intValue();
+					result = data.containsKey(r);
+				}
+				return result;
+			}
+
+			@Override
+			public Integer get(Object key) {
+				Integer result = null;
+				if ( key instanceof Number ) {
+					final int r = ((Number) key).intValue();
+					if ( data.containsKey(r) ) {
+						result = Short.toUnsignedInt(data.get(r));
+					}
+				}
+				return result;
+			}
+
+			@Override
+			public Set<Entry<Integer, Integer>> entrySet() {
+				return entrySet;
+			}
+
+		};
 	}
 
 }

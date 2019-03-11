@@ -153,6 +153,13 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		this.decimalScale = decimalScale;
 	}
 
+	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @return the settings, never {@literal null}
+	 */
 	public static List<SettingSpecifier> settings(String prefix) {
 		ModbusPropertyConfig defaults = new ModbusPropertyConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
@@ -330,7 +337,7 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		if ( type == null ) {
 			type = GeneralDatumSamplesType.Instantaneous;
 		}
-		setPropertyType(type);
+		setDatumPropertyType(type);
 	}
 
 	/**

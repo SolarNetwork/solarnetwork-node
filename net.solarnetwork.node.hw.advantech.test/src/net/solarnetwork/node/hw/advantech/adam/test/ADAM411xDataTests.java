@@ -88,9 +88,9 @@ public class ADAM411xDataTests {
 		}
 		BigDecimal[] expected = new BigDecimal[] {
 			// @formatter:off
-			new BigDecimal("0.07657"), // 684; (684 + 32768) / 65535 * 150
-			new BigDecimal("0.07666"), // 724
-			new BigDecimal("0.07678"), // 778
+			new BigDecimal("0.00157"), // 684; (684 / 65535) * 150
+			new BigDecimal("0.00166"), // 724
+			new BigDecimal("0.00178"), // 778
 			// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {
@@ -111,10 +111,10 @@ public class ADAM411xDataTests {
 		}
 		BigDecimal[] expected = new BigDecimal[] {
 			// @formatter:off
-			new BigDecimal("-0.14770"), // -32265; (-32265 + 32768) / 65535 * 300 - 150
-			new BigDecimal("-0.14694"), // -32099
-			new BigDecimal("-0.14710"), // -32134
-			new BigDecimal("-0.14743"), // -32206
+			new BigDecimal("-0.29770"), // -32265; ((-32265 / 65535) * 300) - 150
+			new BigDecimal("-0.29694"), // -32099
+			new BigDecimal("-0.29710"), // -32134
+			new BigDecimal("-0.29743"), // -32206
 			// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {
@@ -147,14 +147,14 @@ public class ADAM411xDataTests {
 		}
 		BigDecimal[] expected = new BigDecimal[] {
 				// @formatter:off
-				new BigDecimal("171.99011"), // 14089; (14089 / 32767) * 400
-				new BigDecimal("172.62489"), // 14141; (14141 / 32767) * 400
-				new BigDecimal("-0.01451"), // -31698; (-31698 + 32768) / 65535 * 30 - 15
-				new BigDecimal("0.01200"), // -1; (-1 + 32768) / 65535 * (20 - 4) + 4
-				new BigDecimal("0.01200"), // -1 (-1 + 32768) / 65535 * (20 - 4) + 4
-				new BigDecimal("-0.01444"), // -31550; (-31550 + 32768) / 65535 * 30 - 15
-				new BigDecimal("-0.01119"), // -24445
-				new BigDecimal("-0.01165"), // -25458
+				new BigDecimal("7.49218"), // 14089; (14089 / 65535) * 500 - 100
+				new BigDecimal("7.88892"), // 14141; (14141 / 65535) * 500 - 100
+				new BigDecimal("-0.02951"), // -31698; (-31698 / 65535 * 30 - 15
+				new BigDecimal("0.00400"), // -1; (-1 / 65535) * 24 + 4
+				new BigDecimal("0.00400"), // -1 (-1 / 65535 * 24 + 4
+				new BigDecimal("-0.02944"), // -31550; (-31550 / 65535) * 30 - 15
+				new BigDecimal("-0.02619"), // -24445
+				new BigDecimal("-0.02665"), // -25458
 				// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {

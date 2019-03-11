@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -204,6 +204,11 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		return (a != null && b != null && c != null
 				? (a.floatValue() + b.floatValue() + c.floatValue()) / 3.0f
 				: null);
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		return null;
 	}
 
 	@Override

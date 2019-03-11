@@ -52,7 +52,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -63,6 +63,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	private long sampleCacheMs = 5000;
 	private String sourceId = "PM5100";
 	private boolean backwards = false;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -122,6 +123,9 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			return null;
 		}
 		PM5100Datum d = new PM5100Datum(currSample, ACPhase.Total, this.backwards);
+		if ( this.includePhaseMeasurements ) {
+			d.populatePhaseMeasurementProperties(currSample);
+		}
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -279,6 +283,16 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 */
 	public void setBackwards(boolean backwards) {
 		this.backwards = backwards;
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
 	}
 
 }

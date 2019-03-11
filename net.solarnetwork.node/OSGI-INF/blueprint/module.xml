@@ -111,12 +111,23 @@
 		<interfaces>
 			<value>org.springframework.scheduling.TaskScheduler</value>
 			<value>org.springframework.scheduling.SchedulingTaskExecutor</value>
+		</interfaces>
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+	</service>
+	
+	<service>
+		<interfaces>
 			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
 			<value>org.springframework.core.task.TaskExecutor</value>
 		</interfaces>
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
+		<bean class="org.springframework.core.task.support.TaskExecutorAdapter">
+			<argument ref="executorService"/>
+		</bean>
 	</service>
 	
 	<service ref="delegatingReactorSerialization" ranking="5"
@@ -183,6 +194,9 @@
 	<bean id="taskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
 		<property name="poolSize" value="1"/>
 	</bean>
+	
+	<!-- Task executor for simple tasks -->
+	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newWorkStealingPool" destroy-method="shutdown"/>
 		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">

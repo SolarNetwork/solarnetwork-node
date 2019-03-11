@@ -61,13 +61,12 @@ import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
-import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test case for the {@link DefaultBackupManager} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class DefaultBackupManagerTest {
 
@@ -90,7 +89,6 @@ public class DefaultBackupManagerTest {
 		service.removeAllBackups();
 
 		manager = new DefaultBackupManager();
-		manager.setBackupServiceTracker(new StaticOptionalService<BackupService>(service));
 		List<BackupService> services = new ArrayList<BackupService>();
 		services.add(service);
 		manager.setBackupServices(services);

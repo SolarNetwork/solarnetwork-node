@@ -33,7 +33,6 @@ import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
@@ -120,7 +119,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	public EGaugePowerDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
 		EGaugePowerDatum d = getCurrentSample();
-		if ( d.getCreated() != null && d.getCreated().getTime() >= start ) {
+		if ( d != null && d.getCreated() != null && d.getCreated().getTime() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
 		}
@@ -150,7 +149,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
 
-		results.add(new BasicGroupSettingSpecifier("eGaugeClient", getClientSettings()));
+		results.addAll(getClientSettings());
 
 		return results;
 	}

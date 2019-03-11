@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -78,6 +79,7 @@ import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -86,7 +88,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -238,7 +240,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
-			return instruction.getStatus().newCopyWithState(InstructionState.Completed);
+			final InstructionStatus startingStatus = instruction.getStatus();
+			return (startingStatus != null ? startingStatus.newCopyWithState(InstructionState.Completed)
+					: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
+							new Date()));
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM001", e.getMessage());
@@ -252,7 +257,11 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Map<String, Object> resultParams = new LinkedHashMap<>();
 		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
 		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
-		return instruction.getStatus().newCopyWithState(InstructionState.Declined, resultParams);
+		final InstructionStatus startingStatus = instruction.getStatus();
+		return (startingStatus != null
+				? startingStatus.newCopyWithState(InstructionState.Declined, resultParams)
+				: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined, new Date(),
+						null, resultParams));
 	}
 
 	private boolean isConfigured() {

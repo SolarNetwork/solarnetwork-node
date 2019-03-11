@@ -14,6 +14,14 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.upload.mqtt">
+		<beans:prop key="client.keepAliveInterval">60</beans:prop>
+	</osgix:cm-properties>
+
+	<ctx:property-placeholder properties-ref="cfg"/>
+
 	<!-- Get GeneralNodeDatumDao, which we'll wrap as a UploadServiceDatumDao -->
 	<reference id="generalNodeDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
 		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
@@ -59,6 +67,7 @@
 		<argument ref="reactorService"/>
 		<argument ref="instructionExecutionService"/>
 		<argument ref="eventAdmin"/>
+		<property name="keepAliveInterval" value="${client.keepAliveInterval}"/>
 	</bean>
 
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">

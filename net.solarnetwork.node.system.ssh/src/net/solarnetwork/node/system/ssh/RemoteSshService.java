@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -48,6 +49,7 @@ import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -95,7 +97,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class RemoteSshService
 		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
@@ -280,13 +282,18 @@ public class RemoteSshService
 			configs.remove(config);
 		}
 
+		final InstructionStatus startingStatus = instruction.getStatus();
+
 		// TODO: use Executing state when connection hasn't been confirmed as connected!
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
-			result = instruction.getStatus().newCopyWithState(newState);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
 		} else {
-			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
+							resultParams));
 		}
 		return result;
 	}

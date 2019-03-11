@@ -22,11 +22,16 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
+import static net.solarnetwork.node.domain.ACPhase.PhaseA;
+import static net.solarnetwork.node.domain.ACPhase.PhaseB;
+import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.schneider.meter.ION6200Data;
 import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.ION6200Register;
@@ -60,31 +65,34 @@ public class ION6200DataTests {
 			// @formatter:on
 	};
 
-	private final int[] TEST_METER_1_REG_102 = new int[] {
+	private final int[] TEST_METER_1_REG_99 = new int[] {
 			// @formatter:off
-			0x0B0F,
-			0x133C,
-			0x131E,
-			0x131C,
-			0x1328,
-			0x01EA,
-			0x0113,
-			0x0112,
-			0x015A,
+			0x0B0D, // Vln a
+			0x0B0E, // Vln b
+			0x0B11, // Vln c
+			0x0B0F, // Vln avg
+			0x133C, // Vll ab
+			0x131E, // Vll bc
+			0x131C, // Vll ca
+			0x1328, // Vll avg
+			0x01EA, // I a
+			0x0113, // I b
+			0x0112, // I c
+			0x015A, // I avg
 			0x015E,
 			0x040F,
 			0x0390,
-			0x176D,
+			0x176D, // Hz
 			0xDF2A,
 			0xEB03,
 			0x11DF,
 			0x17E5,
-			0x0361,
-			0x022D,
-			0x0405,
-			0x02E6,
-			0xFE9D,
-			0x01DD,
+			0x0361, // kW total
+			0x022D, // kVAR total
+			0x0405, // kVA total
+			0x02E6, // kW a
+			0xFE9D, // kW b
+			0x01DD, // kW c
 			0x026F,
 			0x0044,
 			0xFF7B,
@@ -138,7 +146,7 @@ public class ION6200DataTests {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				m.saveDataArray(TEST_INFO_1_REG_0, 0);
-				m.saveDataArray(TEST_METER_1_REG_102, 102);
+				m.saveDataArray(TEST_METER_1_REG_99, 99);
 				m.saveDataArray(TEST_CONFIG_1_REG_4000, 4000);
 				return true;
 			}
@@ -196,4 +204,102 @@ public class ION6200DataTests {
 		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), equalTo(144130000L));
 	}
 
+	@Test
+	public void activePower() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Power", data.getActivePower(), equalTo(8650));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase power a", phaseData.getActivePower(), equalTo(7420));
+
+		phaseData = data.accessorForPhase(PhaseB);
+		assertThat("Phase power b", phaseData.getActivePower(), equalTo(-3550));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase power c", phaseData.getActivePower(), equalTo(4770));
+	}
+
+	@Test
+	public void activePowerReversed() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Power reversed", data.reversed().getActivePower(), equalTo(-8650));
+
+		assertThat("Reversed phase power a", data.reversed().accessorForPhase(PhaseA).getActivePower(),
+				equalTo(-7420));
+		assertThat("Phase power a reversed", data.accessorForPhase(PhaseA).reversed().getActivePower(),
+				equalTo(-7420));
+
+		assertThat("Reversed phase power b", data.reversed().accessorForPhase(PhaseB).getActivePower(),
+				equalTo(3550));
+		assertThat("Phase power b reversed", data.accessorForPhase(PhaseB).reversed().getActivePower(),
+				equalTo(3550));
+
+		assertThat("Reversed phase power c", data.reversed().accessorForPhase(PhaseC).getActivePower(),
+				equalTo(-4770));
+		assertThat("Phase power c reversed", data.accessorForPhase(PhaseC).reversed().getActivePower(),
+				equalTo(-4770));
+	}
+
+	@Test
+	public void energyDelivered() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Active energy delievered", data.getActiveEnergyDelivered(), equalTo(421435000L));
+
+		assertThat("Active energy delivered reversed", data.reversed().getActiveEnergyDelivered(),
+				equalTo(74520000L));
+	}
+
+	@Test
+	public void energyReceived() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Active energy receieved", data.getActiveEnergyReceived(), equalTo(74520000L));
+
+		assertThat("Active energy received reversed", data.reversed().getActiveEnergyReceived(),
+				equalTo(421435000L));
+	}
+
+	@Test
+	public void current() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Current", data.getCurrent(), equalTo(34.6f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase current a", phaseData.getCurrent(), equalTo(49.0f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Phase current b", phaseData.getCurrent(), equalTo(27.5f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase current c", phaseData.getCurrent(), equalTo(27.4f));
+	}
+
+	@Test
+	public void voltage() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Voltage", data.getVoltage(), equalTo(283.1f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Phase voltage a", phaseData.getVoltage(), equalTo(282.9f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Phase voltage b", phaseData.getVoltage(), equalTo(283.0f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Phase voltage c", phaseData.getVoltage(), equalTo(283.3f));
+	}
+
+	@Test
+	public void lineVoltage() {
+		ION6200DataAccessor data = getTestDataInstance();
+		assertThat("Line voltage", data.getLineVoltage(), equalTo(490.4f));
+
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		assertThat("Line voltage ab", phaseData.getLineVoltage(), equalTo(492.4f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		assertThat("Line voltage bc", phaseData.getLineVoltage(), equalTo(489.4f));
+
+		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		assertThat("Line voltage ca", phaseData.getLineVoltage(), equalTo(489.2f));
+	}
 }

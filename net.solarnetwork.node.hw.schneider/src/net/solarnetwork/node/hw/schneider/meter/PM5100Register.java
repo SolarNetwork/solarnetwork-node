@@ -36,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public enum PM5100Register implements ModbusReference {
@@ -81,10 +81,49 @@ public enum PM5100Register implements ModbusReference {
 	// Meter data
 
 	/** Current average, reported in A. */
+	MeterCurrentPhaseA(2999, Float32),
+
+	/** Current average, reported in A. */
+	MeterCurrentPhaseB(3001, Float32),
+
+	/** Current average, reported in A. */
+	MeterCurrentPhaseC(3003, Float32),
+
+	/** Current average, reported in A. */
 	MeterCurrentAverage(3009, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineLinePhaseAPhaseB(3019, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineLinePhaseBPhaseC(3021, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineLinePhaseCPhaseA(3023, Float32),
+
+	/** Line-to-neutral voltage average, reported in V. */
+	MeterVoltageLineLineAverage(3025, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineNeutralPhaseA(3027, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineNeutralPhaseB(3029, Float32),
+
+	/** Line-to-neutral voltage for phase A, reported in V. */
+	MeterVoltageLineNeutralPhaseC(3031, Float32),
 
 	/** Line-to-neutral voltage average, reported in V. */
 	MeterVoltageLineNeutralAverage(3035, Float32),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseA(3053, Float32),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseB(3055, Float32),
+
+	/** Active power total, reported in kW. */
+	MeterActivePowerPhaseC(3057, Float32),
 
 	/** Active power total, reported in kW. */
 	MeterActivePowerTotal(3059, Float32),
@@ -184,6 +223,7 @@ public enum PM5100Register implements ModbusReference {
 	 * 
 	 * @return the word length
 	 */
+	@Override
 	public int getWordLength() {
 		return wordLength;
 	}

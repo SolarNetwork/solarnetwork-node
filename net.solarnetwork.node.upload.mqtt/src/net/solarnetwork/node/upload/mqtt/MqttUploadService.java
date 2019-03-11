@@ -49,6 +49,7 @@ import net.solarnetwork.node.io.mqtt.support.MqttServiceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
@@ -208,6 +209,21 @@ public class MqttUploadService extends MqttServiceSupport
 		client.subscribe(instructionTopic);
 	}
 
+	private void publishInstructionAck(Instruction instr) {
+		IMqttClient client = getClient();
+		if ( client != null ) {
+			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, identityService.getNodeId());
+			try {
+				ObjectMapper objectMapper = getObjectMapper();
+
+				client.publish(topic, objectMapper.writeValueAsBytes(instr), 1, false);
+			} catch ( MqttException | IOException e ) {
+				log.warn("Error posting instruction status {} via MQTT @ {}: {}", instr,
+						client.getServerURI(), e.getMessage());
+			}
+		}
+	}
+
 	private void postInstructionAcks(List<Instruction> instructions) {
 		if ( instructions == null || instructions.isEmpty() ) {
 			return;
@@ -275,7 +291,12 @@ public class MqttUploadService extends MqttServiceSupport
 						try {
 							InstructionStatus status = null;
 							if ( executor != null ) {
-								// execute immediately with our executor
+								// execute immediately with our executor; pass Executing status back first
+								publishInstructionAck(new BasicInstruction(instr.getId(),
+										instr.getTopic(), instr.getInstructionDate(),
+										instr.getRemoteInstructionId(), instr.getInstructorId(),
+										new BasicInstructionStatus(instr.getId(),
+												InstructionState.Executing, new Date())));
 								status = executor.executeInstruction(instr);
 							}
 							if ( status == null ) {

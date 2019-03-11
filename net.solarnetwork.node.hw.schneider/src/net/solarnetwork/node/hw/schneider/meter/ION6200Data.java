@@ -24,8 +24,10 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import java.math.BigDecimal;
+import java.util.Map;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -178,8 +180,17 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		if ( phase == ACPhase.Total ) {
 			return this;
 		}
-		// TODO
-		throw new UnsupportedOperationException("Phase measurements not supported yet.");
+		return new PhaseMeterDataAccessor(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		return dataAccessorForPhase(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return new ReversedMeterDataAccessor(this);
 	}
 
 	@Override
@@ -309,6 +320,11 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		return getVoltageValue(ION6200Register.MeterVoltageLineNeutralAverage);
 	}
 
+	@Override
+	public Float getLineVoltage() {
+		return getVoltageValue(ION6200Register.MeterVoltageLineLineAverage);
+	}
+
 	private Long getEnergyValue(ION6200Register reg) {
 		Long v = getInt32(reg.getAddress());
 		if ( v == null ) {
@@ -348,4 +364,315 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		return null;
 	}
 
+	private class PhaseMeterDataAccessor implements ION6200DataAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterDataAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return ION6200Data.this.getDeviceInfo();
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return ION6200Data.this.getSerialNumber();
+		}
+
+		@Override
+		public Integer getFirmwareRevision() {
+			return ION6200Data.this.getFirmwareRevision();
+		}
+
+		@Override
+		public Integer getDeviceType() {
+			return ION6200Data.this.getDeviceType();
+		}
+
+		@Override
+		public ION6200VoltsMode getVoltsMode() {
+			return ION6200Data.this.getVoltsMode();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return ION6200Data.this.getDataTimestamp();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return ION6200Data.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return new ReversedMeterDataAccessor(this);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return ION6200Data.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getCurrentValue(ION6200Register.MeterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getCurrentValue(ION6200Register.MeterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getCurrentValue(ION6200Register.MeterCurrentPhaseC);
+					break;
+
+				default:
+					n = ION6200Data.this.getCurrent();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					n = ION6200Data.this.getVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineLinePhaseAPhaseB);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineLinePhaseBPhaseC);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(ION6200Register.MeterVoltageLineLinePhaseCPhaseA);
+					break;
+
+				default:
+					n = ION6200Data.this.getLineVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return ION6200Data.this.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getPowerValue(ION6200Register.MeterActivePowerPhaseA);
+					break;
+
+				case PhaseB:
+					n = getPowerValue(ION6200Register.MeterActivePowerPhaseB);
+					break;
+
+				case PhaseC:
+					n = getPowerValue(ION6200Register.MeterActivePowerPhaseC);
+					break;
+
+				default:
+					n = ION6200Data.this.getActivePower();
+			}
+			return n;
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return ION6200Data.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return ION6200Data.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return ION6200Data.this.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return ION6200Data.this.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return ION6200Data.this.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return ION6200Data.this.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return ION6200Data.this.getApparentEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return ION6200Data.this.getActiveEnergyReceived();
+		}
+
+	}
+
+	private static class ReversedMeterDataAccessor implements ION6200DataAccessor {
+
+		private final ION6200DataAccessor delegate;
+
+		private ReversedMeterDataAccessor(ION6200DataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return new ReversedMeterDataAccessor((ION6200DataAccessor) delegate.accessorForPhase(phase));
+		}
+
+		@Override
+		public Integer getDeviceType() {
+			return delegate.getDeviceType();
+		}
+
+		@Override
+		public ION6200VoltsMode getVoltsMode() {
+			return delegate.getVoltsMode();
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return delegate.getSerialNumber();
+		}
+
+		@Override
+		public Integer getFirmwareRevision() {
+			return delegate.getFirmwareRevision();
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
+		}
+
+	}
 }

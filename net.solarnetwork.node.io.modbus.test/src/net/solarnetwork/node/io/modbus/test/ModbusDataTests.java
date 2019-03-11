@@ -22,11 +22,15 @@
 
 package net.solarnetwork.node.io.modbus.test;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Map;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -38,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class ModbusDataTests {
 
@@ -437,5 +441,28 @@ public class ModbusDataTests {
 		String str = d.dataDebugString();
 		assertThat("Debug string", str,
 				equalTo("ModbusData{\n\t    0:       , 0xABCD\n\t    2: 0xFEDC, 0x1122\n}"));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void unsignedDataMap() {
+		ModbusData d = new ModbusData();
+		d.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { 0xABCD, 0xFEDC, 0x1122, 0x3456 }, 0);
+				m.saveDataArray(new int[] { 0x9999 }, 9); // throw in a lone odd word
+				m.saveDataArray(new int[] { 0xFF01, 0xFF02, 0xFF03, 0xFF04, 0xFF05 }, 1000); // end in odd word
+				return false;
+			}
+		});
+
+		Map<Integer, Integer> dataMap = d.getUnsignedDataMap();
+		assertThat("Data map size", dataMap.entrySet(), hasSize(10));
+		assertThat("Data map contains", dataMap,
+				allOf(hasEntry(0, 0xABCD), hasEntry(1, 0xFEDC), hasEntry(2, 0x1122), hasEntry(3, 0x3456),
+						hasEntry(9, 0x9999), hasEntry(1000, 0xFF01), hasEntry(1001, 0xFF02),
+						hasEntry(1002, 0xFF03), hasEntry(1003, 0xFF04), hasEntry(1004, 0xFF05)));
 	}
 }

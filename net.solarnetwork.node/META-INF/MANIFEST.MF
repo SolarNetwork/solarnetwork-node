@@ -4,19 +4,19 @@ Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.63.0
+Bundle-Version: 1.64.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node;version="1.26.0",
  net.solarnetwork.node.backup;version="1.6.3",
  net.solarnetwork.node.dao;version="1.8.0",
- net.solarnetwork.node.domain;version="1.15.0",
+ net.solarnetwork.node.domain;version="1.16.0",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.reactor;version="1.4.0",
- net.solarnetwork.node.reactor.support;version="1.4.0",
+ net.solarnetwork.node.reactor.support;version="1.4.1",
  net.solarnetwork.node.settings;version="1.10.0",
- net.solarnetwork.node.settings.support;version="1.9.0",
+ net.solarnetwork.node.settings.support;version="1.9.1",
  net.solarnetwork.node.setup;version="1.12.0",
  net.solarnetwork.node.support;version="1.15.1",
  net.solarnetwork.node.util;version="1.7.2"
@@ -33,7 +33,7 @@ Import-Package:
  javax.xml.transform.dom,
  javax.xml.transform.stream,
  javax.xml.xpath,
- net.solarnetwork.domain;version="1.12.0",
+ net.solarnetwork.domain;version="1.16.0",
  net.solarnetwork.support;version="1.0.0",
  net.solarnetwork.util;version="1.26.0",
  org.apache.commons.codec;version="[1.7,2.0)",
@@ -62,6 +62,7 @@ Import-Package:
  org.springframework.core.io;version="[4.2,5.0)",
  org.springframework.core.io.support;version="[4.2,5.0)",
  org.springframework.core.task;version="[4.2,5.0)",
+ org.springframework.core.task.support;version="[4.2,5.0)",
  org.springframework.dao;version="[4.2,5.0)",
  org.springframework.messaging;version="[4.2,5.0)",
  org.springframework.messaging.core;version="[4.2,5.0)",

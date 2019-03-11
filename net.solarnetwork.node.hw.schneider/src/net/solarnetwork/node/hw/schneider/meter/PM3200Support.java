@@ -37,6 +37,7 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
@@ -59,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 
@@ -100,7 +101,8 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 * @return the meter name, or <em>null</em> if not available
 	 */
 	public String getMeterName(ModbusConnection conn) {
-		return conn.readString(ADDR_SYSTEM_METER_NAME, 20, true, ModbusConnection.UTF8_CHARSET);
+		return conn.readString(ModbusReadFunction.ReadHoldingRegister, ADDR_SYSTEM_METER_NAME, 20, true,
+				ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -111,7 +113,8 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 * @return the meter model, or <em>null</em> if not available
 	 */
 	public String getMeterModel(ModbusConnection conn) {
-		return conn.readString(ADDR_SYSTEM_METER_MODEL, 20, true, ModbusConnection.UTF8_CHARSET);
+		return conn.readString(ModbusReadFunction.ReadHoldingRegister, ADDR_SYSTEM_METER_MODEL, 20, true,
+				ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -122,7 +125,8 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 * @return the meter manufacturer, or <em>null</em> if not available
 	 */
 	public String getMeterManufacturer(ModbusConnection conn) {
-		return conn.readString(ADDR_SYSTEM_METER_MANUFACTURER, 20, true, ModbusConnection.UTF8_CHARSET);
+		return conn.readString(ModbusReadFunction.ReadHoldingRegister, ADDR_SYSTEM_METER_MANUFACTURER,
+				20, true, ModbusConnection.UTF8_CHARSET);
 	}
 
 	/**
@@ -134,7 +138,8 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 */
 	public Long getMeterSerialNumber(ModbusConnection conn) {
 		Long result = null;
-		Integer[] data = conn.readValues(ADDR_SYSTEM_METER_SERIAL_NUMBER, 2);
+		int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				ADDR_SYSTEM_METER_SERIAL_NUMBER, 2);
 		if ( data != null && data.length == 2 ) {
 			int longValue = ModbusHelper.getLongWord(data[0], data[1]);
 			result = (long) longValue;
@@ -150,8 +155,9 @@ public class PM3200Support extends ModbusDeviceDatumDataSourceSupport {
 	 * @return the meter manufacture date, or <em>null</em> if not available
 	 */
 	public LocalDateTime getMeterManufactureDate(ModbusConnection conn) {
-		int[] data = conn.readInts(ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4);
-		return parseDateTime(data);
+		int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+				ADDR_SYSTEM_METER_MANUFACTURE_DATE, 4);
+		return DataUtils.parseDateTime(data);
 	}
 
 	@Override

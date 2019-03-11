@@ -37,6 +37,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.SSLService;
@@ -46,7 +47,7 @@ import net.solarnetwork.util.OptionalService;
  * Helper base class for MQTT client based services.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
@@ -54,6 +55,9 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	public static final String DEFAULT_PERSISTENCE_PATH = "var/mqtt";
 
 	private static final long MAX_CONNECT_DELAY_MS = 120000L;
+
+	private int keepAliveInterval = MqttConnectOptions.KEEP_ALIVE_INTERVAL_DEFAULT;
+	private MessageSource messageSource;
 
 	private final ObjectMapper objectMapper;
 	private final TaskScheduler taskScheduler;
@@ -234,6 +238,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 		MqttConnectOptions connOptions = new MqttConnectOptions();
 		connOptions.setCleanSession(true);
 		connOptions.setAutomaticReconnect(true);
+		connOptions.setKeepAliveInterval(keepAliveInterval);
 
 		final SSLService sslService = (sslServiceOpt != null ? sslServiceOpt.service() : null);
 		if ( sslService != null ) {
@@ -380,6 +385,56 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	 */
 	public void setPersistencePath(String persistencePath) {
 		this.persistencePath = persistencePath;
+	}
+
+	/**
+	 * Get the configured {@link MessageSource}.
+	 * 
+	 * @return the message source, or {@literal null}
+	 * @since 1.1
+	 */
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set a {@link MessageSource} to use for resolving localized messages.
+	 * 
+	 * @param messageSource
+	 *        the message source to use
+	 * @since 1.1
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get the MQTT keep-alive interval, in seconds.
+	 * 
+	 * @return the keep-alive interval
+	 * @since 1.1
+	 */
+	public int getKeepAliveInterval() {
+		return keepAliveInterval;
+	}
+
+	/**
+	 * Set a MQTT keep-alive interval, in seconds.
+	 * 
+	 * <p>
+	 * This interval is used by the MQTT client to issue small PING packets.
+	 * </p>
+	 * 
+	 * @param keepAliveInterval
+	 *        the interval, in seconds, or {@literal 0} to disable; defaults to
+	 *        {@link MqttConnectOptions#KEEP_ALIVE_INTERVAL_DEFAULT}
+	 * @since 1.1
+	 */
+	public void setKeepAliveInterval(int keepAliveInterval) {
+		if ( keepAliveInterval < 0 ) {
+			return;
+		}
+		this.keepAliveInterval = keepAliveInterval;
 	}
 
 }

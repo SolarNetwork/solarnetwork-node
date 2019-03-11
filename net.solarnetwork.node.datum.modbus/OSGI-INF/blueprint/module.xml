@@ -45,6 +45,11 @@
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
 	
+	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -114,6 +119,7 @@
 											</property>
 										</bean>	
 									</property>
+									<property name="expressionServices" ref="expressionServices"/>
 								</bean>
 							</entry>
 						</map>

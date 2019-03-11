@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.schneider.ion6200;
 
 import java.util.Date;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
@@ -31,9 +33,9 @@ import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
  * Datum for the ION6200 meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class ION6200Datum extends GeneralNodeACEnergyDatum {
+public class ION6200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
 	private final ION6200DataAccessor data;
 	private final boolean backwards;
@@ -86,6 +88,65 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum {
 	 */
 	public ION6200DataAccessor getData() {
 		return data;
+	}
+
+	@Override
+	public long getDataTimestamp() {
+		return data.getDataTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return data.getDeviceInfo();
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
+		}
+		return phaseData;
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return data.reversed();
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return data.getActivePower();
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return data.getActiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return data.getActiveEnergyReceived();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return data.getApparentEnergyDelivered();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return data.getApparentEnergyReceived();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return data.getReactiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return data.getReactiveEnergyReceived();
 	}
 
 }
