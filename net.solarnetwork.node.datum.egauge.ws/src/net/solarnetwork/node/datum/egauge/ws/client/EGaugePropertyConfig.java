@@ -189,7 +189,7 @@ public class EGaugePropertyConfig {
 	 */
 	public synchronized ExpressionServiceExpression getExpression(Iterable<ExpressionService> services) {
 		for ( ExpressionService service : services ) {
-			if ( service != null && expressionServiceId.equalsIgnoreCase(service.getUid()) ) {
+			if ( service != null && service.getUid().equalsIgnoreCase(expressionServiceId) ) {
 				Expression expr = cachedExpression;
 				if ( expr == null ) {
 					expr = service.parseExpression(expression);
