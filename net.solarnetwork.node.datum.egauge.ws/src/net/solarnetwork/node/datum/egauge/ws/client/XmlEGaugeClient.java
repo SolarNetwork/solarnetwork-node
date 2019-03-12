@@ -232,7 +232,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		final ExpressionServiceExpression expr;
 		try {
 			expr = propertyConfig
-
 					.getExpression(expressionServices != null ? expressionServices.services() : null);
 		} catch ( ExpressionException e ) {
 			log.warn("Error parsing property [{}] expression `{}`: {}", propertyConfig.getPropertyKey(),
