@@ -58,7 +58,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ModelDataFactory {
 
@@ -270,9 +270,9 @@ public class ModelDataFactory {
 					} catch ( ClassNotFoundException | NoSuchMethodException | SecurityException
 							| InstantiationException | IllegalAccessException | IllegalArgumentException
 							| InvocationTargetException e ) {
-						log.error(
-								"Error loading SunSpec ModelAccessor class {} for model {} using class loader {}",
-								accessorClassName, modelId, cl, e);
+						log.warn(
+								"Error loading SunSpec ModelAccessor class {} for model {} using class loader {}: {}",
+								accessorClassName, modelId, cl, e.toString());
 					}
 				}
 			}
