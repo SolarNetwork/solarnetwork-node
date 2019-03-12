@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing PVI-14TL series data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
@@ -214,6 +214,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		return (a != null && b != null && c != null
 				? (a.floatValue() + b.floatValue() + c.floatValue()) / 10.0f
 				: null);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
 	}
 
 	@Override

@@ -31,7 +31,7 @@ import net.solarnetwork.util.SerializeIgnore;
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
 
@@ -265,7 +265,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	/**
 	 * Get an export energy value.
 	 * 
-	 * @return An energy value, in watts, or <em>null</em> if none available.
+	 * @return An energy value, in watts, or {@literal null} if none available.
 	 * @since 1.1
 	 */
 	@JsonIgnore
@@ -278,7 +278,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	 * Set an export energy value.
 	 * 
 	 * @param wattHourReading
-	 *        An energy value, in watts, or <em>null</em> if none available.
+	 *        An energy value, in watts, or {@literal null} if none available.
 	 * @since 1.1
 	 */
 	public void setReverseWattHourReading(Long wattHourReading) {
@@ -286,4 +286,28 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 				wattHourReading);
 	}
 
+	/**
+	 * Get a neutral current value.
+	 * 
+	 * @return the current value, in amperes, or {@literal null} if none
+	 *         available.
+	 * @since 1.3
+	 */
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getNeutralCurrent() {
+		return getInstantaneousSampleFloat(NEUTRAL_CURRENT_KEY);
+	}
+
+	/**
+	 * Set a neutral current value.
+	 * 
+	 * @param current
+	 *        the current value to set, in amperes
+	 * @since 1.3
+	 */
+	public void setNeutralCurrent(Float current) {
+		putInstantaneousSampleValue(NEUTRAL_CURRENT_KEY, current);
+	}
 }

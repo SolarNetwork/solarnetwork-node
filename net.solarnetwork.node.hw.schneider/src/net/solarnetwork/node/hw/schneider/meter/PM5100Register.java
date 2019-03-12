@@ -36,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.4
  */
 public enum PM5100Register implements ModbusReference {
@@ -88,6 +88,20 @@ public enum PM5100Register implements ModbusReference {
 
 	/** Current average, reported in A. */
 	MeterCurrentPhaseC(3003, Float32),
+
+	/**
+	 * Neutral current, reported in A.
+	 * 
+	 * @since 1.2
+	 */
+	MeterCurrentNeutral(3005, Float32),
+
+	/**
+	 * Ground current, reported in A.
+	 * 
+	 * @since 1.2
+	 */
+	MeterCurrentGround(3007, Float32),
 
 	/** Current average, reported in A. */
 	MeterCurrentAverage(3009, Float32),

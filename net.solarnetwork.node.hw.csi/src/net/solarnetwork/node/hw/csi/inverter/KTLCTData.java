@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 1.2
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -191,6 +191,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		return (a != null && b != null && c != null
 				? (a.floatValue() + b.floatValue() + c.floatValue()) / 10.0f
 				: null);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
 	}
 
 	@Override

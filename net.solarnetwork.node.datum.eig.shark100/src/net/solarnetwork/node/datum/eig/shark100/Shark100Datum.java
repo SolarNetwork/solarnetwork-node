@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
  * Datum for the Shark 100 meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
@@ -64,6 +64,7 @@ public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyD
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
 		setCurrent(data.getCurrent());
+		setNeutralCurrent(data.getNeutralCurrent());
 		setPowerFactor(data.getPowerFactor());
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());

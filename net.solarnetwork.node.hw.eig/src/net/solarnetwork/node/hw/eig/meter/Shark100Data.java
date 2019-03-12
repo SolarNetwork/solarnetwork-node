@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
@@ -194,6 +194,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		return (n != null ? Math.abs(n.longValue()) : null);
 	}
 
+	private Float getCurrentValue(Shark100Register reg) {
+		Number n = getNumber(reg);
+		return (n != null ? n.floatValue() : null);
+	}
+
 	@Override
 	public SharkPowerEnergyFormat getPowerEnergyFormat() {
 		Number n = getNumber(Shark100Register.ConfigPowerEnergyFormats);
@@ -318,6 +323,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		return null;
 	}
 
+	@Override
+	public Float getNeutralCurrent() {
+		return getCurrentValue(Shark100Register.MeterNeutralCurrent);
+	}
+
 	private class PhaseMeterDataAccessor implements Shark100DataAccessor {
 
 		private final ACPhase phase;
@@ -379,24 +389,36 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
 		@Override
 		public Float getCurrent() {
-			Number n = null;
 			switch (phase) {
 				case PhaseA:
-					n = getNumber(Shark100Register.MeterCurrentPhaseA);
-					break;
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseA);
 
 				case PhaseB:
-					n = getNumber(Shark100Register.MeterCurrentPhaseB);
-					break;
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseB);
 
 				case PhaseC:
-					n = getNumber(Shark100Register.MeterCurrentPhaseC);
-					break;
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseC);
 
 				default:
 					return Shark100Data.this.getCurrent();
 			}
-			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			switch (phase) {
+				case PhaseA:
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseA);
+
+				case PhaseB:
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseB);
+
+				case PhaseC:
+					return getCurrentValue(Shark100Register.MeterCurrentPhaseC);
+
+				default:
+					return Shark100Data.this.getNeutralCurrent();
+			}
 		}
 
 		@Override
@@ -557,6 +579,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		@Override
 		public Float getCurrent() {
 			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
 		}
 
 		@Override

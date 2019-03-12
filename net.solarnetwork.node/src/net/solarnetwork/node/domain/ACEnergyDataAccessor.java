@@ -26,7 +26,7 @@ package net.solarnetwork.node.domain;
  * API for accessing AC energy data from an object, such as a power meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.60
  */
 public interface ACEnergyDataAccessor extends DataAccessor {
@@ -61,6 +61,14 @@ public interface ACEnergyDataAccessor extends DataAccessor {
 	 * @return the current
 	 */
 	Float getCurrent();
+
+	/**
+	 * Get the neutral current, in A.
+	 * 
+	 * @return the neutral current
+	 * @since 1.2
+	 */
+	Float getNeutralCurrent();
 
 	/**
 	 * Get the voltage, in V.
