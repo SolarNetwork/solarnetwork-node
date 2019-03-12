@@ -47,7 +47,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1s
  */
 public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -55,6 +55,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	private String sourceId = "Shark 100";
 	private boolean backwards = false;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -97,8 +98,11 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 			if ( currSample == null ) {
 				return null;
 			}
-			Shark100Datum d = new Shark100Datum(
-					backwards ? currSample.reversedDataAccessor() : currSample, ACPhase.Total);
+			Shark100Datum d = new Shark100Datum(currSample.reversedDataAccessor(), ACPhase.Total,
+					backwards);
+			if ( this.includePhaseMeasurements ) {
+				d.populatePhaseMeasurementProperties(currSample);
+			}
 			d.setSourceId(this.sourceId);
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
@@ -153,6 +157,8 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements",
+				defaults.includePhaseMeasurements));
 
 		return results;
 	}
@@ -199,6 +205,16 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	 */
 	public void setBackwards(boolean backwards) {
 		this.backwards = backwards;
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
 	}
 
 }

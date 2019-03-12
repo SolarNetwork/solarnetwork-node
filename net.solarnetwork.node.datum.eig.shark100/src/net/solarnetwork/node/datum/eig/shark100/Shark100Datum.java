@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.eig.shark100;
 
 import java.util.Date;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
@@ -33,9 +35,10 @@ import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
  * @author matt
  * @version 1.1
  */
-public class Shark100Datum extends GeneralNodeACEnergyDatum {
+public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
 	private final Shark100DataAccessor data;
+	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
@@ -43,16 +46,18 @@ public class Shark100Datum extends GeneralNodeACEnergyDatum {
 	 * @param data
 	 *        the sample data
 	 */
-	public Shark100Datum(Shark100DataAccessor data, ACPhase phase) {
+	public Shark100Datum(Shark100DataAccessor data, ACPhase phase, boolean backwards) {
 		super();
 		this.data = data;
+		this.backwards = backwards;
 		if ( data.getDataTimestamp() > 0 ) {
 			setCreated(new Date(data.getDataTimestamp()));
 		}
-		populateMeasurements(data, phase);
+		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
+		populateMeasurements(phaseData, phase);
 	}
 
-	private void populateMeasurements(Shark100DataAccessor data, ACPhase phase) {
+	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
 		assert phase == ACPhase.Total;
 		setPhase(phase);
 		setFrequency(data.getFrequency());
@@ -75,4 +80,64 @@ public class Shark100Datum extends GeneralNodeACEnergyDatum {
 	public Shark100DataAccessor getData() {
 		return data;
 	}
+
+	@Override
+	public long getDataTimestamp() {
+		return data.getDataTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return data.getDeviceInfo();
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
+		}
+		return phaseData;
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return data.reversed();
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return data.getActivePower();
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return data.getActiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return data.getActiveEnergyReceived();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return data.getApparentEnergyDelivered();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return data.getApparentEnergyReceived();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return data.getReactiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return data.getReactiveEnergyReceived();
+	}
+
 }
