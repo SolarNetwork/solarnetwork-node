@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider PM5100 Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.schneider.pm5100
 Bundle-Description: Collect data from Schneider Electric PM51XX series power meters.
-Bundle-Version: 1.2.0
+Bundle-Version: 1.2.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.schneider.pm5100
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

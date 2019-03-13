@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
  * Datum for the PM5100 meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PM5100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
@@ -70,6 +70,7 @@ public class PM5100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDat
 		setPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
+		setLineVoltage(data.getLineVoltage());
 		setCurrent(data.getCurrent());
 		setNeutralCurrent(data.getNeutralCurrent());
 		setPowerFactor(data.getPowerFactor());
