@@ -42,7 +42,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, Identifiable {
@@ -103,7 +103,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 				|| (lastSaveSetting != null
 						&& createdSettings.replace(sourceId, lastSaveSetting, newSaveSetting)) ) {
 
-			Setting s = new Setting(settingKey, sourceId, Long.toString(now, 16),
+			Setting s = new Setting(settingKey, sourceId, newSaveSetting,
 					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
 			getSettingDao().storeSetting(s);
 		}
