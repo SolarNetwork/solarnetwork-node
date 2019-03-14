@@ -22,13 +22,15 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import net.solarnetwork.node.domain.DataAccessor;
+
 /**
  * API for accessing common model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface CommonModelAccessor extends ModelAccessor {
+public interface CommonModelAccessor extends ModelAccessor, DataAccessor {
 
 	@Override
 	default int getFixedBlockLength() {

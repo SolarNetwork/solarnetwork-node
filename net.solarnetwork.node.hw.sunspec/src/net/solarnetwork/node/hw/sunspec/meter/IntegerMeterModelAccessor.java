@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.util.Map;
 import java.util.Set;
 import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Data object for an integer meter model.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class IntegerMeterModelAccessor extends BaseModelAccessor implements MeterModelAccessor {
 
@@ -150,8 +151,19 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	}
 
 	@Override
+	public Float getNeutralCurrent() {
+		// not supported in SunSpec
+		return null;
+	}
+
+	@Override
 	public Float getVoltage() {
 		return getVoltageValue(IntegerMeterModelRegister.VoltageLineNeutralAverage);
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		return getVoltageValue(IntegerMeterModelRegister.VoltageLineLineAverage);
 	}
 
 	@Override
@@ -212,6 +224,41 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(IntegerMeterModelRegister.EventsBitmask);
 		return MeterModelEvent.forBitmask(n.longValue());
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getActiveEnergyImported();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return getActiveEnergyExported();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return getApparentEnergyImported();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return getApparentEnergyExported();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return getReactiveEnergyImported();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return getReactiveEnergyExported();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return getData().getDeviceInfo();
 	}
 
 	private class PhaseMeterModelAccessor implements MeterModelAccessor {
@@ -296,6 +343,11 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
+		public Float getNeutralCurrent() {
+			return null;
+		}
+
+		@Override
 		public Float getVoltage() {
 			switch (phase) {
 				case PhaseA:
@@ -309,6 +361,23 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 				default:
 					return IntegerMeterModelAccessor.this.getVoltage();
+			}
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseAPhaseB);
+
+				case PhaseB:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseBPhaseC);
+
+				case PhaseC:
+					return getVoltageValue(IntegerMeterModelRegister.VoltagePhaseCPhaseA);
+
+				default:
+					return IntegerMeterModelAccessor.this.getLineVoltage();
 			}
 		}
 
@@ -523,6 +592,41 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		@Override
 		public Set<ModelEvent> getEvents() {
 			return IntegerMeterModelAccessor.this.getEvents();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return getActiveEnergyImported();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return getActiveEnergyExported();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return getApparentEnergyImported();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return getApparentEnergyExported();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return getReactiveEnergyImported();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return getReactiveEnergyExported();
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return IntegerMeterModelAccessor.this.getDeviceInfo();
 		}
 
 	}

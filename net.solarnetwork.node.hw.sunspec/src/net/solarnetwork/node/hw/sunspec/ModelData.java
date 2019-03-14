@@ -23,7 +23,9 @@
 package net.solarnetwork.node.hw.sunspec;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
@@ -139,6 +141,30 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	@Override
 	public ModbusData copy() {
 		return new ModelData(this);
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		ModelData data = getSnapshot();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String manufacturer = data.getManufacturer();
+		if ( manufacturer != null ) {
+			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+		}
+		String model = data.getModelName();
+		if ( model != null ) {
+			String version = data.getVersion();
+			if ( version != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+			} else {
+				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+			}
+		}
+		String sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+		}
+		return result;
 	}
 
 	/**
