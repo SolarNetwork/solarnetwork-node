@@ -64,7 +64,7 @@ public class SamplesTransformerSupport {
 	 * A global cache for helping with transformers that require persistence.
 	 */
 	protected static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
-			4);
+			4, 0.9f, 1);
 
 	private String uid;
 	private String groupUID;
