@@ -44,13 +44,14 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
 
 	private boolean backwards = false;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -94,6 +95,9 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		}
 		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
 		SunSpecMeterDatum d = new SunSpecMeterDatum(data, ACPhase.Total, this.backwards);
+		if ( this.includePhaseMeasurements ) {
+			d.populatePhaseMeasurementProperties(data);
+		}
 		d.setSourceId(getSourceId());
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -137,6 +141,8 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		if ( defaults instanceof SunSpecMeterDatumDataSource ) {
 			SunSpecMeterDatumDataSource mDefaults = (SunSpecMeterDatumDataSource) defaults;
 			results.add(new BasicToggleSettingSpecifier("backwards", mDefaults.backwards));
+			results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements",
+					mDefaults.includePhaseMeasurements));
 		}
 
 		return results;
@@ -192,4 +198,14 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		this.backwards = backwards;
 	}
 
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 1.2
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
+	}
 }
