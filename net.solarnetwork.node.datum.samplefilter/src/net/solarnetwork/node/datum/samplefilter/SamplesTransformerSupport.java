@@ -42,8 +42,9 @@ import net.solarnetwork.node.support.KeyValuePair;
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
+@SuppressWarnings("deprecation")
 public class SamplesTransformerSupport {
 
 	/** The default value for the {@code settingCacheSecs} property. */
@@ -116,9 +117,11 @@ public class SamplesTransformerSupport {
 	public static GeneralDatumSamples copy(GeneralDatumSamples samples) {
 		GeneralDatumSamples copy = new GeneralDatumSamples(
 				samples.getInstantaneous() != null
-						? new LinkedHashMap<String, Number>(samples.getInstantaneous()) : null,
+						? new LinkedHashMap<String, Number>(samples.getInstantaneous())
+						: null,
 				samples.getAccumulating() != null
-						? new LinkedHashMap<String, Number>(samples.getAccumulating()) : null,
+						? new LinkedHashMap<String, Number>(samples.getAccumulating())
+						: null,
 				samples.getStatus() != null ? new LinkedHashMap<String, Object>(samples.getStatus())
 						: null);
 		copy.setTags(samples.getTags() != null ? new LinkedHashSet<String>(samples.getTags()) : null);
@@ -248,7 +251,7 @@ public class SamplesTransformerSupport {
 	protected ConcurrentMap<String, String> loadSettings(String key) {
 		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
 		if ( result == null ) {
-			SETTING_CACHE.putIfAbsent(key, new ConcurrentHashMap<String, String>(16));
+			SETTING_CACHE.putIfAbsent(key, new ConcurrentHashMap<String, String>(16, 0.9f, 1));
 			result = SETTING_CACHE.get(key);
 		}
 		final long expiry = settingCacheExpiry.get();
@@ -329,7 +332,8 @@ public class SamplesTransformerSupport {
 	public void setSourceId(String sourceIdPattern) {
 		try {
 			this.sourceId = (sourceIdPattern != null
-					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE) : null);
+					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE)
+					: null);
 		} catch ( PatternSyntaxException e ) {
 			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
 			this.sourceId = null;
