@@ -140,6 +140,10 @@
 						</map>
 					</property>
 				</bean>	
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionHandler"/>
+				</bean>	
 			</argument>
 			<property name="messageSource" ref="outstationMessageSource"/>
 			<property name="taskExecutor" ref="taskExecutor"/>
