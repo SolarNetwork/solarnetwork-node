@@ -51,7 +51,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the ION6200 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -62,6 +62,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	private long sampleCacheMs = 5000;
 	private String sourceId = "ION6200";
 	private boolean backwards = false;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -121,6 +122,9 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			return null;
 		}
 		ION6200Datum d = new ION6200Datum(currSample, ACPhase.Total, this.backwards);
+		if ( this.includePhaseMeasurements ) {
+			d.populatePhaseMeasurementProperties(currSample);
+		}
 		d.setSourceId(this.sourceId);
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -214,6 +218,8 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 		results.add(new BasicToggleSettingSpecifier("megawattModel", defaults.sample.isMegawattModel()));
 		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements",
+				defaults.includePhaseMeasurements));
 
 		return results;
 	}
@@ -292,4 +298,14 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		this.backwards = backwards;
 	}
 
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 1.1
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
+	}
 }
