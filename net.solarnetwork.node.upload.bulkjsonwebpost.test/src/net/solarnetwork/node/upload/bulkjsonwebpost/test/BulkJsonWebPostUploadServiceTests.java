@@ -106,7 +106,6 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		reactorService = EasyMock.createMock(ReactorService.class);
 		generalNodeDatumSerializer = new GeneralNodeDatumSerializer();
 
-		@SuppressWarnings("unchecked")
 		List<JsonSerializer<? extends Object>> serializers = Arrays.asList(
 				(JsonSerializer<?>) generalNodeDatumSerializer, new DatumSerializer(),
 				new InstructionSerializer(), new NodeControlInfoSerializer());
