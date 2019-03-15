@@ -290,6 +290,8 @@ public class SourceThrottlingSamplesTransformerTests {
 		result = xform.transformSamples(datum, datum.getSamples());
 		assertThat("Non-filtered 3rd result", result, notNullValue());
 
+		Thread.sleep(100);
+
 		List<Setting> savedSettings = savedSettingCapture.getValues();
 		assertThat("Processed date setting should be persisted twice", savedSettings, hasSize(2));
 		for ( Setting savedSetting : savedSettings ) {
@@ -329,6 +331,8 @@ public class SourceThrottlingSamplesTransformerTests {
 
 		result = xform.transformSamples(datum, datum.getSamples());
 		assertThat("Non-filtered 2rd result", result, notNullValue());
+
+		Thread.sleep(100);
 
 		List<Setting> savedSettings = savedSettingCapture.getValues();
 		assertThat("Processed date setting should be persisted once", savedSettings, hasSize(1));
