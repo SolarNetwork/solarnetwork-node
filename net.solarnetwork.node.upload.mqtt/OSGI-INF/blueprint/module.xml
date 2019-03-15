@@ -24,11 +24,11 @@
 
 	<!-- Get GeneralNodeDatumDao, which we'll wrap as a UploadServiceDatumDao -->
 	<reference id="generalNodeDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
-		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
+		filter="(&amp;(!(mqtt=true))(mode=direct)(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
 		
 	<!-- Get GeneralLocationDatumDao, which we'll wrap as a UploadServiceDatumDao -->
 	<reference id="generalLocationDatumDao" availability="optional" interface="net.solarnetwork.node.dao.DatumDao"
-		filter="(&amp;(!(mqtt=true))(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
+		filter="(&amp;(!(mqtt=true))(mode=direct)(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
 		
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 	
@@ -54,6 +54,11 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
 	</bean>
+	
+	<bean id="samplesTransformService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+	</bean>
 
 	<reference-list id="sampleTransformers" availability="optional" 
 		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
@@ -76,9 +81,7 @@
 		</property>
 		<property name="serializers">
 			<list>
-				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer">
-					<property name="sampleTransformers" ref="sampleTransformers"/>	
-				</bean>
+				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer"/>
 				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
 				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
 				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
@@ -96,6 +99,7 @@
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalNodeDatumDao"/>
 			<argument ref="mqttUploadService"/>
+			<argument ref="samplesTransformService"/>
 		</bean>
 	</service>
 
@@ -109,6 +113,7 @@
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalLocationDatumDao"/>
 			<argument ref="mqttUploadService"/>
+			<argument ref="samplesTransformService"/>
 		</bean>
 	</service>
 
