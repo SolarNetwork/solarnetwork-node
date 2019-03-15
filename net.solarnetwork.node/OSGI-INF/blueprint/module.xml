@@ -175,8 +175,7 @@
 	
 	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService">
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
-			<argument ref="sampleTransformers"/>
-			<argument><null/></argument>
+			<property name="sampleTransformers" ref="sampleTransformers"/>
 		</bean>
 	</service>
 	

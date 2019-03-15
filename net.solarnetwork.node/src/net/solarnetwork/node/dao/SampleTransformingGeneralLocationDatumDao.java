@@ -28,21 +28,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * Proxy DAO for {@link GeneralNodeDatum} that applies sample transforms before
- * persisting.
+ * Proxy DAO for {@link GeneralLocationDatum} that applies sample transforms
+ * before persisting.
  * 
  * @author matt
  * @version 1.0
  * @since 1.66
  */
-public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNodeDatum> {
+public class SampleTransformingGeneralLocationDatumDao implements DatumDao<GeneralLocationDatum> {
 
 	private final OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
-	private final DatumDao<GeneralNodeDatum> delegate;
+	private final DatumDao<GeneralLocationDatum> delegate;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -54,7 +54,7 @@ public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNo
 	 * @param samplesTransformService
 	 *        the transformer service
 	 */
-	public SampleTransformingGeneralNodeDatumDao(DatumDao<GeneralNodeDatum> delegate,
+	public SampleTransformingGeneralLocationDatumDao(DatumDao<GeneralLocationDatum> delegate,
 			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService) {
 		super();
 		this.samplesTransformService = samplesTransformService;
@@ -77,32 +77,33 @@ public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNo
 	 *        ignored
 	 */
 	@SuppressWarnings("unchecked")
-	public SampleTransformingGeneralNodeDatumDao(Object delegate,
+	public SampleTransformingGeneralLocationDatumDao(Object delegate,
 			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService,
 			boolean yesReally) {
-		this((DatumDao<GeneralNodeDatum>) delegate, samplesTransformService);
+		this((DatumDao<GeneralLocationDatum>) delegate, samplesTransformService);
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
+	public Class<? extends GeneralLocationDatum> getDatumType() {
 		return delegate.getDatumType();
 	}
 
 	@Override
-	public void storeDatum(GeneralNodeDatum datum) {
+	public void storeDatum(GeneralLocationDatum datum) {
 		GeneralDatumSamplesTransformService xformService = (samplesTransformService != null
 				? samplesTransformService.service()
 				: null);
 		if ( datum != null && xformService != null && datum.getSamples() != null ) {
 			GeneralDatumSamples samples = xformService.transformSamples(datum, datum.getSamples(), null);
 			if ( samples == null || samples.isEmpty() ) {
-				log.info("Samples transform service filtered out datum {} @ {}; will not persist",
+				log.info(
+						"Samples transform service filtered out location datum {} @ {}; will not persist",
 						datum.getSourceId(), datum.getCreated());
 				return;
 			} else if ( !samples.equals(datum.getSamples()) ) {
-				log.info("Samples transform service modified datum {} @ {} properties to {}",
+				log.info("Samples transform service modified location datum {} @ {} properties to {}",
 						datum.getSourceId(), datum.getCreated(), samples.getSampleData());
-				GeneralNodeDatum copy = (GeneralNodeDatum) datum.clone();
+				GeneralLocationDatum copy = (GeneralLocationDatum) datum.clone();
 				copy.setSamples(samples);
 				delegate.storeDatum(copy);
 				return;
@@ -112,12 +113,12 @@ public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNo
 	}
 
 	@Override
-	public List<GeneralNodeDatum> getDatumNotUploaded(String destination) {
+	public List<GeneralLocationDatum> getDatumNotUploaded(String destination) {
 		return delegate.getDatumNotUploaded(destination);
 	}
 
 	@Override
-	public void setDatumUploaded(GeneralNodeDatum datum, Date date, String destination,
+	public void setDatumUploaded(GeneralLocationDatum datum, Date date, String destination,
 			String trackingId) {
 		delegate.setDatumUploaded(datum, date, destination, trackingId);
 	}

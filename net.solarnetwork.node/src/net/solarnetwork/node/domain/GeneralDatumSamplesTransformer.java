@@ -48,19 +48,6 @@ public interface GeneralDatumSamplesTransformer {
 	String PARAM_TEST_ONLY = "test";
 
 	/**
-	 * A parameter key signaling the date the transform should consider as the
-	 * current time.
-	 * 
-	 * <p>
-	 * The value of this property should be a {@code Long} millisecond epoch
-	 * date.
-	 * </p>
-	 * 
-	 * @since 1.2
-	 */
-	String PARAM_DATE = "date";
-
-	/**
 	 * Transform a samples instance.
 	 * 
 	 * <p>
