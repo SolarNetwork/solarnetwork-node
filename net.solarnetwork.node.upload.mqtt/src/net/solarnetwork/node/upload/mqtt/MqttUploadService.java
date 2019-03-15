@@ -155,8 +155,13 @@ public class MqttUploadService extends MqttServiceSupport
 					return DigestUtils.md5DigestAsHex(
 							String.format("%tQ;%s", data.getCreated(), data.getSourceId()).getBytes());
 				} catch ( MqttException | IOException e ) {
-					log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
-							data, client.getServerURI(), e.getMessage());
+					if ( log.isDebugEnabled() ) {
+						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode",
+								data, client.getServerURI(), e);
+					} else {
+						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
+								data, client.getServerURI(), e.getMessage());
+					}
 				}
 			}
 		}
@@ -193,7 +198,7 @@ public class MqttUploadService extends MqttServiceSupport
 				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
 				props.put(Datum.DATUM_TYPES_PROPERTY, types);
 			}
-			log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
+			log.trace("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
 			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
 		}
 	}
