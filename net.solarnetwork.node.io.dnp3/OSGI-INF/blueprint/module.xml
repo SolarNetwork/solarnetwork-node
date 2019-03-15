@@ -139,7 +139,9 @@
 							<entry key="UID" value="#{T(net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService).DEFAULT_UID}"/>
 						</map>
 					</property>
-				</bean>	
+				</bean>
+			</argument>
+			<argument>
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionHandler"/>
