@@ -47,16 +47,24 @@ import net.solarnetwork.util.OptionalService;
  * Helper base class for MQTT client based services.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
 	/** The default value for the {@code persistencePath} property. */
 	public static final String DEFAULT_PERSISTENCE_PATH = "var/mqtt";
 
+	/**
+	 * The default value for the {@code maxInflight} property.
+	 * 
+	 * @since 1.2
+	 */
+	public static final int DEFAULT_MAX_IN_FLIGHT = 50;
+
 	private static final long MAX_CONNECT_DELAY_MS = 120000L;
 
 	private int keepAliveInterval = MqttConnectOptions.KEEP_ALIVE_INTERVAL_DEFAULT;
+	private int maxInflight = DEFAULT_MAX_IN_FLIGHT;
 	private MessageSource messageSource;
 
 	private final ObjectMapper objectMapper;
@@ -124,6 +132,9 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 						}
 					} catch ( RuntimeException e ) {
 						// ignore
+						if ( log.isDebugEnabled() ) {
+							log.debug("Error creating MQTT client to {}", getMqttUri(), e);
+						}
 					}
 					long delay = sleep.accumulateAndGet(sleep.get() / 2000, (c, s) -> {
 						long d = (s * 2) * 2000;
@@ -155,6 +166,8 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	public synchronized void close() {
 		IMqttClient client = clientRef.get();
 		if ( client != null ) {
+			log.info("Disabling MQTT auto reconnect and disconnecting MQTT connection to {}",
+					client.getServerURI());
 			try {
 				if ( this.connectOptions != null ) {
 					this.connectOptions.setAutomaticReconnect(false);
@@ -239,6 +252,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 		connOptions.setCleanSession(true);
 		connOptions.setAutomaticReconnect(true);
 		connOptions.setKeepAliveInterval(keepAliveInterval);
+		connOptions.setMaxInflight(maxInflight);
 
 		final SSLService sslService = (sslServiceOpt != null ? sslServiceOpt.service() : null);
 		if ( sslService != null ) {
@@ -298,6 +312,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
 		MqttClientPersistence persistence = createMqttClientPersistence();
 		MqttClient c = null;
+		log.info("Creating MQTT client {} to {}", getMqttClientId(), serverUri);
 		try {
 			c = new MqttClient(serverUri, getMqttClientId(), persistence);
 			c.setCallback(this);
@@ -307,7 +322,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 				return c;
 			}
 		} catch ( MqttException e ) {
-			log.warn("Error configuring MQTT client: {}", e.toString());
+			log.warn("Error configuring MQTT client to {}: {}", serverUri, e.toString());
 			if ( c != null ) {
 				clientRef.compareAndSet(c, null);
 			}
@@ -435,6 +450,21 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 			return;
 		}
 		this.keepAliveInterval = keepAliveInterval;
+	}
+
+	/**
+	 * Set the MQTT maximum "in-flight" message value.
+	 * 
+	 * @param maxInflight
+	 *        the maximum in-flight messages; defaults to
+	 *        {@link #DEFAULT_MAX_IN_FLIGHT}
+	 * @since 1.2
+	 */
+	public void setMaxInflight(int maxInflight) {
+		if ( maxInflight < 0 ) {
+			return;
+		}
+		this.maxInflight = maxInflight;
 	}
 
 }
