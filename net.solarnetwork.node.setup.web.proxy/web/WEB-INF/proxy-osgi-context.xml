@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.eclipse.org/gemini/blueprint/schema/blueprint"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd">
+
+	<bean id="webProxyConfigurations" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.setup.web.proxy.WebProxyConfiguration"/>
+	</bean>
+
+	<bean id="proxyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basename" value="net.solarnetwork.node.setup.web.proxy.SimpleWebProxyConfiguration"/>
+	</bean>
+
+	<bean id="proxySettingResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+		<property name="basenames">
+			<list>
+				<value>META-INF/settings/proxy-setting-link</value>
+			</list>
+		</property>
+	</bean>
+
+	<!-- 
+		Inject some JavaScript directly into SolarNode Setup Web. This provides the action
+		to jump to the proxy target in the SolarNode Settings GUI when the custom "Go to proxy"
+		button is pressed.
+	 -->
+	<osgi:service interface="net.solarnetwork.node.setup.SetupResourceProvider">
+		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
+			<property name="resources">
+				<list>
+					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource"> 
+						<constructor-arg value="proxy-settings-integration.js"/>
+						<constructor-arg value="proxy-settings-integration.js"/>
+						<constructor-arg value="net.solarnetwork.node.setup.web.proxy.WebProxyController"/>
+						<constructor-arg value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
+						<constructor-arg value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
+						<constructor-arg value="#{T(net.solarnetwork.node.setup.SetupResource).USER_ROLES}"/>
+					</bean>
+				</list>
+			</property>
+		</bean>
+	</osgi:service>
+	
+	<osgi:service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Web Proxy"/>
+			<property name="factoryUID" value="net.solarnetwork.node.setup.web.proxy.config"/>
+			<property name="messageSource" ref="proxyMessageSource"/>
+		</bean>
+	</osgi:service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.setup.web.proxy.config" autowire-on-update="true">
+		<osgix:interfaces>
+			<value>net.solarnetwork.node.setup.web.proxy.WebProxyConfiguration</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<entry key="settingPid" value="net.solarnetwork.node.setup.web.proxy.config"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.setup.web.proxy.SimpleWebProxyConfiguration">
+			<property name="messageSource" ref="proxyMessageSource"/>
+			<property name="settingResourceProvider" ref="proxySettingResourceProvider"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</beans>
