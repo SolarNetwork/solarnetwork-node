@@ -129,4 +129,9 @@ public class KTLCTDataTests {
 		assertThat("Voltage", data.getLineVoltage(), equalTo(490.7f));
 	}
 
+	@Test
+	public void getWorkMode() {
+		assertThat("Work mode", data.getWorkMode(), equalTo(KTLCTInverterWorkMode.Running));
+	}
+
 }

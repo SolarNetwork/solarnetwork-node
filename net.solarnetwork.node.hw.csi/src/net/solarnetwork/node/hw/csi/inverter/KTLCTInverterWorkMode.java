@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import net.solarnetwork.domain.DeviceOperatingState;
+
 /**
  * Enumeration of inverter work modes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum KTLCTInverterWorkMode {
 
@@ -64,6 +66,32 @@ public enum KTLCTInverterWorkMode {
 	 */
 	public String getDescription() {
 		return description;
+	}
+
+	/**
+	 * Get a device operating state for this work mode.
+	 * 
+	 * @return the device operating state
+	 * @since 1.1
+	 */
+	public DeviceOperatingState asDeviceOperatingState() {
+		switch (this) {
+			case Fault:
+				return DeviceOperatingState.Fault;
+
+			case Standby:
+				return DeviceOperatingState.Standby;
+
+			case Derate:
+				return DeviceOperatingState.Override;
+
+			case Check:
+				return DeviceOperatingState.Starting;
+
+			default:
+				return DeviceOperatingState.Normal;
+
+		}
 	}
 
 	/**

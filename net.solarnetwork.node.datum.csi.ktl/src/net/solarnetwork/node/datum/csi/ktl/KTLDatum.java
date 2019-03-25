@@ -23,10 +23,13 @@
 package net.solarnetwork.node.datum.csi.ktl;
 
 import java.util.Date;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
+import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
 
 /**
  * Extension of {@link GeneralNodePVEnergyDatum} with additional properties
@@ -56,6 +59,16 @@ public class KTLDatum extends GeneralNodePVEnergyDatum {
 	}
 
 	private void populateMeasurements(KTLCTDataAccessor data) {
+		KTLCTInverterWorkMode workMode = data.getWorkMode();
+		DeviceOperatingState state = workMode != null ? workMode.asDeviceOperatingState()
+				: DeviceOperatingState.Unknown;
+
+		// verify in Running/Derate work mode, else invalid data might be collected
+		if ( !(state == DeviceOperatingState.Normal || state == DeviceOperatingState.Override) ) {
+			putStatusSampleValue(Datum.OP_STATE, state.getCode());
+			return;
+		}
+
 		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());

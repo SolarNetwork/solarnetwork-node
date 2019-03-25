@@ -29,7 +29,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
@@ -39,6 +39,14 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the device type
 	 */
 	KTLCTInverterType getInverterType();
+
+	/**
+	 * Get the inverter work mode.
+	 * 
+	 * @return the work mode
+	 * @since 1.1
+	 */
+	KTLCTInverterWorkMode getWorkMode();
 
 	/**
 	 * Get the device model name.
