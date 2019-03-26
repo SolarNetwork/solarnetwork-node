@@ -48,7 +48,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * 
  * @author matt
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -168,7 +168,8 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("Hz = ").append(data.getFrequency());
+		buf.append("mode = ").append(data.getWorkMode());
+		buf.append(", Hz = ").append(data.getFrequency());
 		buf.append(", PV1 V = ").append(data.getPv1Voltage());
 		buf.append(", PV2 V = ").append(data.getPv2Voltage());
 		buf.append(", PV3 V = ").append(data.getPv3Voltage());

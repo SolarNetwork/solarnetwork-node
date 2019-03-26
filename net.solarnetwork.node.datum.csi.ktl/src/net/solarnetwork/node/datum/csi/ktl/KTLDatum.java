@@ -22,7 +22,10 @@
 
 package net.solarnetwork.node.datum.csi.ktl;
 
+import static net.solarnetwork.domain.Bitmaskable.bitmaskValue;
 import java.util.Date;
+import java.util.Set;
+import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.Datum;
@@ -37,7 +40,7 @@ import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
  * 
  * @author matt
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class KTLDatum extends GeneralNodePVEnergyDatum {
 
@@ -62,6 +65,30 @@ public class KTLDatum extends GeneralNodePVEnergyDatum {
 		KTLCTInverterWorkMode workMode = data.getWorkMode();
 		DeviceOperatingState state = workMode != null ? workMode.asDeviceOperatingState()
 				: DeviceOperatingState.Unknown;
+
+		Set<? extends Bitmaskable> bitmask = data.getWarnings();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			putStatusSampleValue("warn", bitmaskValue(bitmask));
+		}
+		bitmask = data.getFaults0();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			putStatusSampleValue("fault0", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults1();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			putStatusSampleValue("fault1", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults2();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			putStatusSampleValue("fault2", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getPermanentFaults();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			putStatusSampleValue("permFault", bitmaskValue(bitmask));
+		}
 
 		// verify in Running/Derate work mode, else invalid data might be collected
 		if ( !(state == DeviceOperatingState.Normal || state == DeviceOperatingState.Override) ) {

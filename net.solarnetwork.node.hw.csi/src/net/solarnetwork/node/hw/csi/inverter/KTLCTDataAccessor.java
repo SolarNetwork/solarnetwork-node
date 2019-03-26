@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import java.util.Set;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -49,6 +50,41 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	KTLCTInverterWorkMode getWorkMode();
 
 	/**
+	 * Get the warnings.
+	 * 
+	 * @return the warnings
+	 */
+	Set<KTLCTWarn> getWarnings();
+
+	/**
+	 * Get the fault 0 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault0> getFaults0();
+
+	/**
+	 * Get the fault 1 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault1> getFaults1();
+
+	/**
+	 * Get the fault 2 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault2> getFaults2();
+
+	/**
+	 * Get the permanent fault set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTPermanentFault> getPermanentFaults();
+
+	/**
 	 * Get the device model name.
 	 * 
 	 * @return the model name
@@ -61,6 +97,14 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the serial number
 	 */
 	String getSerialNumber();
+
+	/**
+	 * Get the firmware version.
+	 * 
+	 * @return the version
+	 * @since 1.1
+	 */
+	KTLCTFirmwareVersion getFirmwareVersion();
 
 	/**
 	 * Get the module (heat sink) temperature, in degrees Celsius.

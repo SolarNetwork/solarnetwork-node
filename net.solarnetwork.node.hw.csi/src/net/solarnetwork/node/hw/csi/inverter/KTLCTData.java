@@ -22,8 +22,11 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -104,9 +107,34 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 				result.put(INFO_KEY_DEVICE_MODEL, model);
 			}
 		}
+		KTLCTFirmwareVersion version = data.getFirmwareVersion();
+		if ( version != null ) {
+			result.put("Firmware Version", String.format("DSP = %d, MCU = %d", version.getDspVersion(),
+					version.getMcuVersion()));
+		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
 			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		Set<KTLCTWarn> warns = data.getWarnings();
+		if ( warns != null && !warns.isEmpty() ) {
+			result.put("Warnings", commaDelimitedStringFromCollection(warns));
+		}
+		Set<KTLCTPermanentFault> permFaults = data.getPermanentFaults();
+		if ( permFaults != null && !permFaults.isEmpty() ) {
+			result.put("Permanent Faults", commaDelimitedStringFromCollection(permFaults));
+		}
+		Set<KTLCTFault0> faults0 = data.getFaults0();
+		if ( faults0 != null && !faults0.isEmpty() ) {
+			result.put("Faults 0", commaDelimitedStringFromCollection(faults0));
+		}
+		Set<KTLCTFault1> faults1 = data.getFaults1();
+		if ( faults1 != null && !faults1.isEmpty() ) {
+			result.put("Faults 1", commaDelimitedStringFromCollection(faults1));
+		}
+		Set<KTLCTFault2> faults2 = data.getFaults2();
+		if ( faults2 != null && !faults2.isEmpty() ) {
+			result.put("Faults 2", commaDelimitedStringFromCollection(faults2));
 		}
 		return result;
 	}
@@ -319,6 +347,42 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	public String getSerialNumber() {
 		Number n = getNumber(KTLCTRegister.InfoSerialNumber);
 		return (n != null ? n.toString() : null);
+	}
+
+	@Override
+	public KTLCTFirmwareVersion getFirmwareVersion() {
+		Number n = getNumber(KTLCTRegister.InfoFirmwareVersion);
+		return (n != null ? KTLCTFirmwareVersion.forCode(n.intValue()) : null);
+	}
+
+	@Override
+	public Set<KTLCTWarn> getWarnings() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTWarn.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault0> getFaults0() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault0.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault1> getFaults1() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault1.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault2> getFaults2() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault2.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTPermanentFault> getPermanentFaults() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTPermanentFault.class) : null);
 	}
 
 	@Override

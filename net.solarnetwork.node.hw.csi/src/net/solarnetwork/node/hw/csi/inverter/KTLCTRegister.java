@@ -38,12 +38,15 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum KTLCTRegister implements ModbusReference {
 
 	/** Inverter model number. */
 	InfoInverterModel(0, UInt16),
+
+	/** Firmware version, as in {@link KTLCTFirmwareVersion}. */
+	InfoFirmwareVersion(0x5, UInt16),
 
 	/** Serial number. */
 	InfoSerialNumber(0x6, UInt64),
@@ -118,7 +121,28 @@ public enum KTLCTRegister implements ModbusReference {
 	InverterTransformerTemperature(0x2E, UInt16),
 
 	/** Status mode code, see {@link KTLCTInverterWorkMode}. */
-	StatusMode(0x2F, UInt16);
+	StatusMode(0x2F, UInt16),
+
+	/** Permanent fault codes. */
+	StatusPermanentFault(0x34, UInt16),
+
+	/** Warning codes. */
+	StatusWarn(0x35, UInt16),
+
+	/** Fault 0 codes. */
+	StatusFault0(0x36, UInt16),
+
+	/** Fault 1 codes. */
+	StatusFault1(0x376, UInt16),
+
+	/** Fault 2 codes. */
+	StatusFault2(0x38, UInt16),
+
+	/** Fault 3 codes. */
+	StatusFault3(0x39, UInt16),
+
+	/** Fault 4 codes. */
+	StatusFault4(0x3A, UInt16);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet();
