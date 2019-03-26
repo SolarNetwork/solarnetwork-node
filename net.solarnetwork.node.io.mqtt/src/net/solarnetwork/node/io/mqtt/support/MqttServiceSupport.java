@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.common.mqtt.paho.MqttFilePersistence;
 import net.solarnetwork.node.SSLService;
 import net.solarnetwork.util.OptionalService;
 
@@ -276,7 +277,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 	 * @return the persistence to use
 	 */
 	protected MqttClientPersistence createMqttClientPersistence() {
-		return new MqttDefaultFilePersistence(persistencePath);
+		return new MqttFilePersistence(persistencePath);
 	}
 
 	/**
