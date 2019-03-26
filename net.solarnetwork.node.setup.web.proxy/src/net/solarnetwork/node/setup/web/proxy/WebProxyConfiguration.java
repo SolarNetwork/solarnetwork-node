@@ -51,4 +51,12 @@ public interface WebProxyConfiguration extends Identifiable {
 	 */
 	String getProxyPath();
 
+	/**
+	 * Flag to control response body content link rewriting.
+	 * 
+	 * @return {@literal true} to rewrite links in response body content,
+	 *         {@literal false} otherwise
+	 */
+	boolean isContentLinksRewrite();
+
 }

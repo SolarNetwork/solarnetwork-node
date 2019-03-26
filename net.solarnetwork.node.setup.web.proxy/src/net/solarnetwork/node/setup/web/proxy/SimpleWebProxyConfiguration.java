@@ -32,6 +32,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 
 /**
@@ -46,6 +47,7 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 	private String proxyPath;
 	private String groupUID;
 	private String proxyTargetUri;
+	private boolean contentLinksRewrite = true;
 	private MessageSource messageSource;
 	private SetupResourceProvider settingResourceProvider;
 
@@ -60,6 +62,7 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 
 		results.add(new BasicTextFieldSettingSpecifier("proxyPath", ""));
 		results.add(new BasicTextFieldSettingSpecifier("proxyTargetUri", ""));
+		results.add(new BasicToggleSettingSpecifier("contentLinksRewrite", Boolean.TRUE));
 
 		if ( settingResourceProvider != null ) {
 			Map<String, Object> setupProps = Collections.singletonMap("config-id", getProxyPath());
@@ -126,6 +129,15 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 
 	public void setProxyPath(String proxyPath) {
 		this.proxyPath = proxyPath;
+	}
+
+	@Override
+	public boolean isContentLinksRewrite() {
+		return contentLinksRewrite;
+	}
+
+	public void setContentLinksRewrite(boolean contentLinksRewrite) {
+		this.contentLinksRewrite = contentLinksRewrite;
 	}
 
 }

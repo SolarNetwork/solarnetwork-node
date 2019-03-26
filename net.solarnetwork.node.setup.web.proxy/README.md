@@ -33,3 +33,4 @@ Each configuration contains the following overall settings:
 |:-------------------|:------------|
 | Proxy Name         | An optional unique friendly name to use in the URL path. |
 | Target URL         | The absolute URL to the service to proxy. |
+| Link Rewrite       | If enabled, then re-write HTML links to work behind the proxy. |

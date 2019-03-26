@@ -30,8 +30,6 @@ import java.util.stream.StreamSupport;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
@@ -55,8 +53,6 @@ public class WebProxyController {
 	private static final ConcurrentMap<String, WebProxyServlet> proxyServletMap 
 	      = new ConcurrentHashMap<>(2, 0.9f, 1);
 	// @formatter:on
-
-	private static final Logger LOG = LoggerFactory.getLogger(WebProxyController.class);
 
 	private final OptionalServiceCollection<WebProxyConfiguration> configurations;
 
@@ -125,7 +121,6 @@ public class WebProxyController {
 			return;
 		}
 
-		LOG.debug("Context path: {}; requestURI: {}", req.getContextPath(), req.getRequestURI());
 		proxy.service(req, resp);
 	}
 
