@@ -12,6 +12,9 @@
 	
 	<!-- Configure Spring Security -->
 	<http auto-config="true" use-expressions="true">
+		<headers>
+			<frame-options policy="SAMEORIGIN"/>
+		</headers>
 		<intercept-url pattern='/*.do' access="permitAll" />
 		<intercept-url pattern='/pub/**' access="permitAll" />
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')" />
