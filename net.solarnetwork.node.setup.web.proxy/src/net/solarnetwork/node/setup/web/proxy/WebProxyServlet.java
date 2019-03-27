@@ -30,7 +30,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.HttpCookie;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -49,7 +48,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicHeader;
 import org.mitre.dsmiley.httpproxy.ProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,7 +135,6 @@ public class WebProxyServlet extends ProxyServlet {
 		// @formatter:off
 	    return HttpClientBuilder.create()
 	        .setDefaultRequestConfig(buildRequestConfig())
-	        .setDefaultHeaders(Collections.singletonList(new BasicHeader("X-Forwarded-Path", proxyPath)))
 	        .setConnectionTimeToLive(1, TimeUnit.MINUTES)
 	        .disableCookieManagement()
 	        .disableRedirectHandling()
