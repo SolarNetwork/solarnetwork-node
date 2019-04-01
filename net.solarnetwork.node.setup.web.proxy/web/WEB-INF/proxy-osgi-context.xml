@@ -72,4 +72,13 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
+	<!-- Hook into CSRF enforcement to ignore all paths under /a/webproxy/** -->
+	<osgi:service interface="org.springframework.security.web.util.matcher.RequestMatcher">
+		<osgi:service-properties>
+			<entry key="mode" value="csrf-ignore"/>
+		</osgi:service-properties>
+		<bean class="org.springframework.security.web.util.matcher.AntPathRequestMatcher">
+			<constructor-arg name="pattern" value="/a/webproxy/**"/>
+		</bean>
+	</osgi:service>
 </beans>
