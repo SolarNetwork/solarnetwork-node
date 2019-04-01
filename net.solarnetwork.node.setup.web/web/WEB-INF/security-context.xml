@@ -22,7 +22,20 @@
 		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
 		<logout logout-url="/logout" logout-success-url="/loggedout.do"/>
+		<csrf request-matcher-ref="csrfIgnoreRequestMatcher"/>
 	</http>
+	
+	<beans:bean id="csrfIgnoreRequestMatcher" class="net.solarnetwork.node.setup.web.support.MethodAndIgnoreRequestMatcher">
+		<beans:constructor-arg>
+			<beans:bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+				<beans:constructor-arg>
+					<beans:bean class="net.solarnetwork.node.setup.web.support.DynamicOrRequestMatcher">
+						<beans:constructor-arg ref="csrfIgnoreRequestMatchers"/>
+					</beans:bean>
+				</beans:constructor-arg>
+			</beans:bean>
+		</beans:constructor-arg>
+	</beans:bean>
 	
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
 

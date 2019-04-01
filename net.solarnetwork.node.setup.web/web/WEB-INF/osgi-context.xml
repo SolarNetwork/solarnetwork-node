@@ -91,4 +91,10 @@
 		<bean class="net.solarnetwork.util.SimpMessageSendingOperationsFactoryBean" autowire="byType"/>
 	</osgi:service>
 	
+	<bean id="csrfIgnoreRequestMatchers" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.security.web.util.matcher.RequestMatcher"/>
+		<property name="serviceFilter" value="(mode=csrf-ignore)"/>
+	</bean>
+
 </beans>

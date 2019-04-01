@@ -1,5 +1,9 @@
 # SolarNode Web Setup GUI Changelog
 
+## 2019-04-02 - v1.38
+
+ * Support for dynamic web proxies.
+
 ## 2018-11-23
 
  * Order components on Settings view by display name (NODE-156)
