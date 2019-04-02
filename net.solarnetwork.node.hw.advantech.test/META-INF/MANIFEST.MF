@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Advantech Hardware Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.advantech.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.hw.advantech;bundle-version="1.0.0"
 Automatic-Module-Name: net.solarnetwork.node.hw.advantech.test
