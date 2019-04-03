@@ -76,7 +76,8 @@ import net.solarnetwork.web.domain.Response;
  * Controller used to associate a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version 1.3
+ * @author matt
+ * @version 1.4
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -232,13 +233,22 @@ public class NodeAssociationController extends BaseSetupController {
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
 	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
-			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
+			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
+			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
 			NetworkAssociationDetails req = new NetworkAssociationDetails(details);
 			req.setUsername(details.getUsername());
 			req.setKeystorePassword(command.getKeystorePassword());
+			if ( identity != null && identity.getNetworkServiceURLs() != null ) {
+				Map<String, String> urls = req.getNetworkServiceURLs();
+				if ( urls == null ) {
+					urls = new HashMap<>(4);
+					req.setNetworkServiceURLs(urls);
+				}
+				urls.putAll(identity.getNetworkServiceURLs());
+			}
 			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(req);
 			details.setNetworkId(cert.getNetworkId());
 
