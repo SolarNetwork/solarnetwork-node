@@ -122,6 +122,7 @@
 		</interfaces>
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum" />
+			<entry key="upload" value="false" />
 		</service-properties>
 	</service>
 	
@@ -147,6 +148,7 @@
 		</interfaces>
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum" />
+			<entry key="upload" value="false" />
 		</service-properties>
 	</service>
 	
