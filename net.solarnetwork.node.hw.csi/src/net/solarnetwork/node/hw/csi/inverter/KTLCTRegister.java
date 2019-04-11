@@ -133,7 +133,7 @@ public enum KTLCTRegister implements ModbusReference {
 	StatusFault0(0x36, UInt16),
 
 	/** Fault 1 codes. */
-	StatusFault1(0x376, UInt16),
+	StatusFault1(0x37, UInt16),
 
 	/** Fault 2 codes. */
 	StatusFault2(0x38, UInt16),

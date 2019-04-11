@@ -82,8 +82,10 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 48))
-				.andReturn(copyOfRange(TEST_DATA, 0, 48));
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
+				.andReturn(copyOfRange(TEST_DATA, 0, 59));
+		//expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 886, 1))
+		//		.andReturn(copyOfRange(TEST_DATA, 886, 1));
 
 		// when
 		EasyMock.replay(conn);
