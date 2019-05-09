@@ -54,7 +54,6 @@ import com.automatak.dnp3.FrozenCounter;
 import com.automatak.dnp3.Outstation;
 import com.automatak.dnp3.OutstationChangeSet;
 import com.automatak.dnp3.OutstationStackConfig;
-import com.automatak.dnp3.StackStatistics;
 import com.automatak.dnp3.enums.AnalogOutputStatusQuality;
 import com.automatak.dnp3.enums.AnalogQuality;
 import com.automatak.dnp3.enums.BinaryOutputStatusQuality;
@@ -64,7 +63,6 @@ import com.automatak.dnp3.enums.CounterQuality;
 import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
 import com.automatak.dnp3.enums.FrozenCounterQuality;
-import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.OperateType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
@@ -95,7 +93,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -874,12 +872,13 @@ public class OutstationService extends AbstractApplicationService
 
 	private synchronized String getStackStatusMessage() {
 		StringBuilder buf = new StringBuilder();
+		buf.append(outstation != null ? "Available" : "Offline");
+		/*- TODO stats are crashing JVM for some reason
 		StackStatistics stackStats = outstation != null ? outstation.getStatistics() : null;
 		if ( stackStats == null ) {
 			buf.append("N/A");
 		} else {
 			buf.append(app.getLinkStatus() == LinkStatus.RESET ? "Online" : "Offline");
-			/*- stats are crashing JVM for some reason
 			TransportStatistics stats = stackStats.transport;
 			if ( stats != null ) {
 				buf.append("; ").append(stats.numTransportRx).append(" in");
@@ -889,10 +888,11 @@ public class OutstationService extends AbstractApplicationService
 				buf.append("; ").append(stats.numTransportDiscard).append(" discarded");
 				buf.append("; ").append(stats.numTransportIgnore).append(" ignored");
 			}
-			*/
 		}
+		*/
 		return buf.toString();
 	}
+
 	/*
 	 * =========================================================================
 	 * Accessors
