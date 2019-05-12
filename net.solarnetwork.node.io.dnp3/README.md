@@ -44,11 +44,17 @@ protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
 Each outstation configuration contains the following general settings:
 
-| Setting           | Description                                      |
-|-------------------|--------------------------------------------------|
-| Service Name      | A unique name to identify this data source with. |
-| Service Group     | A group name to associate this data source with. |
-| Event buffer size | The number of DNP3 data events to maintain internally. |
+| Setting                  | Description                                      |
+|--------------------------|--------------------------------------------------|
+| Service Name             | A unique name to identify this component with. |
+| Service Group            | A group name to associate this component with. |
+| Event buffer size        | The number of DNP3 data events to maintain internally. |
+| DNP3 Server              | The **Service Name** of DNP3 server component to use. |
+| Address                  | The DNP3 address to use.|
+| Master Address           | The DNP3 address of the master DNP3 server to use. |
+| Max Controls Per Request | The maximum number of controls the outstation will attempt to process from a single request. |
+| Max Rx Fragment          | The maximum fragment size the outstation will be able to receive. |
+| Max Tx Fragment          | The maximum fragment size the outstation will use for fragments it sends. |
 
 ## DNP3 Outstation measurement settings
 
