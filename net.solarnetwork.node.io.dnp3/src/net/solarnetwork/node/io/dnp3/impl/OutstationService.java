@@ -736,7 +736,7 @@ public class OutstationService extends AbstractApplicationService
 
 		private CommandStatus handleAnalogOperation(Object command, int index, String opDescription,
 				Number value) {
-			ControlConfig config = controlConfigForIndex(ControlType.Binary, index);
+			ControlConfig config = controlConfigForIndex(ControlType.Analog, index);
 			if ( config == null ) {
 				return CommandStatus.NOT_AUTHORIZED;
 			}
