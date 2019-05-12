@@ -23,8 +23,8 @@ Each TCP server configuration contains the following settings:
 
 | Setting         | Description                                      |
 |-----------------|--------------------------------------------------|
-| Service Name    | A unique name to identify this data source with. |
-| Service Group   | A group name to associate this data source with. |
+| Service Name    | A unique name to identify this component with. |
+| Service Group   | A group name to associate this component with. |
 | Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels]. |
 | Retry min delay | The minimum length of time, in seconds, to delay between network operation retry attempts. |
 | Retry max delay | The maximum length of time, in seconds, to delay between network operation retry attempts. |
