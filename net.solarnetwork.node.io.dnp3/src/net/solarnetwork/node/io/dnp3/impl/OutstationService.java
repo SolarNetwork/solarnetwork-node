@@ -70,8 +70,10 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
+import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
+import net.solarnetwork.node.io.dnp3.domain.OutstationConfig;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
@@ -93,7 +95,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -110,6 +112,7 @@ public class OutstationService extends AbstractApplicationService
 	private final Application app;
 	private final CommandHandler commandHandler;
 	private final OptionalServiceCollection<InstructionHandler> instructionHandlers;
+	private final OutstationConfig outstationConfig;
 
 	private MeasurementConfig[] measurementConfigs;
 	private ControlConfig[] controlConfigs;
@@ -133,6 +136,7 @@ public class OutstationService extends AbstractApplicationService
 		super(dnp3Channel);
 		setUid(DEFAULT_UID);
 		this.app = new Application();
+		this.outstationConfig = new OutstationConfig();
 		this.commandHandler = new CommandHandler();
 		this.instructionHandlers = (instructionHandlers != null ? instructionHandlers
 				: new StaticOptionalServiceCollection<>(Collections.emptyList()));
@@ -225,8 +229,12 @@ public class OutstationService extends AbstractApplicationService
 		Map<MeasurementType, List<MeasurementConfig>> configs = measurementTypeMap(
 				getMeasurementConfigs());
 		Map<ControlType, List<ControlConfig>> controlConfigs = controlTypeMap(getControlConfigs());
-		return new OutstationStackConfig(createDatabaseConfig(configs, controlConfigs),
+		OutstationStackConfig config = new OutstationStackConfig(
+				createDatabaseConfig(configs, controlConfigs),
 				createEventBufferConfig(configs, controlConfigs));
+		copySettings(getLinkLayerConfig(), config.linkConfig);
+		copySettings(getOutstationConfig(), config.outstationConfig);
+		return config;
 	}
 
 	private Map<MeasurementType, List<MeasurementConfig>> measurementTypeMap(
@@ -818,7 +826,7 @@ public class OutstationService extends AbstractApplicationService
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<>(8);
+		List<SettingSpecifier> result = new ArrayList<>(16);
 
 		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
 
@@ -826,6 +834,12 @@ public class OutstationService extends AbstractApplicationService
 		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
+		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['UID']",
+				TcpServerChannelService.DEFAULT_UID));
+
+		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
+
+		result.addAll(outstationSettings("outstationConfig.", new OutstationConfig()));
 
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
@@ -1051,6 +1065,60 @@ public class OutstationService extends AbstractApplicationService
 	 */
 	public void setStartupDelaySecs(int startupDelaySecs) {
 		this.startupDelaySecs = startupDelaySecs;
+	}
+
+	/**
+	 * Get the outstation configuration.
+	 * 
+	 * @return the configuration
+	 * @since 1.2
+	 */
+	public OutstationConfig getOutstationConfig() {
+		return outstationConfig;
+	}
+
+	/**
+	 * Copy the link outstation configuration from one object to another.
+	 * 
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 1.2
+	 */
+	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
+			com.automatak.dnp3.OutstationConfig to) {
+		to.allowUnsolicited = from.allowUnsolicited;
+		to.indexMode = from.indexMode;
+		to.maxControlsPerRequest = from.maxControlsPerRequest;
+		to.maxRxFragSize = from.maxRxFragSize;
+		to.maxTxFragSize = from.maxTxFragSize;
+		to.selectTimeout = from.selectTimeout;
+		to.solConfirmTimeout = from.solConfirmTimeout;
+		to.unsolRetryTimeout = from.unsolRetryTimeout;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of
+	 * {@link OutstationConfig}.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param defaults
+	 *        the default settings
+	 * @return the settings, never {@literal null}
+	 * @since 1.1
+	 */
+	public static List<SettingSpecifier> outstationSettings(String prefix, OutstationConfig defaults) {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		OutstationConfig config = new OutstationConfig();
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxControlsPerRequest",
+				String.valueOf(config.maxControlsPerRequest)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxRxFragSize",
+				String.valueOf(config.maxRxFragSize)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxTxFragSize",
+				String.valueOf(config.maxTxFragSize)));
+		return results;
 	}
 
 }

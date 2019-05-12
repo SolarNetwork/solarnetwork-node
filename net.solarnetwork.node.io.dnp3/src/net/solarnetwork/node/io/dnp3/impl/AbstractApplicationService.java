@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
@@ -34,13 +36,16 @@ import org.springframework.scheduling.TaskScheduler;
 import com.automatak.dnp3.Channel;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.OutstationService;
+import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Abstract implementation of {@link OutstationService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class AbstractApplicationService implements OutstationService {
 
@@ -54,6 +59,7 @@ public abstract class AbstractApplicationService implements OutstationService {
 	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 	private TaskScheduler taskScheduler;
+	private final LinkLayerConfig linkLayerConfig = new LinkLayerConfig(false);
 
 	/**
 	 * Constructor.
@@ -146,6 +152,47 @@ public abstract class AbstractApplicationService implements OutstationService {
 	}
 
 	/**
+	 * Copy the link layer configuration from one object to another.
+	 * 
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 1.1
+	 */
+	public static void copySettings(com.automatak.dnp3.LinkLayerConfig from,
+			com.automatak.dnp3.LinkLayerConfig to) {
+		to.isMaster = from.isMaster;
+		to.keepAliveTimeout = from.keepAliveTimeout;
+		to.localAddr = from.localAddr;
+		to.numRetry = from.numRetry;
+		to.remoteAddr = from.remoteAddr;
+		to.responseTimeout = from.responseTimeout;
+		to.useConfirms = from.useConfirms;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of
+	 * {@link LinkLayerConfig}.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param defaults
+	 *        the default settings
+	 * @return the settings, never {@literal null}
+	 * @since 1.1
+	 */
+	public static List<SettingSpecifier> linkLayerSettings(String prefix, LinkLayerConfig defaults) {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "localAddr",
+				String.valueOf(defaults.localAddr)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "remoteAddr",
+				String.valueOf(defaults.remoteAddr)));
+
+		return results;
+	}
+
+	/**
 	 * Alias for the {@link #getUID()} method.
 	 * 
 	 * @return the unique ID
@@ -207,6 +254,26 @@ public abstract class AbstractApplicationService implements OutstationService {
 
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the channel service.
+	 * 
+	 * @return the channel service
+	 * @since 1.1
+	 */
+	public OptionalService<ChannelService> getDnp3Channel() {
+		return dnp3Channel;
+	}
+
+	/**
+	 * Get the link layer configuration
+	 * 
+	 * @return the configuration
+	 * @since 1.1
+	 */
+	public LinkLayerConfig getLinkLayerConfig() {
+		return linkLayerConfig;
 	}
 
 }
