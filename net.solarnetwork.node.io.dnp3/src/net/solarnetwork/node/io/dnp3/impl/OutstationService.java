@@ -268,6 +268,31 @@ public class OutstationService extends AbstractApplicationService
 		return map;
 	}
 
+	private void appendMeasurementInfos(StringBuilder buf, MeasurementType type,
+			List<MeasurementConfig> list) {
+		buf.append(type.getTitle()).append(" (").append(list != null ? list.size() : 0).append(")\n");
+		if ( list != null ) {
+			int i = 0;
+			for ( MeasurementConfig conf : list ) {
+				buf.append(String.format("  %3d: %s\n", i, conf.getSourceId()));
+				i++;
+			}
+		}
+	}
+
+	private void appendControlInfos(StringBuilder buf, ControlType type, List<ControlConfig> list,
+			int offset) {
+		buf.append(type.getTitle()).append(" output status (").append(list != null ? list.size() : 0)
+				.append(")\n");
+		if ( list != null ) {
+			int i = 0;
+			for ( ControlConfig conf : list ) {
+				buf.append(String.format("  %3d: %s\n", i + offset, conf.getControlId()));
+				i++;
+			}
+		}
+	}
+
 	private DatabaseConfig createDatabaseConfig(Map<MeasurementType, List<MeasurementConfig>> configs,
 			Map<ControlType, List<ControlConfig>> controlConfigs) {
 		int analogCount = 0;
@@ -277,6 +302,7 @@ public class OutstationService extends AbstractApplicationService
 		int counterCount = 0;
 		int doubleBinaryCount = 0;
 		int frozenCounterCount = 0;
+		StringBuilder infoBuf = new StringBuilder();
 		if ( configs != null ) {
 			for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : configs.entrySet() ) {
 				MeasurementType type = me.getKey();
@@ -287,6 +313,7 @@ public class OutstationService extends AbstractApplicationService
 				switch (type) {
 					case AnalogInput:
 						analogCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case AnalogOutputStatus:
@@ -295,6 +322,7 @@ public class OutstationService extends AbstractApplicationService
 
 					case BinaryInput:
 						binaryCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case BinaryOutputStatus:
@@ -303,14 +331,17 @@ public class OutstationService extends AbstractApplicationService
 
 					case Counter:
 						counterCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case DoubleBitBinaryInput:
 						doubleBinaryCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case FrozenCounter:
 						frozenCounterCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 				}
 			}
@@ -324,16 +355,20 @@ public class OutstationService extends AbstractApplicationService
 				}
 				switch (type) {
 					case Analog:
+						appendControlInfos(infoBuf, type, list, aoStatusCount);
 						aoStatusCount += list.size();
 						break;
 
 					case Binary:
+						appendControlInfos(infoBuf, type, list, boStatusCount);
 						boStatusCount += list.size();
 						break;
 
 				}
 			}
 		}
+		log.info("DNP3 outstation [{}] database configured with following registers:\n{}", getUid(),
+				infoBuf);
 		return new DatabaseConfig(binaryCount, doubleBinaryCount, analogCount, counterCount,
 				frozenCounterCount, boStatusCount, aoStatusCount);
 	}
@@ -467,6 +502,7 @@ public class OutstationService extends AbstractApplicationService
 		synchronized ( this ) {
 			Outstation station = getOutstation();
 			if ( station != null ) {
+				log.info("Applying changes to DNP3 [{}]", getUID());
 				station.apply(changes);
 			}
 		}
