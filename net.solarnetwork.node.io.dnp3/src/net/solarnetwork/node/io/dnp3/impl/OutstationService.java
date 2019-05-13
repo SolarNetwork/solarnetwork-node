@@ -585,9 +585,13 @@ public class OutstationService extends AbstractApplicationService
 							if ( changes == null ) {
 								changes = new OutstationChangeSet();
 							}
+
+							int index = (type == ControlType.Analog ? analogStatusOffset
+									: binaryStatusOffset) + itr.previousIndex();
+
 							Object propVal = event.getProperty("value");
-							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type,
-									itr.previousIndex(), sourceId, propVal);
+							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type, index,
+									sourceId, propVal);
 							switch (type) {
 								case Analog:
 									try {
@@ -599,7 +603,7 @@ public class OutstationService extends AbstractApplicationService
 										}
 										changes.update(new AnalogOutputStatus(n.doubleValue(),
 												(byte) AnalogOutputStatusQuality.ONLINE.toType(), ts),
-												itr.previousIndex() + analogStatusOffset);
+												index);
 									} catch ( NumberFormatException e ) {
 										log.warn("Cannot convert control [{}] value [{}] to number: {}",
 												sourceId, propVal, e.getMessage());
@@ -609,7 +613,7 @@ public class OutstationService extends AbstractApplicationService
 								case Binary:
 									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
 											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
-											itr.previousIndex() + binaryStatusOffset);
+											index);
 									break;
 
 							}
