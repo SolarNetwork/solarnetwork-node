@@ -8,3 +8,5 @@
    allows configuring the DNP3 server to use, if there are more than one available.
  * Fix to support analog controls. Previously analog controls could not be modified
    because the code looked for a binary control to update.
+ * Fix responding to "control changed" events so DNP3 state updated when associated 
+   control values are updated.

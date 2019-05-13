@@ -449,7 +449,8 @@ public class OutstationService extends AbstractApplicationService
 		String topic = (event != null ? event.getTopic() : null);
 		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
-		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic) ) {
+		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
+				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
 			handleControlInfoCapturedEvent(event);
 		}
 	}
