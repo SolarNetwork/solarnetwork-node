@@ -4,7 +4,7 @@ Bundle-Name: Core SolarNode Framework
 Bundle-SymbolicName: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.66.0
+Bundle-Version: 1.67.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
@@ -13,7 +13,7 @@ Export-Package:
  net.solarnetwork.node.dao;version="1.9.0",
  net.solarnetwork.node.domain;version="1.18.0",
  net.solarnetwork.node.job;version="1.13.4",
- net.solarnetwork.node.reactor;version="1.4.0",
+ net.solarnetwork.node.reactor;version="1.5.0",
  net.solarnetwork.node.reactor.support;version="1.4.1",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.9.1",
