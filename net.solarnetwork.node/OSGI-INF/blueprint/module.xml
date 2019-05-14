@@ -205,7 +205,7 @@
 	</bean>
 	
 	<!-- Task executor for simple tasks -->
-	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newWorkStealingPool" destroy-method="shutdown"/>
+	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newCachedThreadPool" destroy-method="shutdown"/>
 		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
