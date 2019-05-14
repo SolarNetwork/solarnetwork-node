@@ -76,7 +76,7 @@
 								<list>
 									<value>net.solarnetwork.node.DatumDataSource</value>
 									<value>net.solarnetwork.node.MultiDatumDataSource</value>
-									<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+									<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 								</list>
 							</property>
 							<property name="properties">
