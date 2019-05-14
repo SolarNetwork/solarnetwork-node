@@ -76,7 +76,7 @@ public interface InstructionHandler {
 	 * {@link net.solarnetwork.domain.DeviceOperatingState} of a device.
 	 * 
 	 * <p>
-	 * By convention the instruction should have a parameter whose keys are IDs
+	 * By convention the instruction should have a parameter whose key is the ID
 	 * of the control that should respond to the request and whose value is
 	 * <i>either</i> an integer representing a
 	 * {@link net.solarnetwork.domain.DeviceOperatingState#getCode()} value
