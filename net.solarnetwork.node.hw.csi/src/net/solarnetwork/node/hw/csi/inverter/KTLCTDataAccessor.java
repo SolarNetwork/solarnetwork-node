@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.csi.inverter;
 
 import java.util.Set;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -30,7 +31,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
@@ -175,4 +176,22 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the current for PV string 3
 	 */
 	Float getPv3Current();
+
+	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the state
+	 * @since 1.2
+	 */
+	DeviceOperatingState getDeviceOperatingState();
+
+	/**
+	 * Get an enforced output power limit, in a percentage of maximum power
+	 * capability.
+	 * 
+	 * @return the output power limit as a percentage (0 - 1)
+	 * @since 1.2
+	 */
+	Float getOutputPowerLimitPercent();
+
 }

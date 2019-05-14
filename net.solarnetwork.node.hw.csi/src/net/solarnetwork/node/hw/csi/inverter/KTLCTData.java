@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -38,9 +39,25 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
- * @version 1.3
+ * @version 1.4
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
+
+	/**
+	 * The value of the {@link KTLCTRegister#ControlDevicePowerSwitch} register
+	 * representing <i>on</i>.
+	 * 
+	 * @since 1.4
+	 */
+	public static final int POWER_SWITCH_ON = 0xAAAA;
+
+	/**
+	 * The value of the {@link KTLCTRegister#ControlDevicePowerSwitch} register
+	 * representing <i>off</i>.
+	 * 
+	 * @since 1.4
+	 */
+	public static final int POWER_SWITCH_OFF = 0x5555;
 
 	private static final int MAX_RESULTS = 64;
 
@@ -91,6 +108,18 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	public final void readInverterData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,
 				KTLCTRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
+	}
+
+	/**
+	 * Read the control registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @since 1.4
+	 */
+	public final void readControlData(final ModbusConnection conn) {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				KTLCTRegister.getControlRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	@Override
@@ -398,6 +427,21 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	@Override
 	public Float getTransformerTemperature() {
 		return getCentiValueAsFloat(KTLCTRegister.InverterTransformerTemperature);
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		Number n = getNumber(KTLCTRegister.ControlDevicePowerSwitch);
+		if ( n != null && n.intValue() == POWER_SWITCH_OFF ) {
+			return DeviceOperatingState.Shutdown;
+		}
+		KTLCTInverterWorkMode mode = getWorkMode();
+		return (mode != null ? mode.asDeviceOperatingState() : DeviceOperatingState.Unknown);
+	}
+
+	@Override
+	public Float getOutputPowerLimitPercent() {
+		return getCentiValueAsFloat(KTLCTRegister.ControlDevicePowerLimit);
 	}
 
 }
