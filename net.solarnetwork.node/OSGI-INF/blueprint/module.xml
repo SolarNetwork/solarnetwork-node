@@ -205,7 +205,14 @@
 	</bean>
 	
 	<!-- Task executor for simple tasks -->
-	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newCachedThreadPool" destroy-method="shutdown"/>
+	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newFixedThreadPool" destroy-method="shutdown">
+		<argument value="#{T(java.lang.Runtime).getRuntime().availableProcessors() + 1}"/>
+		<argument>
+			<bean class="org.springframework.scheduling.concurrent.CustomizableThreadFactory">
+				<argument value="SolarNode-Core-"/>
+			</bean>
+		</argument>
+	</bean>
 		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">
