@@ -8,7 +8,7 @@ Bundle-Version: 1.67.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node;version="1.27.0",
+ net.solarnetwork.node;version="1.28.0",
  net.solarnetwork.node.backup;version="1.6.3",
  net.solarnetwork.node.dao;version="1.9.0",
  net.solarnetwork.node.domain;version="1.18.0",

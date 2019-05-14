@@ -27,10 +27,34 @@ package net.solarnetwork.node;
  * configuration changes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.47
  */
 public interface SystemService {
+
+	/**
+	 * The instruction topic for a request to restart the SolarNode application.
+	 * 
+	 * <p>
+	 * In practice this could mean invoking the {@link #exit(boolean)} method,
+	 * assuming the node OS automatically restarts the application when it
+	 * exits.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	String TOPIC_RESTART = "SystemRestart";
+
+	/**
+	 * The instruction topic for a request to reboot the SolarNode device.
+	 * 
+	 * <p>
+	 * In practice this could mean invoking the {@link #reboot()} method.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	String TOPIC_REBOOT = "SystemReboot";
 
 	/**
 	 * Exit the node application, stopping the active process.
