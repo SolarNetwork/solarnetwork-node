@@ -89,7 +89,15 @@
 		<interfaces>
 			<value>net.solarnetwork.node.settings.SettingsService</value>
 			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>UpdateSetting</value>
+				</list>
+			</entry>
+		</service-properties>
 	</service>
 	
 	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">

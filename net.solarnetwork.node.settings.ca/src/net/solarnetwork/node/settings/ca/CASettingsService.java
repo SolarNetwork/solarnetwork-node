@@ -88,6 +88,10 @@ import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -106,19 +110,12 @@ import net.solarnetwork.node.support.KeyValuePair;
  * {@link ConfigurationAdmin} to change settings at runtime, and
  * {@link SettingDao} to persist changes between application restarts.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>configurationAdmin</dt>
- * <dd>The {@link ConfigurationAdmin} service to use.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
-public class CASettingsService implements SettingsService, BackupResourceProvider {
+@SuppressWarnings("deprecation")
+public class CASettingsService
+		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
 
 	/** The OSGi service property key for the setting PID. */
 	public static final String OSGI_PROPERTY_KEY_SETTING_PID = "settingPid";
@@ -145,10 +142,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	private MessageSource messageSource;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
-	// private final Map<String, SettingSpecifierProviderFactory> factories =
-	// new TreeMap<String, SettingSpecifierProviderFactory>();
-	// private final Map<String, List<SettingSpecifierProvider>>
-	// factoryProviders = new HashMap<String, List<SettingSpecifierProvider>>();
 	private final Map<String, SettingSpecifierProvider> providers = new TreeMap<String, SettingSpecifierProvider>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -374,7 +367,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}
 			final String providerUID = provider.getSettingUID();
 			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider
-					? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID() : null);
+					? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID()
+					: null);
 			try {
 				Configuration conf = getConfiguration(providerUID, instanceUID);
 				@SuppressWarnings("unchecked")
@@ -550,9 +544,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
 				new org.supercsv.cellprocessor.Optional(), new CellProcessor() {
 
+					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object value, CsvContext ctx) {
-						@SuppressWarnings("unchecked")
 						Set<net.solarnetwork.node.Setting.SettingFlag> set = (Set<net.solarnetwork.node.Setting.SettingFlag>) value;
 						if ( set != null ) {
 							return net.solarnetwork.node.Setting.SettingFlag.maskForSet(set);
@@ -648,6 +642,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		final CellProcessor[] processors = new CellProcessor[] { null, new ConvertNullTo(""), null,
 				new CellProcessor() {
 
+					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object arg, CsvContext ctx) {
 						Set<net.solarnetwork.node.Setting.SettingFlag> set = null;
@@ -697,7 +692,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		});
 
 		// now that settings have been imported into DAO layer, we need to apply them to the existing runtime
+		applyImportedSettings(importedSettings);
+	}
 
+	private void applyImportedSettings(final List<Setting> importedSettings) throws IOException {
 		// first, determine what factories we have... these have keys like <factoryPID>.FACTORY
 		final Map<String, Setting> factorySettings = new HashMap<String, Setting>();
 		for ( Setting s : importedSettings ) {
@@ -988,6 +986,47 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return TOPIC_UPDATE_SETTING.equals(topic);
+	}
+
+	@Override
+	public InstructionState processInstruction(Instruction instruction) {
+		InstructionStatus status = processInstructionWithFeedback(instruction);
+		return (status != null ? status.getInstructionState() : null);
+	}
+
+	@Override
+	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		if ( TOPIC_UPDATE_SETTING.equals(topic) ) {
+			final String key = instruction.getParameterValue(PARAM_UPDATE_SETTING_KEY);
+			final String type = instruction.getParameterValue(PARAM_UPDATE_SETTING_TYPE);
+			final String value = instruction.getParameterValue(PARAM_UPDATE_SETTING_VALUE);
+			final String flags = instruction.getParameterValue(PARAM_UPDATE_SETTING_FLAGS);
+			if ( key != null && !key.trim().isEmpty() ) {
+				Set<SettingFlag> flagSet = null;
+				if ( flags != null ) {
+					try {
+						flagSet = SettingFlag.setForMask(Integer.parseInt(flags));
+					} catch ( NumberFormatException e ) {
+						// ignore this
+					}
+				}
+				Setting s = new Setting(key, type, value, flagSet);
+				settingDao.storeSetting(s);
+				try {
+					applyImportedSettings(Collections.singletonList(s));
+				} catch ( IOException e ) {
+					log.warn("Error applying updated setting {}/{} value {} to runtime: {}", s.getKey(),
+							s.getType(), s.getValue(), e.toString());
+				}
+			}
+		}
+		return null;
 	}
 
 	public void setConfigurationAdmin(ConfigurationAdmin configurationAdmin) {

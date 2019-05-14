@@ -33,9 +33,45 @@ import java.util.Map;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface SettingsService {
+
+	/**
+	 * The instruction topic for a request to update (create or change) a
+	 * setting value.
+	 * 
+	 * @since 1.3
+	 */
+	String TOPIC_UPDATE_SETTING = "UpdateSetting";
+
+	/**
+	 * The instruction parameter for setting key.
+	 * 
+	 * @since 1.3
+	 */
+	String PARAM_UPDATE_SETTING_KEY = "key";
+
+	/**
+	 * The instruction parameter for setting type.
+	 * 
+	 * @since 1.3
+	 */
+	String PARAM_UPDATE_SETTING_TYPE = "type";
+
+	/**
+	 * The instruction parameter for setting value.
+	 * 
+	 * @since 1.3
+	 */
+	String PARAM_UPDATE_SETTING_VALUE = "value";
+
+	/**
+	 * The instruction parameter for setting flags.
+	 * 
+	 * @since 1.3
+	 */
+	String PARAM_UPDATE_SETTING_FLAGS = "flags";
 
 	/**
 	 * Get a list of all possible non-factory setting providers.
