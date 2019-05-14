@@ -22,7 +22,11 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static org.easymock.EasyMock.aryEq;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
@@ -40,6 +44,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.test.DataUtils;
 
 /**
@@ -100,12 +105,12 @@ public class KTLCTDataTests {
 				.andReturn(mapSlice(TEST_DATA, 4096, 2));
 
 		// when
-		EasyMock.replay(conn);
+		replay(conn);
 		data.readConfigurationData(conn);
 
 		// then
 
-		EasyMock.verify(conn);
+		verify(conn);
 	}
 
 	@Test
@@ -186,4 +191,51 @@ public class KTLCTDataTests {
 		assertThat("Output power limit", data.getOutputPowerLimitPercent(), equalTo(70.7f));
 	}
 
+	@Test
+	public void updateDeviceOperatingStateOff() {
+		// given
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		KTLCTData data = new KTLCTData();
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
+				aryEq(new int[] { KTLCTData.POWER_SWITCH_OFF }));
+
+		// when
+		replay(conn);
+		data.setDeviceOperatingState(conn, DeviceOperatingState.Shutdown);
+
+		// then
+
+		verify(conn);
+	}
+
+	@Test
+	public void updateDeviceOperatingStateOn() {
+		// given
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { KTLCTData.POWER_SWITCH_OFF },
+						KTLCTRegister.ControlDevicePowerSwitch.getAddress());
+				return true;
+			}
+		});
+
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		KTLCTData data = new KTLCTData();
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
+				aryEq(new int[] { KTLCTData.POWER_SWITCH_ON }));
+
+		// when
+		replay(conn);
+		data.setDeviceOperatingState(conn, DeviceOperatingState.Normal);
+
+		// then
+
+		verify(conn);
+	}
 }

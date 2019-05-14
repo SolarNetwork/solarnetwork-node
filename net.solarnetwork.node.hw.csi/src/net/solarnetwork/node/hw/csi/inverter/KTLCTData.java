@@ -34,6 +34,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 
 /**
  * Implementation for accessing SI-60KTL-CT data.
@@ -439,9 +440,85 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		return (mode != null ? mode.asDeviceOperatingState() : DeviceOperatingState.Unknown);
 	}
 
+	/**
+	 * Set the device operating state.
+	 * 
+	 * <p>
+	 * This modifies the {@link KTLCTRegister#ControlDevicePowerSwitch}
+	 * register. This method supports setting the state to either
+	 * {@link DeviceOperatingState#Shutdown} or
+	 * {@link DeviceOperatingState#Normal}. This instance's sample data will
+	 * also be updated to reflect the value set on the device, if successful.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the modbus connection to use
+	 * @param state
+	 *        the desired state
+	 * @since 1.4
+	 */
+	public void setDeviceOperatingState(ModbusConnection conn, DeviceOperatingState state) {
+		final DeviceOperatingState currState = getDeviceOperatingState();
+		final int powerSwitchAddr = KTLCTRegister.ControlDevicePowerSwitch.getAddress();
+		final Integer update;
+		if ( state == DeviceOperatingState.Shutdown && currState != DeviceOperatingState.Shutdown ) {
+			// turn off
+			update = KTLCTData.POWER_SWITCH_OFF;
+
+		} else if ( state != DeviceOperatingState.Shutdown && (currState == DeviceOperatingState.Shutdown
+				|| currState == DeviceOperatingState.Unknown) ) {
+			// turn on
+			update = KTLCTData.POWER_SWITCH_ON;
+		} else {
+			update = null;
+		}
+		if ( update != null ) {
+			conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerSwitchAddr,
+					new int[] { update });
+			performUpdates(new ModbusDataUpdateAction() {
+
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(new int[] { update }, powerSwitchAddr);
+					return true;
+				}
+			});
+		}
+	}
+
 	@Override
 	public Float getOutputPowerLimitPercent() {
 		return getCentiValueAsFloat(KTLCTRegister.ControlDevicePowerLimit);
+	}
+
+	/**
+	 * Set the device output power limit.
+	 * 
+	 * <p>
+	 * This modifies the {@link KTLCTRegister#ControlDevicePowerLimit} register.
+	 * This instance's sample data will also be updated to reflect the value set
+	 * on the device, if successful.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the modbus connection to use
+	 * @param percent
+	 *        the desired output power limit, as a percentage from 0 - 1
+	 * @since 1.4
+	 */
+	public void setOutputPowerLimitPercent(ModbusConnection conn, Float percent) {
+		final int update = (percent != null ? (int) (percent.floatValue() * 1000) : 1000);
+		final int powerLimitAddr = KTLCTRegister.ControlDevicePowerLimit.getAddress();
+		conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr,
+				new int[] { update });
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { update }, powerLimitAddr);
+				return true;
+			}
+		});
 	}
 
 }
