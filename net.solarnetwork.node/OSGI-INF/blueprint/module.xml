@@ -74,6 +74,9 @@
 		</reference-listener>
 	</reference-list>
 	
+	<reference-list id="sampleTransformers" availability="optional"
+		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
+		
 	<!-- Published Services -->
 
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
@@ -120,7 +123,9 @@
 	<service>
 		<interfaces>
 			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
+			<value>org.springframework.core.task.AsyncTaskExecutor</value>
 			<value>org.springframework.core.task.TaskExecutor</value>
+			<value>java.util.concurrent.Executor</value>
 		</interfaces>
 		<service-properties>
 			<entry key="function" value="node"/>
@@ -170,6 +175,12 @@
 		</bean>
 	</service>
 	
+	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService">
+		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+			<property name="sampleTransformers" ref="sampleTransformers"/>
+		</bean>
+	</service>
+	
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>
@@ -196,7 +207,14 @@
 	</bean>
 	
 	<!-- Task executor for simple tasks -->
-	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newWorkStealingPool" destroy-method="shutdown"/>
+	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newFixedThreadPool" destroy-method="shutdown">
+		<argument value="#{T(java.lang.Runtime).getRuntime().availableProcessors() + 1}"/>
+		<argument>
+			<bean class="org.springframework.scheduling.concurrent.CustomizableThreadFactory">
+				<argument value="SolarNode-Core-"/>
+			</bean>
+		</argument>
+	</bean>
 		
 	<bean id="delegatingReactorSerialization" 
 		class="net.solarnetwork.node.reactor.support.DelegatingReactorSerialization">

@@ -23,8 +23,8 @@ Each TCP server configuration contains the following settings:
 
 | Setting         | Description                                      |
 |-----------------|--------------------------------------------------|
-| Service Name    | A unique name to identify this data source with. |
-| Service Group   | A group name to associate this data source with. |
+| Service Name    | A unique name to identify this component with. |
+| Service Group   | A group name to associate this component with. |
 | Log Levels      | A bitmask combination of OpenDNP3 [log levels][log-levels]. |
 | Retry min delay | The minimum length of time, in seconds, to delay between network operation retry attempts. |
 | Retry max delay | The maximum length of time, in seconds, to delay between network operation retry attempts. |
@@ -44,11 +44,17 @@ protocol, and for DNP3 control actions to be performed on SolarNode controls.
 
 Each outstation configuration contains the following general settings:
 
-| Setting           | Description                                      |
-|-------------------|--------------------------------------------------|
-| Service Name      | A unique name to identify this data source with. |
-| Service Group     | A group name to associate this data source with. |
-| Event buffer size | The number of DNP3 data events to maintain internally. |
+| Setting                  | Description                                      |
+|--------------------------|--------------------------------------------------|
+| Service Name             | A unique name to identify this component with. |
+| Service Group            | A group name to associate this component with. |
+| Event buffer size        | The number of DNP3 data events to maintain internally. |
+| DNP3 Server              | The **Service Name** of DNP3 server component to use. |
+| Address                  | The DNP3 address to use.|
+| Master Address           | The DNP3 address of the master DNP3 server to use. |
+| Max Controls Per Request | The maximum number of controls the outstation will attempt to process from a single request. |
+| Max Rx Fragment          | The maximum fragment size the outstation will be able to receive. |
+| Max Tx Fragment          | The maximum fragment size the outstation will use for fragments it sends. |
 
 ## DNP3 Outstation measurement settings
 
@@ -69,11 +75,17 @@ Each measurement configuration contains the following settings:
 | Unit Multiplier | A multiplication factor to apply to property values to normalize the value into a standard unit. |
 | Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. |
 
+The Outstation will listen for `net/solarnetwork/node/DatumDataSource/DATUM_CAPTURED` events that 
+match any measurement configuration's _Source ID_ value, and update the associated value in the DNP3 database.
+
 ## DNP3 Outstation control settings
 
 You may configure control settings for each control you want to make manageable via DNP3.
 You can configure as many control settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd>
 buttons to add/remove control configurations.
+
+Each control configuration will add a corresponding _output status_ type property to the DNP3 database
+(i.e. either an _Analog output status_ or a _Binary output status_).
 
 ![DNP3 Outstation control settings](docs/solarnode-dnp3-outstation-control-settings.png)
 
@@ -84,6 +96,10 @@ Each control configuration contains the following settings:
 | Control Provider | The **Service Name** of the of the control provider to query for control values. |
 | Control ID       | The control ID to manage via DNP3. |
 | DNP3 Type        | The type of DNP3 control to associate with the datum property. |
+
+The Outstation will listen for `net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CAPTURED` and
+`net/solarnetwork/node/NodeControlProvider/CONTROL_INFO_CHANGED` events that match any control
+configuration's _Control ID_ value, and update the associated value in the DNP3 database.
 
 
 # OpenDNP3 Shared library

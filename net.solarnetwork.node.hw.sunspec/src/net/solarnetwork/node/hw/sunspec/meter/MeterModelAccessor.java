@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Set;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -31,15 +32,16 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  * API for accessing meter model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public interface MeterModelAccessor extends ModelAccessor {
+public interface MeterModelAccessor extends ModelAccessor, ACEnergyDataAccessor {
 
 	/**
 	 * Get the AC frequency value, in Hz.
 	 * 
 	 * @return the frequency
 	 */
+	@Override
 	Float getFrequency();
 
 	/**
@@ -47,6 +49,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the current
 	 */
+	@Override
 	Float getCurrent();
 
 	/**
@@ -54,6 +57,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the voltage
 	 */
+	@Override
 	Float getVoltage();
 
 	/**
@@ -61,6 +65,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the power factor
 	 */
+	@Override
 	Float getPowerFactor();
 
 	/**
@@ -68,6 +73,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the active power
 	 */
+	@Override
 	Integer getActivePower();
 
 	/**
@@ -75,6 +81,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the apparent power
 	 */
+	@Override
 	Integer getApparentPower();
 
 	/**
@@ -82,6 +89,7 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the reactive power
 	 */
+	@Override
 	Integer getReactivePower();
 
 	/**
@@ -133,7 +141,20 @@ public interface MeterModelAccessor extends ModelAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
+	@Override
 	MeterModelAccessor accessorForPhase(ACPhase phase);
+
+	/**
+	 * Get a "reversed" model accessor, where import/export directions are
+	 * switched.
+	 * 
+	 * @return the reversed accessor
+	 * @since 1.1
+	 */
+	@Override
+	default MeterModelAccessor reversed() {
+		return new ReversedMeterModelAccessor(this);
+	}
 
 	/**
 	 * Get the active events.

@@ -22,22 +22,32 @@
 
 package net.solarnetwork.node.upload.mqtt.test;
 
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao;
+import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link UploadServiceDatumDao} class.
@@ -50,22 +60,25 @@ public class UploadServiceDatumDaoTests {
 	private UploadService uploadService;
 	private DatumDao<GeneralNodeDatum> delegate;
 	private UploadServiceDatumDao<GeneralNodeDatum> dao;
+	private GeneralDatumSamplesTransformService transformService;
 
 	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
 		uploadService = EasyMock.createMock(UploadService.class);
 		delegate = EasyMock.createMock(DatumDao.class);
-		dao = new UploadServiceDatumDao<>(uploadService, delegate);
+		transformService = EasyMock.createMock(GeneralDatumSamplesTransformService.class);
+		dao = new UploadServiceDatumDao<>(uploadService, delegate,
+				new StaticOptionalService<>(transformService));
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(uploadService, delegate);
+		EasyMock.verify(uploadService, delegate, transformService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(uploadService, delegate);
+		EasyMock.replay(uploadService, delegate, transformService);
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -132,6 +145,9 @@ public class UploadServiceDatumDaoTests {
 	public void storeDatumWithUploadSuccess() {
 		// given
 		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null))
+				.andReturn(datum.getSamples());
 		String id = UUID.randomUUID().toString();
 		expect(uploadService.uploadDatum(datum)).andReturn(id);
 
@@ -145,7 +161,12 @@ public class UploadServiceDatumDaoTests {
 	public void storeDatumWithUploadNoId() {
 		// given
 		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null))
+				.andReturn(datum.getSamples());
 		expect(uploadService.uploadDatum(datum)).andReturn(null);
+
+		// because no ID returned from UploadService, we fall back to persisting datum for later upload
 		delegate.storeDatum(datum);
 
 		replayAll();
@@ -158,6 +179,9 @@ public class UploadServiceDatumDaoTests {
 	public void storeDatumWithUploadThrowsException() {
 		// given
 		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null))
+				.andReturn(datum.getSamples());
 		RuntimeException e = new RuntimeException("boo");
 		expect(uploadService.uploadDatum(datum)).andThrow(e);
 		delegate.storeDatum(datum);
@@ -168,4 +192,78 @@ public class UploadServiceDatumDaoTests {
 		dao.storeDatum(datum);
 	}
 
+	@Test
+	public void storeDatumWithSampleFilterRemoved() {
+		// given
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null)).andReturn(null);
+
+		replayAll();
+
+		// when
+		dao.storeDatum(datum);
+	}
+
+	@Test
+	public void storeDatumWithSampleFilterModified() {
+		// given
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		GeneralDatumSamples modifiedSamples = new GeneralDatumSamples();
+		modifiedSamples.putInstantaneousSampleValue("bar", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null))
+				.andReturn(modifiedSamples);
+
+		// upload modified samples
+		String id = UUID.randomUUID().toString();
+		Capture<Datum> datumCaptor = new Capture<>();
+		expect(uploadService.uploadDatum(capture(datumCaptor))).andReturn(id);
+
+		replayAll();
+
+		// when
+		dao.storeDatum(datum);
+
+		// then
+		assertThat("Uploaded datum", datumCaptor.getValue(),
+				allOf(instanceOf(GeneralNodeDatum.class), not(sameInstance(datum))));
+		assertThat("Upoaded datum samples modified",
+				((GeneralNodeDatum) datumCaptor.getValue()).getSamples(), sameInstance(modifiedSamples));
+	}
+
+	@Test
+	public void storeDatumWithSampleFilterModifiedUploadNoId() {
+		// given
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.putInstantaneousSampleValue("foo", 1);
+		GeneralDatumSamples modifiedSamples = new GeneralDatumSamples();
+		modifiedSamples.putInstantaneousSampleValue("bar", 1);
+		expect(transformService.transformSamples(datum, datum.getSamples(), null))
+				.andReturn(modifiedSamples);
+
+		Capture<Datum> datumCaptor = new Capture<>();
+		expect(uploadService.uploadDatum(capture(datumCaptor))).andReturn(null);
+
+		// because no ID returned from UploadService, we fall back to persisting datum for later upload
+		Capture<GeneralNodeDatum> storeDatumCaptor = new Capture<>();
+		delegate.storeDatum(capture(storeDatumCaptor));
+
+		replayAll();
+
+		// when
+		dao.storeDatum(datum);
+
+		// then
+		assertThat("Uploaded datum", datumCaptor.getValue(),
+				allOf(instanceOf(GeneralNodeDatum.class), not(sameInstance(datum))));
+		assertThat("Upoaded datum samples modified",
+				((GeneralNodeDatum) datumCaptor.getValue()).getSamples(), sameInstance(modifiedSamples));
+
+		assertThat("Stored datum", storeDatumCaptor.getValue(),
+				allOf(notNullValue(), not(sameInstance(datum))));
+		assertThat("Stored datum samples modified", storeDatumCaptor.getValue().getSamples(),
+				sameInstance(modifiedSamples));
+
+	}
 }

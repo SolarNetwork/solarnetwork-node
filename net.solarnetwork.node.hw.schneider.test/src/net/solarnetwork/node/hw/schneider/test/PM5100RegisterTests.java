@@ -42,10 +42,10 @@ public class PM5100RegisterTests {
 
 	@Test
 	public void intRangeSet() {
-		// [29-48,79-79,128-134,1637-1638,1640-1640,2013-2015,2999-3004,3009-3010,3019-3032,3035-3036,3059-3060,3067-3068,3075-3076,3083-3084,3109-3110,3203-3210,3219-3226,3235-3242]
+		// [29-48,89-89,128-134,1637-1638,1640-1640,2013-2015,2999-3010,3019-3032,3035-3036,3053-3060,3067-3068,3075-3076,3083-3084,3109-3110,3203-3210,3219-3226,3235-3242]
 		IntRangeSet set = PM5100Register.getRegisterAddressSet();
 		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(18));
+		assertThat("Register set length", set.ranges(), arrayWithSize(17));
 	}
 
 	@Test
@@ -66,7 +66,7 @@ public class PM5100RegisterTests {
 	public void meterIntRangeSet() {
 		IntRangeSet set = PM5100Register.getMeterRegisterAddressSet();
 		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(12));
+		assertThat("Register set length", set.ranges(), arrayWithSize(11));
 		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
 		IntRange[] ranges = reduced.ranges();
 		assertThat("Reduced register set length", ranges, arrayWithSize(3));

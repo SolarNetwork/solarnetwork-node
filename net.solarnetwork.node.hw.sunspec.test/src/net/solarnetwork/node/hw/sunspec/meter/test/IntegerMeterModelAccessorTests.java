@@ -329,6 +329,17 @@ public class IntegerMeterModelAccessorTests {
 	}
 
 	@Test
+	public void activeEnergyExportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getActiveEnergyImported(), equalTo(1090000L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getActiveEnergyImported(),
+				equalTo(1009000L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getActiveEnergyImported(), equalTo(33600L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getActiveEnergyImported(), equalTo(47300L));
+	}
+
+	@Test
 	public void activeEnergyImport() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
 		assertThat("Total", model.getActiveEnergyImported(), equalTo(1001509000L));
@@ -337,6 +348,19 @@ public class IntegerMeterModelAccessorTests {
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getActiveEnergyImported(),
 				equalTo(273085000L));
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getActiveEnergyImported(),
+				equalTo(377907200L));
+	}
+
+	@Test
+	public void activeEnergyImportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getActiveEnergyExported(), equalTo(1001509000L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getActiveEnergyExported(),
+				equalTo(350516800L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getActiveEnergyExported(),
+				equalTo(273085000L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getActiveEnergyExported(),
 				equalTo(377907200L));
 	}
 
@@ -353,6 +377,19 @@ public class IntegerMeterModelAccessorTests {
 	}
 
 	@Test
+	public void apparentEnergyExportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getApparentEnergyImported(), equalTo(4003900L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getApparentEnergyImported(),
+				equalTo(7862800L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getApparentEnergyImported(),
+				equalTo(67600L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getApparentEnergyImported(),
+				equalTo(78900L));
+	}
+
+	@Test
 	public void apparentEnergyImport() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
 		assertThat("Total", model.getApparentEnergyImported(), equalTo(1047825700L));
@@ -361,6 +398,19 @@ public class IntegerMeterModelAccessorTests {
 		assertThat("Phase B", model.accessorForPhase(PhaseB).getApparentEnergyImported(),
 				equalTo(285831500L));
 		assertThat("Phase C", model.accessorForPhase(PhaseC).getApparentEnergyImported(),
+				equalTo(395004400L));
+	}
+
+	@Test
+	public void apparentEnergyImportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getApparentEnergyExported(), equalTo(1047825700L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getApparentEnergyExported(),
+				equalTo(370640000L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getApparentEnergyExported(),
+				equalTo(285831500L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getApparentEnergyExported(),
 				equalTo(395004400L));
 	}
 
@@ -377,6 +427,19 @@ public class IntegerMeterModelAccessorTests {
 	}
 
 	@Test
+	public void reactiveEnergyImportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getReactiveEnergyExported(), equalTo((0x18BDFFL + 0x131B4L) * 100L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getReactiveEnergyExported(),
+				equalTo((0xE7389L + 0x12EC0L) * 100L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getReactiveEnergyExported(),
+				equalTo((0x537F4L + 0x171L) * 100L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getReactiveEnergyExported(),
+				equalTo((0x51281L + 0x182) * 100L));
+	}
+
+	@Test
 	public void reactiveEnergyExport() {
 		MeterModelAccessor model = getTestDataInstance().getTypedModel();
 		assertThat("Total", model.getReactiveEnergyExported(), equalTo((0x51L + 0x6C73FL) * 100L));
@@ -388,4 +451,16 @@ public class IntegerMeterModelAccessorTests {
 				equalTo((0x0L + 0x53437L) * 100L));
 	}
 
+	@Test
+	public void reactiveEnergyExportReversed() {
+		MeterModelAccessor model = getTestDataInstance().getTypedModel();
+		model = model.reversed();
+		assertThat("Total", model.getReactiveEnergyImported(), equalTo((0x51L + 0x6C73FL) * 100L));
+		assertThat("Phase A", model.accessorForPhase(PhaseA).getReactiveEnergyImported(),
+				equalTo((0x50L + 0x0L) * 100L));
+		assertThat("Phase B", model.accessorForPhase(PhaseB).getReactiveEnergyImported(),
+				equalTo((0x0L + 0x19307L) * 100L));
+		assertThat("Phase C", model.accessorForPhase(PhaseC).getReactiveEnergyImported(),
+				equalTo((0x0L + 0x53437L) * 100L));
+	}
 }

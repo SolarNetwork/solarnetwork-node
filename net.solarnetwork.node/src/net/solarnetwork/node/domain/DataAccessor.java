@@ -25,8 +25,7 @@ package net.solarnetwork.node.domain;
 import java.util.Map;
 
 /**
- * API for accessing photovoltaic energy properties from a snapshot of data
- * captured from a device.
+ * API for accessing properties from a snapshot of data captured from a device.
  * 
  * @author matt
  * @version 1.0

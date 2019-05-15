@@ -25,6 +25,7 @@ package net.solarnetwork.node.system.cmdline;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import org.osgi.framework.BundleContext;
@@ -32,6 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.SystemService;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -41,9 +47,10 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * functions.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class CmdlineSystemService implements SystemService, SettingSpecifierProvider {
+public class CmdlineSystemService
+		implements SystemService, SettingSpecifierProvider, FeedbackInstructionHandler {
 
 	/** The default value for the {@code exitCommand} property. */
 	public static final String DEFAULT_EXIT_COMMAND = "sudo systemctl restart solarnode";
@@ -190,6 +197,36 @@ public class CmdlineSystemService implements SystemService, SettingSpecifierProv
 			}
 		}).start();
 	}
+
+	// FeedbackInstructionHandler
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return (TOPIC_REBOOT.equals(topic) || TOPIC_RESTART.equals(topic));
+	}
+
+	@Override
+	public InstructionState processInstruction(Instruction instruction) {
+		InstructionStatus status = processInstructionWithFeedback(instruction);
+		return (status != null ? status.getInstructionState() : null);
+	}
+
+	@Override
+	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
+		if ( TOPIC_REBOOT.equals(topic) ) {
+			reboot();
+		} else if ( TOPIC_RESTART.equals(topic) ) {
+			exit(true);
+		}
+
+		return status != null ? status.newCopyWithState(InstructionState.Completed)
+				: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
+						new Date());
+	}
+
+	// Settings
 
 	@Override
 	public String getSettingUID() {

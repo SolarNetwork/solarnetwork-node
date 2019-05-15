@@ -54,7 +54,6 @@ import com.automatak.dnp3.FrozenCounter;
 import com.automatak.dnp3.Outstation;
 import com.automatak.dnp3.OutstationChangeSet;
 import com.automatak.dnp3.OutstationStackConfig;
-import com.automatak.dnp3.StackStatistics;
 import com.automatak.dnp3.enums.AnalogOutputStatusQuality;
 import com.automatak.dnp3.enums.AnalogQuality;
 import com.automatak.dnp3.enums.BinaryOutputStatusQuality;
@@ -64,7 +63,6 @@ import com.automatak.dnp3.enums.CounterQuality;
 import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
 import com.automatak.dnp3.enums.FrozenCounterQuality;
-import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.OperateType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
@@ -72,8 +70,10 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
+import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
+import net.solarnetwork.node.io.dnp3.domain.OutstationConfig;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
@@ -95,7 +95,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -112,6 +112,7 @@ public class OutstationService extends AbstractApplicationService
 	private final Application app;
 	private final CommandHandler commandHandler;
 	private final OptionalServiceCollection<InstructionHandler> instructionHandlers;
+	private final OutstationConfig outstationConfig;
 
 	private MeasurementConfig[] measurementConfigs;
 	private ControlConfig[] controlConfigs;
@@ -135,6 +136,7 @@ public class OutstationService extends AbstractApplicationService
 		super(dnp3Channel);
 		setUid(DEFAULT_UID);
 		this.app = new Application();
+		this.outstationConfig = new OutstationConfig();
 		this.commandHandler = new CommandHandler();
 		this.instructionHandlers = (instructionHandlers != null ? instructionHandlers
 				: new StaticOptionalServiceCollection<>(Collections.emptyList()));
@@ -227,8 +229,12 @@ public class OutstationService extends AbstractApplicationService
 		Map<MeasurementType, List<MeasurementConfig>> configs = measurementTypeMap(
 				getMeasurementConfigs());
 		Map<ControlType, List<ControlConfig>> controlConfigs = controlTypeMap(getControlConfigs());
-		return new OutstationStackConfig(createDatabaseConfig(configs, controlConfigs),
+		OutstationStackConfig config = new OutstationStackConfig(
+				createDatabaseConfig(configs, controlConfigs),
 				createEventBufferConfig(configs, controlConfigs));
+		copySettings(getLinkLayerConfig(), config.linkConfig);
+		copySettings(getOutstationConfig(), config.outstationConfig);
+		return config;
 	}
 
 	private Map<MeasurementType, List<MeasurementConfig>> measurementTypeMap(
@@ -262,6 +268,31 @@ public class OutstationService extends AbstractApplicationService
 		return map;
 	}
 
+	private void appendMeasurementInfos(StringBuilder buf, MeasurementType type,
+			List<MeasurementConfig> list) {
+		buf.append(type.getTitle()).append(" (").append(list != null ? list.size() : 0).append(")\n");
+		if ( list != null ) {
+			int i = 0;
+			for ( MeasurementConfig conf : list ) {
+				buf.append(String.format("  %3d: %s\n", i, conf.getSourceId()));
+				i++;
+			}
+		}
+	}
+
+	private void appendControlInfos(StringBuilder buf, ControlType type, List<ControlConfig> list,
+			int offset) {
+		buf.append(type.getTitle()).append(" output status (").append(list != null ? list.size() : 0)
+				.append(")\n");
+		if ( list != null ) {
+			int i = 0;
+			for ( ControlConfig conf : list ) {
+				buf.append(String.format("  %3d: %s\n", i + offset, conf.getControlId()));
+				i++;
+			}
+		}
+	}
+
 	private DatabaseConfig createDatabaseConfig(Map<MeasurementType, List<MeasurementConfig>> configs,
 			Map<ControlType, List<ControlConfig>> controlConfigs) {
 		int analogCount = 0;
@@ -271,6 +302,7 @@ public class OutstationService extends AbstractApplicationService
 		int counterCount = 0;
 		int doubleBinaryCount = 0;
 		int frozenCounterCount = 0;
+		StringBuilder infoBuf = new StringBuilder();
 		if ( configs != null ) {
 			for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : configs.entrySet() ) {
 				MeasurementType type = me.getKey();
@@ -281,6 +313,7 @@ public class OutstationService extends AbstractApplicationService
 				switch (type) {
 					case AnalogInput:
 						analogCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case AnalogOutputStatus:
@@ -289,6 +322,7 @@ public class OutstationService extends AbstractApplicationService
 
 					case BinaryInput:
 						binaryCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case BinaryOutputStatus:
@@ -297,14 +331,17 @@ public class OutstationService extends AbstractApplicationService
 
 					case Counter:
 						counterCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case DoubleBitBinaryInput:
 						doubleBinaryCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 
 					case FrozenCounter:
 						frozenCounterCount = list.size();
+						appendMeasurementInfos(infoBuf, type, list);
 						break;
 				}
 			}
@@ -318,16 +355,20 @@ public class OutstationService extends AbstractApplicationService
 				}
 				switch (type) {
 					case Analog:
+						appendControlInfos(infoBuf, type, list, aoStatusCount);
 						aoStatusCount += list.size();
 						break;
 
 					case Binary:
+						appendControlInfos(infoBuf, type, list, boStatusCount);
 						boStatusCount += list.size();
 						break;
 
 				}
 			}
 		}
+		log.info("DNP3 outstation [{}] database configured with following registers:\n{}", getUid(),
+				infoBuf);
 		return new DatabaseConfig(binaryCount, doubleBinaryCount, analogCount, counterCount,
 				frozenCounterCount, boStatusCount, aoStatusCount);
 	}
@@ -408,7 +449,8 @@ public class OutstationService extends AbstractApplicationService
 		String topic = (event != null ? event.getTopic() : null);
 		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
-		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic) ) {
+		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
+				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
 			handleControlInfoCapturedEvent(event);
 		}
 	}
@@ -461,6 +503,7 @@ public class OutstationService extends AbstractApplicationService
 		synchronized ( this ) {
 			Outstation station = getOutstation();
 			if ( station != null ) {
+				log.info("Applying changes to DNP3 [{}]", getUID());
 				station.apply(changes);
 			}
 		}
@@ -579,9 +622,13 @@ public class OutstationService extends AbstractApplicationService
 							if ( changes == null ) {
 								changes = new OutstationChangeSet();
 							}
+
+							int index = (type == ControlType.Analog ? analogStatusOffset
+									: binaryStatusOffset) + itr.previousIndex();
+
 							Object propVal = event.getProperty("value");
-							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type,
-									itr.previousIndex(), sourceId, propVal);
+							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type, index,
+									sourceId, propVal);
 							switch (type) {
 								case Analog:
 									try {
@@ -593,7 +640,7 @@ public class OutstationService extends AbstractApplicationService
 										}
 										changes.update(new AnalogOutputStatus(n.doubleValue(),
 												(byte) AnalogOutputStatusQuality.ONLINE.toType(), ts),
-												itr.previousIndex() + analogStatusOffset);
+												index);
 									} catch ( NumberFormatException e ) {
 										log.warn("Cannot convert control [{}] value [{}] to number: {}",
 												sourceId, propVal, e.getMessage());
@@ -603,7 +650,7 @@ public class OutstationService extends AbstractApplicationService
 								case Binary:
 									changes.update(new BinaryOutputStatus(booleanPropertyValue(propVal),
 											(byte) BinaryOutputStatusQuality.ONLINE.toType(), ts),
-											itr.previousIndex() + binaryStatusOffset);
+											index);
 									break;
 
 							}
@@ -730,7 +777,7 @@ public class OutstationService extends AbstractApplicationService
 
 		private CommandStatus handleAnalogOperation(Object command, int index, String opDescription,
 				Number value) {
-			ControlConfig config = controlConfigForIndex(ControlType.Binary, index);
+			ControlConfig config = controlConfigForIndex(ControlType.Analog, index);
 			if ( config == null ) {
 				return CommandStatus.NOT_AUTHORIZED;
 			}
@@ -820,7 +867,7 @@ public class OutstationService extends AbstractApplicationService
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<>(8);
+		List<SettingSpecifier> result = new ArrayList<>(16);
 
 		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
 
@@ -828,6 +875,12 @@ public class OutstationService extends AbstractApplicationService
 		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
+		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['UID']",
+				TcpServerChannelService.DEFAULT_UID));
+
+		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
+
+		result.addAll(outstationSettings("outstationConfig.", new OutstationConfig()));
 
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
@@ -874,12 +927,13 @@ public class OutstationService extends AbstractApplicationService
 
 	private synchronized String getStackStatusMessage() {
 		StringBuilder buf = new StringBuilder();
+		buf.append(outstation != null ? "Available" : "Offline");
+		/*- TODO stats are crashing JVM for some reason
 		StackStatistics stackStats = outstation != null ? outstation.getStatistics() : null;
 		if ( stackStats == null ) {
 			buf.append("N/A");
 		} else {
 			buf.append(app.getLinkStatus() == LinkStatus.RESET ? "Online" : "Offline");
-			/*- stats are crashing JVM for some reason
 			TransportStatistics stats = stackStats.transport;
 			if ( stats != null ) {
 				buf.append("; ").append(stats.numTransportRx).append(" in");
@@ -889,10 +943,11 @@ public class OutstationService extends AbstractApplicationService
 				buf.append("; ").append(stats.numTransportDiscard).append(" discarded");
 				buf.append("; ").append(stats.numTransportIgnore).append(" ignored");
 			}
-			*/
 		}
+		*/
 		return buf.toString();
 	}
+
 	/*
 	 * =========================================================================
 	 * Accessors
@@ -1051,6 +1106,60 @@ public class OutstationService extends AbstractApplicationService
 	 */
 	public void setStartupDelaySecs(int startupDelaySecs) {
 		this.startupDelaySecs = startupDelaySecs;
+	}
+
+	/**
+	 * Get the outstation configuration.
+	 * 
+	 * @return the configuration
+	 * @since 1.2
+	 */
+	public OutstationConfig getOutstationConfig() {
+		return outstationConfig;
+	}
+
+	/**
+	 * Copy the link outstation configuration from one object to another.
+	 * 
+	 * @param from
+	 *        the settings to copy
+	 * @param to
+	 *        the destination to copy the settings to
+	 * @since 1.2
+	 */
+	public static void copySettings(com.automatak.dnp3.OutstationConfig from,
+			com.automatak.dnp3.OutstationConfig to) {
+		to.allowUnsolicited = from.allowUnsolicited;
+		to.indexMode = from.indexMode;
+		to.maxControlsPerRequest = from.maxControlsPerRequest;
+		to.maxRxFragSize = from.maxRxFragSize;
+		to.maxTxFragSize = from.maxTxFragSize;
+		to.selectTimeout = from.selectTimeout;
+		to.solConfirmTimeout = from.solConfirmTimeout;
+		to.unsolRetryTimeout = from.unsolRetryTimeout;
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of
+	 * {@link OutstationConfig}.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param defaults
+	 *        the default settings
+	 * @return the settings, never {@literal null}
+	 * @since 1.1
+	 */
+	public static List<SettingSpecifier> outstationSettings(String prefix, OutstationConfig defaults) {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		OutstationConfig config = new OutstationConfig();
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxControlsPerRequest",
+				String.valueOf(config.maxControlsPerRequest)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxRxFragSize",
+				String.valueOf(config.maxRxFragSize)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxTxFragSize",
+				String.valueOf(config.maxTxFragSize)));
+		return results;
 	}
 
 }

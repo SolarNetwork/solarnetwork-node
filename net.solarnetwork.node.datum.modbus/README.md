@@ -195,6 +195,9 @@ The root object is a [ExpressionRoot][ExpressionRoot] object, which has the foll
 | `sample` | `ModbusData` | A [`ModbusData`][ModbusData] object, populated with the raw Modbus data read from the device. |
 | `regs` | `Map<Integer,Integer>` | Simple Map based access to the register data in `sample`, to simplify expressions all register values are returned as unsigned 16-bit integers. |
 
+Any Modbus registers referenced via `reg[x]` expressions will be automatically read via the Modbus
+**read holding register** function, unless that same register is referenced also in a normal
+property configuration, in which case the Modus function defined there will be used.
 
 ### Expression examples
 

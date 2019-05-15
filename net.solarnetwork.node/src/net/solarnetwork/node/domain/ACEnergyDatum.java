@@ -28,7 +28,7 @@ package net.solarnetwork.node.domain;
  * average or total measurement.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public interface ACEnergyDatum extends EnergyDatum {
 
@@ -101,9 +101,17 @@ public interface ACEnergyDatum extends EnergyDatum {
 	public static final String LINE_VOLTAGE_KEY = "lineVoltage";
 
 	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for {@link #getNeutralCurrent()} values.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String NEUTRAL_CURRENT_KEY = "neutralCurrent";
+
+	/**
 	 * Get the phase measured by this datum.
 	 * 
-	 * @return the phase, should never be <em>null</em>
+	 * @return the phase, should never be {@literal null}
 	 */
 	ACPhase getPhase();
 
@@ -112,14 +120,14 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * same value as {@link EnergyDatum#getWatts()} but has this method to be
 	 * explicit.
 	 * 
-	 * @return the real power in watts, or <em>null</em> if not available
+	 * @return the real power in watts, or {@literal null} if not available
 	 */
 	Integer getRealPower();
 
 	/**
 	 * Get the instantaneous apparent power, in volt-amperes (VA).
 	 * 
-	 * @return the apparent power in volt-amperes, or <em>null</em> if not
+	 * @return the apparent power in volt-amperes, or {@literal null} if not
 	 *         available
 	 */
 	Integer getApparentPower();
@@ -127,8 +135,8 @@ public interface ACEnergyDatum extends EnergyDatum {
 	/**
 	 * Get the instantaneous reactive power, in reactive volt-amperes (var).
 	 * 
-	 * @return the reactive power in reactive volt-amperes, or <em>null</em> if
-	 *         not available
+	 * @return the reactive power in reactive volt-amperes, or {@literal null}
+	 *         if not available
 	 */
 	Integer getReactivePower();
 
@@ -145,14 +153,14 @@ public interface ACEnergyDatum extends EnergyDatum {
 	/**
 	 * Get the instantaneous frequency, in hertz (Hz).
 	 * 
-	 * @return the frequency, or <em>null</em> if not known
+	 * @return the frequency, or {@literal null} if not known
 	 */
 	Float getFrequency();
 
 	/**
 	 * Get the instantaneous neutral voltage.
 	 * 
-	 * @return the volts, or <em>null</em> if not known
+	 * @return the volts, or {@literal null} if not known
 	 */
 	Float getVoltage();
 
@@ -170,11 +178,11 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * Get the instantaneous current, in amps.
 	 * 
 	 * <p>
-	 * This metnod is equivalent to calling
+	 * This method is equivalent to calling
 	 * {@code datum.getCurrent(datum.getPhase())}.
 	 * </p>
 	 * 
-	 * @return the amps, or <em>null</em> if not known
+	 * @return the amps, or {@literal null} if not known
 	 */
 	Float getCurrent();
 
@@ -187,6 +195,14 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * @sicne 1.2
 	 */
 	Float getCurrent(ACPhase phase);
+
+	/**
+	 * Get the instantaneous neutral current, in amps.
+	 * 
+	 * @return the amps, or {@literal null} if not known
+	 * @since 1.3
+	 */
+	Float getNeutralCurrent();
 
 	/**
 	 * Get the instantaneous phase-to-neutral line voltage.
@@ -243,7 +259,7 @@ public interface ACEnergyDatum extends EnergyDatum {
 	/**
 	 * Get the instantaneous power factor.
 	 * 
-	 * @return the power factor, or <em>null</em> if not known
+	 * @return the power factor, or {@literal null} if not known
 	 */
 	Float getPowerFactor();
 }

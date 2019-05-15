@@ -28,10 +28,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.ChannelListener;
-import com.automatak.dnp3.ChannelStatistics;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
-import com.automatak.dnp3.LinkStatistics;
 import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 
@@ -41,7 +39,7 @@ import net.solarnetwork.node.io.dnp3.ChannelService;
  * @param C
  *        the channel configuration
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		implements ChannelService, ChannelListener {
@@ -160,6 +158,8 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 			buf.append("N/A");
 		} else {
 			buf.append(channelState);
+			// TODO: the stats stuff is causing segfaults, so commented out for now
+			/*-
 			LinkStatistics linkStats = channel.getStatistics();
 			ChannelStatistics stats = (linkStats != null ? linkStats.channel : null);
 			if ( stats != null ) {
@@ -169,6 +169,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 				buf.append("; ").append(stats.numBytesRx / 1024).append(" KB in");
 				buf.append("; ").append(stats.numBytesTx / 1024).append(" KB out");
 			}
+			*/
 		}
 		return buf.toString();
 	}

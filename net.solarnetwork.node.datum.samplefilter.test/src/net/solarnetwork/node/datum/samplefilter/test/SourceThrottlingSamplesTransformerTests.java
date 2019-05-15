@@ -27,16 +27,26 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -50,8 +60,9 @@ import net.solarnetwork.node.support.KeyValuePair;
  * Test cases for the {@link SourceThrottlingSamplesTransformer} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
+@SuppressWarnings("deprecation")
 public class SourceThrottlingSamplesTransformerTests {
 
 	private static final int TEST_FREQ = 1;
@@ -233,6 +244,107 @@ public class SourceThrottlingSamplesTransformerTests {
 				savedSetting.getFlags());
 		assertTrue("Setting value",
 				Long.valueOf(savedSetting.getValue(), 16) < System.currentTimeMillis());
+
+		verify(settingDao);
+	}
+
+	@Test
+	public void settingCacheExpiresNoInitialSetting() throws InterruptedException {
+		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
+		List<KeyValuePair> initialSettings = Collections.emptyList();
+		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+
+		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		settingDao.storeSetting(capture(savedSettingCapture));
+
+		// reload cached settings from DAO after expires
+		expect(settingDao.getSettings(settingKey)).andAnswer(new IAnswer<List<KeyValuePair>>() {
+
+			@Override
+			public List<KeyValuePair> answer() throws Throwable {
+				List<Setting> capturedSettings = savedSettingCapture.getValues();
+				List<KeyValuePair> pairs = new ArrayList<KeyValuePair>();
+				if ( capturedSettings != null ) {
+					for ( Setting setting : capturedSettings ) {
+						pairs.add(new KeyValuePair(setting.getType(), setting.getValue()));
+					}
+				}
+				return pairs;
+			}
+		});
+
+		settingDao.storeSetting(capture(savedSettingCapture));
+
+		replay(settingDao);
+
+		GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertThat("Non-filtered 1st result", result, notNullValue());
+
+		result = xform.transformSamples(datum, datum.getSamples());
+		assertThat("Filtered 2nd result", result, nullValue());
+
+		Thread.sleep(TEST_SETTING_CACHE_SECS * 1000L + 200);
+
+		result = xform.transformSamples(datum, datum.getSamples());
+		assertThat("Non-filtered 3rd result", result, notNullValue());
+
+		Thread.sleep(100);
+
+		List<Setting> savedSettings = savedSettingCapture.getValues();
+		assertThat("Processed date setting should be persisted twice", savedSettings, hasSize(2));
+		for ( Setting savedSetting : savedSettings ) {
+			assertThat("Setting key", savedSetting.getKey(), equalTo(settingKey));
+			assertThat("Setting type", savedSetting.getType(), equalTo(datum.getSourceId()));
+			assertThat("Setting flags", savedSetting.getFlags(),
+					equalTo((Set<Setting.SettingFlag>) EnumSet.of(Setting.SettingFlag.Volatile,
+							Setting.SettingFlag.IgnoreModificationDate)));
+			assertThat("Setting value", Long.valueOf(savedSetting.getValue(), 16),
+					lessThan(System.currentTimeMillis()));
+		}
+
+		verify(settingDao);
+	}
+
+	@Test
+	public void settingCacheExpiresInitiallyNotExpired() throws InterruptedException {
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		final long start = System.currentTimeMillis();
+		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
+		List<KeyValuePair> initialSettings = Collections
+				.singletonList(new KeyValuePair(datum.getSourceId(), Long.toString(start, 16)));
+		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+
+		// reload cached settings from DAO after expires (no changes)
+		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+
+		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		settingDao.storeSetting(capture(savedSettingCapture));
+
+		replay(settingDao);
+
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		assertThat("Filtered 1st result", result, nullValue());
+
+		Thread.sleep(TEST_SETTING_CACHE_SECS * 1000L + 200);
+
+		result = xform.transformSamples(datum, datum.getSamples());
+		assertThat("Non-filtered 2rd result", result, notNullValue());
+
+		Thread.sleep(100);
+
+		List<Setting> savedSettings = savedSettingCapture.getValues();
+		assertThat("Processed date setting should be persisted once", savedSettings, hasSize(1));
+		for ( Setting savedSetting : savedSettings ) {
+			assertThat("Setting key", savedSetting.getKey(), equalTo(settingKey));
+			assertThat("Setting type", savedSetting.getType(), equalTo(datum.getSourceId()));
+			assertThat("Setting flags", savedSetting.getFlags(),
+					equalTo((Set<Setting.SettingFlag>) EnumSet.of(Setting.SettingFlag.Volatile,
+							Setting.SettingFlag.IgnoreModificationDate)));
+			assertThat("Setting value", Long.valueOf(savedSetting.getValue(), 16),
+					lessThan(System.currentTimeMillis()));
+		}
 
 		verify(settingDao);
 	}

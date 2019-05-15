@@ -85,6 +85,11 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService" />
 	</bean>
 
+	<bean id="generalDatumSamplesTransformService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService" />
+	</bean>
+
 	<!-- Published Services -->
 
 	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"
@@ -111,14 +116,25 @@
 		</service-properties>
 	</service>
 
+	<service ref="transformingGeneralNodeDatumDao" ranking="2" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+		</interfaces>
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum" />
+			<entry key="upload" value="false" />
+		</service-properties>
+	</service>
+	
+	<!-- The GeneralNodeDatumDao is also published as (mode=direct) for services that need non-proxied direct support. -->
 	<service ref="generalNodeDatumDao" ranking="1" depends-on="databaseSetup">
 		<interfaces>
 			<value>net.solarnetwork.node.dao.DatumDao</value>
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
 		</interfaces>
 		<service-properties>
-			<beans:entry key="datumClassName"
-				value="net.solarnetwork.node.domain.GeneralNodeDatum" />
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum" />
+			<entry key="mode" value="direct" />
 		</service-properties>
 	</service>
 
@@ -126,14 +142,25 @@
 
 	<service ref="generalNodeDatumTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
 
+	<service ref="transformingGeneralLocationDatumDao" ranking="2" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.DatumDao</value>
+		</interfaces>
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum" />
+			<entry key="upload" value="false" />
+		</service-properties>
+	</service>
+	
+	<!-- The GeneralLocationDatumDao is also published as (mode=direct) for services that need non-proxied direct support. -->
 	<service ref="generalLocationDatumDao" ranking="1" depends-on="databaseSetup">
 		<interfaces>
 			<value>net.solarnetwork.node.dao.DatumDao</value>
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
 		</interfaces>
 		<service-properties>
-			<beans:entry key="datumClassName"
-				value="net.solarnetwork.node.domain.GeneralLocationDatum" />
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralLocationDatum" />
+			<entry key="mode" value="direct" />
 		</service-properties>
 	</service>
 
@@ -258,6 +285,12 @@
 		<property name="sqlResourcePrefix" value="${JdbcGeneralNodeDatumDao.sqlResourcePrefix}" />
 		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
+	
+	<bean id="transformingGeneralNodeDatumDao" class="net.solarnetwork.node.dao.SampleTransformingGeneralNodeDatumDao">
+		<argument ref="generalNodeDatumDao"/>
+		<argument ref="generalDatumSamplesTransformService"/>
+		<argument value="true"/>
+	</bean>
 
 	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
 		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
@@ -325,6 +358,12 @@
 		<property name="sqlResourcePrefix"
 			value="${JdbcGeneralLocationDatumDao.sqlResourcePrefix}" />
 		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
+	</bean>
+
+	<bean id="transformingGeneralLocationDatumDao" class="net.solarnetwork.node.dao.SampleTransformingGeneralLocationDatumDao">
+		<argument ref="generalLocationDatumDao"/>
+		<argument ref="generalDatumSamplesTransformService"/>
+		<argument value="true"/>
 	</bean>
 
 	<bean id="generalLocationDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">

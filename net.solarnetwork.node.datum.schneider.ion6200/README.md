@@ -33,6 +33,7 @@ Each device configuration contains the following overall settings:
 | Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
 | Megawatt           | Toggle to treat as the Megawatt version of the ION meter.                        |
 | Backwards          | Toggle to treat energy delivered as `wattHoursReverse` instead of `wattHours`    |
+| Phase Measurements | Toggle to collect additional phase-specific measurement properties.              |
 
 ## Overall device settings notes
 
@@ -57,4 +58,11 @@ Each device configuration contains the following overall settings:
 	datum property and <i>energy received</i> to <code>wattHoursReverse</code>. Enable this to instead
 	map <i>energy delivered</i> to <code>wattHoursReverse</code> and <i>energy received</i>
 	to <code>wattHours</code>.</dd>
+	<dt>Phase Measurements</dt>
+	<dd>When enabled, then the data source will include phase-specific measurements in the datum
+	it collects, such as: <ul>
+	<li><code>current_a</code>, <code>current_b</code>, <code>current_c</code></li>
+	<li><code>voltage_a</code>, <code>voltage_b</code>, <code>voltage_c</code></li>
+	<li><code>voltage_ab</code>, <code>voltage_bc</code>, <code>voltage_ca</code></li>
+	</ol></ul>
 </dl>

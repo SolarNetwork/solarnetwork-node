@@ -33,20 +33,22 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Serialize {@link GeneralNodeDatum} and {@link GeneralLocationDatum} to JSON.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.3
  * @since 1.58
  */
 public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeDatum>
 		implements Serializable {
 
-	private static final long serialVersionUID = 4147284403831089758L;
+	private static final long serialVersionUID = 1564431501442940772L;
 
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
+	private OptionalService<SimpleGeneralDatumSamplesTransformService> samplesTransformService;
 
 	/**
 	 * Default constructor.
@@ -59,6 +61,14 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 	public void serialize(GeneralNodeDatum datum, JsonGenerator generator, SerializerProvider provider)
 			throws IOException, JsonGenerationException {
 		GeneralDatumSamples samples = datum.getSamples();
+
+		SimpleGeneralDatumSamplesTransformService xformService = (samplesTransformService != null
+				? samplesTransformService.service()
+				: null);
+		if ( samples != null && xformService != null ) {
+			samples = xformService.transformSamples(datum, samples, null);
+		}
+
 		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
 		if ( samples != null && xforms != null ) {
 			for ( GeneralDatumSamplesTransformer xform : xforms ) {
@@ -102,6 +112,24 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 	public void setSampleTransformers(
 			List<net.solarnetwork.node.domain.GeneralDatumSamplesTransformer> sampleTransformers) {
 		this.sampleTransformers = sampleTransformers;
+	}
+
+	/**
+	 * Set a samples transform service to use when serializing.
+	 * 
+	 * <p>
+	 * If this service is configured, it will be invoked <em>before</em> any
+	 * samples transformers configured via {@link #setSampleTransformers(List)}.
+	 * </p>
+	 * 
+	 * @param samplesTransformService
+	 *        The service to use; if the service returns {@literal null} then
+	 *        the datum will not be serialized.
+	 * @since 1.3
+	 */
+	public void setSamplesTransformService(
+			OptionalService<SimpleGeneralDatumSamplesTransformService> samplesTransformService) {
+		this.samplesTransformService = samplesTransformService;
 	}
 
 }

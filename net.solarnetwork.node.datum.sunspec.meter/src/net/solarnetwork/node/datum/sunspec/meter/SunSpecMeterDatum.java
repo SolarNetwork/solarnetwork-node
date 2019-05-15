@@ -23,6 +23,8 @@
 package net.solarnetwork.node.datum.sunspec.meter;
 
 import java.util.Date;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
@@ -31,9 +33,9 @@ import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
  * Datum for a SunSpec compatible meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum {
+public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
 	private final MeterModelAccessor data;
 	private final boolean backwards;
@@ -60,25 +62,23 @@ public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum {
 		if ( data.getDataTimestamp() > 0 ) {
 			setCreated(new Date(data.getDataTimestamp()));
 		}
-		populateMeasurements(data, phase);
+		MeterModelAccessor phaseData = accessorForPhase(phase);
+		populateMeasurements(phaseData, phase);
 	}
 
 	private void populateMeasurements(MeterModelAccessor data, ACPhase phase) {
 		setPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
+		setLineVoltage(data.getLineVoltage());
 		setCurrent(data.getCurrent());
+		setNeutralCurrent(data.getNeutralCurrent());
 		setPowerFactor(data.getPowerFactor());
-		setApparentPower((backwards ? -1 : 1) * data.getApparentPower());
-		setReactivePower((backwards ? -1 : 1) * data.getReactivePower());
-		setWatts((backwards ? -1 : 1) * data.getActivePower());
-		if ( backwards ) {
-			setWattHourReading(data.getActiveEnergyExported());
-			setReverseWattHourReading(data.getActiveEnergyImported());
-		} else {
-			setWattHourReading(data.getActiveEnergyImported());
-			setReverseWattHourReading(data.getActiveEnergyExported());
-		}
+		setApparentPower(data.getApparentPower());
+		setReactivePower(data.getReactivePower());
+		setWatts(data.getActivePower());
+		setWattHourReading(data.getActiveEnergyImported());
+		setReverseWattHourReading(data.getActiveEnergyExported());
 	}
 
 	/**
@@ -88,6 +88,65 @@ public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum {
 	 */
 	public MeterModelAccessor getData() {
 		return data;
+	}
+
+	@Override
+	public long getDataTimestamp() {
+		return data.getDataTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return data.getDeviceInfo();
+	}
+
+	@Override
+	public MeterModelAccessor accessorForPhase(ACPhase phase) {
+		MeterModelAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
+		}
+		return phaseData;
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return data.reversed();
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return data.getActivePower();
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return data.getActiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return data.getActiveEnergyReceived();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return data.getApparentEnergyDelivered();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return data.getApparentEnergyReceived();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return data.getReactiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return data.getReactiveEnergyReceived();
 	}
 
 }

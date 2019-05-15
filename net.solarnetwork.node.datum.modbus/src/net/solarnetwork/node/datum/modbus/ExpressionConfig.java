@@ -50,7 +50,7 @@ import net.solarnetwork.support.ExpressionServiceExpression;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
@@ -113,6 +113,7 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 			BasicMultiValueSettingSpecifier expressionServiceId = new BasicMultiValueSettingSpecifier(
 					prefix + "expressionServiceId", "");
 			Map<String, String> exprServiceTitles = new LinkedHashMap<>();
+			exprServiceTitles.put("", "");
 			for ( ExpressionService service : expressionServices ) {
 				exprServiceTitles.put(service.getUid(), service.getDisplayName());
 			}

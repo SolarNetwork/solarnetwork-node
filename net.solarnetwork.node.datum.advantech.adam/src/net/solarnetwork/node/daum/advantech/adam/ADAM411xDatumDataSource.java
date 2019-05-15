@@ -140,7 +140,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 				continue;
 			}
 			Number propVal = sample.getChannelValue(conf.getChannel());
-			propVal = conf.applyScaleAndMultipler(propVal);
+			propVal = conf.applyTransformations(propVal);
 
 			if ( propVal != null ) {
 				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);

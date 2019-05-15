@@ -22,22 +22,29 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
-import static java.util.Arrays.copyOfRange;
+import static org.easymock.EasyMock.aryEq;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.test.DataUtils;
 
 /**
@@ -48,18 +55,28 @@ import net.solarnetwork.node.test.DataUtils;
  */
 public class KTLCTDataTests {
 
-	private static final int[] TEST_DATA = parseTestData("data-01.txt");
+	private static final Map<Integer, Integer> TEST_DATA = parseTestData("data-01.txt");
 
 	private static final Logger log = LoggerFactory.getLogger(KTLCTDataTests.class);
 
-	private static int[] parseTestData(String resource) {
+	private static Map<Integer, Integer> parseTestData(String resource) {
 		try {
-			return DataUtils.parseModbusHexRegisterLines(new BufferedReader(
+			return DataUtils.parseModbusHexRegisterMappingLines(new BufferedReader(
 					new InputStreamReader(KTLCTDataTests.class.getResourceAsStream(resource))));
 		} catch ( IOException e ) {
 			log.error("Error reading modbus data resource [{}]", resource, e);
-			return new int[0];
+			return Collections.emptyMap();
 		}
+	}
+
+	private static int[] mapSlice(Map<Integer, Integer> data, int start, int len) {
+		int[] slice = new int[len];
+		for ( int i = start, end = start + len; i < end; i++ ) {
+			Integer k = i;
+			Integer v = data.get(k);
+			slice[i - start] = (v != null ? v.intValue() : 0);
+		}
+		return slice;
 	}
 
 	private final KTLCTData data = new KTLCTData();
@@ -70,7 +87,7 @@ public class KTLCTDataTests {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA, 0);
+				m.saveDataMap(TEST_DATA);
 				return true;
 			}
 		});
@@ -82,51 +99,143 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 48))
-				.andReturn(copyOfRange(TEST_DATA, 0, 48));
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
+				.andReturn(mapSlice(TEST_DATA, 0, 59));
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 4096, 2))
+				.andReturn(mapSlice(TEST_DATA, 4096, 2));
 
 		// when
-		EasyMock.replay(conn);
+		replay(conn);
 		data.readConfigurationData(conn);
 
 		// then
 
-		EasyMock.verify(conn);
+		verify(conn);
 	}
 
 	@Test
-	public void getDeviceModel() {
+	public void deviceModel() {
 		assertThat("Inveter type", data.getInverterType(), equalTo(KTLCTInverterType.CSI_50KTL_CT));
 	}
 
 	@Test
-	public void getModelName() {
+	public void modelName() {
 		assertThat("Model name", data.getModelName(), equalTo("PVI36TL-480"));
 	}
 
 	@Test
-	public void getSerialNumber() {
+	public void serialNumber() {
 		assertThat("Serial number", data.getSerialNumber(), equalTo("282791139098658"));
 	}
 
 	@Test
-	public void getActivePower() {
+	public void activePower() {
 		assertThat("Active power", data.getActivePower(), equalTo(15600));
 	}
 
 	@Test
-	public void getApparentPower() {
+	public void apparentPower() {
 		assertThat("Apparent power", data.getApparentPower(), equalTo(15700));
 	}
 
 	@Test
-	public void getVoltage() {
+	public void voltage() {
 		assertThat("Voltage", data.getVoltage(), equalTo(490.7f));
 	}
 
 	@Test
-	public void getLineVoltage() {
+	public void lineVoltage() {
 		assertThat("Voltage", data.getLineVoltage(), equalTo(490.7f));
 	}
 
+	@Test
+	public void workMode() {
+		assertThat("Work mode", data.getWorkMode(), equalTo(KTLCTInverterWorkMode.Running));
+	}
+
+	@Test
+	public void deviceOperatingState() {
+		assertThat("Power mode", data.getDeviceOperatingState(), equalTo(DeviceOperatingState.Normal));
+	}
+
+	@Test
+	public void deviceOperatingStateOff() {
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { KTLCTData.POWER_SWITCH_OFF },
+						KTLCTRegister.ControlDevicePowerSwitch.getAddress());
+				return true;
+			}
+		});
+		assertThat("Power mode", data.getDeviceOperatingState(), equalTo(DeviceOperatingState.Shutdown));
+	}
+
+	@Test
+	public void outputPowerLimitPercent() {
+		assertThat("Output power limit", data.getOutputPowerLimitPercent(), equalTo(100.0f));
+	}
+
+	@Test
+	public void outputPowerLimitPercentLimited() {
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { 0x02C3 },
+						KTLCTRegister.ControlDevicePowerLimit.getAddress());
+				return true;
+			}
+		});
+		assertThat("Output power limit", data.getOutputPowerLimitPercent(), equalTo(70.7f));
+	}
+
+	@Test
+	public void updateDeviceOperatingStateOff() {
+		// given
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		KTLCTData data = new KTLCTData();
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
+				aryEq(new int[] { KTLCTData.POWER_SWITCH_OFF }));
+
+		// when
+		replay(conn);
+		data.setDeviceOperatingState(conn, DeviceOperatingState.Shutdown);
+
+		// then
+
+		verify(conn);
+	}
+
+	@Test
+	public void updateDeviceOperatingStateOn() {
+		// given
+		data.performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { KTLCTData.POWER_SWITCH_OFF },
+						KTLCTRegister.ControlDevicePowerSwitch.getAddress());
+				return true;
+			}
+		});
+
+		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
+		KTLCTData data = new KTLCTData();
+
+		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
+				aryEq(new int[] { KTLCTData.POWER_SWITCH_ON }));
+
+		// when
+		replay(conn);
+		data.setDeviceOperatingState(conn, DeviceOperatingState.Normal);
+
+		// then
+
+		verify(conn);
+	}
 }

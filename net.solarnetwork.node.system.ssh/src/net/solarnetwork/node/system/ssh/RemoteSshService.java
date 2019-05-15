@@ -310,12 +310,16 @@ public class RemoteSshService
 		if ( stopped ) {
 			configs.remove(config);
 		}
+		final InstructionStatus startingStatus = instruction.getStatus();
 		InstructionState newState = (stopped ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
-			result = instruction.getStatus().newCopyWithState(newState);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
 		} else {
-			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
+							resultParams));
 		}
 		return result;
 	}

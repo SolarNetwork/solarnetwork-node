@@ -22,22 +22,43 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 
 /**
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 1.4
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
+
+	/**
+	 * The value of the {@link KTLCTRegister#ControlDevicePowerSwitch} register
+	 * representing <i>on</i>.
+	 * 
+	 * @since 1.4
+	 */
+	public static final int POWER_SWITCH_ON = 0xAAAA;
+
+	/**
+	 * The value of the {@link KTLCTRegister#ControlDevicePowerSwitch} register
+	 * representing <i>off</i>.
+	 * 
+	 * @since 1.4
+	 */
+	public static final int POWER_SWITCH_OFF = 0x5555;
 
 	private static final int MAX_RESULTS = 64;
 
@@ -90,6 +111,18 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 				KTLCTRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
 
+	/**
+	 * Read the control registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @since 1.4
+	 */
+	public final void readControlData(final ModbusConnection conn) {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				KTLCTRegister.getControlRegisterAddressSet(), MAX_RESULTS);
+	}
+
 	@Override
 	public Map<String, Object> getDeviceInfo() {
 		KTLCTDataAccessor data = getSnapshot();
@@ -104,9 +137,34 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 				result.put(INFO_KEY_DEVICE_MODEL, model);
 			}
 		}
+		KTLCTFirmwareVersion version = data.getFirmwareVersion();
+		if ( version != null ) {
+			result.put("Firmware Version", String.format("DSP = %d, MCU = %d", version.getDspVersion(),
+					version.getMcuVersion()));
+		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
 			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		Set<KTLCTWarn> warns = data.getWarnings();
+		if ( warns != null && !warns.isEmpty() ) {
+			result.put("Warnings", commaDelimitedStringFromCollection(warns));
+		}
+		Set<KTLCTPermanentFault> permFaults = data.getPermanentFaults();
+		if ( permFaults != null && !permFaults.isEmpty() ) {
+			result.put("Permanent Faults", commaDelimitedStringFromCollection(permFaults));
+		}
+		Set<KTLCTFault0> faults0 = data.getFaults0();
+		if ( faults0 != null && !faults0.isEmpty() ) {
+			result.put("Faults 0", commaDelimitedStringFromCollection(faults0));
+		}
+		Set<KTLCTFault1> faults1 = data.getFaults1();
+		if ( faults1 != null && !faults1.isEmpty() ) {
+			result.put("Faults 1", commaDelimitedStringFromCollection(faults1));
+		}
+		Set<KTLCTFault2> faults2 = data.getFaults2();
+		if ( faults2 != null && !faults2.isEmpty() ) {
+			result.put("Faults 2", commaDelimitedStringFromCollection(faults2));
 		}
 		return result;
 	}
@@ -191,6 +249,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		return (a != null && b != null && c != null
 				? (a.floatValue() + b.floatValue() + c.floatValue()) / 10.0f
 				: null);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
 	}
 
 	@Override
@@ -279,6 +342,19 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		}
 	}
 
+	@Override
+	public KTLCTInverterWorkMode getWorkMode() {
+		Number n = getNumber(KTLCTRegister.StatusMode);
+		if ( n == null ) {
+			return null;
+		}
+		try {
+			return KTLCTInverterWorkMode.forCode(n.intValue());
+		} catch ( IllegalArgumentException e ) {
+			return null;
+		}
+	}
+
 	private String getNullTerminatedString(String s) {
 		if ( s == null || s.isEmpty() ) {
 			return s;
@@ -304,6 +380,42 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	}
 
 	@Override
+	public KTLCTFirmwareVersion getFirmwareVersion() {
+		Number n = getNumber(KTLCTRegister.InfoFirmwareVersion);
+		return (n != null ? KTLCTFirmwareVersion.forCode(n.intValue()) : null);
+	}
+
+	@Override
+	public Set<KTLCTWarn> getWarnings() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTWarn.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault0> getFaults0() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault0.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault1> getFaults1() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault1.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTFault2> getFaults2() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault2.class) : null);
+	}
+
+	@Override
+	public Set<KTLCTPermanentFault> getPermanentFaults() {
+		Number n = getNumber(KTLCTRegister.StatusWarn);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTPermanentFault.class) : null);
+	}
+
+	@Override
 	public Float getModuleTemperature() {
 		return getCentiValueAsFloat(KTLCTRegister.InverterModuleTemperature);
 	}
@@ -316,6 +428,97 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	@Override
 	public Float getTransformerTemperature() {
 		return getCentiValueAsFloat(KTLCTRegister.InverterTransformerTemperature);
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		Number n = getNumber(KTLCTRegister.ControlDevicePowerSwitch);
+		if ( n != null && n.intValue() == POWER_SWITCH_OFF ) {
+			return DeviceOperatingState.Shutdown;
+		}
+		KTLCTInverterWorkMode mode = getWorkMode();
+		return (mode != null ? mode.asDeviceOperatingState() : DeviceOperatingState.Unknown);
+	}
+
+	/**
+	 * Set the device operating state.
+	 * 
+	 * <p>
+	 * This modifies the {@link KTLCTRegister#ControlDevicePowerSwitch}
+	 * register. This method supports setting the state to either
+	 * {@link DeviceOperatingState#Shutdown} or
+	 * {@link DeviceOperatingState#Normal}. This instance's sample data will
+	 * also be updated to reflect the value set on the device, if successful.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the modbus connection to use
+	 * @param state
+	 *        the desired state
+	 * @since 1.4
+	 */
+	public void setDeviceOperatingState(ModbusConnection conn, DeviceOperatingState state) {
+		final DeviceOperatingState currState = getDeviceOperatingState();
+		final int powerSwitchAddr = KTLCTRegister.ControlDevicePowerSwitch.getAddress();
+		final Integer update;
+		if ( state == DeviceOperatingState.Shutdown && currState != DeviceOperatingState.Shutdown ) {
+			// turn off
+			update = KTLCTData.POWER_SWITCH_OFF;
+
+		} else if ( state != DeviceOperatingState.Shutdown && (currState == DeviceOperatingState.Shutdown
+				|| currState == DeviceOperatingState.Unknown) ) {
+			// turn on
+			update = KTLCTData.POWER_SWITCH_ON;
+		} else {
+			update = null;
+		}
+		if ( update != null ) {
+			conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerSwitchAddr,
+					new int[] { update });
+			performUpdates(new ModbusDataUpdateAction() {
+
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(new int[] { update }, powerSwitchAddr);
+					return true;
+				}
+			});
+		}
+	}
+
+	@Override
+	public Float getOutputPowerLimitPercent() {
+		return getCentiValueAsFloat(KTLCTRegister.ControlDevicePowerLimit);
+	}
+
+	/**
+	 * Set the device output power limit.
+	 * 
+	 * <p>
+	 * This modifies the {@link KTLCTRegister#ControlDevicePowerLimit} register.
+	 * This instance's sample data will also be updated to reflect the value set
+	 * on the device, if successful.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the modbus connection to use
+	 * @param percent
+	 *        the desired output power limit, as a percentage from 0 - 1
+	 * @since 1.4
+	 */
+	public void setOutputPowerLimitPercent(ModbusConnection conn, Float percent) {
+		final int update = (percent != null ? (int) (percent.floatValue() * 1000) : 1000);
+		final int powerLimitAddr = KTLCTRegister.ControlDevicePowerLimit.getAddress();
+		conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr,
+				new int[] { update });
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(new int[] { update }, powerLimitAddr);
+				return true;
+			}
+		});
 	}
 
 }

@@ -36,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.4
  */
 public class PM5100Data extends ModbusData implements PM5100DataAccessor {
@@ -257,6 +257,11 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	}
 
 	@Override
+	public Float getNeutralCurrent() {
+		return getCurrentValue(PM5100Register.MeterCurrentNeutral);
+	}
+
+	@Override
 	public Float getVoltage() {
 		return getVoltageValue(PM5100Register.MeterVoltageLineNeutralAverage);
 	}
@@ -380,6 +385,11 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 					n = PM5100Data.this.getCurrent();
 			}
 			return n;
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return PM5100Data.this.getNeutralCurrent();
 		}
 
 		@Override
@@ -562,6 +572,11 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		@Override
 		public Float getCurrent() {
 			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
 		}
 
 		@Override

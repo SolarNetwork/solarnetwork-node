@@ -38,12 +38,15 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public enum KTLCTRegister implements ModbusReference {
 
 	/** Inverter model number. */
 	InfoInverterModel(0, UInt16),
+
+	/** Firmware version, as in {@link KTLCTFirmwareVersion}. */
+	InfoFirmwareVersion(0x5, UInt16),
 
 	/** Serial number. */
 	InfoSerialNumber(0x6, UInt64),
@@ -118,10 +121,46 @@ public enum KTLCTRegister implements ModbusReference {
 	InverterTransformerTemperature(0x2E, UInt16),
 
 	/** Status mode code, see {@link KTLCTInverterWorkMode}. */
-	StatusMode(0x2F, UInt16);
+	StatusMode(0x2F, UInt16),
+
+	/** Permanent fault codes. */
+	StatusPermanentFault(0x34, UInt16),
+
+	/** Warning codes. */
+	StatusWarn(0x35, UInt16),
+
+	/** Fault 0 codes. */
+	StatusFault0(0x36, UInt16),
+
+	/** Fault 1 codes. */
+	StatusFault1(0x37, UInt16),
+
+	/** Fault 2 codes. */
+	StatusFault2(0x38, UInt16),
+
+	/** Fault 3 codes. */
+	StatusFault3(0x39, UInt16),
+
+	/** Fault 4 codes. */
+	StatusFault4(0x3A, UInt16),
+
+	/**
+	 * Power on (<code>0xAAAA</code>) or off (<code>0x5555</code>).
+	 * 
+	 * @since 1.2
+	 */
+	ControlDevicePowerSwitch(0x1000, UInt16),
+
+	/**
+	 * Power limit integer percentage (0-100), in 0.1 percent scale.
+	 * 
+	 * @since 1.2
+	 */
+	ControlDevicePowerLimit(0x1001, UInt16);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
 
 	private final int address;
 	private final int length;
@@ -161,6 +200,10 @@ public enum KTLCTRegister implements ModbusReference {
 		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Info", "Config")));
 	}
 
+	private static IntRangeSet createControlRegisterAddressSet() {
+		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Control")));
+	}
+
 	@Override
 	public int getAddress() {
 		return address;
@@ -190,6 +233,7 @@ public enum KTLCTRegister implements ModbusReference {
 	public static IntRangeSet getRegisterAddressSet() {
 		IntRangeSet s = new IntRangeSet(CONFIG_REGISTER_ADDRESS_SET);
 		s.addAll(INVERTER_REGISTER_ADDRESS_SET);
+		s.addAll(CONTROL_REGISTER_ADDRESS_SET);
 		return s;
 	}
 
@@ -221,6 +265,22 @@ public enum KTLCTRegister implements ModbusReference {
 	 */
 	public static IntRangeSet getInverterRegisterAddressSet() {
 		return (IntRangeSet) INVERTER_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the control registers defined in
+	 * this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 * @since 1.2
+	 */
+	public static IntRangeSet getControlRegisterAddressSet() {
+		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
 	}
 
 }

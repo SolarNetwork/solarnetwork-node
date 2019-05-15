@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public enum Shark100Register implements ModbusReference {
 
@@ -130,6 +130,13 @@ public enum Shark100Register implements ModbusReference {
 
 	/** AC frequency, reported in Hz. */
 	MeterFrequency(0x401, Float32),
+
+	/**
+	 * The neutral current, reported in A.
+	 *
+	 * @since 1.2
+	 */
+	MeterNeutralCurrent(0x403, Float32),
 
 	/** Total energy received, in energy scale factor * Wh. */
 	MeterActiveEnergyReceived(0x44B, Int32),

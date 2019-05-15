@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  * Data object for the ION6200 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.4
  */
 public class ION6200Data extends ModbusData implements ION6200DataAccessor {
@@ -364,6 +364,11 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		return null;
 	}
 
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
 	private class PhaseMeterDataAccessor implements ION6200DataAccessor {
 
 		private final ACPhase phase;
@@ -438,6 +443,11 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 					n = ION6200Data.this.getCurrent();
 			}
 			return n;
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return null;
 		}
 
 		@Override
@@ -610,6 +620,11 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		@Override
 		public Float getCurrent() {
 			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
 		}
 
 		@Override

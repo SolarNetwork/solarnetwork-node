@@ -106,7 +106,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.10
+ * @version 1.11
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -119,6 +119,13 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/** The default value for the {@code solarInUrlPrefix} property. */
 	public static final String DEFAULT_SOLARIN_URL_PREFIX = "/solarin";
+
+	/**
+	 * The default value for the {@code solarUserUrlPrefix} property.
+	 * 
+	 * @since 1.11
+	 */
+	public static final String DEFAULT_SOLARUSER_URL_PREFIX = "/solaruser";
 
 	/**
 	 * Instruction topic for sending a renewed certificate to a node.
@@ -167,14 +174,25 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String VERIFICATION_URL_SOLARIN_MQTT = "solarInMqttServiceURL";
 
 	private static final String SOLAR_NET_IDENTITY_PATH = "/identity.do";
-	private static final String SOLAR_NET_IDENTITY_URL = "/solarin" + SOLAR_NET_IDENTITY_PATH;
-	private static final String SOLAR_NET_REG_URL = "/solaruser/associate.xml";
+	private static final String SOLAR_NET_REG_PATH = "/associate.xml";
 	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
+
+	private static enum SolarApplication {
+		SolarIn("solarin"),
+		SolarUser("solaruser");
+
+		private final String key;
+
+		private SolarApplication(String key) {
+			this.key = key;
+		}
+	}
 
 	private final SetupIdentityDao setupIdentityDao;
 	private OptionalService<BackupManager> backupManager;
 	private PKIService pkiService;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
+	private String solarUserUrlPrefix = DEFAULT_SOLARUSER_URL_PREFIX;
 
 	private NodeAppConfiguration appConfiguration = new NodeAppConfiguration();
 
@@ -377,13 +395,37 @@ public class DefaultSetupService extends XmlServiceSupport
 		req.setUsername(details.getUsername());
 		req.setKey(details.getConfirmationKey());
 		webFormGetForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), association,
-				getAbsoluteUrl(details, SOLAR_NET_IDENTITY_URL), null, getIdentityPropertyMapping());
+				getAbsoluteUrl(details, SolarApplication.SolarIn, SOLAR_NET_IDENTITY_PATH), null,
+				getIdentityPropertyMapping());
 		return association;
 	}
 
-	private String getAbsoluteUrl(NetworkAssociationDetails details, String url) {
-		return "http" + (details.getPort() == 443 || details.isForceTLS() ? "s" : "") + "://"
-				+ details.getHost() + ":" + details.getPort() + url;
+	private String getAbsoluteUrl(NetworkAssociationDetails details, SolarApplication app, String path) {
+		StringBuilder buf = new StringBuilder();
+		if ( app != SolarApplication.SolarIn ) {
+			Map<String, String> urls = (details != null ? details.getNetworkServiceURLs()
+					: Collections.emptyMap());
+			String base = urls.get(app.key);
+			if ( base != null ) {
+				buf.append(base);
+			}
+		}
+		if ( buf.length() < 1 ) {
+			buf.append("http").append(details.getPort() == 443 || details.isForceTLS() ? "s" : "")
+					.append("://");
+			buf.append(details.getHost()).append(":").append(details.getPort());
+			switch (app) {
+				case SolarUser:
+					buf.append(solarUserUrlPrefix);
+					break;
+
+				default:
+					buf.append(solarInUrlPrefix);
+					break;
+			}
+		}
+		buf.append(path);
+		return buf.toString();
 	}
 
 	@Override
@@ -397,7 +439,7 @@ public class DefaultSetupService extends XmlServiceSupport
 					details.getConfirmationKey(), details.getKeystorePassword());
 			final NetworkCertificate result = new NetworkAssociationDetails();
 			webFormPostForBean(PropertyAccessorFactory.forBeanPropertyAccess(req), result,
-					getAbsoluteUrl(details, SOLAR_NET_REG_URL), null,
+					getAbsoluteUrl(details, SolarApplication.SolarUser, SOLAR_NET_REG_PATH), null,
 					getNodeAssociationPropertyMapping());
 
 			SetupIdentityInfo oldInfo = setupIdentityDao.getSetupIdentityInfo();
@@ -578,8 +620,26 @@ public class DefaultSetupService extends XmlServiceSupport
 		return config;
 	}
 
+	/**
+	 * Set the URL path prefix to use for the SolarIn application.
+	 * 
+	 * @param solarUserUrlPrefix
+	 *        the prefix to use; defaults to {@link #DEFAULT_SOLARIN_URL_PREFIX}
+	 */
 	public void setSolarInUrlPrefix(String solarInUrlPrefix) {
 		this.solarInUrlPrefix = solarInUrlPrefix;
+	}
+
+	/**
+	 * Set the URL path prefix to use for the SolarUser application.
+	 * 
+	 * @param solarUserUrlPrefix
+	 *        the prefix to use; defaults to
+	 *        {@link #DEFAULT_SOLARUSER_URL_PREFIX}
+	 * @since 1.11
+	 */
+	public void setSolarUserUrlPrefix(String solarUserUrlPrefix) {
+		this.solarUserUrlPrefix = solarUserUrlPrefix;
 	}
 
 	public void setPkiService(PKIService pkiService) {

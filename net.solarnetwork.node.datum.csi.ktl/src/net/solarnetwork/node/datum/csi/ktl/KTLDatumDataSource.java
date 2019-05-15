@@ -26,9 +26,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
@@ -36,7 +40,14 @@ import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTData;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -48,11 +59,11 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * 
  * @author matt
  * @author maxieduncan
- * @version 1.0
+ * @version 1.2
  */
-public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData>
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData> implements
+		DatumDataSource<GeneralNodePVEnergyDatum>, MultiDatumDataSource<GeneralNodePVEnergyDatum>,
+		SettingSpecifierProvider, FeedbackInstructionHandler {
 
 	private String sourceId = "CSI";
 
@@ -81,6 +92,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	@Override
 	protected void refreshDeviceData(ModbusConnection connection, KTLCTData sample) {
 		sample.readInverterData(connection);
+		sample.readControlData(connection);
 	}
 
 	@Override
@@ -122,6 +134,74 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			return Collections.singletonList(datum);
 		}
 		return Collections.emptyList();
+	}
+
+	// FeedbackInstructionHandler
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SET_OPERATING_STATE.equals(topic);
+	}
+
+	@Override
+	public InstructionState processInstruction(Instruction instruction) {
+		InstructionStatus status = processInstructionWithFeedback(instruction);
+		return (status != null ? status.getInstructionState() : InstructionState.Declined);
+	}
+
+	@Override
+	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
+		final String sourceId = this.sourceId;
+		if ( InstructionHandler.TOPIC_SET_OPERATING_STATE.equals(topic) && sourceId != null ) {
+			String paramVal = instruction.getParameterValue(this.sourceId);
+			if ( paramVal == null ) {
+				// not intended for me
+				return null;
+			}
+
+			try {
+				DeviceOperatingState desiredState = null;
+				try {
+					desiredState = DeviceOperatingState.forCode(Integer.parseInt(paramVal));
+				} catch ( NumberFormatException e ) {
+					desiredState = DeviceOperatingState.valueOf(paramVal);
+				}
+				log.info("Processing {} instruction on inverter {} to set operating state to {}", topic,
+						this.sourceId, desiredState);
+				setDeviceOperatingState(desiredState);
+				return (status != null ? status.newCopyWithState(InstructionState.Completed)
+						: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
+								new Date()));
+			} catch ( Exception e ) {
+				log.warn("Error processing {} instruction on inverter {}", topic, sourceId, e);
+				Map<String, Object> resultParams = new LinkedHashMap<>();
+				resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "KTL.001");
+				resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, e.toString());
+				return (status != null ? status.newCopyWithState(InstructionState.Declined, resultParams)
+						: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
+								new Date(), null, resultParams));
+			}
+		}
+		return null;
+	}
+
+	private void setDeviceOperatingState(final DeviceOperatingState desiredState) throws IOException {
+		performAction(new ModbusConnectionAction<Void>() {
+
+			@Override
+			public Void doWithConnection(ModbusConnection conn) throws IOException {
+				KTLCTData sample = getSample();
+				// re-read the control data to make sure we have the current state of the inverter
+				sample.readControlData(conn);
+
+				// now request the state to our desired state
+				sample.setDeviceOperatingState(conn, desiredState);
+				return null;
+			}
+		});
+
 	}
 
 	// SettingSpecifierProvider
@@ -168,7 +248,8 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
-		buf.append("Hz = ").append(data.getFrequency());
+		buf.append("mode = ").append(data.getWorkMode());
+		buf.append(", Hz = ").append(data.getFrequency());
 		buf.append(", PV1 V = ").append(data.getPv1Voltage());
 		buf.append(", PV2 V = ").append(data.getPv2Voltage());
 		buf.append(", PV3 V = ").append(data.getPv3Voltage());

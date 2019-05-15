@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import java.util.Set;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -29,7 +31,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
@@ -39,6 +41,49 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the device type
 	 */
 	KTLCTInverterType getInverterType();
+
+	/**
+	 * Get the inverter work mode.
+	 * 
+	 * @return the work mode
+	 * @since 1.1
+	 */
+	KTLCTInverterWorkMode getWorkMode();
+
+	/**
+	 * Get the warnings.
+	 * 
+	 * @return the warnings
+	 */
+	Set<KTLCTWarn> getWarnings();
+
+	/**
+	 * Get the fault 0 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault0> getFaults0();
+
+	/**
+	 * Get the fault 1 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault1> getFaults1();
+
+	/**
+	 * Get the fault 2 set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTFault2> getFaults2();
+
+	/**
+	 * Get the permanent fault set.
+	 * 
+	 * @return the faults
+	 */
+	Set<KTLCTPermanentFault> getPermanentFaults();
 
 	/**
 	 * Get the device model name.
@@ -53,6 +98,14 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the serial number
 	 */
 	String getSerialNumber();
+
+	/**
+	 * Get the firmware version.
+	 * 
+	 * @return the version
+	 * @since 1.1
+	 */
+	KTLCTFirmwareVersion getFirmwareVersion();
 
 	/**
 	 * Get the module (heat sink) temperature, in degrees Celsius.
@@ -123,4 +176,22 @@ public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAcc
 	 * @return the current for PV string 3
 	 */
 	Float getPv3Current();
+
+	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the state
+	 * @since 1.2
+	 */
+	DeviceOperatingState getDeviceOperatingState();
+
+	/**
+	 * Get an enforced output power limit, in a percentage of maximum power
+	 * capability.
+	 * 
+	 * @return the output power limit as a percentage (0 - 1)
+	 * @since 1.2
+	 */
+	Float getOutputPowerLimitPercent();
+
 }

@@ -32,6 +32,7 @@ Each device configuration contains the following overall settings:
 | Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
 | Source ID          | The SolarNetwork source ID to assign to captured datum.                          |
 | Backwards          | Toggle to treat energy delivered as `wattHoursReverse` instead of `wattHours`    |
+| Phase Measurements | Toggle to collect additional phase-specific measurement properties.              |
 
 ## Overall device settings notes
 
@@ -56,6 +57,13 @@ Each device configuration contains the following overall settings:
 	datum property and <i>energy exported</i> to <code>wattHoursReverse</code>. Enable this to instead
 	map <i>energy imported</i> to <code>wattHoursReverse</code> and <i>energy exported</i>
 	to <code>wattHours</code>.</dd>
+	<dt>Phase Measurements</dt>
+	<dd>When enabled, then the data source will include phase-specific measurements in the datum
+	it collects, such as: <ul>
+	<li><code>current_a</code>, <code>current_b</code>, <code>current_c</code></li>
+	<li><code>voltage_a</code>, <code>voltage_b</code>, <code>voltage_c</code></li>
+	<li><code>voltage_ab</code>, <code>voltage_bc</code>, <code>voltage_ca</code></li>
+	</ol></ul>
 </dl>
 
  [suns]: https://sunspec.org/

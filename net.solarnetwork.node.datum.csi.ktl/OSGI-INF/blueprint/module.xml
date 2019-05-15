@@ -76,11 +76,17 @@
 								<list>
 									<value>net.solarnetwork.node.DatumDataSource</value>
 									<value>net.solarnetwork.node.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
 									<entry key="datumClassName" value="net.solarnetwork.node.domain.PVEnergyDatum"/>
+									<entry key="instruction">
+										<list>
+											<value>SetOperatingState</value>
+										</list>
+									</entry>
 								</map>
 							</property>
 						</bean>
