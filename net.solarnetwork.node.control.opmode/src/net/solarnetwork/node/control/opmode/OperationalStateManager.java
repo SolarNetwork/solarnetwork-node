@@ -296,7 +296,7 @@ public class OperationalStateManager extends BaseIdentifiable
 					log.info(
 							"Error applying [{}] operational mode change operating state to [{}] on {} @ {}; attempted {}/{} times, will try again.",
 							mode, state, controlIds, start, attemptNumber + 1, retryCount + 1);
-				} else {
+				} else if ( okControlIds.size() < controlIds.size() ) {
 					log.error(
 							"Error applying [{}] operational mode change operating state to [{}] on {} @ {}; attempted {} times, giving up now.",
 							mode, state, controlIds, start, attemptNumber + 1);

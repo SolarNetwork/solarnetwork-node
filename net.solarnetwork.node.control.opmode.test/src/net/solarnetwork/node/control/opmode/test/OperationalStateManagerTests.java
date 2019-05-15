@@ -45,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.control.opmode.OperationalStateManager;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -67,12 +68,15 @@ public class OperationalStateManagerTests {
 	private static final List<String> TEST_CONTROL_IDS = asList(TEST_CONTROL_ID_1, TEST_CONTROL_ID_2);
 
 	private OperationalStateManager mgr;
+	private OperationalModesService opModesService;
 	private InstructionExecutionService instrService;
 
 	@Before
 	public void setup() {
+		opModesService = EasyMock.createMock(OperationalModesService.class);
 		instrService = EasyMock.createMock(InstructionExecutionService.class);
 		mgr = new OperationalStateManager(
+				new StaticOptionalService<OperationalModesService>(opModesService),
 				new StaticOptionalService<InstructionExecutionService>(instrService));
 		mgr.setMode(TEST_OP_MODE);
 		mgr.setEnabledState(DeviceOperatingState.Shutdown);
@@ -81,16 +85,16 @@ public class OperationalStateManagerTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(instrService);
+		EasyMock.replay(instrService, opModesService);
 	}
 
 	private void resetAll() {
-		EasyMock.reset(instrService);
+		EasyMock.reset(instrService, opModesService);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(instrService);
+		EasyMock.verify(instrService, opModesService);
 	}
 
 	@Test
