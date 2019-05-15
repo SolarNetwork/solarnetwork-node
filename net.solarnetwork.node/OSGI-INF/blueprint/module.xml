@@ -123,7 +123,9 @@
 	<service>
 		<interfaces>
 			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
+			<value>org.springframework.core.task.AsyncTaskExecutor</value>
 			<value>org.springframework.core.task.TaskExecutor</value>
+			<value>java.util.concurrent.Executor</value>
 		</interfaces>
 		<service-properties>
 			<entry key="function" value="node"/>
