@@ -28,8 +28,10 @@ import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_OPERATI
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -43,14 +45,22 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Service that listens for operational mode changes and can respond by setting
@@ -67,7 +77,7 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.0
  */
-public class OperationalStateManager implements EventHandler {
+public class OperationalStateManager implements EventHandler, Identifiable, SettingSpecifierProvider {
 
 	/** The default value for the {@code taskTimeoutSecs} property. */
 	public static final long DEFAULT_TASK_TIMEOUT_SECS = 60L;
@@ -77,7 +87,9 @@ public class OperationalStateManager implements EventHandler {
 	private DeviceOperatingState disabledState;
 	private long taskTimeoutSecs = DEFAULT_TASK_TIMEOUT_SECS;
 	private Set<String> controlIds;
-
+	private String uid;
+	private String groupUID;
+	private MessageSource messageSource;
 	private AsyncTaskExecutor taskExecutor;
 
 	private final OptionalService<InstructionExecutionService> instructionService;
@@ -291,6 +303,56 @@ public class OperationalStateManager implements EventHandler {
 		}
 	}
 
+	// Settings
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.control.opmode.opstatemgr";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Operational State Manager";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+
+		results.add(
+				new BasicTitleSettingSpecifier("info", isModeActive() ? "Active" : "Inactive", true));
+
+		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		results.add(new BasicTextFieldSettingSpecifier("mode", ""));
+		results.add(new BasicTextFieldSettingSpecifier("controlIdsValue", ""));
+
+		// drop-down menu for enabledState
+		Map<String, String> stateTitles = new LinkedHashMap<String, String>(
+				DeviceOperatingState.values().length + 1);
+		stateTitles.put("", "");
+		for ( DeviceOperatingState e : DeviceOperatingState.values() ) {
+			stateTitles.put(String.valueOf(e.getCode()), e.toString());
+		}
+		BasicMultiValueSettingSpecifier enabledStateSpec = new BasicMultiValueSettingSpecifier(
+				"enabledStateCode", "");
+		enabledStateSpec.setValueTitles(stateTitles);
+		results.add(enabledStateSpec);
+
+		// drop-down menu for disabledState
+		BasicMultiValueSettingSpecifier disabledStateSpec = new BasicMultiValueSettingSpecifier(
+				"disabledStateCode", "");
+		disabledStateSpec.setValueTitles(stateTitles);
+		results.add(disabledStateSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier("taskTimeoutSecs",
+				String.valueOf(DEFAULT_TASK_TIMEOUT_SECS)));
+
+		return results;
+	}
+
+	// Accessors
+
 	/**
 	 * Get the active state.
 	 * 
@@ -359,6 +421,37 @@ public class OperationalStateManager implements EventHandler {
 	}
 
 	/**
+	 * Get the operating state to apply when the operational mode is enabled,
+	 * via its code value.
+	 * 
+	 * @return the state to apply, as a code
+	 */
+	public Integer getEnabledStateCode() {
+		DeviceOperatingState state = getEnabledState();
+		return state != null ? state.getCode() : null;
+	}
+
+	/**
+	 * Set the operating state to apply when the operational mode is enabled,
+	 * via its code value.
+	 * 
+	 * @param code
+	 *        the state to apply, as a code
+	 */
+	public void setEnabledStateCode(Integer code) {
+		DeviceOperatingState state = null;
+		if ( code != null ) {
+			try {
+				state = DeviceOperatingState.forCode(code);
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+				return;
+			}
+		}
+		setEnabledState(state);
+	}
+
+	/**
 	 * Get the operating state to apply when the operational mode is disabled.
 	 * 
 	 * @return the state to apply
@@ -375,6 +468,37 @@ public class OperationalStateManager implements EventHandler {
 	 */
 	public void setDisabledState(DeviceOperatingState disabledState) {
 		this.disabledState = disabledState;
+	}
+
+	/**
+	 * Get the operating state to apply when the operational mode is disabled,
+	 * via its code value.
+	 * 
+	 * @return the state to apply, as a code
+	 */
+	public Integer getDisabledStateCode() {
+		DeviceOperatingState state = getDisabledState();
+		return state != null ? state.getCode() : null;
+	}
+
+	/**
+	 * Set the operating state to apply when the operational mode is disabled,
+	 * via its code value.
+	 * 
+	 * @param code
+	 *        the state to apply, as a code
+	 */
+	public void setDisabledStateCode(Integer code) {
+		DeviceOperatingState state = null;
+		if ( code != null ) {
+			try {
+				state = DeviceOperatingState.forCode(code);
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+				return;
+			}
+		}
+		setDisabledState(state);
 	}
 
 	/**
@@ -422,6 +546,91 @@ public class OperationalStateManager implements EventHandler {
 	 */
 	public void setControlIds(Set<String> controlIds) {
 		this.controlIds = controlIds;
+	}
+
+	/**
+	 * Get the control IDs to manage, as a comma-delimited list.
+	 * 
+	 * @return the control IDs, as a comma-delimited list
+	 */
+	public String getControlIdsValue() {
+		return StringUtils.commaDelimitedStringFromCollection(getControlIds());
+	}
+
+	/**
+	 * Set the control IDs to manage, as a comma-delimited list.
+	 * 
+	 * @param controlIds
+	 *        the control IDs to manage, as a comma-delimited list
+	 */
+	public void setControlIdsValue(String controlIds) {
+		Set<String> set = StringUtils.commaDelimitedStringToSet(controlIds);
+		setControlIds(set);
+	}
+
+	/**
+	 * Get the message source to use for settings.
+	 * 
+	 * @return the message source
+	 */
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set the message source to use for settings.
+	 * 
+	 * @param messageSource
+	 *        the message source
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * <p>
+	 * This is an alias for {@link #getUID()}.
+	 * </p>
+	 */
+	@Override
+	public String getUID() {
+		return getUid();
+	}
+
+	/**
+	 * Get a unique ID for this service.
+	 * 
+	 * @return the service unique ID
+	 */
+	public String getUid() {
+		return uid;
+	}
+
+	/**
+	 * Set the unique ID for this service.
+	 * 
+	 * @param uid
+	 */
+	public void setUid(String uid) {
+		this.uid = uid;
+	}
+
+	@Override
+	public String getGroupUID() {
+		return groupUID;
+	}
+
+	/**
+	 * Set a unique group ID for this service.
+	 * 
+	 * @param groupUID
+	 *        the group ID to use
+	 */
+	public void setGroupUID(String groupUID) {
+		this.groupUID = groupUID;
 	}
 
 }
