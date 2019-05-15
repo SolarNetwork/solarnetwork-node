@@ -45,11 +45,9 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -59,6 +57,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -77,7 +76,8 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.0
  */
-public class OperationalStateManager implements EventHandler, Identifiable, SettingSpecifierProvider {
+public class OperationalStateManager extends BaseIdentifiable
+		implements EventHandler, SettingSpecifierProvider {
 
 	/** The default value for the {@code taskTimeoutSecs} property. */
 	public static final long DEFAULT_TASK_TIMEOUT_SECS = 60L;
@@ -87,9 +87,6 @@ public class OperationalStateManager implements EventHandler, Identifiable, Sett
 	private DeviceOperatingState disabledState;
 	private long taskTimeoutSecs = DEFAULT_TASK_TIMEOUT_SECS;
 	private Set<String> controlIds;
-	private String uid;
-	private String groupUID;
-	private MessageSource messageSource;
 	private AsyncTaskExecutor taskExecutor;
 
 	private final OptionalService<InstructionExecutionService> instructionService;
@@ -322,8 +319,7 @@ public class OperationalStateManager implements EventHandler, Identifiable, Sett
 		results.add(
 				new BasicTitleSettingSpecifier("info", isModeActive() ? "Active" : "Inactive", true));
 
-		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		results.addAll(baseIdentifiableSettings(null));
 		results.add(new BasicTextFieldSettingSpecifier("mode", ""));
 		results.add(new BasicTextFieldSettingSpecifier("controlIdsValue", ""));
 
@@ -566,71 +562,6 @@ public class OperationalStateManager implements EventHandler, Identifiable, Sett
 	public void setControlIdsValue(String controlIds) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(controlIds);
 		setControlIds(set);
-	}
-
-	/**
-	 * Get the message source to use for settings.
-	 * 
-	 * @return the message source
-	 */
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set the message source to use for settings.
-	 * 
-	 * @param messageSource
-	 *        the message source
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * <p>
-	 * This is an alias for {@link #getUID()}.
-	 * </p>
-	 */
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return the service unique ID
-	 */
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the unique ID for this service.
-	 * 
-	 * @param uid
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	/**
-	 * Set a unique group ID for this service.
-	 * 
-	 * @param groupUID
-	 *        the group ID to use
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }

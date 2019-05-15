@@ -11,51 +11,49 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
-	<reference id="taskExecutor" interface="org.springframework.core.task.AsyncTaskExecutor" filter="(function=node)"/>
-	
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+	<bean id="messageSourceSwitch" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
-				<value>net.solarnetwork.node.control.opmode.OperationalStateManager</value>
+				<value>net.solarnetwork.node.control.opmode.OperationalModeSwitch</value>
 			</list>
 		</property>
 	</bean>
 	
-	<bean id="instructionExecutionService" class="net.solarnetwork.util.DynamicServiceTracker">
+	<bean id="operationalModesService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.OperationalModesService"/>
 	</bean>
 
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Operational State Manager"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.opmode.opstatemgr"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="displayName" value="Operational Mode Switch"/>
+			<property name="factoryUID" value="net.solarnetwork.node.control.opmode.switch"/>
+			<property name="messageSource" ref="messageSourceSwitch"/>
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.opmode.opstatemgr" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.opmode.switch" autowire-on-update="true">
 		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.control.opmode.opstatemgr"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.control.opmode.switch"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
 					<beans:value>#{T(net.solarnetwork.node.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.control.opmode.OperationalStateManager">
-			<argument ref="instructionExecutionService"/>
-			<property name="messageSource" ref="messageSource"/>
-			<property name="taskExecutor" ref="taskExecutor"/>
+		<bean class="net.solarnetwork.node.control.opmode.OperationalModeSwitch">
+			<argument ref="operationalModesService"/>
+			<property name="messageSource" ref="messageSourceSwitch"/>
 		</bean>
 	</osgix:managed-service-factory>
-
 	
 </blueprint>
