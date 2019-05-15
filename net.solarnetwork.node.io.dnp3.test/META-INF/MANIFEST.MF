@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode DNP3 Tests
+Bundle-Name: DNP3 Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.dnp3.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.io.dnp3;bundle-version="1.0.0"
 Automatic-Module-Name: net.solarnetwork.node.io.dnp3.test

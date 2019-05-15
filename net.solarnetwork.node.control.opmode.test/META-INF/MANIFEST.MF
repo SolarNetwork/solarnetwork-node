@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode Operational Mode Controller Tests
+Bundle-Name: Operational Mode Controller Tests
 Bundle-SymbolicName: net.solarnetwork.node.control.opmode.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
