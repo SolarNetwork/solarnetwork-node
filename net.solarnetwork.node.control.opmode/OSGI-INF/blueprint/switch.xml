@@ -20,11 +20,6 @@
 		</property>
 	</bean>
 	
-	<bean id="operationalModesService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.OperationalModesService"/>
-	</bean>
-
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">

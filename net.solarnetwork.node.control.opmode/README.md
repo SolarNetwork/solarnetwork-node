@@ -23,6 +23,7 @@ Each Operational State Manager component includes the following settings:
 | Control IDs      | The control IDs to issue [`SetOperatingState`][set-op-state] instructions to when the configured mode changes. |
 | Active State     | The [operating state][op-states] to apply when the mode is **enabled**. |
 | Inactive State   | The [operating state][op-states] to apply when the mode is **disabled**. |
+| Retry Count      | This count determines how many times the service will re-try applying state changes if an error occurs. If the retry count is `0` then no retries will be attempted. If the retry count is anything less than `0`, then the code will attempt an <b>unlimited</b> number of times. Otherwise up to this number of attempts will be performed. |
 | Max Wait         | The maximum number of seconds to wait for all controls' state change to be applied. |
 
 

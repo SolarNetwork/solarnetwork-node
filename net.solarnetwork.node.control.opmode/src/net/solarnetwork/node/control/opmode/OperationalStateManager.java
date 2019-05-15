@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.opmode;
 
+import static java.util.Collections.singleton;
 import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
 import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_OPERATING_STATE;
@@ -48,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -82,13 +84,18 @@ public class OperationalStateManager extends BaseIdentifiable
 	/** The default value for the {@code taskTimeoutSecs} property. */
 	public static final long DEFAULT_TASK_TIMEOUT_SECS = 60L;
 
+	/** The default value for the {@code retryCount} property. */
+	public static final int DEFAULT_RETRY_COUNT = 3;
+
 	private String mode;
 	private DeviceOperatingState enabledState;
 	private DeviceOperatingState disabledState;
 	private long taskTimeoutSecs = DEFAULT_TASK_TIMEOUT_SECS;
 	private Set<String> controlIds;
+	private int retryCount = DEFAULT_RETRY_COUNT;
 	private AsyncTaskExecutor taskExecutor;
 
+	private final OptionalService<OperationalModesService> opModesService;
 	private final OptionalService<InstructionExecutionService> instructionService;
 	private final AtomicBoolean active = new AtomicBoolean(false);
 	private final Lock oneAtATimeLock = new ReentrantLock(true);
@@ -97,11 +104,15 @@ public class OperationalStateManager extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
+	 * @param opModesService
+	 *        the operational modes service to use
 	 * @param instructionService
 	 *        the instruction execution service to use
 	 */
-	public OperationalStateManager(OptionalService<InstructionExecutionService> instructionService) {
+	public OperationalStateManager(OptionalService<OperationalModesService> opModesService,
+			OptionalService<InstructionExecutionService> instructionService) {
 		super();
+		this.opModesService = opModesService;
 		this.instructionService = instructionService;
 	}
 
@@ -146,6 +157,9 @@ public class OperationalStateManager extends BaseIdentifiable
 					throw new RuntimeException("No InstructionExecutionService available.");
 				}
 				InstructionStatus status = instrService.executeInstruction(instr);
+				log.info("Set operating state instruction for [{}] to [{}] result: {}", controlId, state,
+						status != null ? status.getInstructionState()
+								: "Not handled (no matching control?)");
 				return new StateChangeResult(controlId,
 						status != null && status.getInstructionState() != InstructionState.Declined,
 						null);
@@ -163,6 +177,8 @@ public class OperationalStateManager extends BaseIdentifiable
 		private final String mode;
 		private final DeviceOperatingState state;
 		private final Set<String> controlIds;
+		private final int attemptNumber;
+		private final boolean enabling;
 
 		private final CountDownLatch latch;
 
@@ -175,13 +191,27 @@ public class OperationalStateManager extends BaseIdentifiable
 		 *        the desired operational state to apply
 		 * @param controlIds
 		 *        the controls to apply the operational state to
+		 * @param enabling
+		 *        {@literal true} if enabling the active state
 		 */
-		public StateChangeManager(String mode, DeviceOperatingState state, Set<String> controlIds) {
+		public StateChangeManager(String mode, DeviceOperatingState state, Set<String> controlIds,
+				boolean enabling) {
 			super();
 			this.mode = mode;
 			this.state = state;
 			this.controlIds = controlIds;
 			this.latch = new CountDownLatch(controlIds.size());
+			this.enabling = enabling;
+			this.attemptNumber = 0;
+		}
+
+		private StateChangeManager(StateChangeManager other, Set<String> controlIds) {
+			this.mode = other.mode;
+			this.state = other.state;
+			this.controlIds = controlIds;
+			this.latch = new CountDownLatch(controlIds.size());
+			this.enabling = other.enabling;
+			this.attemptNumber = other.attemptNumber + 1;
 		}
 
 		@Override
@@ -191,6 +221,7 @@ public class OperationalStateManager extends BaseIdentifiable
 			if ( executor != null ) {
 				oneAtATimeLock.lock();
 			}
+			StateChangeManager retry = null;
 			try {
 				final Date start = new Date();
 				log.info("Executing [{}] operational mode change operating state to [{}] on {} @ {}",
@@ -224,6 +255,7 @@ public class OperationalStateManager extends BaseIdentifiable
 				buf.append("Results for [").append(mode)
 						.append("] operational mode change operating state to [").append(state)
 						.append("] @ ").append(start).append(":\n");
+				Set<String> okControlIds = new LinkedHashSet<>(results.size());
 				for ( Future<StateChangeResult> f : results ) {
 					if ( f.isDone() ) {
 						try {
@@ -233,11 +265,13 @@ public class OperationalStateManager extends BaseIdentifiable
 								buf.append("ERROR: ").append(r.t.toString());
 							} else if ( r.result ) {
 								buf.append("OK");
+								okControlIds.add(r.controlId);
 							} else {
 								buf.append("FAIL");
 							}
 							buf.append("\n");
 						} catch ( Exception e ) {
+							// shouldn't get here... just in case we handle this here
 							Throwable root = e;
 							while ( root.getCause() != null ) {
 								root = root.getCause();
@@ -248,9 +282,41 @@ public class OperationalStateManager extends BaseIdentifiable
 					}
 				}
 				log.info(buf.toString());
+				int retryCount = getRetryCount();
+				if ( okControlIds.size() < controlIds.size()
+						&& (retryCount < 0 || attemptNumber < retryCount) ) {
+					// not all controls passed and we can retry
+					Set<String> retryControlIds = new LinkedHashSet<>(controlIds.size());
+					for ( String controlId : controlIds ) {
+						if ( !okControlIds.contains(controlId) ) {
+							retryControlIds.add(controlId);
+						}
+					}
+					retry = new StateChangeManager(this, retryControlIds);
+					log.info(
+							"Error applying [{}] operational mode change operating state to [{}] on {} @ {}; attempted {}/{} times, will try again.",
+							mode, state, controlIds, start, attemptNumber + 1, retryCount + 1);
+				} else {
+					log.error(
+							"Error applying [{}] operational mode change operating state to [{}] on {} @ {}; attempted {} times, giving up now.",
+							mode, state, controlIds, start, attemptNumber + 1);
+					if ( enabling ) {
+						// was trying to enable, so disable the mode now to "fall back" to disabled state
+						log.info(
+								"Disabling [{}] operational mode after failing to change operating state to [{}] on {} @ {}",
+								mode, state, controlIds, start);
+						OperationalModesService opService = getOpModesService();
+						if ( opService != null ) {
+							opService.disableOperationalModes(singleton(mode));
+						}
+					}
+				}
 			} finally {
 				if ( executor != null ) {
 					oneAtATimeLock.unlock();
+				}
+				if ( retry != null ) {
+					executeManagerTask(retry);
 				}
 			}
 		}
@@ -258,6 +324,10 @@ public class OperationalStateManager extends BaseIdentifiable
 
 	private InstructionExecutionService getInstructionExecutionService() {
 		return (instructionService != null ? instructionService.service() : null);
+	}
+
+	private OperationalModesService getOpModesService() {
+		return (opModesService != null ? opModesService.service() : null);
 	}
 
 	/**
@@ -281,22 +351,29 @@ public class OperationalStateManager extends BaseIdentifiable
 			boolean isActive = activeModes.contains(mode);
 			Set<String> controlIds = immutableControlIds();
 			DeviceOperatingState desiredState = null;
+			boolean enabling = true;
 			if ( !controlIds.isEmpty() && isActive && active.compareAndSet(false, true) ) {
 				// mode has been enabled
 				desiredState = enabledState;
 			} else if ( !controlIds.isEmpty() && !isActive && active.compareAndSet(true, false) ) {
 				// mode has been disabled
 				desiredState = disabledState;
+				enabling = false;
 			}
 			if ( desiredState != null ) {
-				StateChangeManager mgr = new StateChangeManager(mode, desiredState, controlIds);
-				TaskExecutor executor = getTaskExecutor();
-				if ( executor != null ) {
-					executor.execute(mgr);
-				} else {
-					mgr.run();
-				}
+				StateChangeManager mgr = new StateChangeManager(mode, desiredState, controlIds,
+						enabling);
+				executeManagerTask(mgr);
 			}
+		}
+	}
+
+	private void executeManagerTask(StateChangeManager mgr) {
+		TaskExecutor executor = getTaskExecutor();
+		if ( executor != null ) {
+			executor.execute(mgr);
+		} else {
+			mgr.run();
 		}
 	}
 
@@ -341,6 +418,8 @@ public class OperationalStateManager extends BaseIdentifiable
 		disabledStateSpec.setValueTitles(stateTitles);
 		results.add(disabledStateSpec);
 
+		results.add(
+				new BasicTextFieldSettingSpecifier("retryCount", String.valueOf(DEFAULT_RETRY_COUNT)));
 		results.add(new BasicTextFieldSettingSpecifier("taskTimeoutSecs",
 				String.valueOf(DEFAULT_TASK_TIMEOUT_SECS)));
 
@@ -562,6 +641,33 @@ public class OperationalStateManager extends BaseIdentifiable
 	public void setControlIdsValue(String controlIds) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(controlIds);
 		setControlIds(set);
+	}
+
+	/**
+	 * Get the retry count.
+	 * 
+	 * @return the retry count
+	 */
+	public int getRetryCount() {
+		return retryCount;
+	}
+
+	/**
+	 * Set the retry count.
+	 * 
+	 * <p>
+	 * This count determines how many times the service will re-try applying
+	 * state changes if an error occurs. If the retry count is {@literal 0} then
+	 * no retries will be attempted. If the retry count is anything less than
+	 * {@literal 0}, then the code will attempt an <b>unlimited</b> number of
+	 * times. Otherwise up to {@code retryCount} attempts will be performed.
+	 * </p>
+	 * 
+	 * @param retryCount
+	 *        the retry count to set
+	 */
+	public void setRetryCount(int retryCount) {
+		this.retryCount = retryCount;
 	}
 
 }

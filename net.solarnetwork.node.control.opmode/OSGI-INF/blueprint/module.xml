@@ -13,6 +13,11 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.AsyncTaskExecutor" filter="(function=node)"/>
 	
+	<bean id="operationalModesService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.OperationalModesService"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -51,6 +56,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.control.opmode.OperationalStateManager">
+			<argument ref="operationalModesService"/>
 			<argument ref="instructionExecutionService"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="taskExecutor" ref="taskExecutor"/>
