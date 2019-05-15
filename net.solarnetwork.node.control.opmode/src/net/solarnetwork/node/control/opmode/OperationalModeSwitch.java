@@ -145,18 +145,18 @@ public class OperationalModeSwitch extends BaseIdentifiable
 		if ( this.controlId == null || !this.controlId.equals(controlId) ) {
 			return null;
 		}
-		NodeControlInfoDatum d = createDatum();
+		NodeControlInfoDatum d = createDatum(isModeActive());
 		postControlEvent(d, EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 		return d;
 	}
 
-	private NodeControlInfoDatum createDatum() {
+	private NodeControlInfoDatum createDatum(boolean active) {
 		NodeControlInfoDatum d = new NodeControlInfoDatum();
 		d.setCreated(new Date());
 		d.setReadonly(false);
 		d.setSourceId(getControlId());
 		d.setType(NodeControlPropertyType.Boolean);
-		d.setValue(String.valueOf(isModeActive()));
+		d.setValue(String.valueOf(active));
 		return d;
 	}
 
@@ -184,8 +184,7 @@ public class OperationalModeSwitch extends BaseIdentifiable
 		boolean enabled = enabledModes != null && enabledModes.contains(mode);
 		if ( enabled != active.getAndSet(enabled) ) {
 			// notify of changed control value
-			NodeControlInfoDatum d = createDatum();
-			d.setValue(String.valueOf(enabled));
+			NodeControlInfoDatum d = createDatum(enabled);
 			postControlEvent(d, EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		}
 	}
