@@ -1,0 +1,22 @@
+# sn-rfid-server systemd instance service unit
+#
+# Designed so multiple RFID readers can be used, each server will
+# run on a port starting on 9090 + the device number. For example
+# if the device is /dev/rfid2 then port 9092 will be used.
+
+[Unit]
+Description=SolarNode RFID server.
+After=dev-%i.device
+BindsTo=dev-%i.device
+StopWhenUnneeded=yes
+
+[Service]
+Type=simple
+User=rfid
+Group=input
+ExecStart=/usr/bin/sn-rfid-server /dev/%I
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
