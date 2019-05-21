@@ -106,7 +106,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.11
+ * @version 1.12
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -403,7 +403,8 @@ public class DefaultSetupService extends XmlServiceSupport
 	private String getAbsoluteUrl(NetworkAssociationDetails details, SolarApplication app, String path) {
 		StringBuilder buf = new StringBuilder();
 		if ( app != SolarApplication.SolarIn ) {
-			Map<String, String> urls = (details != null ? details.getNetworkServiceURLs()
+			Map<String, String> urls = (details != null && details.getNetworkServiceURLs() != null
+					? details.getNetworkServiceURLs()
 					: Collections.emptyMap());
 			String base = urls.get(app.key);
 			if ( base != null ) {
