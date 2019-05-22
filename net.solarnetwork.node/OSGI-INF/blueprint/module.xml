@@ -50,7 +50,6 @@
 		<property name="scheduler" ref="scheduler"/>
 		<property name="bundleContext" ref="bundleContext"/>
 	</bean>
-	
 
 	<reference-list id="serializers" availability="optional" filter="(!(delegating=true))"
 		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
@@ -120,7 +119,7 @@
 		</service-properties>
 	</service>
 	
-	<service>
+	<service ref="taskExecutor">
 		<interfaces>
 			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
 			<value>org.springframework.core.task.AsyncTaskExecutor</value>
@@ -130,9 +129,6 @@
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
-		<bean class="org.springframework.core.task.support.TaskExecutorAdapter">
-			<argument ref="executorService"/>
-		</bean>
 	</service>
 	
 	<service ref="delegatingReactorSerialization" ranking="5"
@@ -181,6 +177,12 @@
 		</bean>
 	</service>
 	
+	<service interface="net.solarnetwork.node.PlatformPackageService">
+		<bean class="net.solarnetwork.node.support.NativeTarPlatformPackageService">
+			<property name="taskExecutor" ref="taskExecutor"/>
+		</bean>
+	</service>
+	
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>
@@ -214,6 +216,10 @@
 				<argument value="SolarNode-Core-"/>
 			</bean>
 		</argument>
+	</bean>
+
+	<bean id="taskExecutor" class="org.springframework.core.task.support.TaskExecutorAdapter">
+		<argument ref="executorService"/>
 	</bean>
 		
 	<bean id="delegatingReactorSerialization" 
