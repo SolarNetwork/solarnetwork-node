@@ -22,6 +22,11 @@
 	
 	<service ref="s3SetupManager" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
 	
+	<bean id="platformPackageServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlatformPackageService"/>
+	</bean>	
+	
 	<!-- Supporting Services -->
 	
 	<bean id="s3SetupManager" class="net.solarnetwork.node.setup.s3.S3SetupManager" init-method="init">
@@ -31,6 +36,7 @@
 		<property name="s3Client" ref="s3Client"/>
 		<property name="settingDao" ref="settingDao"/>
 		<property name="taskExecutor" ref="taskExecutor"/>
+		<property name="packageServices" ref="platformPackageServices"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.setup.s3.S3SetupManager"/>

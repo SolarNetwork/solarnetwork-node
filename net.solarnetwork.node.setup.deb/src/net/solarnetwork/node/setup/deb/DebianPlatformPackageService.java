@@ -77,7 +77,7 @@ public class DebianPlatformPackageService extends BasePlatformPackageService
 				if ( log.isDebugEnabled() ) {
 					log.debug("Package command: {}", delimitedStringFromCollection(cmd, " "));
 				}
-				log.info("Extracting Debian archive {}", archive);
+				log.info("Installing Debian archive {}", archive);
 				List<Path> extractedPaths = new ArrayList<>();
 				ProcessBuilder pb = new ProcessBuilder(cmd);
 				Path devNull = Paths.get("/dev/null");

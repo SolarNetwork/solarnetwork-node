@@ -93,7 +93,8 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 * @return the command as a list
 	 */
 	protected List<String> pkgCommand(String action, String... args) {
-		List<String> result = new ArrayList<>(1 + (args != null ? args.length : 0));
+		List<String> result = new ArrayList<>(2 + (args != null ? args.length : 0));
+		result.add(getCommand());
 		result.add(action);
 		if ( args != null ) {
 			for ( String arg : args ) {
