@@ -179,7 +179,11 @@
 	
 	<service interface="net.solarnetwork.node.PlatformPackageService">
 		<bean class="net.solarnetwork.node.support.NativeTarPlatformPackageService">
-			<property name="taskExecutor" ref="taskExecutor"/>
+			<property name="taskExecutor">
+				<bean class="net.solarnetwork.util.StaticOptionalService">
+					<argument ref="taskExecutor"/>
+				</bean>
+			</property>
 		</bean>
 	</service>
 	

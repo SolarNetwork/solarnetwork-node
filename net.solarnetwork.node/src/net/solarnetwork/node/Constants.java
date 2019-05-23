@@ -26,7 +26,7 @@ package net.solarnetwork.node;
  * SolarNode constants.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public final class Constants {
 
@@ -41,6 +41,21 @@ public final class Constants {
 	 * @since 1.1
 	 */
 	public static final String EVENT_TOPIC_CONFIGURATION_CHANGED = "net/solarnetwork/node/CONFIGURATION_CHANGED";
+
+	/**
+	 * Get the configured SolarNode home directory.
+	 * 
+	 * <p>
+	 * This returns the {@link #SYSTEM_PROP_NODE_HOME} system property value if
+	 * available, or else {@literal /home/solar}.
+	 * </p>
+	 * 
+	 * @return the home directory, never {@literal null}
+	 * @since 1.2
+	 */
+	public static String solarNodeHome() {
+		return System.getProperty(SYSTEM_PROP_NODE_HOME, "/home/solar");
+	}
 
 	private Constants() {
 		// don't construct me

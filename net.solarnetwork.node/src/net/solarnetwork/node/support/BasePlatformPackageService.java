@@ -22,21 +22,30 @@
 
 package net.solarnetwork.node.support;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.springframework.core.task.AsyncTaskExecutor;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.PlatformPackageService;
+import net.solarnetwork.util.OptionalService;
 
 /**
- * Base implementation of {@link PlatformPackageService}.
+ * Base implementation of {@link PlatformPackageService}, with support for using
+ * an OS-level helper program.
  * 
  * @author matt
  * @version 1.0
  */
 public abstract class BasePlatformPackageService implements PlatformPackageService {
 
-	private AsyncTaskExecutor taskExecutor;
+	/** The default value for the {@code command} property. */
+	public static final String DEFAULT_COMMAND = Constants.solarNodeHome() + "/bin/solarpkg";
+
+	private OptionalService<AsyncTaskExecutor> taskExecutor;
+	private String command = DEFAULT_COMMAND;
 
 	/**
 	 * Perform the extraction task, using the configured
@@ -57,7 +66,7 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 */
 	protected <T> Future<PlatformPackageExtractResult<T>> performTask(
 			Callable<PlatformPackageExtractResult<T>> task, T context) {
-		AsyncTaskExecutor executor = getTaskExecutor();
+		AsyncTaskExecutor executor = taskExecutor();
 		if ( executor != null ) {
 			return executor.submit(task);
 		}
@@ -74,11 +83,42 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	}
 
 	/**
+	 * Get an OS command to run, based on the configured {@code command}
+	 * program, an action verb, and optional arguments.
+	 * 
+	 * @param action
+	 *        the action verb
+	 * @param args
+	 *        the arguments
+	 * @return the command as a list
+	 */
+	protected List<String> pkgCommand(String action, String... args) {
+		List<String> result = new ArrayList<>(1 + (args != null ? args.length : 0));
+		result.add(action);
+		if ( args != null ) {
+			for ( String arg : args ) {
+				result.add(arg);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get the configured task executor.
+	 * 
+	 * @return the task executor, or {@literal null}.
+	 */
+	protected AsyncTaskExecutor taskExecutor() {
+		OptionalService<AsyncTaskExecutor> os = getTaskExecutor();
+		return (os != null ? os.service() : null);
+	}
+
+	/**
 	 * Get the task executor.
 	 * 
 	 * @return the task executor
 	 */
-	public AsyncTaskExecutor getTaskExecutor() {
+	public OptionalService<AsyncTaskExecutor> getTaskExecutor() {
 		return taskExecutor;
 	}
 
@@ -88,8 +128,27 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 * @param taskExecutor
 	 *        the task executor
 	 */
-	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+	public void setTaskExecutor(OptionalService<AsyncTaskExecutor> taskExecutor) {
 		this.taskExecutor = taskExecutor;
+	}
+
+	/**
+	 * Get the OS command for the package helper program to use.
+	 * 
+	 * @return the OS command; defaults to {@link #DEFAULT_COMMAND}
+	 */
+	public String getCommand() {
+		return command;
+	}
+
+	/**
+	 * Set the OS command for the package helper program to use.
+	 * 
+	 * @param command
+	 *        the OS command
+	 */
+	public void setCommand(String command) {
+		this.command = command;
 	}
 
 }
