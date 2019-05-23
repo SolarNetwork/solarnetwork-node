@@ -472,14 +472,14 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				String dataObjKey = objects[i];
 				PlatformPackageService pkgService = packageServiceForArchiveFileName(dataObjKey);
 				if ( pkgService == null ) {
-					log.warn("S3 setup resource {} not a supported type; skipping");
+					log.warn("S3 setup resource {} is not a supported type; skipping", dataObjKey);
 					continue;
 				}
 
 				setState(S3SetupManagerPlatformTaskState.DownloadingAsset, dataObjKey);
 				S3Object obj = s3Client.getObject(dataObjKey);
 				if ( obj == null ) {
-					log.warn("Data object {} not found, cannot apply setup", dataObjKey);
+					log.warn("S3 setup resource {} not found, cannot apply setup", dataObjKey);
 					continue;
 				}
 
