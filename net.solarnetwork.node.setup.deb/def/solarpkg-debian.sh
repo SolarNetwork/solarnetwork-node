@@ -153,7 +153,7 @@ pkg_list () {
 	local name="${1:-*}"
 	
 	apt list "$name" 2>/dev/null \
-		|awk 'NR >= 3 {sub(/\/.*$/, "", $1); printf "%s,%s,%s\n", $1, $2, match($4, /installed/) ? "true" : "false"}'
+		|awk 'NF >= 3 {sub(/\/.*$/, "", $1); printf "%s,%s,%s\n", $1, $2, match($4, /installed/) ? "true" : "false"}'
 }
 
 # list name,version,installed (true|false)
