@@ -5,16 +5,52 @@
 VERBOSE=""
 
 do_help () {
-	echo "Usage: $0 [-v] <action>" 1>&2
-	echo 1>&2
-	echo "<action> is one of: install, remove, set-conf" 1>&2
+	cat 1>&2 <<EOF
+Usage: $0 [-v] <action> [arguments]
+
+<action> is one of: clean, install, is-installed, list, refresh, remove, set-conf, upgrade
+
+  clean
+  
+      Remove any cached download packages or temporary files. Remove any packages no longer
+      required by other packages (autoremove).
+
+  install <name>
+  
+      Install package `name`. If `name` ends with '.deb' then install the package file `name`.
+      Otherwise, download and install `name` from the configured apt repositories.
+      
+  is-installed <name>
+  
+      Test if a particular package is installed. Returns 'true' or 'false'.
+      
+  list [<name>] [<installed>]
+  
+      List packages. If `name` is provided, only packages matching this name (including wildcards)
+      will be listed. The output is a CSV table of columns: name, version, installed (true|false).
+      
+  list-installed
+  
+      List installed packages. If `name` is provided, only packages matching this name (including 
+      wildcards) will be listed.mThe output is a CSV table of columns: name, version, installed 
+      (true|false).
+      
+  refresh
+  
+      Refresh the available packages from remote repositories.
+      
+  upgrade [major]
+  
+      Upgrade all packages. If `major` defined, then perform a "major" upgrade using dist-upgrade.
+      
+EOF
 }
 
 while getopts ":v" opt; do
 	case $opt in
 		v) VERBOSE="1";;
 
-		\?) do_help; exit 1;;
+		*) do_help; exit 1;;
 	esac
 done
 
@@ -31,9 +67,14 @@ shift 1
 
 export DEBIAN_FRONTEND=noninteractive
 
-# install a package, and return a list of files installed
-pkg_install () {
+pkg_list_files () {
 	local pkg="$1"
+	dpkg -c "$pkg" |awk '$6 !~ "/$" {print substr($6,2)}'
+}
+
+pkg_install_file () {
+	local pkg="$1"
+
 	if [ -z "$pkg" ]; then
 		echo "Must provide path to package to install."  1>&2
 		exit 1
@@ -46,8 +87,38 @@ pkg_install () {
 	#
 	# We thus extract the 6th field, omitting paths that end in '/' and stripping the leading '.'
 	
-	sudo dpkg -i --force-confdef --force-confold "$pkg" >/dev/null \
-		&& dpkg -c "$pkg" |awk '$6 !~ "/$" {print substr($6,2)}'
+	sudo dpkg -i --force-confdef --force-confold "$pkg" >/dev/null </dev/null \
+		&& pkg_list_files "$pkg"
+}
+
+pkg_install_repo () {
+	local pkg="$1"
+	local ver="$2"
+	local redo=""
+	
+	if dpkg -s "$pkg" >/dev/null 2>&1; then
+		redo="--reinstall"
+	fi
+		
+	sudo apt-get install -qy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+		--no-install-recommends $redo "$pkg${ver:+=$ver}" >/dev/null </dev/null || exit $?
+	
+	local fname="${pkg}_(dpkg-query -W -f '${Version}_${Architecture}' "$pkg").deb"
+	if [ -e "/var/cache/apt/archives/$fname" ]; then
+		pkg_list_files "$fname"
+	fi	
+}
+
+# install a package, and return a list of files installed
+pkg_install () {
+	local pkg="$1"
+	local ver="$2"
+	
+	case $pkg in
+		*.deb) pkg_install_file "$@";;
+		
+		*) pkg_install_repo "$@";;
+	esac
 }
 
 pkg_remove () {	
@@ -57,15 +128,73 @@ pkg_remove () {
 		exit 1
 	fi
 	if dpkg -s "$pkg" >/dev/null 2>&1; then
-		sudo apt-get -qy remove --purge >/dev/null "$pkg"
+		sudo apt-get remove -qy --purge "$pkg" >/dev/null </dev/null
 	fi
 }
 
+pkg_clean () {
+	sudo apt-get -qy autoremove >/dev/null </dev/null \
+		&& sudo apt-get clean -qy >/dev/null </dev/null
+}
+
+# list name,version,installed (true|false)
+pkg_list () {
+	local name="${1:-*}"
+	
+	apt list '*telnet' 2>/dev/null \
+		|awk 'NR >= 3 {sub(/\/.*$/, "", $1); printf "%s,%s,%s\n", $1, $2, match($4, /installed/) ? "true" : "false"}'
+}
+
+# list name,version,installed (true|false)
+pkg_list_installed () {
+	local name="${1:-*}"
+	
+	dpkg-query -W -f '${Package},${Version},${db:Status-Status}\n' "$name" \
+		|sed -e '/,installed$/! d' -e '/,installed$/ s/,installed$/,true/'
+}
+
+# return (true|false)
+pkg_is_installed () {
+	local pkg="$1"
+	if dpkg -s "$pkg" >/dev/null 2>&1; then
+		echo "true"
+	else
+		echo "false"
+	fi
+}
+
+pkg_refresh () {
+	sudo apt-get update -qy >/dev/null  2>&1 </dev/null
+}
+
+pkg_upgrade () {
+	local major="$1"
+	local action="upgrade"
+
+	if [ -n "$major" ]; then
+		action="dist-upgrade"
+	fi
+	
+	sudo apt-get $action -qy -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" \
+		>/dev/null </dev/null
+}
 
 case $ACTION in
+	clean) pkg_clean "$@";;
+	
 	install) pkg_install "$@";;
 	
+	is-installed) pkg_is_installed "$@";;
+	
+	list) pkg_list "$@";;
+
+	list-installed) pkg_list_installed "$@";;
+	
+	refresh) pkg_refresh "$@";;
+	
 	remove) pkg_remove "$@";;
+	
+	upgrade) pkg_upgrade "$@";;
 
 	*)
 		echo "Action '${ACTION}' not supported." 1>&2
