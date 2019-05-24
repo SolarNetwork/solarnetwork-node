@@ -501,9 +501,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					// extract archive
 					setStateAndIncrementStep(S3SetupManagerPlatformTaskState.InstallingAsset,
 							dataObjKey);
-					Future<PlatformPackageService.PlatformPackageExtractResult<Void>> extractFuture = pkgService
-							.extractPackage(dataObjFile.toPath(), destBasePath, this, null);
-					PlatformPackageService.PlatformPackageExtractResult<Void> extractResult = extractFuture
+					Future<PlatformPackageService.PlatformPackageInstallResult<Void>> extractFuture = pkgService
+							.installPackage(dataObjFile.toPath(), destBasePath, this, null);
+					PlatformPackageService.PlatformPackageInstallResult<Void> extractResult = extractFuture
 							.get(5, TimeUnit.MINUTES);
 					if ( extractResult != null ) {
 						if ( extractResult.isSuccess() ) {
