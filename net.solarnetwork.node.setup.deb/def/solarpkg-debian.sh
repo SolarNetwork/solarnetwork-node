@@ -76,6 +76,7 @@ fi
 
 shift 1
 
+# Set the frontend; NOTE sudo must be configured with env_keep+=DEBIAN_FRONTEND for this to work
 export DEBIAN_FRONTEND=noninteractive
 
 pkg_list_files () {
