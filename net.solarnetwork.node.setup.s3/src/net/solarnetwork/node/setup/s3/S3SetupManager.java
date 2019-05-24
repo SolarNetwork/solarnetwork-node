@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.s3;
 
 import static java.util.Arrays.asList;
+import static org.springframework.util.StringUtils.getFilenameExtension;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -510,6 +511,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 				// download the data object to the work dir
 				String dataObjFilename = DigestUtils.sha1Hex(dataObjKey);
+				String dataObjFilenameExt = getFilenameExtension(dataObjKey);
+				if ( dataObjFilenameExt != null ) {
+					dataObjFilename += "." + dataObjFilenameExt;
+				}
 				File dataObjFile = new File(workDir, dataObjFilename);
 				try (InputStream in = obj.getObjectContent();
 						OutputStream out = new BufferedOutputStream(new FileOutputStream(dataObjFile))) {
