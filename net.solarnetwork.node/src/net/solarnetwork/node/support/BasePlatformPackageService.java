@@ -22,30 +22,28 @@
 
 package net.solarnetwork.node.support;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
-import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.PlatformPackageService;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * Base implementation of {@link PlatformPackageService}, with support for using
- * an OS-level helper program.
+ * Base implementation of {@link PlatformPackageService}.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.68
  */
 public abstract class BasePlatformPackageService implements PlatformPackageService {
 
-	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = Constants.solarNodeHome() + "/bin/solarpkg";
-
 	private OptionalService<AsyncTaskExecutor> taskExecutor;
-	private String command = DEFAULT_COMMAND;
+
+	/** A class-level logger. */
+	protected Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Perform the extraction task, using the configured
@@ -64,44 +62,52 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 *        the context
 	 * @return the task future
 	 */
-	protected <T> Future<PlatformPackageInstallResult<T>> performTask(
-			Callable<PlatformPackageInstallResult<T>> task, T context) {
+	protected <T> Future<PlatformPackageResult<T>> performPackageResultTask(
+			Callable<PlatformPackageResult<T>> task, T context) {
 		AsyncTaskExecutor executor = taskExecutor();
 		if ( executor != null ) {
 			return executor.submit(task);
 		}
 
 		// execute on calling thread
-		CompletableFuture<PlatformPackageInstallResult<T>> future = new CompletableFuture<>();
+		CompletableFuture<PlatformPackageResult<T>> future = new CompletableFuture<>();
 		try {
 			future.complete(task.call());
 		} catch ( Throwable t ) {
-			future.complete(
-					new BasicPlatformPackageInstallResult<T>(false, t.getMessage(), t, null, context));
+			future.complete(new BasicPlatformPackageResult<T>(false, t.getMessage(), t, null, context));
 		}
 		return future;
 	}
 
 	/**
-	 * Get an OS command to run, based on the configured {@code command}
-	 * program, an action verb, and optional arguments.
+	 * Perform the extraction task, using the configured
+	 * {@link AsyncTaskExecutor} if available.
 	 * 
-	 * @param action
-	 *        the action verb
-	 * @param args
-	 *        the arguments
-	 * @return the command as a list
+	 * <p>
+	 * If {@link #getTaskExecutor()} is {@literal null}, the task will be
+	 * executed on the calling thread.
+	 * </p>
+	 * 
+	 * @param <T>
+	 *        the context type
+	 * @param task
+	 *        the task
+	 * @return the task future
 	 */
-	protected List<String> pkgCommand(String action, String... args) {
-		List<String> result = new ArrayList<>(2 + (args != null ? args.length : 0));
-		result.add(getCommand());
-		result.add(action);
-		if ( args != null ) {
-			for ( String arg : args ) {
-				result.add(arg);
-			}
+	protected <T> Future<T> performTask(Callable<T> task) {
+		AsyncTaskExecutor executor = taskExecutor();
+		if ( executor != null ) {
+			return executor.submit(task);
 		}
-		return result;
+
+		// execute on calling thread
+		CompletableFuture<T> future = new CompletableFuture<>();
+		try {
+			future.complete(task.call());
+		} catch ( Throwable t ) {
+			future.completeExceptionally(t);
+		}
+		return future;
 	}
 
 	/**
@@ -131,25 +137,6 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 */
 	public void setTaskExecutor(OptionalService<AsyncTaskExecutor> taskExecutor) {
 		this.taskExecutor = taskExecutor;
-	}
-
-	/**
-	 * Get the OS command for the package helper program to use.
-	 * 
-	 * @return the OS command; defaults to {@link #DEFAULT_COMMAND}
-	 */
-	public String getCommand() {
-		return command;
-	}
-
-	/**
-	 * Set the OS command for the package helper program to use.
-	 * 
-	 * @param command
-	 *        the OS command
-	 */
-	public void setCommand(String command) {
-		this.command = command;
 	}
 
 }

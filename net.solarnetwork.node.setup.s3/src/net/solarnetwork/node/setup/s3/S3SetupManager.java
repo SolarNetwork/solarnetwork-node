@@ -120,6 +120,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	/** A prefix applied to data objects. */
 	public static final String DATA_OBJECT_KEY_PREFIX = "setup-data/";
 
+	/** The default package timeout value. */
+	public static final long DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS = TimeUnit.MINUTES.toSeconds(5);
+
 	private static final Pattern VERSION_PAT = Pattern.compile(".*/(\\d+)");
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -159,6 +162,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	private TaskExecutor taskExecutor;
 	private MessageSource messageSource;
 	private OptionalServiceCollection<PlatformPackageService> packageServices;
+	private long packageActionTimeoutSecs = DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -287,6 +291,12 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 		DeletingAsset,
 
+		InstallingPackage,
+
+		DeletingPackage,
+
+		UpgradingPackages,
+
 		PostingSetupVersion,
 
 		Complete,
@@ -310,7 +320,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			assert config != null;
 			this.taskId = UUID.randomUUID().toString();
 			this.config = config;
-			this.stepCount = config.getTotalStepCount() + 1;
+			// add +2 if any packages defined, to perform refresh/clean steps before/after
+			this.stepCount = config.getTotalStepCount() + 1
+					+ (config.getPackages() != null && config.getPackages().length > 0 ? 2 : 0);
 			state = new AtomicReference<S3SetupManagerPlatformTaskState>(
 					S3SetupManagerPlatformTaskState.Idle);
 			assetName = new AtomicReference<String>(null);
@@ -325,6 +337,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				Set<Path> installedFiles = applySetupObjects(config);
 				Set<Path> deletedFiles = applySetupSyncPaths(config, installedFiles);
 				deletedFiles.addAll(applySetupCleanPaths(config));
+
+				installedFiles.addAll(applySetupPackages(config));
+
 				try {
 					setState(S3SetupManagerPlatformTaskState.PostingSetupVersion, null);
 					updateNodeMetadataForInstalledVersion(config);
@@ -501,10 +516,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					// extract archive
 					setStateAndIncrementStep(S3SetupManagerPlatformTaskState.InstallingAsset,
 							dataObjKey);
-					Future<PlatformPackageService.PlatformPackageInstallResult<Void>> extractFuture = pkgService
+					Future<PlatformPackageService.PlatformPackageResult<Void>> extractFuture = pkgService
 							.installPackage(dataObjFile.toPath(), destBasePath, this, null);
-					PlatformPackageService.PlatformPackageInstallResult<Void> extractResult = extractFuture
-							.get(5, TimeUnit.MINUTES);
+					PlatformPackageService.PlatformPackageResult<Void> extractResult = extractFuture
+							.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
 					if ( extractResult != null ) {
 						if ( extractResult.isSuccess() ) {
 							installed.addAll(extractResult.getExtractedPaths());
@@ -533,6 +548,100 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			if ( !installed.isEmpty() ) {
 				log.info("Installed files from objects {}: {}", asList(config.getObjects()), installed);
 			}
+			return installed;
+		}
+
+		private Set<Path> applySetupPackages(S3SetupConfiguration config) throws IOException {
+			final S3SetupPackageConfiguration[] pkgConfigs = (config != null ? config.getPackages()
+					: null);
+			if ( pkgConfigs == null || pkgConfigs.length < 1 ) {
+				return Collections.emptySet();
+			}
+			final PlatformPackageService pkgService = mainPackageService();
+			if ( pkgService == null ) {
+				log.warn("No PlatformPackageService available to install packages; skipping.");
+				return Collections.emptySet();
+			}
+
+			Future<Boolean> boolTaskFuture = pkgService.refreshNamedPackages();
+			try {
+				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+			} catch ( InterruptedException | ExecutionException e ) {
+				log.warn("Error refreshing packages; continuing anyway: {}", e.getMessage(), e);
+			} catch ( TimeoutException e ) {
+				log.warn("Timeout waiting to refresh packages; continuing anyway.");
+			} finally {
+				incrementStep();
+			}
+
+			final Path destBasePath = Paths.get(destinationPath);
+			Set<Path> installed = new LinkedHashSet<>();
+			for ( S3SetupPackageConfiguration pkgConfig : pkgConfigs ) {
+				extractPercentComplete = 0;
+				try {
+					Future<PlatformPackageService.PlatformPackageResult<Void>> taskFuture = null;
+					switch (pkgConfig.getAction()) {
+						case Install:
+							setState(S3SetupManagerPlatformTaskState.InstallingPackage,
+									pkgConfig.getName());
+							log.info("Installing package [{}]", pkgConfig.getName());
+							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
+									pkgConfig.getVersion(), destBasePath, this, null);
+							break;
+
+						case Remove:
+							setState(S3SetupManagerPlatformTaskState.DeletingPackage,
+									pkgConfig.getName());
+							log.info("Removing package [{}]", pkgConfig.getName());
+							taskFuture = pkgService.removeNamedPackage(pkgConfig.getName(), this, null);
+							break;
+
+						case Upgrade:
+							setState(S3SetupManagerPlatformTaskState.UpgradingPackages, "");
+							log.info("Upgrading all packages");
+							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
+									pkgConfig.getVersion(), destBasePath, this, null);
+							break;
+
+					}
+					if ( taskFuture != null ) {
+						PlatformPackageService.PlatformPackageResult<Void> taskResult = taskFuture
+								.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+						if ( taskResult != null ) {
+							if ( taskResult.isSuccess() ) {
+								installed.addAll(taskResult.getExtractedPaths());
+							} else if ( taskResult.getException() != null ) {
+								if ( taskResult.getException() instanceof RuntimeException ) {
+									throw (RuntimeException) taskResult.getException();
+								} else if ( taskResult.getException() instanceof IOException ) {
+									throw (IOException) taskResult.getException();
+								} else {
+									throw new RuntimeException(taskResult.getException());
+								}
+							}
+						}
+					}
+					incrementStep();
+				} catch ( InterruptedException | ExecutionException e ) {
+					throw new RuntimeException("Error handling " + pkgConfig.getAction()
+							+ " of package [" + pkgConfig.getName() + "]: " + e.getMessage(), e);
+				} catch ( TimeoutException e ) {
+					throw new RuntimeException("Timeout waiting for " + pkgConfig.getAction()
+							+ " of package [" + pkgConfig.getName() + "] to complete");
+				}
+			}
+
+			boolTaskFuture = pkgService.cleanup();
+			try {
+				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+			} catch ( InterruptedException | ExecutionException e ) {
+				log.warn("Error cleaning packages; continuing anyway: {}", e.getMessage(), e);
+			} catch ( TimeoutException e ) {
+				log.warn("Timeout waiting to clean packages; continuing anyway.");
+			} finally {
+				incrementStep();
+			}
+
 			return installed;
 		}
 
@@ -787,6 +896,28 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	/**
+	 * This method returns the first-available package service.
+	 * 
+	 * <p>
+	 * To ensure the desired package service is used, the
+	 * {@link OptionalServiceCollection} is assumed to return the services in a
+	 * ranked order, from highest to lowest rank.
+	 * </p>
+	 * 
+	 * @return the "main" package service, or {@literal null} if none available
+	 */
+	private PlatformPackageService mainPackageService() {
+		Iterable<PlatformPackageService> itr = (packageServices != null ? packageServices.services()
+				: Collections.emptyList());
+		for ( PlatformPackageService s : itr ) {
+			if ( s != null ) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Construct a full S3 object key that includes the configured
 	 * {@code objectKeyPrefix} from a relative path value.
 	 * 
@@ -951,6 +1082,17 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 */
 	public void setPackageServices(OptionalServiceCollection<PlatformPackageService> packageServices) {
 		this.packageServices = packageServices;
+	}
+
+	/**
+	 * Set a timeout, in seconds, to use for package actions.
+	 * 
+	 * @param packageActionTimeoutSecs
+	 *        the timeout to use; defaults to
+	 *        {@link #DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS}
+	 */
+	public void setPackageActionTimeoutSecs(long packageActionTimeoutSecs) {
+		this.packageActionTimeoutSecs = packageActionTimeoutSecs;
 	}
 
 }

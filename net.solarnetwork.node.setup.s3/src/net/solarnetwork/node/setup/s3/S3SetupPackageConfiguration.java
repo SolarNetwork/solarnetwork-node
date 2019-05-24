@@ -1,5 +1,5 @@
 /* ==================================================================
- * DebianPlatformPackageService.java - 23/05/2019 10:03:58 am
+ * S3SetupPackageConfiguration.java - 24/05/2019 2:19:58 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -20,25 +20,65 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.deb;
-
-import java.util.regex.Pattern;
-import net.solarnetwork.node.PlatformPackageService;
-import net.solarnetwork.node.support.BaseSolarPkgPlatformPackageService;
+package net.solarnetwork.node.setup.s3;
 
 /**
- * Implementation of {@link PlatformPackageService} for Debian packages.
+ * Configuration for a single setup package.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.1
  */
-public class DebianPlatformPackageService extends BaseSolarPkgPlatformPackageService {
+public class S3SetupPackageConfiguration {
 
-	private static final Pattern DEBIAN_PACKAGE_PAT = Pattern.compile("\\.deb$");
+	/**
+	 * The package setup actions.
+	 */
+	public static enum Action {
 
-	@Override
-	public boolean handlesPackage(String archiveFileName) {
-		return archiveFileName != null && DEBIAN_PACKAGE_PAT.matcher(archiveFileName).find();
+		Install,
+
+		Remove,
+
+		Upgrade;
+
+	}
+
+	private Action action;
+	private String name;
+	private String version;
+	private String[] arguments;
+
+	public Action getAction() {
+		return action;
+	}
+
+	public void setAction(Action action) {
+		this.action = action;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String[] getArguments() {
+		return arguments;
+	}
+
+	public void setArguments(String[] arguments) {
+		this.arguments = arguments;
 	}
 
 }

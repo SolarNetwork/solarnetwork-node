@@ -1,5 +1,5 @@
 /* ==================================================================
- * DebianPlatformPackageService.java - 23/05/2019 10:03:58 am
+ * BasicPlatformPackage.java - 24/05/2019 4:16:40 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -20,25 +20,53 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.deb;
+package net.solarnetwork.node.support;
 
-import java.util.regex.Pattern;
-import net.solarnetwork.node.PlatformPackageService;
-import net.solarnetwork.node.support.BaseSolarPkgPlatformPackageService;
+import net.solarnetwork.node.PlatformPackageService.PlatformPackage;
 
 /**
- * Implementation of {@link PlatformPackageService} for Debian packages.
+ * Basic immutable implementation of {@link PlatformPackage}.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.68
  */
-public class DebianPlatformPackageService extends BaseSolarPkgPlatformPackageService {
+public class BasicPlatformPackage implements PlatformPackage {
 
-	private static final Pattern DEBIAN_PACKAGE_PAT = Pattern.compile("\\.deb$");
+	private final String name;
+	private final String version;
+	private final boolean installed;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param name
+	 *        the package name
+	 * @param version
+	 *        the package version
+	 * @param installed
+	 *        {@literal true} if installed
+	 */
+	public BasicPlatformPackage(String name, String version, boolean installed) {
+		super();
+		this.name = name;
+		this.version = version;
+		this.installed = installed;
+	}
 
 	@Override
-	public boolean handlesPackage(String archiveFileName) {
-		return archiveFileName != null && DEBIAN_PACKAGE_PAT.matcher(archiveFileName).find();
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	public String getVersion() {
+		return version;
+	}
+
+	@Override
+	public boolean isInstalled() {
+		return installed;
 	}
 
 }

@@ -1,6 +1,7 @@
-#!/usr/bin/env sh
-#
-# Debian helper script for managing Debian packages.
+# solarpkg helper script
+
+The scripts in this directory implement a _solarpkg_ API specific to SolarNode OS deployments. The
+scripts will be invoked by the 
 
 VERBOSE=""
 
@@ -15,11 +16,10 @@ Usage: $0 [-v] <action> [arguments]
       Remove any cached download packages or temporary files. Remove any packages no longer
       required by other packages (autoremove).
 
-  install <name> [<version>]
+  install <name>
   
       Install package `name`. If `name` ends with '.deb' then install the package file `name`.
-      Otherwise, download and install `name` from the configured apt repositories; if `version`
-      specified then install the specific version.
+      Otherwise, download and install `name` from the configured apt repositories.
       
   is-installed <name>
   
@@ -30,25 +30,15 @@ Usage: $0 [-v] <action> [arguments]
       List packages. If `name` is provided, only packages matching this name (including wildcards)
       will be listed. The output is a CSV table of columns: name, version, installed (true|false).
       
-  list-available [<name>]
-  
-      List packages available to be installed (but are not yet installed). If `name` is provided, 
-      only packages matching this name (including  wildcards) will be listed. The output is a CSV 
-      table of columns: name, version, installed (true|false).
-      
   list-installed [<name>]
   
       List installed packages. If `name` is provided, only packages matching this name (including 
-      wildcards) will be listed. The output is a CSV table of columns: name, version, installed 
+      wildcards) will be listed.mThe output is a CSV table of columns: name, version, installed 
       (true|false).
       
   refresh
   
       Refresh the available packages from remote repositories.
-      
-  remove <name>
-  
-      Remove the package named `name`.
       
   upgrade [major]
   
@@ -152,7 +142,7 @@ pkg_clean () {
 pkg_list () {
 	local name="${1:-*}"
 	
-	apt list "$name" 2>/dev/null \
+	apt list '*telnet' 2>/dev/null \
 		|awk 'NR >= 3 {sub(/\/.*$/, "", $1); printf "%s,%s,%s\n", $1, $2, match($4, /installed/) ? "true" : "false"}'
 }
 
@@ -162,11 +152,6 @@ pkg_list_installed () {
 	
 	dpkg-query -W -f '${Package},${Version},${db:Status-Status}\n' "$name" \
 		|sed -e '/,installed$/! d' -e '/,installed$/ s/,installed$/,true/'
-}
-
-# list name,version,installed (true|false)
-pkg_list_available () {
-	pkg_list "$@" |grep ',false$'
 }
 
 # return (true|false)
@@ -204,8 +189,6 @@ case $ACTION in
 	
 	list) pkg_list "$@";;
 
-	list-available) pkg_list_available "$@";;
-	
 	list-installed) pkg_list_installed "$@";;
 	
 	refresh) pkg_refresh "$@";;

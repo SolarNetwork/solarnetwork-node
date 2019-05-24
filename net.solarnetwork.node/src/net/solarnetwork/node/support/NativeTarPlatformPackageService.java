@@ -32,12 +32,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.PlatformPackageService;
 import net.solarnetwork.util.ProgressListener;
 
@@ -79,25 +78,24 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	private List<String> tarCommand = DEFAULT_TAR_COMMAND;
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
-
 	@Override
 	public boolean handlesPackage(String archiveFileName) {
 		return archiveFileName != null && TARBALL_PAT.matcher(archiveFileName).find();
 	}
 
 	@Override
-	public <T> Future<PlatformPackageInstallResult<T>> installPackage(Path archive, Path baseDirectory,
+	public <T> Future<PlatformPackageResult<T>> installPackage(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
-		return performTask(createTask(archive, baseDirectory, progressListener, context), context);
+		return performPackageResultTask(createTask(archive, baseDirectory, progressListener, context),
+				context);
 	}
 
-	protected <T> Callable<PlatformPackageInstallResult<T>> createTask(Path archive, Path baseDirectory,
+	protected <T> Callable<PlatformPackageResult<T>> createTask(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
-		return new Callable<PlatformPackageService.PlatformPackageInstallResult<T>>() {
+		return new Callable<PlatformPackageService.PlatformPackageResult<T>>() {
 
 			@Override
-			public PlatformPackageInstallResult<T> call() throws Exception {
+			public PlatformPackageResult<T> call() throws Exception {
 				List<String> cmd = new ArrayList<>(tarCommand.size());
 				String tarballPath = archive.toAbsolutePath().toString();
 				for ( String param : tarCommand ) {
@@ -146,20 +144,48 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 							"Tar command returned non-zero exit code " + pr.exitValue() + ": " + output);
 				}
 
-				return new BasicPlatformPackageInstallResult<T>(true, null, null, extractedPaths,
-						context);
+				return new BasicPlatformPackageResult<T>(true, null, null, extractedPaths, context);
 			}
 		};
 	}
 
 	@Override
-	public Iterable<PlatformPackage> listPackages(String nameFilter, Boolean installedFilter) {
-		return Collections.emptyList();
+	public Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
+			Boolean installedFilter) {
+		CompletableFuture<Iterable<PlatformPackage>> f = new CompletableFuture<>();
+		f.complete(Collections.emptyList());
+		return f;
 	}
 
 	@Override
-	public <T> Future<PlatformPackageInstallResult<T>> installPackage(String name, String version,
+	public Future<Boolean> refreshNamedPackages() {
+		CompletableFuture<Boolean> f = new CompletableFuture<>();
+		f.complete(true);
+		return f;
+	}
+
+	@Override
+	public Future<Boolean> cleanup() {
+		CompletableFuture<Boolean> f = new CompletableFuture<>();
+		f.complete(true);
+		return f;
+	}
+
+	@Override
+	public <T> Future<PlatformPackageResult<T>> installNamedPackage(String name, String version,
 			Path baseDirectory, ProgressListener<T> progressListener, T context) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T> Future<PlatformPackageResult<T>> removeNamedPackage(String name,
+			ProgressListener<T> progressListener, T context) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public <T> Future<PlatformPackageResult<T>> upgradeNamedPackages(
+			ProgressListener<T> progressListener, T context) {
 		throw new UnsupportedOperationException();
 	}
 

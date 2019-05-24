@@ -70,12 +70,12 @@ public interface PlatformPackageService {
 	}
 
 	/**
-	 * The results of extracting a package.
+	 * The results of performing an action on a package.
 	 * 
 	 * @param <T>
 	 *        the context object type
 	 */
-	interface PlatformPackageInstallResult<T> {
+	interface PlatformPackageResult<T> {
 
 		/**
 		 * Get the success flag.
@@ -99,9 +99,9 @@ public interface PlatformPackageService {
 		Throwable getException();
 
 		/**
-		 * Get a complete list of files extracted from the package.
+		 * Get a complete list of files installed from the package.
 		 * 
-		 * @return the extracted paths
+		 * @return the extracted paths, or {@literal null} if nothing installed
 		 */
 		List<Path> getExtractedPaths();
 
@@ -113,20 +113,6 @@ public interface PlatformPackageService {
 		T getContext();
 
 	}
-
-	/**
-	 * List packages, optionally filtering by name and installed status.
-	 * 
-	 * @param nameFilter
-	 *        a regular expression to filter packages by, or {@literal null} to
-	 *        include everything
-	 * @param installedFilter
-	 *        {@literal true} to include only installed packages,
-	 *        {@literal false} to exclude installed packages, or {@literal null}
-	 *        to include everthing
-	 * @return the matching packages, never {@literal null}
-	 */
-	Iterable<PlatformPackage> listPackages(String nameFilter, Boolean installedFilter);
 
 	/**
 	 * Test if this service handles packages with a given name.
@@ -159,17 +145,46 @@ public interface PlatformPackageService {
 	 *         {@link #handlesPackage(String)} does not return {@literal true}
 	 *         for the archives name)
 	 */
-	<T> Future<PlatformPackageInstallResult<T>> installPackage(Path archive, Path baseDirectory,
+	<T> Future<PlatformPackageResult<T>> installPackage(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context);
+
+	/**
+	 * List named packages, optionally filtering by name and installed status.
+	 * 
+	 * @param nameFilter
+	 *        a regular expression to filter packages by, or {@literal null} to
+	 *        include everything
+	 * @param installedFilter
+	 *        {@literal true} to include only installed packages,
+	 *        {@literal false} to exclude installed packages, or {@literal null}
+	 *        to include everything
+	 * @return the matching packages, never {@literal null}
+	 */
+	Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter, Boolean installedFilter);
+
+	/**
+	 * Refresh named packages.
+	 * 
+	 * @return the task completion status
+	 */
+	Future<Boolean> refreshNamedPackages();
+
+	/**
+	 * Cleanup any temporary or cached data.
+	 * 
+	 * @return the task completion status
+	 */
+	Future<Boolean> cleanup();
 
 	/**
 	 * Install a package.
 	 * 
 	 * <p>
-	 * This method is used to install packages that are "available" to be
+	 * This method is used to install named packages that are "available" to be
 	 * installed, i.e. one that is returned from the
-	 * {@link #listPackages(String, Boolean)} method. The package might have to
-	 * be downloaded from a remote package repository and then installed.
+	 * {@link #listPackages(String, Boolean)} method when {@literal false} is
+	 * passed. The package might have to be downloaded from a remote package
+	 * repository and then installed.
 	 * </p>
 	 * 
 	 * @param <T>
@@ -188,7 +203,49 @@ public interface PlatformPackageService {
 	 *        in the result; may be {@literal null}
 	 * @return a future for the package installation results
 	 */
-	<T> Future<PlatformPackageInstallResult<T>> installPackage(String name, String version,
+	<T> Future<PlatformPackageResult<T>> installNamedPackage(String name, String version,
 			Path baseDirectory, ProgressListener<T> progressListener, T context);
+
+	/**
+	 * Remove a named package.
+	 * 
+	 * <p>
+	 * This method is used to remove named packages that are currently
+	 * installed.
+	 * </p>
+	 * 
+	 * @param <T>
+	 *        the context object type
+	 * @param name
+	 *        the package name to install
+	 * @param progressListener
+	 *        an optional listener of the progress of extracting the package
+	 * @param context
+	 *        a context object to pass to {@code progressListener} and provide
+	 *        in the result; may be {@literal null}
+	 * @return a future for the package installation results
+	 */
+	<T> Future<PlatformPackageResult<T>> removeNamedPackage(String name,
+			ProgressListener<T> progressListener, T context);
+
+	/**
+	 * Upgrade all installed packages.
+	 * 
+	 * <p>
+	 * This method is used to upgrade named packages to the highest available
+	 * versions.
+	 * </p>
+	 * 
+	 * @param <T>
+	 *        the context object type
+	 * @param progressListener
+	 *        an optional listener of the progress of extracting the package
+	 * @param context
+	 *        a context object to pass to {@code progressListener} and provide
+	 *        in the result; may be {@literal null}
+	 * @return a future for the package installation results
+	 */
+	<T> Future<PlatformPackageResult<T>> upgradeNamedPackages(ProgressListener<T> progressListener,
+			T context);
 
 }

@@ -16,7 +16,7 @@
 		
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.PlatformPackageService">
+	<service interface="net.solarnetwork.node.PlatformPackageService" ranking="10">
 		<bean class="net.solarnetwork.node.setup.deb.DebianPlatformPackageService">
 			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>
