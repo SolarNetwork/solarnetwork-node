@@ -43,12 +43,39 @@ import net.solarnetwork.util.ProgressListener;
 public interface PlatformPackageService {
 
 	/**
+	 * A platform package.
+	 */
+	interface PlatformPackage {
+
+		/**
+		 * Get the package name.
+		 * 
+		 * @return the name
+		 */
+		String getName();
+
+		/**
+		 * Get the package version.
+		 * 
+		 * @return the version
+		 */
+		String getVersion();
+
+		/**
+		 * Flag if this package is installed.
+		 * 
+		 * @return {@literal true} if the package is installed
+		 */
+		boolean isInstalled();
+	}
+
+	/**
 	 * The results of extracting a package.
 	 * 
 	 * @param <T>
 	 *        the context object type
 	 */
-	interface PlatformPackageExtractResult<T> {
+	interface PlatformPackageInstallResult<T> {
 
 		/**
 		 * Get the success flag.
@@ -81,11 +108,25 @@ public interface PlatformPackageService {
 		/**
 		 * Get the context object.
 		 * 
-		 * @return the context objexct
+		 * @return the context object
 		 */
 		T getContext();
 
 	}
+
+	/**
+	 * List packages, optionally filtering by name and installed status.
+	 * 
+	 * @param nameFilter
+	 *        a regular expression to filter packages by, or {@literal null} to
+	 *        include everything
+	 * @param installedFilter
+	 *        {@literal true} to include only installed packages,
+	 *        {@literal false} to exclude installed packages, or {@literal null}
+	 *        to include everthing
+	 * @return the matching packages, never {@literal null}
+	 */
+	Iterable<PlatformPackage> listPackages(String nameFilter, Boolean installedFilter);
 
 	/**
 	 * Test if this service handles packages with a given name.
@@ -99,12 +140,12 @@ public interface PlatformPackageService {
 	boolean handlesPackage(String archiveFileName);
 
 	/**
-	 * Extract a package.
+	 * Install a package from an archive file.
 	 * 
 	 * @param <T>
 	 *        the context object type
 	 * @param archive
-	 *        the package to extract
+	 *        the package to extract and install
 	 * @param baseDirectory
 	 *        a "base" directory to resolve relative file paths against
 	 * @param progressListener
@@ -112,13 +153,42 @@ public interface PlatformPackageService {
 	 * @param context
 	 *        a context object to pass to {@code progressListener} and provide
 	 *        in the result; may be {@literal null}
-	 * @return a future for the package extraction results
+	 * @return a future for the package installation results
 	 * @throws IllegalArgumentException
 	 *         if {@code archive} is not a supported type (that is, the
 	 *         {@link #handlesPackage(String)} does not return {@literal true}
 	 *         for the archives name)
 	 */
-	<T> Future<PlatformPackageExtractResult<T>> extractPackage(Path archive, Path baseDirectory,
+	<T> Future<PlatformPackageInstallResult<T>> installPackage(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context);
+
+	/**
+	 * Install a package.
+	 * 
+	 * <p>
+	 * This method is used to install packages that are "available" to be
+	 * installed, i.e. one that is returned from the
+	 * {@link #listPackages(String, Boolean)} method. The package might have to
+	 * be downloaded from a remote package repository and then installed.
+	 * </p>
+	 * 
+	 * @param <T>
+	 *        the context object type
+	 * @param name
+	 *        the package name to install
+	 * @param version
+	 *        the package version to install, or {@literal null} for the highest
+	 *        available version
+	 * @param baseDirectory
+	 *        a "base" directory to resolve relative file paths against
+	 * @param progressListener
+	 *        an optional listener of the progress of extracting the package
+	 * @param context
+	 *        a context object to pass to {@code progressListener} and provide
+	 *        in the result; may be {@literal null}
+	 * @return a future for the package installation results
+	 */
+	<T> Future<PlatformPackageInstallResult<T>> installPackage(String name, String version,
+			Path baseDirectory, ProgressListener<T> progressListener, T context);
 
 }

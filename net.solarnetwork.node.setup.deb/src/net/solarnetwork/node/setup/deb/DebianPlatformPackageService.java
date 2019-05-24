@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.PlatformPackageService;
 import net.solarnetwork.node.support.BasePlatformPackageService;
-import net.solarnetwork.node.support.BasicPlatformPackageExtractResult;
+import net.solarnetwork.node.support.BasicPlatformPackageInstallResult;
 import net.solarnetwork.util.ProgressListener;
 
 /**
@@ -52,6 +52,12 @@ import net.solarnetwork.util.ProgressListener;
 public class DebianPlatformPackageService extends BasePlatformPackageService
 		implements PlatformPackageService {
 
+	/** The command action for installing a package. */
+	public static final String ACTION_INSTALL = "install";
+
+	/** The command action for listing packages. */
+	public static final String ACTION_LIST = "list";
+
 	private static final Pattern DEBIAN_PACKAGE_PAT = Pattern.compile("\\.deb$");
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -62,18 +68,18 @@ public class DebianPlatformPackageService extends BasePlatformPackageService
 	}
 
 	@Override
-	public <T> Future<PlatformPackageExtractResult<T>> extractPackage(Path archive, Path baseDirectory,
+	public <T> Future<PlatformPackageInstallResult<T>> installPackage(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
 		return performTask(createTask(archive, baseDirectory, progressListener, context), context);
 	}
 
-	protected <T> Callable<PlatformPackageExtractResult<T>> createTask(Path archive, Path baseDirectory,
+	protected <T> Callable<PlatformPackageInstallResult<T>> createTask(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
-		return new Callable<PlatformPackageService.PlatformPackageExtractResult<T>>() {
+		return new Callable<PlatformPackageService.PlatformPackageInstallResult<T>>() {
 
 			@Override
-			public PlatformPackageExtractResult<T> call() throws Exception {
-				List<String> cmd = pkgCommand("install", archive.toAbsolutePath().toString());
+			public PlatformPackageInstallResult<T> call() throws Exception {
+				List<String> cmd = pkgCommand(ACTION_INSTALL, archive.toAbsolutePath().toString());
 				if ( log.isDebugEnabled() ) {
 					log.debug("Package command: {}", delimitedStringFromCollection(cmd, " "));
 				}
@@ -116,10 +122,23 @@ public class DebianPlatformPackageService extends BasePlatformPackageService
 							+ ": " + output);
 				}
 
-				return new BasicPlatformPackageExtractResult<T>(true, null, null, extractedPaths,
+				return new BasicPlatformPackageInstallResult<T>(true, null, null, extractedPaths,
 						context);
 			}
 		};
+	}
+
+	@Override
+	public Iterable<PlatformPackage> listPackages(String nameFilter, Boolean installedFilter) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public <T> Future<PlatformPackageInstallResult<T>> installPackage(String name, String version,
+			Path baseDirectory, ProgressListener<T> progressListener, T context) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

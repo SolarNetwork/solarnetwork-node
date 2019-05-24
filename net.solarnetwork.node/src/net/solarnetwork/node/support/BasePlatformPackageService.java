@@ -64,20 +64,20 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	 *        the context
 	 * @return the task future
 	 */
-	protected <T> Future<PlatformPackageExtractResult<T>> performTask(
-			Callable<PlatformPackageExtractResult<T>> task, T context) {
+	protected <T> Future<PlatformPackageInstallResult<T>> performTask(
+			Callable<PlatformPackageInstallResult<T>> task, T context) {
 		AsyncTaskExecutor executor = taskExecutor();
 		if ( executor != null ) {
 			return executor.submit(task);
 		}
 
 		// execute on calling thread
-		CompletableFuture<PlatformPackageExtractResult<T>> future = new CompletableFuture<>();
+		CompletableFuture<PlatformPackageInstallResult<T>> future = new CompletableFuture<>();
 		try {
 			future.complete(task.call());
 		} catch ( Throwable t ) {
 			future.complete(
-					new BasicPlatformPackageExtractResult<T>(false, t.getMessage(), t, null, context));
+					new BasicPlatformPackageInstallResult<T>(false, t.getMessage(), t, null, context));
 		}
 		return future;
 	}

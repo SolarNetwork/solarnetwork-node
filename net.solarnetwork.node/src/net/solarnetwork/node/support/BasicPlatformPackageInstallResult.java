@@ -1,5 +1,5 @@
 /* ==================================================================
- * BasicPlatformPackageExtractResult.java - 22/05/2019 4:20:30 pm
+ * BasicPlatformPackageInstallResult.java - 22/05/2019 4:20:30 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -25,11 +25,11 @@ package net.solarnetwork.node.support;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.PlatformPackageService.PlatformPackageExtractResult;
+import net.solarnetwork.node.PlatformPackageService.PlatformPackageInstallResult;
 
 /**
  * A basic, immutable implementation of
- * {@Link PlatformPackageService.PlatformPackageExtractResult}.
+ * {@Link PlatformPackageService.PlatformPackageInstallResult}.
  * 
  * @param <T>
  *        the context type
@@ -37,7 +37,7 @@ import net.solarnetwork.node.PlatformPackageService.PlatformPackageExtractResult
  * @version 1.0
  * @since 1.68
  */
-public class BasicPlatformPackageExtractResult<T> implements PlatformPackageExtractResult<T> {
+public class BasicPlatformPackageInstallResult<T> implements PlatformPackageInstallResult<T> {
 
 	private final boolean success;
 	private final String message;
@@ -59,7 +59,7 @@ public class BasicPlatformPackageExtractResult<T> implements PlatformPackageExtr
 	 * @param context
 	 *        the context
 	 */
-	public BasicPlatformPackageExtractResult(boolean success, String message, Throwable exception,
+	public BasicPlatformPackageInstallResult(boolean success, String message, Throwable exception,
 			List<Path> extractedPaths, T context) {
 		super();
 		this.success = success;

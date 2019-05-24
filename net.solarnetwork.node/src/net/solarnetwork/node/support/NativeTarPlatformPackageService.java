@@ -87,17 +87,17 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	}
 
 	@Override
-	public <T> Future<PlatformPackageExtractResult<T>> extractPackage(Path archive, Path baseDirectory,
+	public <T> Future<PlatformPackageInstallResult<T>> installPackage(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
 		return performTask(createTask(archive, baseDirectory, progressListener, context), context);
 	}
 
-	protected <T> Callable<PlatformPackageExtractResult<T>> createTask(Path archive, Path baseDirectory,
+	protected <T> Callable<PlatformPackageInstallResult<T>> createTask(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
-		return new Callable<PlatformPackageService.PlatformPackageExtractResult<T>>() {
+		return new Callable<PlatformPackageService.PlatformPackageInstallResult<T>>() {
 
 			@Override
-			public PlatformPackageExtractResult<T> call() throws Exception {
+			public PlatformPackageInstallResult<T> call() throws Exception {
 				List<String> cmd = new ArrayList<>(tarCommand.size());
 				String tarballPath = archive.toAbsolutePath().toString();
 				for ( String param : tarCommand ) {
@@ -146,10 +146,21 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 							"Tar command returned non-zero exit code " + pr.exitValue() + ": " + output);
 				}
 
-				return new BasicPlatformPackageExtractResult<T>(true, null, null, extractedPaths,
+				return new BasicPlatformPackageInstallResult<T>(true, null, null, extractedPaths,
 						context);
 			}
 		};
+	}
+
+	@Override
+	public Iterable<PlatformPackage> listPackages(String nameFilter, Boolean installedFilter) {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public <T> Future<PlatformPackageInstallResult<T>> installPackage(String name, String version,
+			Path baseDirectory, ProgressListener<T> progressListener, T context) {
+		throw new UnsupportedOperationException();
 	}
 
 	/**
