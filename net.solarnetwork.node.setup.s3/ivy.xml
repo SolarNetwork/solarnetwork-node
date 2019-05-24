@@ -11,6 +11,7 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
+	    <dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.51.1,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.68,2.0)"/>
 	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node.backup.s3" rev="[0.4,2.0)"/>
 		<dependency org="com.amazonaws" name="aws-java-sdk-osgi" rev="1.11.207"/>
