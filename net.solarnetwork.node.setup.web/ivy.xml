@@ -24,15 +24,16 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.61,2.0)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
-		<dependency org="org.springframework" name="spring-beans" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework" name="spring-context" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework" name="spring-jdbc" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework" name="spring-messaging" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework" name="spring-webmvc" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework" name="spring-websocket" rev="4.2.6.RELEASE"/>
-		<dependency org="org.springframework.security" name="spring-security-core" rev="4.1.0.RELEASE"/>
-		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.spring-security-messaging" rev="4.1.0.RELEASE_1" conf="runtime"/>
-		<dependency org="org.springframework.security" name="spring-security-taglibs" rev="4.1.0.RELEASE" conf="runtime"/>
-		<dependency org="org.springframework.security" name="spring-security-web" rev="4.1.0.RELEASE"/>
+		<dependency org="org.springframework" name="spring-beans" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-jdbc" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-messaging" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-webmvc" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework" name="spring-websocket" rev="4.3.23.RELEASE"/>
+		<dependency org="org.springframework.security" name="spring-security-core" rev="4.2.4.RELEASE"/>
+		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.spring-security-messaging" rev="4.2.4.RELEASE_1" conf="runtime"/>
+		<dependency org="org.springframework.security" name="spring-security-taglibs" rev="4.2.4.RELEASE" conf="runtime"/>
+		<dependency org="org.springframework.security" name="spring-security-web" rev="4.2.4.RELEASE"/>
     </dependencies>
 </ivy-module>
