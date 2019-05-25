@@ -113,7 +113,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	public static final String INSTRUCTION_PARAM_VERSION = "Version";
 
 	/** The default value for the {@code workDirectory} property. */
-	public static final String DEFAULT_WORK_DIRECTORY = "work/s3-setup";
+	public static final String DEFAULT_WORK_DIRECTORY = "var/work/s3-setup";
 
 	/** A prefix applied to metadata objects. */
 	public static final String META_OBJECT_KEY_PREFIX = "setup-meta/";
