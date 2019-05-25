@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <%@page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@taglib prefix="tilesx" uri="http://tiles.apache.org/tags-tiles-extras" %>
 <html lang="en">
-	<tiles:useAttribute name="navloc" scope="request"/>
+	<tilesx:useAttribute name="navloc" scope="request"/>
 	<tiles:insertAttribute name="head" />
 	<body>
 		<c:import url="/WEB-INF/jsp/navbar.jsp"/>
