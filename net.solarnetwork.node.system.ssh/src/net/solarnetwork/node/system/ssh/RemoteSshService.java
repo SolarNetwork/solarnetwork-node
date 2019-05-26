@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.system.ssh;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
+import static net.solarnetwork.node.Constants.solarNodeHome;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -44,6 +46,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
@@ -97,7 +100,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class RemoteSshService
 		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
@@ -134,15 +137,20 @@ public class RemoteSshService
 	 */
 	public static final String PARAM_REVERSE_PORT = "rport";
 
-	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = "solarssh";
+	/**
+	 * The default value for the {@code command} property.
+	 * 
+	 * <p>
+	 * This is {@link Constants#solarNodeHome()} with {@literal /bin/solarssh}.
+	 * </p>
+	 */
+	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/solarssh";
 
 	/** The node metadata info key to publish the SSH public key to. */
 	public static final String METADATA_SSH_PUBLIC_KEY = "ssh-public-key";
 
-	private String command = DEFAULT_COMMAND;
-	private Set<String> allowedHosts = Collections
-			.unmodifiableSet(new HashSet<String>(Arrays.asList("data.solarnetwork.net")));
+	private String command;
+	private Set<String> allowedHosts;
 	private MessageSource messageSource;
 	private TaskScheduler taskScheduler;
 	private ScheduledFuture<?> maintenanceFuture;
@@ -151,6 +159,12 @@ public class RemoteSshService
 	private final Set<RemoteSshConfig> configs = new ConcurrentSkipListSet<RemoteSshConfig>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	public RemoteSshService() {
+		super();
+		this.allowedHosts = unmodifiableSet(new HashSet<String>(asList("data.solarnetwork.net")));
+		this.command = DEFAULT_COMMAND;
+	}
 
 	private class ConnectionMaintenanceTask implements Runnable {
 
