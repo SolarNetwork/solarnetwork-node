@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.os.stat;
 
+import static net.solarnetwork.node.Constants.solarNodeHome;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,12 +45,12 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * command.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ProcessActionCommandRunner implements ActionCommandRunner, SettingSpecifierProvider {
 
 	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = "/home/solar/bin/solarstat";
+	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/solarstat";
 
 	private String command = DEFAULT_COMMAND;
 	private MessageSource messageSource;
