@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.impl;
@@ -106,7 +104,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.12
+ * @version 1.13
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -580,7 +578,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	}
 
 	@Override
-	public NodeAppConfiguration getAppConfiguration() {
+	public synchronized NodeAppConfiguration getAppConfiguration() {
 		NodeAppConfiguration config = this.appConfiguration;
 		if ( config.getCreated() + APP_CONFIG_CACHE_MS > System.currentTimeMillis() ) {
 			return config;
