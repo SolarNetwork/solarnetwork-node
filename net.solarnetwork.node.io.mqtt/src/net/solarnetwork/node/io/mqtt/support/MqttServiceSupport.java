@@ -48,7 +48,7 @@ import net.solarnetwork.util.OptionalService;
  * Helper base class for MQTT client based services.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class MqttServiceSupport implements MqttCallbackExtended {
 
@@ -144,8 +144,13 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 						}
 						return d;
 					});
-					log.info("Failed to connect to MQTT server {}, will try again in {}s", getMqttUri(),
-							delay / 1000);
+					URI uri = getMqttUri();
+					if ( uri == null ) {
+						log.info("No MQTT server configured, will try again in {}s", uri, delay / 1000);
+					} else {
+						log.info("Failed to connect to MQTT server {}, will try again in {}s", uri,
+								delay / 1000);
+					}
 					taskScheduler.schedule(this, new Date(System.currentTimeMillis() + delay));
 				}
 			};

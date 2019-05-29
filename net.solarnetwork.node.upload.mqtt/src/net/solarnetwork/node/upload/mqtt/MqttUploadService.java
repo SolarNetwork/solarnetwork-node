@@ -60,7 +60,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MqttUploadService extends MqttServiceSupport
 		implements UploadService, MqttCallbackExtended {
@@ -120,7 +120,10 @@ public class MqttUploadService extends MqttServiceSupport
 	protected URI getMqttUri() {
 		try {
 			return new URI(identityService.getSolarInMqttUrl());
-		} catch ( NullPointerException | URISyntaxException e1 ) {
+		} catch ( NullPointerException e ) {
+			// perhaps not configured yet
+			return null;
+		} catch ( URISyntaxException e ) {
 			log.error("Invalid MQTT URL: " + identityService.getSolarInMqttUrl());
 			return null;
 		}
