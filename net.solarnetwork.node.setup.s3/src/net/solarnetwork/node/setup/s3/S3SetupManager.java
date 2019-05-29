@@ -92,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -255,7 +255,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	private synchronized S3SetupTaskResult applySetup(S3SetupConfiguration config) throws IOException {
-		if ( config == null || config.getObjects() == null || config.getObjects().length < 1 ) {
+		if ( config == null ) {
 			return new S3SetupTaskResult(false, Collections.emptySet(), Collections.emptySet());
 		}
 		S3SetupManagerPlatformTask task = new S3SetupManagerPlatformTask(config);
