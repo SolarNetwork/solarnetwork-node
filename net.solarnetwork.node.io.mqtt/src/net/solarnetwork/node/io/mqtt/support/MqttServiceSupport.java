@@ -146,7 +146,7 @@ public abstract class MqttServiceSupport implements MqttCallbackExtended {
 					});
 					URI uri = getMqttUri();
 					if ( uri == null ) {
-						log.info("No MQTT server configured, will try again in {}s", uri, delay / 1000);
+						log.info("No MQTT server configured, will try again in {}s", delay / 1000);
 					} else {
 						log.info("Failed to connect to MQTT server {}, will try again in {}s", uri,
 								delay / 1000);

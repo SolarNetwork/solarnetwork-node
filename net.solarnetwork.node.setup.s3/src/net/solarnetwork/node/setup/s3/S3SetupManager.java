@@ -92,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -340,9 +340,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			try {
 				Set<Path> installedFiles = applySetupObjects(config);
 				Set<Path> deletedFiles = applySetupSyncPaths(config, installedFiles);
-				deletedFiles.addAll(applySetupCleanPaths(config));
+				deletedFiles = addTo(deletedFiles, applySetupCleanPaths(config));
 
-				installedFiles.addAll(applySetupPackages(config));
+				installedFiles = addTo(installedFiles, applySetupPackages(config));
 
 				try {
 					setState(S3SetupManagerPlatformTaskState.PostingSetupVersion, null);
@@ -372,6 +372,19 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					informStatusHandlers();
 				}
 			}
+		}
+
+		private Set<Path> addTo(Set<Path> set, Set<Path> additions) {
+			if ( additions.isEmpty() ) {
+				return set;
+			}
+			if ( set.isEmpty() ) {
+				return additions;
+			} else {
+				set.addAll(additions);
+				return set;
+			}
+
 		}
 
 		private synchronized void informStatusHandlers() {

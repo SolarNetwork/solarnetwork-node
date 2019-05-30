@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: MQTT Communication Support
 Bundle-Description: Communication support for the MQTT protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.mqtt
-Bundle-Version: 1.0.5
+Bundle-Version: 1.0.6
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.mqtt
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
