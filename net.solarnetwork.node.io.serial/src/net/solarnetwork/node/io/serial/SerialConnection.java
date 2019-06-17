@@ -27,9 +27,17 @@ import net.solarnetwork.node.LockTimeoutException;
 
 /**
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface SerialConnection {
+
+	/**
+	 * Get the name of the serial port used by this connection.
+	 * 
+	 * @return the serial port name, or {@literal null} if not known
+	 * @since 1.1
+	 */
+	String getPortName();
 
 	/**
 	 * Open the connection, if it is not already open. The connection must be
