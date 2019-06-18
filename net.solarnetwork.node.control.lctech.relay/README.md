@@ -1,37 +1,31 @@
-# SolarNode Modbus Toggle Control
+# SolarNode LC Tech USB Relay Toggle Control
 
-This project provides SolarNode plugin that can toggle a switch via the
-Modbus protocol by flipping a Modbus "coil" type register on and off.
+This project provides SolarNode plugin that can toggle a LC Tech USB relay open and closed.
 
-![settings](docs/solarnode-modbus-toggle-settings.png)
+![settings](docs/solarnode-lctech-usb-relay-toggle-settings.png)
 
 # Install
 
-The plugin can be installed via the **Plugins** page on your SolarNode. It
-appears under the **Control** category as **Modbus Toggle Control**.
+The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
+**Control** category as **LC Tech Relay Toggle Control**.
 
 # Configuration
 
-Once installed, a new **Modbus Switch Toggler** component will appear on the
-**Settings** page on your SolarNode. Click on the **Manage** button to configure
-devices. You'll need to add one configuration for each Modbus switch you want to
-control.
-
-A status indicator will appear at the top of the device settings, which will
-display `true` (switch closed) or `false` (switch open).
+Once installed, a new **LC Tech USB Relay Toggler** component will appear on the **Settings** page
+on your SolarNode. Click on the **Manage** button to configure devices. You'll need to add one
+configuration for each Modbus switch you want to control.
 
 ## Overall device settings
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Control ID         | The ID to use for the SolarNode control.                                         |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Connection  | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to control, from 1 - 255.                            |
-| Address            | The zero-based Modbus address for coil or holding register to toggle.            |
-| Function           | The Modbus function to use when writing the control state.                       |
+| Setting       | Description |
+|:--------------|:------------|
+| Control ID    | The ID to use for the SolarNode control. |
+| Service Group | A group name to associate this data source with. |
+| Serial Port   | The service name of the Serial port to use. |
+| Identity      | The identity of the Modbus device to control. |
+| Address       | The one-based address for relay to toggle. |
 
 ## Overall device settings notes
 
@@ -41,33 +35,30 @@ Each device configuration contains the following overall settings:
 	control IDs are grouped into a hierarchy via slash characters, for example `/modem/power/1`.
 	This ID will also be used as the datum source ID when the control value is posted to
 	SolarNetwork.</dd>
-	<dt>Address</dT>
-	<dd>Note this value is the zero-based address to read. Sometimes documentation for Modbus
-	devices list the addresses in one-based notation. If that is the case for your device,
-	simply subtract one from the documented address here.</dd>
-	<dt>Function</dT>
-	<dd>Typically this will either be <code>WriteCoil</code> or <code>WriteHoldingRegister</code>,
-	and depends on the device you're using.</dd>
+	<dt>Identity</dt>
+	<dd>This does not typically need to be changed from the default value.</dd>
+	<dt>Address</dt>
+	<dd>Note this value is the one-based address to toggle. For devices with a single relay this
+	is always <code>1</code>. For multi-relay devices, this goes up 1 for each relay.</dd>
 </dl>
 
 # Use
 
-Once configured each switch can be toggled on/off on the node itself or via the
-SolarNetwork API.
+Once configured each relay can be toggled on/off on the node itself or via the SolarNetwork API. A
+value of `true` sets the relay to **open** and `false` sets the relay to **closed**.
 
 ## Local SolarNode control
 
-You can toggle the switch using the SolarNode GUI once the device is configured.
-Visit the **Controls** page, then tap the **Manage** button for the control ID
-of the switch you want to toggle. You'll see a form where you can toggle the
-switch by entering `true` or `false`, like this:
-
-![settings](docs/solarnode-modbus-toggle-control.png)
+You can toggle the switch using the SolarNode GUI once the device is configured. Visit the
+**Controls** page, then tap the **Manage** button for the control ID of the switch you want to
+toggle. You'll see a form where you can toggle the switch by entering `true` or `false`.
 
 ## SolarNetwork control
 
-The [SolarUser Instruction API](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction)
-can be used to toggle the switch from anywhere in the world, by requesting the
-SolarNode to perform a [`SetControlParameter`](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter)
-instruction and passing a single instruction parameter named the **Control ID** you
-configured for the switch and `true` or `false` as the parameter value.
+The [SolarUser Instruction API][instr-api] can be used to toggle the switch from anywhere in the
+world, by requesting the SolarNode to perform a [`SetControlParameter`][set-control-param]
+instruction and passing a single instruction parameter named the **Control ID** you configured for
+the switch and `true` or `false` as the parameter value.
+
+[instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
+[set-control-param]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
