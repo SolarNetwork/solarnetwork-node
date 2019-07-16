@@ -25,9 +25,9 @@ package net.solarnetwork.node.io.dnp3.impl;
 import java.util.ArrayList;
 import java.util.List;
 import com.automatak.dnp3.Channel;
-import com.automatak.dnp3.ChannelRetry;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
+import com.automatak.dnp3.enums.ServerAcceptMode;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -37,7 +37,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * TCP based server (outstation) channel service.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class TcpServerChannelService extends AbstractChannelService<TcpServerChannelConfiguration>
 		implements SettingSpecifierProvider {
@@ -58,10 +58,9 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 
 	@Override
 	public Channel createChannel(TcpServerChannelConfiguration configuration) throws DNP3Exception {
-		ChannelRetry retryConfig = new ChannelRetry(configuration.getMinRetryDelay(),
-				configuration.getMaxRetryDelay());
-		return getManager().addTCPServer(getUid(), configuration.getLogLevels(), retryConfig,
-				configuration.getBindAddress(), configuration.getPort(), this);
+		return getManager().addTCPServer(getUid(), configuration.getLogLevels(),
+				ServerAcceptMode.CloseNew, configuration.getBindAddress(), configuration.getPort(),
+				this);
 	}
 
 	@Override
