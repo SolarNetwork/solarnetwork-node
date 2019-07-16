@@ -119,9 +119,12 @@ Build using the provided `Makefile`, then `fpm` to package, like:
 ```sh
 $ make
 
-$ fpm -s dir -t deb -m 'packaging@solarnetwork.org.nz' --vendor 'SolarNetwork Foundation' \
-	-n sn-rfid-reader-tools -v 1.0.0 --description 'Tools for working with RFID readers.' \
-	--url https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.hw.rfid/def/rfid-reader \
-	-f -C build \
-	bin=usr system=usr/lib/systemd
+$ make deb
 ```
+
+To specify a specific distribution target, add the `DIST` parameter, like
+
+```sh
+$ make deb DIST=buster
+```
+

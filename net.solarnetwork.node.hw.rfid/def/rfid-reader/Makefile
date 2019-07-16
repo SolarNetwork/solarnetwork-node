@@ -1,3 +1,6 @@
+DIST = 
+VERSION = 1.0.0-1$(if $(DIST),+$(DIST),)
+NAME = sn-rfid-reader-tools 
 BDIR = build
 ODIR = $(BDIR)/obj
 PDIR = $(BDIR)/bin
@@ -37,3 +40,16 @@ clean :
 	rm $(PDIR)/sn-rfid-server $(ODIR)/rfid-server.o \
 		$(PDIR)/sn-rfid-reader $(ODIR)/rfid-reader.o \
 		$(UDIR)/sn-rfid-server@.service
+
+deb : $(UDIR)/sn-rfid-server@.service $(PDIR)/sn-rfid-server $(PDIR)/sn-rfid-reader
+	fpm -s dir -t deb \
+	-n $(NAME) \
+	-v $(VERSION) \
+	--description 'Tools for working with RFID readers.' \
+	--license 'Apache License 2.0' \
+	-m 'packaging@solarnetwork.org.nz' \
+	--vendor 'SolarNetwork Foundation' \
+	--url https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.hw.rfid/def/rfid-reader \
+	--force \
+	-C build \
+	bin=usr system=usr/lib/systemd
