@@ -41,7 +41,7 @@ import net.solarnetwork.node.Constants;
  * Abstract support class for {@link BackupService} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.54
  */
 public abstract class BackupServiceSupport implements BackupService {
@@ -288,6 +288,13 @@ public abstract class BackupServiceSupport implements BackupService {
 			data.put(MARKED_BACKUP_PROP_KEY, backup.getKey());
 			if ( props != null && !props.isEmpty() ) {
 				data.put(MARKED_BACKUP_PROP_PROPS, props);
+			}
+			File parentDir = markFile.getParentFile();
+			if ( parentDir != null && !parentDir.exists() ) {
+				if ( !parentDir.mkdirs() ) {
+					log.warn("Failed to create directory {} for backup restore mark file {}", parentDir,
+							markFile.getName());
+				}
 			}
 			try {
 				OBJECT_MAPPER.writeValue(markFile, data);
