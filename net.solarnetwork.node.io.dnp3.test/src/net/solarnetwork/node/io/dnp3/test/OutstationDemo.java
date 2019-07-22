@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.dnp3.test;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import com.automatak.dnp3.Channel;
-import com.automatak.dnp3.ChannelRetry;
 import com.automatak.dnp3.Counter;
 import com.automatak.dnp3.DNP3Manager;
 import com.automatak.dnp3.DatabaseConfig;
@@ -34,6 +33,7 @@ import com.automatak.dnp3.LogMasks;
 import com.automatak.dnp3.Outstation;
 import com.automatak.dnp3.OutstationChangeSet;
 import com.automatak.dnp3.OutstationStackConfig;
+import com.automatak.dnp3.enums.ServerAcceptMode;
 import com.automatak.dnp3.impl.DNP3ManagerFactory;
 import com.automatak.dnp3.mock.DefaultOutstationApplication;
 import com.automatak.dnp3.mock.SuccessCommandHandler;
@@ -65,7 +65,7 @@ public class OutstationDemo {
 
 		// Create a tcp channel class that will connect to the loopback
 		Channel channel = manager.addTCPServer("client", LogMasks.NORMAL | LogMasks.APP_COMMS,
-				ChannelRetry.getDefault(), "127.0.0.1", 20000, new Slf4jChannelListener());
+				ServerAcceptMode.CloseNew, "127.0.0.1", 20000, new Slf4jChannelListener());
 
 		// Create the default outstation configuration
 		OutstationStackConfig config = new OutstationStackConfig(DatabaseConfig.allValues(5),
