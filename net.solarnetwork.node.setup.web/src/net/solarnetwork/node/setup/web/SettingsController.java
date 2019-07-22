@@ -29,7 +29,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +59,7 @@ import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
+import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -67,7 +67,7 @@ import net.solarnetwork.web.domain.Response;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -117,23 +117,7 @@ public class SettingsController {
 			model.put(KEY_BACKUP_SERVICE, service);
 			if ( service != null ) {
 				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, new Comparator<Backup>() {
-
-					@Override
-					public int compare(Backup o1, Backup o2) {
-						// sort first by node ID
-						Long n1 = o1.getNodeId();
-						Long n2 = o2.getNodeId();
-
-						int r = n1.compareTo(n2);
-						if ( r != 0 ) {
-							return r;
-						}
-
-						// sort in reverse chronological order (newest to oldest)
-						return o2.getDate().compareTo(o1.getDate());
-					}
-				});
+				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
