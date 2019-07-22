@@ -27,7 +27,6 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +68,7 @@ import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
+import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -77,7 +77,7 @@ import net.solarnetwork.web.domain.Response;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -298,14 +298,7 @@ public class NodeAssociationController extends BaseSetupController {
 			model.put(KEY_BACKUP_SERVICE, service);
 			if ( service != null ) {
 				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, new Comparator<Backup>() {
-
-					@Override
-					public int compare(Backup o1, Backup o2) {
-						// sort in reverse chronological order (newest to oldest)
-						return o2.getDate().compareTo(o1.getDate());
-					}
-				});
+				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
