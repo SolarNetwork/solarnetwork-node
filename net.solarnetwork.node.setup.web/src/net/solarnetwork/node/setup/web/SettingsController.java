@@ -67,7 +67,7 @@ import net.solarnetwork.web.domain.Response;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -121,6 +121,15 @@ public class SettingsController {
 
 					@Override
 					public int compare(Backup o1, Backup o2) {
+						// sort first by node ID
+						Long n1 = o1.getNodeId();
+						Long n2 = o2.getNodeId();
+
+						int r = n1.compareTo(n2);
+						if ( r != 0 ) {
+							return r;
+						}
+
 						// sort in reverse chronological order (newest to oldest)
 						return o2.getDate().compareTo(o1.getDate());
 					}

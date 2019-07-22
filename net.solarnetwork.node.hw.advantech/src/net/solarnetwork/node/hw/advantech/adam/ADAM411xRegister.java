@@ -36,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * modules.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum ADAM411xRegister implements ModbusReference {
 
@@ -56,21 +56,21 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	CoilChannel7BurnOut(7, ModbusDataType.UInt16, ModbusReadFunction.ReadCoil),
 
-	Channel0(0, ModbusDataType.Int16),
+	Channel0(0, ModbusDataType.UInt16),
 
-	Channel1(1, ModbusDataType.Int16),
+	Channel1(1, ModbusDataType.UInt16),
 
-	Channel2(2, ModbusDataType.Int16),
+	Channel2(2, ModbusDataType.UInt16),
 
-	Channel3(3, ModbusDataType.Int16),
+	Channel3(3, ModbusDataType.UInt16),
 
-	Channel4(4, ModbusDataType.Int16),
+	Channel4(4, ModbusDataType.UInt16),
 
-	Channel5(5, ModbusDataType.Int16),
+	Channel5(5, ModbusDataType.UInt16),
 
-	Channel6(6, ModbusDataType.Int16),
+	Channel6(6, ModbusDataType.UInt16),
 
-	Channel7(7, ModbusDataType.Int16),
+	Channel7(7, ModbusDataType.UInt16),
 
 	ConfigChannel0InputType(200, ModbusDataType.UInt16),
 
@@ -101,6 +101,7 @@ public enum ADAM411xRegister implements ModbusReference {
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
 	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createChannelRegisterAddressSet();
 	private static final IntRangeSet CHANNEL_CONFIG_REGISTER_ADDRESS_SET = createChannelConfigRegisterAddressSet();
+	private static final IntRangeSet COIL_REGISTER_ADDRESS_SET = createCoilRegisterAddressSet();
 
 	private final int address;
 	private final int length;
@@ -141,6 +142,10 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	private static IntRangeSet createChannelRegisterAddressSet() {
 		return createRegisterAddressSet(Collections.singleton("Channel"));
+	}
+
+	private static IntRangeSet createCoilRegisterAddressSet() {
+		return createRegisterAddressSet(Collections.singleton("Coil"));
 	}
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
@@ -237,6 +242,22 @@ public enum ADAM411xRegister implements ModbusReference {
 		IntRangeSet s = new IntRangeSet(CHANNEL_REGISTER_ADDRESS_SET);
 		s.addAll(CHANNEL_CONFIG_REGISTER_ADDRESS_SET);
 		return s;
+	}
+
+	/**
+	 * Get an address range set that covers all the coil registers defined in
+	 * this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 * @since 1.1
+	 */
+	public static IntRangeSet getCoilRegisterAddressSet() {
+		return (IntRangeSet) COIL_REGISTER_ADDRESS_SET.clone();
 	}
 
 }

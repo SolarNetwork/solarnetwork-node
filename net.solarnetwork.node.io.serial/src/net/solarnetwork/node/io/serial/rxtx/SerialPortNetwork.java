@@ -30,6 +30,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
@@ -39,9 +42,6 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.SerialPortBean;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * RXTX implementation of {@link SerialNetwork}.
@@ -81,6 +81,12 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		if ( executor.isShutdown() == false ) {
 			executor.shutdown();
 		}
+	}
+
+	@Override
+	public String getPortName() {
+		SerialPortBeanParameters params = getSerialParams();
+		return (params != null ? params.getSerialPort() : null);
 	}
 
 	@Override
@@ -180,8 +186,8 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		} catch ( InterruptedException e ) {
 			log.debug("Interrupted waiting for port {} lock", serialParams.getSerialPort());
 		}
-		throw new LockTimeoutException("Could not acquire port " + serialParams.getSerialPort()
-				+ " lock");
+		throw new LockTimeoutException(
+				"Could not acquire port " + serialParams.getSerialPort() + " lock");
 	}
 
 	/**
@@ -224,11 +230,11 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
 
 		SerialPortBeanParameters defaultSerialParams = getDefaultSerialParametersInstance();
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort", defaultSerialParams
-				.getSerialPort()));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort",
+				defaultSerialParams.getSerialPort()));
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.maxWait", String
-				.valueOf(defaultSerialParams.getMaxWait())));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.maxWait",
+				String.valueOf(defaultSerialParams.getMaxWait())));
 		results.addAll(SerialPortBean.getDefaultSettingSpecifiers(defaultSerialParams, "serialParams."));
 
 		return results;

@@ -27,12 +27,13 @@ import com.automatak.dnp3.OutstationApplication;
 import com.automatak.dnp3.enums.AssignClassType;
 import com.automatak.dnp3.enums.LinkStatus;
 import com.automatak.dnp3.enums.PointClass;
+import com.automatak.dnp3.enums.RestartMode;
 
 /**
  * Base implementation of {@link OutstationApplication}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BaseOutstationApplication implements OutstationApplication {
 
@@ -80,6 +81,26 @@ public class BaseOutstationApplication implements OutstationApplication {
 	@Override
 	public boolean supportsAssignClass() {
 		return false;
+	}
+
+	@Override
+	public RestartMode coldRestartSupport() {
+		return RestartMode.UNSUPPORTED;
+	}
+
+	@Override
+	public RestartMode warmRestartSupport() {
+		return RestartMode.UNSUPPORTED;
+	}
+
+	@Override
+	public int coldRestart() {
+		return 0xFFFF;
+	}
+
+	@Override
+	public int warmRestart() {
+		return 0xFFFF;
 	}
 
 	@Override

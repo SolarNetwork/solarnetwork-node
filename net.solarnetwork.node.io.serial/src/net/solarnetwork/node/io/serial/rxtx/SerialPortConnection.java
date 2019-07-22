@@ -22,14 +22,6 @@
 
 package net.solarnetwork.node.io.serial.rxtx;
 
-import gnu.io.CommPortIdentifier;
-import gnu.io.NoSuchPortException;
-import gnu.io.PortInUseException;
-import gnu.io.SerialPort;
-import gnu.io.SerialPortEvent;
-import gnu.io.SerialPortEventListener;
-import gnu.io.UnsupportedCommOperationException;
-import gnu.trove.list.array.TByteArrayList;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,18 +34,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import net.solarnetwork.node.LockTimeoutException;
-import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import gnu.io.CommPortIdentifier;
+import gnu.io.NoSuchPortException;
+import gnu.io.PortInUseException;
+import gnu.io.SerialPort;
+import gnu.io.SerialPortEvent;
+import gnu.io.SerialPortEventListener;
+import gnu.io.UnsupportedCommOperationException;
+import gnu.trove.list.array.TByteArrayList;
+import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.support.SerialPortBeanParameters;
 
 /**
  * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
@@ -61,8 +61,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	private static final Logger log = LoggerFactory.getLogger(SerialPortConnection.class);
 
 	/** A class-level logger with the suffix SERIAL_EVENT. */
-	private static final Logger eventLog = LoggerFactory.getLogger(SerialPortConnection.class.getName()
-			+ ".SERIAL_EVENT");
+	private static final Logger eventLog = LoggerFactory
+			.getLogger(SerialPortConnection.class.getName() + ".SERIAL_EVENT");
 
 	private final SerialPortBeanParameters serialParams;
 	private final ExecutorService executor;
@@ -90,6 +90,11 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	}
 
 	@Override
+	public String getPortName() {
+		return (serialParams != null ? serialParams.getSerialPort() : null);
+	}
+
+	@Override
 	public void open() throws IOException, LockTimeoutException {
 		CommPortIdentifier portId = getCommPortIdentifier(serialParams.getSerialPort());
 		try {
@@ -103,8 +108,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			} catch ( Exception e2 ) {
 				// ignore this
 			}
-			throw new IOException("Serial port " + serialParams.getSerialPort()
-					+ " has too many listeners", e);
+			throw new IOException(
+					"Serial port " + serialParams.getSerialPort() + " has too many listeners", e);
 		}
 	}
 
@@ -253,7 +258,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	}
 
 	@Override
-	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker) throws IOException {
+	public byte[] readMarkedMessage(final byte[] startMarker, final byte[] endMarker)
+			throws IOException {
 		final TByteArrayList sink = new TByteArrayList(1024);
 		final byte[] buf = new byte[64];
 		boolean result = false;
@@ -298,8 +304,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		eventLog.trace("Attempting to read up to {} bytes from serial port", max);
 		while ( max > 0 && (len = in.read(buf, 0, max > buf.length ? buf.length : max)) > 0 ) {
 			sink.add(buf, 0, len);
-			int foundMarkerByteCount = findMarkerBytes(sink, len, (lookingForEndMarker ? endMarker
-					: startMarker), lookingForEndMarker);
+			int foundMarkerByteCount = findMarkerBytes(sink, len,
+					(lookingForEndMarker ? endMarker : startMarker), lookingForEndMarker);
 			if ( lookingForEndMarker == false && foundMarkerByteCount == startMarker.length ) {
 				lookingForEndMarker = true;
 				// immediately look for end marker, might already be in the buffer
@@ -333,8 +339,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		} catch ( TimeoutException e ) {
 			log.warn("Timeout waiting {}ms for serial data, aborting operation", maxMs);
 			future.cancel(true);
-			throw new LockTimeoutException("Timeout waiting " + serialParams.getMaxWait()
-					+ "ms for serial data");
+			throw new LockTimeoutException(
+					"Timeout waiting " + serialParams.getMaxWait() + "ms for serial data");
 		} finally {
 			task.abort();
 		}
@@ -390,8 +396,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			}
 		}
 		if ( commPortId == null ) {
-			throw new IOException("Couldn't find port identifier for [" + portId
-					+ "]; available ports: " + foundNames);
+			throw new IOException("Couldn't find port identifier for [" + portId + "]; available ports: "
+					+ foundNames);
 		}
 		return commPortId;
 	}
@@ -464,8 +470,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			}
 
 			if ( log.isDebugEnabled() ) {
-				log.debug(
-						"Setting serial port baud = {}, dataBits = {}, stopBits = {}, parity = {}",
+				log.debug("Setting serial port baud = {}, dataBits = {}, stopBits = {}, parity = {}",
 						new Object[] { serialParams.getBaud(), serialParams.getDataBits(),
 								serialParams.getStopBits(), serialParams.getParity() });
 			}
@@ -493,8 +498,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		}
 	}
 
-	private int findMarkerBytes(final TByteArrayList sink, final int appendedLength,
-			final byte[] marker, final boolean end) {
+	private int findMarkerBytes(final TByteArrayList sink, final int appendedLength, final byte[] marker,
+			final boolean end) {
 		//final byte[] sinkBuf = sink.toArray();
 		final int sinkBufLength = sink.size();
 		int markerIdx = Math.max(0, sinkBufLength - appendedLength - marker.length);

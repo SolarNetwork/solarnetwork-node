@@ -4,13 +4,13 @@ Bundle-Name: DNP3 Integration
 Bundle-SymbolicName: net.solarnetwork.node.io.dnp3
 Bundle-Description: Integration with DNP3 based networks.
 Automatic-Module-Name: net.solarnetwork.node.io.dnp3
-Bundle-Version: 1.1.1
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- com.automatak.dnp3;version="2.2.0",
- com.automatak.dnp3.enums;version="2.2.0",
- com.automatak.dnp3.impl;version="2.2.0",
+ com.automatak.dnp3;version="2.3.2",
+ com.automatak.dnp3.enums;version="2.3.2",
+ com.automatak.dnp3.impl;version="2.3.2",
  net.solarnetwork.dnp3.util;version="1.0.0",
  net.solarnetwork.domain;version="1.16.0",
  net.solarnetwork.node;version="1.26.0",

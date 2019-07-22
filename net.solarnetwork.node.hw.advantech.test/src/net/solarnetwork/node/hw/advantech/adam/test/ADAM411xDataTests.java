@@ -45,7 +45,7 @@ import net.solarnetwork.node.test.DataUtils;
  * Test cases for the {@link ADAM411xData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ADAM411xDataTests {
 
@@ -111,10 +111,10 @@ public class ADAM411xDataTests {
 		}
 		BigDecimal[] expected = new BigDecimal[] {
 			// @formatter:off
-			new BigDecimal("-0.29770"), // -32265; ((-32265 / 65535) * 300) - 150
-			new BigDecimal("-0.29694"), // -32099
-			new BigDecimal("-0.29710"), // -32134
-			new BigDecimal("-0.29743"), // -32206
+			new BigDecimal("0.00230"), // 33271; (((33271 / 65535) * 300) - 150) / 1000
+			new BigDecimal("0.00306"), // 33437; (((33437 / 65535) * 300) - 150) / 1000
+			new BigDecimal("0.00290"), // 33402; (((33402 / 65535) * 300) - 150) / 1000
+			new BigDecimal("0.00257"), // 33330; (((33330 / 65535) * 300) - 150) / 1000
 			// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {
@@ -147,14 +147,54 @@ public class ADAM411xDataTests {
 		}
 		BigDecimal[] expected = new BigDecimal[] {
 				// @formatter:off
-				new BigDecimal("7.49218"), // 14089; (14089 / 65535) * 500 - 100
-				new BigDecimal("7.88892"), // 14141; (14141 / 65535) * 500 - 100
-				new BigDecimal("-0.02951"), // -31698; (-31698 / 65535 * 30 - 15
-				new BigDecimal("0.00400"), // -1; (-1 / 65535) * 24 + 4
-				new BigDecimal("0.00400"), // -1 (-1 / 65535 * 24 + 4
-				new BigDecimal("-0.02944"), // -31550; (-31550 / 65535) * 30 - 15
-				new BigDecimal("-0.02619"), // -24445
-				new BigDecimal("-0.02665"), // -25458
+				new BigDecimal("7.49218"),  // 14089; (14089 / 65535) * 500 - 100
+				new BigDecimal("7.88892"),  // 14141; (14141 / 65535) * 500 - 100
+				new BigDecimal("0.00049"),  // 33838; ((33838 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.00056"),  // 33986; ((33986 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00381"),  // 41091; ((41091 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00335"),  // 40078; ((40078 / 65535) * 30 - 15) / 1000
+				// @formatter:on
+		};
+		for ( int i = 0; i < expected.length; i++ ) {
+			BigDecimal val = data.getChannelValue(i).setScale(5, RoundingMode.HALF_UP);
+			assertThat("Channel " + i + " value", val, equalTo(expected[i]));
+		}
+	}
+
+	@Test
+	public void adam4118_02() {
+		ADAM411xData data = getDataInstance("test-4118-02.txt");
+		assertThat("Model", data.getModelName(), equalTo("4118"));
+		assertThat("Firmware revision", data.getFirmwareRevision(), equalTo("A106"));
+		assertThat("Enabled channels", data.getEnabledChannelNumbers(),
+				contains(0, 1, 2, 3, 4, 5, 6, 7));
+		InputRangeType[] expectedTypes = new InputRangeType[] {
+				// @formatter:off
+				InputRangeType.TypeTThermocouple,
+				InputRangeType.TypeTThermocouple,
+				InputRangeType.PlusMinusFifteenMilliVolts,
+				InputRangeType.FourToTwentyMilliAmps,
+				InputRangeType.FourToTwentyMilliAmps,
+				InputRangeType.PlusMinusFifteenMilliVolts,
+				InputRangeType.PlusMinusFifteenMilliVolts,
+				InputRangeType.PlusMinusFifteenMilliVolts,
+				// @formatter:on
+		};
+		for ( int i = 0; i < 8; i++ ) {
+			assertThat("Channel " + i + " type", data.getChannelType(i), equalTo(expectedTypes[i]));
+		}
+		BigDecimal[] expected = new BigDecimal[] {
+				// @formatter:off
+				new BigDecimal("23.78882"), // 16225; (16225 / 65535) * 500 - 100
+				new BigDecimal("25.78775"), // 16487; (16487 / 65535) * 500 - 100
+				new BigDecimal("0.00193"),  // 36976; ((36976 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.00278"),  // 38841; ((38841 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00442"),  // 42432; ((42432 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00373"),  // 40926; ((40926 / 65535) * 30 - 15) / 1000
 				// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {
@@ -189,12 +229,12 @@ public class ADAM411xDataTests {
 				// @formatter:off
 				new BigDecimal("10.68132"), // 14507; (14507 / 65535) * 500 - 100
 				new BigDecimal("24.78065"), // 16355; (16355 / 65535) * 500 - 100
-				new BigDecimal("-0.02384"), // -19321; (-19321 / 65535) * 30 - 15
-				new BigDecimal("0.00400"),  // -1; (-1 / 65535) * 24 + 4
-				new BigDecimal("0.00400"),  // -1; (-1 / 65535) * 24 + 4
-				new BigDecimal("-0.02480"), // -21402; (-21402 / 65535) * 30 - 15
-				new BigDecimal("-0.02610"), // -24252; (-24252 / 65535) * 30 - 15
-				new BigDecimal("-0.02661"), // -25363; (-25363 / 65535) * 30 - 15
+				new BigDecimal("0.00616"),  // 46215; ((46215 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.02000"),  // 65535; ((65535 / 65535) * 16 + 4) / 1000
+				new BigDecimal("0.00520"),  // 44134; ((44134 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00390"),  // 41284; ((41284 / 65535) * 30 - 15) / 1000
+				new BigDecimal("0.00339"),  // 40173; ((40173 / 65535) * 30 - 15) / 1000
 				// @formatter:on
 		};
 		for ( int i = 0; i < expected.length; i++ ) {

@@ -50,7 +50,7 @@ import net.solarnetwork.util.OptionalService;
  * messages as {@link EventAdmin} events.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class RfidSocketReaderService implements SettingSpecifierProvider, Runnable {
 
@@ -334,7 +334,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 			buf.append("Connected and listening.");
 			long count = messageCount;
 			if ( count > 0 ) {
-				buf.append(count).append(" messages received.");
+				buf.append(' ').append(count).append(" messages received.");
 				long mDate = lastMessageDate;
 				if ( mDate > 0 ) {
 					buf.append(" Last message received at ").append(new Date(mDate)).append(".");
