@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.control.virtual;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import org.osgi.service.event.Event;
@@ -32,18 +35,24 @@ import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.NodeControlUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * A virtual control that operates on a set of other controls, making a group of
@@ -61,14 +70,26 @@ import net.solarnetwork.util.OptionalService;
 public class ControlGroup extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, EventHandler {
 
+	/** The default value for the {@code controlPropertyType} property. */
 	public static final NodeControlPropertyType DEFAULT_CONTROL_PROPERTY_TYPE = NodeControlPropertyType.Boolean;
 
+	private final OptionalServiceCollection<NodeControlProvider> controls;
+	private final OptionalService<InstructionExecutionService> instructionService;
+	private final OptionalService<EventAdmin> eventAdmin;
 	private String controlId;
 	private NodeControlPropertyType controlPropertyType = DEFAULT_CONTROL_PROPERTY_TYPE;
-	private OptionalService<EventAdmin> eventAdmin;
 
 	private final AtomicReference<String> controlValue = new AtomicReference<>();
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	public ControlGroup(OptionalServiceCollection<NodeControlProvider> controls,
+			OptionalService<InstructionExecutionService> instructionService,
+			OptionalService<EventAdmin> eventAdmin) {
+		super();
+		this.controls = controls;
+		this.instructionService = instructionService;
+		this.eventAdmin = eventAdmin;
+	}
 
 	@Override
 	public boolean handlesTopic(String topic) {
@@ -82,10 +103,12 @@ public class ControlGroup extends BaseIdentifiable
 				|| controlId == null ) {
 			return null;
 		}
-		String paramValue = instruction.getParameterValue(controlId);
+		String paramValue = NodeControlUtils.controlValue(controlPropertyType,
+				instruction.getParameterValue(controlId));
 		if ( paramValue == null ) {
 			return null;
 		}
+
 		return null;
 	}
 
@@ -164,8 +187,53 @@ public class ControlGroup extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		// TODO Auto-generated method stub
-		return null;
+		final List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+
+		results.add(new BasicTitleSettingSpecifier("groupValue", controlValue.get(), true));
+		results.add(new BasicTitleSettingSpecifier("controlValues", controlValuesDescription(), true));
+
+		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+
+		results.add(new BasicTextFieldSettingSpecifier("controlId", ""));
+
+		// drop-down menu for controlPropertyType
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				"controlPropertyTypeKey", String.valueOf(DEFAULT_CONTROL_PROPERTY_TYPE.getKey()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
+		for ( NodeControlPropertyType e : NodeControlPropertyType.values() ) {
+			propTypeTitles.put(String.valueOf(e.getKey()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier("controls.propertyFilters['groupUID']", ""));
+
+		return results;
+	}
+
+	private String controlValuesDescription() {
+		StringBuilder buf = new StringBuilder();
+		for ( NodeControlProvider control : controls.services() ) {
+			for ( String controlId : control.getAvailableControlIds() ) {
+				NodeControlInfo info = control.getCurrentControlInfo(controlId);
+				if ( info != null ) {
+					if ( buf.length() > 0 ) {
+						buf.append(", ");
+					}
+					buf.append(controlId).append(" = ").append(info.getValue());
+				}
+			}
+		}
+		if ( buf.length() > 0 ) {
+			return buf.toString();
+		}
+		String msg = "No controls available.";
+		MessageSource ms = getMessageSource();
+		if ( ms != null ) {
+			msg = ms.getMessage("controls.empty", null, msg, Locale.getDefault());
+		}
+		return msg;
 	}
 
 	/**
@@ -203,7 +271,55 @@ public class ControlGroup extends BaseIdentifiable
 	 *        the controlPropertyType to set
 	 */
 	public void setControlPropertyType(NodeControlPropertyType controlPropertyType) {
+		if ( controlPropertyType == null ) {
+			controlPropertyType = DEFAULT_CONTROL_PROPERTY_TYPE;
+		}
 		this.controlPropertyType = controlPropertyType;
+	}
+
+	/**
+	 * Get the control property type key.
+	 * 
+	 * <p>
+	 * This returns the configured {@link #getControlPropertyType()}
+	 * {@link NodeControlPropertyType#getKey()} value as a string.
+	 * </p>
+	 * 
+	 * @return the property type key
+	 */
+	public String getControlPropertyTypeKey() {
+		NodeControlPropertyType type = getControlPropertyType();
+		if ( type == null ) {
+			return null;
+		}
+		return Character.toString(type.getKey());
+	}
+
+	/**
+	 * Set the datum property type via a key value.
+	 * 
+	 * <p>
+	 * This uses the first character of {@code key} as a
+	 * {@link NodeControlPropertyType} key value to call
+	 * {@link #setControlPropertyType(NodeControlPropertyType)}. If {@code key}
+	 * is not recognized, then {@link #DEFAULT_CONTROL_PROPERTY_TYPE} will be
+	 * set instead.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the property type key to set
+	 */
+	public void setControlPropertyTypeKey(String key) {
+		if ( key == null || key.length() < 1 ) {
+			return;
+		}
+		NodeControlPropertyType type;
+		try {
+			type = NodeControlPropertyType.forKey(key.charAt(0));
+		} catch ( IllegalArgumentException e ) {
+			type = DEFAULT_CONTROL_PROPERTY_TYPE;
+		}
+		setControlPropertyType(type);
 	}
 
 	/**
@@ -216,13 +332,12 @@ public class ControlGroup extends BaseIdentifiable
 	}
 
 	/**
-	 * Set the event admin.
+	 * Get the controls to manage.
 	 * 
-	 * @param eventAdmin
-	 *        the event admin to use
+	 * @return the controls to manage
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
+	public OptionalServiceCollection<NodeControlProvider> getControls() {
+		return controls;
 	}
 
 }
