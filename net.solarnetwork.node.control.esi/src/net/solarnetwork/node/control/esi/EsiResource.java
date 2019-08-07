@@ -25,6 +25,7 @@ package net.solarnetwork.node.control.esi;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,7 @@ import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.control.esi.domain.ResourceCharacteristics;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 
@@ -66,6 +68,7 @@ public class EsiResource extends BaseIdentifiable implements SettingSpecifierPro
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(12);
+		results.add(new BasicTitleSettingSpecifier("status", getStatus(Locale.getDefault()), true));
 		results.addAll(baseIdentifiableSettings(null));
 		ResourceCharacteristics.addSettings("characteristics.", results);
 		return results;
@@ -81,10 +84,23 @@ public class EsiResource extends BaseIdentifiable implements SettingSpecifierPro
 		updateNodeMetadata();
 	}
 
+	private String getStatus(Locale locale) {
+		final String uid = getUid();
+		if ( uid == null || uid.trim().isEmpty() ) {
+			return getMessageSource().getMessage("status.error.noUid", null, locale);
+		}
+		NodeMetadataService nms = nodeMetadataService();
+		if ( nms == null ) {
+			return getMessageSource().getMessage("status.error.noMetadataService", null, locale);
+		}
+		return getMessageSource().getMessage("status.ok", null, locale);
+	}
+
 	private void updateNodeMetadata() {
 		String uid = getUid();
-		if ( uid == null ) {
+		if ( uid == null || uid.trim().isEmpty() ) {
 			log.warn("Cannot publish ESI Resource metadata because no UID configured.");
+			return;
 		}
 		NodeMetadataService service = nodeMetadataService();
 		if ( service == null ) {
