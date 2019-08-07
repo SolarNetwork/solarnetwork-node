@@ -22,7 +22,12 @@
 
 package net.solarnetwork.node.control.esi.domain;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * DER characteristic details.
@@ -46,6 +51,32 @@ public class ResourceCharacteristics {
 		super();
 	}
 
+	/**
+	 * Add settings for this class to a list.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to use for all setting keys
+	 * @param results
+	 *        the list to add settings to
+	 */
+	public static void addSettings(String prefix, List<SettingSpecifier> results) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "loadPowerMax", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "loadPowerFactor", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "supplyPowerMax", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "supplyPowerFactor", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "storageEnergyCapacity", ""));
+
+		DurationRange.addSettings(prefix + "responseTime.", results);
+	}
+
+	/**
+	 * Create a copy of this instance.
+	 * 
+	 * @return the copy
+	 */
 	public ResourceCharacteristics copy() {
 		ResourceCharacteristics c = new ResourceCharacteristics();
 		c.setLoadPowerMax(getLoadPowerMax());
@@ -59,6 +90,22 @@ public class ResourceCharacteristics {
 			c.setResponseTime(d.copy());
 		}
 		return c;
+	}
+
+	/**
+	 * Get the resource characteristics data as a Map.
+	 * 
+	 * @return
+	 */
+	public Map<String, Object> asMap() {
+		Map<String, Object> map = new LinkedHashMap<>(8);
+		map.put("loadPowerMax", loadPowerMax());
+		map.put("loadPowerFactor", loadPowerFactor());
+		map.put("supplyPowerMax", supplyPowerMax());
+		map.put("supplyPowerFactor", supplyPowerFactor());
+		map.put("storageEnergyCapacity", storageEnergyCapacity());
+		map.put("responseTime", responseTime().asMap());
+		return map;
 	}
 
 	@Override

@@ -23,7 +23,12 @@
 package net.solarnetwork.node.control.esi.domain;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A duration range.
@@ -55,6 +60,34 @@ public class DurationRange {
 		super();
 		this.min = min;
 		this.max = max;
+	}
+
+	/**
+	 * Add settings for this class to a list.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to use for all setting keys
+	 * @param results
+	 *        the list to add settings to
+	 */
+	public static void addSettings(String prefix, List<SettingSpecifier> results) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "minMillis", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxMillis", ""));
+	}
+
+	/**
+	 * Get the resource characteristics data as a Map.
+	 * 
+	 * @return
+	 */
+	public Map<String, Object> asMap() {
+		Map<String, Object> map = new LinkedHashMap<>(8);
+		map.put("minMillis", getMinMillis());
+		map.put("maxMillis", getMaxMillis());
+		return map;
 	}
 
 	/**
@@ -130,6 +163,26 @@ public class DurationRange {
 	}
 
 	/**
+	 * Get the minimum duration, in milliseconds
+	 * 
+	 * @return the minimum duration, in milliseconds
+	 */
+	public long getMinMillis() {
+		Duration d = getMin();
+		return (d != null ? d.toMillis() : 0);
+	}
+
+	/**
+	 * Set the minimum duration, in milliseconds.
+	 * 
+	 * @param min
+	 *        the duration to set, in milliseconds
+	 */
+	public void setMinMillis(long min) {
+		setMin(Duration.ofMillis(min));
+	}
+
+	/**
 	 * Get the maximum duration.
 	 * 
 	 * @return the maximum duration
@@ -158,4 +211,25 @@ public class DurationRange {
 		}
 		return d;
 	}
+
+	/**
+	 * Get the maximum duration, in milliseconds.
+	 * 
+	 * @return the maximum duration, in milliseconds
+	 */
+	public long getMaxMillis() {
+		Duration d = getMax();
+		return (d != null ? d.toMillis() : 0);
+	}
+
+	/**
+	 * Set the maximum duration, in milliseconds.
+	 * 
+	 * @param max
+	 *        the duration to set, in milliseconds
+	 */
+	public void setMaxMillis(long max) {
+		setMax(Duration.ofMillis(max));
+	}
+
 }
