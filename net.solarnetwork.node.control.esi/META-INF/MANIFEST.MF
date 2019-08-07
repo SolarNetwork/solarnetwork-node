@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarNode ESI Control
+Bundle-SymbolicName: net.solarnetwork.node.control.esi
+Bundle-Version: 0.1.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.control.esi
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Bundle-ClassPath: .,lib/esi-api-0.2.0.jar
+Import-Package: 
+ com.google.protobuf;version="[3.7,4)",
+ javax.annotation;version="[1.2,2)"
