@@ -101,7 +101,7 @@ public class KTLCTDataTests {
 
 		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
 				.andReturn(mapSlice(TEST_DATA, 0, 59));
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 4096, 2))
+		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
 				.andReturn(mapSlice(TEST_DATA, 4096, 2));
 
 		// when

@@ -98,6 +98,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadInputRegister, KTLCTRegister.getRegisterAddressSet(),
 				MAX_RESULTS);
+		readControlData(conn);
 	}
 
 	/**
