@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public enum KTLCTRegister implements ModbusReference {
 
@@ -226,14 +226,13 @@ public enum KTLCTRegister implements ModbusReference {
 
 	/**
 	 * Get an address range set that covers all the registers defined in this
-	 * enumeration.
+	 * enumeration <b>except<b> controls.
 	 * 
 	 * @return the range set
 	 */
 	public static IntRangeSet getRegisterAddressSet() {
 		IntRangeSet s = new IntRangeSet(CONFIG_REGISTER_ADDRESS_SET);
 		s.addAll(INVERTER_REGISTER_ADDRESS_SET);
-		s.addAll(CONTROL_REGISTER_ADDRESS_SET);
 		return s;
 	}
 
