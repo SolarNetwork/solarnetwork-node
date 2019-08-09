@@ -18,6 +18,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.esi.EsiResource</value>
+				<value>net.solarnetwork.node.control.esi.BaseEsiMetadataComponent</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>

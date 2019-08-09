@@ -1,5 +1,5 @@
 /* ==================================================================
- * EsiResource.java - 7/08/2019 4:34:04 pm
+ * EsiPriceMap.java - 9/08/2019 5:07:02 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -25,75 +25,76 @@ package net.solarnetwork.node.control.esi;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.control.esi.domain.ResourceCharacteristics;
+import net.solarnetwork.node.control.esi.domain.PriceMap;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
- * A configurable ESI resource component.
+ * A configurable ESI price map component.
  * 
  * @author matt
  * @version 1.0
  */
-public class EsiResource extends BaseEsiMetadataComponent {
+public class EsiPriceMap extends BaseEsiMetadataComponent implements SettingSpecifierProvider {
 
-	/** The node property metadata key used for all ESI resource metadata. */
-	public static final String ESI_RESOURCE_METADATA_KEY = "esi-resource";
+	/** The node property metadata key used for all ESI price map metadata. */
+	public static final String ESI_RESOURCE_METADATA_KEY = "esi-pricemap";
 
-	private ResourceCharacteristics characteristics = new ResourceCharacteristics();
+	private PriceMap priceMap = new PriceMap();
 
 	/**
 	 * Constructor.
 	 */
-	public EsiResource() {
+	public EsiPriceMap() {
 		super(ESI_RESOURCE_METADATA_KEY);
 	}
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.control.esi.resource";
+		return "net.solarnetwork.node.control.esi.pricemap";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "ESI Resource";
+		return "ESI PriceMap";
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
-		ResourceCharacteristics.addSettings("characteristics.", results);
+		PriceMap.addSettings("priceMap.", results);
 		return results;
 	}
 
 	@Override
 	protected Map<String, Object> getEsiComponentMetadata() {
 		Map<String, Object> result = new LinkedHashMap<>();
-		result.put("characteristics", characteristics.asMap());
+		result.put("pricemap", priceMap.asMap());
 		return result;
 	}
 
 	/**
-	 * Get the characteristics.
+	 * Get the price map.
 	 * 
-	 * @return the characteristics, never {@literal null}
+	 * @return the price map
 	 */
-	public ResourceCharacteristics getCharacteristics() {
-		return characteristics;
+	public final PriceMap getPriceMap() {
+		return priceMap;
 	}
 
 	/**
-	 * Set the characteristics.
+	 * Set the price map.
 	 * 
-	 * @param characteristics
-	 *        the characteristics
+	 * @param priceMap
+	 *        the price map to set
 	 * @throws IllegalArgumentException
-	 *         if {@code characteristics} is {@literal null}
+	 *         if {@code priceMap} is {@literal null}
 	 */
-	public void setCharacteristics(ResourceCharacteristics characteristics) {
-		if ( characteristics == null ) {
-			throw new IllegalArgumentException("The characteristics must be provided.");
+	public final void setPriceMap(PriceMap priceMap) {
+		if ( priceMap == null ) {
+			throw new IllegalArgumentException("The price map must be provided.");
 		}
-		this.characteristics = characteristics;
+		this.priceMap = priceMap;
 	}
 
 }
