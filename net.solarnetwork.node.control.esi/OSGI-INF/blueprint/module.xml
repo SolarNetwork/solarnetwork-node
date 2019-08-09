@@ -14,26 +14,6 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames">
-			<list>
-				<value>net.solarnetwork.node.control.esi.EsiResource</value>
-				<value>net.solarnetwork.node.control.esi.BaseEsiMetadataComponent</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
-			</list>
-		</property>
-		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
-				<property name="prefix" value="characteristics."/>
-				<property name="delegate" ref="characteristicsMessageSource"/>
-			</bean>	
-  		</property>
-	</bean>
-	
-	<bean id="characteristicsMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="net.solarnetwork.node.control.esi.domain.ResourceCharacteristics"/>
-	</bean>
-	
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
@@ -44,13 +24,83 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
 	</bean>
 
-	<!-- Published Services -->
+	<bean id="subMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="characteristics."/>
+		<property name="delegates">
+			<map>
+				<entry key="characteristics.">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basename" value="net.solarnetwork.node.control.esi.domain.ResourceCharacteristics"/>
+					</bean>
+				</entry>
+				<entry key="priceMap.">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basename" value="net.solarnetwork.node.control.esi.domain.PriceMap"/>
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>	
+		
+	<!-- ESI PriceMap Services -->
 	
+	<bean id="priceMapMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.esi.EsiPriceMap</value>
+				<value>net.solarnetwork.node.control.esi.BaseEsiMetadataComponent</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource" ref="subMessageSource"/>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="ESI PriceMap"/>
+			<property name="factoryUID" value="net.solarnetwork.node.control.esi.pricemap"/>
+			<property name="messageSource" ref="priceMapMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.esi.pricemap" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.control.esi.pricemap"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean id="controller" class="net.solarnetwork.node.control.esi.EsiPriceMap">
+			<property name="messageSource" ref="priceMapMessageSource"/>
+			<property name="nodeMetadataService" ref="nodeMetadataService"/>
+			<!--property name="eventAdmin" ref="eventAdmin"/-->
+		</bean>
+	</osgix:managed-service-factory>
+	
+	<!-- ESI Resource Services -->
+	
+	<bean id="resourceMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.esi.EsiResource</value>
+				<value>net.solarnetwork.node.control.esi.BaseEsiMetadataComponent</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource" ref="subMessageSource"/>
+	</bean>
+
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="ESI Resource"/>
 			<property name="factoryUID" value="net.solarnetwork.node.control.esi.resource"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="resourceMessageSource"/>
 		</bean>
 	</service>
 	
@@ -68,9 +118,8 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.esi.EsiResource">
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="resourceMessageSource"/>
 			<property name="nodeMetadataService" ref="nodeMetadataService"/>
-			<!--property name="eventAdmin" ref="eventAdmin"/-->
 		</bean>
 	</osgix:managed-service-factory>
 	

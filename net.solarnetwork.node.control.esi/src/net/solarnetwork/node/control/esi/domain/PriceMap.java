@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Objects;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A price map.
@@ -62,6 +63,34 @@ public class PriceMap {
 	private PriceComponents priceComponents;
 
 	/**
+	 * Constructor.
+	 */
+	public PriceMap() {
+		super();
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param power
+	 *        the power components
+	 * @param duration
+	 *        the duration
+	 * @param responseTime
+	 *        the response time
+	 * @param price
+	 *        the price components
+	 */
+	public PriceMap(PowerComponents power, Duration duration, DurationRange responseTime,
+			PriceComponents price) {
+		super();
+		setPowerComponents(power);
+		setDuration(duration);
+		setResponseTime(responseTime);
+		setPriceComponents(price);
+	}
+
+	/**
 	 * Add settings for this class to a list.
 	 * 
 	 * @param prefix
@@ -73,17 +102,23 @@ public class PriceMap {
 		if ( prefix == null ) {
 			prefix = "";
 		}
-		// TODO
+		PowerComponents.addSettings(prefix + "powerComponents.", results);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "durationMillis", ""));
+		DurationRange.addSettings(prefix + "responseTime.", results);
+		PriceComponents.addSettings(prefix + "priceComponents.", results);
 	}
 
 	/**
 	 * Get the price map data as a Map.
 	 * 
-	 * @return
+	 * @return a map of the properties of this class
 	 */
 	public Map<String, Object> asMap() {
 		Map<String, Object> map = new LinkedHashMap<>(8);
-		// TODO
+		map.put("powerComponents", powerComponents().asMap());
+		map.put("durationMillis", getDurationMillis());
+		map.put("responseTime", responseTime().asMap());
+		map.put("priceComponents", priceComponents().asMap());
 		return map;
 	}
 
@@ -329,6 +364,26 @@ public class PriceMap {
 			d = Duration.ZERO;
 		}
 		return d;
+	}
+
+	/**
+	 * Get the duration, in milliseconds
+	 * 
+	 * @return the duration, in milliseconds
+	 */
+	public long getDurationMillis() {
+		Duration d = getDuration();
+		return (d != null ? d.toMillis() : 0);
+	}
+
+	/**
+	 * Set the duration, in milliseconds.
+	 * 
+	 * @param dur
+	 *        the duration to set, in milliseconds
+	 */
+	public void setDurationMillis(long dur) {
+		setDuration(Duration.ofMillis(dur));
 	}
 
 	/**

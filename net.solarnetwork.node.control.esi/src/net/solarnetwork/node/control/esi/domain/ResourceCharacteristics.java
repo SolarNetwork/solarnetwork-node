@@ -95,7 +95,7 @@ public class ResourceCharacteristics {
 	/**
 	 * Get the resource characteristics data as a Map.
 	 * 
-	 * @return
+	 * @return a map of the properties of this class
 	 */
 	public Map<String, Object> asMap() {
 		Map<String, Object> map = new LinkedHashMap<>(8);

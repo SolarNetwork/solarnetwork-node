@@ -23,8 +23,11 @@
 package net.solarnetwork.node.control.esi.domain;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Components of power.
@@ -56,6 +59,22 @@ public class PowerComponents {
 		super();
 		this.realPower = realPower;
 		this.reactivePower = reactivePower;
+	}
+
+	/**
+	 * Add settings for this class to a list.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to use for all setting keys
+	 * @param results
+	 *        the list to add settings to
+	 */
+	public static void addSettings(String prefix, List<SettingSpecifier> results) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "realPower", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "reactivePower", ""));
 	}
 
 	/**

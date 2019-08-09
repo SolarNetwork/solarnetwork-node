@@ -26,9 +26,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Currency;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Components of price.
@@ -75,6 +78,22 @@ public class PriceComponents {
 	public static PriceComponents of(String currencyCode, String apparentEnergyPrice) {
 		return new PriceComponents(Currency.getInstance(currencyCode),
 				new BigDecimal(apparentEnergyPrice));
+	}
+
+	/**
+	 * Add settings for this class to a list.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to use for all setting keys
+	 * @param results
+	 *        the list to add settings to
+	 */
+	public static void addSettings(String prefix, List<SettingSpecifier> results) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "currencyCode", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "apparentEnergyPriceValue", ""));
 	}
 
 	/**
