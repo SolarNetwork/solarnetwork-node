@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.esi.domain;
 
+import java.util.Locale;
 import net.solarnetwork.domain.Identifiable;
 
 /**
@@ -33,32 +34,41 @@ import net.solarnetwork.domain.Identifiable;
 public interface ResourceAccessor extends Identifiable {
 
 	/**
+	 * Get a status message.
+	 * 
+	 * @param locale
+	 *        the desired locale of the message
+	 * @return the message
+	 */
+	String getStatusMessage(Locale locale);
+
+	/**
 	 * Get the maximum load this resource can demand, in W.
 	 * 
 	 * @return the power maximum
 	 */
-	public Long getLoadPowerMax();
+	Long getLoadPowerMax();
 
 	/**
 	 * Get the expected power factor of load, between -1..1.
 	 * 
 	 * @return the power factor
 	 */
-	public Float getLoadPowerFactor();
+	Float getLoadPowerFactor();
 
 	/**
 	 * Get the maximum supply resource can offer, in W.
 	 * 
 	 * @return the power maximum
 	 */
-	public Long getSupplyPowerMax();
+	Long getSupplyPowerMax();
 
 	/**
 	 * Get the expected power factor of supply, between -1..1.
 	 * 
 	 * @return the power factor
 	 */
-	public Float getSupplyPowerFactor();
+	Float getSupplyPowerFactor();
 
 	/**
 	 * 
@@ -66,7 +76,7 @@ public interface ResourceAccessor extends Identifiable {
 	 * 
 	 * @return the capacity
 	 */
-	public Long getStorageEnergyCapacity();
+	Long getStorageEnergyCapacity();
 
 	/**
 	 * Get the expected minimum/maximum response time to start/finish executing
@@ -74,6 +84,6 @@ public interface ResourceAccessor extends Identifiable {
 	 * 
 	 * @return the response time
 	 */
-	public DurationRange getResponseTime();
+	DurationRange getResponseTime();
 
 }

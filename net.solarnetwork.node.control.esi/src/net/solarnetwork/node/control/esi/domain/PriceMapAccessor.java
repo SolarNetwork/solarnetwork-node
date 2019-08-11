@@ -36,6 +36,15 @@ import net.solarnetwork.domain.Identifiable;
 public interface PriceMapAccessor extends Identifiable {
 
 	/**
+	 * Get a status message.
+	 * 
+	 * @param locale
+	 *        the desired locale of the message
+	 * @return the message
+	 */
+	String getStatusMessage(Locale locale);
+
+	/**
 	 * Calculate the theoretical cost represented by this price map as the
 	 * apparent power multiplied by the duration (in hours) multiplied by the
 	 * apparent energy price.
@@ -43,14 +52,14 @@ public interface PriceMapAccessor extends Identifiable {
 	 * @return the apparent energy cost, in the configured currency units per
 	 *         volt-amp-hours (VAh)
 	 */
-	public BigDecimal calculatedApparentEnergyCost();
+	BigDecimal calculatedApparentEnergyCost();
 
 	/**
 	 * Get the fractional hours represented by the configured duration.
 	 * 
 	 * @return the duration, as fractional hours
 	 */
-	public double durationHours();
+	double durationHours();
 
 	/**
 	 * Get a brief informational string out of the main aspects of this price
@@ -58,7 +67,7 @@ public interface PriceMapAccessor extends Identifiable {
 	 * 
 	 * @return the string
 	 */
-	public String toInfoString(Locale locale);
+	String toInfoString(Locale locale);
 
 	/**
 	 * Get the info string in the default locale.
@@ -66,41 +75,41 @@ public interface PriceMapAccessor extends Identifiable {
 	 * @return the info string
 	 * @see #toInfoString(Locale)
 	 */
-	public String getInfo();
+	String getInfo();
 
 	/**
 	 * Get the power components.
 	 * 
 	 * @return the power components
 	 */
-	public PowerComponents getPowerComponents();
+	PowerComponents getPowerComponents();
 
 	/**
 	 * Get the duration of time for this price map.
 	 * 
 	 * @return the duration
 	 */
-	public Duration getDuration();
+	Duration getDuration();
 
 	/**
 	 * Get the duration, in milliseconds
 	 * 
 	 * @return the duration, in milliseconds
 	 */
-	public long getDurationMillis();
+	long getDurationMillis();
 
 	/**
 	 * Get the response time range.
 	 * 
 	 * @return the response time range
 	 */
-	public DurationRange getResponseTime();
+	DurationRange getResponseTime();
 
 	/**
 	 * Get the price components.
 	 * 
 	 * @return the price components
 	 */
-	public PriceComponents getPriceComponents();
+	PriceComponents getPriceComponents();
 
 }

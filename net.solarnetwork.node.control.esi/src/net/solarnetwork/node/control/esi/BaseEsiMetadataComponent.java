@@ -90,11 +90,26 @@ public abstract class BaseEsiMetadataComponent extends BaseIdentifiable
 	 *        the locale to get the message for
 	 * @return the message, never {@literal null}
 	 */
-	protected String getStatusMessage(Locale locale) {
+	public String getStatusMessage(Locale locale) {
 		String err = getConfigurationErrorStatusMessage(locale);
 		if ( err != null ) {
 			return err;
 		}
+		return getConfigurationOkStatusMessage(locale);
+	}
+
+	/**
+	 * Get a configuration OK status message.
+	 * 
+	 * <p>
+	 * This method returns a default {@code status.ok} message.
+	 * </p>
+	 * 
+	 * @param locale
+	 *        the locale to get the message for
+	 * @return the configuration OK status message, or {@literal null} if none
+	 */
+	protected String getConfigurationOkStatusMessage(Locale locale) {
 		return getMessageSource().getMessage("status.ok", null, locale);
 	}
 

@@ -32,6 +32,7 @@ import net.solarnetwork.node.control.esi.domain.ResourceAccessor;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
@@ -88,8 +89,13 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		results.add(programTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['UID']", "Main"));
+		results.add(new BasicTitleSettingSpecifier("resourceStatus",
+				resourceStatusMessage(Locale.getDefault()), true));
+
 		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['UID']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['groupUID']", "Main"));
+		results.add(new BasicTitleSettingSpecifier("priceMapsStatus",
+				priceMapsStatusMessage(Locale.getDefault()), true));
 
 		return results;
 	}
@@ -99,6 +105,70 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		Map<String, Object> result = new LinkedHashMap<>();
 		// TODO
 		return result;
+	}
+
+	@Override
+	protected String getConfigurationErrorStatusMessage(Locale locale) {
+		String result = super.getConfigurationErrorStatusMessage(locale);
+		if ( result != null ) {
+			return result;
+		}
+
+		final DerProgramType pt = getProgramType();
+		if ( pt == null || pt == DerProgramType.UNRECOGNIZED ) {
+			return getMessageSource().getMessage("status.error.noProgramType", null, locale);
+		}
+
+		final ResourceAccessor rsrc = resource();
+		if ( rsrc == null ) {
+			return getMessageSource().getMessage("status.error.noResource", null, locale);
+		}
+
+		final Iterable<PriceMapAccessor> pms = priceMaps();
+		if ( pms == null || !pms.iterator().hasNext() ) {
+			return getMessageSource().getMessage("status.error.noPriceMap", null, locale);
+		}
+
+		return null;
+	}
+
+	private ResourceAccessor resource() {
+		OptionalService<ResourceAccessor> s = getResource();
+		return (s != null ? s.service() : null);
+	}
+
+	private String resourceStatusMessage(Locale locale) {
+		ResourceAccessor r = resource();
+		return (r != null ? r.getStatusMessage(locale)
+				: getMessageSource().getMessage("status.error.noResource", null, locale));
+	}
+
+	private Iterable<PriceMapAccessor> priceMaps() {
+		OptionalServiceCollection<PriceMapAccessor> s = getPriceMaps();
+		return (s != null ? s.services() : null);
+	}
+
+	private String priceMapsStatusMessage(Locale locale) {
+		StringBuilder buf = new StringBuilder();
+		Iterable<PriceMapAccessor> pms = priceMaps();
+		if ( pms != null ) {
+			for ( PriceMapAccessor p : pms ) {
+				if ( buf.length() > 0 ) {
+					buf.append(" ");
+				}
+				String uid = p.getUid();
+				String guid = p.getGroupUid();
+				if ( uid != null && !uid.isEmpty() ) {
+					buf.append(uid).append(": ");
+				} else if ( guid != null && !guid.isEmpty() ) {
+					buf.append(getMessageSource().getMessage("priceMaps.groupUid.title",
+							new Object[] { guid }, locale)).append(": ");
+				}
+				buf.append(p.getStatusMessage(locale));
+			}
+		}
+		return (buf.length() > 0 ? buf.toString()
+				: getMessageSource().getMessage("status.error.noPriceMap", null, locale));
 	}
 
 	/**
