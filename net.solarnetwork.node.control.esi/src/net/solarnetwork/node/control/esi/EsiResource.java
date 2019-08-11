@@ -25,6 +25,8 @@ package net.solarnetwork.node.control.esi;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.node.control.esi.domain.DurationRange;
+import net.solarnetwork.node.control.esi.domain.ResourceAccessor;
 import net.solarnetwork.node.control.esi.domain.ResourceCharacteristics;
 import net.solarnetwork.node.settings.SettingSpecifier;
 
@@ -34,7 +36,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public class EsiResource extends BaseEsiMetadataComponent {
+public class EsiResource extends BaseEsiMetadataComponent implements ResourceAccessor {
 
 	/** The node property metadata key used for all ESI resource metadata. */
 	public static final String ESI_RESOURCE_METADATA_KEY = "esi-resource";
@@ -70,6 +72,40 @@ public class EsiResource extends BaseEsiMetadataComponent {
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("characteristics", characteristics.asMap());
 		return result;
+	}
+
+	// ----------------
+	// ResourceAccessor
+	// ----------------
+
+	@Override
+	public Long getLoadPowerMax() {
+		return characteristics.getLoadPowerMax();
+	}
+
+	@Override
+	public Float getLoadPowerFactor() {
+		return characteristics.getLoadPowerFactor();
+	}
+
+	@Override
+	public Long getSupplyPowerMax() {
+		return characteristics.getSupplyPowerMax();
+	}
+
+	@Override
+	public Float getSupplyPowerFactor() {
+		return characteristics.getSupplyPowerFactor();
+	}
+
+	@Override
+	public Long getStorageEnergyCapacity() {
+		return characteristics.getStorageEnergyCapacity();
+	}
+
+	@Override
+	public DurationRange getResponseTime() {
+		return characteristics.getResponseTime();
 	}
 
 	/**

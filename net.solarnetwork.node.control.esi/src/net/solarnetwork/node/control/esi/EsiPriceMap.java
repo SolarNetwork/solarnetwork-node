@@ -22,12 +22,18 @@
 
 package net.solarnetwork.node.control.esi;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import net.solarnetwork.node.control.esi.domain.DurationRange;
+import net.solarnetwork.node.control.esi.domain.PowerComponents;
+import net.solarnetwork.node.control.esi.domain.PriceComponents;
 import net.solarnetwork.node.control.esi.domain.PriceMap;
+import net.solarnetwork.node.control.esi.domain.PriceMapAccessor;
 import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
  * A configurable ESI price map component.
@@ -35,10 +41,10 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * @author matt
  * @version 1.0
  */
-public class EsiPriceMap extends BaseEsiMetadataComponent implements SettingSpecifierProvider {
+public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAccessor {
 
 	/** The node property metadata key used for all ESI price map metadata. */
-	public static final String ESI_RESOURCE_METADATA_KEY = "esi-pricemap";
+	public static final String ESI_PRICEMAP_METADATA_KEY = "esi-pricemap";
 
 	private PriceMap priceMap = new PriceMap();
 
@@ -46,7 +52,7 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements SettingSpec
 	 * Constructor.
 	 */
 	public EsiPriceMap() {
-		super(ESI_RESOURCE_METADATA_KEY);
+		super(ESI_PRICEMAP_METADATA_KEY);
 	}
 
 	@Override
@@ -72,6 +78,59 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements SettingSpec
 		result.put("pricemap", priceMap.asMap());
 		return result;
 	}
+
+	// ----------------
+	// PriceMapAccessor
+	// ----------------
+
+	@Override
+	public BigDecimal calculatedApparentEnergyCost() {
+		return priceMap.calculatedApparentEnergyCost();
+	}
+
+	@Override
+	public double durationHours() {
+		return priceMap.durationHours();
+	}
+
+	@Override
+	public String toInfoString(Locale locale) {
+		return priceMap.toInfoString(locale);
+	}
+
+	@Override
+	public String getInfo() {
+		return priceMap.getInfo();
+	}
+
+	@Override
+	public PowerComponents getPowerComponents() {
+		return priceMap.getPowerComponents();
+	}
+
+	@Override
+	public Duration getDuration() {
+		return priceMap.getDuration();
+	}
+
+	@Override
+	public long getDurationMillis() {
+		return priceMap.getDurationMillis();
+	}
+
+	@Override
+	public DurationRange getResponseTime() {
+		return priceMap.getResponseTime();
+	}
+
+	@Override
+	public PriceComponents getPriceComponents() {
+		return priceMap.getPriceComponents();
+	}
+
+	// ----------------
+	// Accessors
+	// ----------------
 
 	/**
 	 * Get the price map.
