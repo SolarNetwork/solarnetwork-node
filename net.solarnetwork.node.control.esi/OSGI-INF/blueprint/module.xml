@@ -116,6 +116,28 @@
 		<bean id="controller" class="net.solarnetwork.node.control.esi.EsiProgram">
 			<property name="messageSource" ref="programMessageSource"/>
 			<property name="nodeMetadataService" ref="nodeMetadataService"/>
+			<property name="resource">
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.control.esi.domain.ResourceAccessor"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="UID" value="Main"/>
+						</map>
+					</property>
+				</bean>			
+			</property>
+			<property name="priceMaps">
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.control.esi.domain.PriceMapAccessor"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="groupUID" value="Main"/>
+						</map>
+					</property>
+				</bean>			
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 

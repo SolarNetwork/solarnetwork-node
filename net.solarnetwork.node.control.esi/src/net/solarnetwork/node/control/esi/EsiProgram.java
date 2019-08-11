@@ -31,6 +31,7 @@ import net.solarnetwork.node.control.esi.domain.PriceMapAccessor;
 import net.solarnetwork.node.control.esi.domain.ResourceAccessor;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
@@ -85,6 +86,10 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		}
 		programTypeSpec.setValueTitles(programTypeTitles);
 		results.add(programTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['UID']", "Main"));
+		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['UID']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['groupUID']", "Main"));
 
 		return results;
 	}
