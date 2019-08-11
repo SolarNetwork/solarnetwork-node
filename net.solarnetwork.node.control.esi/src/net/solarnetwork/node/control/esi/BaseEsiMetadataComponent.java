@@ -172,6 +172,13 @@ public abstract class BaseEsiMetadataComponent extends BaseIdentifiable
 		}
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
 		Map<String, Object> props = getEsiComponentMetadata();
+
+		// automatically add the groupUid key
+		String guid = getGroupUid();
+		if ( guid != null ) {
+			props.put("groupUid", guid);
+		}
+
 		meta.putInfoValue(rootMetadataKey, uid, props);
 		log.info("Publishing ESI {} metadata for {}: {}", rootMetadataKey, uid, props);
 		service.addNodeMetadata(meta);

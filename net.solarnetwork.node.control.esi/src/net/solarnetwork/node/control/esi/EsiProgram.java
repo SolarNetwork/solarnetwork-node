@@ -33,6 +33,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
@@ -102,8 +103,24 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 	@Override
 	protected Map<String, Object> getEsiComponentMetadata() {
-		Map<String, Object> result = new LinkedHashMap<>();
-		// TODO
+		Map<String, Object> result = new LinkedHashMap<>(4);
+
+		result.put("programTypeNumber", getProgramTypeNumber());
+
+		if ( resource instanceof FilterableService ) {
+			FilterableService f = (FilterableService) resource;
+			final Object uid = f.getPropertyFilters().get("UID");
+			result.put("resource", uid != null ? uid.toString() : "");
+		}
+
+		if ( priceMaps instanceof FilterableService ) {
+			FilterableService f = (FilterableService) priceMaps;
+			final Object uid = f.getPropertyFilters().get("UID");
+			final Object guid = f.getPropertyFilters().get("groupUID");
+			result.put("pricemap", uid != null ? uid.toString() : "");
+			result.put("pricemapGroup", guid != null ? guid.toString() : "");
+		}
+
 		return result;
 	}
 
