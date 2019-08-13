@@ -110,15 +110,15 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		if ( resource instanceof FilterableService ) {
 			FilterableService f = (FilterableService) resource;
 			final Object uid = f.getPropertyFilters().get("UID");
-			result.put("resource", uid != null ? uid.toString() : "");
+			result.put("resourceId", uid != null ? uid.toString() : "");
 		}
 
 		if ( priceMaps instanceof FilterableService ) {
 			FilterableService f = (FilterableService) priceMaps;
 			final Object uid = f.getPropertyFilters().get("UID");
 			final Object guid = f.getPropertyFilters().get("groupUID");
-			result.put("pricemap", uid != null ? uid.toString() : "");
-			result.put("pricemapGroup", guid != null ? guid.toString() : "");
+			result.put("priceMapId", uid != null ? uid.toString() : "");
+			result.put("priceMapGroupUid", guid != null ? guid.toString() : "");
 		}
 
 		return result;

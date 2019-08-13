@@ -75,7 +75,7 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAcc
 	@Override
 	protected Map<String, Object> getEsiComponentMetadata() {
 		Map<String, Object> result = new LinkedHashMap<>();
-		result.put("pricemap", priceMap.asMap());
+		result.put("priceMap", priceMap.asMap());
 		return result;
 	}
 
