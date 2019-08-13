@@ -163,7 +163,7 @@ public class DurationRange {
 	}
 
 	/**
-	 * Get the minimum duration, in milliseconds
+	 * Get the minimum duration, in milliseconds.
 	 * 
 	 * @return the minimum duration, in milliseconds
 	 */
