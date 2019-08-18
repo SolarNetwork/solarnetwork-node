@@ -34,6 +34,7 @@ import net.solarnetwork.node.control.esi.domain.PriceComponents;
 import net.solarnetwork.node.control.esi.domain.PriceMap;
 import net.solarnetwork.node.control.esi.domain.PriceMapAccessor;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A configurable ESI price map component.
@@ -46,6 +47,10 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAcc
 	/** The node property metadata key used for all ESI price map metadata. */
 	public static final String ESI_PRICEMAP_METADATA_KEY = "esi-pricemap";
 
+	/** The default {@code controlId} value. */
+	public static final String DEFAULT_CONTROL_ID = "/load/1";
+
+	private String controlId = DEFAULT_CONTROL_ID;
 	private PriceMap priceMap = new PriceMap();
 
 	/**
@@ -68,6 +73,7 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAcc
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
+		results.add(new BasicTextFieldSettingSpecifier("controlId", DEFAULT_CONTROL_ID));
 		PriceMap.addSettings("priceMap.", results);
 		return results;
 	}
@@ -131,6 +137,25 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAcc
 	// ----------------
 	// Accessors
 	// ----------------
+
+	/**
+	 * Get the control ID.
+	 * 
+	 * @return the control ID
+	 */
+	public String getControlId() {
+		return controlId;
+	}
+
+	/**
+	 * Set the control ID.
+	 * 
+	 * @param controlId
+	 *        the control ID to set
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
+	}
 
 	/**
 	 * Get the price map.
