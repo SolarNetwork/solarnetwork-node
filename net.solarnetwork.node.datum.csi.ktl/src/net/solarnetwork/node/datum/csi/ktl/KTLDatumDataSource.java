@@ -116,8 +116,8 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			}
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from KTL device {}: {}", modbusNetwork(),
-					e.getMessage());
+			log.error("Communication problem reading source {} from KTL device {}: {}", this.sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

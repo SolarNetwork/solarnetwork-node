@@ -44,7 +44,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -125,9 +125,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 				}
 				log.debug("Read SunSpec inverter data: {}", currSample);
 			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from SunSpec inverter device " + modbusNetwork(),
-						e);
+				throw new RuntimeException("Communication problem reading source " + this.sourceId
+						+ " from SunSpec inverter device " + modbusDeviceName(), e);
 			}
 		}
 		return (currSample != null ? currSample.getSnapshot() : null);

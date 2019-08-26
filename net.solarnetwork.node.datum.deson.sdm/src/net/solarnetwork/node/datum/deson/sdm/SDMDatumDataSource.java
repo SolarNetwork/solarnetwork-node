@@ -58,7 +58,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<GeneralNodeACEnergyDatum>,
 		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -88,7 +88,7 @@ public class SDMDatumDataSource extends SDMSupport implements DatumDataSource<Ge
 				log.debug("Read SDM data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
-						"Communication problem reading from Modbus device " + modbusNetwork(), e);
+						"Communication problem reading from Modbus device " + modbusDeviceName(), e);
 			}
 		} else {
 			currSample = sample.getSnapshot();

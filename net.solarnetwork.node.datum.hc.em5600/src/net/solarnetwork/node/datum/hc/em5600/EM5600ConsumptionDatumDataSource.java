@@ -26,12 +26,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.EnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.hc.EM5600Data;
 import net.solarnetwork.node.hw.hc.EM5600Support;
@@ -46,26 +46,8 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} implementation for {@link ACEnergyDatum} with the
  * EM5600 series watt meter.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with
- * {@link SettingSpecifierProvider}.</dd>
- * 
- * <dt>sampleCacheMs</dt>
- * <dd>The maximum number of milliseconds to cache data read from the meter,
- * until the data will be read from the meter again.</dd>
- * 
- * <dt>tagConsumption</dt>
- * <dd>If {@link #getDatumMetadataService()} is available, then tag the
- * configured source with
- * </dl>
- * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -106,7 +88,7 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 				log.debug("Read EM5600 data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
-						"Communication problem reading from Modbus device " + modbusNetwork(), e);
+						"Communication problem reading from Modbus device " + modbusDeviceName(), e);
 			}
 		} else {
 			currSample = new EM5600Data(sample);
@@ -224,9 +206,9 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		// associate consumption/generation tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagConsumption() ) {
-			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_CONSUMPTION);
+			sourceMeta.addTag(EnergyDatum.TAG_CONSUMPTION);
 		} else {
-			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+			sourceMeta.addTag(EnergyDatum.TAG_GENERATION);
 		}
 		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
@@ -255,18 +237,51 @@ public class EM5600ConsumptionDatumDataSource extends EM5600Support implements
 		return results;
 	}
 
+	/**
+	 * Get the maximum number of milliseconds to cache data read from the meter,
+	 * until the data will be read from the meter again.
+	 * 
+	 * @return the cache time, in milliseconds
+	 */
 	public long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
+	/**
+	 * Set the maximum number of milliseconds to cache data read from the meter,
+	 * until the data will be read from the meter again.
+	 * 
+	 * @param sampleCacheMs
+	 *        the cache time, in milliseconds
+	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 
+	/**
+	 * Get the consumption/generation tag setting.
+	 * 
+	 * @return {@literal true} to tag as consumption, {@literal false} for
+	 *         generation
+	 */
 	public boolean isTagConsumption() {
 		return tagConsumption;
 	}
 
+	/**
+	 * Configure the consumption/generation tag setting.
+	 * 
+	 * <p>
+	 * When {@literal true} then tag the configured source with
+	 * {@link EnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
+	 * configured source with {@link EnergyDatum#TAG_GENERATION}. Requires the
+	 * {@link #getDatumMetadataService()} to be available.
+	 * </p>
+	 * 
+	 * @param tagConsumption
+	 *        {@literal true} to tag as consumption, {@literal false} for
+	 *        generation
+	 */
 	public void setTagConsumption(boolean tagConsumption) {
 		this.tagConsumption = tagConsumption;
 	}

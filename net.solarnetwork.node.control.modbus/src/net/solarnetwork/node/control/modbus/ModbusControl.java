@@ -74,7 +74,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
@@ -206,8 +206,8 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				while ( t.getCause() != null ) {
 					t = t.getCause();
 				}
-				log.debug("Error reading from Modbus device {}", modbusNetwork(), t);
-				log.warn("Communication problem reading from Modbus device {}: {}", modbusNetwork(),
+				log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
+				log.warn("Communication problem reading from Modbus device {}: {}", modbusDeviceName(),
 						t.getMessage());
 			}
 		} else {

@@ -25,10 +25,10 @@ package net.solarnetwork.node.io.modbus;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based services.
@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public abstract class ModbusDeviceSupport {
@@ -224,6 +224,16 @@ public abstract class ModbusDeviceSupport {
 	 */
 	protected void setDeviceInfoMap(Map<String, Object> deviceInfo) {
 		this.deviceInfo = deviceInfo;
+	}
+
+	/**
+	 * Get the configured Modbus device name.
+	 * 
+	 * @return the modbus device name
+	 * @since 1.1
+	 */
+	public String modbusDeviceName() {
+		return getUnitId() + "@" + modbusNetwork();
 	}
 
 	/**

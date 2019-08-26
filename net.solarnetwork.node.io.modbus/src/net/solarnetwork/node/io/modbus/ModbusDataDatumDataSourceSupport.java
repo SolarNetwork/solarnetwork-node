@@ -33,7 +33,7 @@ import net.solarnetwork.node.domain.DataAccessor;
  * object.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -205,7 +205,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 			T sample = getCurrentSample(conn);
 			return sample.getDeviceInfo();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from device {}: {}", modbusNetwork(),
+			log.error("Communication problem reading device info from device {}: {}", modbusDeviceName(),
 					e.getMessage());
 			return null;
 		}
