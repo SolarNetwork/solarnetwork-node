@@ -72,7 +72,7 @@ public final class Stabiliti30cUtils {
 	 *        the fault group 3 data value
 	 * @return the set of faults, never {@literal null}
 	 */
-	public SortedSet<Stabiliti30cFault> faultSet(int f0, int f1, int f2, int f3) {
+	public static SortedSet<Stabiliti30cFault> faultSet(int f0, int f1, int f2, int f3) {
 		SortedSet<Stabiliti30cFault> result = new TreeSet<>(SORT_BY_FAULT_NUMBER);
 		Set<Stabiliti30cFault0> f0set = setForBitmask(f0, Stabiliti30cFault0.class);
 		if ( f0set != null ) {
@@ -102,7 +102,7 @@ public final class Stabiliti30cUtils {
 	 *        the fault group to extract
 	 * @return the fault group data value
 	 */
-	public int faultGroupDataValue(Set<Stabiliti30cFault> faults, int group) {
+	public static int faultGroupDataValue(Set<Stabiliti30cFault> faults, int group) {
 		if ( faults == null || faults.isEmpty() ) {
 			return 0;
 		}
