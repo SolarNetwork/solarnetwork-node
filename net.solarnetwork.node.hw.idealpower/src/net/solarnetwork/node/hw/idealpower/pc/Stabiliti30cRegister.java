@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.idealpower.pc;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
@@ -78,6 +79,18 @@ public enum Stabiliti30cRegister implements ModbusReference {
 
 	/** P3 current, in centi-amps. */
 	PowerControlP3Current(250, Int16),
+
+	/** The active fault group 0, see {@link Stabiliti30cFault0}. */
+	StatusFaultActive0(16, UInt16),
+
+	/** The active fault group 1, see {@link Stabiliti30cFault1}. */
+	StatusFaultActive1(17, UInt16),
+
+	/** The active fault group 2, see {@link Stabiliti30cFault2}. */
+	StatusFaultActive2(18, UInt16),
+
+	/** The active fault group 3, see {@link Stabiliti30cFault3}. */
+	StatusFaultActive3(19, UInt16),
 
 	/** System operating mode, see {@link Stabiliti30cOperatingMode}. */
 	StatusOperatingMode(267, UInt16),
@@ -180,7 +193,46 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P3 soft current limit absolute value, in centi-amps. */
 	ControlP3CurrentLimit(218, UInt16),
 
-	DELETE_ME(-1, UInt16);
+	/**
+	 * Set which fault to show information for in the other {@code FaultStatus*}
+	 * registers.
+	 */
+	FaultControlIndex(0, UInt16),
+
+	/** For over/under limit faults, the limit value that was exceeded. */
+	FaultStatusLimit(1, UInt16),
+
+	/**
+	 * The measured value that exceeded a limit and triggered the fault flag.
+	 */
+	FaultStatusValue(2, UInt16),
+
+	/** The number of times this fault occurred since the last fault reset. */
+	FaultStatusCount(3, UInt16),
+
+	/**
+	 * The Unix timestamp of the most recent occurrence of this type of fault,
+	 * in least-to-most-significant word order.
+	 */
+	FaultStatusUtime(4, UInt32),
+
+	/**
+	 * In the case a fault can apply to multiple sources, the source that
+	 * triggered the fault.
+	 */
+	FaultStatusSelector(8, UInt16),
+
+	/**
+	 * A fault status combination register.
+	 * 
+	 * <ul>
+	 * <li>Bits 0-2 represent the fault severity, see
+	 * {@link Stabiliti30cFaultSeverity}.</li>
+	 * <li>Bits 3-4 represent the fault status, see
+	 * {@link Stabiliti30cFaultStatus}.</li>
+	 * </ul>
+	 */
+	FaultStatusStatus(9, UInt16);
 
 	private final int address;
 	private final int length;
