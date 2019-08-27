@@ -53,7 +53,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** Serial number. */
 	InfoSerialNumber(2001, 8, StringAscii),
 
-	/** P1 port type, see {@link Stability30cAcPortType}. */
+	/** P1 port type, see {@link Stabiliti30cAcPortType}. */
 	SetupP1PortType(64, UInt16),
 
 	/** P1 real power, positive when exporting to grid, in deca-watts. */
@@ -79,13 +79,13 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P3 current, in centi-amps. */
 	PowerControlP3Current(250, Int16),
 
-	/** System operating mode, see {@link Stability30cOperatingMode}. */
+	/** System operating mode, see {@link Stabiliti30cOperatingMode}. */
 	StatusOperatingMode(267, UInt16),
 
-	/** System status, see {@link Stability30cSystemStatus}. */
+	/** System status, see {@link Stabiliti30cSystemStatus}. */
 	StatusSystem(298, UInt16),
 
-	/** System info, see {@link Stability30cSystemInfo}. */
+	/** System info, see {@link Stabiliti30cSystemInfo}. */
 	StatusInfo(438, UInt16),
 
 	/** Countdown watchdog, in seconds, or {@literal 0} to disable. */
@@ -97,7 +97,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** Stop manual mode by setting to {@literal 1}. */
 	ControlUserSetop(264, UInt16),
 
-	/** P1 control method, see {@link Stability30cAcControlMethod}. */
+	/** P1 control method, see {@link Stabiliti30cAcControlMethod}. */
 	ControlP1ControlMethod(65, UInt16),
 
 	/**
@@ -121,7 +121,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** Soft current limit, in centi-amps. */
 	ControlP1CurrentLimit(90, Int16),
 
-	/** P2 control method, see {@link Stability30cDcControlMethod}. */
+	/** P2 control method, see {@link Stabiliti30cDcControlMethod}. */
 	ControlP2ControlMethod(129, UInt16),
 
 	/**
@@ -147,10 +147,10 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P2 soft current limit absolute value, in centi-amps. */
 	ControlP2CurrentLimit(154, UInt16),
 
-	/** Command, see {@link Stability30cCommand}. */
+	/** Command, see {@link Stabiliti30cCommand}. */
 	ControlCommand(2000, UInt16),
 
-	/** P3 control method, see {@link Stability30cDcControlMethod}. */
+	/** P3 control method, see {@link Stabiliti30cDcControlMethod}. */
 	ControlP3ControlMethod(193, UInt16),
 
 	/**

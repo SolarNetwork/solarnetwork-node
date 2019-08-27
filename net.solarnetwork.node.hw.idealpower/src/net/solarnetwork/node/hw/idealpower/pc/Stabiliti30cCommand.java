@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cDcControlMethod.java - 27/08/2019 4:25:54 pm
+ * Stabiliti30cCommand.java - 27/08/2019 3:56:13 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -23,33 +23,27 @@
 package net.solarnetwork.node.hw.idealpower.pc;
 
 /**
- * Enumeration of DC control methods.
+ * Enumeration of command values.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cDcControlMethod {
+public enum Stabiliti30cCommand {
 
-	Idle(0x0000, "Idle"),
+	Reset(1),
 
-	Net(0x0001, "Net"),
+	Save(3),
 
-	Mppt(0x0002, "MPP2"),
-
-	DcCurrent(0x0301, "DC current"),
-
-	DcPower(0x0401, "DC power");
+	SaveSettings(7);
 
 	private final int code;
-	private final String description;
 
-	private Stability30cDcControlMethod(int code, String description) {
+	private Stabiliti30cCommand(int code) {
 		this.code = code;
-		this.description = description;
 	}
 
 	/**
-	 * Get the code for this condition.
+	 * Get the type value encoding.
 	 * 
 	 * @return the code
 	 */
@@ -58,31 +52,18 @@ public enum Stability30cDcControlMethod {
 	}
 
 	/**
-	 * Get a description.
-	 * 
-	 * @return the description
-	 */
-	public final String getDescription() {
-		return description;
-	}
-
-	/**
-	 * Get an enum for a code value.
+	 * Get an enumeration for a given code value.
 	 * 
 	 * @param code
-	 *        the code to get an enum for
-	 * @return the enum with the given {@code code}
-	 * @throws IllegalArgumentException
-	 *         if {@code code} is not supported
+	 *        the code to get the enum value for
+	 * @return the enumeration value
 	 */
-	public static Stability30cDcControlMethod forCode(int code) {
-		for ( Stability30cDcControlMethod c : values() ) {
+	public static Stabiliti30cCommand forCode(int code) {
+		for ( Stabiliti30cCommand c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException(
-				"Stability30cDcControlMethod code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cCommand code [" + code + "] not supported");
 	}
-
 }

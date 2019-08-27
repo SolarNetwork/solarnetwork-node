@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cSystemStatus.java - 27/08/2019 3:14:19 pm
+ * Stabiliti30cFault0.java - 27/08/2019 5:11:50 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,73 +22,72 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
- * Enumeration of system status states.
+ * Bitmask enumeration of fault 2 codes.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cSystemStatus implements Bitmaskable {
+public enum Stabiliti30cFault2 implements Stabiliti30cFault {
 
-	SelfTest(0, "Self-test mode"),
+	AcOverVoltageLevel3(0, "AC over voltage level 3 trip"),
 
-	ReconnectTimer0(1, "Reconnect timer 0 countdown"),
+	AcOverVoltageLevel4(1, "AC over voltage level 4 trip"),
 
-	ReconnectTimer1(2, "Reconnect timer 1 countdown"),
+	AcUnderFrequencyLevel1(2, "AC under frequency level 1 trip"),
 
-	ReconnectTimer2(3, "Reconnect timer 2 countdown"),
+	AcUnderFrequencyLevel2(3, "AC under frequency level 2 trip"),
 
-	Precharge(4, "Precharge active"),
+	AcUnderFrequencyLevel3(4, "AC under frequency level 3 trip"),
 
-	BadControlMethod(5, "Bad control method"),
+	AcUnderFrequencyLevel4(5, "AC under frequency level 4 trip"),
 
-	Ac1RotationError(6, "AC1 rotation error"),
+	AcOverFrequencyLevel1(6, "AC over frequency level 1 trip"),
 
-	MpptEnabledVoltage(7, "MPPT enabled based on voltage"),
+	AcOverFrequencyLevel2(7, "AC over frequency level 2 trip"),
 
-	MpptEnabledTime(8, "MPPT enabled based on time"),
+	AcOverFrequencyLevel3(8, "AC over frequency level 3 trip"),
 
-	PpsaConverting(9, "PPSA link converting power"),
+	AcOverFrequencyLevel4(9, "AC over frequency level 4 trip"),
 
-	Shutdown(10, "Shutdown active"),
+	WatchdogTimeout(10, "Watchdog timeout"),
 
-	Lockdown(11, "System lockdown"),
+	EmergencyStop(11, "Emergency stop active"),
 
-	Abort(12, "Abort active"),
+	SensingFault(12, "Sensing fault"),
 
-	GfdiFault(15, "GFDI fault");
+	ArcFault(13, "Arc fault"),
+
+	CommsProcessorInitiatedShutdown(14, "Comms processor initiated shutdown"),
+
+	Surge(15, "Surge detect");
 
 	private final int code;
 	private final String description;
 
-	private Stability30cSystemStatus(int code, String description) {
+	private Stabiliti30cFault2(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
 
-	/**
-	 * Get the code for this condition.
-	 * 
-	 * @return the code
-	 */
+	@Override
 	public int getCode() {
 		return code;
 	}
 
-	/**
-	 * Get a description.
-	 * 
-	 * @return the description
-	 */
-	public final String getDescription() {
+	@Override
+	public String getDescription() {
 		return description;
 	}
 
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getFaultGroup() {
+		return 2;
 	}
 
 	/**
@@ -101,16 +100,16 @@ public enum Stability30cSystemStatus implements Bitmaskable {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static Stability30cSystemStatus forCode(int code) {
+	public static Stabiliti30cFault2 forCode(int code) {
 		if ( code == 0 ) {
 			return null;
 		}
-		for ( Stability30cSystemStatus c : values() ) {
+		for ( Stabiliti30cFault2 c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("Stability30cSystemStatus code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cFault2 code [" + code + "] not supported");
 	}
 
 }

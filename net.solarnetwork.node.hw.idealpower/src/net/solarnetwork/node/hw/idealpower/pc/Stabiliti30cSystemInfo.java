@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cSystemInfo.java - 27/08/2019 3:14:19 pm
+ * Stabiliti30cSystemInfo.java - 27/08/2019 3:14:19 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -30,7 +30,7 @@ import net.solarnetwork.domain.Bitmaskable;
  * @author matt
  * @version 1.0
  */
-public enum Stability30cSystemInfo implements Bitmaskable {
+public enum Stabiliti30cSystemInfo implements Bitmaskable {
 
 	Fault(0, "Fault occurred since last reset"),
 
@@ -67,7 +67,7 @@ public enum Stability30cSystemInfo implements Bitmaskable {
 	private final int code;
 	private final String description;
 
-	private Stability30cSystemInfo(int code, String description) {
+	private Stabiliti30cSystemInfo(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
@@ -105,16 +105,16 @@ public enum Stability30cSystemInfo implements Bitmaskable {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static Stability30cSystemInfo forCode(int code) {
+	public static Stabiliti30cSystemInfo forCode(int code) {
 		if ( code == 0 ) {
 			return null;
 		}
-		for ( Stability30cSystemInfo c : values() ) {
+		for ( Stabiliti30cSystemInfo c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("Stability30cSystemInfo code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cSystemInfo code [" + code + "] not supported");
 	}
 
 }

@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cOperatingMode.java - 27/08/2019 4:58:06 pm
+ * Stabiliti30cFault.java - 28/08/2019 6:35:18 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,33 +22,43 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import net.solarnetwork.domain.Bitmaskable;
+
 /**
- * Enumeration of operating modes.
+ * API for Stabiliti 30C fault encodings.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cOperatingMode {
-
-	Manual(0, "Manual mode"),
-
-	Automatic(1, "Automatic mode");
-
-	private final int code;
-	private final String description;
-
-	private Stability30cOperatingMode(int code, String description) {
-		this.code = code;
-		this.description = description;
-	}
+public interface Stabiliti30cFault extends Bitmaskable {
 
 	/**
-	 * Get the code for this condition.
+	 * Get the raw data code (bitmap offset within data register).
 	 * 
 	 * @return the code
 	 */
-	public int getCode() {
-		return code;
+	int getCode();
+
+	/**
+	 * Get the raw data group this fault belongs to, starting from {@literal 0}.
+	 * 
+	 * <p>
+	 * Faults are grouped into sets of 16 faults to fit within a 16-bit data
+	 * value.
+	 * </p>
+	 * 
+	 * @return the fault group
+	 */
+	int getFaultGroup();
+
+	/**
+	 * Get the overall fault number within all fault groups, starting from
+	 * {@literal 0}.
+	 * 
+	 * @return the fault number
+	 */
+	default int getFaultNumber() {
+		return (getFaultGroup() * 16) + bitmaskBitOffset();
 	}
 
 	/**
@@ -56,27 +66,6 @@ public enum Stability30cOperatingMode {
 	 * 
 	 * @return the description
 	 */
-	public final String getDescription() {
-		return description;
-	}
-
-	/**
-	 * Get an enum for a code value.
-	 * 
-	 * @param code
-	 *        the code to get an enum for
-	 * @return the enum with the given {@code code}
-	 * @throws IllegalArgumentException
-	 *         if {@code code} is not supported
-	 */
-	public static Stability30cOperatingMode forCode(int code) {
-		for ( Stability30cOperatingMode c : values() ) {
-			if ( code == c.code ) {
-				return c;
-			}
-		}
-		throw new IllegalArgumentException(
-				"Stability30cOperatingMode code [" + code + "] not supported");
-	}
+	String getDescription();
 
 }

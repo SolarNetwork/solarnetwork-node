@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cCommand.java - 27/08/2019 3:56:13 pm
+ * Stabiliti30cAcPortType.java - 27/08/2019 4:07:01 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -23,27 +23,25 @@
 package net.solarnetwork.node.hw.idealpower.pc;
 
 /**
- * Enumeration of command values.
+ * Enumeration of AC port types.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cCommand {
+public enum Stabiliti30cAcPortType {
 
-	Reset(1),
-
-	Save(3),
-
-	SaveSettings(7);
+	Delta3Wire(0x0103, "Delta 3-Wire");
 
 	private final int code;
+	private final String description;
 
-	private Stability30cCommand(int code) {
+	private Stabiliti30cAcPortType(int code, String description) {
 		this.code = code;
+		this.description = description;
 	}
 
 	/**
-	 * Get the type value encoding.
+	 * Get the code for this condition.
 	 * 
 	 * @return the code
 	 */
@@ -52,18 +50,30 @@ public enum Stability30cCommand {
 	}
 
 	/**
-	 * Get an enumeration for a given code value.
+	 * Get a description.
+	 * 
+	 * @return the description
+	 */
+	public final String getDescription() {
+		return description;
+	}
+
+	/**
+	 * Get an enum for a code value.
 	 * 
 	 * @param code
-	 *        the code to get the enum value for
-	 * @return the enumeration value
+	 *        the code to get an enum for
+	 * @return the enum with the given {@code code}
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
 	 */
-	public static Stability30cCommand forCode(int code) {
-		for ( Stability30cCommand c : values() ) {
+	public static Stabiliti30cAcPortType forCode(int code) {
+		for ( Stabiliti30cAcPortType c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("Stability30cCommand code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cAcPortType code [" + code + "] not supported");
 	}
+
 }

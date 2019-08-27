@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cAcPortType.java - 27/08/2019 4:07:01 pm
+ * Stabiliti30cFault0.java - 27/08/2019 5:11:50 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -23,39 +23,53 @@
 package net.solarnetwork.node.hw.idealpower.pc;
 
 /**
- * Enumeration of AC port types.
+ * Bitmask enumeration of fault 3 codes.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cAcPortType {
+public enum Stabiliti30cFault3 implements Stabiliti30cFault {
 
-	Delta3Wire(0x0103, "Delta 3-Wire");
+	AcSwitchBreakdownVoltageExceeded(0, "AC switch breakdown voltage exceeded"),
+
+	DcSwitchBreakdownVoltageExceeded(1, "DC switch breakdown voltage exceeded"),
+
+	PrechargeTimeout(2, "Precharge timeout"),
+
+	AcToLinkPrimaryHighVoltage(3, "AC to link primary high voltage"),
+
+	AcLineToLineInstantaneousOverVoltage(4, "AC line to line instantaneous over voltage"),
+
+	LicenseFault(5, "License fault"),
+
+	GridAckTimeout(6, "Grid_Ack timeout");
 
 	private final int code;
 	private final String description;
 
-	private Stability30cAcPortType(int code, String description) {
+	private Stabiliti30cFault3(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
 
-	/**
-	 * Get the code for this condition.
-	 * 
-	 * @return the code
-	 */
+	@Override
 	public int getCode() {
 		return code;
 	}
 
-	/**
-	 * Get a description.
-	 * 
-	 * @return the description
-	 */
-	public final String getDescription() {
+	@Override
+	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public int bitmaskBitOffset() {
+		return code;
+	}
+
+	@Override
+	public int getFaultGroup() {
+		return 3;
 	}
 
 	/**
@@ -63,17 +77,21 @@ public enum Stability30cAcPortType {
 	 * 
 	 * @param code
 	 *        the code to get an enum for
-	 * @return the enum with the given {@code code}
+	 * @return the enum with the given {@code code}, or {@literal null} if
+	 *         {@code code} is {@literal 0}
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static Stability30cAcPortType forCode(int code) {
-		for ( Stability30cAcPortType c : values() ) {
+	public static Stabiliti30cFault3 forCode(int code) {
+		if ( code == 0 ) {
+			return null;
+		}
+		for ( Stabiliti30cFault3 c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("Stability30cAcPortType code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cFault3 code [" + code + "] not supported");
 	}
 
 }

@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cFault0.java - 27/08/2019 5:11:50 pm
+ * Stabiliti30cFault0.java - 27/08/2019 5:11:50 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,77 +22,72 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
- * Bitmask enumeration of fault 0 codes.
+ * Bitmask enumeration of fault 1 codes.
  * 
  * @author matt
  * @version 1.0
  */
-public enum Stability30cFault0 implements Bitmaskable {
+public enum Stabiliti30cFault1 implements Stabiliti30cFault {
 
-	GfdiFault(0, "GFDI fault (grounded DC)"),
+	AcBcHardSwitch(0, "AC B-C hard switch"),
 
-	ImiFault(1, "IMI fault (floating DC)"),
+	AcCaHardSwitch(1, "AC C-A hard switch"),
 
-	PowerModuleHeatsinkTemperatureFault(2, "Power module heatsink temperature fault"),
+	Dc2InputHardSwitch(2, "DC2 input hard switch"),
 
-	ControlBoardTemperatureFault(3, "Control board temperature fault"),
+	Dc2OutputHardSwitch(3, "DC2 output hard switch"),
 
-	AuxSupplyUnderVoltage(4, "24V auxiliary supply under voltage"),
+	Dc3InputHardSwitch(4, "DC3 input hard switch"),
 
-	FanFault(5, "Fan fault"),
+	Dc3OutputHardSwitch(5, "DC3 output hard switch"),
 
-	DcDiffOverVoltage(6, "DC differential over voltage"),
+	LinkStateTimerCheck(6, "Link state timer check"),
 
-	DcDiffUnderVoltage(7, "DC differential under voltage"),
+	BadLinkStart(7, "Bad link start"),
 
-	LinkOverVoltage(8, "Link over voltage"),
+	InvalidSettings(8, "Invalid method/settings"),
 
-	LinkStarving(9, "Link starving"),
+	IslandDetected(9, "Island detected"),
 
-	LinkOverCurrent(10, "Link over current"),
+	AcUnderVoltageLevel1(10, "AC under voltage level 1 trip"),
 
-	IgbtVcesOverVoltage1(11, "IGBT VCES over voltage 1"),
+	AcUnderVoltageLevel2(11, "AC under voltage level 2 trip"),
 
-	IgbtVcesOverVoltage2(12, "IGBT VCES over voltage 2"),
+	AcUnderVoltageLevel3(12, "AC under voltage level 3 trip"),
 
-	IgbtVcesOverVoltage3(13, "IGBT VCES over voltage 3"),
+	AcUnderVoltageLevel4(13, "AC under voltage level 4 trip"),
 
-	IgbtVcesOverVoltage4(14, "IGBT VCES over voltage 4"),
+	AcOverVoltageLevel1(14, "AC over voltage level 1 trip"),
 
-	AcAbHardSwitch(15, "AC A-B hard switch");
+	AcOverVoltageLevel2(15, "AC over voltage level 2 trip");
 
 	private final int code;
 	private final String description;
 
-	private Stability30cFault0(int code, String description) {
+	private Stabiliti30cFault1(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
 
-	/**
-	 * Get the code for this condition.
-	 * 
-	 * @return the code
-	 */
+	@Override
 	public int getCode() {
 		return code;
 	}
 
-	/**
-	 * Get a description.
-	 * 
-	 * @return the description
-	 */
-	public final String getDescription() {
+	@Override
+	public String getDescription() {
 		return description;
 	}
 
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getFaultGroup() {
+		return 1;
 	}
 
 	/**
@@ -105,16 +100,16 @@ public enum Stability30cFault0 implements Bitmaskable {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static Stability30cFault0 forCode(int code) {
+	public static Stabiliti30cFault1 forCode(int code) {
 		if ( code == 0 ) {
 			return null;
 		}
-		for ( Stability30cFault0 c : values() ) {
+		for ( Stabiliti30cFault1 c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("Stability30cFault0 code [" + code + "] not supported");
+		throw new IllegalArgumentException("Stabiliti30cFault1 code [" + code + "] not supported");
 	}
 
 }

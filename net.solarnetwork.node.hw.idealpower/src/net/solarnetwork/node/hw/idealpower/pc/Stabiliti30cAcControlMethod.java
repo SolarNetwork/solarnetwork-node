@@ -1,5 +1,5 @@
 /* ==================================================================
- * Stability30cAcControlMethod.java - 27/08/2019 4:11:12 pm
+ * Stabiliti30cAcControlMethod.java - 27/08/2019 4:11:12 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.idealpower.pc;
  * @author matt
  * @version 1.0
  */
-public enum Stability30cAcControlMethod {
+public enum Stabiliti30cAcControlMethod {
 
 	Idle(0x0000, "Idle"),
 
@@ -41,7 +41,7 @@ public enum Stability30cAcControlMethod {
 	private final int code;
 	private final String description;
 
-	private Stability30cAcControlMethod(int code, String description) {
+	private Stabiliti30cAcControlMethod(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
@@ -73,14 +73,14 @@ public enum Stability30cAcControlMethod {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static Stability30cAcControlMethod forCode(int code) {
-		for ( Stability30cAcControlMethod c : values() ) {
+	public static Stabiliti30cAcControlMethod forCode(int code) {
+		for ( Stabiliti30cAcControlMethod c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
 		throw new IllegalArgumentException(
-				"Stability30cAcControlMethod code [" + code + "] not supported");
+				"Stabiliti30cAcControlMethod code [" + code + "] not supported");
 	}
 
 }
