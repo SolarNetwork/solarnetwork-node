@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.idealpower.pc;
 
 import java.util.Set;
 import java.util.SortedSet;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
@@ -54,6 +55,57 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	 */
 	Integer getP1ActivePower();
 
+	/**
+	 * Get the P1 control method.
+	 * 
+	 * @return the control method
+	 */
+	Stabiliti30cAcControlMethod getP1ControlMethod();
+
+	/**
+	 * Get the P1 active (real) power setpoint for voltage-following mode.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP1ControlMethod()} is
+	 * {@link Stabiliti30cAcControlMethod#GridPower} or
+	 * {@link Stabiliti30cAcControlMethod#FacilityPower}.
+	 * </p>
+	 * 
+	 * @return the active power setpoint, in watts
+	 */
+	Integer getP1ActivePowerSetpoint();
+
+	/**
+	 * Get the P1 line-to-line voltage setpoint for voltage-forming mode.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP1ControlMethod()} is
+	 * {@link Stabiliti30cAcControlMethod#FacilityPower}.
+	 * </p>
+	 * 
+	 * @return the active power setpoint, in volts
+	 */
+	Integer getP1VoltageSetpoint();
+
+	/**
+	 * Get the P1 AC frequency setpoint for voltage-forming mode.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP1ControlMethod()} is
+	 * {@link Stabiliti30cAcControlMethod#FacilityPower}.
+	 * </p>
+	 * 
+	 * @return the frequency setpoint, in hertz
+	 */
+	Float getP1FrequencySetpoint();
+
+	/**
+	 * Get the P1 current soft limit, in amps.
+	 * 
+	 * @return the current limit
+	 */
+	Float getP1CurrentLimit();
+
 	/* === Port 2 === */
 
 	/**
@@ -75,6 +127,72 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	 * Get the P2 current, in amps.
 	 */
 	Float getP2Current();
+
+	/**
+	 * Get the P2 control method.
+	 * 
+	 * @return the control method
+	 */
+	Stabiliti30cDcControlMethod getP2ControlMethod();
+
+	/**
+	 * Get the P2 current limit.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP2ControlMethod()} is
+	 * {@link Stabiliti30cDcControlMethod#DcCurrent}.
+	 * </p>
+	 * 
+	 * @return the current setpoint, in amps
+	 */
+	Float getP2CurrentSetpoint();
+
+	/**
+	 * Get the P2 power setpoint.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP2ControlMethod()} is
+	 * {@link Stabiliti30cDcControlMethod#DcPower}.
+	 * </p>
+	 * 
+	 * @return the power setpoint, in watts
+	 */
+	Integer getP2PowerSetpoint();
+
+	/**
+	 * Get the P2 maximum DC operating voltage.
+	 * 
+	 * @return the voltage limit, in volts
+	 */
+	Integer getP2VoltageMaximumLimit();
+
+	/**
+	 * Get the P2 minimum DC operating voltage.
+	 * 
+	 * @return the voltage limit, in volts
+	 */
+	Integer getP2VoltageMinimumLimit();
+
+	/**
+	 * Get the P2 import (discharge) soft power limit.
+	 * 
+	 * @return the power limit, in watts
+	 */
+	Integer getP2ImportPowerLimit();
+
+	/**
+	 * Get the P2 export (charge) soft power limit.
+	 * 
+	 * @return the power limit, in watts
+	 */
+	Integer getP2ExportPowerLimit();
+
+	/**
+	 * Get the P2 current soft limit absolute value.
+	 * 
+	 * @return the current limit, in amps
+	 */
+	Float getP2CurrentLimit();
 
 	/* === Port 3 === */
 
@@ -98,6 +216,77 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	 * @return the current
 	 */
 	Float getP3Current();
+
+	/**
+	 * Get the P3 control method.
+	 * 
+	 * @return the control method
+	 */
+	Stabiliti30cDcControlMethod getP3ControlMethod();
+
+	/**
+	 * Get the P3 MPPT start time offset.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP3ControlMethod()} is
+	 * {@link Stabiliti30cDcControlMethod#Mppt}.
+	 * </p>
+	 * 
+	 * @return the time offset, in minutes from midnight
+	 */
+	Integer getP3MpptStartTimeOffsetSetpoint();
+
+	/**
+	 * Get the P3 MPPT stop time offset.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP3ControlMethod()} is
+	 * {@link Stabiliti30cDcControlMethod#Mppt}.
+	 * </p>
+	 * 
+	 * @return the time offset, in minutes from midnight
+	 */
+	Integer getP3MpptStopTimeOffsetSetpoint();
+
+	/**
+	 * Get the P3 MPPT stop time offset.
+	 * 
+	 * <p>
+	 * This setpoint applies if {@link #getP3ControlMethod()} is
+	 * {@link Stabiliti30cDcControlMethod#Mppt}.
+	 * </p>
+	 * 
+	 * @return the voltage minimum, in volts
+	 */
+	Integer getP3MpptVoltageMinimumSetpoint();
+
+	/**
+	 * Get the P3 maximum voltage.
+	 * 
+	 * @return the voltage maximum, in volts
+	 */
+	Integer getP3VoltageMaximum();
+
+	/**
+	 * Get the P3 minimum voltage.
+	 * 
+	 * @return the voltage minimum, in volts
+	 */
+	Integer getP3VoltageMinimum();
+
+	/**
+	 * Get the P3 import soft power limit.
+	 * 
+	 * @return the power limit, in watts
+	 */
+	Integer getP3ImportPowerLimit();
+
+	/**
+	 * Get the P3 current soft limit absolute value.
+	 * 
+	 * @return the current limit, in amps
+	 */
+	Float getP3CurrentLimit();
 
 	/* === Device information === */
 
@@ -123,6 +312,13 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	String getCommunicationsVersion();
 
 	/* === Operational status === */
+
+	/**
+	 * Get the standardized operating state.
+	 * 
+	 * @return the operating state
+	 */
+	DeviceOperatingState getDeviceOperatingState();
 
 	/**
 	 * Get the system information.

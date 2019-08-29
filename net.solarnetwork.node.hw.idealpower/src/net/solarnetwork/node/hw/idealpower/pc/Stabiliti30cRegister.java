@@ -81,7 +81,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P3 power, negative when importing from PV, in deca-watts. */
 	PowerControlP3Power(249, Int16),
 
-	/** P3 current, in centi-amps. */
+	/** P3 current, in deci-amps. */
 	PowerControlP3Current(250, Int16),
 
 	/** The active fault group 0, see {@link Stabiliti30cFault0}. */
@@ -135,14 +135,14 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 */
 	ControlP1FrequencySetpoint(72, Int16),
 
-	/** Soft current limit, in centi-amps. */
+	/** Soft current limit, in deci-amps. */
 	ControlP1CurrentLimit(90, Int16),
 
 	/** P2 control method, see {@link Stabiliti30cDcControlMethod}. */
 	ControlP2ControlMethod(129, UInt16),
 
 	/**
-	 * P2 current setpoint if the P2 control method is Current, in centi-amps.
+	 * P2 current setpoint if the P2 control method is Current, in deci-amps.
 	 */
 	ControlP2CurrentSetpoint(132, Int16),
 
@@ -161,7 +161,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P2 export (charge) soft power limit, in deca-watts. */
 	ControlP2ExportPowerLimit(153, Int16),
 
-	/** P2 soft current limit absolute value, in centi-amps. */
+	/** P2 soft current limit absolute value, in deci-amps. */
 	ControlP2CurrentLimit(154, UInt16),
 
 	/** Command, see {@link Stabiliti30cCommand}. */
@@ -194,8 +194,14 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	/** P3 import soft power limit, in deca-watts. */
 	ControlP3ImportPowerLimit(216, Int16),
 
-	/** P3 soft current limit absolute value, in centi-amps. */
+	/** P3 soft current limit absolute value, in deci-amps. */
 	ControlP3CurrentLimit(218, UInt16),
+
+	/** Initiate manual control mode. */
+	ControlManualModeStart(263, UInt16),
+
+	/** End manual control mode. */
+	ControlManualModeStop(264, UInt16),
 
 	/**
 	 * Set which fault to show information for in the other {@code FaultStatus*}
