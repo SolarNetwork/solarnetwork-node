@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.util.Set;
 import bak.pcj.set.IntRange;
 import bak.pcj.set.IntRangeSet;
 
@@ -29,7 +30,7 @@ import bak.pcj.set.IntRangeSet;
  * Utilities for the {@link IntRangeSet} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.8
  */
 public final class IntRangeSetUtils {
@@ -96,6 +97,67 @@ public final class IntRangeSetUtils {
 			result.addAll(currRange);
 		}
 		return result;
+	}
+
+	/**
+	 * Create a Modbus register address set from enum {@link ModbusReference}
+	 * values.
+	 * 
+	 * @param <T>
+	 *        the enum type that also implements {@link ModbusReference}
+	 * @param clazz
+	 *        the enum class to extract the register set from
+	 * @param prefixes
+	 *        an optional set of enum prefixes to restrict the result to; if not
+	 *        provided then all enum values will be included
+	 * @return the range set, never {@literal null}
+	 * @see #createRegisterAddressSet(ModbusReference[], Set)
+	 * @since 1.1
+	 */
+	public static <T extends Enum<?> & ModbusReference> IntRangeSet createRegisterAddressSet(
+			Class<T> clazz, Set<String> prefixes) {
+		return createRegisterAddressSet(clazz.getEnumConstants(), prefixes);
+	}
+
+	/**
+	 * Create a Modbus register address set from enum {@link ModbusReference}
+	 * values.
+	 * 
+	 * @param <T>
+	 *        the enum type that also implements {@link ModbusReference}
+	 * @param clazz
+	 *        the enum class to extract the register set from
+	 * @param prefixes
+	 *        an optional set of enum prefixes to restrict the result to, which
+	 *        are compared to the {@link Object#toString()} value of each
+	 *        {@link ModbusReference} in {@code refs}; if not provided then all
+	 *        values will be included
+	 * @return the range set, never {@literal null}
+	 * @since 1.1
+	 */
+	public static IntRangeSet createRegisterAddressSet(ModbusReference[] refs, Set<String> prefixes) {
+		IntRangeSet set = new IntRangeSet();
+		for ( ModbusReference r : refs ) {
+			if ( prefixes != null ) {
+				String name = r.toString();
+				boolean found = false;
+				for ( String prefix : prefixes ) {
+					if ( name.startsWith(prefix) ) {
+						found = true;
+						break;
+					}
+				}
+				if ( !found ) {
+					continue;
+				}
+			}
+
+			int len = r.getWordLength();
+			if ( len > 0 ) {
+				set.addAll(r.getAddress(), r.getAddress() + len - 1);
+			}
+		}
+		return set;
 	}
 
 }
