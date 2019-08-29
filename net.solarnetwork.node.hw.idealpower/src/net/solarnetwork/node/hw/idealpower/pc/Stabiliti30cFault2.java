@@ -22,6 +22,11 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort0;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort1;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort2;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Info;
+
 /**
  * Bitmask enumeration of fault 2 codes.
  * 
@@ -30,44 +35,50 @@ package net.solarnetwork.node.hw.idealpower.pc;
  */
 public enum Stabiliti30cFault2 implements Stabiliti30cFault {
 
-	AcOverVoltageLevel3(0, "AC over voltage level 3 trip"),
+	AcOverVoltageLevel3(0, "AC over voltage level 3 trip", Abort0),
 
-	AcOverVoltageLevel4(1, "AC over voltage level 4 trip"),
+	AcOverVoltageLevel4(1, "AC over voltage level 4 trip", Abort0),
 
-	AcUnderFrequencyLevel1(2, "AC under frequency level 1 trip"),
+	AcUnderFrequencyLevel1(2, "AC under frequency level 1 trip", Abort0),
 
-	AcUnderFrequencyLevel2(3, "AC under frequency level 2 trip"),
+	AcUnderFrequencyLevel2(3, "AC under frequency level 2 trip", Abort0),
 
-	AcUnderFrequencyLevel3(4, "AC under frequency level 3 trip"),
+	AcUnderFrequencyLevel3(4, "AC under frequency level 3 trip", Abort0),
 
-	AcUnderFrequencyLevel4(5, "AC under frequency level 4 trip"),
+	AcUnderFrequencyLevel4(5, "AC under frequency level 4 trip", Abort0),
 
-	AcOverFrequencyLevel1(6, "AC over frequency level 1 trip"),
+	AcOverFrequencyLevel1(6, "AC over frequency level 1 trip", Abort0),
 
-	AcOverFrequencyLevel2(7, "AC over frequency level 2 trip"),
+	AcOverFrequencyLevel2(7, "AC over frequency level 2 trip", Abort0),
 
-	AcOverFrequencyLevel3(8, "AC over frequency level 3 trip"),
+	AcOverFrequencyLevel3(8, "AC over frequency level 3 trip", Abort0),
 
-	AcOverFrequencyLevel4(9, "AC over frequency level 4 trip"),
+	AcOverFrequencyLevel4(9, "AC over frequency level 4 trip", Abort0),
 
-	WatchdogTimeout(10, "Watchdog timeout"),
+	WatchdogTimeout(10, "Watchdog timeout", Abort2),
 
-	EmergencyStop(11, "Emergency stop active"),
+	EmergencyStop(11, "Emergency stop active", Abort0),
 
-	SensingFault(12, "Sensing fault"),
+	SensingFault(12, "Sensing fault", Abort2),
 
-	ArcFault(13, "Arc fault"),
+	ArcFault(13, "Arc fault", Abort0),
 
-	CommsProcessorInitiatedShutdown(14, "Comms processor initiated shutdown"),
+	CommsProcessorInitiatedShutdown(14, "Comms processor initiated shutdown", Abort2),
 
-	Surge(15, "Surge detect");
+	Surge(15, "Surge detect", Abort1);
 
 	private final int code;
 	private final String description;
+	private final Stabiliti30cFaultSeverity severity;
 
 	private Stabiliti30cFault2(int code, String description) {
+		this(code, description, Info);
+	}
+
+	private Stabiliti30cFault2(int code, String description, Stabiliti30cFaultSeverity severity) {
 		this.code = code;
 		this.description = description;
+		this.severity = severity;
 	}
 
 	@Override
@@ -78,6 +89,11 @@ public enum Stabiliti30cFault2 implements Stabiliti30cFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Stabiliti30cFaultSeverity getSeverity() {
+		return severity;
 	}
 
 	@Override

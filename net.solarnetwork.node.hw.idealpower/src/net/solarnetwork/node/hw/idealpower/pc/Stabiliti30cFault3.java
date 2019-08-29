@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort1;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort2;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Info;
+
 /**
  * Bitmask enumeration of fault 3 codes.
  * 
@@ -30,26 +34,32 @@ package net.solarnetwork.node.hw.idealpower.pc;
  */
 public enum Stabiliti30cFault3 implements Stabiliti30cFault {
 
-	AcSwitchBreakdownVoltageExceeded(0, "AC switch breakdown voltage exceeded"),
+	AcSwitchBreakdownVoltageExceeded(0, "AC switch breakdown voltage exceeded", Abort2),
 
-	DcSwitchBreakdownVoltageExceeded(1, "DC switch breakdown voltage exceeded"),
+	DcSwitchBreakdownVoltageExceeded(1, "DC switch breakdown voltage exceeded", Abort2),
 
-	PrechargeTimeout(2, "Precharge timeout"),
+	PrechargeTimeout(2, "Precharge timeout", Abort2),
 
-	AcToLinkPrimaryHighVoltage(3, "AC to link primary high voltage"),
+	AcToLinkPrimaryHighVoltage(3, "AC to link primary high voltage", Abort2),
 
-	AcLineToLineInstantaneousOverVoltage(4, "AC line to line instantaneous over voltage"),
+	AcLineToLineInstantaneousOverVoltage(4, "AC line to line instantaneous over voltage", Abort1),
 
-	LicenseFault(5, "License fault"),
+	LicenseFault(5, "License fault", Abort2),
 
-	GridAckTimeout(6, "Grid_Ack timeout");
+	GridAckTimeout(6, "Grid_Ack timeout", Abort1);
 
 	private final int code;
 	private final String description;
+	private final Stabiliti30cFaultSeverity severity;
 
 	private Stabiliti30cFault3(int code, String description) {
+		this(code, description, Info);
+	}
+
+	private Stabiliti30cFault3(int code, String description, Stabiliti30cFaultSeverity severity) {
 		this.code = code;
 		this.description = description;
+		this.severity = severity;
 	}
 
 	@Override
@@ -60,6 +70,11 @@ public enum Stabiliti30cFault3 implements Stabiliti30cFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Stabiliti30cFaultSeverity getSeverity() {
+		return severity;
 	}
 
 	@Override

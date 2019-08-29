@@ -22,6 +22,11 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort1;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort2;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Info;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Lockdown;
+
 /**
  * Bitmask enumeration of fault 0 codes.
  * 
@@ -30,44 +35,50 @@ package net.solarnetwork.node.hw.idealpower.pc;
  */
 public enum Stabiliti30cFault0 implements Stabiliti30cFault {
 
-	GfdiFault(0, "GFDI fault (grounded DC)"),
+	GfdiFault(0, "GFDI fault (grounded DC)", Lockdown),
 
-	ImiFault(1, "IMI fault (floating DC)"),
+	ImiFault(1, "IMI fault (floating DC)", Lockdown),
 
-	PowerModuleHeatsinkTemperatureFault(2, "Power module heatsink temperature fault"),
+	PowerModuleHeatsinkTemperatureFault(2, "Power module heatsink temperature fault", Abort1),
 
-	ControlBoardTemperatureFault(3, "Control board temperature fault"),
+	ControlBoardTemperatureFault(3, "Control board temperature fault", Abort1),
 
-	AuxSupplyUnderVoltage(4, "24V auxiliary supply under voltage"),
+	AuxSupplyUnderVoltage(4, "24V auxiliary supply under voltage", Abort1),
 
-	FanFault(5, "Fan fault"),
+	FanFault(5, "Fan fault", Lockdown),
 
-	DcDiffOverVoltage(6, "DC differential over voltage"),
+	DcDiffOverVoltage(6, "DC differential over voltage", Abort1),
 
-	DcDiffUnderVoltage(7, "DC differential under voltage"),
+	DcDiffUnderVoltage(7, "DC differential under voltage", Abort1),
 
-	LinkOverVoltage(8, "Link over voltage"),
+	LinkOverVoltage(8, "Link over voltage", Abort2),
 
-	LinkStarving(9, "Link starving"),
+	LinkStarving(9, "Link starving", Abort2),
 
-	LinkOverCurrent(10, "Link over current"),
+	LinkOverCurrent(10, "Link over current", Abort2),
 
-	IgbtVcesOverVoltage1(11, "IGBT VCES over voltage 1"),
+	IgbtVcesOverVoltage1(11, "IGBT VCES over voltage 1", Abort2),
 
-	IgbtVcesOverVoltage2(12, "IGBT VCES over voltage 2"),
+	IgbtVcesOverVoltage2(12, "IGBT VCES over voltage 2", Abort2),
 
-	IgbtVcesOverVoltage3(13, "IGBT VCES over voltage 3"),
+	IgbtVcesOverVoltage3(13, "IGBT VCES over voltage 3", Abort2),
 
-	IgbtVcesOverVoltage4(14, "IGBT VCES over voltage 4"),
+	IgbtVcesOverVoltage4(14, "IGBT VCES over voltage 4", Abort2),
 
-	AcAbHardSwitch(15, "AC A-B hard switch");
+	AcAbHardSwitch(15, "AC A-B hard switch", Abort2);
 
 	private final int code;
 	private final String description;
+	private final Stabiliti30cFaultSeverity severity;
 
 	private Stabiliti30cFault0(int code, String description) {
+		this(code, description, Info);
+	}
+
+	private Stabiliti30cFault0(int code, String description, Stabiliti30cFaultSeverity severity) {
 		this.code = code;
 		this.description = description;
+		this.severity = severity;
 	}
 
 	@Override
@@ -78,6 +89,11 @@ public enum Stabiliti30cFault0 implements Stabiliti30cFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Stabiliti30cFaultSeverity getSeverity() {
+		return severity;
 	}
 
 	@Override

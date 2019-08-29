@@ -68,4 +68,11 @@ public interface Stabiliti30cFault extends Bitmaskable {
 	 */
 	String getDescription();
 
+	/**
+	 * Get the severity of the fault.
+	 * 
+	 * @return the severity
+	 */
+	Stabiliti30cFaultSeverity getSeverity();
+
 }

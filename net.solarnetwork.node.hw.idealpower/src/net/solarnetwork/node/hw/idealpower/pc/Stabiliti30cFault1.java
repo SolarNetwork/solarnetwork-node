@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort0;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Abort2;
+import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cFaultSeverity.Info;
+
 /**
  * Bitmask enumeration of fault 1 codes.
  * 
@@ -30,44 +34,50 @@ package net.solarnetwork.node.hw.idealpower.pc;
  */
 public enum Stabiliti30cFault1 implements Stabiliti30cFault {
 
-	AcBcHardSwitch(0, "AC B-C hard switch"),
+	AcBcHardSwitch(0, "AC B-C hard switch", Abort2),
 
-	AcCaHardSwitch(1, "AC C-A hard switch"),
+	AcCaHardSwitch(1, "AC C-A hard switch", Abort2),
 
-	Dc2InputHardSwitch(2, "DC2 input hard switch"),
+	Dc2InputHardSwitch(2, "DC2 input hard switch", Abort2),
 
-	Dc2OutputHardSwitch(3, "DC2 output hard switch"),
+	Dc2OutputHardSwitch(3, "DC2 output hard switch", Abort2),
 
-	Dc3InputHardSwitch(4, "DC3 input hard switch"),
+	Dc3InputHardSwitch(4, "DC3 input hard switch", Abort2),
 
-	Dc3OutputHardSwitch(5, "DC3 output hard switch"),
+	Dc3OutputHardSwitch(5, "DC3 output hard switch", Abort2),
 
-	LinkStateTimerCheck(6, "Link state timer check"),
+	LinkStateTimerCheck(6, "Link state timer check", Abort2),
 
-	BadLinkStart(7, "Bad link start"),
+	BadLinkStart(7, "Bad link start", Abort2),
 
-	InvalidSettings(8, "Invalid method/settings"),
+	InvalidSettings(8, "Invalid method/settings", Abort2),
 
-	IslandDetected(9, "Island detected"),
+	IslandDetected(9, "Island detected", Abort0),
 
-	AcUnderVoltageLevel1(10, "AC under voltage level 1 trip"),
+	AcUnderVoltageLevel1(10, "AC under voltage level 1 trip", Abort0),
 
-	AcUnderVoltageLevel2(11, "AC under voltage level 2 trip"),
+	AcUnderVoltageLevel2(11, "AC under voltage level 2 trip", Abort0),
 
-	AcUnderVoltageLevel3(12, "AC under voltage level 3 trip"),
+	AcUnderVoltageLevel3(12, "AC under voltage level 3 trip", Abort0),
 
-	AcUnderVoltageLevel4(13, "AC under voltage level 4 trip"),
+	AcUnderVoltageLevel4(13, "AC under voltage level 4 trip", Abort0),
 
-	AcOverVoltageLevel1(14, "AC over voltage level 1 trip"),
+	AcOverVoltageLevel1(14, "AC over voltage level 1 trip", Abort0),
 
-	AcOverVoltageLevel2(15, "AC over voltage level 2 trip");
+	AcOverVoltageLevel2(15, "AC over voltage level 2 trip", Abort0);
 
 	private final int code;
 	private final String description;
+	private final Stabiliti30cFaultSeverity severity;
 
 	private Stabiliti30cFault1(int code, String description) {
+		this(code, description, Info);
+	}
+
+	private Stabiliti30cFault1(int code, String description, Stabiliti30cFaultSeverity severity) {
 		this.code = code;
 		this.description = description;
+		this.severity = severity;
 	}
 
 	@Override
@@ -78,6 +88,11 @@ public enum Stabiliti30cFault1 implements Stabiliti30cFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Stabiliti30cFaultSeverity getSeverity() {
+		return severity;
 	}
 
 	@Override

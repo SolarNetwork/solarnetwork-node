@@ -22,10 +22,14 @@
 
 package net.solarnetwork.node.hw.idealpower.pc;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import java.util.HashSet;
+import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
@@ -55,7 +59,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	InfoSerialNumber(2001, 8, StringAscii),
 
 	/** P1 port type, see {@link Stabiliti30cAcPortType}. */
-	SetupP1PortType(64, UInt16),
+	ConfigP1PortType(64, UInt16),
 
 	/** P1 real power, positive when exporting to grid, in deca-watts. */
 	PowerControlP1RealPower(119, Int16),
@@ -268,4 +272,78 @@ public enum Stabiliti30cRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
+	private static final IntRangeSet POWER_CONTROL_REGISTER_ADDRESS_SET = createPowerControlRegisterAddressSet();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
+
+	private static IntRangeSet createConfigRegisterAddressSet() {
+		return createRegisterAddressSet(Stabiliti30cRegister.class,
+				new HashSet<>(asList("Info", "Config")));
+	}
+
+	private static IntRangeSet createPowerControlRegisterAddressSet() {
+		return createRegisterAddressSet(Stabiliti30cRegister.class,
+				new HashSet<>(asList("PowerControl", "Status")));
+	}
+
+	private static IntRangeSet createControlRegisterAddressSet() {
+		return createRegisterAddressSet(Stabiliti30cRegister.class, new HashSet<>(asList("Control")));
+	}
+
+	/**
+	 * Get an address range set that covers all the registers defined in this
+	 * enumeration <b>except<b> controls.
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getRegisterAddressSet() {
+		IntRangeSet s = new IntRangeSet(CONFIG_REGISTER_ADDRESS_SET);
+		s.addAll(POWER_CONTROL_REGISTER_ADDRESS_SET);
+		return s;
+	}
+
+	/**
+	 * Get an address range set that covers all the configuration and info
+	 * registers defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getConfigRegisterAddressSet() {
+		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the power control registers
+	 * defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getPowerControlRegisterAddressSet() {
+		return (IntRangeSet) POWER_CONTROL_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the control registers defined in
+	 * this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getControlRegisterAddressSet() {
+		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
+	}
 }

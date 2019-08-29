@@ -41,6 +41,83 @@ public final class Stabiliti30cUtils {
 	/** A comparator of faults by their numbers in ascending order. */
 	public static final Comparator<Stabiliti30cFault> SORT_BY_FAULT_NUMBER = new SortByFaultNumber();
 
+	/**
+	 * A comparator of faults by their severity in descending order, then
+	 * numbers in ascending order.
+	 */
+	public static final Comparator<Stabiliti30cFault> SORT_BY_FAULT_SEVERITY = new SortByFaultSeverity();
+
+	/**
+	 * A {@link Stabiliti30cFault} that can be used when sorting/filtering
+	 * faults by severity.
+	 * 
+	 * <p>
+	 * For example, you could use this fault to extract the tail set of faults
+	 * with this severity or higher, like this:
+	 * </p>
+	 * 
+	 * <pre>
+	 * <code>
+	 * SortedSet&lt;Stabiliti30cFault&gt; faults = getFaults();
+	 * SortedSet&lt;Stabiliti30cFault&gt; faultsBySeverity = new TreeSet<>(SORT_BY_FAULT_SEVERITY);
+	 * faultsBySeverity.addAll(faults);
+	 * SortedSet&lt;Stabiliti30cFault&gt; severeFaults = faults.tailSet(ABORT2_SEVERITY);
+	 * </code>
+	 * </pre>
+	 */
+	public static final Stabiliti30cFault ABORT2_SEVERITY = new FaultSeverity(
+			Stabiliti30cFaultSeverity.Abort2);
+
+	/**
+	 * A utility implementation of {@link Stabiliti30cFault} to help with
+	 * filtering by severity.
+	 */
+	private static class FaultSeverity implements Stabiliti30cFault {
+
+		private final Stabiliti30cFaultSeverity severity;
+
+		private FaultSeverity(Stabiliti30cFaultSeverity severity) {
+			super();
+			this.severity = severity;
+		}
+
+		@Override
+		public int bitmaskBitOffset() {
+			return -1;
+		}
+
+		@Override
+		public int getCode() {
+			return -1;
+		}
+
+		@Override
+		public int getFaultGroup() {
+			return -1;
+		}
+
+		@Override
+		public int getFaultNumber() {
+			return -1;
+		}
+
+		@Override
+		public String getDescription() {
+			return severity.toString();
+		}
+
+		@Override
+		public Stabiliti30cFaultSeverity getSeverity() {
+			return severity;
+		}
+
+		@Override
+		public String toString() {
+			return severity + " fault";
+		}
+
+	}
+
 	private static class SortByFaultNumber implements Comparator<Stabiliti30cFault> {
 
 		@Override
@@ -52,6 +129,36 @@ public final class Stabiliti30cUtils {
 			} else if ( o2 == null ) {
 				return 1;
 			}
+			int n1 = o1.getFaultNumber();
+			int n2 = o2.getFaultNumber();
+			return (n2 == n1 ? 0 : n1 < n2 ? -1 : 1);
+		}
+
+	}
+
+	private static class SortByFaultSeverity implements Comparator<Stabiliti30cFault> {
+
+		@Override
+		public int compare(Stabiliti30cFault o1, Stabiliti30cFault o2) {
+			if ( o1 == o2 ) {
+				return 0;
+			} else if ( o1 == null ) {
+				return -1;
+			} else if ( o2 == null ) {
+				return 1;
+			}
+			if ( o1.getSeverity() != null && o2.getSeverity() != null ) {
+				// first sort by severity in descending order
+				int s1 = o1.getSeverity().getCode();
+				int s2 = o2.getSeverity().getCode();
+				if ( s1 < s2 ) {
+					return 1;
+				} else if ( s1 > s2 ) {
+					return -1;
+				}
+			}
+
+			// then sort by number in ascending order
 			int n1 = o1.getFaultNumber();
 			int n2 = o2.getFaultNumber();
 			return (n2 == n1 ? 0 : n1 < n2 ? -1 : 1);
