@@ -314,6 +314,13 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	/* === Operational status === */
 
 	/**
+	 * Get the manual mode status.
+	 * 
+	 * @return {@code true} if the manual mode has been enabled
+	 */
+	boolean isManualModeEnabled();
+
+	/**
 	 * Get the standardized operating state.
 	 * 
 	 * @return the operating state

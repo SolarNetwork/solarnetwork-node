@@ -72,6 +72,7 @@ public class Stabiliti30cDataTests {
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(68), aryEq(new int[] { 0x0000 }));
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(199), aryEq(new int[] { 0x0000 }));
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(200), aryEq(new int[] { 1440 }));
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(263), aryEq(new int[] { 1 }));
 
 		// WHEN
 		replayAll();
@@ -88,6 +89,7 @@ public class Stabiliti30cDataTests {
 				acc.setP1ActivePowerSetpoint(0);
 				acc.setP3MpptStartTimeOffsetSetpoint(0);
 				acc.setP3MpptStopTimeOffsetSetpoint(1440);
+				acc.setManualModeEnabled(true);
 				return false;
 			}
 		});
@@ -105,6 +107,7 @@ public class Stabiliti30cDataTests {
 				equalTo(0));
 		assertThat("P3 MPPT stop time offset state updated", data.getP3MpptStopTimeOffsetSetpoint(),
 				equalTo(1440));
+		assertThat("Manual mode enabled", data.isManualModeEnabled(), equalTo(true));
 	}
 
 }

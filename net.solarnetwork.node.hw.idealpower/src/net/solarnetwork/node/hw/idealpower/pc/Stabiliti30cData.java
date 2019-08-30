@@ -387,6 +387,12 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	}
 
 	@Override
+	public boolean isManualModeEnabled() {
+		Number n = getNumber(Stabiliti30cRegister.ControlManualModeStart);
+		return (n != null && n.intValue() > 0);
+	}
+
+	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
 		Set<Stabiliti30cSystemInfo> infos = getSystemInfo();
 		if ( infos != null ) {
@@ -481,6 +487,17 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 			final int addr = register.getAddress();
 			conn.writeUnsignedShorts(WriteHoldingRegister, addr, data);
 			state.saveDataArray(data, addr);
+		}
+
+		@Override
+		public void setManualModeEnabled(boolean enabled) {
+			if ( enabled ) {
+				update(Stabiliti30cRegister.ControlUserStart, 1);
+				state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStop.getAddress());
+			} else {
+				update(Stabiliti30cRegister.ControlUserStop, 1);
+				state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStart.getAddress());
+			}
 		}
 
 		@Override

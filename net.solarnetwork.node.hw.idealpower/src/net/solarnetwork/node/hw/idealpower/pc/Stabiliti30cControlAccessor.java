@@ -30,6 +30,15 @@ package net.solarnetwork.node.hw.idealpower.pc;
  */
 public interface Stabiliti30cControlAccessor {
 
+	/**
+	 * Control manual mode.
+	 * 
+	 * @param enabled
+	 *        {@literal true} to start manual mode, {@literal false} to stop
+	 *        manual mode
+	 */
+	void setManualModeEnabled(boolean enabled);
+
 	/* === Port 1 === */
 
 	/**

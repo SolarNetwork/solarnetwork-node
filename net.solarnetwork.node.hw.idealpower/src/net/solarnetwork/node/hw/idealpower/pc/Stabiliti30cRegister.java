@@ -112,7 +112,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	ControlUserStart(263, UInt16),
 
 	/** Stop manual mode by setting to {@literal 1}. */
-	ControlUserSetop(264, UInt16),
+	ControlUserStop(264, UInt16),
 
 	/** P1 control method, see {@link Stabiliti30cAcControlMethod}. */
 	ControlP1ControlMethod(65, UInt16),
