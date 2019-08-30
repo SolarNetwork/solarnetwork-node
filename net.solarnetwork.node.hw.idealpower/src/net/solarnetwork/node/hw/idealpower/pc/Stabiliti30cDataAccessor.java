@@ -321,6 +321,14 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 	boolean isManualModeEnabled();
 
 	/**
+	 * Get the watchdog timeout value.
+	 * 
+	 * @return the watchdog timeout, in seconds; {@literal 0} means the timeout
+	 *         is diabled; {@literal -1} means a timeout fault has occurred
+	 */
+	Integer getWatchdogTimeout();
+
+	/**
 	 * Get the standardized operating state.
 	 * 
 	 * @return the operating state

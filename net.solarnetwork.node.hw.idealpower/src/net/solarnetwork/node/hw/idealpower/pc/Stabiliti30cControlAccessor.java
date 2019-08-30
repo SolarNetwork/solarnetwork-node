@@ -39,6 +39,15 @@ public interface Stabiliti30cControlAccessor {
 	 */
 	void setManualModeEnabled(boolean enabled);
 
+	/**
+	 * Update the watchdog timeout.
+	 * 
+	 * @param seconds
+	 *        the seconds to start counting from, or {@literal 0} to disable the
+	 *        timeout
+	 */
+	void setWatchdogTimeout(int seconds);
+
 	/* === Port 1 === */
 
 	/**

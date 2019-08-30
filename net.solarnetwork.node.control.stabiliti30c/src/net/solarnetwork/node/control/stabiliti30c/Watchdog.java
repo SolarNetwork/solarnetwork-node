@@ -1,0 +1,294 @@
+/* ==================================================================
+ * Watchdog.java - 30/08/2019 2:34:44 pm
+ * 
+ * Copyright 2019 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.control.stabiliti30c;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import org.springframework.context.MessageSource;
+import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cControlAccessor;
+import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cData;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+
+/**
+ * Component to integrate with the watchdog timer of the Stabiliti 30C series
+ * power control system.
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierProvider {
+
+	/** The default value for the {@code timeoutSeconds} property. */
+	public static final int DEFAULT_TIMEOUT_SECONDS = 900;
+
+	/** The default value for the {@code updateFrequency} property. */
+	public static final int DEFAULT_UPDATE_FREQUENCY = 60;
+
+	private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
+			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
+
+	private TaskScheduler taskScheduler;
+	private MessageSource messageSource;
+	private int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
+	private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
+
+	private boolean enabled = false;
+	private Instant lastUpdateTime;
+	private Exception lastUpdateError;
+	private ScheduledFuture<?> task;
+
+	@Override
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return null;
+	}
+
+	/**
+	 * Callback after properties have been changed.
+	 * 
+	 * @param properties
+	 *        the changed properties
+	 */
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		if ( enabled ) {
+			scheduleTask();
+		}
+	}
+
+	/**
+	 * Startup the watchdog task.
+	 * 
+	 * <p>
+	 * Call this method after the properties of this class have been configured,
+	 * to start execution of the watchdog task.
+	 * </p>
+	 */
+	public synchronized void startup() {
+		enabled = true;
+		scheduleTask();
+	}
+
+	public synchronized void shutdown() {
+		enabled = false;
+
+	}
+
+	private synchronized void unscheduleTask() {
+		if ( task != null ) {
+			task.cancel(true);
+			task = null;
+		}
+	}
+
+	private synchronized void scheduleTask() {
+		unscheduleTask();
+		task = taskScheduler.scheduleWithFixedDelay(new WatchdogTask(),
+				new Date(System.currentTimeMillis() + 5000), TimeUnit.SECONDS.toMillis(updateFrequency));
+	}
+
+	private class WatchdogTask implements Runnable {
+
+		@Override
+		public void run() {
+			final ModbusNetwork modbus = modbusNetwork();
+			final int unitId = getUnitId();
+			final int timeout = getTimeoutSeconds();
+			if ( modbus == null ) {
+				updateStatus(Instant.now(), new RuntimeException(messageSource
+						.getMessage("status.err.noModbusNetwork", null, Locale.getDefault())));
+				log.warn("No ModbusNetwork available for watchdog task for Stabiliti {}", unitId);
+				return;
+			}
+			log.info("Setting watchdog timeout to {}s on Stabiliti {}", timeout, modbusDeviceName());
+			try {
+				modbus.performAction(new ModbusConnectionAction<Void>() {
+
+					@Override
+					public Void doWithConnection(ModbusConnection conn) throws IOException {
+						Stabiliti30cControlAccessor acc = new Stabiliti30cData().controlAccessor(conn);
+						acc.setWatchdogTimeout(timeout);
+						return null;
+					}
+				}, unitId);
+				updateStatus(Instant.now(), null);
+			} catch ( Exception e ) {
+				updateStatus(Instant.now(), e);
+				log.error("Exception in watchdog task for Stabiliti {}: {}", modbusDeviceName(),
+						e.getMessage(), e);
+			}
+		}
+
+	}
+
+	private synchronized void updateStatus(Instant time, Exception error) {
+		lastUpdateTime = time;
+		lastUpdateError = error;
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.control.stabiliti30c.Watchdog";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Stabiliti 30C Watchdog";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
+
+		// get last update time
+		results.add(new BasicTitleSettingSpecifier("status", statusInfo(), true));
+
+		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+				"Modbus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(1)));
+
+		results.add(new BasicTextFieldSettingSpecifier("timeoutSeconds",
+				String.valueOf(DEFAULT_TIMEOUT_SECONDS)));
+
+		results.add(new BasicTextFieldSettingSpecifier("updateFrequency",
+				String.valueOf(DEFAULT_UPDATE_FREQUENCY)));
+
+		return results;
+	}
+
+	private String statusInfo() {
+		final Instant luTime;
+		final Exception luError;
+		synchronized ( this ) {
+			luTime = lastUpdateTime;
+			luError = lastUpdateError;
+		}
+		if ( luTime == null ) {
+			return "N/A";
+		}
+
+		final String ts = DATE_FORMAT.format(luTime);
+		if ( luError != null ) {
+			return messageSource.getMessage("status.msg.err",
+					new Object[] { ts, luError.getLocalizedMessage() }, Locale.getDefault());
+		}
+		return messageSource.getMessage("status.msg.ok", new Object[] { ts }, Locale.getDefault());
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set the message source to resolve messages with.
+	 * 
+	 * @param messageSource
+	 *        the message source
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set the task scheduler to use for the watchdog task.
+	 * 
+	 * @param taskScheduler
+	 *        the task scheduler
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the watchdog timeout value.
+	 * 
+	 * @return the watchdog timeout value, in seconds; defaults to
+	 *         {@link #DEFAULT_TIMEOUT_SECONDS}
+	 */
+	public int getTimeoutSeconds() {
+		return timeoutSeconds;
+	}
+
+	/**
+	 * Set the watchdog timeout value.
+	 * 
+	 * <p>
+	 * This is the number of seconds the Stabiliti should count down from, and
+	 * if not updated before it reaches zero to shut the system down. This value
+	 * should be larger than the configured {@code updateFrequency}.
+	 * </p>
+	 * 
+	 * @param timeoutSeconds
+	 *        the timeout value, in seconds
+	 */
+	public void setTimeoutSeconds(int timeoutSeconds) {
+		this.timeoutSeconds = timeoutSeconds;
+	}
+
+	/**
+	 * Get the watchdog update frequency.
+	 * 
+	 * @return the watchdog update frequency, in seconds; defaults to
+	 *         {@link #DEFAULT_UPDATE_FREQUENCY}
+	 */
+	public long getUpdateFrequency() {
+		return updateFrequency;
+	}
+
+	/**
+	 * Set the watchdog update frequency.
+	 * 
+	 * <p>
+	 * This is the frequency at which this component should reset the watchdog
+	 * timeout value on the Stabiliti to {@code timeoutSeconds}, essentially
+	 * resetting the count down timer. This value should be smaller than the
+	 * configured {@code timeoutSeconds}.
+	 * </p>
+	 * 
+	 * @param updateFrequency
+	 *        the update frequency, in seconds
+	 */
+	public void setUpdateFrequency(long updateFrequency) {
+		this.updateFrequency = updateFrequency;
+	}
+
+}

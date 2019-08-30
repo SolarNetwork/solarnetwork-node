@@ -393,6 +393,11 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	}
 
 	@Override
+	public Integer getWatchdogTimeout() {
+		return getValueAsInteger(Stabiliti30cRegister.ControlWatchdogSeconds);
+	}
+
+	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
 		Set<Stabiliti30cSystemInfo> infos = getSystemInfo();
 		if ( infos != null ) {
@@ -451,6 +456,17 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	}
 
 	/**
+	 * Get a control accessor that does not update local state.
+	 * 
+	 * @param conn
+	 *        the Modbus connection to use
+	 * @return the accessor
+	 */
+	public Stabiliti30cControlAccessor controlAccessor(ModbusConnection conn) {
+		return new ControlAccessor(conn, null);
+	}
+
+	/**
 	 * Get a control accessor.
 	 * 
 	 * <p>
@@ -486,18 +502,29 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 		private void update(final ModbusReference register, final int[] data) {
 			final int addr = register.getAddress();
 			conn.writeUnsignedShorts(WriteHoldingRegister, addr, data);
-			state.saveDataArray(data, addr);
+			if ( state != null ) {
+				state.saveDataArray(data, addr);
+			}
 		}
 
 		@Override
 		public void setManualModeEnabled(boolean enabled) {
 			if ( enabled ) {
 				update(Stabiliti30cRegister.ControlUserStart, 1);
-				state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStop.getAddress());
+				if ( state != null ) {
+					state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStop.getAddress());
+				}
 			} else {
 				update(Stabiliti30cRegister.ControlUserStop, 1);
-				state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStart.getAddress());
+				if ( state != null ) {
+					state.saveDataArray(new int[0], Stabiliti30cRegister.ControlUserStart.getAddress());
+				}
 			}
+		}
+
+		@Override
+		public void setWatchdogTimeout(int seconds) {
+			update(Stabiliti30cRegister.ControlWatchdogSeconds, seconds);
 		}
 
 		@Override
