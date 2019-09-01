@@ -57,7 +57,7 @@ import net.solarnetwork.node.support.JsonHttpClientSupport;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService {
 
@@ -65,7 +65,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
 
-	public SettingDao settingDao;
+	private SettingDao settingDao;
 
 	private String nodeSourceMetadataUrl(String sourceId) {
 		StringBuilder buf = new StringBuilder();
