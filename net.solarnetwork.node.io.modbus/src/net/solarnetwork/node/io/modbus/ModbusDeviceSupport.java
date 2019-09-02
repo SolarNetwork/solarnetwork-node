@@ -23,36 +23,26 @@
 package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based services.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>modbusNetwork</dt>
- * <dd>The {@link ModbusNetwork} to use.</dd>
- * <dt>unitId</dt>
- * <dd>The Modbus unit ID to communicate with.</dd>
- * <dt>uid</dt>
- * <dd>A service name to use.</dd>
- * <dt>groupUID</dt>
- * <dd>A service group to use.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
-public abstract class ModbusDeviceSupport {
+public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/** Key for the device name, as a String. */
 	public static final String INFO_KEY_DEVICE_NAME = "Name";
@@ -67,16 +57,48 @@ public abstract class ModbusDeviceSupport {
 	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
 
 	/**
+	 * The default value for the {@code unitId} property.
+	 * 
+	 * @since 1.2
+	 */
+	public static final int DEFAULT_UNIT_ID = 1;
+
+	/**
+	 * The default value for the {@link ModbusNetwork#getUID()} property filter
+	 * value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String DEFAULT_NETWORK_UID = "Modbus Port";
+
+	/**
 	 * Key for the device manufacture date, as a
 	 * {@link org.joda.time.ReadablePartial}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	private Map<String, Object> deviceInfo;
-	private int unitId = 1;
-	private String uid;
-	private String groupUID;
+	private int unitId = DEFAULT_UNIT_ID;
 	private OptionalService<ModbusNetwork> modbusNetwork;
+
+	/**
+	 * Get setting specifiers for the {@literal unitId} and
+	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.2
+	 */
+	public static List<SettingSpecifier> modbusNetworkSettings(String prefix) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['UID']",
+				DEFAULT_NETWORK_UID));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "unitId", String.valueOf(DEFAULT_UNIT_ID)));
+		return results;
+	}
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -176,7 +198,7 @@ public abstract class ModbusDeviceSupport {
 				});
 				deviceInfo = info;
 			} catch ( IOException e ) {
-				log.warn("Communcation problem with {}: {}", uid, e.getMessage());
+				log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
 			}
 		}
 		return (info == null ? null : Collections.unmodifiableMap(info));
@@ -237,42 +259,43 @@ public abstract class ModbusDeviceSupport {
 	}
 
 	/**
-	 * Get a UID value. Returns {@link #getUid()}.
+	 * Get the Modbus network to use.
 	 * 
-	 * @return UID
+	 * @return the network
 	 */
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
 	public OptionalService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
+	/**
+	 * Set the Modbus network to use.
+	 * 
+	 * @param modbusDevice
+	 *        the network
+	 */
 	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 
+	/**
+	 * Get the Modbus unit ID.
+	 * 
+	 * @return the unit ID; defaults to {@link #DEFAULT_UNIT_ID}
+	 */
 	public int getUnitId() {
 		return unitId;
 	}
 
+	/**
+	 * Set the Modbus unit ID.
+	 * 
+	 * <p>
+	 * The <i>unit ID</i> is the unique ID of the device on the Modbus network.
+	 * </p>
+	 * 
+	 * @param unitId
+	 *        the ID to use
+	 */
 	public void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
