@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
@@ -61,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ModbusToggler extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -79,7 +78,6 @@ public class ModbusToggler extends ModbusDeviceSupport
 	private ModbusWriteFunction function = ModbusWriteFunction.WriteCoil;
 	private String controlId = DEFAULT_CONTROL_ID;
 	private long sampleCacheMs = 5000;
-	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 
 	@Override
@@ -312,15 +310,6 @@ public class ModbusToggler extends ModbusDeviceSupport
 		results.add(functionSpec);
 
 		return results;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	public int getAddress() {

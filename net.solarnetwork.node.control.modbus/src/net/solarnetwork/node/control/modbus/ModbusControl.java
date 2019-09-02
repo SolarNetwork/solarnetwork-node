@@ -41,7 +41,6 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
@@ -74,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
@@ -87,7 +86,6 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 	private long sampleCacheMs = 5000;
 	private ModbusWritePropertyConfig[] propConfigs;
-	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 
 	private final ModbusData sample = new ModbusData();
@@ -602,15 +600,6 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				}));
 
 		return results;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	public OptionalService<EventAdmin> getEventAdmin() {
