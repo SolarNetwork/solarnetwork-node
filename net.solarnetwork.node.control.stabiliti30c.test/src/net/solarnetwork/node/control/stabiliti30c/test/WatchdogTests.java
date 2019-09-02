@@ -57,10 +57,10 @@ import net.solarnetwork.util.StaticOptionalService;
  */
 public class WatchdogTests {
 
-	private final int TEST_UNIT_ID = 2;
-	private final int TEST_TIMEOUT_SECS = 44;
-	private final long TEST_UPDATE_FREQ = 10;
-	private final int TEST_STARTUP_DELAY = 0;
+	private static final int TEST_UNIT_ID = 2;
+	private static final int TEST_TIMEOUT_SECS = 44;
+	private static final long TEST_UPDATE_FREQ = 10;
+	private static final int TEST_STARTUP_DELAY = 0;
 
 	private ModbusNetwork modbus;
 	private ModbusConnection conn;
