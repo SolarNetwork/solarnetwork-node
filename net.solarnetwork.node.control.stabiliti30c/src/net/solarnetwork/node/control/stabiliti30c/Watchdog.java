@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cControlAccessor;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cData;
@@ -66,7 +65,6 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
 	private TaskScheduler taskScheduler;
-	private MessageSource messageSource;
 	private int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
 	private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
 
@@ -131,7 +129,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			final int unitId = getUnitId();
 			final int timeout = getTimeoutSeconds();
 			if ( modbus == null ) {
-				updateStatus(Instant.now(), new RuntimeException(messageSource
+				updateStatus(Instant.now(), new RuntimeException(getMessageSource()
 						.getMessage("status.err.noModbusNetwork", null, Locale.getDefault())));
 				log.warn("No ModbusNetwork available for watchdog task for Stabiliti {}", unitId);
 				return;
@@ -207,25 +205,10 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 		final String ts = DATE_FORMAT.format(luTime);
 		if ( luError != null ) {
-			return messageSource.getMessage("status.msg.err",
+			return getMessageSource().getMessage("status.msg.err",
 					new Object[] { ts, luError.getLocalizedMessage() }, Locale.getDefault());
 		}
-		return messageSource.getMessage("status.msg.ok", new Object[] { ts }, Locale.getDefault());
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set the message source to resolve messages with.
-	 * 
-	 * @param messageSource
-	 *        the message source
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+		return getMessageSource().getMessage("status.msg.ok", new Object[] { ts }, Locale.getDefault());
 	}
 
 	/**
