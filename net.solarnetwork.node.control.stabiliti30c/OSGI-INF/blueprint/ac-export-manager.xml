@@ -46,7 +46,8 @@
 				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.control.stabiliti30c.AcExportManager" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.control.stabiliti30c.AcExportManager" 
+				init-method="startup" destroy-method="resetDeviceSettings">
 			<property name="messageSource" ref="acExportManagerMessageSource"/>
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="modbusNetwork">

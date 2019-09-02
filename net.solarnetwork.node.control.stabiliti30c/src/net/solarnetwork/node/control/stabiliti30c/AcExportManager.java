@@ -96,7 +96,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	/**
 	 * Call once before disposing of component.
 	 */
-	public void shutdown() {
+	public void resetDeviceSettings() {
 		try {
 			log.info("Resetting AC export power settings on Stabiliti {}", modbusDeviceName());
 			performAction(new ModbusConnectionAction<Void>() {
@@ -242,7 +242,11 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 			log.warn("ShedLoad target missing or not a number: {}", e.getMessage());
 			return null;
 		}
-		adjustAcExportPower(targetPower);
+		if ( targetPower.intValue() == 0 ) {
+			resetDeviceSettings();
+		} else {
+			adjustAcExportPower(targetPower);
+		}
 		return InstructionState.Completed;
 	}
 
