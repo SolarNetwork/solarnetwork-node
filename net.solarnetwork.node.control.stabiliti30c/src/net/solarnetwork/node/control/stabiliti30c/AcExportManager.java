@@ -304,7 +304,10 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		if ( sample.getP3ControlMethod() != Stabiliti30cDcControlMethod.Mppt ) {
 			acc.setP3ControlMethod(Stabiliti30cDcControlMethod.Mppt);
 		}
-		if ( targetPower != null && !targetPower.equals(sample.getP1ActivePowerSetpoint()) ) {
+
+		// 
+		if ( targetPower != null && (targetPower.intValue() == 0
+				|| !targetPower.equals(sample.getP1ActivePowerSetpoint())) ) {
 			acc.setP1ActivePowerSetpoint(targetPower);
 		}
 		// TODO: this needed? acc.setP3MpptStartTimeOffsetSetpoint(0);
