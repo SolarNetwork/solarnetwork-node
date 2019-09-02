@@ -98,6 +98,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	 */
 	public void shutdown() {
 		try {
+			log.info("Resetting AC export power settings on Stabiliti {}", modbusDeviceName());
 			performAction(new ModbusConnectionAction<Void>() {
 
 				@Override
@@ -127,6 +128,8 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
+				log.info("Configuring initial AC export power settings on Stabiliti {}",
+						modbusDeviceName());
 				setAcExportSettings(connection, sample, m, 0, false);
 				return false;
 			}
@@ -169,12 +172,14 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 	@Override
 	public List<String> getAvailableControlIds() {
+		final String controlId = getControlId();
 		return (controlId == null ? Collections.emptyList() : Collections.singletonList(controlId));
 	}
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		if ( this.controlId == null || !this.controlId.equals(controlId) ) {
+		final String myControlId = getControlId();
+		if ( myControlId == null || !myControlId.equals(controlId) ) {
 			return null;
 		}
 		return readCurrentDatum();
@@ -283,7 +288,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 	}
 
-	private void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
+	private synchronized void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
 			MutableModbusData m, Integer targetPower, boolean manualModeEnabled) {
 		Stabiliti30cControlAccessor acc = sample.controlAccessor(connection);
 		if ( sample.getP2ControlMethod() != Stabiliti30cDcControlMethod.Net ) {
@@ -303,7 +308,6 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		if ( manualModeEnabled != sample.isManualModeEnabled() ) {
 			acc.setManualModeEnabled(manualModeEnabled);
 		}
-
 	}
 
 	/* === SettingSpecifierProvider === */
