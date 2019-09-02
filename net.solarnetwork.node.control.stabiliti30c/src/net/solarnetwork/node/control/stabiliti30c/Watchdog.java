@@ -55,6 +55,11 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  */
 public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierProvider {
 
+	/**
+	 * The default value for the {@code startupDelaySeconds} property.
+	 */
+	public static final int DEFAULT_STARTUP_DELAY_SECONDS = 5;
+
 	/** The default value for the {@code timeoutSeconds} property. */
 	public static final int DEFAULT_TIMEOUT_SECONDS = 900;
 
@@ -65,6 +70,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
 	private TaskScheduler taskScheduler;
+	private int startupDelaySeconds = DEFAULT_STARTUP_DELAY_SECONDS;
 	private int timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
 	private long updateFrequency = DEFAULT_UPDATE_FREQUENCY;
 
@@ -118,7 +124,8 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 	private synchronized void scheduleTask() {
 		unscheduleTask();
 		task = taskScheduler.scheduleWithFixedDelay(new WatchdogTask(),
-				new Date(System.currentTimeMillis() + 5000), TimeUnit.SECONDS.toMillis(updateFrequency));
+				new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(startupDelaySeconds)),
+				TimeUnit.SECONDS.toMillis(updateFrequency));
 	}
 
 	private class WatchdogTask implements Runnable {
@@ -188,6 +195,9 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 		results.add(new BasicTextFieldSettingSpecifier("updateFrequency",
 				String.valueOf(DEFAULT_UPDATE_FREQUENCY)));
+
+		results.add(new BasicTextFieldSettingSpecifier("startupDelaySeconds",
+				String.valueOf(DEFAULT_STARTUP_DELAY_SECONDS)));
 
 		return results;
 	}
@@ -272,6 +282,26 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 	 */
 	public void setUpdateFrequency(long updateFrequency) {
 		this.updateFrequency = updateFrequency;
+	}
+
+	/**
+	 * Get the startup delay when scheduling the watchdog task.
+	 * 
+	 * @return the startup delay, in seconds; defaluts to
+	 *         {@link #DEFAULT_STARTUP_DELAY_SECONDS}
+	 */
+	public int getStartupDelaySeconds() {
+		return startupDelaySeconds;
+	}
+
+	/**
+	 * Get the startup delay for scheduling the watchdog task.
+	 * 
+	 * @param startupDelaySeconds
+	 *        the initial startup delay, in seconds
+	 */
+	public void setStartupDelaySeconds(int startupDelaySeconds) {
+		this.startupDelaySeconds = startupDelaySeconds;
 	}
 
 }
