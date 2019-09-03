@@ -310,9 +310,12 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 				|| !targetPower.equals(sample.getP1ActivePowerSetpoint())) ) {
 			acc.setP1ActivePowerSetpoint(targetPower);
 		}
+
 		// TODO: this needed? acc.setP3MpptStartTimeOffsetSetpoint(0);
 		// TODO: this needed? acc.setP3MpptStopTimeOffsetSetpoint(1440);
-		if ( manualModeEnabled != sample.isManualModeEnabled() ) {
+
+		if ( manualModeEnabled != sample.isManualModeEnabled()
+				|| (targetPower != null && (targetPower.intValue() == 0)) ) {
 			acc.setManualModeEnabled(manualModeEnabled);
 		}
 	}
