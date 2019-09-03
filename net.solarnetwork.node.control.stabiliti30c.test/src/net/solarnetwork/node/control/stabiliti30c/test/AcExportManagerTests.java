@@ -28,10 +28,14 @@ import static net.solarnetwork.node.io.modbus.ModbusWriteFunction.WriteHoldingRe
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.Date;
+import java.util.UUID;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -45,6 +49,9 @@ import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cRegister;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.util.StaticOptionalService;
 
@@ -101,6 +108,10 @@ public class AcExportManagerTests {
 
 	private void replayAll() {
 		EasyMock.replay(modbus, conn, eventAdmin, messageSource);
+	}
+
+	private void resetAll() {
+		EasyMock.reset(modbus, conn, eventAdmin, messageSource);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -190,13 +201,7 @@ public class AcExportManagerTests {
 				1)).andReturn(new int[] { data[Stabiliti30cRegister.StatusInfo.getAddress()] });
 	}
 
-	@Test
-	public void startupResetsDeviceStateToKnownValues() throws IOException {
-		// GIVEN
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
-				.andDelegateTo(new TestModbusNetwork());
-
-		// first reset state to known starting values...
+	private void expectStartupResetDeviceState() throws IOException {
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cDcControlMethod.Net.getCode() }));
@@ -212,6 +217,19 @@ public class AcExportManagerTests {
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
 				aryEq(new int[] { 0 }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlManualModeStop.getAddress()), aryEq(new int[] { 1 }));
+	}
+
+	@Test
+	public void startupResetsDeviceStateToKnownValues() throws IOException {
+		// GIVEN
+		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+				.andDelegateTo(new TestModbusNetwork());
+
+		// first reset state to known starting values...
+		expectStartupResetDeviceState();
 
 		final int[] initialData = DataUtils.parseModbusHexRegisterLines(new BufferedReader(
 				new InputStreamReader(getClass().getResourceAsStream("stability-data-01.txt"), UTF8)));
@@ -233,4 +251,62 @@ public class AcExportManagerTests {
 		// THEN
 	}
 
+	@Test
+	public void handleShedLoadInstruction() throws IOException {
+		// GIVEN
+		startupResetsDeviceStateToKnownValues();
+		resetAll();
+
+		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+				.andDelegateTo(new TestModbusNetwork());
+
+		final int shedPowerAmount = 1000;
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
+				aryEq(new int[] { shedPowerAmount / 10 }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlManualModeStart.getAddress()), aryEq(new int[] { 1 }));
+
+		// WHEN
+		replayAll();
+
+		Date now = new Date();
+		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
+				UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
+		InstructionState result = service.processInstruction(shedLoad);
+
+		// THEN
+		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+	}
+
+	@Test
+	public void handleShedLoadInstructionZeroValue() throws IOException {
+		// GIVEN
+		startupResetsDeviceStateToKnownValues();
+		resetAll();
+
+		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+				.andDelegateTo(new TestModbusNetwork());
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
+				aryEq(new int[] { 0 }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlManualModeStop.getAddress()), aryEq(new int[] { 1 }));
+
+		// WHEN
+		replayAll();
+
+		Date now = new Date();
+		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
+				UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
+		InstructionState result = service.processInstruction(shedLoad);
+
+		// THEN
+		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+	}
 }
