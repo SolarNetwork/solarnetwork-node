@@ -5,7 +5,7 @@ Power][ideal-power] Stabiliti 30C Power Control System.
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
 **Control** category as **Stabiliti 30C Power Control**. Once installed, several new **Stabiliti**
-components will appear on the **Settings** pageon your SolarNode. Click on the **Manage** button to
+components will appear on the **Settings** page on your SolarNode. Click on the **Manage** button to
 configure price maps.
 
 # Stabiliti 30C AC Export Manager
