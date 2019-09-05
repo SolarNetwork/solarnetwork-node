@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * command.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ProcessActionCommandRunner implements ActionCommandRunner, SettingSpecifierProvider {
 
@@ -108,9 +108,9 @@ public class ProcessActionCommandRunner implements ActionCommandRunner, SettingS
 	}
 
 	@Override
-	public List<Map<String, String>> executeAction(StatAction action) {
+	public List<Map<String, String>> executeAction(final String action) {
 		log.debug("Executing action {}", action);
-		ProcessBuilder pb = new ProcessBuilder(new String[] { command, action.getAction() });
+		ProcessBuilder pb = new ProcessBuilder(new String[] { command, action });
 		try {
 			Process pr = pb.start();
 

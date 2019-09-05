@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.datum.os.stat;
 
+import static java.util.stream.Collectors.toCollection;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -104,15 +103,33 @@ import net.solarnetwork.util.StringUtils;
  * up-sec</dd>
  * </dl>
  * 
+ * <p>
+ * Other actions can be used, as long as the supporting OS script also supports
+ * them and returns CSV data as outlined previously. By default, <i>status</i>
+ * properties will be populated on the datum. To populate <i>instantaneous</i>
+ * or <i>accumulating</i> properties the column name should be prefixed with
+ * {@code i/} or {@code a/}, respectively. The actual property name used on the
+ * datum will be stripped of this prefix. For example, an action
+ * {@literal cpu-temp} could populate a "cpu_temp" instantaneous property if the
+ * OS script returned the following output when called with that action:
+ * </p>
+ * 
+ * <pre>
+ * <code>
+ * i/cpu_temp
+ * 30.1
+ * </code>
+ * </pre>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
 
 	private final AtomicReference<CachedResult<GeneralNodeDatum>> sampleCache = new AtomicReference<>();
 
-	private Set<StatAction> actions = EnumSet.allOf(StatAction.class);
+	private Set<String> actions = StatAction.ALL_ACTIONS;
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
 	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
 	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0"));
@@ -150,7 +167,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		result.setCreated(new Date());
 		result.setSourceId(sourceId);
 
-		for ( StatAction action : actions ) {
+		for ( String action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);
 			populateActionData(action, data, result);
 		}
@@ -162,12 +179,22 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		return result;
 	}
 
-	private void populateActionData(StatAction action, List<Map<String, String>> data,
+	private void populateActionData(String action, List<Map<String, String>> data,
 			GeneralNodeDatum result) {
 		if ( data == null || data.isEmpty() ) {
 			return;
 		}
-		switch (action) {
+		StatAction stdAction = null;
+		try {
+			stdAction = StatAction.forAction(action);
+		} catch ( IllegalArgumentException e ) {
+			// ignore
+		}
+		if ( stdAction == null ) {
+			populateGeneralActionResults(action, data, result);
+			return;
+		}
+		switch (stdAction) {
 			case CpuUse:
 				populateCpuUse(data, result);
 				break;
@@ -192,9 +219,15 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 				populateSystemUptime(data, result);
 				break;
 		}
+
 	}
 
 	private void populateInstantaneousValue(StatAction action, Map<String, String> row, String key,
+			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+		populateInstantaneousValue(action.getAction(), row, key, propName, result, scaleFactor);
+	}
+
+	private void populateInstantaneousValue(String action, Map<String, String> row, String key,
 			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
 		BigDecimal d = null;
 		try {
@@ -206,12 +239,17 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		} catch ( NullPointerException e ) {
 			// ignore, property not available
 		} catch ( NumberFormatException e ) {
-			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
+			log.debug("Error parsing {} action {} value [{}]: {}", action, key, row.get(key),
 					e.getMessage());
 		}
 	}
 
 	private void populateAccumulatingValue(StatAction action, Map<String, String> row, String key,
+			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+		populateAccumulatingValue(action.getAction(), row, key, propName, result, scaleFactor);
+	}
+
+	private void populateAccumulatingValue(String action, Map<String, String> row, String key,
 			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
 		BigDecimal d = null;
 		try {
@@ -223,8 +261,42 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		} catch ( NullPointerException e ) {
 			// ignore, property not available
 		} catch ( NumberFormatException e ) {
-			log.debug("Error parsing {} action {} value [{}]: {}", action.getAction(), key, row.get(key),
+			log.debug("Error parsing {} action {} value [{}]: {}", action, key, row.get(key),
 					e.getMessage());
+		}
+	}
+
+	private void populateStatusValue(Map<String, String> row, String key, String propName,
+			GeneralNodeDatum result) {
+		result.putStatusSampleValue(propName, row.get(key));
+	}
+
+	private void populateGeneralActionResults(String action, List<Map<String, String>> data,
+			GeneralNodeDatum result) {
+		Map<String, String> row = data.get(0);
+		for ( Map.Entry<String, String> me : row.entrySet() ) {
+			final String key = me.getKey();
+			final int idx = key.indexOf('/');
+			String propName = key;
+			String groupKey = null;
+			if ( idx > 0 && idx + 1 < key.length() ) {
+				// treat text before / as i,a,s prefix
+				groupKey = key.substring(0, idx);
+				propName = key.substring(idx + 1);
+			}
+			switch (groupKey) {
+				case "i":
+					populateInstantaneousValue(action, row, key, propName, result, null);
+					break;
+
+				case "a":
+					populateAccumulatingValue(action, row, key, propName, result, null);
+					break;
+
+				default:
+					populateStatusValue(row, key, propName, result);
+					break;
+			}
 		}
 	}
 
@@ -482,10 +554,22 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	 *        the actions to perform
 	 */
 	public void setActions(Set<StatAction> actions) {
-		if ( actions == null ) {
+		Set<String> s = null;
+		if ( actions != null ) {
+			s = actions.stream().map(e -> e.getAction()).collect(toCollection(LinkedHashSet::new));
 			actions = Collections.emptySet();
 		}
-		this.actions = actions;
+		setActionSet(s);
+	}
+
+	/**
+	 * Set the action set of actions to perform and gather statistics from.
+	 * 
+	 * @param actions
+	 *        the actions
+	 */
+	public void setActionSet(Set<String> actions) {
+		this.actions = (actions == null ? Collections.emptySet() : actions);
 	}
 
 	/**
@@ -495,8 +579,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	 * @return actions the actions to perform, as a comma-delimited string
 	 */
 	public String getActionsValue() {
-		return StringUtils.commaDelimitedStringFromCollection(
-				actions.stream().map(StatAction::getAction).collect(Collectors.toSet()));
+		return StringUtils.commaDelimitedStringFromCollection(actions);
 	}
 
 	/**
@@ -507,21 +590,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	 * @see #setActions(Set)
 	 */
 	public void setActionsValue(String keys) {
-		Set<String> actionValues = StringUtils.commaDelimitedStringToSet(keys);
-		Set<StatAction> actions = new LinkedHashSet<>(actionValues.size());
-		for ( String value : actionValues ) {
-			try {
-				actions.add(StatAction.forAction(value));
-			} catch ( IllegalArgumentException e ) {
-				log.warn(e.getMessage());
-			}
-		}
-		if ( actions.isEmpty() ) {
-			actions = Collections.emptySet();
-		} else {
-			actions = EnumSet.copyOf(actions);
-		}
-		setActions(actions);
+		setActionSet(StringUtils.commaDelimitedStringToSet(keys));
 	}
 
 	/**

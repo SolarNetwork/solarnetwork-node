@@ -29,7 +29,7 @@ import java.util.Map;
  * API for executing stat actions.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface ActionCommandRunner {
 
@@ -37,9 +37,9 @@ public interface ActionCommandRunner {
 	 * Execute the given action and return the results.
 	 * 
 	 * @param action
-	 *        the action to perform
+	 *        the action to perform; see {@link StatAction}
 	 * @return the action results
 	 */
-	List<Map<String, String>> executeAction(StatAction action);
+	List<Map<String, String>> executeAction(String action);
 
 }
