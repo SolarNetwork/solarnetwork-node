@@ -224,3 +224,17 @@ up-sec
 26483.63
 ```
 
+# Custom statistic types
+
+Since version **1.1** this plugin supports custom statistic collection via arbitrary statistic
+names. The configured **Command** must support the statistic names, of course, and they must return
+CSV formatted data, including a header row. All returned columns will be populated as _status_ datum
+properties. To populate _instantaneous_ or _accumulating_ properties, the column names should be
+prefixed with `i/` and `a/`, respectively. The actual property name used on the datum will be
+stripped of this prefix. For example, if the **Command** supports a `cpu-temp` statistic that should
+populate an instantaneous property `cpu_temp` the output should be formatted like this:
+
+```
+i/cpu_temp
+30.1
+```
