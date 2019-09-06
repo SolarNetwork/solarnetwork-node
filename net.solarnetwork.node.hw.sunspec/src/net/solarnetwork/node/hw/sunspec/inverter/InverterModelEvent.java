@@ -29,7 +29,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
- * Inverter type events
+ * Inverter type events.
  * 
  * @author matt
  * @version 1.0
