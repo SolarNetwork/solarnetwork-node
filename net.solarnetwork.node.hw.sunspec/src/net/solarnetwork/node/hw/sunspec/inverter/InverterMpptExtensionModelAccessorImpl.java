@@ -92,15 +92,10 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public int getRepeatingBlockInstanceCount() {
+	public List<DcModule> getDcModules() {
 		Number n = getData().getNumber(InverterMpptExtensionModelRegister.ModuleCount,
 				getBlockAddress());
-		return (n != null ? n.intValue() : 0);
-	}
-
-	@Override
-	public List<DcModule> getDcModules() {
-		final int count = getRepeatingBlockInstanceCount();
+		final int count = (n != null ? n.intValue() : null);
 		if ( count < 1 ) {
 			return Collections.emptyList();
 		}
