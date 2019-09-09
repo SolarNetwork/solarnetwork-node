@@ -66,8 +66,8 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	 * Constructor.
 	 * 
 	 * <p>
-	 * The {@link InverterControlModelId} class will be used as the
-	 * {@code ModelId} instance.
+	 * The {@link InverterModelId} class will be used as the {@code ModelId}
+	 * instance.
 	 * </p>
 	 * 
 	 * @param data
@@ -78,7 +78,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	 *        the model ID
 	 */
 	public InverterMpptExtensionModelAccessorImpl(ModelData data, int baseAddress, int modelId) {
-		this(data, baseAddress, InverterControlModelId.forId(modelId));
+		this(data, baseAddress, InverterModelId.forId(modelId));
 	}
 
 	@Override
@@ -109,7 +109,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 	@Override
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(InverterMpptExtensionModelRegister.EventsBitmask, getBlockAddress());
-		return InverterMpptExtensionEvent.forBitmask(n.longValue());
+		return InverterMpptExtensionModelEvent.forBitmask(n.longValue());
 	}
 
 	@Override
@@ -189,7 +189,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public OperatingState getOperatingState() {
-			Number n = getData().getNumber(IntegerInverterModelRegister.OperatingState,
+			Number n = getData().getNumber(InverterMpptExtensionModelRegister.ModuleOperatingState,
 					getBlockAddress() + index * REPEATING_BLOCK_LENGTH);
 			if ( n == null ) {
 				return null;
@@ -199,9 +199,9 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public Set<ModelEvent> getEvents() {
-			Number n = getBitfield(InverterMpptExtensionModelRegister.EventsBitmask,
+			Number n = getBitfield(InverterMpptExtensionModelRegister.ModuleEventsBitmask,
 					getBlockAddress() + index * REPEATING_BLOCK_LENGTH);
-			return InverterMpptExtensionEvent.forBitmask(n.longValue());
+			return InverterMpptExtensionModelEvent.forBitmask(n.longValue());
 		}
 
 	}

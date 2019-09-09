@@ -65,7 +65,7 @@ public enum InverterMpptExtensionModelRegister implements SunspecModbusReference
 	/** Energy scale factor, as *10^X. */
 	ScaleFactorDcEnergy(3, Int16, ScaleFactor),
 
-	/** Global events bitmask, see {@link InverterMpptExtensionEvent}. */
+	/** Global events bitmask, see {@link InverterMpptExtensionModelEvent}. */
 	EventsBitmask(4, UInt32, Bitfield),
 
 	/** The count of modules (repeating block). */
@@ -101,8 +101,8 @@ public enum InverterMpptExtensionModelRegister implements SunspecModbusReference
 	/** Module operating state, see {@link InverterOperatingState}. */
 	ModuleOperatingState(17, UInt16),
 
-	/** Module events, see {@link InverterMpptExtensionEvent}. */
-	ModuleEvents(18, UInt32, Bitfield);
+	/** Module events, see {@link InverterMpptExtensionModelEvent}. */
+	ModuleEventsBitmask(18, UInt32, Bitfield);
 
 	private final int address;
 	private final ModbusDataType dataType;
@@ -145,11 +145,6 @@ public enum InverterMpptExtensionModelRegister implements SunspecModbusReference
 		return ModbusReadFunction.ReadHoldingRegister;
 	}
 
-	/**
-	 * Get the data type word length.
-	 * 
-	 * @return the word length
-	 */
 	@Override
 	public int getWordLength() {
 		return wordLength;

@@ -28,7 +28,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  * Enumeration of SunSpec inverter model IDs.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum InverterModelId implements ModelId {
 
@@ -36,7 +36,9 @@ public enum InverterModelId implements ModelId {
 
 	SplitPhaseInverterInteger(102, "Split phase inverter"),
 
-	ThreePhaseInverterInteger(103, "3-phase inverter");
+	ThreePhaseInverterInteger(103, "3-phase inverter"),
+
+	MultipleMpptInverterExtension(160, "Multiple MPPT Inverter Extension Model");
 
 	final private int id;
 	final private String description;

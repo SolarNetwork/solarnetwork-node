@@ -1,5 +1,5 @@
 /* ==================================================================
- * InverterMpptExtensionEvent.java - 6/09/2019 5:33:58 pm
+ * InverterMpptExtensionModelEvent.java - 6/09/2019 5:33:58 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -35,7 +35,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  * @version 1.0
  * @since 1.4
  */
-public enum InverterMpptExtensionEvent implements ModelEvent {
+public enum InverterMpptExtensionModelEvent implements ModelEvent {
 
 	GroundFault(0, "Ground fault"),
 
@@ -68,7 +68,7 @@ public enum InverterMpptExtensionEvent implements ModelEvent {
 	final private int index;
 	final private String description;
 
-	private InverterMpptExtensionEvent(int index, String description) {
+	private InverterMpptExtensionModelEvent(int index, String description) {
 		this.index = index;
 		this.description = description;
 	}
@@ -92,8 +92,8 @@ public enum InverterMpptExtensionEvent implements ModelEvent {
 	 * @throws IllegalArgumentException
 	 *         if {@code index} is not supported
 	 */
-	public static InverterMpptExtensionEvent forIndex(int index) {
-		for ( InverterMpptExtensionEvent e : InverterMpptExtensionEvent.values() ) {
+	public static InverterMpptExtensionModelEvent forIndex(int index) {
+		for ( InverterMpptExtensionModelEvent e : InverterMpptExtensionModelEvent.values() ) {
 			if ( e.index == index ) {
 				return e;
 			}
@@ -113,7 +113,7 @@ public enum InverterMpptExtensionEvent implements ModelEvent {
 			return Collections.emptySet();
 		}
 		Set<ModelEvent> result = new LinkedHashSet<>(32);
-		for ( InverterMpptExtensionEvent e : InverterMpptExtensionEvent.values() ) {
+		for ( InverterMpptExtensionModelEvent e : InverterMpptExtensionModelEvent.values() ) {
 			int index = e.getIndex();
 			if ( ((bitmask >> index) & 0x1) == 1 ) {
 				result.add(e);
