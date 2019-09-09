@@ -8,20 +8,23 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 components will appear on the **Settings** page on your SolarNode. Click on the **Manage** button to
 configure price maps.
 
+
 # Stabiliti 30C AC Export Manager
 
 The **Stabiliti 30C AC Export Manager** component allows you to configure a control that can
 respond to [`ShedLoad`][ShedLoad] instructions by requesting a constant supply of AC energy be
 exported to the grid.
 
-When this component starts, it configures the following Stabiliti device settings:
+When this component starts or stops, it configures the following Stabiliti device settings:
 
 | Setting                | Register | Value    | Description |
 |:-----------------------|:---------|:---------|:------------|
-| P2 Control Method      | 129      | `0x0001` | Net mode |
-| P1 Control Method      | 65       | `0x0402` | Grid power mode |
+| P1 Control Method      | 65       | `0x0001` | Net mode |
+| P2 Control Method      | 129      | `0x0000` | Idle mode |
 | P3 Control Method      | 193      | `0x0002` | MPPT mode |
 | P1 Real Power Setpoint | 68       | `0x0000` | Zero export |
+| Manual mode stop       | 264      | `0x0001` | Stop manual mode |
+
 
 When a `ShedLoad` instruction with a positive value is handled by this component, it will update the
 following settings:
@@ -38,7 +41,6 @@ following settings:
 |:-----------------------|:---------|:---------|:------------|
 | P1 Real Power Setpoint | 68       | `0x0000` | Zero export |
 | User Stop              | 264      | `0x0001` | Stop manual mode |
-
 
 ## Stabiliti 30C AC Export Manager configuration
 

@@ -108,7 +108,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 						@Override
 						public boolean updateModbusData(MutableModbusData m) {
-							setAcExportSettings(connection, sample, m, 0, false);
+							resetAcExportSettings(connection, sample, m);
 							return false;
 						}
 					});
@@ -130,7 +130,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 			public boolean updateModbusData(MutableModbusData m) {
 				log.info("Configuring initial AC export power settings on Stabiliti {}",
 						modbusDeviceName());
-				setAcExportSettings(connection, sample, m, 0, false);
+				resetAcExportSettings(connection, sample, m);
 				return false;
 			}
 		});
@@ -294,28 +294,51 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 	private synchronized void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
 			MutableModbusData m, Integer targetPower, boolean manualModeEnabled) {
+		if ( manualModeEnabled != sample.isManualModeEnabled() ) {
+			// first set control methods to safe starting values...
+			setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Idle,
+					Stabiliti30cDcControlMethod.Idle, Stabiliti30cDcControlMethod.Idle, null, null,
+					true);
+		}
+
+		// then set control methods to desired values
+		setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.GridPower,
+				Stabiliti30cDcControlMethod.Net, Stabiliti30cDcControlMethod.Mppt, targetPower,
+				manualModeEnabled, false);
+	}
+
+	private synchronized void resetAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
+			MutableModbusData m) {
+		setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Idle,
+				Stabiliti30cDcControlMethod.Idle, Stabiliti30cDcControlMethod.Idle, null, null, true);
+		setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Net,
+				Stabiliti30cDcControlMethod.Idle, Stabiliti30cDcControlMethod.Mppt, 0, false, true);
+	}
+
+	private synchronized void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
+			MutableModbusData m, Stabiliti30cAcControlMethod p1Method,
+			Stabiliti30cDcControlMethod p2Method, Stabiliti30cDcControlMethod p3Method,
+			Integer targetPower, Boolean manualModeEnabled, boolean force) {
 		Stabiliti30cControlAccessor acc = sample.controlAccessor(connection);
-		if ( sample.getP2ControlMethod() != Stabiliti30cDcControlMethod.Net ) {
-			acc.setP2ControlMethod(Stabiliti30cDcControlMethod.Net);
+
+		if ( force || sample.getP1ControlMethod() != p1Method ) {
+			acc.setP1ControlMethod(p1Method);
 		}
-		if ( sample.getP1ControlMethod() != Stabiliti30cAcControlMethod.GridPower ) {
-			acc.setP1ControlMethod(Stabiliti30cAcControlMethod.GridPower);
+		if ( force || sample.getP2ControlMethod() != p2Method ) {
+			acc.setP2ControlMethod(p2Method);
 		}
-		if ( sample.getP3ControlMethod() != Stabiliti30cDcControlMethod.Mppt ) {
-			acc.setP3ControlMethod(Stabiliti30cDcControlMethod.Mppt);
+		if ( force || sample.getP3ControlMethod() != p3Method ) {
+			acc.setP3ControlMethod(p3Method);
 		}
 
 		// 
-		if ( targetPower != null && (targetPower.intValue() == 0
-				|| !targetPower.equals(sample.getP1ActivePowerSetpoint())) ) {
+		if ( targetPower != null && (force
+				|| (targetPower != null && !targetPower.equals(sample.getP1ActivePowerSetpoint()))) ) {
 			acc.setP1ActivePowerSetpoint(targetPower);
 		}
 
-		// TODO: this needed? acc.setP3MpptStartTimeOffsetSetpoint(0);
-		// TODO: this needed? acc.setP3MpptStopTimeOffsetSetpoint(1440);
-
-		if ( manualModeEnabled != sample.isManualModeEnabled()
-				|| (targetPower != null && (targetPower.intValue() == 0)) ) {
+		if ( manualModeEnabled != null
+				&& (force || manualModeEnabled != sample.isManualModeEnabled()) ) {
 			acc.setManualModeEnabled(manualModeEnabled);
 		}
 	}

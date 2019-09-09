@@ -203,12 +203,12 @@ public class AcExportManagerTests {
 
 	private void expectStartupResetDeviceState() throws IOException {
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
-				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
-				aryEq(new int[] { Stabiliti30cDcControlMethod.Net.getCode() }));
+				eq(Stabiliti30cRegister.ControlP1ControlMethod.getAddress()),
+				aryEq(new int[] { Stabiliti30cAcControlMethod.Net.getCode() }));
 
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
-				eq(Stabiliti30cRegister.ControlP1ControlMethod.getAddress()),
-				aryEq(new int[] { Stabiliti30cAcControlMethod.GridPower.getCode() }));
+				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
+				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
 
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP3ControlMethod.getAddress()),
@@ -222,13 +222,30 @@ public class AcExportManagerTests {
 				eq(Stabiliti30cRegister.ControlManualModeStop.getAddress()), aryEq(new int[] { 1 }));
 	}
 
+	private void expectResetSafeDeviceState() throws IOException {
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP1ControlMethod.getAddress()),
+				aryEq(new int[] { Stabiliti30cAcControlMethod.Idle.getCode() }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
+				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP3ControlMethod.getAddress()),
+				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
+	}
+
 	@Test
 	public void startupResetsDeviceStateToKnownValues() throws IOException {
 		// GIVEN
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
 
-		// first reset state to known starting values...
+		// first reset state to known safe values...
+		expectResetSafeDeviceState();
+
+		// then reset state to known starting values...
 		expectStartupResetDeviceState();
 
 		final int[] initialData = DataUtils.parseModbusHexRegisterLines(new BufferedReader(
@@ -260,6 +277,9 @@ public class AcExportManagerTests {
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
 
+		// first reset state to known safe values...
+		expectResetSafeDeviceState();
+
 		final int shedPowerAmount = 1000;
 		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
@@ -290,12 +310,11 @@ public class AcExportManagerTests {
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
-				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
-				aryEq(new int[] { 0 }));
+		// first reset state to known safe values...
+		expectResetSafeDeviceState();
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
-				eq(Stabiliti30cRegister.ControlManualModeStop.getAddress()), aryEq(new int[] { 1 }));
+		// then reset state to known safe values...
+		expectStartupResetDeviceState();
 
 		// WHEN
 		replayAll();
