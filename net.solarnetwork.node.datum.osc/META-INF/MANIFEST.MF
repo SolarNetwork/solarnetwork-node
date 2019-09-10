@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OSC Datum Data Source
+Bundle-SymbolicName: net.solarnetwork.node.datum.osc
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.datum.osc
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ com.illposed.osc;version="0.6.0",
+ com.illposed.osc.argument;version="0.6.0",
+ com.illposed.osc.messageselector;version="0.6.0",
+ com.illposed.osc.transport;version="0.6.0",
+ com.illposed.osc.transport.udp;version="0.6.0"
