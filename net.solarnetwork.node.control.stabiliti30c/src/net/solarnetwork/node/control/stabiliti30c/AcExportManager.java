@@ -71,6 +71,9 @@ import net.solarnetwork.util.StringUtils;
 public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		implements InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
 
+	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
+			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
+
 	private OptionalService<EventAdmin> eventAdmin;
 	private String controlId;
 
@@ -379,9 +382,6 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		}
 		return (msg == null ? "N/A" : msg);
 	}
-
-	private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
-			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
 	private String getSampleMessage(Stabiliti30cDataAccessor sample) {
 		if ( sample.getDataTimestamp() < 1 || controlId == null ) {

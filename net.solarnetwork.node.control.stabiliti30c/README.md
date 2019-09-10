@@ -55,6 +55,16 @@ Each Stabiliti 30C AC Export Manager component contains the following settings:
 | Sample Maximum Age | The maximum number of **milliseconds** any sampled data may be cached before refreshing it again from the device. |
 | Control ID         | The ID to use for the SolarNode control. |
 
+### Stabiliti 30C AC Export Manager configuration notes
+
+<dl>
+	<dt>Modbus Connection</dt>
+	<dd>This is the <i>service name</i> of the Modbus component configured elsewhere
+	in SolarNode. You must configure that component with the proper connection settings
+	for your Modbus network, configure a unique service name on that component, and then
+	enter that same service name here.</dd>
+</dl>
+
 
 # Stabiliti 30C Watchdog
 
@@ -62,7 +72,6 @@ The **Stabiliti 30C Watchdog** component allows you to configure a watchdog task
 safety count down timer available on the power control system.
 
 ![settings](docs/solarnode-stabiliti-30c-watchdog-settings.png)
-
 
 ## Stabiliti 30C Watchdog configuration
 
@@ -89,5 +98,37 @@ Each Stabiliti 30C Watchdog component contains the following settings:
 </dl>
 
 
+# Stabiliti 30C Power Control Device
+
+The **Stabiliti 30C Power Control Device** component allows you to configure datum data sources for
+each of the ports available on the Stabiliti 30C device.
+
+## Stabiliti 30C Power Control Device configuration
+
+Each Stabiliti 30C Watchdog component contains the following settings:
+
+| Setting            | Description |
+|:-------------------|:------------|
+| Schedule           | A [cron schedule][cron-syntax] that determines when data is collected. |
+| Service Name       | A unique name to associate this component with. |
+| Service Group      | A group name to associate this component with. |
+| Modbus Connection  | The service name of the Modbus connection to use. |
+| Modbus Unit ID     | The ID of the Modbus device to control, from 1 - 255. |
+| Sample Maximum Age | The maximum number of **milliseconds** any sampled data may be cached before refreshing it again from the device. |
+| P1 Source ID       | The source ID to assign to port 1 (AC, grid) generated datum. |
+| P2 Source ID       | The source ID to assign to port 2 (DC, battery) generated datum. |
+| P3 Source ID       | The source ID to assign to port 3 (DC, PV) generated datum. |
+
+### Stabiliti 30C Power Control Device configuration notes
+
+<dl>
+	<dt>Modbus Connection</dt>
+	<dd>This is the <i>service name</i> of the Modbus component configured elsewhere
+	in SolarNode. You must configure that component with the proper connection settings
+	for your Modbus network, configure a unique service name on that component, and then
+	enter that same service name here.</dd>
+</dl>
+
+[cron-syntax]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [ideal-power]: http://www.idealpower.com/
 [ShedLoad]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#shedload
