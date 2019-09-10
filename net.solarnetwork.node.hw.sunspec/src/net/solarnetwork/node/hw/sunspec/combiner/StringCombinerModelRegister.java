@@ -81,16 +81,16 @@ public enum StringCombinerModelRegister implements SunspecModbusReference {
 	DcCharge(10, UInt32, Accumulator),
 
 	/** Output voltage, in volts. */
-	DcVoltage(14, UInt16),
+	DcVoltage(12, UInt16),
 
 	/** Internal operating temperature, in degrees celsius. */
-	Temperature(15, Int16),
+	Temperature(13, Int16),
 
 	/** Current scale factor, as *10^X. */
-	ScaleFactorInputDcCurrent(16, Int16, ScaleFactor),
+	ScaleFactorInputDcCurrent(14, Int16, ScaleFactor),
 
 	/** Charge (amp hour) scale factor, as *10^X. */
-	ScaleFactorInputDcCharge(17, Int16, ScaleFactor),
+	ScaleFactorInputDcCharge(15, Int16, ScaleFactor),
 
 	/** Input ID. */
 	InputId(0, UInt16),

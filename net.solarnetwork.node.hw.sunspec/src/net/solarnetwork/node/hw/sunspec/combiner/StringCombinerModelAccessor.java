@@ -101,13 +101,6 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	Float getDCVoltage();
 
 	/**
-	 * Get the list of available DC inputs.
-	 * 
-	 * @return the inputs
-	 */
-	List<DcInput> getDcInputs();
-
-	/**
 	 * Get the temperature of the combiner, in degrees celsius.
 	 * 
 	 * @return the temperature
@@ -128,5 +121,12 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	 * @return the vendor events, never {@literal null}
 	 */
 	Set<ModelEvent> getVendorEvents();
+
+	/**
+	 * Get the list of available DC inputs.
+	 * 
+	 * @return the inputs
+	 */
+	List<DcInput> getDcInputs();
 
 }
