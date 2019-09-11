@@ -28,7 +28,7 @@ import bak.pcj.set.IntRange;
  * API for accessing model data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
 public interface ModelAccessor {
 
