@@ -75,8 +75,8 @@ public enum StringCombinerModelEvent implements ModelEvent {
 
 	ArcDetected(18, "Arc detected");
 
-	final private int index;
-	final private String description;
+	private final int index;
+	private final String description;
 
 	private StringCombinerModelEvent(int index, String description) {
 		this.index = index;

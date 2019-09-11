@@ -65,8 +65,8 @@ public enum InverterMpptExtensionModelEvent implements ModelEvent {
 
 	DcOverCurrent(22, "DC over current");
 
-	final private int index;
-	final private String description;
+	private final int index;
+	private final String description;
 
 	private InverterMpptExtensionModelEvent(int index, String description) {
 		this.index = index;

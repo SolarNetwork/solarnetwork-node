@@ -53,8 +53,8 @@ public enum InverterOperatingState implements OperatingState {
 
 	Test(9, "Device is in test mode");
 
-	final private int code;
-	final private String description;
+	private final int code;
+	private final String description;
 
 	private InverterOperatingState(int index, String description) {
 		this.code = index;

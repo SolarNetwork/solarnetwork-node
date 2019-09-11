@@ -38,8 +38,8 @@ public enum InverterDerType implements DistributedEnergyResourceType {
 
 	PVAndStorage(82, "Photovoltaic generation with battery storage");
 
-	final private int code;
-	final private String description;
+	private final int code;
+	private final String description;
 
 	private InverterDerType(int index, String description) {
 		this.code = index;

@@ -38,8 +38,8 @@ public enum InverterReactivePowerAction implements ReactivePowerAction {
 
 	Maintain(2, "Maintain VAR characterization");
 
-	final private int code;
-	final private String description;
+	private final int code;
+	private final String description;
 
 	private InverterReactivePowerAction(int index, String description) {
 		this.code = index;
