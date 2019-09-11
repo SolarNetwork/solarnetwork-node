@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
@@ -44,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -53,6 +54,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	private long sampleCacheMs = 5000;
 	private String sourceId = "SunSpec-Device";
+	private Set<Class<? extends ModelAccessor>> secondaryModelAccessorTypes;
 
 	/**
 	 * Default constructor.
@@ -90,7 +92,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * <p>
 	 * This returns cached data if possible. Otherwise it will query the device
 	 * and cache the results. When refreshing data, only the data for the model
-	 * returned from {@link #getPrimaryModelAccessorType()} will be refreshed.
+	 * returned from {@link #getPrimaryModelAccessorType()} and any types in
+	 * [@link {@link #getSecondaryModelAccessorTypes()}} will be refreshed.
 	 * </p>
 	 * 
 	 * @return the model data
@@ -113,8 +116,24 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 						}
 						final ModelAccessor accessor = data
 								.findTypedModel(getPrimaryModelAccessorType());
-						if ( accessor != null ) {
-							data.readModelData(connection, Collections.singletonList(accessor));
+						final Set<Class<? extends ModelAccessor>> secondaryTypes = getSecondaryModelAccessorTypes();
+						List<ModelAccessor> accessors = null;
+						if ( secondaryTypes == null || secondaryTypes.isEmpty() ) {
+							accessors = (accessor != null ? Collections.singletonList(accessor) : null);
+						} else {
+							accessors = new ArrayList<>(secondaryTypes.size() + 1);
+							if ( accessor != null ) {
+								accessors.add(accessor);
+							}
+							for ( Class<? extends ModelAccessor> type : secondaryTypes ) {
+								ModelAccessor secondary = data.findTypedModel(type);
+								if ( secondary != null ) {
+									accessors.add(secondary);
+								}
+							}
+						}
+						if ( accessors != null && !accessors.isEmpty() ) {
+							data.readModelData(connection, accessors);
 						}
 						return data;
 					}
@@ -338,6 +357,28 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Get a set of secondary models to acquire data from.
+	 * 
+	 * @return an optional set of model accessor types
+	 * @since 1.4
+	 */
+	public Set<Class<? extends ModelAccessor>> getSecondaryModelAccessorTypes() {
+		return secondaryModelAccessorTypes;
+	}
+
+	/**
+	 * Set a set of secondary model accessor types to acquire data from.
+	 * 
+	 * @param secondaryModelAccessorTypes
+	 *        the secondary model accessor types
+	 * @since 1.4
+	 */
+	public void setSecondaryModelAccessorTypes(
+			Set<Class<? extends ModelAccessor>> secondaryModelAccessorTypes) {
+		this.secondaryModelAccessorTypes = secondaryModelAccessorTypes;
 	}
 
 }
