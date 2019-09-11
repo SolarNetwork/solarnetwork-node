@@ -26,14 +26,14 @@ package net.solarnetwork.node.hw.sunspec;
  * {@link ModelId} for the SunSpec common model standard.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum CommonModelId implements ModelId {
 
 	CommonModel(1, "Common model");
 
-	final private int id;
-	final private String description;
+	private final int id;
+	private final String description;
 
 	private CommonModelId(int id, String description) {
 		this.id = id;
@@ -48,6 +48,11 @@ public enum CommonModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return CommonModelAccessor.class;
 	}
 
 	/**

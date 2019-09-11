@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.combiner;
 
+import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
@@ -35,18 +36,28 @@ public enum StringCombinerModelId implements ModelId {
 
 	BasicStringCombiner(401, "Basic string combiner"),
 
-	AdvancedStringCombiner(402, "Advanced string combiner"),
+	AdvancedStringCombiner(402, "Advanced string combiner", StringCombinerAdvancedModelAccessor.class),
 
 	BasicStringCombiner2(403, "Basic string combiner v2"),
 
-	AdvancedStringCombiner2(404, "Advanced string combiner v2");
+	AdvancedStringCombiner2(
+			404,
+			"Advanced string combiner v2",
+			StringCombinerAdvancedModelAccessor.class);
 
-	final private int id;
-	final private String description;
+	private final int id;
+	private final String description;
+	private final Class<? extends ModelAccessor> accessorType;
 
 	private StringCombinerModelId(int id, String description) {
+		this(id, description, StringCombinerModelAccessor.class);
+	}
+
+	private StringCombinerModelId(int id, String description,
+			Class<? extends ModelAccessor> accessorType) {
 		this.id = id;
 		this.description = description;
+		this.accessorType = accessorType;
 	}
 
 	@Override
@@ -57,6 +68,11 @@ public enum StringCombinerModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return accessorType;
 	}
 
 	/**
