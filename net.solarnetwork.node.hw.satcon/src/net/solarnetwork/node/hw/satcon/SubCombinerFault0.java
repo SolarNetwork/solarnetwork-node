@@ -1,5 +1,5 @@
 /* ==================================================================
- * PowerGateFault3.java - 11/09/2019 11:06:27 am
+ * SubCombinerFault0.java - 11/09/2019 11:06:27 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -23,56 +23,30 @@
 package net.solarnetwork.node.hw.satcon;
 
 /**
- * Bitmask enumeration of fault 3 codes.
+ * Bitmask enumeration of combiner fault 0 codes.
  * 
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault3 implements Fault {
+public enum SubCombinerFault0 implements Fault {
 
-	DpcbIsoPlus5V(0, "DPCB isolated +5V power supply fault."),
+	InternalTemperatureOutsideBounds(0, "The internal box temperature is out of bounds."),
 
-	DpcbPlus5V(1, "DPCB +5V power supply fault."),
+	Aux1InternalTemperatureOutsideBounds(1, "Auxillary 1 internal box temperature is out of bounds."),
 
-	DpcbPlus15V(2, "DPCB +15V power supply fault."),
-
-	DpcbMinus15V(3, "DPCB -15V power supply fault."),
-
-	FpgaWatchdog(4, "FPGA watchdog timer fault."),
-
-	SurgeSuppressor(5, "AC or DC surge suppressor fault."),
-
-	InverterFuse1(6, "Inverter fuse 1 open."),
-
-	InverterFuse2(7, "Inverter fuse 2 open."),
-
-	InverterOverTemperature1(8, "Inverter hardware over-temperature 1."),
-
-	InverterOverTemperature2(9, "Inverter hardware over-temperature 2."),
-
-	TransformerOverTemperature(10, "Isolation transformer over-temperature."),
-
-	ReactorOverTemperature(11, "AC filter reactor over-temperature."),
-
-	PrechargeFault(12, "Precharge circuit fault."),
-
-	TestModeFault(13, "Test mode fault."),
-
-	OpenCircuitTestModeFault(14, "Open circuit test mode fault."),
-
-	ShortCircuitTestModeFault(15, "Short circuit test mode fault.");
+	Aux2InternalTemperatureOutsideBounds(2, "Auxillary 1 internal box temperature is out of bounds.");
 
 	private final int code;
 	private final String description;
 
-	private PowerGateFault3(int code, String description) {
+	private SubCombinerFault0(int code, String description) {
 		this.code = code;
 		this.description = description;
 	}
 
 	@Override
 	public int getFaultGroup() {
-		return 3;
+		return 0;
 	}
 
 	@Override
@@ -100,16 +74,16 @@ public enum PowerGateFault3 implements Fault {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static PowerGateFault3 forCode(int code) {
+	public static SubCombinerFault0 forCode(int code) {
 		if ( code == 0 ) {
 			return null;
 		}
-		for ( PowerGateFault3 c : values() ) {
+		for ( SubCombinerFault0 c : values() ) {
 			if ( code == c.code ) {
 				return c;
 			}
 		}
-		throw new IllegalArgumentException("PowerGateFault3 code [" + code + "] not supported");
+		throw new IllegalArgumentException("SubCombinerFault0 code [" + code + "] not supported");
 	}
 
 }

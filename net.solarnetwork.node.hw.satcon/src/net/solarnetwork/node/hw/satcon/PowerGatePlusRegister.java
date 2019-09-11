@@ -257,7 +257,7 @@ public enum PowerGatePlusRegister implements ModbusReference {
 
 	@Override
 	public ModbusReadFunction getFunction() {
-		return ModbusReadFunction.ReadHoldingRegister;
+		return ModbusReadFunction.ReadInputRegister;
 	}
 
 	@Override

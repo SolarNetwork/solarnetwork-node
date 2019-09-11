@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault5 implements PowerGateFault {
+public enum PowerGateFault5 implements Fault {
 
 	InternalAirHighTemperature(0, "Internal air high temperature fault."),
 

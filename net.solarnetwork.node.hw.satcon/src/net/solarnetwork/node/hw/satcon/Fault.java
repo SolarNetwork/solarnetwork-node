@@ -1,5 +1,5 @@
 /* ==================================================================
- * PowerGateFault.java - 11/09/2019 2:06:28 pm
+ * Fault.java - 11/09/2019 2:06:28 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -30,7 +30,7 @@ import net.solarnetwork.domain.Bitmaskable;
  * @author matt
  * @version 1.0
  */
-public interface PowerGateFault extends Bitmaskable {
+public interface Fault extends Bitmaskable {
 
 	/**
 	 * Get the raw data code (bitmap offset within data register).

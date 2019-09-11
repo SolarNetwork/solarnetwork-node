@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault6 implements PowerGateFault {
+public enum PowerGateFault6 implements Fault {
 
 	FanFault1(0, "Variable speed fan fault inverter 1."),
 

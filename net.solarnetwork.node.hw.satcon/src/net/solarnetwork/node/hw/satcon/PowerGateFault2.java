@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault2 implements PowerGateFault {
+public enum PowerGateFault2 implements Fault {
 
 	ProgramChecksum(0, "Program checksum error."),
 

@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault4 implements PowerGateFault {
+public enum PowerGateFault4 implements Fault {
 
 	GateFeedbackA(0, "Gate feedback fault phase A inverter 1."),
 

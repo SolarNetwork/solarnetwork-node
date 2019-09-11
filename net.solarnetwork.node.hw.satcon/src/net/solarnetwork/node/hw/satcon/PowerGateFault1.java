@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault1 implements PowerGateFault {
+public enum PowerGateFault1 implements Fault {
 
 	DcInputOverVoltage(
 			0,

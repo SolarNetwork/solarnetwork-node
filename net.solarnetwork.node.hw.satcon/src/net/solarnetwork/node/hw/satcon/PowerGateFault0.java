@@ -28,7 +28,7 @@ package net.solarnetwork.node.hw.satcon;
  * @author matt
  * @version 1.0
  */
-public enum PowerGateFault0 implements PowerGateFault {
+public enum PowerGateFault0 implements Fault {
 
 	DcInputNotReady(
 			0,
@@ -82,11 +82,6 @@ public enum PowerGateFault0 implements PowerGateFault {
 		return code;
 	}
 
-	/**
-	 * Get the description for this condition.
-	 * 
-	 * @return the description
-	 */
 	@Override
 	public String getDescription() {
 		return description;
