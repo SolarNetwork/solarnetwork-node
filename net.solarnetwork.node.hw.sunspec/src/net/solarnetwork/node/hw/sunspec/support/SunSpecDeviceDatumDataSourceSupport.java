@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
+import net.solarnetwork.node.hw.sunspec.GenericModelId;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
@@ -257,12 +258,15 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * {@link #getStatusMessage(ModelData)}</li>
 	 * <li>A <code>sample</code> title with
 	 * {@link #getSampleMessage(ModelData)}</li>
+	 * <li>A <code>secondaryModels</code> title with
+	 * {@link #getSecondaryModelAccessors(ModelData)}</li>
 	 * <li>All items returned by
 	 * {@link #getIdentifiableSettingSpecifiers()}</li>
 	 * <li>All items returned by
 	 * {@link #getModbusNetworkSettingSpecifiers()}</li>
 	 * <li>A <code>sampleCacheMs</code> text field.</li>
 	 * <li>A <code>sourceId</code> text field.</li>
+	 * <li>A <code>secondaryModelIdsValue</code> text field.</li>
 	 * </ol>
 	 * 
 	 * @param defaults
@@ -346,8 +350,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * 
 	 * <p>
 	 * The returned message is a comma-delimited list of model IDs with their
-	 * associated descriptions. The first two models are ignored, which are
-	 * assumed to be the common model followed by the primary model.
+	 * associated descriptions. The first model is ignored, which is assumed to
+	 * be the primary model.
 	 * </p>
 	 * 
 	 * @return the message, or {@literal N/A} if no secondary types are
@@ -355,12 +359,18 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 */
 	protected String getSecondaryTypesMessage(ModelData sample) {
 		List<ModelAccessor> accessors = sample.getModels();
-		if ( accessors == null || accessors.size() < 3 ) {
+		if ( accessors == null || accessors.size() < 2 ) {
 			return "N/A";
 		}
-		return accessors.subList(3, accessors.size()).stream().filter(a -> a.getModelId() != null).map(
-				a -> String.format("%d (%s)", a.getModelId().getId(), a.getModelId().getDescription()))
-				.collect(Collectors.joining(", "));
+		return accessors.subList(1, accessors.size()).stream().filter(a -> a.getModelId() != null)
+				.map(a -> {
+					if ( a.getModelId() instanceof GenericModelId ) {
+						return String.valueOf(a.getModelId().getId());
+					}
+					return String.format("%d (%s)", a.getModelId().getId(),
+							a.getModelId().getDescription());
+
+				}).collect(Collectors.joining(", "));
 	}
 
 	/**
