@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.nio.ByteOrder;
 import java.util.HashSet;
 import java.util.List;
@@ -81,56 +84,98 @@ public class KcdLoader implements DescriptionLoader {
 	private Schema schema;
 	private JAXBContext context;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @throws RuntimeException
+	 *         if the KCD JAXB context or XML Schema cannot be loaded
+	 */
 	public KcdLoader() {
 		SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		InputStream resourceAsStream = getClass().getResourceAsStream("Definition.xsd");
 		Source s = new StreamSource(resourceAsStream);
 		try {
 			schema = schemaFactory.newSchema(s);
-		} catch ( SAXException ex ) {
-			logger.error("Could not load schema: ", ex);
+			context = JAXBContext.newInstance(new Class[] { NetworkDefinition.class });
+		} catch ( JAXBException | SAXException ex ) {
+			logger.error("Could not create KCD XML context: ", ex);
+			throw new RuntimeException(ex);
 		}
-		try {
-			context = JAXBContext
-					.newInstance(new Class[] { com.github.kayak.canio.kcd.NetworkDefinition.class });
-		} catch ( JAXBException ex ) {
-			logger.error("Could not create JAXB context: ", ex);
+	}
+
+	private static final int GZIP_MAGIC = 0x1f8b;
+
+	private InputStream inputStreamForStream(InputStream in) throws IOException {
+		// checking for GZIP
+		if ( in instanceof GZIPInputStream ) {
+			return in;
 		}
+		PushbackInputStream s = new PushbackInputStream(in, 2);
+		int count = 0;
+		byte[] magic = new byte[] { -1, -1 };
+		while ( count < 2 ) {
+			int readCount = s.read(magic, count, 2 - count);
+			if ( readCount < 0 ) {
+				break;
+			}
+			count += readCount;
+		}
+		s.unread(magic, 0, count);
+		// GZIP magic bytes: 0x1F 0x8B
+		if ( magic[0] == (byte) (GZIP_MAGIC >> 8) && magic[1] == (byte) (GZIP_MAGIC) ) {
+			return new GZIPInputStream(s);
+		}
+		return s;
 	}
 
 	@Override
 	public Document parseFile(File file) {
-		NetworkDefinition netdef = null;
-
 		try {
-			context = JAXBContext
-					.newInstance(new Class[] { com.github.kayak.canio.kcd.NetworkDefinition.class });
+			return parse(new BufferedInputStream(new FileInputStream(file)), file.getAbsolutePath());
+		} catch ( IOException e ) {
+			throw new RuntimeException("Error parsing KCD file [" + file + "]", e);
+		}
+	}
+
+	/**
+	 * Parse KCD data from an input stream, using a given file name.
+	 * 
+	 * <p>
+	 * GZIP encoded streams are supported and will be automatically detected.
+	 * </p>
+	 * 
+	 * @param in
+	 *        the input stream to read
+	 * @param fileName
+	 *        the file name to associate with the stream
+	 * @return the parsed document
+	 * @throws IOException
+	 *         if any error occurs reading the data
+	 */
+	public Document parse(InputStream in, String fileName) throws IOException {
+		try (InputStream input = inputStreamForStream(in)) {
 			Unmarshaller umarshall = context.createUnmarshaller();
 			umarshall.setSchema(schema);
 
-			Object object;
+			Object object = umarshall.unmarshal(input);
 
-			if ( file.getName().endsWith(".kcd.gz") ) {
-				GZIPInputStream zipstream = new GZIPInputStream(new FileInputStream(file));
-				object = umarshall.unmarshal(zipstream);
-			} else if ( file.getName().endsWith(".kcd") ) {
-				object = umarshall.unmarshal(file);
+			if ( object instanceof NetworkDefinition ) {
+				return createDocument((NetworkDefinition) object, fileName);
 			} else {
-				return null;
+				throw new IOException("Unexpected KCD data found.");
 			}
-
-			if ( object.getClass() == NetworkDefinition.class ) {
-				netdef = (NetworkDefinition) object;
-			}
-
+		} catch ( IOException e ) {
+			throw e;
 		} catch ( UnmarshalException e ) {
-			logger.warn("Found invalid file: " + file.getAbsolutePath() + "!", e);
-			return null;
+			logger.warn("Invalid KCD data.", e);
+			throw new IOException(e);
 		} catch ( Exception e ) {
-			logger.warn("Could not load kcd file " + file.getAbsolutePath() + "!", e);
-			return null;
+			logger.warn("Error loading KCD data.", e);
+			throw new IOException(e);
 		}
+	}
 
+	private Document createDocument(NetworkDefinition netdef, String fileName) {
 		Document doc = new Document();
 
 		com.github.kayak.canio.kcd.Document documentInfo = netdef.getDocument();
@@ -139,7 +184,7 @@ public class KcdLoader implements DescriptionLoader {
 		doc.setCompany(documentInfo.getCompany());
 		doc.setDate(documentInfo.getDate());
 		doc.setName(documentInfo.getName());
-		doc.setFileName(file.getAbsolutePath());
+		doc.setFileName(fileName);
 
 		for ( Node n : netdef.getNode() ) {
 			doc.createNode(n.getId(), n.getName());
@@ -256,8 +301,7 @@ public class KcdLoader implements DescriptionLoader {
 		return doc;
 	}
 
-	private com.github.kayak.core.description.SignalDescription signalToSignalDescription(Signal s,
-			SignalDescription signalDescription) {
+	private SignalDescription signalToSignalDescription(Signal s, SignalDescription signalDescription) {
 		if ( s.getEndianess().equals("big") ) {
 			signalDescription.setByteOrder(ByteOrder.BIG_ENDIAN);
 		} else {
