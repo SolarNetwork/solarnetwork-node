@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: CAN Bus Communication Support
+Bundle-Description: Communication support for the CAN bus protocol.
+Bundle-SymbolicName: net.solarnetwork.node.io.canbus
+Bundle-Version: 1.0.0
+Automatic-Module-Name: net.solarnetwork.node.io.canbus
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ com.github.kayak.canio.kcd;version="1.0.0",
+ com.github.kayak.core;version="1.0.0",
+ com.github.kayak.core.description;version="1.0.0",
+ javax.xml,
+ javax.xml.bind,
+ javax.xml.bind.annotation,
+ javax.xml.namespace,
+ javax.xml.transform,
+ javax.xml.transform.stream,
+ javax.xml.validation,
+ org.slf4j;version="[1.7,2.0)",
+ org.xml.sax
