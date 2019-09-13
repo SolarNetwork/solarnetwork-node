@@ -142,7 +142,7 @@ public class KcdLoader implements DescriptionLoader {
 		doc.setFileName(file.getAbsolutePath());
 
 		for ( Node n : netdef.getNode() ) {
-			com.github.kayak.core.description.Node node = doc.createNode(n.getId(), n.getName());
+			doc.createNode(n.getId(), n.getName());
 		}
 
 		for ( Bus b : netdef.getBus() ) {
@@ -266,19 +266,11 @@ public class KcdLoader implements DescriptionLoader {
 
 		Value value = s.getValue();
 		if ( value != null ) {
-			Double intercept = value.getIntercept();
-			if ( intercept != null ) {
-				signalDescription.setIntercept(intercept);
-			} else {
-				signalDescription.setIntercept(0);
-			}
+			double intercept = value.getIntercept();
+			signalDescription.setIntercept(intercept);
 
-			Double slope = value.getSlope();
-			if ( slope != null ) {
-				signalDescription.setSlope(slope);
-			} else {
-				signalDescription.setSlope(1);
-			}
+			double slope = value.getSlope();
+			signalDescription.setSlope(slope);
 
 			String typeString = value.getType();
 			if ( typeString.equals("signed") ) {
