@@ -111,7 +111,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 @SuppressWarnings("deprecation")
 public class CASettingsService
@@ -239,7 +239,6 @@ public class CASettingsService
 				Configuration conf;
 				try {
 					conf = configurationAdmin.getConfiguration(instancePid, null);
-					@SuppressWarnings("unchecked")
 					Dictionary<String, ?> props = conf.getProperties();
 					if ( props != null ) {
 						factoryInstanceKey = (String) props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY);
@@ -371,7 +370,6 @@ public class CASettingsService
 					: null);
 			try {
 				Configuration conf = getConfiguration(providerUID, instanceUID);
-				@SuppressWarnings("unchecked")
 				Dictionary<String, ?> props = conf.getProperties();
 				Object val = (props == null ? null : props.get(keyedSetting.getKey()));
 				if ( val == null ) {
@@ -389,7 +387,6 @@ public class CASettingsService
 
 	private static final Pattern INDEXED_PROP_PATTERN = Pattern.compile("\\[\\d+\\]");
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public void updateSettings(SettingsCommand command) {
 		// group all updates by provider+instance, to reduce the number of CA updates
@@ -495,7 +492,6 @@ public class CASettingsService
 			settingDao.storeSetting(getFactorySettingKey(factoryUID), newInstanceKey, newInstanceKey);
 			try {
 				Configuration conf = getConfiguration(factoryUID, newInstanceKey);
-				@SuppressWarnings("unchecked")
 				Dictionary<String, Object> props = conf.getProperties();
 				if ( props == null ) {
 					props = new Hashtable<String, Object>();
@@ -715,7 +711,6 @@ public class CASettingsService
 				for ( int i = 1; i <= instanceCount; i++ ) {
 					String instanceKey = String.valueOf(i);
 					Configuration conf = getConfiguration(factoryPID, instanceKey);
-					@SuppressWarnings("unchecked")
 					Dictionary<String, Object> props = conf.getProperties();
 					if ( props == null ) {
 						props = new Hashtable<String, Object>();
