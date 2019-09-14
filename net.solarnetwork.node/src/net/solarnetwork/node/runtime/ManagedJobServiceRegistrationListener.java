@@ -113,7 +113,7 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -268,12 +268,10 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
 			String newCronExpression = origTrigger.getCronExpression();
 			JobDataMap newJobDataMap = (JobDataMap) origJobDetail.getJobDataMap().clone();
-			@SuppressWarnings("unchecked")
 			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 			ConfigurationAdmin ca = bundleContext.getService(caRef);
 			try {
 				Configuration config = ca.getConfiguration(pid, null);
-				@SuppressWarnings("unchecked")
 				Dictionary<String, ?> props = config.getProperties();
 
 				// first look for expression on common attribute names

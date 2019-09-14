@@ -22,11 +22,17 @@
 
 package net.solarnetwork.node.datum.os.stat;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 /**
  * Enumeration of supported helper script action commands.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum StatAction {
 
@@ -42,10 +48,23 @@ public enum StatAction {
 
 	SystemUptime("sys-up");
 
+	/**
+	 * An unmodifiable set of all action names.
+	 * 
+	 * @since 1.1
+	 */
+	public static final Set<String> ALL_ACTIONS = createAllActions();
+
 	private final String action;
 
 	private StatAction(String action) {
 		this.action = action;
+	}
+
+	private static Set<String> createAllActions() {
+		Set<String> s = EnumSet.allOf(StatAction.class).stream().map(e -> e.getAction())
+				.collect(Collectors.toCollection(LinkedHashSet::new));
+		return Collections.unmodifiableSet(s);
 	}
 
 	/**

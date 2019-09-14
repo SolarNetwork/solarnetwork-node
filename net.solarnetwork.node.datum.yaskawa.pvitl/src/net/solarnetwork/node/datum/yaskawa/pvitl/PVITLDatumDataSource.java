@@ -46,7 +46,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * with the PVI-XXTL series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITLData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -102,8 +102,8 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 			}
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from PVI-TL device {}: {}", modbusNetwork(),
-					e.getMessage());
+			log.error("Communication problem reading source {} from PVI-TL device {}: {}", this.sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

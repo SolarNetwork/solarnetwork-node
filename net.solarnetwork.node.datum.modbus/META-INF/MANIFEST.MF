@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Generic Modbus Datum Source
 Bundle-Description: Collect data from arbitrary Modbus devices devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.modbus
-Bundle-Version: 1.4.1
+Bundle-Version: 1.4.2
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -17,7 +17,7 @@ Import-Package:
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.backup;version="1.6.0",
  net.solarnetwork.node.domain;version="1.12.0",
- net.solarnetwork.node.io.modbus;version="2.10.0",
+ net.solarnetwork.node.io.modbus;version="2.11.0",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.0",

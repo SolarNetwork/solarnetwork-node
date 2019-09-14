@@ -73,7 +73,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class ModbusPCMController extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -482,6 +482,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		return messageSource;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.os.stat.test;
 
+import static java.util.Collections.singleton;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -55,7 +56,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link OsStatDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class OsStatDatumDataSourceTests {
 
@@ -84,12 +85,19 @@ public class OsStatDatumDataSourceTests {
 		return ds;
 	}
 
+	private OsStatDatumDataSource dataSourceInstanceCustom(Set<String> actions) {
+		OsStatDatumDataSource ds = new OsStatDatumDataSource();
+		ds.setCommandRunner(runner);
+		ds.setActionSet(actions);
+		return ds;
+	}
+
 	@Test
 	public void populateFsUse() throws IOException {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("fs-use-01.csv"));
-		expect(runner.executeAction(StatAction.FilesystemUse)).andReturn(rows);
+		expect(runner.executeAction(StatAction.FilesystemUse.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -112,7 +120,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("cpu-use-01.csv"));
-		expect(runner.executeAction(StatAction.CpuUse)).andReturn(rows);
+		expect(runner.executeAction(StatAction.CpuUse.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -132,7 +140,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("cpu-use-02.csv"));
-		expect(runner.executeAction(StatAction.CpuUse)).andReturn(rows);
+		expect(runner.executeAction(StatAction.CpuUse.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -150,7 +158,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("cpu-use-03.csv"));
-		expect(runner.executeAction(StatAction.CpuUse)).andReturn(rows);
+		expect(runner.executeAction(StatAction.CpuUse.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -170,7 +178,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("net-traffic-01.csv"));
-		expect(runner.executeAction(StatAction.NetworkTraffic)).andReturn(rows);
+		expect(runner.executeAction(StatAction.NetworkTraffic.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -196,7 +204,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("mem-use-01.csv"));
-		expect(runner.executeAction(StatAction.MemoryUse)).andReturn(rows);
+		expect(runner.executeAction(StatAction.MemoryUse.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -216,7 +224,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-load-01.csv"));
-		expect(runner.executeAction(StatAction.SystemLoad)).andReturn(rows);
+		expect(runner.executeAction(StatAction.SystemLoad.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -236,7 +244,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-up-01.csv"));
-		expect(runner.executeAction(StatAction.SystemUptime)).andReturn(rows);
+		expect(runner.executeAction(StatAction.SystemUptime.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -254,7 +262,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-up-01.csv"));
-		expect(runner.executeAction(StatAction.SystemUptime)).andReturn(rows);
+		expect(runner.executeAction(StatAction.SystemUptime.getAction())).andReturn(rows);
 
 		// when
 		replayAll();
@@ -279,7 +287,7 @@ public class OsStatDatumDataSourceTests {
 		// given
 		List<Map<String, String>> rows = ProcessActionCommandRunner
 				.parseActionCommandCsvOutput(getClass().getResourceAsStream("sys-up-01.csv"));
-		expect(runner.executeAction(StatAction.SystemUptime)).andReturn(rows);
+		expect(runner.executeAction(StatAction.SystemUptime.getAction())).andReturn(rows);
 
 		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
 		nodeMetadataService.addNodeMetadata(EasyMock.capture(metadataCaptor));
@@ -305,5 +313,27 @@ public class OsStatDatumDataSourceTests {
 		assertThat("OS name", os, hasEntry("name", System.getProperty("os.name")));
 		assertThat("OS arch", os, hasEntry("arch", System.getProperty("os.arch")));
 		assertThat("OS version", os, hasEntry("version", System.getProperty("os.version")));
+	}
+
+	@Test
+	public void populateCustomStats() throws IOException, InterruptedException {
+		// given
+		List<Map<String, String>> rows = ProcessActionCommandRunner
+				.parseActionCommandCsvOutput(getClass().getResourceAsStream("custom-01.csv"));
+		expect(runner.executeAction("custom")).andReturn(rows);
+
+		// when
+		replayAll();
+		OsStatDatumDataSource ds = dataSourceInstanceCustom(singleton("custom"));
+		GeneralNodeDatum result = ds.readCurrentDatum();
+
+		// then
+		assertThat("Result returned", result, notNullValue());
+		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		assertThat("Instantaneous cpu_temp", iData, hasEntry("cpu_temp", new BigDecimal("30.1")));
+		Map<String, Number> aData = result.getSamples().getAccumulating();
+		assertThat("Accumulating cpu_energy", aData, hasEntry("cpu_energy", new BigDecimal("12345678")));
+		Map<String, Object> sData = result.getSamples().getStatus();
+		assertThat("Status cpu_state", sData, hasEntry("cpu_state", "ok"));
 	}
 }

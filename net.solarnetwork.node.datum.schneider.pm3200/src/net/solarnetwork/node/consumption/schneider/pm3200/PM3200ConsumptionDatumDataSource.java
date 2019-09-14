@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
@@ -43,22 +42,8 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * DatumDataSource for GeneralNodeACEnergyDatum with the Schneider Electric
  * PM3200 series kWh meter.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with
- * {@link SettingSpecifierProvider}.</dd>
- * 
- * <dt>sampleCacheMs</dt>
- * <dd>The maximum number of milliseconds to cache data read from the meter,
- * until the data will be read from the meter again.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PM3200ConsumptionDatumDataSource extends PM3200Support
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -85,7 +70,7 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support
 				log.debug("Read PM3200 data: {}", currSample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
-						"Communication problem reading from Modbus device " + modbusNetwork(), e);
+						"Communication problem reading from Modbus device " + modbusDeviceName(), e);
 			}
 		} else {
 			currSample = new PM3200Data(sample);
@@ -224,10 +209,21 @@ public class PM3200ConsumptionDatumDataSource extends PM3200Support
 		setSampleCacheMs(sampleCacheSeconds * 1000L);
 	}
 
+	/**
+	 * Get the sample cache maximum age, in milliseconds.
+	 * 
+	 * @return the cache milliseconds
+	 */
 	public long getSampleCacheMs() {
 		return sampleCacheMs;
 	}
 
+	/**
+	 * Set the sample cache maximum age, in milliseconds.
+	 * 
+	 * @param sampleCacheMs
+	 *        the cache milliseconds
+	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}

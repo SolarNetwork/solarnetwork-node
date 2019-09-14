@@ -44,7 +44,7 @@ Each device configuration contains the following overall settings:
 ### Overall device settings notes
 
 <dl>
-	<dt>Modbus Port</dt>
+	<dt>Modbus Connection</dt>
 	<dd>This is the <i>service name</i> of the Modbus component configured elsewhere
 	in SolarNode. You must configure that component with the proper connection settings
 	for your Modbus network, configure a unique service name on that component, and then

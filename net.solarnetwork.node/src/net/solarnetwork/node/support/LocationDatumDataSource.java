@@ -27,6 +27,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.LocationService;
@@ -47,12 +53,6 @@ import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifie
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceTracker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 
 /**
  * {@link DatumDataSource} that augments some other data source's datum values
@@ -69,56 +69,11 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * Collection.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>delegate</dt>
- * <dd>The {@link DatumDataSource} to delegate to.</dd>
- * 
- * <dt>locationType</dt>
- * <dd>The type of location to search for. Defaults to {@link PriceLocation}.</dd>
- * 
- * <dt>locationService</dt>
- * <dd>The {@link LocationService} to use to lookup {@link Location} instances
- * via the configured {@code locationId} property.</dd>
- * 
- * <dt>locationId</dt>
- * <dd>The {@link Location} ID to assign.</dd>
- * 
- * <dt>locationIdPropertyName</dt>
- * <dd>The JavaBean property name to set the found
- * {@link Location#getLocationId()} to on the {@link Datum} returned from the
- * configured {@code delegate}. The object must support a JavaBean setter method
- * for this property. Defaults to {@link #DEFAULT_LOCATION_ID_PROP_NAME}.</dd>
- * 
- * <dt>sourceIdId</dt>
- * <dd>The location source ID to assign.</dd>
- * 
- * <dt>sourceIdPropertyName</dt>
- * <dd>The JavaBean property name to set the found
- * {@link Location#getSourceId()} to on the {@link Datum} returned from the
- * configured {@code delegate}. The object must support a JavaBean setter method
- * for this property. Defaults to {@link #DEFAULT_SOURCE_ID_PROP_NAME}.</dd>
- * 
- * <dt>requireLocationService</dt>
- * <dd>If configured as <em>true</em> then return <em>null</em> data only
- * instead of calling the delegate. This is designed for services that require a
- * location ID to be set, for example a Location Datum logger. Defaults to
- * <em>false</em>.</dd>
- * 
- * <dt>messageBundleBasename</dt>
- * <dd>The message bundle basename to use. This can be customized so different
- * messages can be shown for different uses of this proxy. Defaults to
- * {@link #PRICE_LOCATION_MESSAGE_BUNDLE}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
-public class LocationDatumDataSource<T extends Datum> implements DatumDataSource<T>,
-		MultiDatumDataSource<T>, SettingSpecifierProvider {
+public class LocationDatumDataSource<T extends Datum>
+		implements DatumDataSource<T>, MultiDatumDataSource<T>, SettingSpecifierProvider {
 
 	/** Default value for the {@code locationIdPropertyName} property. */
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
@@ -162,11 +117,10 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	 *        the location service
 	 * @return the data source
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public static LocationDatumDataSource<? extends Datum> getInstance(Object delegate,
 			OptionalServiceTracker<LocationService> locationService) {
 		LocationDatumDataSource<? extends Datum> ds = new LocationDatumDataSource<Datum>();
-		ds.setDelegate((DatumDataSource) delegate);
+		ds.setDelegate(delegate);
 		ds.setLocationService(locationService);
 		return ds;
 	}
@@ -246,8 +200,8 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	private boolean shouldIgnoreDatum(T datum) {
-		return (datumClassNameIgnore != null && datumClassNameIgnore
-				.contains(datum.getClass().getName()));
+		return (datumClassNameIgnore != null
+				&& datumClassNameIgnore.contains(datum.getClass().getName()));
 	}
 
 	@Override
@@ -348,50 +302,172 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		return new BasicLocationLookupSettingSpecifier("locationKey", locationType, location);
 	}
 
-	public DatumDataSource<T> getDelegate() {
+	/**
+	 * Get the delegate.
+	 * 
+	 * <p>
+	 * This getter is used to work around a <i>No conversion found for generic
+	 * argument(s) for reified type</i> bug with Spring/Gemini Blueprint wiring.
+	 * </p>
+	 * 
+	 * @return the delegate
+	 * @see #getDelegateDatumDataSource()
+	 */
+	public Object getDelegate() {
+		return getDelegateDatumDataSource();
+	}
+
+	/**
+	 * Set the delegate.
+	 * 
+	 * <p>
+	 * This getter is used to work around a <i>No conversion found for generic
+	 * argument(s) for reified type</i> bug with Spring/Gemini Blueprint wiring.
+	 * </p>
+	 * 
+	 * @param delegate
+	 *        the delegate to set; must implement {@link DatumDataSource<T>}
+	 * @see #setDelegateDatumDataSource(DatumDataSource)
+	 */
+	@SuppressWarnings("unchecked")
+	public void setDelegate(Object delegate) {
+		setDelegateDatumDataSource((DatumDataSource<T>) delegate);
+	}
+
+	/**
+	 * Get the delegate {@link DatumDataSource}.
+	 * 
+	 * @return the delegate
+	 * @since 1.6
+	 */
+	public Object getDelegateDatumDataSource() {
 		return delegate;
 	}
 
-	public void setDelegate(DatumDataSource<T> delegate) {
+	/**
+	 * Set the delegate {@link DatumDataSource}.
+	 * 
+	 * @param delegate
+	 *        the delegate
+	 * @since 1.6
+	 */
+	public void setDelegateDatumDataSource(DatumDataSource<T> delegate) {
 		this.delegate = delegate;
 	}
 
+	/**
+	 * Get the {@link LocationService} to use to lookup {@link Location}
+	 * instances via the configured {@code locationId} property.
+	 * 
+	 * @return the location service
+	 */
 	public OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
+	/**
+	 * Set the {@link LocationService} to use to lookup {@link Location}
+	 * instances via the configured {@code locationId} property.
+	 * 
+	 * @param locationService
+	 *        the service to use
+	 */
 	public void setLocationService(OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 
+	/**
+	 * Get the JavaBean property name to set the found
+	 * {@link Location#getLocationId()} to on the {@link Datum} returned from
+	 * the configured {@code delegate}.
+	 * 
+	 * @return the location ID property name; defaults to
+	 *         {@link #DEFAULT_LOCATION_ID_PROP_NAME}
+	 */
 	public String getLocationIdPropertyName() {
 		return locationIdPropertyName;
 	}
 
+	/**
+	 * Set the JavaBean property name to set the found
+	 * {@link Location#getLocationId()} to on the {@link Datum} returned from
+	 * the configured {@code delegate}.
+	 * 
+	 * <p>
+	 * The object must support a JavaBean setter method for this property.
+	 * </p>
+	 * 
+	 * @param locationIdPropertyName
+	 *        the property name to use
+	 */
 	public void setLocationIdPropertyName(String locationIdPropertyName) {
 		this.locationIdPropertyName = locationIdPropertyName;
 	}
 
+	/**
+	 * Get the "location service required" flag.
+	 * 
+	 * @return the location service reqiured flag; defaults to {@literal false}
+	 */
 	public boolean isRequireLocationService() {
 		return requireLocationService;
 	}
 
+	/**
+	 * Get the "location service required" flag.
+	 * 
+	 * <p>
+	 * If configured as {@literal true} then return {@literal null} data only
+	 * instead of calling the {@code delegate}. This is designed for services
+	 * that require a location ID to be set, for example a Location Datum
+	 * logger.
+	 * </p>
+	 * 
+	 * @param requireLocationService
+	 *        the required setting to use
+	 */
 	public void setRequireLocationService(boolean requireLocationService) {
 		this.requireLocationService = requireLocationService;
 	}
 
+	/**
+	 * Get the type of location to search for.
+	 * 
+	 * @return the type; defaults to {@link PriceLocation}
+	 */
 	public String getLocationType() {
 		return locationType;
 	}
 
+	/**
+	 * Set the type of location to search for.
+	 * 
+	 * @param locationType
+	 */
 	public void setLocationType(String locationType) {
 		this.locationType = locationType;
 	}
 
+	/**
+	 * Get the message bundle basename to use.
+	 * 
+	 * @return the basename; defaults to {@link #PRICE_LOCATION_MESSAGE_BUNDLE}
+	 */
 	public String getMessageBundleBasename() {
 		return messageBundleBasename;
 	}
 
+	/**
+	 * Set the message bundle basename to use.
+	 * 
+	 * <p>
+	 * This can be customized so different messages can be shown for different
+	 * uses of this proxy.
+	 * </p>
+	 * 
+	 * @param messageBundleBaseName
+	 *        the basename to use
+	 */
 	public void setMessageBundleBasename(String messageBundleBaseName) {
 		this.messageBundleBasename = messageBundleBaseName;
 	}
@@ -417,10 +493,21 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 		setSourceId(newSourceId);
 	}
 
+	/**
+	 * Get the {@link Location} ID to assign to datum.
+	 * 
+	 * @return the location ID
+	 */
 	public Long getLocationId() {
 		return locationId;
 	}
 
+	/**
+	 * Set the {@link Location} ID to assign to datum.
+	 * 
+	 * @param locationId
+	 *        the location ID
+	 */
 	public void setLocationId(Long locationId) {
 		if ( this.location != null && locationId != null
 				&& !locationId.equals(this.location.getLocationId()) ) {
@@ -446,16 +533,37 @@ public class LocationDatumDataSource<T extends Datum> implements DatumDataSource
 	}
 
 	public void setSourceId(String sourceId) {
-		if ( this.location != null && sourceId != null && !sourceId.equals(this.location.getSourceId()) ) {
+		if ( this.location != null && sourceId != null
+				&& !sourceId.equals(this.location.getSourceId()) ) {
 			this.location = null; // set to null so we re-fetch from server
 		}
 		this.sourceId = sourceId;
 	}
 
+	/**
+	 * Get the JavaBean property name to set the found
+	 * {@link Location#getSourceId()} to on the {@link Datum} returned from the
+	 * configured {@code delegate}.
+	 * 
+	 * @return the source ID property name; defaults to
+	 *         {@link #DEFAULT_SOURCE_ID_PROP_NAME}
+	 */
 	public String getSourceIdPropertyName() {
 		return sourceIdPropertyName;
 	}
 
+	/**
+	 * Set the JavaBean property name to set the found
+	 * {@link Location#getSourceId()} to on the {@link Datum} returned from the
+	 * configured {@code delegate}.
+	 * 
+	 * <p>
+	 * The object must support a JavaBean setter method for this property.
+	 * </p>
+	 * 
+	 * @param sourceIdPropertyName
+	 *        the source ID property name to use
+	 */
 	public void setSourceIdPropertyName(String sourceIdPropertyName) {
 		this.sourceIdPropertyName = sourceIdPropertyName;
 	}
