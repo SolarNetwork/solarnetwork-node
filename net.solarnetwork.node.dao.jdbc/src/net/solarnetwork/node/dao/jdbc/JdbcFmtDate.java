@@ -37,7 +37,7 @@ import org.supercsv.util.CsvContext;
  * Format dates using a Joda {@link DateTimeFormatter}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JdbcFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
 
@@ -91,7 +91,7 @@ public class JdbcFmtDate extends CellProcessorAdaptor implements DateCellProcess
 	}
 
 	@Override
-	public Object execute(final Object value, final CsvContext context) {
+	public <T> T execute(final Object value, final CsvContext context) {
 		validateInputNotNull(value, context);
 
 		String result;
