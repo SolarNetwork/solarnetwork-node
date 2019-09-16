@@ -10,6 +10,10 @@ Import-Package:
  com.github.kayak.canio.kcd;version="1.0.0",
  com.github.kayak.core;version="1.0.0",
  com.github.kayak.core.description;version="1.0.0",
+ javax.measure;version="[2.0,3.0)",
+ javax.measure.format;version="[2.0,3.0)",
+ javax.measure.quantity;version="[2.0,3.0)",
+ javax.measure.spi;version="[2.0,3.0)",
  javax.xml,
  javax.xml.bind,
  javax.xml.bind.annotation,
@@ -17,5 +21,7 @@ Import-Package:
  javax.xml.transform,
  javax.xml.transform.stream,
  javax.xml.validation,
+ net.solarnetwork.javax.measure;version="2.0.0",
+ net.solarnetwork.util;version="1.37.0",
  org.slf4j;version="[1.7,2.0)",
  org.xml.sax

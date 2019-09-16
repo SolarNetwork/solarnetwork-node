@@ -61,8 +61,8 @@ public class KcdLoaderTests {
 	@Test
 	public void parseStream() throws IOException {
 		Document d = null;
-		try (InputStream compressedIn = getClass().getResourceAsStream("kcd-test-01.xml")) {
-			d = new KcdLoader().parse(compressedIn, "test.kcd");
+		try (InputStream in = getClass().getResourceAsStream("kcd-test-01.xml")) {
+			d = new KcdLoader().parse(in, "test.kcd");
 		}
 		assertTest01Document(d, "test.kcd");
 	}
