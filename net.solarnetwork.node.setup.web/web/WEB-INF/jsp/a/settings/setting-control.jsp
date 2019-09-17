@@ -138,17 +138,15 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')}">
 						<textarea  name="${settingId}" id="${settingId}" class="span5">${settingValue}</textarea>
-						<script>
-						$(function() {
-							SolarNode.Settings.addTextArea({
-								key: '${settingId}',
-								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
-								setting: '${setup:js(setting.key)}',
-								instance: '${instanceId}'
-							});
-						});
-						</script>
+						<button type="button" class="btn setting-resource-upload"
+							data-key="${settingId}" 
+							data-xint="${setting['transient']}"
+							data-provider="${provider.settingUID}"
+							data-setting="${setup:js(setting.key)}"
+							data-instance="${instanceId}"
+							>
+							<fmt:message key="settings.resource.upload.action"/>
+						</button>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
@@ -222,18 +220,16 @@
 								multiple="multiple"
 							</c:if>
 							/>
-						<script>
-						$(function() {
-							SolarNode.Settings.addFile({
-								key: '${settingId}',
-								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
-								setting: '${setup:js(setting.key)}',
-								instance: '${instanceId}',
-								multiple: ${!!setting.multiple}
-							});
-						});
-						</script>
+						<button type="button" class="btn setting-resource-upload"
+							data-key="${settingId}" 
+							data-xint="${setting['transient']}"
+							data-provider="${provider.settingUID}"
+							data-setting="${setup:js(setting.key)}"
+							data-instance="${instanceId}"
+							data-multiple="${!!setting.multiple}"
+							>
+							<fmt:message key="settings.resource.upload.action"/>
+						</button>
 					</c:when>
 				</c:choose>
 				

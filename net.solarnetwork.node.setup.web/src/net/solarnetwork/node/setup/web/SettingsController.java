@@ -26,6 +26,7 @@ import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
@@ -52,6 +54,7 @@ import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
@@ -62,6 +65,7 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.support.MultipartFileResource;
 
 /**
  * Web controller for the settings UI.
@@ -81,7 +85,6 @@ public class SettingsController {
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
-	private static final String KEY_RESOURCE_HANDLERS = "resourceHandlers";
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -270,6 +273,79 @@ public class SettingsController {
 		props.put(BackupManager.BACKUP_KEY, file.getName());
 		manager.importBackupArchive(file.getInputStream(), props);
 		return "redirect:/a/settings";
+	}
+
+	/**
+	 * Import a setting resource.
+	 * 
+	 * @param handlerKey
+	 *        the {@link SettingResourceHandler} ID to import with
+	 * @param instanceKey
+	 *        the optional factory instance ID, or {@literal null}
+	 * @param key
+	 *        the resource setting key
+	 * @param file
+	 *        the resource
+	 * @return status response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
+			@RequestParam(name = "instanceKey", required = false) String instanceKey,
+			@RequestParam("key") String key, @RequestParam("file") MultipartFile file)
+			throws IOException {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service == null ) {
+			return new Response<Void>(false, null, "SettingsService not available.", null);
+		}
+		MultipartFileResource r = new MultipartFileResource(file);
+		service.importSettingResources(handlerKey, instanceKey, Collections.singleton(r));
+		return Response.response(null);
+	}
+
+	/**
+	 * Import a setting resource from direct text.
+	 * 
+	 * @param handlerKey
+	 *        the {@link SettingResourceHandler} ID to import with
+	 * @param instanceKey
+	 *        the optional factory instance ID, or {@literal null}
+	 * @param key
+	 *        the resource setting key
+	 * @param data
+	 *        the resource data
+	 * @return status response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = "!"
+			+ MediaType.MULTIPART_FORM_DATA_VALUE)
+	public Response<Void> importResourceData(@RequestParam("handlerKey") String handlerKey,
+			@RequestParam(name = "instanceKey", required = false) String instanceKey,
+			@RequestParam("key") String key, @RequestParam("data") String data) throws IOException {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service == null ) {
+			return new Response<Void>(false, null, "SettingsService not available.", null);
+		}
+		NamedDataResource r = new NamedDataResource(key + "-01.txt", data);
+		service.importSettingResources(handlerKey, instanceKey, Collections.singleton(r));
+		return Response.response(null);
+	}
+
+	private static final class NamedDataResource extends ByteArrayResource {
+
+		private final String filename;
+
+		private NamedDataResource(String filename, String data) {
+			super(data.getBytes(Charset.forName("UTF-8")));
+			this.filename = filename;
+		}
+
+		@Override
+		public String getFilename() {
+			return filename;
+		}
 	}
 
 }
