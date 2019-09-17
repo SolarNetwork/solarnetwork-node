@@ -268,7 +268,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 			log.info("Stabiliti {} AC export power setpoint already configured as {}, nothing to do",
 					modbusDeviceName(), currSetpointValue);
 		}
-		log.info("Setting AC export power setpoint to {}s on Stabiliti {}", targetPower,
+		log.info("Setting AC export power setpoint to {}W on Stabiliti {}", targetPower,
 				modbusDeviceName());
 		try {
 			modbus.performAction(new ModbusConnectionAction<Void>() {
