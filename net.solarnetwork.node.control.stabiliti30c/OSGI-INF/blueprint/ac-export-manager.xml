@@ -42,6 +42,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.stabiliti30c.AcExportManager"/>
 			<beans:entry key="instruction">
 				<beans:list>
+					<beans:value>SetControlParameter</beans:value>
 					<beans:value>ShedLoad</beans:value>
 				</beans:list>
 			</beans:entry>

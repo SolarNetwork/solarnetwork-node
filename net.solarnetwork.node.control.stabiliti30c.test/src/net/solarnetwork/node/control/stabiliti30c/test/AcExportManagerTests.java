@@ -328,4 +328,65 @@ public class AcExportManagerTests {
 		// THEN
 		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
 	}
+
+	@Test
+	public void handleSetControlParameterInstruction() throws IOException {
+		// GIVEN
+		startupResetsDeviceStateToKnownValues();
+		resetAll();
+
+		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+				.andDelegateTo(new TestModbusNetwork());
+
+		// first reset state to known safe values...
+		expectResetSafeDeviceState();
+
+		final int shedPowerAmount = 1000;
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
+				aryEq(new int[] { shedPowerAmount / 10 }));
+
+		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+				eq(Stabiliti30cRegister.ControlManualModeStart.getAddress()), aryEq(new int[] { 1 }));
+
+		// WHEN
+		replayAll();
+
+		Date now = new Date();
+		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				now, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
+		InstructionState result = service.processInstruction(shedLoad);
+
+		// THEN
+		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+	}
+
+	@Test
+	public void handleSetControlParameterInstructionZeroValue() throws IOException {
+		// GIVEN
+		startupResetsDeviceStateToKnownValues();
+		resetAll();
+
+		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+				.andDelegateTo(new TestModbusNetwork());
+
+		// first reset state to known safe values...
+		expectResetSafeDeviceState();
+
+		// then reset state to known safe values...
+		expectStartupResetDeviceState();
+
+		// WHEN
+		replayAll();
+
+		Date now = new Date();
+		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				now, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
+		InstructionState result = service.processInstruction(shedLoad);
+
+		// THEN
+		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+	}
 }

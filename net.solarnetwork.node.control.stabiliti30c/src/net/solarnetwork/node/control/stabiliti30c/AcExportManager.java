@@ -234,15 +234,19 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	@Override
 	public InstructionState processInstruction(Instruction instruction) {
 		String controlId = getControlId();
-		if ( instruction == null || controlId == null
-				|| !TOPIC_SHED_LOAD.equals(instruction.getTopic()) ) {
+		if ( instruction == null || controlId == null ) {
 			return null;
 		}
-		Integer targetPower;
-		try {
-			targetPower = Integer.valueOf(instruction.getParameterValue(controlId));
-		} catch ( NumberFormatException | NullPointerException e ) {
-			log.warn("ShedLoad target missing or not a number: {}", e.getMessage());
+		String topic = instruction.getTopic();
+		Integer targetPower = null;
+		if ( TOPIC_SHED_LOAD.equals(topic) || TOPIC_SET_CONTROL_PARAMETER.equals(topic) ) {
+			try {
+				targetPower = Integer.valueOf(instruction.getParameterValue(controlId));
+			} catch ( NumberFormatException | NullPointerException e ) {
+				log.warn("ShedLoad target missing or not a number: {}", e.getMessage());
+				return null;
+			}
+		} else {
 			return null;
 		}
 		if ( targetPower.intValue() == 0 ) {
