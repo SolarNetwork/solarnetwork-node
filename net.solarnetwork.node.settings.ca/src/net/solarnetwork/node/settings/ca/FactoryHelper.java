@@ -24,10 +24,10 @@ package net.solarnetwork.node.settings.ca;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
@@ -40,13 +40,39 @@ import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
  */
 public class FactoryHelper {
 
-	private final SettingSpecifierProviderFactory factory;
-	private final Map<String, List<SettingSpecifierProvider>> instanceMap = new TreeMap<String, List<SettingSpecifierProvider>>();
-	private final Map<String, List<SettingResourceHandler>> handlerMap = new TreeMap<String, List<SettingResourceHandler>>();
+	private static final Logger log = LoggerFactory.getLogger(FactoryHelper.class);
 
+	private final SettingSpecifierProviderFactory factory;
+	private final Map<String, SettingSpecifierProvider> instanceMap;
+	private final Map<String, SettingResourceHandler> handlerMap;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param factory
+	 *        the factory to provide help to
+	 */
 	public FactoryHelper(SettingSpecifierProviderFactory factory) {
+		this(factory, new TreeMap<>(), new TreeMap<>());
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param factory
+	 *        the factory to provide help to
+	 * @param instanceMap
+	 *        a map to use for tracking instance providers
+	 * @param handlerMap
+	 *        a map to use for tracking instance handlers
+	 */
+	public FactoryHelper(SettingSpecifierProviderFactory factory,
+			Map<String, SettingSpecifierProvider> instanceMap,
+			Map<String, SettingResourceHandler> handlerMap) {
 		super();
 		this.factory = factory;
+		this.instanceMap = instanceMap;
+		this.handlerMap = handlerMap;
 	}
 
 	/**
@@ -59,25 +85,6 @@ public class FactoryHelper {
 	}
 
 	/**
-	 * Get a list of providers for a given instance ID, creating an empty list
-	 * if one doesn't exist yet.
-	 * 
-	 * @param instanceUID
-	 *        the ID of the instance to get the list of providers for
-	 * @return instance list, never {@literal null}
-	 */
-	private List<SettingSpecifierProvider> getInstanceProviders(String instanceUID) {
-		synchronized ( instanceMap ) {
-			List<SettingSpecifierProvider> results = instanceMap.get(instanceUID);
-			if ( results == null ) {
-				results = new ArrayList<SettingSpecifierProvider>(5);
-				instanceMap.put(instanceUID, results);
-			}
-			return results;
-		}
-	}
-
-	/**
 	 * Add a provider for a given instance ID.
 	 * 
 	 * @param instanceUID
@@ -87,29 +94,13 @@ public class FactoryHelper {
 	 * @since 1.1
 	 */
 	public void addProvider(String instanceUID, SettingSpecifierProvider provider) {
-		synchronized ( handlerMap ) {
-			List<SettingSpecifierProvider> list = getInstanceProviders(instanceUID);
-			list.add(provider);
-		}
-	}
-
-	/**
-	 * Get a list of handlers for a given instance ID, creating an empty list if
-	 * one doesn't exist yet.
-	 * 
-	 * @param instanceUID
-	 *        the ID of the instance to get the list of handlers for
-	 * @return handler list, never {@literal null}
-	 * @since 1.1
-	 */
-	private List<SettingResourceHandler> getInstanceHandlers(String instanceUID) {
-		synchronized ( handlerMap ) {
-			List<SettingResourceHandler> results = handlerMap.get(instanceUID);
-			if ( results == null ) {
-				results = new ArrayList<SettingResourceHandler>(5);
-				handlerMap.put(instanceUID, results);
+		synchronized ( instanceMap ) {
+			SettingSpecifierProvider existing = instanceMap.putIfAbsent(instanceUID, provider);
+			if ( existing != null ) {
+				log.warn(
+						"Duplicate setting provider instance {} for provider {} ignored; already configured as {}",
+						instanceUID, provider, existing);
 			}
-			return results;
 		}
 	}
 
@@ -124,8 +115,12 @@ public class FactoryHelper {
 	 */
 	public void addHandler(String instanceUID, SettingResourceHandler handler) {
 		synchronized ( handlerMap ) {
-			List<SettingResourceHandler> list = getInstanceHandlers(instanceUID);
-			list.add(handler);
+			SettingResourceHandler existing = handlerMap.putIfAbsent(instanceUID, handler);
+			if ( existing != null ) {
+				log.warn(
+						"Duplicate setting resource handler instance {} for provider {} ignored; already configured as {}",
+						instanceUID, handler, existing);
+			}
 		}
 	}
 
@@ -134,18 +129,24 @@ public class FactoryHelper {
 	 * 
 	 * @return set of instance IDs with associated providers
 	 */
-	public Set<Map.Entry<String, List<SettingSpecifierProvider>>> instanceEntrySet() {
-		return instanceMap.entrySet();
+	public Iterable<Map.Entry<String, SettingSpecifierProvider>> instanceEntrySet() {
+		synchronized ( instanceMap ) {
+			return new ArrayList<>(instanceMap.entrySet());
+		}
 	}
 
 	/**
 	 * Get the complete set setting resource handlers.
 	 * 
-	 * @return set of instance IDs with associated handlers
+	 * @param instanceUID
+	 *        the handler key to get
+	 * @return the handler, or {@literal null} if none available
 	 * @since 1.1
 	 */
-	public Set<Map.Entry<String, List<SettingResourceHandler>>> handlerEntrySet() {
-		return handlerMap.entrySet();
+	public SettingResourceHandler getHandler(String instanceUID) {
+		synchronized ( handlerMap ) {
+			return handlerMap.get(instanceUID);
+		}
 	}
 
 	/**
@@ -156,17 +157,16 @@ public class FactoryHelper {
 	 */
 	public void removeProvider(SettingSpecifierProvider provider) {
 		synchronized ( instanceMap ) {
-			for ( List<SettingSpecifierProvider> providerList : instanceMap.values() ) {
-				for ( Iterator<SettingSpecifierProvider> itr = providerList.iterator(); itr
-						.hasNext(); ) {
-					SettingSpecifierProvider oneProvider = itr.next();
-					if ( oneProvider.equals(provider) ) {
-						itr.remove();
-						return;
-					}
+			for ( Iterator<SettingSpecifierProvider> itr = instanceMap.values().iterator(); itr
+					.hasNext(); ) {
+				SettingSpecifierProvider oneProvider = itr.next();
+				if ( oneProvider.equals(provider) ) {
+					itr.remove();
+					return;
 				}
 			}
 		}
+
 	}
 
 	/**
@@ -178,13 +178,12 @@ public class FactoryHelper {
 	 */
 	public void removeHandler(SettingResourceHandler handler) {
 		synchronized ( handlerMap ) {
-			for ( List<SettingResourceHandler> handlerList : handlerMap.values() ) {
-				for ( Iterator<SettingResourceHandler> itr = handlerList.iterator(); itr.hasNext(); ) {
-					SettingResourceHandler oneHandler = itr.next();
-					if ( oneHandler.equals(handler) ) {
-						itr.remove();
-						return;
-					}
+			for ( Iterator<SettingResourceHandler> itr = handlerMap.values().iterator(); itr
+					.hasNext(); ) {
+				SettingResourceHandler oneHandler = itr.next();
+				if ( oneHandler.equals(handler) ) {
+					itr.remove();
+					return;
 				}
 			}
 		}

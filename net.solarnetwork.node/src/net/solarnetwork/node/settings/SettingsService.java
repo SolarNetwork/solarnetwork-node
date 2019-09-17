@@ -132,14 +132,6 @@ public interface SettingsService {
 	List<SettingSpecifierProviderFactory> getProviderFactories();
 
 	/**
-	 * Get a list of all possible setting resource handlers.
-	 * 
-	 * @return list of setting resource handlers (never {@literal null})
-	 * @since 1.4
-	 */
-	List<SettingResourceHandler> getResourceHandlers();
-
-	/**
 	 * Get a specific factory for a given UID.
 	 * 
 	 * @param factoryUID
@@ -175,10 +167,10 @@ public interface SettingsService {
 	 * @param factoryUID
 	 *        the factory UID to get the providers for
 	 * 
-	 * @return mapping of instance IDs to list of setting providers (never
+	 * @return mapping of instance IDs to associated setting providers (never
 	 *         {@literal null})
 	 */
-	Map<String, List<FactorySettingSpecifierProvider>> getProvidersForFactory(String factoryUID);
+	Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID);
 
 	/**
 	 * Get the current value of a setting.
@@ -208,10 +200,12 @@ public interface SettingsService {
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
 	 *        import the resources for, otherwise {@literal null}
+	 * @param settingKey
+	 *        the setting ID to get the resources for
 	 * @return the resources (never {@literal null})
 	 * @since 1.4
 	 */
-	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey);
+	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey, String settingKey);
 
 	/**
 	 * Import setting resources.

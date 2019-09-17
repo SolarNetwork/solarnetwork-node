@@ -22,28 +22,40 @@
 
 package net.solarnetwork.node.settings.playpen;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.domain.BasicGeneralLocation;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
+import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextAreaSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
@@ -54,10 +66,14 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class SettingsPlaypen implements SettingSpecifierProvider {
+public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
+	private static final String PLAYPEN_SETTING_FILE_TXT = "var/playpen-setting-file-%d.txt";
+	private static final String PLAYPEN_SETTING_FILE_DAT = "var/playpen-setting-file.dat";
+	private static final String RESOURCE_KEY_FILE = "file";
+	private static final String RESOURCE_KEY_TEXT_FILES = "textFiles";
 	private static final String DEFAULT_STRING = "simple";
 	private static final Integer DEFAULT_INTEGER = 42;
 	private static final Double DEFAULT_SLIDE = 5.0;
@@ -139,6 +155,16 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// text area
+		results.add(new BasicTextAreaSettingSpecifier("textArea", ""));
+
+		// file
+		results.add(new BasicFileSettingSpecifier(RESOURCE_KEY_FILE, null));
+
+		// text files
+		results.add(new BasicFileSettingSpecifier(RESOURCE_KEY_TEXT_FILES, null,
+				new LinkedHashSet<>(Arrays.asList(".txt", "text/*")), true));
 
 		// custom UI
 		results.add(new BasicSetupResourceSettingSpecifier(customSettingResourceProvider,
@@ -265,6 +291,62 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		setWeatherLocationId(newLocationId);
 		setWeatherSourceId(newSourceId);
 	}
+
+	// SettingResourceHandler -----
+
+	@Override
+	public Iterable<Resource> currentSettingResources(String settingKey) {
+		List<Resource> result = new ArrayList<>(2);
+		if ( RESOURCE_KEY_FILE.equals(settingKey) ) {
+			Resource r = new FileSystemResource(PLAYPEN_SETTING_FILE_DAT);
+			if ( r.exists() ) {
+				result.add(r);
+			}
+		} else if ( RESOURCE_KEY_TEXT_FILES.equals(settingKey) ) {
+			int i = 1;
+			while ( true ) {
+				Resource r = new FileSystemResource(String.format(PLAYPEN_SETTING_FILE_TXT, i));
+				if ( !r.exists() ) {
+					break;
+				}
+				result.add(r);
+				i++;
+			}
+		}
+		return result;
+	}
+
+	@Override
+	public void applySettingResources(String settingKey, Iterable<Resource> resources) {
+		if ( resources == null ) {
+			return;
+		}
+		if ( RESOURCE_KEY_FILE.equals(settingKey) ) {
+			for ( Resource r : resources ) {
+				saveSettingResource(r, PLAYPEN_SETTING_FILE_DAT);
+				break; // only save first one
+			}
+		} else if ( RESOURCE_KEY_TEXT_FILES.equals(settingKey) ) {
+			int i = 1;
+			for ( Resource r : resources ) {
+				saveSettingResource(r, String.format(PLAYPEN_SETTING_FILE_TXT, i));
+				i++;
+			}
+		} else {
+			log.warn("Ignoring setting resource key [{}]", settingKey);
+		}
+	}
+
+	private void saveSettingResource(Resource r, String name) {
+		try (OutputStream out = new BufferedOutputStream(new FileOutputStream(name))) {
+			FileCopyUtils.copy(r.getInputStream(), out);
+			log.info("Saved setting resource [{}]", name);
+		} catch ( IOException e ) {
+			log.error("Error saving setting resource [{}]: {}", name, e.getMessage());
+		}
+	}
+
+	// Accessors -----
 
 	public String getString() {
 		return string;

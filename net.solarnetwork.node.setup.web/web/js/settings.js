@@ -267,7 +267,14 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 			$(this).attr('disabled', 'disabled');
 		}
 	});
+};
 
+SolarNode.Settings.addTextArea = function(params) {
+	// TODO
+};
+
+SolarNode.Settings.addFile = function(params) {
+	// TODO
 };
 
 /**

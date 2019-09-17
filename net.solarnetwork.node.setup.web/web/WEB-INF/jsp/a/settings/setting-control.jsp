@@ -136,6 +136,20 @@
 						});
 						</script>
 					</c:when>
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')}">
+						<textarea  name="${settingId}" id="${settingId}" class="span5">${settingValue}</textarea>
+						<script>
+						$(function() {
+							SolarNode.Settings.addTextArea({
+								key: '${settingId}',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}'
+							});
+						});
+						</script>
+					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
 						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
 							class="span5" maxLength="255"
@@ -194,13 +208,40 @@
 						});
 						</script>
 					</c:when>
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')}">
+						<c:set var="acceptFileTypes">
+							<c:forEach items="${setting.acceptableFileTypeSpecifiers}" var="fileType" varStatus="fileTypeStatus">
+								<c:if test="${!fileTypeStatus.first}">,</c:if><c:out value="${fileType}" />
+							</c:forEach>
+						</c:set>
+						<input type="file" name="${settingId}" id="${settingId}" class="span5" 
+							<c:if test="${fn:length(acceptFileTypes) gt 0}">
+								accept="${acceptFileTypes}"
+							</c:if>
+							<c:if test="${setting.multiple}">
+								multiple="multiple"
+							</c:if>
+							/>
+						<script>
+						$(function() {
+							SolarNode.Settings.addFile({
+								key: '${settingId}',
+								xint: '${setting["transient"]}',
+								provider: '${provider.settingUID}',
+								setting: '${setup:js(setting.key)}',
+								instance: '${instanceId}',
+								multiple: ${!!setting.multiple}
+							});
+						});
+						</script>
+					</c:when>
 				</c:choose>
 				
 				<c:set var="help">
 					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
 				</c:set>
 
-				<c:if test="${fn:length(help) > 0}">
+				<c:if test="${fn:length(help) gt 0}">
 					<button type="button" class=" help-popover help-icon" tabindex="-1"
 							data-content="${fn:escapeXml(help)}"
 							data-html="true">
@@ -210,7 +251,9 @@
 				
 				<span class="help-inline active-value clean"><span class="text-info">
 					<c:choose>
-						<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true}">
+						<c:when test="${(setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true)
+									|| setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')
+									|| setup:instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')}">
 							<fmt:message key="settings.changed.value.label"/>
 						</c:when>
 						<c:otherwise>

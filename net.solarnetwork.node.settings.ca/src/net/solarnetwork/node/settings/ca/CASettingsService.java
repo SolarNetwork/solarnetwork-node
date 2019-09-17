@@ -348,20 +348,15 @@ public class CASettingsService
 	}
 
 	@Override
-	public Map<String, List<FactorySettingSpecifierProvider>> getProvidersForFactory(String factoryUID) {
-		Map<String, List<FactorySettingSpecifierProvider>> results = new LinkedHashMap<String, List<FactorySettingSpecifierProvider>>();
+	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
+		Map<String, FactorySettingSpecifierProvider> results = new LinkedHashMap<>();
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(factoryUID);
 			if ( helper != null ) {
-				for ( Map.Entry<String, List<SettingSpecifierProvider>> me : helper
-						.instanceEntrySet() ) {
+				for ( Map.Entry<String, SettingSpecifierProvider> me : helper.instanceEntrySet() ) {
 					String instanceUID = me.getKey();
-					List<FactorySettingSpecifierProvider> list = new ArrayList<FactorySettingSpecifierProvider>(
-							me.getValue().size());
-					for ( SettingSpecifierProvider provider : me.getValue() ) {
-						list.add(new BasicFactorySettingSpecifierProvider(instanceUID, provider));
-					}
-					results.put(instanceUID, list);
+					results.put(instanceUID,
+							new BasicFactorySettingSpecifierProvider(instanceUID, me.getValue()));
 				}
 			}
 		}
@@ -857,16 +852,28 @@ public class CASettingsService
 	}
 
 	@Override
-	public List<SettingResourceHandler> getResourceHandlers() {
-		synchronized ( handlers ) {
-			return new ArrayList<>(handlers.values());
+	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey,
+			String settingKey) {
+		if ( handlerKey == null || handlerKey.isEmpty() ) {
+			return Collections.emptyList();
 		}
-	}
-
-	@Override
-	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey) {
-		// TODO Auto-generated method stub
-		return null;
+		SettingResourceHandler handler = null;
+		if ( instanceKey != null && !instanceKey.isEmpty() ) {
+			synchronized ( factories ) {
+				FactoryHelper helper = factories.get(handlerKey);
+				if ( helper != null ) {
+					handler = helper.getHandler(instanceKey);
+				}
+			}
+		} else {
+			synchronized ( handlers ) {
+				handler = handlers.get(handlerKey);
+			}
+		}
+		if ( handler != null ) {
+			return handler.currentSettingResources(settingKey);
+		}
+		return Collections.emptyList();
 	}
 
 	@Override

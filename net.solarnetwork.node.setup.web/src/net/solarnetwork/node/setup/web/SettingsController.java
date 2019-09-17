@@ -67,7 +67,7 @@ import net.solarnetwork.web.domain.Response;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -81,6 +81,7 @@ public class SettingsController {
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
+	private static final String KEY_RESOURCE_HANDLERS = "resourceHandlers";
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -129,19 +130,20 @@ public class SettingsController {
 			ModelMap model) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
-			Map<String, List<FactorySettingSpecifierProvider>> providers = service
+			Map<String, FactorySettingSpecifierProvider> providers = service
 					.getProvidersForFactory(factoryUID);
-			if ( providers != null && providers.size() > 1 ) {
+			if ( providers != null && !providers.isEmpty() ) {
 				// sort map keys numerically
 				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
 				Arrays.sort(instanceIds, FactoryInstanceIdComparator.INSTANCE);
-				Map<String, List<FactorySettingSpecifierProvider>> orderedProviders = new LinkedHashMap<>();
+				Map<String, FactorySettingSpecifierProvider> orderedProviders = new LinkedHashMap<>();
 				for ( String id : instanceIds ) {
 					orderedProviders.put(id, providers.get(id));
 				}
-				providers = orderedProviders;
+				model.put(KEY_PROVIDERS, orderedProviders);
+			} else {
+				model.put(KEY_PROVIDERS, Collections.emptyMap());
 			}
-			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
