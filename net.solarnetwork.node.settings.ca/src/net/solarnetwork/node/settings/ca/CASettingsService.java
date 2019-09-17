@@ -83,6 +83,7 @@ import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
+import net.solarnetwork.io.TransferrableResource;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.SetupSettings;
@@ -902,8 +903,12 @@ public class CASettingsService
 			}
 			Path out = rsrcDir.resolve(name);
 			try {
-				FileCopyUtils.copy(r.getInputStream(),
-						new BufferedOutputStream(new FileOutputStream(out.toFile())));
+				if ( r instanceof TransferrableResource ) {
+					((TransferrableResource) r).transferTo(out.toFile());
+				} else {
+					FileCopyUtils.copy(r.getInputStream(),
+							new BufferedOutputStream(new FileOutputStream(out.toFile())));
+				}
 				log.info("Imported setting resource {}", out);
 				i++;
 			} catch ( IOException e ) {
