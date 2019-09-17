@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -35,6 +37,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -63,9 +69,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.FileCopyUtils;
 import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
@@ -94,6 +103,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
+import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
@@ -111,7 +121,7 @@ import net.solarnetwork.node.support.KeyValuePair;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 @SuppressWarnings("deprecation")
 public class CASettingsService
@@ -143,6 +153,7 @@ public class CASettingsService
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
 	private final Map<String, SettingSpecifierProvider> providers = new TreeMap<String, SettingSpecifierProvider>();
+	private final Map<String, SettingResourceHandler> handlers = new TreeMap<String, SettingResourceHandler>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -227,7 +238,7 @@ public class CASettingsService
 		log.debug("Bind called on {} with props {}", provider, properties);
 		final String pid = provider.getSettingUID();
 
-		List<SettingSpecifierProvider> factoryList = null;
+		boolean factoryFound = false;
 		String factoryInstanceKey = null;
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
@@ -244,8 +255,8 @@ public class CASettingsService
 						factoryInstanceKey = (String) props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY);
 						log.debug("Got factory {} instance key {}", pid, factoryInstanceKey);
 
-						factoryList = helper.getInstanceProviders(factoryInstanceKey);
-						factoryList.add(provider);
+						helper.addProvider(factoryInstanceKey, provider);
+						factoryFound = true;
 					}
 				} catch ( IOException e ) {
 					log.error("Error getting factory instance configuration {}", instancePid, e);
@@ -253,7 +264,7 @@ public class CASettingsService
 			}
 		}
 
-		if ( factoryList == null ) {
+		if ( !factoryFound ) {
 			synchronized ( providers ) {
 				providers.put(pid, provider);
 			}
@@ -771,6 +782,130 @@ public class CASettingsService
 		}
 	}
 
+	/**
+	 * Callback when a {@link SettingResourceHandler} has been registered.
+	 * 
+	 * @param handler
+	 *        the handler object
+	 * @param properties
+	 *        the service properties
+	 */
+	public void onBindHandler(SettingResourceHandler handler, Map<String, ?> properties) {
+		log.debug("Bind called on handler {} with props {}", handler, properties);
+		final String pid = handler.getSettingUID();
+
+		boolean factoryFound = false;
+		String factoryInstanceKey = null;
+		synchronized ( factories ) {
+			FactoryHelper helper = factories.get(pid);
+			if ( helper != null ) {
+				// Note: SERVICE_PID not normally provided by Spring: requires
+				// custom SN implementation bundle
+				String instancePid = (String) properties.get(Constants.SERVICE_PID);
+
+				Configuration conf;
+				try {
+					conf = configurationAdmin.getConfiguration(instancePid, null);
+					Dictionary<String, ?> props = conf.getProperties();
+					if ( props != null ) {
+						factoryInstanceKey = (String) props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY);
+						log.debug("Got factory {} instance key {}", pid, factoryInstanceKey);
+
+						helper.addHandler(factoryInstanceKey, handler);
+						factoryFound = true;
+					}
+				} catch ( IOException e ) {
+					log.error("Error getting factory instance configuration {}", instancePid, e);
+				}
+			}
+		}
+
+		if ( !factoryFound ) {
+			synchronized ( handlers ) {
+				handlers.put(pid, handler);
+			}
+		}
+	}
+
+	/**
+	 * Callback when a {@link SettingResourceHandler} has been un-registered.
+	 * 
+	 * @param handler
+	 *        the handler object
+	 * @param properties
+	 *        the service properties
+	 */
+	public void onUnbindHandler(SettingResourceHandler handler, Map<String, ?> properties) {
+		if ( handler == null ) {
+			// gemini blueprint calls this when availability="optional" and there are no services
+			return;
+		}
+		log.debug("Unbind called on handler {} with props {}", handler, properties);
+		final String pid = handler.getSettingUID();
+
+		synchronized ( factories ) {
+			FactoryHelper helper = factories.get(pid);
+			if ( helper != null ) {
+				helper.removeHandler(handler);
+				return;
+			}
+		}
+
+		synchronized ( handlers ) {
+			handlers.remove(pid, handler);
+		}
+	}
+
+	@Override
+	public List<SettingResourceHandler> getResourceHandlers() {
+		synchronized ( handlers ) {
+			return new ArrayList<>(handlers.values());
+		}
+	}
+
+	@Override
+	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void importSettingResources(final String handlerKey, final String instanceKey,
+			Iterable<Resource> resources) {
+		if ( resources == null ) {
+			return;
+		}
+		Path rsrcDir = SettingsService.settingResourceDirectory().resolve(handlerKey);
+		if ( instanceKey != null && !instanceKey.isEmpty() ) {
+			rsrcDir = rsrcDir.resolve(instanceKey);
+		}
+		if ( !Files.exists(rsrcDir) ) {
+			try {
+				Files.createDirectories(rsrcDir);
+			} catch ( IOException e ) {
+				throw new RuntimeException("Error creating settings directory " + rsrcDir
+						+ " for handler" + handlerKey + ": " + e.getMessage());
+			}
+		}
+		int i = 1;
+		for ( Resource r : resources ) {
+			String name = r.getFilename();
+			if ( name == null ) {
+				name = String.valueOf(i);
+			}
+			Path out = rsrcDir.resolve(name);
+			try {
+				FileCopyUtils.copy(r.getInputStream(),
+						new BufferedOutputStream(new FileOutputStream(out.toFile())));
+				log.info("Imported setting resource {}", out);
+				i++;
+			} catch ( IOException e ) {
+				throw new RuntimeException(
+						"Error saving setting resource " + out + ": " + e.getMessage());
+			}
+		}
+	}
+
 	@Override
 	public SettingsBackup backupSettings() {
 		final Date mrd = settingDao.getMostRecentModificationDate();
@@ -886,12 +1021,29 @@ public class CASettingsService
 		List<BackupResource> resources = new ArrayList<BackupResource>(1);
 		resources.add(new ResourceBackupResource(new ByteArrayResource(byos.toByteArray()),
 				BACKUP_RESOURCE_SETTINGS_CSV, getKey()));
+
+		// check for setting resource files
+		Path rsrcDir = SettingsService.settingResourceDirectory();
+		if ( Files.isDirectory(rsrcDir) ) {
+			try {
+				Files.walk(rsrcDir).forEach(p -> {
+					if ( Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) ) {
+						resources.add(new ResourceBackupResource(new FileSystemResource(p.toFile()),
+								p.toString(), getKey()));
+					}
+				});
+			} catch ( IOException e ) {
+				log.warn("IO error looking for setting resources: {}", e.toString());
+			}
+		}
+
 		return resources;
 	}
 
 	@Override
 	public boolean restoreBackupResource(BackupResource resource) {
-		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(resource.getBackupPath()) ) {
+		String backupPath = resource.getBackupPath();
+		if ( BACKUP_RESOURCE_SETTINGS_CSV.equalsIgnoreCase(backupPath) ) {
 			try {
 				// TODO: need a better way to organize settings into "do not restore" category
 				final Pattern notAllowed = Pattern.compile("^solarnode.*", Pattern.CASE_INSENSITIVE);
@@ -910,6 +1062,24 @@ public class CASettingsService
 				return true;
 			} catch ( IOException e ) {
 				log.error("Unable to restore settings backup resource", e);
+			}
+		} else {
+			// check for setting resource files
+			Path backupPathPath = Paths.get(backupPath);
+			if ( !backupPathPath.isAbsolute() ) {
+				Path rsrcPath = SettingsService.settingResourceDirectory().resolve(backupPath);
+				Path rsrcPathDir = rsrcPath.getParent();
+				try {
+					if ( !Files.exists(rsrcPathDir) ) {
+						Files.createDirectories(rsrcPathDir);
+					}
+					FileCopyUtils.copy(resource.getInputStream(),
+							new BufferedOutputStream(new FileOutputStream(rsrcPath.toFile())));
+					log.info("Restored settings resource {}", backupPath);
+					return true;
+				} catch ( IOException e ) {
+					log.error("Error restoring backup settings resource {}", backupPath, e);
+				}
 			}
 		}
 		return false;

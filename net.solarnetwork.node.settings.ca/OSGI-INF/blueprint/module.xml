@@ -108,4 +108,8 @@
 		<reference-listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference-list>
 	
+	<reference-list id="handlerList" interface="net.solarnetwork.node.settings.SettingResourceHandler" availability="optional">
+		<reference-listener ref="settingsService" bind-method="onBindHandler" unbind-method="onUnbindHandler"/>
+	</reference-list>
+	
 </blueprint>

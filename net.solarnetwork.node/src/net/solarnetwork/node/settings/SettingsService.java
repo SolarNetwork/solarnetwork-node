@@ -25,17 +25,61 @@ package net.solarnetwork.node.settings;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.io.Resource;
+import net.solarnetwork.node.Constants;
 
 /**
  * Service API for settings.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public interface SettingsService {
+
+	/**
+	 * The system property for the setting resource directory.
+	 * 
+	 * @since 1.4
+	 */
+	String SYSTEM_PROP_SETTING_RESOURCE_DIR = "sn.rsrc";
+
+	/**
+	 * The default setting resource directory, if
+	 * {@link #SYSTEM_PROP_SETTING_RESOURCE_DIR} is not defined.
+	 * 
+	 * @since 1.4
+	 */
+	String DEFAULT_SETTING_RESOURCE_DIR = "conf/rsrc";
+
+	/**
+	 * Get the path to the setting resource directory.
+	 * 
+	 * <p>
+	 * This is the directory where external setting resources can be persisted.
+	 * If the system property {@link #SYSTEM_PROP_SETTING_RESOURCE_DIR} is
+	 * defined as an absolute path, that path is used directly. Otherwise
+	 * {@link #SYSTEM_PROP_SETTING_RESOURCE_DIR} is treated as a path relative
+	 * to {@link Constants#solarNodeHome()}, defaulting to
+	 * {@link #DEFAULT_SETTING_RESOURCE_DIR} if not defined.
+	 * </p>
+	 * 
+	 * @return the setting resource directory, never {@literal null}
+	 * @since 1.4
+	 */
+	static Path settingResourceDirectory() {
+		Path rsrcDir = Paths
+				.get(System.getProperty(SYSTEM_PROP_SETTING_RESOURCE_DIR, DEFAULT_SETTING_RESOURCE_DIR));
+		if ( rsrcDir.isAbsolute() ) {
+			return rsrcDir;
+		}
+		Path dir = Paths.get(Constants.solarNodeHome());
+		return dir.resolve(rsrcDir);
+	}
 
 	/**
 	 * The instruction topic for a request to update (create or change) a
@@ -76,16 +120,24 @@ public interface SettingsService {
 	/**
 	 * Get a list of all possible non-factory setting providers.
 	 * 
-	 * @return list of setting providers (never <em>null</em>)
+	 * @return list of setting providers (never {@literal null})
 	 */
 	List<SettingSpecifierProvider> getProviders();
 
 	/**
 	 * Get a list of all possible setting provider factories.
 	 * 
-	 * @return list of setting provider factories (never <em>null</em>)
+	 * @return list of setting provider factories (never {@literal null})
 	 */
 	List<SettingSpecifierProviderFactory> getProviderFactories();
+
+	/**
+	 * Get a list of all possible setting resource handlers.
+	 * 
+	 * @return list of setting resource handlers (never {@literal null})
+	 * @since 1.4
+	 */
+	List<SettingResourceHandler> getResourceHandlers();
 
 	/**
 	 * Get a specific factory for a given UID.
@@ -93,7 +145,7 @@ public interface SettingsService {
 	 * @param factoryUID
 	 *        the factory UID to get the providers for
 	 * 
-	 * @return the factory, or <em>null</em> if not available
+	 * @return the factory, or {@literal null} if not available
 	 */
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUID);
 
@@ -124,7 +176,7 @@ public interface SettingsService {
 	 *        the factory UID to get the providers for
 	 * 
 	 * @return mapping of instance IDs to list of setting providers (never
-	 *         <em>null</em>)
+	 *         {@literal null})
 	 */
 	Map<String, List<FactorySettingSpecifierProvider>> getProvidersForFactory(String factoryUID);
 
@@ -135,7 +187,7 @@ public interface SettingsService {
 	 *        the provider of the setting
 	 * @param setting
 	 *        the setting
-	 * @return the currernt setting value
+	 * @return the current setting value
 	 */
 	Object getSettingValue(SettingSpecifierProvider provider, SettingSpecifier setting);
 
@@ -146,6 +198,34 @@ public interface SettingsService {
 	 *        the update command
 	 */
 	void updateSettings(SettingsCommand command);
+
+	/**
+	 * Get current setting resources.
+	 * 
+	 * @param handlerKey
+	 *        the ID if the {@link SettingResourceHandler} to get the resources
+	 *        from
+	 * @param instanceKey
+	 *        if {@code handlerKey} is a factory, the ID of the instance to
+	 *        import the resources for, otherwise {@literal null}
+	 * @return the resources (never {@literal null})
+	 * @since 1.4
+	 */
+	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey);
+
+	/**
+	 * Import setting resources.
+	 * 
+	 * @param handlerKey
+	 *        the ID if the {@link SettingResourceHandler} to import to
+	 * @param instanceKey
+	 *        if {@code handlerKey} is a factory, the ID of the instance to
+	 *        import the resources for, otherwise {@literal null}
+	 * @param resources
+	 *        the resources to import
+	 * @since 1.4
+	 */
+	void importSettingResources(String handlerKey, String instanceKey, Iterable<Resource> resources);
 
 	/**
 	 * Export all settings as CSV formatted text.
@@ -181,17 +261,17 @@ public interface SettingsService {
 	 * <p>
 	 * A new backup need not be created if the settings are unchanged. In that
 	 * case, or if this method does not create a backup for any reason, this
-	 * method should return <em>null</em>.
+	 * method should return {@literal null}.
 	 * </p>
 	 * 
-	 * @return the backup object, or <em>null</em> if no backup created
+	 * @return the backup object, or {@literal null} if no backup created
 	 */
 	SettingsBackup backupSettings();
 
 	/**
 	 * Get a collection of all known settings backups.
 	 * 
-	 * @return the backups, never <em>null</em>
+	 * @return the backups, never {@literal null}
 	 */
 	Collection<SettingsBackup> getAvailableBackups();
 
@@ -201,7 +281,7 @@ public interface SettingsService {
 	 * 
 	 * @param backup
 	 *        the backup to get the Reader for
-	 * @return the Reader, or <em>null</em> if the backup cannot be found
+	 * @return the Reader, or {@literal null} if the backup cannot be found
 	 */
 	Reader getReaderForBackup(SettingsBackup backup);
 }
