@@ -133,7 +133,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * P1 output frequency setpoint for voltage-forming mode, if the P1 control
 	 * method is FPWR, in milli-hertz.
 	 */
-	ControlP1FrequencySetpoint(72, Int16),
+	ControlP1FrequencySetpoint(72, UInt16),
 
 	/** Soft current limit, in deci-amps. */
 	ControlP1CurrentLimit(90, Int16),
