@@ -66,12 +66,21 @@ public interface SettingResourceHandler {
 	/**
 	 * Apply settings for a specific key from a resource.
 	 * 
+	 * <p>
+	 * This method returns a collection of setting values to update as a result
+	 * of applying the given resources. This provides a way for the handler to
+	 * generate a list of settings to be persisted elsewhere (for example via a
+	 * {@link SettingsService}.
+	 * </p>
+	 * 
 	 * @param settingKey
 	 *        the setting key, generally a
 	 *        {@link KeyedSettingSpecifier#getKey()} value
 	 * @param resources
 	 *        the resources with the settings to apply
+	 * @return any setting values that should be persisted as a result of
+	 *         applying the given resources (never {@literal null}
 	 */
-	void applySettingResources(String settingKey, Iterable<Resource> resources);
+	SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources);
 
 }

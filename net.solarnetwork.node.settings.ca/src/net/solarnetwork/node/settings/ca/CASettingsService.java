@@ -51,7 +51,9 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Dictionary;
 import java.util.EnumSet;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,6 +63,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.osgi.framework.Constants;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
@@ -113,6 +116,7 @@ import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
 import net.solarnetwork.node.support.KeyValuePair;
 
@@ -396,61 +400,84 @@ public class CASettingsService
 
 	@Override
 	public void updateSettings(SettingsCommand command) {
-		// group all updates by provider+instance, to reduce the number of CA updates
-		// when multiple settings are changed
-		if ( command.getProviderKey() == null ) {
-			Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
-			Map<String, SettingsCommand> indexedGroups = null;
-			for ( SettingValueBean bean : command.getValues() ) {
-				String groupKey = bean.getProviderKey()
-						+ (bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
-				final boolean indexed = INDEXED_PROP_PATTERN.matcher(bean.getKey()).find();
-				SettingsCommand cmd = null;
-				if ( indexed ) {
-					// indexed property, add in indexed groups
-					if ( indexedGroups == null ) {
-						indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
-					}
-					cmd = indexedGroups.get(groupKey);
-				} else {
-					cmd = groups.get(groupKey);
-				}
-
-				if ( cmd == null ) {
-					cmd = new SettingsCommand();
-					cmd.setProviderKey(bean.getProviderKey());
-					cmd.setInstanceKey(bean.getInstanceKey());
-					if ( indexed ) {
-						indexedGroups.put(groupKey, cmd);
-					} else {
-						groups.put(groupKey, cmd);
-					}
-				}
-				cmd.getValues().add(bean);
-			}
-			for ( SettingsCommand cmd : groups.values() ) {
-				updateSettings(cmd);
-			}
-			if ( indexedGroups != null ) {
-				for ( SettingsCommand cmd : indexedGroups.values() ) {
-					updateSettings(cmd);
-				}
-			}
+		if ( command.getProviderKey() != null ) {
+			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey());
 			return;
 		}
+		// group all updates by provider+instance, to reduce the number of CA updates
+		// when multiple settings are changed
+		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
+		Map<String, SettingsCommand> indexedGroups = null;
+		for ( SettingValueBean bean : command.getValues() ) {
+			String groupKey = bean.getProviderKey()
+					+ (bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
+			final boolean indexed = INDEXED_PROP_PATTERN.matcher(bean.getKey()).find();
+			SettingsCommand cmd = null;
+			if ( indexed ) {
+				// indexed property, add in indexed groups
+				if ( indexedGroups == null ) {
+					indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
+				}
+				cmd = indexedGroups.get(groupKey);
+			} else {
+				cmd = groups.get(groupKey);
+			}
 
+			if ( cmd == null ) {
+				cmd = new SettingsCommand();
+				cmd.setProviderKey(bean.getProviderKey());
+				cmd.setInstanceKey(bean.getInstanceKey());
+				if ( indexed ) {
+					indexedGroups.put(groupKey, cmd);
+				} else {
+					groups.put(groupKey, cmd);
+				}
+			}
+			cmd.getValues().add(bean);
+		}
+		for ( SettingsCommand cmd : groups.values() ) {
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
+		}
+		if ( indexedGroups != null ) {
+			for ( SettingsCommand cmd : indexedGroups.values() ) {
+				applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
+			}
+		}
+	}
+
+	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
+			final String instanceKey) {
+		if ( updates == null || providerKey == null || providerKey.isEmpty()
+				|| !(updates.hasSettingKeyPatternsToClean() || updates.hasSettingValueUpdates()) ) {
+			return;
+		}
+		String settingKey = providerKey;
+		if ( instanceKey != null && !instanceKey.isEmpty() ) {
+			settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
+		}
 		try {
-			Configuration conf = getConfiguration(command.getProviderKey(), command.getInstanceKey());
+			Configuration conf = getConfiguration(providerKey, instanceKey);
 			Dictionary<String, Object> props = conf.getProperties();
 			if ( props == null ) {
 				props = new Hashtable<String, Object>();
 			}
-			for ( SettingValueBean bean : command.getValues() ) {
-				String settingKey = command.getProviderKey();
-				String instanceKey = command.getInstanceKey();
-				if ( instanceKey != null ) {
-					settingKey = getFactoryInstanceSettingKey(settingKey, instanceKey);
+			if ( updates.getSettingKeyPatternsToClean() != null ) {
+				Set<String> keysToRemove = new HashSet<>();
+				Enumeration<String> propKeys = props.keys();
+				while ( propKeys.hasMoreElements() ) {
+					String key = propKeys.nextElement();
+					for ( Pattern p : updates.getSettingKeyPatternsToClean() ) {
+						if ( p.matcher(key).matches() ) {
+							keysToRemove.add(key);
+						}
+					}
 				}
+				for ( String key : keysToRemove ) {
+					props.remove(key);
+					settingDao.deleteSetting(settingKey, key);
+				}
+			}
+			for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
 				if ( bean.isRemove() ) {
 					props.remove(bean.getKey());
 				} else {
@@ -466,12 +493,11 @@ public class CASettingsService
 				}
 			}
 			if ( conf != null && props != null ) {
-				if ( command.getInstanceKey() != null ) {
-					props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, command.getInstanceKey());
+				if ( instanceKey != null && !instanceKey.isEmpty() ) {
+					props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
 				}
 				conf.update(props);
 			}
-
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
@@ -853,11 +879,7 @@ public class CASettingsService
 	}
 
 	@Override
-	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey,
-			String settingKey) {
-		if ( handlerKey == null || handlerKey.isEmpty() ) {
-			return Collections.emptyList();
-		}
+	public SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey) {
 		SettingResourceHandler handler = null;
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			synchronized ( factories ) {
@@ -871,22 +893,38 @@ public class CASettingsService
 				handler = handlers.get(handlerKey);
 			}
 		}
-		if ( handler != null ) {
-			return handler.currentSettingResources(settingKey);
+		return handler;
+	}
+
+	@Override
+	public Iterable<Resource> getSettingResources(final String handlerKey, final String instanceKey,
+			final String settingKey) throws IOException {
+		if ( handlerKey == null || handlerKey.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		Path rsrcDir = getSettingResourcePersistencePath(handlerKey, instanceKey, settingKey);
+		if ( Files.isDirectory(rsrcDir) ) {
+			return Files.list(rsrcDir).sorted().map(p -> {
+				return new FileSystemResource(p.toFile());
+			}).collect(Collectors.toList());
 		}
 		return Collections.emptyList();
 	}
 
 	@Override
 	public void importSettingResources(final String handlerKey, final String instanceKey,
-			Iterable<Resource> resources) {
+			final String settingKey, final Iterable<Resource> resources) {
 		if ( resources == null ) {
 			return;
 		}
-		Path rsrcDir = SettingsService.settingResourceDirectory().resolve(handlerKey);
-		if ( instanceKey != null && !instanceKey.isEmpty() ) {
-			rsrcDir = rsrcDir.resolve(instanceKey);
+		SettingResourceHandler handler = getSettingResourceHandler(handlerKey, instanceKey);
+		if ( handler == null ) {
+			// unknown handler; do not import
+			throw new RuntimeException(
+					"Setting resource handler [" + handlerKey + "] is not supported.");
 		}
+
+		Path rsrcDir = getSettingResourcePersistencePath(handlerKey, instanceKey, settingKey);
 		if ( !Files.exists(rsrcDir) ) {
 			try {
 				Files.createDirectories(rsrcDir);
@@ -895,6 +933,8 @@ public class CASettingsService
 						+ " for handler" + handlerKey + ": " + e.getMessage());
 			}
 		}
+
+		List<Resource> finalResources = new ArrayList<>(2);
 		int i = 1;
 		for ( Resource r : resources ) {
 			String name = r.getFilename();
@@ -902,20 +942,39 @@ public class CASettingsService
 				name = String.valueOf(i);
 			}
 			Path out = rsrcDir.resolve(name);
+			File outFile = out.toFile();
 			try {
+
 				if ( r instanceof TransferrableResource ) {
-					((TransferrableResource) r).transferTo(out.toFile());
+					((TransferrableResource) r).transferTo(outFile);
 				} else {
 					FileCopyUtils.copy(r.getInputStream(),
-							new BufferedOutputStream(new FileOutputStream(out.toFile())));
+							new BufferedOutputStream(new FileOutputStream(outFile)));
 				}
 				log.info("Imported setting resource {}", out);
+				finalResources.add(new FileSystemResource(outFile));
 				i++;
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Error saving setting resource " + out + ": " + e.getMessage());
 			}
 		}
+
+		// finally, pass to handler using copied resource
+		SettingsUpdates updates = handler.applySettingResources(settingKey, finalResources);
+
+		// apply any updates returned by the handler
+		applySettingsUpdates(updates, handlerKey, instanceKey);
+	}
+
+	private Path getSettingResourcePersistencePath(final String handlerKey, final String instanceKey,
+			final String settingKey) {
+		Path rsrcDir = SettingsService.settingResourceDirectory().resolve(handlerKey);
+		if ( instanceKey != null && !instanceKey.isEmpty() ) {
+			rsrcDir = rsrcDir.resolve(instanceKey);
+		}
+		rsrcDir = rsrcDir.resolve(settingKey);
+		return rsrcDir;
 	}
 
 	@Override

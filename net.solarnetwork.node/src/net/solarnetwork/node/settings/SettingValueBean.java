@@ -26,9 +26,9 @@ package net.solarnetwork.node.settings;
  * An individual setting value.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class SettingValueBean {
+public class SettingValueBean implements SettingsUpdates.Change {
 
 	private String providerKey;
 	private String instanceKey;
@@ -38,11 +38,49 @@ public class SettingValueBean {
 	private boolean remove;
 
 	/**
-	 * Get the remove flag. If <em>true</em> this setting should be deleted.
+	 * Constructor.
+	 */
+	public SettingValueBean() {
+		super();
+	}
+
+	/**
+	 * Constructor.
 	 * 
-	 * @return The remove flag.
+	 * @param key
+	 *        the key
+	 * @param value
+	 *        the value
+	 * @since 1.2
+	 */
+	public SettingValueBean(String key, String value) {
+		super();
+		this.key = key;
+		this.value = value;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *        the key
+	 * @param remove
+	 *        the remove flag
+	 * @since 1.2
+	 */
+	public SettingValueBean(String key, boolean remove) {
+		super();
+		this.key = key;
+		this.remove = remove;
+	}
+
+	/**
+	 * Get the remove flag.
+	 * 
+	 * @return {@literal true} this setting should be deleted
 	 * @since 1.1
 	 */
+	@Override
 	public boolean isRemove() {
 		return remove;
 	}
@@ -52,12 +90,13 @@ public class SettingValueBean {
 	 * 
 	 * @param remove
 	 *        The flag to set.
-	 * @since 1.2
+	 * @since 1.1
 	 */
 	public void setRemove(boolean delete) {
 		this.remove = delete;
 	}
 
+	@Override
 	public boolean isTransient() {
 		return trans;
 	}
@@ -74,6 +113,7 @@ public class SettingValueBean {
 		this.providerKey = providerKey;
 	}
 
+	@Override
 	public String getKey() {
 		return key;
 	}
@@ -82,6 +122,7 @@ public class SettingValueBean {
 		this.key = key;
 	}
 
+	@Override
 	public String getValue() {
 		return value;
 	}

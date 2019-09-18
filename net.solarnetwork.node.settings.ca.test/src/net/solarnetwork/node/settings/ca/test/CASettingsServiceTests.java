@@ -22,11 +22,17 @@
 
 package net.solarnetwork.node.settings.ca.test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.IOException;
@@ -35,20 +41,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.node.settings.SettingValueBean;
+import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
 
@@ -99,33 +112,47 @@ public class CASettingsServiceTests {
 	}
 
 	@Test
-	public void importResource() {
+	public void importResource() throws IOException {
 		// GIVEN
 		final String handlerKey = UUID.randomUUID().toString();
+		final String settingKey = "foobar";
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
 		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+
+		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(new SettingsCommand());
 
 		// WHEN
 		replayAll();
 		service.onBindHandler(handler, null);
 
 		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
-		service.importSettingResources(handlerKey, null, singleton(r));
+		service.importSettingResources(handlerKey, null, settingKey, singleton(r));
 
 		// THEN
-		Path expectedResourcePath = tmpDir.resolve(Paths
-				.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, handlerKey, "test-resource-01.txt"));
+		Path expectedResourcePath = tmpDir
+				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, handlerKey, settingKey,
+						"test-resource-01.txt"));
 		assertThat("Resource path exists within subdirectory for handler ID",
 				Files.exists(expectedResourcePath), equalTo(true));
+
+		List<Resource> appliedResources = stream(resourceCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		assertThat("Applied resource same as imported", appliedResources, hasSize(1));
+		assertThat("Applied resource has expexcted path", appliedResources.get(0).getFile(),
+				equalTo(expectedResourcePath.toFile()));
 	}
 
 	@Test
 	public void importResourceForFactory() throws IOException {
 		// GIVEN
 		final String factoryKey = UUID.randomUUID().toString();
-		final String instanceKey = UUID.randomUUID().toString();
+		final String instanceKey = String.valueOf((int) (Math.random() * 50 + 1));
+		final String instancePid = UUID.randomUUID().toString();
+		final String settingKey = "barfoo";
 
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
@@ -138,33 +165,135 @@ public class CASettingsServiceTests {
 		mocks.add(config);
 
 		Hashtable<String, Object> configProps = new Hashtable<>();
-		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", "1");
+		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", instanceKey);
 
 		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
 		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettings(factoryKey + ".FACTORY")).andReturn(emptyList());
-		expect(ca.getConfiguration(instanceKey, null)).andReturn(config);
+		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
-		expect(config.getPid()).andReturn(instanceKey).anyTimes();
+		expect(config.getPid()).andReturn(instancePid).anyTimes();
 		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(new SettingsCommand());
 
 		// WHEN
 		replayAll();
 		service.onBindFactory(factory, null);
 
 		Hashtable<String, Object> instanceProps = new Hashtable<>(
-				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instanceKey));
+				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
 		service.onBindHandler(handler, instanceProps);
 
 		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
-		service.importSettingResources(factoryKey, instanceKey, singleton(r));
+		service.importSettingResources(factoryKey, instanceKey, settingKey, singleton(r));
 
 		// THEN
 		Path expectedResourcePath = tmpDir
 				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, factoryKey, instanceKey,
-						"test-resource-01.txt"));
+						settingKey, "test-resource-01.txt"));
 		assertThat("Resource path exists within subdirectory for handler ID",
 				Files.exists(expectedResourcePath), equalTo(true));
+
+		List<Resource> appliedResources = stream(resourceCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		assertThat("Applied resource same as imported", appliedResources, hasSize(1));
+		assertThat("Applied resource has expexcted path", appliedResources.get(0).getFile(),
+				equalTo(expectedResourcePath.toFile()));
+	}
+
+	@Test
+	public void importResourceForFactoryWithUpdates() throws IOException, InvalidSyntaxException {
+		// GIVEN
+		final String factoryKey = UUID.randomUUID().toString();
+		final String instanceKey = String.valueOf((int) (Math.random() * 50 + 1));
+		final String instancePid = UUID.randomUUID().toString();
+		final String settingKey = "barfoo";
+		final String daoSettingKey = String.format("%s.%s", factoryKey, instanceKey);
+
+		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
+		mocks.add(handler);
+
+		SettingSpecifierProviderFactory factory = EasyMock
+				.createMock(SettingSpecifierProviderFactory.class);
+		mocks.add(factory);
+
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", instanceKey);
+		configProps.put("bim", "bam");
+		configProps.put("bazzar", "true");
+		configProps.put("bazam", "shazam");
+		configProps.put("hi", "there");
+
+		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(dao.getSettings(factoryKey + ".FACTORY")).andReturn(emptyList());
+		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
+		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
+		expect(config.getPid()).andReturn(instancePid).anyTimes();
+		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		SettingsCommand updates = new SettingsCommand(
+				asList(new SettingValueBean("foo", "bar"), new SettingValueBean("bim", true)),
+				asList(Pattern.compile("baz.*")));
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(updates);
+
+		// after applying resource, apply returned updates
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=%s))", factoryKey,
+						CASettingsService.class.getName(), instanceKey)))
+								.andReturn(new Configuration[] { config });
+
+		// delete baz.* pattern matches first
+		expect(dao.deleteSetting(daoSettingKey, "bazzar")).andReturn(true);
+		expect(dao.deleteSetting(daoSettingKey, "bazam")).andReturn(true);
+
+		// then apply SettingValueBean updates
+		dao.storeSetting(daoSettingKey, "foo", "bar");
+		expect(dao.deleteSetting(daoSettingKey, "bim")).andReturn(true);
+
+		// and finally update CA props
+		Capture<Dictionary<String, ?>> confUpdateCaptor = new Capture<>();
+		config.update(capture(confUpdateCaptor));
+
+		// WHEN
+		replayAll();
+		service.onBindFactory(factory, null);
+
+		Hashtable<String, Object> instanceProps = new Hashtable<>(
+				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
+		service.onBindHandler(handler, instanceProps);
+
+		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
+		service.importSettingResources(factoryKey, instanceKey, settingKey, singleton(r));
+
+		// THEN
+		Path expectedResourcePath = tmpDir
+				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, factoryKey, instanceKey,
+						settingKey, "test-resource-01.txt"));
+		assertThat("Resource path exists within subdirectory for handler ID",
+				Files.exists(expectedResourcePath), equalTo(true));
+
+		List<Resource> appliedResources = stream(resourceCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		assertThat("Applied resource same as imported", appliedResources, hasSize(1));
+		assertThat("Applied resource has expexcted path", appliedResources.get(0).getFile(),
+				equalTo(expectedResourcePath.toFile()));
+
+		Dictionary<String, ?> confUpdates = confUpdateCaptor.getValue();
+		assertThat("CA conf result size", confUpdates.size(), equalTo(3));
+		assertThat("CA conf result instance key",
+				confUpdates.get(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY"),
+				equalTo(instanceKey));
+		assertThat("CA conf result preserved key", confUpdates.get("hi"), equalTo("there"));
+		assertThat("CA conf result added key", confUpdates.get("foo"), equalTo("bar"));
 	}
 
 }

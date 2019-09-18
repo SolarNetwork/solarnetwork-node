@@ -301,7 +301,7 @@ public class SettingsController {
 			return new Response<Void>(false, null, "SettingsService not available.", null);
 		}
 		MultipartFileResource r = new MultipartFileResource(file);
-		service.importSettingResources(handlerKey, instanceKey, Collections.singleton(r));
+		service.importSettingResources(handlerKey, instanceKey, key, Collections.singleton(r));
 		return Response.response(null);
 	}
 
@@ -330,7 +330,7 @@ public class SettingsController {
 			return new Response<Void>(false, null, "SettingsService not available.", null);
 		}
 		NamedDataResource r = new NamedDataResource(key + "-01.txt", data);
-		service.importSettingResources(handlerKey, instanceKey, Collections.singleton(r));
+		service.importSettingResources(handlerKey, instanceKey, key, Collections.singleton(r));
 		return Response.response(null);
 	}
 

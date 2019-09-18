@@ -192,6 +192,19 @@ public interface SettingsService {
 	void updateSettings(SettingsCommand command);
 
 	/**
+	 * Get a setting resource handler.
+	 * 
+	 * @param handlerKey
+	 *        the ID if the {@link SettingResourceHandler} to get
+	 * @param instanceKey
+	 *        if {@code handlerKey} is a factory, the ID of the instance to
+	 *        import the resources for, otherwise {@literal null}
+	 * @return the resource handler, or {@literal null} if not available
+	 * @since 1.4
+	 */
+	SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey);
+
+	/**
 	 * Get current setting resources.
 	 * 
 	 * @param handlerKey
@@ -203,23 +216,39 @@ public interface SettingsService {
 	 * @param settingKey
 	 *        the setting ID to get the resources for
 	 * @return the resources (never {@literal null})
+	 * @throws IOException
+	 *         if any IO error occurs
 	 * @since 1.4
 	 */
-	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey, String settingKey);
+	Iterable<Resource> getSettingResources(String handlerKey, String instanceKey, String settingKey)
+			throws IOException;
 
 	/**
 	 * Import setting resources.
+	 * 
+	 * <p>
+	 * The setting resources will be persisted by this service, and should then
+	 * also be passed to the appropriate {@link SettingResourceHandler} for the
+	 * given {@code handlerKey} and {@code instanceKey} values by invoking
+	 * {@link SettingResourceHandler#applySettingResources(String, Iterable)}
+	 * with {@code settingKey} and the persisted resources.
+	 * </p>
 	 * 
 	 * @param handlerKey
 	 *        the ID if the {@link SettingResourceHandler} to import to
 	 * @param instanceKey
 	 *        if {@code handlerKey} is a factory, the ID of the instance to
 	 *        import the resources for, otherwise {@literal null}
+	 * @param settingKey
+	 *        the setting ID to import the resources for
 	 * @param resources
 	 *        the resources to import
+	 * @throws IOException
+	 *         if any IO error occurs
 	 * @since 1.4
 	 */
-	void importSettingResources(String handlerKey, String instanceKey, Iterable<Resource> resources);
+	void importSettingResources(String handlerKey, String instanceKey, String settingKey,
+			Iterable<Resource> resources) throws IOException;
 
 	/**
 	 * Export all settings as CSV formatted text.
