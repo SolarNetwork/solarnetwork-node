@@ -290,7 +290,8 @@ public class SettingsController {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, params = "file")
+	@ResponseBody
 	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, @RequestParam("file") MultipartFile file)
@@ -319,8 +320,8 @@ public class SettingsController {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = "!"
-			+ MediaType.MULTIPART_FORM_DATA_VALUE)
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "!file")
+	@ResponseBody
 	public Response<Void> importResourceData(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, @RequestParam("data") String data) throws IOException {

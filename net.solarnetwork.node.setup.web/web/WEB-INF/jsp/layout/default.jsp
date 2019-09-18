@@ -67,10 +67,10 @@
 		<%-- Generic progress overlay --%>
 		<div id="generic-progress-modal" class="modal dynamic hide fade" data-backdrop="static" data-keyboard="false">
 			<div class="modal-header">
-				<h3 class="info-title"><fmt:message key="generic.progress.title"/></h3>
+				<h3 class="info-title" data-default-message="<fmt:message key='generic.progress.title'/>"></h3>
 			</div>
 			<div class="modal-body">
-				<p class="info-message"><fmt:message key="generic.progress.message"/></p>
+				<p class="info-message" data-default-message="<fmt:message key='generic.progress.message'/>"></p>
 				<div class="progress progress-striped active">
 					<div class="bar"></div>
 			    </div>

@@ -513,6 +513,48 @@ function setupBackups() {
 	});
 }
 
+function uploadSettingResourceProgress(event) {
+	if ( event.lengthComputable ) {
+		var percentComplete = event.loaded / event.total;
+		console.info("Upload progress: %d%%", percentComplete * 100);
+		SolarNode.GlobalProgress.update(percentComplete);
+	}
+}
+
+function uploadSettingResourceDone(event) {
+	var xhr = this;
+	if ( xhr.status >= 200 && xhr.status < 300 ) {
+		SolarNode.GlobalProgress.hide();		
+	} else {
+		console.error("Error uploading setting resource (%d): %s", xhr.status, xhr.responseText);
+	}
+}
+
+function uploadSettingResourceError(event) {
+	var xhr = this;
+	SolarNode.GlobalProgress.hide();
+	console.error( "Error submitting image (%s), got response: %s", xhr.statusText, xhr.responseText);
+}
+
+function uploadSettingResource(url, provider, instance, setting, dataKey, dataValue) {
+	SolarNode.GlobalProgress.show();
+	var xhr = xhr = new XMLHttpRequest();
+	var form = new FormData();
+	form.append("handlerKey", provider);
+	if ( instance ) {
+		form.append("instanceKey", instance);
+	}
+	form.append("key", setting);
+	form.append(dataKey, dataValue);
+	xhr.onload = uploadSettingResourceDone;
+	xhr.onerror = uploadSettingResourceError;
+	xhr.upload.addEventListener("progress", uploadSettingResourceProgress);
+	xhr.open("POST", url);
+	xhr.setRequestHeader("Accept", "application/json");
+	SolarNode.csrf(xhr);
+	xhr.send(form);
+}
+
 $(document).ready(function() {
 	$('.help-popover').popover();
 	
@@ -554,7 +596,32 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
-	
+	$('.setting-resource-upload').on('click', function() {
+		var me = $(this);
+		var id = me.data('key'),
+			field = $('#'+id),
+			url = me.data('action'),
+			provider = me.data('provider'),
+			instance = me.data('instance'),
+			setting = me.data('setting');
+		if ( field.size() < 1 ) {
+			return;
+		}
+		var el = field.get(0),
+			val;
+		if ( el.files ) {
+			// input[type=file]
+			if ( el.files.length > 0 ) {
+				uploadSettingResource(url, provider, instance, setting, "file", el.files[0]);
+			}
+		} else {
+			// textarea
+			val = field.val();
+			if ( val.length > 0 ) {
+				uploadSettingResource(url, provider, instance, setting, "data", val);
+			}
+		}
+	});
 	setupBackups();
 });
 

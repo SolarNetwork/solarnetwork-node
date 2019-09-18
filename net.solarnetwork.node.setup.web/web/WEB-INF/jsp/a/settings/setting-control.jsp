@@ -139,6 +139,7 @@
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')}">
 						<textarea  name="${settingId}" id="${settingId}" class="span5">${settingValue}</textarea>
 						<button type="button" class="btn setting-resource-upload"
+							data-action="<setup:url value='/a/settings/importResource'/>"
 							data-key="${settingId}" 
 							data-xint="${setting['transient']}"
 							data-provider="${provider.settingUID}"
@@ -221,6 +222,7 @@
 							</c:if>
 							/>
 						<button type="button" class="btn setting-resource-upload"
+							data-action="<setup:url value='/a/settings/importResource'/>"
 							data-key="${settingId}" 
 							data-xint="${setting['transient']}"
 							data-provider="${provider.settingUID}"
