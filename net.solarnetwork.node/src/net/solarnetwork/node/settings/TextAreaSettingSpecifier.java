@@ -27,6 +27,7 @@ package net.solarnetwork.node.settings;
  * 
  * @author matt
  * @version 1.0
+ * @since 1.70
  */
 public interface TextAreaSettingSpecifier extends KeyedSettingSpecifier<String> {
 
