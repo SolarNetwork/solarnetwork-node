@@ -228,7 +228,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return InstructionHandler.TOPIC_SHED_LOAD.equals(topic);
+		return TOPIC_SHED_LOAD.equals(topic) || TOPIC_SET_CONTROL_PARAMETER.equals(topic);
 	}
 
 	@Override
