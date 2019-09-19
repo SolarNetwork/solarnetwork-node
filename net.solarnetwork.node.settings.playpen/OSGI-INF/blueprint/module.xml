@@ -18,13 +18,6 @@
 			</list>
 		</property>
 	</bean>
-
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="Settings Playpen"/>
-		<property name="factoryUID" value="net.solarnetwork.node.settings.playpen"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
 	
 	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
 		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
@@ -36,7 +29,13 @@
 	
 	<!-- Published services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Settings Playpen"/>
+			<property name="factoryUID" value="net.solarnetwork.node.settings.playpen"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<service interface="net.solarnetwork.node.setup.SetupResourceProvider">
 		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
@@ -66,6 +65,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.settings.playpen" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingResourceHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.settings.playpen"/>
