@@ -1100,7 +1100,7 @@ public class CASettingsService
 				Files.walk(rsrcDir).forEach(p -> {
 					if ( Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) ) {
 						resources.add(new ResourceBackupResource(new FileSystemResource(p.toFile()),
-								p.toString(), getKey()));
+								rsrcDir.relativize(p).toString(), getKey()));
 					}
 				});
 			} catch ( IOException e ) {
@@ -1138,7 +1138,7 @@ public class CASettingsService
 			// check for setting resource files
 			Path backupPathPath = Paths.get(backupPath);
 			if ( !backupPathPath.isAbsolute() ) {
-				Path rsrcPath = SettingsService.settingResourceDirectory().resolve(backupPath);
+				Path rsrcPath = SettingsService.settingResourceDirectory().resolve(backupPathPath);
 				Path rsrcPathDir = rsrcPath.getParent();
 				try {
 					if ( !Files.exists(rsrcPathDir) ) {

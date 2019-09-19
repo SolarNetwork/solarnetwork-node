@@ -33,6 +33,7 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +47,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -57,6 +60,10 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import net.solarnetwork.node.Constants;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.dao.BasicBatchResult;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
@@ -294,6 +301,54 @@ public class CASettingsServiceTests {
 				equalTo(instanceKey));
 		assertThat("CA conf result preserved key", confUpdates.get("hi"), equalTo("there"));
 		assertThat("CA conf result added key", confUpdates.get("foo"), equalTo("bar"));
+	}
+
+	@Test
+	public void backupResourcesWithImportedResource() throws IOException {
+		// GIVEN
+		final String handlerKey = UUID.randomUUID().toString();
+		final String settingKey = "foobar";
+		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
+		mocks.add(handler);
+
+		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+
+		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(new SettingsCommand());
+
+		Capture<BatchCallback<Setting>> batchCaptor = new Capture<>();
+		expect(dao.batchProcess(capture(batchCaptor), EasyMock.anyObject()))
+				.andReturn(new BasicBatchResult(0));
+
+		// WHEN
+		replayAll();
+		service.onBindHandler(handler, null);
+
+		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
+		service.importSettingResources(handlerKey, null, settingKey, singleton(r));
+
+		Iterable<BackupResource> backupResources = service.getBackupResources();
+
+		// THEN
+		Path expectedResourcePath = tmpDir
+				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, handlerKey, settingKey,
+						"test-resource-01.txt"));
+		assertThat("Resource path exists within subdirectory for handler ID",
+				Files.exists(expectedResourcePath), equalTo(true));
+
+		assertThat("Backup resources available", backupResources, notNullValue());
+		List<BackupResource> backupResourceList = StreamSupport
+				.stream(backupResources.spliterator(), false).collect(Collectors.toList());
+		assertThat("Backup resource list has CSV and setting resource", backupResourceList, hasSize(2));
+
+		BackupResource backupResource = backupResourceList.get(0);
+		assertThat("First backup resource is CSV settings", backupResource.getBackupPath(),
+				equalTo("settings.csv"));
+
+		backupResource = backupResourceList.get(1);
+		assertThat("Second backup resource is setting resource", backupResource.getBackupPath(),
+				equalTo(handlerKey + "/foobar/test-resource-01.txt"));
 	}
 
 }
