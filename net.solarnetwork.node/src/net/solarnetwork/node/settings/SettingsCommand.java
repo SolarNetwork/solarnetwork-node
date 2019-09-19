@@ -45,6 +45,10 @@ public class SettingsCommand implements SettingsUpdates {
 
 	/**
 	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@code values} property will be created automatically.
+	 * </p>
 	 */
 	public SettingsCommand() {
 		this(null);
@@ -54,7 +58,8 @@ public class SettingsCommand implements SettingsUpdates {
 	 * Constructor.
 	 * 
 	 * @param values
-	 *        the values
+	 *        the values, or {@literal null} to have a list created
+	 *        automatically
 	 */
 	public SettingsCommand(List<SettingValueBean> values) {
 		this(values, null);
@@ -64,7 +69,8 @@ public class SettingsCommand implements SettingsUpdates {
 	 * Constructor.
 	 * 
 	 * @param values
-	 *        the values
+	 *        the values, or {@literal null} to have a list created
+	 *        automatically
 	 * @param settingKeyPatternsToClean
 	 *        the key patterns to clean, or {@literal null}
 	 */

@@ -46,6 +46,7 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import net.solarnetwork.node.IdentityService;
@@ -290,11 +291,11 @@ public class SettingsController {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	@RequestMapping(value = "/importResource", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, params = "file")
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "!data")
 	@ResponseBody
 	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
-			@RequestParam("key") String key, @RequestParam("file") MultipartFile file)
+			@RequestParam("key") String key, @RequestPart("file") MultipartFile file)
 			throws IOException {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service == null ) {
@@ -320,7 +321,7 @@ public class SettingsController {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "!file")
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "data")
 	@ResponseBody
 	public Response<Void> importResourceData(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,

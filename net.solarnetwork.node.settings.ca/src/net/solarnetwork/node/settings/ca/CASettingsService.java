@@ -913,7 +913,7 @@ public class CASettingsService
 
 	@Override
 	public void importSettingResources(final String handlerKey, final String instanceKey,
-			final String settingKey, final Iterable<Resource> resources) {
+			final String settingKey, final Iterable<Resource> resources) throws IOException {
 		if ( resources == null ) {
 			return;
 		}

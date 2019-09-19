@@ -74,6 +74,17 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		this.remove = remove;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SettingValueBean{key=");
+		builder.append(key);
+		builder.append(",value=");
+		builder.append(value);
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Get the remove flag.
 	 * 

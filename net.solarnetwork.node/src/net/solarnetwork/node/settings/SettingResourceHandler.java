@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings;
 
+import java.io.IOException;
 import org.springframework.core.io.Resource;
 
 /**
@@ -80,7 +81,10 @@ public interface SettingResourceHandler {
 	 *        the resources with the settings to apply
 	 * @return any setting values that should be persisted as a result of
 	 *         applying the given resources (never {@literal null}
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources);
+	SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources)
+			throws IOException;
 
 }
