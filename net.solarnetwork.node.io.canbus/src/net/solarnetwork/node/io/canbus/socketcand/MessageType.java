@@ -30,9 +30,11 @@ package net.solarnetwork.node.io.canbus.socketcand;
  */
 public enum MessageType {
 
+	Hi("hi"),
+
 	Open("open"),
 
-	Hi("hi"),
+	Ok("ok"),
 
 	Add("add"),
 
@@ -92,6 +94,9 @@ public enum MessageType {
 
 			case "open":
 				return Open;
+
+			case "ok":
+				return Ok;
 
 			case "hi":
 				return Hi;

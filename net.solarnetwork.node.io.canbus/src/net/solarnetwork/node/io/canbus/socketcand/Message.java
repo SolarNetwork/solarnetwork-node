@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 /**
@@ -66,6 +68,16 @@ public interface Message {
 	 * @return the arguments, or {@literal null}
 	 */
 	List<String> getArguments();
+
+	/**
+	 * Write a complete message to a writer.
+	 * 
+	 * @param writer
+	 *        the destination to write the message to
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	void write(Writer out) throws IOException;
 
 	/**
 	 * Cast a message to a more specific type.

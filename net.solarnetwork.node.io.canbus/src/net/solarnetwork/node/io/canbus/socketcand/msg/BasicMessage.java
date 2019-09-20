@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.msg;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
@@ -37,6 +39,16 @@ public class BasicMessage implements Message {
 	private final String command;
 	private final MessageType type;
 	private final List<String> arguments;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param type
+	 *        the type
+	 */
+	public BasicMessage(MessageType type) {
+		this(type, type.getCommand(), null);
+	}
 
 	/**
 	 * Constructor.
@@ -77,6 +89,23 @@ public class BasicMessage implements Message {
 	@Override
 	public List<String> getArguments() {
 		return arguments;
+	}
+
+	@Override
+	public void write(Writer out) throws IOException {
+		out.write('<');
+		out.write(' ');
+		out.write(getCommand());
+
+		if ( arguments != null && !arguments.isEmpty() ) {
+			for ( String arg : arguments ) {
+				out.write(' ');
+				out.write(arg);
+			}
+		}
+
+		out.write(' ');
+		out.write('>');
 	}
 
 }
