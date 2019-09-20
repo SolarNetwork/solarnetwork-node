@@ -1,5 +1,5 @@
 /* ==================================================================
- * SubscribeMessageImpl.java - 20/09/2019 2:57:04 pm
+ * SendMessageImpl.java - 21/09/2019 7:27:33 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,20 +22,21 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.msg;
 
+import java.util.ArrayList;
 import java.util.List;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
-import net.solarnetwork.node.io.canbus.socketcand.SubscribeMessage;
+import net.solarnetwork.node.io.canbus.socketcand.SendMessage;
+import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
 
 /**
- * Implementation of {@link SubscribeMessage}.
+ * Implementation of {@link SendMessage}.
  * 
  * @author matt
  * @version 1.0
  */
-public class SubscribeMessageImpl extends AddressedMessage implements SubscribeMessage {
+public class SendMessageImpl extends AddressedDataMessage implements SendMessage {
 
-	private final int seconds;
-	private final int microseconds;
+	private static final int DATA_OFFSET = 2;
 
 	/**
 	 * Constructor.
@@ -47,29 +48,35 @@ public class SubscribeMessageImpl extends AddressedMessage implements SubscribeM
 	 * @param arguments
 	 *        the raw command arguments
 	 * @throws IllegalArgumentException
-	 *         if the arguments are inappropriate for a subscribe message
+	 *         if the arguments are inappropriate for a send message
 	 */
-	public SubscribeMessageImpl(List<String> arguments) {
-		super(MessageType.Subscribe, null, arguments, 2);
-		try {
-			this.seconds = Integer.parseInt(arguments.get(0));
-			this.microseconds = Integer.parseInt(arguments.get(1));
-		} catch ( NumberFormatException e ) {
-			throw new IllegalArgumentException(
-					"The seconds [" + arguments.get(0) + "] and/or microseconds [" + arguments.get(1)
-							+ "] arguments could not be parsed as numbers.",
-					e);
+	public SendMessageImpl(List<String> arguments) {
+		super(MessageType.Send, null, arguments, 0, DATA_OFFSET);
+
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param address
+	 *        the address to send the message to
+	 * @param data
+	 *        the data to include in the message, or {@literal null} for no data
+	 */
+	public SendMessageImpl(int address, byte[] data) {
+		super(MessageType.Send, null, generateArguments(address, data), 0, DATA_OFFSET);
+	}
+
+	private static List<String> generateArguments(int address, byte[] data) {
+		final int dataLen = (data != null ? data.length : 0);
+		List<String> args = new ArrayList<>(2 + dataLen);
+		args.add(String.format("%X", address));
+		args.add(String.valueOf(dataLen));
+		List<String> hexData = SocketcandUtils.encodeHexStrings(data, 0, dataLen);
+		if ( hexData != null ) {
+			args.addAll(hexData);
 		}
-	}
-
-	@Override
-	public int getSeconds() {
-		return seconds;
-	}
-
-	@Override
-	public int getMicroseconds() {
-		return microseconds;
+		return args;
 	}
 
 }

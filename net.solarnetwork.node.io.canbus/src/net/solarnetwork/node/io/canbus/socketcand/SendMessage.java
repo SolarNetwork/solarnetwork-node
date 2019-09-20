@@ -1,5 +1,5 @@
 /* ==================================================================
- * FrameMessageImpl.java - 20/09/2019 7:26:14 am
+ * SendMessage.java - 21/09/2019 7:28:05 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -23,34 +23,18 @@
 package net.solarnetwork.node.io.canbus.socketcand;
 
 /**
- * Specialized message for socketcand {@literal frame} commands.
+ * Specialized message for socketcand {@literal send} commands.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FrameMessage extends Message, Addressed, Temporal, DataContainer {
-
-	/** The maximum value a "standard" message address can have (11 bits). */
-	int MAX_STANDARD_ID = 0x7FF;
-
-	/** The maximum value an "extended" message address can have (29 bits). */
-	int MAX_EXTENDED_ID = 0x1FFFFFFF;
+public interface SendMessage extends Addressed, DataContainer {
 
 	/**
-	 * Get the frame message data.
+	 * Get the count of data bytes in this message.
 	 * 
-	 * @return the data, never {@literal null}
+	 * @return the count of data bytes
 	 */
-	@Override
-	byte[] getData();
-
-	/**
-	 * Test if this message is a CAN 2.0B "extended" frame or not.
-	 * 
-	 * @return {@literal true} if this frame is an extended frame
-	 */
-	default boolean isExtended() {
-		return (getAddress() > MAX_STANDARD_ID);
-	}
+	int getDataLength();
 
 }

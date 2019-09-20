@@ -1,5 +1,5 @@
 /* ==================================================================
- * FrameMessageImplTests.java - 20/09/2019 2:24:15 pm
+ * SendMessageImplTests.java - 21/09/2019 8:46:21 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,56 +22,49 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.msg.test;
 
-import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Arrays;
 import org.junit.Test;
-import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.SendMessageImpl;
 
 /**
- * Test cases for the {@link FrameMessageImpl} class.
+ * Test cases for the {@link SendMessageImpl} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class FrameMessageImplTests {
+public class SendMessageImplTests {
 
 	@Test
-	public void getData_basic() {
+	public void construct() {
 		// GIVEN
-		FrameMessageImpl m = new FrameMessageImpl(asList("123", "23.424242", "11", "22", "33", "44"));
+		byte[] data = new byte[] { (byte) 0x11, 0x22, 0x33, (byte) 0xFF };
 
 		// WHEN
-		byte[] data = m.getData();
+		SendMessageImpl m = new SendMessageImpl(1, data);
 
 		// THEN
-		assertThat("Decoded message data", Arrays.equals(data, new byte[] { 0x11, 0x22, 0x33, 0x44 }),
-				equalTo(true));
+		assertThat("Arguments", m.getArguments(), contains("1", "4", "11", "22", "33", "FF"));
+		assertThat("Data length", m.getDataLength(), equalTo(data.length));
+		assertThat("Data", Arrays.equals(m.getData(), data), equalTo(true));
 	}
 
 	@Test
-	public void getData_empty() {
+	public void write() throws IOException {
 		// GIVEN
-		FrameMessageImpl m = new FrameMessageImpl(asList("123", "23.424242"));
+		SendMessageImpl m = new SendMessageImpl(234,
+				new byte[] { (byte) 0x11, 0x22, 0x33, (byte) 0xFF });
 
 		// WHEN
-		byte[] data = m.getData();
+		StringWriter out = new StringWriter(16);
+		m.write(out);
 
 		// THEN
-		assertThat("Decoded message data", Arrays.equals(data, new byte[0]), equalTo(true));
+		assertThat("Message value", out.toString(), equalTo("< send EA 4 11 22 33 FF >"));
 	}
 
-	@Test
-	public void getData_paddedHex() {
-		// GIVEN
-		FrameMessageImpl m = new FrameMessageImpl(asList("123", "23.424242", "1", "2", "3"));
-
-		// WHEN
-		byte[] data = m.getData();
-
-		// THEN
-		assertThat("Decoded message data", Arrays.equals(data, new byte[] { 0x1, 0x2, 0x3 }),
-				equalTo(true));
-	}
 }

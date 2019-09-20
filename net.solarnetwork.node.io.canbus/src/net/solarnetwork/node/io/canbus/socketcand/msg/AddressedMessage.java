@@ -65,6 +65,9 @@ public class AddressedMessage extends BasicMessage implements Addressed {
 	 *        the raw command, if {@code type} is {@literal null}
 	 * @param arguments
 	 *        the raw command arguments
+	 * @param addressIndex
+	 *        the index within {@code arguments} that contains the base-16
+	 *        address value
 	 * @throws IllegalArgumentException
 	 *         if both {@code type} and {@code command} are {@literal null}, or
 	 *         {@code arguments} does not have an {@code addressIndex} element,

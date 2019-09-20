@@ -28,7 +28,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import org.junit.Test;
-import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 
 /**
@@ -42,8 +41,7 @@ public class SubscribeMessageImplTests {
 	@Test
 	public void construct_noTime() {
 		// GIVEN
-		SubscribeMessageImpl m = new SubscribeMessageImpl(MessageType.Subscribe,
-				MessageType.Subscribe.getCommand(), asList("0", "0", "123"));
+		SubscribeMessageImpl m = new SubscribeMessageImpl(asList("0", "0", "123"));
 
 		// THEN
 		assertThat("Message time", m.getFractionalSeconds(), equalTo(new BigDecimal("0.000000")));
@@ -53,8 +51,7 @@ public class SubscribeMessageImplTests {
 	@Test
 	public void construct_withTime() {
 		// GIVEN
-		SubscribeMessageImpl m = new SubscribeMessageImpl(MessageType.Subscribe,
-				MessageType.Subscribe.getCommand(), asList("1", "500000", "123"));
+		SubscribeMessageImpl m = new SubscribeMessageImpl(asList("1", "500000", "123"));
 
 		// THEN
 		assertThat("Message time", m.getFractionalSeconds(), equalTo(new BigDecimal("1.500000")));
@@ -64,34 +61,30 @@ public class SubscribeMessageImplTests {
 	@Test(expected = IllegalArgumentException.class)
 	public void construct_emptyArgs() {
 		// GIVEN
-		new SubscribeMessageImpl(MessageType.Subscribe, MessageType.Subscribe.getCommand(), emptyList());
+		new SubscribeMessageImpl(emptyList());
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void construct_tooFewArgs() {
 		// GIVEN
-		new SubscribeMessageImpl(MessageType.Subscribe, MessageType.Subscribe.getCommand(),
-				asList("0", "0"));
+		new SubscribeMessageImpl(asList("0", "0"));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void construct_secondsNaN() {
 		// GIVEN
-		new SubscribeMessageImpl(MessageType.Subscribe, MessageType.Subscribe.getCommand(),
-				asList("A", "0", "123"));
+		new SubscribeMessageImpl(asList("A", "0", "123"));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void construct_microsecondsNaN() {
 		// GIVEN
-		new SubscribeMessageImpl(MessageType.Subscribe, MessageType.Subscribe.getCommand(),
-				asList("0", "A", "123"));
+		new SubscribeMessageImpl(asList("0", "A", "123"));
 	}
 
 	@Test(expected = IllegalArgumentException.class)
 	public void construct_addressNaN() {
 		// GIVEN
-		new SubscribeMessageImpl(MessageType.Subscribe, MessageType.Subscribe.getCommand(),
-				asList("0", "1", "Z"));
+		new SubscribeMessageImpl(asList("0", "1", "Z"));
 	}
 }

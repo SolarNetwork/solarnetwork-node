@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import java.util.List;
 import net.solarnetwork.node.io.canbus.socketcand.msg.AddressedMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.SendMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 
 /**
@@ -107,11 +109,13 @@ public final class SocketcandUtils {
 
 		MessageType type = MessageType.forCommand(command);
 		if ( type == MessageType.Frame ) {
-			return new FrameMessageImpl(type, command, arguments);
+			return new FrameMessageImpl(arguments);
 		} else if ( type == MessageType.Subscribe ) {
-			return new SubscribeMessageImpl(type, command, arguments);
+			return new SubscribeMessageImpl(arguments);
 		} else if ( type == MessageType.Unsubscribe ) {
 			return new AddressedMessage(type, command, arguments);
+		} else if ( type == MessageType.Send ) {
+			return new SendMessageImpl(arguments);
 		} else {
 			return new BasicMessage(type, command, arguments);
 		}
@@ -171,6 +175,100 @@ public final class SocketcandUtils {
 			data[i] = (byte) (n & 0xFF);
 		}
 		return data;
+	}
+
+	/**
+	 * Decode a list of hex-encoded strings into a byte array.
+	 * 
+	 * @param hexData
+	 *        the hex-encoded strings
+	 * @param fromIndex
+	 *        an offset within {@code hexData} to start from (inclusive)
+	 * @param toIndex
+	 *        an offset within {@code hexData} to stop at (exclusive)
+	 * @return the bytes, never {@literal null}
+	 */
+	public static byte[] decodeHexStrings(final List<String> hexData, final int fromIndex,
+			final int toIndex) {
+		final int hexDataSize = (hexData != null ? hexData.size() : 0);
+		if ( hexDataSize < 1 || hexDataSize <= fromIndex || (toIndex - fromIndex) <= 1 ) {
+			return new byte[0];
+		}
+		final int maxIndex = (toIndex > hexDataSize ? hexDataSize : toIndex);
+		try {
+			ByteArrayOutputStream byos = new ByteArrayOutputStream(maxIndex - fromIndex);
+			for ( String hex : (fromIndex == 0 && maxIndex == hexDataSize ? hexData
+					: hexData.subList(fromIndex, maxIndex)) ) {
+				byos.write(decodeHexPadStart(hex.toCharArray()));
+			}
+			return byos.toByteArray();
+		} catch ( IOException e ) {
+			// drat; we ignore this
+		}
+		return new byte[0];
+	}
+
+	// adapted from Apache Commons Codec Hex.java
+
+	private static final char[] DIGITS_UPPER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
+			'B', 'C', 'D', 'E', 'F' };
+
+	/*- maybe someday
+	private static char[] encodeHex(final byte[] data, final char[] toDigits) {
+		final int l = data.length;
+		final char[] out = new char[l << 1];
+		for ( int i = 0, j = 0; i < l; i++ ) {
+			encodeHex(data[i], toDigits, out, j);
+		}
+		return out;
+	}
+	*/
+
+	/**
+	 * Encode a single byte as hex characters.
+	 * 
+	 * @param b
+	 *        the byte to encode
+	 * @param toDigits
+	 *        the hex digits to use
+	 * @param dest
+	 *        the destination character buffer to write the hex encoding to
+	 * @param destIndex
+	 *        the index within {@code dest} to write the hex encoding at, along
+	 *        with {@code destIndex + 1}
+	 * @return the {@code dest} array
+	 */
+	public static char[] encodeHex(final byte b, final char[] toDigits, final char[] dest,
+			int destIndex) {
+		dest[destIndex] = toDigits[(0xF0 & b) >>> 4];
+		dest[destIndex + 1] = toDigits[0x0F & b];
+		return dest;
+	}
+
+	/**
+	 * Encode a byte array into a list of hex-encoded strings, one string for
+	 * each individual byte.
+	 * 
+	 * @param data
+	 *        the data to encode as hex strings
+	 * @param fromIndex
+	 *        the starting index within {@code data} to encode (inclusive)
+	 * @param toIndex
+	 *        the ending index within {@code data} to encode (exclusive)
+	 * @return the list of strings, or {@literal null} if no data is encoded
+	 */
+	public static List<String> encodeHexStrings(final byte[] data, final int fromIndex,
+			final int toIndex) {
+		if ( data == null || data.length < 1 || fromIndex < 0 || fromIndex >= data.length || toIndex < 0
+				|| toIndex <= fromIndex ) {
+			return null;
+		}
+		List<String> hexData = new ArrayList<>(toIndex - fromIndex);
+		char[] buffer = new char[2];
+		for ( int i = fromIndex; i < toIndex; i++ ) {
+			hexData.add(new String(encodeHex(data[i], DIGITS_UPPER, buffer, 0)));
+		}
+		return hexData;
 	}
 
 }

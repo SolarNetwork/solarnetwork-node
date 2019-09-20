@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.test;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -35,6 +36,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.io.canbus.socketcand.FrameMessage;
@@ -81,6 +83,123 @@ public class SocketcandUtilsTests {
 		// THEN
 		assertThat("Decoded bytes",
 				Arrays.equals(b, new byte[] { (byte) 0x0F, (byte) 0x2B, (byte) 0x01 }), equalTo(true));
+	}
+
+	@Test
+	public void decodeHexStrings_basic() {
+		// GIVEN
+		List<String> hexData = asList("1", "02", "33", "FF");
+
+		// WHEN
+		byte[] data = SocketcandUtils.decodeHexStrings(hexData, 0, 4);
+
+		// THEN
+		assertThat("Decoded bytes",
+				Arrays.equals(data, new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33, (byte) 0xFF }),
+				equalTo(true));
+	}
+
+	@Test
+	public void decodeHexStrings_lowercase() {
+		// GIVEN
+		List<String> hexData = asList("1", "3d", "ab", "ff");
+
+		// WHEN
+		byte[] data = SocketcandUtils.decodeHexStrings(hexData, 0, 4);
+
+		// THEN
+		assertThat("Decoded bytes",
+				Arrays.equals(data, new byte[] { (byte) 0x01, (byte) 0x3D, (byte) 0xAB, (byte) 0xFF }),
+				equalTo(true));
+	}
+
+	@Test
+	public void decodeHexStrings_sub_offset() {
+		// GIVEN
+		List<String> hexData = asList("1", "02", "33", "FF");
+
+		// WHEN
+		byte[] data = SocketcandUtils.decodeHexStrings(hexData, 1, 4);
+
+		// THEN
+		assertThat("Decoded bytes",
+				Arrays.equals(data, new byte[] { (byte) 0x02, (byte) 0x33, (byte) 0xFF }),
+				equalTo(true));
+	}
+
+	@Test
+	public void decodeHexStrings_sub_short() {
+		// GIVEN
+		List<String> hexData = asList("1", "02", "33", "FF");
+
+		// WHEN
+		byte[] data = SocketcandUtils.decodeHexStrings(hexData, 0, 3);
+
+		// THEN
+		assertThat("Decoded bytes",
+				Arrays.equals(data, new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33 }),
+				equalTo(true));
+	}
+
+	@Test
+	public void decodeHexStrings_sub_middle() {
+		// GIVEN
+		List<String> hexData = asList("1", "02", "33", "FF");
+
+		// WHEN
+		byte[] data = SocketcandUtils.decodeHexStrings(hexData, 1, 3);
+
+		// THEN
+		assertThat("Decoded bytes", Arrays.equals(data, new byte[] { (byte) 0x02, (byte) 0x33 }),
+				equalTo(true));
+	}
+
+	@Test
+	public void encodeHexStrings_basic() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33, (byte) 0xFF };
+
+		// WHEN
+		List<String> l = SocketcandUtils.encodeHexStrings(data, 0, 4);
+
+		// THEN
+		assertThat("Encoded bytes", l, contains("01", "02", "33", "FF"));
+	}
+
+	@Test
+	public void encodeHexStrings_sub_offset() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33, (byte) 0xFF };
+
+		// WHEN
+		List<String> l = SocketcandUtils.encodeHexStrings(data, 1, 4);
+
+		// THEN
+		assertThat("Encoded bytes", l, contains("02", "33", "FF"));
+	}
+
+	@Test
+	public void encodeHexStrings_sub_short() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33, (byte) 0xFF };
+
+		// WHEN
+		List<String> l = SocketcandUtils.encodeHexStrings(data, 0, 3);
+
+		// THEN
+		assertThat("Encoded bytes", l, contains("01", "02", "33"));
+	}
+
+	@Test
+	public void encodeHexStrings_sub_middle() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x33, (byte) 0xFF };
+
+		// WHEN
+		List<String> l = SocketcandUtils.encodeHexStrings(data, 1, 3);
+
+		// THEN
+		assertThat("Encoded bytes", l, contains("02", "33"));
 	}
 
 	private void assertMessage(String prefix, Message m, MessageType type, String command,
