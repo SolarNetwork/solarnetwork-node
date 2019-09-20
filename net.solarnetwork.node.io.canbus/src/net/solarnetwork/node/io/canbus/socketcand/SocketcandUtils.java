@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.io.canbus.socketcand.msg.AddressedMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 
 /**
  * Utilities for dealing with the socketcand protocol.
@@ -106,6 +108,10 @@ public final class SocketcandUtils {
 		MessageType type = MessageType.forCommand(command);
 		if ( type == MessageType.Frame ) {
 			return new FrameMessageImpl(type, command, arguments);
+		} else if ( type == MessageType.Subscribe ) {
+			return new SubscribeMessageImpl(type, command, arguments);
+		} else if ( type == MessageType.Unsubscribe ) {
+			return new AddressedMessage(type, command, arguments);
 		} else {
 			return new BasicMessage(type, command, arguments);
 		}

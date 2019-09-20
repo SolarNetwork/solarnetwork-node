@@ -1,5 +1,5 @@
 /* ==================================================================
- * FrameMessageImpl.java - 20/09/2019 7:18:05 am
+ * SubscribeMessageImpl.java - 20/09/2019 2:57:04 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,20 +22,17 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.msg;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.List;
-import net.solarnetwork.node.io.canbus.socketcand.FrameMessage;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
-import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
+import net.solarnetwork.node.io.canbus.socketcand.SubscribeMessage;
 
 /**
- * A specialized {@link Message} for a frame.
+ * Implementation of {@link SubscribeMessage}.
  * 
  * @author matt
  * @version 1.0
  */
-public class FrameMessageImpl extends AddressedMessage implements FrameMessage {
+public class SubscribeMessageImpl extends AddressedMessage implements SubscribeMessage {
 
 	private final int seconds;
 	private final int microseconds;
@@ -50,30 +47,22 @@ public class FrameMessageImpl extends AddressedMessage implements FrameMessage {
 	 * @param arguments
 	 *        the raw command arguments
 	 * @throws IllegalArgumentException
-	 *         if {@code type} is not {@link MessageType#Frame} or the arguments
-	 *         are inappropriate for a frame message
+	 *         if {@code type} is not {@link MessageType#Subscribe} or the
+	 *         arguments are inappropriate for a frame message
 	 */
-	public FrameMessageImpl(MessageType type, String command, List<String> arguments) {
-		super(type, command, arguments);
-		if ( type != MessageType.Frame ) {
-			throw new IllegalArgumentException("A Frame message type must be used, not " + type);
+	public SubscribeMessageImpl(MessageType type, String command, List<String> arguments) {
+		super(type, command, arguments, 2);
+		if ( type != MessageType.Subscribe ) {
+			throw new IllegalArgumentException("A Subscribe message type must be used, not " + type);
 		}
-
-		String time = arguments.get(1);
-		int dotIdx = time.indexOf(".");
 		try {
-			if ( dotIdx < 0 ) {
-				this.seconds = Integer.parseInt(time);
-				this.microseconds = 0;
-			} else {
-				this.seconds = Integer.parseInt(time.substring(0, dotIdx));
-				this.microseconds = (dotIdx + 1 < time.length()
-						? Integer.parseInt(time.substring(dotIdx + 1))
-						: 0);
-			}
+			this.seconds = Integer.parseInt(arguments.get(0));
+			this.microseconds = Integer.parseInt(arguments.get(1));
 		} catch ( NumberFormatException e ) {
 			throw new IllegalArgumentException(
-					"The time argument [" + time + "] could not be parsed as a fractional number.", e);
+					"The seconds [" + arguments.get(0) + "] and/or microseconds [" + arguments.get(1)
+							+ "] arguments could not be parsed as numbers.",
+					e);
 		}
 	}
 
@@ -85,24 +74,6 @@ public class FrameMessageImpl extends AddressedMessage implements FrameMessage {
 	@Override
 	public int getMicroseconds() {
 		return microseconds;
-	}
-
-	@Override
-	public byte[] getData() {
-		List<String> hexData = getArguments();
-		if ( hexData == null || hexData.size() < 3 ) {
-			return new byte[0];
-		}
-		try {
-			ByteArrayOutputStream byos = new ByteArrayOutputStream(hexData.size() * 2);
-			for ( String hex : hexData.subList(2, hexData.size()) ) {
-				byos.write(SocketcandUtils.decodeHexPadStart(hex.toCharArray()));
-			}
-			return byos.toByteArray();
-		} catch ( IOException e ) {
-			// drat
-		}
-		return new byte[0];
 	}
 
 }
