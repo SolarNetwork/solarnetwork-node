@@ -30,11 +30,27 @@ package net.solarnetwork.node.io.canbus.socketcand;
  */
 public interface Addressed {
 
+	/** The maximum value a "standard" message address can have (11 bits). */
+	int MAX_STANDARD_ADDRESS = 0x7FF;
+
+	/** The maximum value an "extended" message address can have (29 bits). */
+	int MAX_EXTENDED_ADDRESS = 0x1FFFFFFF;
+
 	/**
 	 * Get the address.
 	 * 
 	 * @return the address
 	 */
 	int getAddress();
+
+	/**
+	 * Test if this the address represents a CAN 2.0B "extended" address or not.
+	 * 
+	 * @return {@literal true} if the address is a CAN 2.0B 29-bit address,
+	 *         otherwise a CAN 2.0A 11-bit address is assumed
+	 */
+	default boolean isExtendedAddress() {
+		return (getAddress() > MAX_STANDARD_ADDRESS);
+	}
 
 }

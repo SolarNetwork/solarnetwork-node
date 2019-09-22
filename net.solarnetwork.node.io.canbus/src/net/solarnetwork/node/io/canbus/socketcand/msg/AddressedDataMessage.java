@@ -38,6 +38,8 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 	private final int dataIndex;
 
 	/**
+	 * Constructor.
+	 * 
 	 * @param type
 	 *        the message type, or {@literal null} if not known
 	 * @param command
@@ -55,7 +57,33 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 	 */
 	public AddressedDataMessage(MessageType type, String command, List<String> arguments,
 			int addressIndex, int dataIndex) {
-		super(type, command, arguments, addressIndex);
+		this(type, command, arguments, addressIndex, dataIndex, false);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param type
+	 *        the message type, or {@literal null} if not known
+	 * @param command
+	 *        the raw command, if {@code type} is {@literal null}
+	 * @param arguments
+	 *        the raw command arguments
+	 * @param addressIndex
+	 *        the index within {@code arguments} that contains the base-16
+	 *        address value
+	 * @param dataIndex
+	 *        the index within {@code arguments} that is the start of the data
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @throws IllegalArgumentException
+	 *         if both {@code type} and {@code command} are {@literal null}, or
+	 *         the arguments are inappropriate for the message
+	 */
+	public AddressedDataMessage(MessageType type, String command, List<String> arguments,
+			int addressIndex, int dataIndex, boolean forceExtendedAddress) {
+		super(type, command, arguments, addressIndex, forceExtendedAddress);
 		if ( dataIndex < 0 ) {
 			throw new IllegalArgumentException("The data index must be >= 0.");
 		}

@@ -51,6 +51,40 @@ public class SendMessageImplTests {
 		assertThat("Arguments", m.getArguments(), contains("1", "4", "11", "22", "33", "FF"));
 		assertThat("Data length", m.getDataLength(), equalTo(data.length));
 		assertThat("Data", Arrays.equals(m.getData(), data), equalTo(true));
+		assertThat("Address", m.getAddress(), equalTo(1));
+		assertThat("Extended address", m.isExtendedAddress(), equalTo(false));
+	}
+
+	@Test
+	public void construct_extended() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x11, 0x22, 0x33, (byte) 0xFF };
+
+		// WHEN
+		SendMessageImpl m = new SendMessageImpl(378489, data);
+
+		// THEN
+		assertThat("Arguments", m.getArguments(), contains("0005C679", "4", "11", "22", "33", "FF"));
+		assertThat("Data length", m.getDataLength(), equalTo(data.length));
+		assertThat("Data", Arrays.equals(m.getData(), data), equalTo(true));
+		assertThat("Address", m.getAddress(), equalTo(378489));
+		assertThat("Extended address", m.isExtendedAddress(), equalTo(true));
+	}
+
+	@Test
+	public void construct_forced_extended() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0x11, 0x22, 0x33, (byte) 0xFF };
+
+		// WHEN
+		SendMessageImpl m = new SendMessageImpl(1, true, data);
+
+		// THEN
+		assertThat("Arguments", m.getArguments(), contains("00000001", "4", "11", "22", "33", "FF"));
+		assertThat("Data length", m.getDataLength(), equalTo(data.length));
+		assertThat("Data", Arrays.equals(m.getData(), data), equalTo(true));
+		assertThat("Address", m.getAddress(), equalTo(1));
+		assertThat("Extended address", m.isExtendedAddress(), equalTo(true));
 	}
 
 	@Test
@@ -65,6 +99,20 @@ public class SendMessageImplTests {
 
 		// THEN
 		assertThat("Message value", out.toString(), equalTo("< send EA 4 11 22 33 FF >"));
+	}
+
+	@Test
+	public void write_extended() throws IOException {
+		// GIVEN
+		SendMessageImpl m = new SendMessageImpl(0xA12FF4C,
+				new byte[] { (byte) 0x11, 0x22, 0x33, (byte) 0xFF });
+
+		// WHEN
+		StringWriter out = new StringWriter(16);
+		m.write(out);
+
+		// THEN
+		assertThat("Message value", out.toString(), equalTo("< send 0A12FF4C 4 11 22 33 FF >"));
 	}
 
 }

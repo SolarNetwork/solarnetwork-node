@@ -30,12 +30,6 @@ package net.solarnetwork.node.io.canbus.socketcand;
  */
 public interface FrameMessage extends Message, Addressed, Temporal, DataContainer {
 
-	/** The maximum value a "standard" message address can have (11 bits). */
-	int MAX_STANDARD_ID = 0x7FF;
-
-	/** The maximum value an "extended" message address can have (29 bits). */
-	int MAX_EXTENDED_ID = 0x1FFFFFFF;
-
 	/**
 	 * Get the frame message data.
 	 * 
@@ -43,14 +37,5 @@ public interface FrameMessage extends Message, Addressed, Temporal, DataContaine
 	 */
 	@Override
 	byte[] getData();
-
-	/**
-	 * Test if this message is a CAN 2.0B "extended" frame or not.
-	 * 
-	 * @return {@literal true} if this frame is an extended frame
-	 */
-	default boolean isExtended() {
-		return (getAddress() > MAX_STANDARD_ID);
-	}
 
 }

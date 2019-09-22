@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.io.canbus.socketcand.Addressed;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SendMessage;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
@@ -58,19 +59,41 @@ public class SendMessageImpl extends AddressedDataMessage implements SendMessage
 	/**
 	 * Constructor.
 	 * 
+	 * <p>
+	 * The address will not be forced into extended form.
+	 * </p>
+	 * 
 	 * @param address
 	 *        the address to send the message to
 	 * @param data
 	 *        the data to include in the message, or {@literal null} for no data
 	 */
 	public SendMessageImpl(int address, byte[] data) {
-		super(MessageType.Send, null, generateArguments(address, data), 0, DATA_OFFSET);
+		this(address, false, data);
 	}
 
-	private static List<String> generateArguments(int address, byte[] data) {
+	/**
+	 * Constructor.
+	 * 
+	 * @param address
+	 *        the address to send the message to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @param data
+	 *        the data to include in the message, or {@literal null} for no data
+	 */
+	public SendMessageImpl(int address, boolean forceExtendedAddress, byte[] data) {
+		super(MessageType.Send, null, generateArguments(address, forceExtendedAddress, data), 0,
+				DATA_OFFSET, forceExtendedAddress);
+	}
+
+	private static List<String> generateArguments(int address, boolean forceExtendedAddress,
+			byte[] data) {
 		final int dataLen = (data != null ? data.length : 0);
+		final boolean extended = forceExtendedAddress || address > Addressed.MAX_STANDARD_ADDRESS;
 		List<String> args = new ArrayList<>(2 + dataLen);
-		args.add(String.format("%X", address));
+		args.add(String.format(extended ? "%08X" : "%X", address));
 		args.add(String.valueOf(dataLen));
 		List<String> hexData = SocketcandUtils.encodeHexStrings(data, 0, dataLen);
 		if ( hexData != null ) {

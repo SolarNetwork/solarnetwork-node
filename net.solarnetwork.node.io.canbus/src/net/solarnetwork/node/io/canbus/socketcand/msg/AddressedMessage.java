@@ -35,6 +35,7 @@ import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 public class AddressedMessage extends BasicMessage implements Addressed {
 
 	private final int address;
+	private final boolean forceExtended;
 
 	/**
 	 * Constructor.
@@ -74,6 +75,31 @@ public class AddressedMessage extends BasicMessage implements Addressed {
 	 *         or the address argument cannot be parsed as a base-16 number
 	 */
 	public AddressedMessage(MessageType type, String command, List<String> arguments, int addressIndex) {
+		this(type, command, arguments, addressIndex, false);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param type
+	 *        the message type, or {@literal null} if not known
+	 * @param command
+	 *        the raw command, if {@code type} is {@literal null}
+	 * @param arguments
+	 *        the raw command arguments
+	 * @param addressIndex
+	 *        the index within {@code arguments} that contains the base-16
+	 *        address value
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @throws IllegalArgumentException
+	 *         if both {@code type} and {@code command} are {@literal null}, or
+	 *         {@code arguments} does not have an {@code addressIndex} element,
+	 *         or the address argument cannot be parsed as a base-16 number
+	 */
+	public AddressedMessage(MessageType type, String command, List<String> arguments, int addressIndex,
+			boolean forceExtendedAddress) {
 		super(type, command, arguments);
 		if ( arguments == null || arguments.size() <= addressIndex ) {
 			throw new IllegalArgumentException(
@@ -85,11 +111,17 @@ public class AddressedMessage extends BasicMessage implements Addressed {
 			throw new IllegalArgumentException("The frame bus address argument ["
 					+ arguments.get(addressIndex) + "] cannot be parsed as a base-16 number.", e);
 		}
+		this.forceExtended = forceExtendedAddress;
 	}
 
 	@Override
 	public final int getAddress() {
 		return address;
+	}
+
+	@Override
+	public boolean isExtendedAddress() {
+		return forceExtended || Addressed.super.isExtendedAddress();
 	}
 
 }
