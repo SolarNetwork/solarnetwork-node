@@ -1,5 +1,5 @@
 /* ==================================================================
- * FilterMessageImpl.java - 23/09/2019 11:23:25 am
+ * MuxFilterMessageImpl.java - 23/09/2019 2:25:40 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -26,17 +26,17 @@ import java.util.ArrayList;
 import java.util.List;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.socketcand.Addressed;
-import net.solarnetwork.node.io.canbus.socketcand.FilterMessage;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
+import net.solarnetwork.node.io.canbus.socketcand.MuxFilterMessage;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
 
 /**
- * Implementation of {@link FilterMessage}.
+ * Implementation of {@link MuxFilterMessage}.
  * 
  * @author matt
  * @version 1.0
  */
-public class FilterMessageImpl extends AddressedDataMessage implements FilterMessage {
+public class MuxFilterMessageImpl extends AddressedDataMessage implements MuxFilterMessage {
 
 	private static final int SECONDS_OFFSET = 0;
 	private static final int MICROSECONDS_OFFSET = 1;
@@ -45,7 +45,8 @@ public class FilterMessageImpl extends AddressedDataMessage implements FilterMes
 
 	private final int seconds;
 	private final int microseconds;
-	private final long dataFilter;
+	private final long multiplexIdentifierBitmask;
+	private final List<Long> multiplexDataFilters;
 
 	/**
 	 * Constructor.
@@ -57,14 +58,20 @@ public class FilterMessageImpl extends AddressedDataMessage implements FilterMes
 	 * @param arguments
 	 *        the raw command arguments
 	 * @throws IllegalArgumentException
-	 *         if the arguments are inappropriate for a filter message
+	 *         if the arguments are inappropriate for a muxfilter message
 	 */
-	public FilterMessageImpl(List<String> arguments) {
-		super(MessageType.Filter, null, arguments, ADDRESS_OFFSET, DATA_OFFSET);
+	public MuxFilterMessageImpl(List<String> arguments) {
+		super(MessageType.Muxfilter, null, arguments, ADDRESS_OFFSET, DATA_OFFSET);
 		try {
 			this.seconds = Integer.parseInt(arguments.get(SECONDS_OFFSET));
 			this.microseconds = Integer.parseInt(arguments.get(MICROSECONDS_OFFSET));
-			this.dataFilter = SocketcandUtils.longForBytes(getData(), 0);
+			byte[] data = getData();
+			this.multiplexIdentifierBitmask = SocketcandUtils.longForBytes(data, 0);
+			this.multiplexDataFilters = new ArrayList<>(
+					Math.max(0, (data.length - Long.BYTES) / Long.BYTES));
+			for ( int i = Long.BYTES; i < data.length; i += Long.BYTES ) {
+				this.multiplexDataFilters.add(SocketcandUtils.longForBytes(data, i));
+			}
 		} catch ( NumberFormatException e ) {
 			throw new IllegalArgumentException("The seconds [" + arguments.get(SECONDS_OFFSET)
 					+ "] and/or microseconds [" + arguments.get(MICROSECONDS_OFFSET)
@@ -84,34 +91,43 @@ public class FilterMessageImpl extends AddressedDataMessage implements FilterMes
 	 *        the limit seconds
 	 * @param limitMicroseconds
 	 *        the limit microseconds
-	 * @param dataFilter
-	 *        the data filter
+	 * @param multiplexIdentifierBitmask
+	 *        the multiplex identifier bitmask
+	 * @param multiplexDataFilters
+	 *        the data filters
 	 * @throws IllegalArgumentException
-	 *         if the arguments are inappropriate for a filter message
+	 *         if the arguments are inappropriate for a muxfilter message
 	 */
-	public FilterMessageImpl(int address, boolean forceExtendedAddress, int limitSeconds,
-			int limitMicroseconds, long dataFilter) {
-		super(MessageType.Filter, null, generateArguments(address, forceExtendedAddress, limitSeconds,
-				limitMicroseconds, dataFilter), ADDRESS_OFFSET, DATA_OFFSET, forceExtendedAddress);
-		if ( dataFilter == CanbusConnection.DATA_FILTER_NONE ) {
-			throw new IllegalArgumentException("The data filter must be provided.");
+	public MuxFilterMessageImpl(int address, boolean forceExtendedAddress, int limitSeconds,
+			int limitMicroseconds, long multiplexIdentifierBitmask, List<Long> multiplexDataFilters) {
+		super(MessageType.Muxfilter, null,
+				generateArguments(address, forceExtendedAddress, limitSeconds, limitMicroseconds,
+						multiplexIdentifierBitmask, multiplexDataFilters),
+				ADDRESS_OFFSET, DATA_OFFSET, forceExtendedAddress);
+		if ( multiplexIdentifierBitmask == CanbusConnection.DATA_FILTER_NONE ) {
+			throw new IllegalArgumentException("The multiplex identifier bitmask must be provided.");
+		}
+		if ( multiplexDataFilters == null || multiplexDataFilters.isEmpty() ) {
+			throw new IllegalArgumentException("At least one multiplex data filter must be provided.");
 		}
 		this.seconds = limitSeconds;
 		this.microseconds = limitMicroseconds;
-		this.dataFilter = dataFilter;
+		this.multiplexIdentifierBitmask = multiplexIdentifierBitmask;
+		this.multiplexDataFilters = multiplexDataFilters;
 	}
 
 	private static List<String> generateArguments(int address, boolean forceExtendedAddress,
-			int limitSeconds, int limitMicroseconds, long dataFilter) {
-		List<String> args = new ArrayList<>(12);
+			int limitSeconds, int limitMicroseconds, long multiplexIdentifierBitmask,
+			List<Long> multiplexDataFilters) {
+		List<String> args = new ArrayList<>(5 + multiplexDataFilters.size() * 8);
 		args.add(String.valueOf(limitSeconds));
 		args.add(String.valueOf(limitMicroseconds));
 		args.add(Addressed.hexAddress(address, forceExtendedAddress));
-
-		List<String> f = SocketcandUtils.encodeAsHexStrings(dataFilter, true);
-		args.add(String.valueOf(f.size()));
-		args.addAll(f);
-
+		args.add(String.valueOf(1 + multiplexDataFilters.size()));
+		args.addAll(SocketcandUtils.encodeAsHexStrings(multiplexIdentifierBitmask, false));
+		for ( Long f : multiplexDataFilters ) {
+			args.addAll(SocketcandUtils.encodeAsHexStrings(f, false));
+		}
 		return args;
 	}
 
@@ -126,8 +142,13 @@ public class FilterMessageImpl extends AddressedDataMessage implements FilterMes
 	}
 
 	@Override
-	public long getDataFilter() {
-		return dataFilter;
+	public long getMultiplexIdentifierBitmask() {
+		return multiplexIdentifierBitmask;
+	}
+
+	@Override
+	public Iterable<Long> getMultiplexDataFilters() {
+		return multiplexDataFilters;
 	}
 
 }

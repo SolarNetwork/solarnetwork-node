@@ -29,8 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import net.solarnetwork.node.io.canbus.socketcand.msg.AddressedMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
+import net.solarnetwork.node.io.canbus.socketcand.msg.FilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
-import net.solarnetwork.node.io.canbus.socketcand.msg.SendMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.MuxFilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 
 /**
@@ -108,17 +109,28 @@ public final class SocketcandUtils {
 		}
 
 		MessageType type = MessageType.forCommand(command);
-		if ( type == MessageType.Frame ) {
-			return new FrameMessageImpl(arguments);
-		} else if ( type == MessageType.Subscribe ) {
-			return new SubscribeMessageImpl(arguments);
-		} else if ( type == MessageType.Unsubscribe ) {
-			return new AddressedMessage(type, command, arguments);
-		} else if ( type == MessageType.Send ) {
-			return new SendMessageImpl(arguments);
-		} else {
-			return new BasicMessage(type, command, arguments);
+		if ( type != null ) {
+			switch (type) {
+				case Frame:
+					return new FrameMessageImpl(arguments);
+
+				case Subscribe:
+					return new SubscribeMessageImpl(arguments);
+
+				case Unsubscribe:
+					return new AddressedMessage(type, command, arguments);
+
+				case Filter:
+					return new FilterMessageImpl(arguments);
+
+				case Muxfilter:
+					return new MuxFilterMessageImpl(arguments);
+
+				default:
+					// ignore here
+			}
 		}
+		return new BasicMessage(type, command, arguments);
 	}
 
 	/**
@@ -285,7 +297,7 @@ public final class SocketcandUtils {
 			return 0L;
 		}
 		long f = 0L;
-		for ( int i = offset, j = Long.BYTES - 1; i < data.length && j < Long.BYTES; i++, j-- ) {
+		for ( int i = offset, j = Long.BYTES - 1; i < data.length && j >= 0; i++, j-- ) {
 			f |= ((long) (data[i] & 0xFF) << (j * 8));
 		}
 		return f;

@@ -25,6 +25,8 @@ package net.solarnetwork.node.io.canbus.socketcand.msg.test;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.Test;
@@ -52,6 +54,43 @@ public class FilterMessageImplTests {
 		assertThat("Microseconds", m.getMicroseconds(), equalTo(500000));
 		assertThat("Fractional seconds", m.getFractionalSeconds(), equalTo(new BigDecimal("1.500000")));
 		assertThat("Data filter", m.getDataFilter(), equalTo(0xFF00000000000000L));
+	}
+
+	@Test
+	public void write() throws IOException {
+		// GIVEN
+		FilterMessageImpl m = new FilterMessageImpl(0x123, false, 1, 500000, 0xFF00000000001234L);
+
+		// WHEN
+		StringWriter out = new StringWriter();
+		m.write(out);
+
+		// THEN
+		assertThat("Address", m.getAddress(), equalTo(0x123));
+		assertThat("Seconds", m.getSeconds(), equalTo(1));
+		assertThat("Microseconds", m.getMicroseconds(), equalTo(500000));
+		assertThat("Fractional seconds", m.getFractionalSeconds(), equalTo(new BigDecimal("1.500000")));
+		assertThat("Data filter", m.getDataFilter(), equalTo(0xFF00000000001234L));
+		assertThat("Written message", out.toString(),
+				equalTo("< filter 1 500000 123 8 FF 00 00 00 00 00 12 34 >"));
+	}
+
+	@Test
+	public void write_trailingZerosTrimmed() throws IOException {
+		// GIVEN
+		FilterMessageImpl m = new FilterMessageImpl(0x123, false, 1, 500000, 0xFF00000000000000L);
+
+		// WHEN
+		StringWriter out = new StringWriter();
+		m.write(out);
+
+		// THEN
+		assertThat("Address", m.getAddress(), equalTo(0x123));
+		assertThat("Seconds", m.getSeconds(), equalTo(1));
+		assertThat("Microseconds", m.getMicroseconds(), equalTo(500000));
+		assertThat("Fractional seconds", m.getFractionalSeconds(), equalTo(new BigDecimal("1.500000")));
+		assertThat("Data filter", m.getDataFilter(), equalTo(0xFF00000000000000L));
+		assertThat("Written message", out.toString(), equalTo("< filter 1 500000 123 1 FF >"));
 	}
 
 }

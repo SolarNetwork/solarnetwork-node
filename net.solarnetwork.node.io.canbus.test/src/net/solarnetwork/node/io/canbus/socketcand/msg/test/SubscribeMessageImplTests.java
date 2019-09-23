@@ -87,4 +87,5 @@ public class SubscribeMessageImplTests {
 		// GIVEN
 		new SubscribeMessageImpl(asList("0", "1", "Z"));
 	}
+
 }
