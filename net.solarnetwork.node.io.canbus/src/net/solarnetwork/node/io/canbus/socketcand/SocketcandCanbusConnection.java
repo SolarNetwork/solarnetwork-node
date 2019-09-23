@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -54,6 +55,8 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  */
 public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
+	public static final long DEFAULT_TIMEOUT_MS = 300000L;
+
 	private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(0);
 	private static final Logger log = LoggerFactory.getLogger(SocketcandCanbusConnection.class);
 
@@ -64,9 +67,12 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	private final String host;
 	private final int port;
 	private final String busName;
+	private long messageTimeout = DEFAULT_TIMEOUT_MS;
+	private TimeUnit messageTimeoutUnit = TimeUnit.MILLISECONDS;
 
 	private Thread readerThread;
 	private CanbusSocket socket;
+	private boolean closed = false;
 
 	/**
 	 * Constructor.
@@ -105,7 +111,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	private Message readNextMessage() throws IOException {
 		CanbusSocket s = this.socket;
 		if ( s != null ) {
-			return s.nextMessage();
+			return s.nextMessage(messageTimeout, messageTimeoutUnit);
 		}
 		throw new IOException("Connection not open.");
 	}
@@ -155,12 +161,11 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	@Override
 	public void run() {
 		while ( true ) {
-			CanbusSocket s = socket;
-			if ( s == null || s.isClosed() || Thread.interrupted() ) {
+			if ( isClosed() || Thread.interrupted() ) {
 				return;
 			}
 			try {
-				Message m = s.nextMessage();
+				Message m = readNextMessage();
 				if ( m == null ) {
 					return;
 				}
@@ -185,6 +190,10 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	@Override
 	public void close() throws IOException {
+		if ( closed ) {
+			return;
+		}
+		closed = true;
 		if ( socket != null ) {
 			// TODO: stop reader thread
 			try {
@@ -197,12 +206,18 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		if ( readerThread != null && readerThread.isAlive() ) {
 			try {
 				readerThread.interrupt();
+				readerThread.join(1000);
 			} catch ( Exception e ) {
 				// ignore
 			} finally {
 				readerThread = null;
 			}
 		}
+	}
+
+	@Override
+	public boolean isClosed() {
+		return closed;
 	}
 
 	@Override
@@ -278,6 +293,49 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	@Override
 	public String getBusName() {
 		return busName;
+	}
+
+	/**
+	 * Get a timeout value to use when waiting for CAN messages.
+	 * 
+	 * @return the message timeout, or zero to wait forever; defaults to
+	 *         {@link #DEFAULT_TIMEOUT_MS}
+	 * @see #getMessageTimeoutUnit()
+	 */
+	public long getMessageTimeout() {
+		return messageTimeout;
+	}
+
+	/**
+	 * Set the timeout value to use when waiting for CAN messages.
+	 * 
+	 * @param messageTimeout
+	 *        the timeout to use
+	 * @see #setMessageTimeoutUnit(TimeUnit)
+	 */
+	public void setMessageTimeout(long messageTimeout) {
+		this.messageTimeout = messageTimeout;
+	}
+
+	/**
+	 * Get the timeout units to use when waiting for CAN messages.
+	 * 
+	 * @return the time unit; defaults to {@link TimeUnit#MILLISECONDS}
+	 * @see #getMessageTimeout()
+	 */
+	public TimeUnit getMessageTimeoutUnit() {
+		return messageTimeoutUnit;
+	}
+
+	/**
+	 * Set the timeout units to use when waiting for CAN messages.
+	 *
+	 * @param messageTimeoutUnit
+	 *        the time unit to use
+	 * @see #setMessageTimeout(long)
+	 */
+	public void setMessageTimeoutUnit(TimeUnit messageTimeoutUnit) {
+		this.messageTimeoutUnit = messageTimeoutUnit;
 	}
 
 }

@@ -69,6 +69,20 @@ public interface CanbusConnection extends Closeable {
 	boolean isEstablished();
 
 	/**
+	 * Test if {@link #close()} has been called.
+	 * 
+	 * <p>
+	 * This method does not necessarily verify if the physical connection has
+	 * been terminated, it is merely an indication if {@link #close()} has been
+	 * invoked.
+	 * </p>
+	 * 
+	 * @return {@literal true} if {@link #close()} has been invoked on this
+	 *         connection
+	 */
+	boolean isClosed();
+
+	/**
 	 * Subscribe to CAN bus changes.
 	 * 
 	 * <p>

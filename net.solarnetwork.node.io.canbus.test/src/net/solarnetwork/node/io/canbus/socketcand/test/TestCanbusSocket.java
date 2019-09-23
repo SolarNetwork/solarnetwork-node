@@ -23,11 +23,12 @@
 package net.solarnetwork.node.io.canbus.socketcand.test;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -42,9 +43,7 @@ import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
  * @author matt
  * @version 1.0
  */
-public class TestCanbusSocket implements CanbusSocket, Runnable {
-
-	private static final AtomicInteger counter = new AtomicInteger(0);
+public class TestCanbusSocket implements CanbusSocket {
 
 	private String host = null;
 	private int port = -1;
@@ -53,44 +52,12 @@ public class TestCanbusSocket implements CanbusSocket, Runnable {
 
 	private final List<Message> written = new ArrayList<Message>(8);
 	private final List<Message> responded = new ArrayList<Message>(8);
-	private final Queue<Message> buffer = new LinkedList<>();
-	private final Queue<Message> input = new LinkedList<>();
+	private final Queue<Message> responseBuffer = new LinkedList<>();
 	private final Lock lock = new ReentrantLock();
-	private final Condition notEmpty = lock.newCondition();
-	private final Thread writerThread;
+	private final Condition haveResponse = lock.newCondition();
 
 	public TestCanbusSocket() {
 		super();
-		writerThread = new Thread(this);
-		writerThread.setName("TestCanbusSocket-" + counter.incrementAndGet());
-		writerThread.setDaemon(true);
-		writerThread.start();
-	}
-
-	@Override
-	public void run() {
-		synchronized ( writerThread ) {
-			while ( !closed ) {
-				if ( Thread.interrupted() ) {
-					return;
-				}
-				try {
-					writerThread.wait();
-					Message m;
-					while ( (m = buffer.poll()) != null ) {
-						lock.lock();
-						try {
-							input.add(m);
-							notEmpty.signal();
-						} finally {
-							lock.unlock();
-						}
-					}
-				} catch ( InterruptedException e ) {
-					return;
-				}
-			}
-		}
 	}
 
 	@Override
@@ -99,18 +66,19 @@ public class TestCanbusSocket implements CanbusSocket, Runnable {
 			return;
 		}
 		closed = true;
-		if ( writerThread.isAlive() ) {
-			try {
-				writerThread.interrupt();
-				writerThread.join();
-			} catch ( Exception e ) {
-				// ignore
-			}
+		lock.lock();
+		try {
+			haveResponse.signal();
+		} finally {
+			lock.unlock();
 		}
 	}
 
 	@Override
 	public void open(String host, int port) throws IOException {
+		if ( closed ) {
+			throw new IOException("Already closed.");
+		}
 		if ( this.host != null ) {
 			throw new IOException("Already opened to " + this.host + ":" + this.port);
 		}
@@ -135,24 +103,26 @@ public class TestCanbusSocket implements CanbusSocket, Runnable {
 	}
 
 	@Override
-	public Message nextMessage() throws IOException {
-		while ( true ) {
-			try {
-				lock.lockInterruptibly();
-			} catch ( InterruptedException e ) {
-				return null;
-			}
-			try {
-				Message m = input.poll();
-				if ( m != null ) {
-					return m;
+	public Message nextMessage(long timeout, TimeUnit unit) throws IOException {
+		lock.lock();
+		try {
+			while ( true ) {
+				try {
+					Message m = responseBuffer.poll();
+					if ( m != null ) {
+						return m;
+					}
+					if ( !haveResponse.await(timeout, unit) ) {
+						throw new SocketTimeoutException("Timeout waiting at most " + timeout + " "
+								+ unit.toString().toLowerCase() + " for next CAN bus message from "
+								+ host + ":" + port);
+					}
+				} catch ( InterruptedException e ) {
+					return null;
 				}
-				notEmpty.await();
-			} catch ( InterruptedException e ) {
-				return input.poll();
-			} finally {
-				lock.unlock();
 			}
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -177,10 +147,13 @@ public class TestCanbusSocket implements CanbusSocket, Runnable {
 	 *        the message to enqueue
 	 */
 	public void respondMessage(Message message) throws IOException {
-		synchronized ( writerThread ) {
+		lock.lock();
+		try {
 			responded.add(message);
-			buffer.add(message);
-			writerThread.notify();
+			responseBuffer.add(message);
+			haveResponse.signal();
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -212,6 +185,7 @@ public class TestCanbusSocket implements CanbusSocket, Runnable {
 		return port;
 	}
 
+	@Override
 	public boolean isClosed() {
 		return closed;
 	}

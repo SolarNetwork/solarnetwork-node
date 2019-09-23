@@ -30,6 +30,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
@@ -103,7 +104,7 @@ public class SocketCanbusSocket implements CanbusSocket {
 	}
 
 	@Override
-	public synchronized Message nextMessage() throws IOException {
+	public synchronized Message nextMessage(long timeout, TimeUnit unit) throws IOException {
 		if ( input != null ) {
 			return SocketcandUtils.readMessage(input, buffer);
 		}

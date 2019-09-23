@@ -27,7 +27,9 @@ import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.time.Duration;
@@ -42,7 +44,6 @@ import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
-import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusConnection;
@@ -63,18 +64,17 @@ public class SocketcandCanbusConnectionTests {
 	private static final String TEST_BUS_NAME = "Test_Bus";
 
 	private CanbusSocketProvider socketProvider;
-	private CanbusSocket socket;
+	private TestCanbusSocket socket;
 
 	private List<Object> mocks;
 
 	@Before
 	public void setup() {
 		socketProvider = EasyMock.createMock(CanbusSocketProvider.class);
-		socket = EasyMock.createMock(CanbusSocket.class);
+		socket = new TestCanbusSocket();
 
 		mocks = new ArrayList<>(8);
 		mocks.add(socketProvider);
-		mocks.add(socket);
 	}
 
 	public void replayAll() {
@@ -90,39 +90,25 @@ public class SocketcandCanbusConnectionTests {
 	public void openAndClose() throws IOException {
 		// GIVEN
 		expect(socketProvider.createCanbusSocket()).andReturn(socket);
-		socket.open(TEST_HOST, TEST_PORT);
-
-		expect(socket.nextMessage()).andReturn(new BasicMessage(MessageType.Hi));
-		socket.writeMessage(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)));
-		expect(socket.nextMessage()).andReturn(new BasicMessage(MessageType.Ok));
-		socket.connectionConfirmed();
-
-		socket.close();
 
 		// WHEN
 		replayAll();
 		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
 				TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
+			assertThat("Socket established", conn.isEstablished(), equalTo(true));
 		}
 
 		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME))));
 	}
 
 	@Test
 	public void subscribe_noFilter() throws IOException {
 		// GIVEN
 		expect(socketProvider.createCanbusSocket()).andReturn(socket);
-		socket.open(TEST_HOST, TEST_PORT);
-
-		expect(socket.nextMessage()).andReturn(new BasicMessage(MessageType.Hi));
-		socket.writeMessage(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)));
-		expect(socket.nextMessage()).andReturn(new BasicMessage(MessageType.Ok));
-		socket.connectionConfirmed();
-
-		socket.writeMessage(new SubscribeMessageImpl(1, false, 0, 0));
-
-		socket.close();
 
 		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
 		mocks.add(listener);
@@ -136,12 +122,15 @@ public class SocketcandCanbusConnectionTests {
 		}
 
 		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new SubscribeMessageImpl(1, false, 0, 0)));
 	}
 
 	@Test
 	public void receive() throws IOException {
 		// GIVEN
-		TestCanbusSocket socket = new TestCanbusSocket();
 		expect(socketProvider.createCanbusSocket()).andReturn(socket);
 
 		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
@@ -163,8 +152,12 @@ public class SocketcandCanbusConnectionTests {
 
 		// THEN
 		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new SubscribeMessageImpl(1, false, 0, 0)));
 
 		CanbusFrame f = frameCaptor.getValue();
+		assertThat("Frame captured", f, notNullValue());
 		assertThat("Frame address", f.getAddress(), equalTo(1));
 		assertThat("Frame data",
 				Arrays.equals(f.getData(),

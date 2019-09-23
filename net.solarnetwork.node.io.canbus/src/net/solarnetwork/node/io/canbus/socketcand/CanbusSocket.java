@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.canbus.socketcand;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * API for a CAN bus socket.
@@ -96,9 +97,13 @@ public interface CanbusSocket extends Closeable {
 	 * Read the next message from the socket, blocking until another message is
 	 * available.
 	 * 
+	 * @param timeout
+	 *        an optional maximum amount of time to wait, if greater than zero
+	 * @param the
+	 *        time unit for {@code timeout}
 	 * @return the next message
 	 */
-	Message nextMessage() throws IOException;
+	Message nextMessage(long timeout, TimeUnit unit) throws IOException;
 
 	/**
 	 * Write a message to the socket.
