@@ -42,10 +42,6 @@ public class SendMessageImpl extends AddressedDataMessage implements SendMessage
 	/**
 	 * Constructor.
 	 * 
-	 * @param type
-	 *        the message type, or {@literal null} if not known
-	 * @param command
-	 *        the raw command, if {@code type} is {@literal null}
 	 * @param arguments
 	 *        the raw command arguments
 	 * @throws IllegalArgumentException
