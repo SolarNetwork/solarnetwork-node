@@ -27,12 +27,12 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.node.io.canbus.socketcand.msg.AddressedMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.MuxFilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.UnsubscribeMessageImpl;
 
 /**
  * Utilities for dealing with the socketcand protocol.
@@ -118,7 +118,7 @@ public final class SocketcandUtils {
 					return new SubscribeMessageImpl(arguments);
 
 				case Unsubscribe:
-					return new AddressedMessage(type, command, arguments);
+					return new UnsubscribeMessageImpl(arguments);
 
 				case Filter:
 					return new FilterMessageImpl(arguments);
