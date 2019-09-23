@@ -69,6 +69,7 @@ public class SocketCanbusSocket implements CanbusSocket {
 	private Reader input;
 	private Writer output;
 	private boolean established;
+	private boolean closed;
 
 	/**
 	 * Constructor.
@@ -135,7 +136,13 @@ public class SocketCanbusSocket implements CanbusSocket {
 		} finally {
 			socket = null;
 			established = false;
+			closed = true;
 		}
+	}
+
+	@Override
+	public boolean isClosed() {
+		return closed;
 	}
 
 	/**

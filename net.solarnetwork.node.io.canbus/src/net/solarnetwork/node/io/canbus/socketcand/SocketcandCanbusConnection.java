@@ -28,11 +28,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
+import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
@@ -50,8 +52,9 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
-public class SocketcandCanbusConnection implements CanbusConnection {
+public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
+	private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(0);
 	private static final Logger log = LoggerFactory.getLogger(SocketcandCanbusConnection.class);
 
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
@@ -62,6 +65,7 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 	private final int port;
 	private final String busName;
 
+	private Thread readerThread;
 	private CanbusSocket socket;
 
 	/**
@@ -139,7 +143,44 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 			throw new IOException("Error opening bus [" + busName + "]: " + m);
 		}
 
+		// create reader thread
+		readerThread = new Thread(this);
+		readerThread.setName("SocketcandCanbusConnection-" + THREAD_COUNTER.incrementAndGet());
+		readerThread.setDaemon(true);
+		readerThread.start();
+
 		socket.connectionConfirmed();
+	}
+
+	@Override
+	public void run() {
+		while ( true ) {
+			CanbusSocket s = socket;
+			if ( s == null || s.isClosed() || Thread.interrupted() ) {
+				return;
+			}
+			try {
+				Message m = s.nextMessage();
+				if ( m == null ) {
+					return;
+				}
+				if ( m instanceof CanbusFrame ) {
+					CanbusFrame frame = (CanbusFrame) m;
+					int addr = frame.getAddress();
+					for ( CanbusSubscription sub : subscriptions.values() ) {
+						if ( addr == sub.getAddress() ) {
+							CanbusFrameListener listener = sub.getListener();
+							if ( listener != null ) {
+								listener.canbusFrameReceived(frame);
+							}
+						}
+					}
+				}
+			} catch ( IOException e ) {
+				log.debug("IOException in CanbusSocket message reader thread: {}", e.toString());
+				// ignore?
+			}
+		}
 	}
 
 	@Override
@@ -151,6 +192,15 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 				// ignore this one
 			} finally {
 				socket = null;
+			}
+		}
+		if ( readerThread != null && readerThread.isAlive() ) {
+			try {
+				readerThread.interrupt();
+			} catch ( Exception e ) {
+				// ignore
+			} finally {
+				readerThread = null;
 			}
 		}
 	}

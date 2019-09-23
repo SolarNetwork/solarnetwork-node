@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Objects;
 import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * A socketcand message.
@@ -108,6 +109,19 @@ public class BasicMessage implements Message {
 		BasicMessage other = (BasicMessage) obj;
 		return Objects.equals(arguments, other.arguments) && Objects.equals(command, other.command)
 				&& type == other.type;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("BasicMessage{");
+		builder.append(command);
+		if ( arguments != null && !arguments.isEmpty() ) {
+			builder.append(" ");
+			builder.append(StringUtils.delimitedStringFromCollection(arguments, " "));
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	@Override

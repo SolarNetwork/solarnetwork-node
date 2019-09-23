@@ -22,23 +22,32 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusConnection;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
+import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 
 /**
@@ -127,6 +136,40 @@ public class SocketcandCanbusConnectionTests {
 		}
 
 		// THEN
+	}
+
+	@Test
+	public void receive() throws IOException {
+		// GIVEN
+		TestCanbusSocket socket = new TestCanbusSocket();
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
+		mocks.add(listener);
+
+		Capture<CanbusFrame> frameCaptor = new Capture<>(CaptureType.ALL);
+		listener.canbusFrameReceived(capture(frameCaptor));
+
+		// WHEN
+		replayAll();
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
+				TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
+
+			// mock a frame message from the server
+			socket.respondMessage(new FrameMessageImpl(asList("1 23.424242 11 22 33 44".split(" "))));
+		}
+
+		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+
+		CanbusFrame f = frameCaptor.getValue();
+		assertThat("Frame address", f.getAddress(), equalTo(1));
+		assertThat("Frame data",
+				Arrays.equals(f.getData(),
+						new byte[] { (byte) 0x11, (byte) 0x22, (byte) 0x33, (byte) 0x44 }),
+				equalTo(true));
 	}
 
 }
