@@ -28,6 +28,6 @@ package net.solarnetwork.node.io.canbus.socketcand;
  * @author matt
  * @version 1.0
  */
-public interface SubscribeMessage extends Addressed, Temporal {
+public interface SubscribeMessage extends Message, Addressed, Temporal {
 
 }

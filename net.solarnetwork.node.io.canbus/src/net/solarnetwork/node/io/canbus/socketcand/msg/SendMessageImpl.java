@@ -91,9 +91,8 @@ public class SendMessageImpl extends AddressedDataMessage implements SendMessage
 	private static List<String> generateArguments(int address, boolean forceExtendedAddress,
 			byte[] data) {
 		final int dataLen = (data != null ? data.length : 0);
-		final boolean extended = forceExtendedAddress || address > Addressed.MAX_STANDARD_ADDRESS;
 		List<String> args = new ArrayList<>(2 + dataLen);
-		args.add(String.format(extended ? "%08X" : "%X", address));
+		args.add(Addressed.hexAddress(address, forceExtendedAddress));
 		args.add(String.valueOf(dataLen));
 		List<String> hexData = SocketcandUtils.encodeHexStrings(data, 0, dataLen);
 		if ( hexData != null ) {

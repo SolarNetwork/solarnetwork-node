@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.canbus;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.time.Duration;
 
 /**
  * High level CAN bus connection API.
@@ -33,6 +34,9 @@ import java.io.IOException;
  * @see CanbusNetwork for the main entry point to acquiring connection instances
  */
 public interface CanbusConnection extends Closeable {
+
+	/** A data filter representing "no filter". */
+	long DATA_FILTER_NONE = 0;
 
 	/**
 	 * Get the CAN bus name the connection uses.
@@ -63,5 +67,113 @@ public interface CanbusConnection extends Closeable {
 	 *         been closed
 	 */
 	boolean isEstablished();
+
+	/**
+	 * Subscribe to CAN bus changes.
+	 * 
+	 * <p>
+	 * The {@code dataFilter} argument represents a 8-byte bitmask to filter CAN
+	 * bus messages by, such that only CAN frame data that changes within the
+	 * specified mask will result in a call back to {@code listener}.
+	 * </p>
+	 * 
+	 * <p>
+	 * Subscriptions are required to be unique only per address on a given
+	 * connection. The behavior when subscribing to the same address with
+	 * different filters is implementation specific.
+	 * </p>
+	 * 
+	 * @param address
+	 *        the CAN address to subscribe to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @param limit
+	 *        an optional rate to limit update messages to
+	 * @param dataFilter
+	 *        a bitmask filter to limit update message to, or {@literal 0} to
+	 *        receive all frames
+	 * @param listener
+	 *        the listener to be notified of frame changes
+	 */
+	void subscribe(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
+			CanbusFrameListener listener) throws IOException;
+
+	/**
+	 * Subscribe to multiplexed CAN bus changes.
+	 * 
+	 * <p>
+	 * Multiplexed subscriptions can be used when a single CAN bus address can
+	 * emit different types of data, using some portion of the data to represent
+	 * a "type" identifier. For example the first byte of the frame data might
+	 * represent the multiplex identifier, with the remainder of the frame data
+	 * holding the logical content.
+	 * </p>
+	 * 
+	 * <p>
+	 * Each {@code dataFilters} value represents a 8-byte bitmask to filter CAN
+	 * bus messages by, such that only CAN frame data that changes within the
+	 * specified mask will result in a call back to {@code listener}. The
+	 * {@code identifierMask} is a bitmask that represents
+	 * </p>
+	 * 
+	 * <p>
+	 * Subscriptions are required to be unique only per address on a given
+	 * connection. The behavior when subscribing to the same address with
+	 * different filters is implementation specific.
+	 * </p>
+	 * 
+	 * @param address
+	 *        the CAN address to subscribe to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @param limit
+	 *        an optional rate to limit update messages to
+	 * @param identifierMask
+	 *        an 8-byte bitmask that represents which data bits represent the
+	 *        multiplex identifier
+	 * @param dataFilters
+	 *        a list of bitmask filters to limit update message to; must have at
+	 *        least one value
+	 * @param listener
+	 *        the listener to be notified of frame changes
+	 */
+	void subscribe(int address, boolean forceExtendedAddress, Duration limit, long identifierMask,
+			Iterable<Long> dataFilters, CanbusFrameListener listener) throws IOException;
+
+	/**
+	 * Unsubscribe from CAN bus changes.
+	 * 
+	 * <p>
+	 * After calling this message, any {@code CanbusFrameListener} previously
+	 * subscribed on {@code address} should stop receiving CAN bus changes.
+	 * </p>
+	 * 
+	 * @param address
+	 *        the CAN address to unsubscribe from
+	 */
+	void unsubscribe(int address) throws IOException;
+
+	/**
+	 * Monitor all unfiltered CAN bus changes.
+	 * 
+	 * <p>
+	 * After this method is called, any registered subscriptions are suspended
+	 * and only {@code listener} will receive CAN bus changes.
+	 * 
+	 * @param listener
+	 *        the listener to be notified of frame changes
+	 */
+	void monitor(CanbusFrameListener listener) throws IOException;
+
+	/**
+	 * Stop monitoring all unfiltered CAN bus changes.
+	 * 
+	 * <p>
+	 * After this method is called, any registered subscriptions are resumed.
+	 * </p>
+	 */
+	void unmonitor() throws IOException;
 
 }

@@ -60,7 +60,9 @@ public enum MessageType {
 
 	Bcmmode("bcmmode"),
 
-	Statistics("statistics");
+	Statistics("statistics"),
+
+	Stat("stat");
 
 	private final String command;
 
@@ -136,6 +138,9 @@ public enum MessageType {
 
 			case "statistics":
 				return Statistics;
+
+			case "stat":
+				return Stat;
 		}
 
 		return null;

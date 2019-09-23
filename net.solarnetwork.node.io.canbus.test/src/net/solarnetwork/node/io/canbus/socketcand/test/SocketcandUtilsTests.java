@@ -259,4 +259,78 @@ public class SocketcandUtilsTests {
 		assertThat("Time", fm.getFractionalSeconds(), equalTo(new BigDecimal("23.424242")));
 	}
 
+	@Test
+	public void longForBytes_singleByte() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0xFF };
+
+		// WHEN
+		long l = SocketcandUtils.longForBytes(data, 0);
+
+		// THEN
+		assertThat("Single byte translated to upper long bits", l, equalTo(0xFF00000000000000L));
+	}
+
+	@Test
+	public void longForBytes_basic() {
+		// GIVEN
+		byte[] data = new byte[] { (byte) 0xFE, (byte) 0xDC, (byte) 0xBA, (byte) 0x98, (byte) 0x76,
+				(byte) 0x54, (byte) 0x32, (byte) 0x10 };
+
+		// WHEN
+		long l = SocketcandUtils.longForBytes(data, 0);
+
+		// THEN
+		assertThat("8 bytes translated to complete long bits", l, equalTo(0xFEDCBA9876543210L));
+	}
+
+	@Test
+	public void longForBytes_leadingZeros() {
+		// GIVEN
+		byte[] data = new byte[] { 0, 0, 0, 0, 0, 0, 0, (byte) 0x10 };
+
+		// WHEN
+		long l = SocketcandUtils.longForBytes(data, 0);
+
+		// THEN
+		assertThat("Last byte translated to lower long bits", l, equalTo(0x0000000000000010L));
+	}
+
+	@Test
+	public void encodeAsHexStrings_basic() {
+		// GIVEN
+		long l = 0xFEDCBA9876543210L;
+
+		// WHEN
+		List<String> hex = SocketcandUtils.encodeAsHexStrings(l, true);
+
+		// THEN
+		assertThat("Hex strings encoded", hex, contains("FE", "DC", "BA", "98", "76", "54", "32", "10"));
+	}
+
+	@Test
+	public void encodeAsHexStrings_trim() {
+		// GIVEN
+		long l = 0xFF00000000000000L;
+
+		// WHEN
+		List<String> hex = SocketcandUtils.encodeAsHexStrings(l, true);
+
+		// THEN
+		assertThat("Trailing zeros omitted", hex, contains("FF"));
+	}
+
+	@Test
+	public void encodeAsHexStrings_noTrim() {
+		// GIVEN
+		long l = 0xFF00000000000000L;
+
+		// WHEN
+		List<String> hex = SocketcandUtils.encodeAsHexStrings(l, false);
+
+		// THEN
+		assertThat("Trailing zeros preserved", hex,
+				contains("FF", "00", "00", "00", "00", "00", "00", "00"));
+	}
+
 }

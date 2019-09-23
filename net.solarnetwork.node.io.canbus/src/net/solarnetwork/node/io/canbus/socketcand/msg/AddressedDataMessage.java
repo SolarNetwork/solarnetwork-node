@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.List;
+import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.socketcand.DataContainer;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
@@ -33,7 +34,7 @@ import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
  * @author matt
  * @version 1.0
  */
-public class AddressedDataMessage extends AddressedMessage implements DataContainer {
+public class AddressedDataMessage extends AddressedMessage implements DataContainer, CanbusFrame {
 
 	private final int dataIndex;
 
@@ -88,6 +89,11 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 			throw new IllegalArgumentException("The data index must be >= 0.");
 		}
 		this.dataIndex = dataIndex;
+	}
+
+	@Override
+	public boolean isExtendedFrame() {
+		return isExtendedAddress();
 	}
 
 	@Override

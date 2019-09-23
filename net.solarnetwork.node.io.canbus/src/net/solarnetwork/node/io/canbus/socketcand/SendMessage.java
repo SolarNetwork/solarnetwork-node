@@ -22,19 +22,14 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import net.solarnetwork.node.io.canbus.CanbusFrame;
+
 /**
  * Specialized message for socketcand {@literal send} commands.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SendMessage extends Addressed, DataContainer {
-
-	/**
-	 * Get the count of data bytes in this message.
-	 * 
-	 * @return the count of data bytes
-	 */
-	int getDataLength();
+public interface SendMessage extends Addressed, DataContainer, CanbusFrame {
 
 }

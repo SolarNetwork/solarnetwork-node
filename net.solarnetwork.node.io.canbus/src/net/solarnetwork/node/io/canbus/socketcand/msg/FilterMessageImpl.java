@@ -1,5 +1,5 @@
 /* ==================================================================
- * SubscribeMessageImpl.java - 20/09/2019 2:57:04 pm
+ * FilterMessageImpl.java - 23/09/2019 11:23:25 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -25,23 +25,26 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 import java.util.ArrayList;
 import java.util.List;
 import net.solarnetwork.node.io.canbus.socketcand.Addressed;
+import net.solarnetwork.node.io.canbus.socketcand.FilterMessage;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
-import net.solarnetwork.node.io.canbus.socketcand.SubscribeMessage;
+import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
 
 /**
- * Implementation of {@link SubscribeMessage}.
+ * Implementation of {@link FilterMessage}.
  * 
  * @author matt
  * @version 1.0
  */
-public class SubscribeMessageImpl extends AddressedMessage implements SubscribeMessage {
+public class FilterMessageImpl extends AddressedDataMessage implements FilterMessage {
 
 	private static final int SECONDS_OFFSET = 0;
 	private static final int MICROSECONDS_OFFSET = 1;
 	private static final int ADDRESS_OFFSET = 2;
+	private static final int DATA_OFFSET = 4;
 
 	private final int seconds;
 	private final int microseconds;
+	private final long dataFilter;
 
 	/**
 	 * Constructor.
@@ -55,11 +58,12 @@ public class SubscribeMessageImpl extends AddressedMessage implements SubscribeM
 	 * @throws IllegalArgumentException
 	 *         if the arguments are inappropriate for a subscribe message
 	 */
-	public SubscribeMessageImpl(List<String> arguments) {
-		super(MessageType.Subscribe, null, arguments, ADDRESS_OFFSET);
+	public FilterMessageImpl(List<String> arguments) {
+		super(MessageType.Filter, null, arguments, ADDRESS_OFFSET, DATA_OFFSET);
 		try {
 			this.seconds = Integer.parseInt(arguments.get(SECONDS_OFFSET));
 			this.microseconds = Integer.parseInt(arguments.get(MICROSECONDS_OFFSET));
+			this.dataFilter = SocketcandUtils.longForBytes(getData(), 0);
 		} catch ( NumberFormatException e ) {
 			throw new IllegalArgumentException("The seconds [" + arguments.get(SECONDS_OFFSET)
 					+ "] and/or microseconds [" + arguments.get(MICROSECONDS_OFFSET)
@@ -79,22 +83,29 @@ public class SubscribeMessageImpl extends AddressedMessage implements SubscribeM
 	 *        the limit seconds
 	 * @param limitMicroseconds
 	 *        the limit microseconds
+	 * @param dataFilter
+	 *        the data filter
 	 */
-	public SubscribeMessageImpl(int address, boolean forceExtendedAddress, int limitSeconds,
-			int limitMicroseconds) {
-		super(MessageType.Subscribe, null,
-				generateArguments(address, forceExtendedAddress, limitSeconds, limitMicroseconds),
-				ADDRESS_OFFSET, forceExtendedAddress);
+	public FilterMessageImpl(int address, boolean forceExtendedAddress, int limitSeconds,
+			int limitMicroseconds, long dataFilter) {
+		super(MessageType.Filter, null, generateArguments(address, forceExtendedAddress, limitSeconds,
+				limitMicroseconds, dataFilter), ADDRESS_OFFSET, DATA_OFFSET, forceExtendedAddress);
 		this.seconds = limitSeconds;
 		this.microseconds = limitMicroseconds;
+		this.dataFilter = dataFilter;
 	}
 
 	private static List<String> generateArguments(int address, boolean forceExtendedAddress,
-			int limitSeconds, int limitMicroseconds) {
+			int limitSeconds, int limitMicroseconds, long dataFilter) {
 		List<String> args = new ArrayList<>(3);
 		args.add(String.valueOf(limitSeconds));
 		args.add(String.valueOf(limitMicroseconds));
 		args.add(Addressed.hexAddress(address, forceExtendedAddress));
+
+		List<String> f = SocketcandUtils.encodeAsHexStrings(dataFilter, true);
+		args.add(String.valueOf(f.size()));
+		args.addAll(f);
+
 		return args;
 	}
 
@@ -106,6 +117,11 @@ public class SubscribeMessageImpl extends AddressedMessage implements SubscribeM
 	@Override
 	public int getMicroseconds() {
 		return microseconds;
+	}
+
+	@Override
+	public long getDataFilter() {
+		return dataFilter;
 	}
 
 }

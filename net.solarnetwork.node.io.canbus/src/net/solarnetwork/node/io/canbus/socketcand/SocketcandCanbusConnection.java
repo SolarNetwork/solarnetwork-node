@@ -30,12 +30,19 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.Socket;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
+import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
+import net.solarnetwork.node.io.canbus.socketcand.msg.FilterMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
+import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
 
 /**
  * Implementation of {@link CanbusNetwork} for socketcand CAN bus servers.
@@ -63,6 +70,9 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 	public static final boolean DEFAULT_SOCKET_KEEP_ALIVE = false;
 
 	private static final Logger log = LoggerFactory.getLogger(SocketcandCanbusConnection.class);
+
+	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
+			0.9f, 1);
 
 	private final char[] buffer = new char[4096];
 	private final String host;
@@ -172,6 +182,52 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 			socket = null;
 			established = false;
 		}
+
+	}
+
+	@Override
+	public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
+			CanbusFrameListener listener) throws IOException {
+		CanbusSubscription sub = new CanbusSubscription(address, limit, dataFilter, listener);
+		Message m = null;
+		if ( sub.hasFilter() ) {
+			m = new FilterMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
+					sub.getLimitMicroseconds(), dataFilter);
+		} else {
+			m = new SubscribeMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
+					sub.getLimitMicroseconds());
+		}
+		writeMessage(m);
+		CanbusSubscription old = subscriptions.put(address, sub);
+		if ( old != null ) {
+			log.warn("Subscription to CAN bus [{}] {} replaced by new subscription", busName, old);
+		}
+		log.info("Subscribed to CAN bus [{}]: {}", busName, sub);
+
+	}
+
+	@Override
+	public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long identifierMask,
+			Iterable<Long> dataFilters, CanbusFrameListener listener) throws IOException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void unsubscribe(int address) throws IOException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void monitor(CanbusFrameListener listener) throws IOException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void unmonitor() throws IOException {
+		// TODO Auto-generated method stub
 
 	}
 

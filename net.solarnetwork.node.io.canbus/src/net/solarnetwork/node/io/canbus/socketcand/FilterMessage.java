@@ -1,5 +1,5 @@
 /* ==================================================================
- * FrameMessageImpl.java - 20/09/2019 7:26:14 am
+ * FilterMessage.java - 23/09/2019 11:23:43 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,14 +22,26 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
-import net.solarnetwork.node.io.canbus.CanbusFrame;
-
 /**
- * Specialized message for socketcand {@literal frame} commands.
+ * Specialized message for socketcand {@literal filter} commands.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FrameMessage extends Message, Addressed, Temporal, DataContainer, CanbusFrame {
+public interface FilterMessage extends Message, Addressed, Temporal, DataContainer {
+
+	/**
+	 * Get the data filter value.
+	 * 
+	 * <p>
+	 * A data filter is a bitmask applied to the data contained in other
+	 * messages. The {@link DataContainer#getData()} method returns the filter
+	 * value as a byte array, while this method returns the filter encoded as a
+	 * {@code long}.
+	 * </p>
+	 * 
+	 * @return the data filter
+	 */
+	long getDataFilter();
 
 }

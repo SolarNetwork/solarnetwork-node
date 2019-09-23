@@ -1,5 +1,5 @@
 /* ==================================================================
- * FrameMessageImpl.java - 20/09/2019 7:26:14 am
+ * CanbusFrameListener.java - 23/09/2019 9:29:47 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -20,16 +20,23 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.canbus.socketcand;
-
-import net.solarnetwork.node.io.canbus.CanbusFrame;
+package net.solarnetwork.node.io.canbus;
 
 /**
- * Specialized message for socketcand {@literal frame} commands.
+ * API for a listener of CAN bus frames.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FrameMessage extends Message, Addressed, Temporal, DataContainer, CanbusFrame {
+@FunctionalInterface
+public interface CanbusFrameListener {
+
+	/**
+	 * Notification that a CAN bus frame has been received.
+	 * 
+	 * @param frame
+	 *        the frame that has been received
+	 */
+	void canbusFrameReceived(CanbusFrame frame);
 
 }

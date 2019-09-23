@@ -1,5 +1,5 @@
 /* ==================================================================
- * Addressed.java - 20/09/2019 7:27:29 am
+ * CanbusFrame.java - 23/09/2019 8:55:08 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -20,17 +20,21 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.canbus.socketcand;
-
-import net.solarnetwork.node.io.canbus.CanbusFrame;
+package net.solarnetwork.node.io.canbus;
 
 /**
- * API for something that has an address within the socketcand bus.
+ * General API for a CAN bus message, or frame.
  * 
  * @author matt
  * @version 1.0
  */
-public interface Addressed {
+public interface CanbusFrame {
+
+	/** The maximum value a "standard" message address can have (11 bits). */
+	int MAX_STANDARD_ADDRESS = 0x7FF;
+
+	/** The maximum value an "extended" message address can have (29 bits). */
+	int MAX_EXTENDED_ADDRESS = 0x1FFFFFFF;
 
 	/**
 	 * Get the address.
@@ -45,23 +49,22 @@ public interface Addressed {
 	 * @return {@literal true} if the address is a CAN 2.0B 29-bit address,
 	 *         otherwise a CAN 2.0A 11-bit address is assumed
 	 */
-	default boolean isExtendedAddress() {
-		return (getAddress() > CanbusFrame.MAX_STANDARD_ADDRESS);
+	default boolean isExtendedFrame() {
+		return (getAddress() > MAX_STANDARD_ADDRESS);
 	}
 
 	/**
-	 * Get a hex-formatted address value.
+	 * Get the count of data bytes.
 	 * 
-	 * @param address
-	 *        the address
-	 * @param forceExtendedAddress
-	 *        {@literal true} if the address should always be treated as an
-	 *        extended address
-	 * @return the hex-formatted address
+	 * @return the count of data bytes
 	 */
-	static String hexAddress(int address, boolean forceExtendedAddress) {
-		final boolean extended = forceExtendedAddress || address > CanbusFrame.MAX_STANDARD_ADDRESS;
-		return String.format(extended ? "%08X" : "%X", address);
-	}
+	int getDataLength();
+
+	/**
+	 * Get the data.
+	 * 
+	 * @return the data, never {@literal null}
+	 */
+	byte[] getData();
 
 }

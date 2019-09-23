@@ -191,7 +191,7 @@ public final class SocketcandUtils {
 	public static byte[] decodeHexStrings(final List<String> hexData, final int fromIndex,
 			final int toIndex) {
 		final int hexDataSize = (hexData != null ? hexData.size() : 0);
-		if ( hexDataSize < 1 || hexDataSize <= fromIndex || (toIndex - fromIndex) <= 1 ) {
+		if ( hexDataSize < 1 || hexDataSize <= fromIndex || (toIndex - fromIndex) < 1 ) {
 			return new byte[0];
 		}
 		final int maxIndex = (toIndex > hexDataSize ? hexDataSize : toIndex);
@@ -269,6 +269,54 @@ public final class SocketcandUtils {
 			hexData.add(new String(encodeHex(data[i], DIGITS_UPPER, buffer, 0)));
 		}
 		return hexData;
+	}
+
+	/**
+	 * Convert up to 8 bytes into a long value.
+	 * 
+	 * @param data
+	 *        the bytes to convert
+	 * @param offset
+	 *        the index within {@code data} to start reading from
+	 * @return the extracted long value
+	 */
+	public static long longForBytes(byte[] data, int offset) {
+		if ( data == null || data.length < 1 || offset >= data.length ) {
+			return 0L;
+		}
+		long f = 0L;
+		for ( int i = offset, j = Long.BYTES - 1; i < data.length && j < Long.BYTES; i++, j-- ) {
+			f |= ((long) (data[i] & 0xFF) << (j * 8));
+		}
+		return f;
+	}
+
+	/**
+	 * Convert a long into a list of hex strings.
+	 * 
+	 * @param number
+	 *        the long to convert
+	 * @param trimEnd
+	 *        {@literal true} to trim trailing zero values from the result
+	 * @return the list of hex-encoded bytes
+	 */
+	public static List<String> encodeAsHexStrings(long number, boolean trimEnd) {
+		List<String> result = new ArrayList<>(Long.BYTES);
+		int lastNonZeroIndex = 0;
+		char[] buffer = new char[2];
+		for ( int i = 0; i < Long.BYTES; i++ ) {
+			byte b = (byte) ((number >>> ((Long.BYTES - i - 1) * 8)) & 0xFF);
+			if ( b != 0 ) {
+				lastNonZeroIndex = i + 1;
+				result.add(new String(encodeHex(b, DIGITS_UPPER, buffer, 0)));
+			} else {
+				result.add("00");
+			}
+		}
+		if ( trimEnd && lastNonZeroIndex > 0 && lastNonZeroIndex < Long.BYTES ) {
+			result = result.subList(0, lastNonZeroIndex);
+		}
+		return result;
 	}
 
 }
