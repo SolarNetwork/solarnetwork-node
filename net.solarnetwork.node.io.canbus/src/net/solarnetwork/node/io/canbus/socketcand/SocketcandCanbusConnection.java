@@ -182,7 +182,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 					}
 				}
 			} catch ( IOException e ) {
-				log.debug("IOException in CanbusSocket message reader thread: {}", e.toString());
+				log.debug("Communication error in CanbusSocket message reader thread: {}", e.toString());
 				// ignore?
 			}
 		}
