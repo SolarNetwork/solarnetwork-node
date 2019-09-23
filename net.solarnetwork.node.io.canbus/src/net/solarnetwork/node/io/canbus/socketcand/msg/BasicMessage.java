@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.List;
+import java.util.Objects;
 import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 
@@ -89,6 +90,24 @@ public class BasicMessage implements Message {
 	@Override
 	public List<String> getArguments() {
 		return arguments;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(arguments, command, type);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
+			return true;
+		}
+		if ( !(obj instanceof BasicMessage) ) {
+			return false;
+		}
+		BasicMessage other = (BasicMessage) obj;
+		return Objects.equals(arguments, other.arguments) && Objects.equals(command, other.command)
+				&& type == other.type;
 	}
 
 	@Override

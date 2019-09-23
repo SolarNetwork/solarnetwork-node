@@ -56,7 +56,8 @@ public final class SocketcandUtils {
 	 * @param buffer
 	 *        a character buffer to use, which will be overwritten with data and
 	 *        must be large enough to hold the complete message
-	 * @return the message, never {@literal null}
+	 * @return the message, or {@literal null} if the end of the stream is
+	 *         reached
 	 * @throws IOException
 	 *         if any IO error occurs
 	 * @throws IndexOutOfBoundsException
@@ -70,7 +71,11 @@ public final class SocketcandUtils {
 		List<String> arguments = null;
 
 		LOOP: while ( true ) {
-			char c = (char) in.read();
+			int b = in.read();
+			if ( b < 0 ) {
+				break;
+			}
+			char c = (char) b;
 			// find opening <
 			switch (state) {
 				case SEEK:
@@ -107,7 +112,9 @@ public final class SocketcandUtils {
 					break;
 			}
 		}
-
+		if ( command == null ) {
+			return null;
+		}
 		MessageType type = MessageType.forCommand(command);
 		if ( type != null ) {
 			switch (type) {

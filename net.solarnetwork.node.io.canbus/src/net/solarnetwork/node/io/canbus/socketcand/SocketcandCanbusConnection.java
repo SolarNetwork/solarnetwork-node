@@ -22,18 +22,14 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.net.Socket;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
@@ -41,7 +37,9 @@ import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FilterMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.MuxFilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
+import net.solarnetwork.node.io.canbus.socketcand.msg.UnsubscribeMessageImpl;
 import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
 
 /**
@@ -54,45 +52,23 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  */
 public class SocketcandCanbusConnection implements CanbusConnection {
 
-	/** The default value for the {@code socketTimeout} property. */
-	public static final int DEFAULT_SOCKET_TIMEOUT = 400;
-
-	/** The default value for the {@code socketTcpNoDelay} property. */
-	public static final boolean DEFAULT_SOCKET_TCP_NO_DELAY = true;
-
-	/** The default value for the {@code socketReuseAddress} property. */
-	public static final boolean DEFAULT_SOCKET_REUSE_ADDRESS = true;
-
-	/** The default value for the {@code socketLinger} property. */
-	public static final int DEFAULT_SOCKET_LINGER = 1;
-
-	/** The default value for the {@code socketKeepAlive} property. */
-	public static final boolean DEFAULT_SOCKET_KEEP_ALIVE = false;
-
 	private static final Logger log = LoggerFactory.getLogger(SocketcandCanbusConnection.class);
 
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
 			0.9f, 1);
 
-	private final char[] buffer = new char[4096];
+	private final CanbusSocketProvider socketProvider;
 	private final String host;
 	private final int port;
 	private final String busName;
 
-	private int socketTimeout = DEFAULT_SOCKET_TIMEOUT;
-	private boolean socketTcpNoDelay = DEFAULT_SOCKET_TCP_NO_DELAY;
-	private boolean socketReuseAddress = DEFAULT_SOCKET_REUSE_ADDRESS;
-	private int socketLinger = DEFAULT_SOCKET_LINGER;
-	private boolean socketKeepAlive = DEFAULT_SOCKET_KEEP_ALIVE;
-
-	private Socket socket;
-	private Reader input;
-	private Writer output;
-	private boolean established;
+	private CanbusSocket socket;
 
 	/**
 	 * Constructor.
 	 * 
+	 * @param socketProvider
+	 *        the socket provider
 	 * @param host
 	 *        the host
 	 * @param port
@@ -100,8 +76,10 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 	 * @param busName
 	 *        the CAN bus to connect to
 	 */
-	public SocketcandCanbusConnection(String host, int port, String busName) {
+	public SocketcandCanbusConnection(CanbusSocketProvider socketProvider, String host, int port,
+			String busName) {
 		super();
+		this.socketProvider = socketProvider;
 		this.host = host;
 		this.port = port;
 		this.busName = busName;
@@ -121,31 +99,26 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 	}
 
 	private Message readNextMessage() throws IOException {
-		synchronized ( buffer ) {
-			return SocketcandUtils.readMessage(input, buffer);
+		CanbusSocket s = this.socket;
+		if ( s != null ) {
+			return s.nextMessage();
 		}
+		throw new IOException("Connection not open.");
 	}
 
 	private void writeMessage(Message message) throws IOException {
-		synchronized ( output ) {
-			message.write(output);
-			output.flush();
+		CanbusSocket s = this.socket;
+		if ( s != null ) {
+			s.writeMessage(message);
+		} else {
+			throw new IOException("Connection not open.");
 		}
 	}
 
 	@Override
 	public void open() throws IOException {
-		socket = new Socket(host, port);
-		socket.setTcpNoDelay(socketTcpNoDelay);
-		socket.setSoLinger(socketLinger > 0, socketLinger);
-		socket.setKeepAlive(socketKeepAlive);
-		socket.setReuseAddress(socketReuseAddress);
-
-		// start socket timeout with a more generous value when initiating the connection
-		socket.setSoTimeout(socketTimeout * 10);
-
-		input = new BufferedReader(new InputStreamReader(socket.getInputStream(), "ASCII"), 2048);
-		output = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), "ASCII"), 128);
+		socket = socketProvider.createCanbusSocket();
+		socket.open(host, port);
 
 		// the server immediately sends the Hi message when the socket connects
 		Message m = readNextMessage();
@@ -161,28 +134,25 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 		// expect an Ok response
 		m = readNextMessage();
 		if ( m == null || m.getType() != MessageType.Ok ) {
-			log.error("Error opening bus [{}]: {}", busName, m);
+			log.error("Error opening bus [{}]: expected Ok response from Open message, but got {}",
+					busName, m);
 			throw new IOException("Error opening bus [" + busName + "]: " + m);
 		}
 
-		// change socket timeout to normal value now
-		socket.setSoTimeout(socketTimeout);
-
-		// TODO: start reader thread
-		established = true;
+		socket.connectionConfirmed();
 	}
 
 	@Override
 	public void close() throws IOException {
-		// TODO: stop reader thread
-		try {
-			socket.close();
-			// ignore this one
-		} finally {
-			socket = null;
-			established = false;
+		if ( socket != null ) {
+			// TODO: stop reader thread
+			try {
+				socket.close();
+				// ignore this one
+			} finally {
+				socket = null;
+			}
 		}
-
 	}
 
 	@Override
@@ -197,26 +167,44 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 			m = new SubscribeMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
 					sub.getLimitMicroseconds());
 		}
-		writeMessage(m);
-		CanbusSubscription old = subscriptions.put(address, sub);
-		if ( old != null ) {
-			log.warn("Subscription to CAN bus [{}] {} replaced by new subscription", busName, old);
-		}
-		log.info("Subscribed to CAN bus [{}]: {}", busName, sub);
+		subscribe(m, sub);
+	}
 
+	private void subscribe(Message m, CanbusSubscription sub) throws IOException {
+		synchronized ( subscriptions ) {
+			writeMessage(m);
+			CanbusSubscription old = subscriptions.put(sub.getAddress(), sub);
+			if ( old != null ) {
+				log.warn("Subscription to CAN bus [{}] {} replaced by new subscription", busName, old);
+			}
+			log.info("Subscribed to CAN bus [{}]: {}", busName, sub);
+		}
 	}
 
 	@Override
 	public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long identifierMask,
 			Iterable<Long> dataFilters, CanbusFrameListener listener) throws IOException {
-		// TODO Auto-generated method stub
-
+		CanbusSubscription sub = new CanbusSubscription(address, limit, identifierMask, listener);
+		List<Long> filters;
+		if ( dataFilters instanceof List<?> ) {
+			filters = (List<Long>) dataFilters;
+		} else {
+			filters = StreamSupport.stream(dataFilters.spliterator(), false)
+					.collect(Collectors.toList());
+		}
+		Message m = new MuxFilterMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
+				sub.getLimitMicroseconds(), identifierMask, filters);
+		subscribe(m, sub);
 	}
 
 	@Override
-	public void unsubscribe(int address) throws IOException {
-		// TODO Auto-generated method stub
-
+	public void unsubscribe(int address, boolean forceExtendedAddress) throws IOException {
+		Message m = new UnsubscribeMessageImpl(address, forceExtendedAddress);
+		synchronized ( subscriptions ) {
+			writeMessage(m);
+			subscriptions.remove(address);
+			log.info("Unsubscribed to CAN bus [{}] {}", busName, address);
+		}
 	}
 
 	@Override
@@ -233,113 +221,13 @@ public class SocketcandCanbusConnection implements CanbusConnection {
 
 	@Override
 	public boolean isEstablished() {
-		return established;
+		CanbusSocket s = this.socket;
+		return (s != null ? s.isEstablished() : false);
 	}
 
 	@Override
 	public String getBusName() {
 		return busName;
-	}
-
-	/**
-	 * Get the timeout for blocking socket operations like reading from the
-	 * socket.
-	 * 
-	 * @return the socket timeout, in milliseconds; defaults to
-	 *         {@link #DEFAULT_SOCKET_TIMEOUT}
-	 */
-	public int getSocketTimeout() {
-		return socketTimeout;
-	}
-
-	/**
-	 * Set the timeout for blocking socket operations like reading from the
-	 * socket.
-	 * 
-	 * @param socketTimeout
-	 *        the socket timeout to use, in milliseconds
-	 */
-	public void setSocketTimeout(int socketTimeout) {
-		this.socketTimeout = socketTimeout;
-	}
-
-	/**
-	 * Get the TCP "no delay" flag.
-	 * 
-	 * @return {@literal true} if the TCP "no delay" option should be used;
-	 *         defaults to {@link #DEFAULT_SOCKET_TCP_NO_DELAY}
-	 */
-	public boolean isSocketTcpNoDelay() {
-		return socketTcpNoDelay;
-	}
-
-	/**
-	 * Set the TCP "no delay" flag.
-	 * 
-	 * @param socketTcpNoDelay
-	 *        {@literal true} if the TCP "no delay" option should be used
-	 */
-	public void setSocketTcpNoDelay(boolean socketTcpNoDelay) {
-		this.socketTcpNoDelay = socketTcpNoDelay;
-	}
-
-	/**
-	 * Get the socket "reuse address" flag.
-	 * 
-	 * @return {@literal true} if the socket "reuse address" flag should be
-	 *         used; defaults to {@link #DEFAULT_SOCKET_REUSE_ADDRESS}
-	 */
-	public boolean isSocketReuseAddress() {
-		return socketReuseAddress;
-	}
-
-	/**
-	 * Set the socket "reuse address" flag.
-	 * 
-	 * @param socketReuseAddress
-	 *        {@literal true} if the socket "reuse address" flag should be used
-	 */
-	public void setSocketReuseAddress(boolean socketReuseAddress) {
-		this.socketReuseAddress = socketReuseAddress;
-	}
-
-	/**
-	 * Get the socket linger amount.
-	 * 
-	 * @return the socket linger amount, in seconds, or {@literal 0} to disable;
-	 *         defaults to {@link #DEFAULT_SOCKET_LINGER}
-	 */
-	public int getSocketLinger() {
-		return socketLinger;
-	}
-
-	/**
-	 * Set the socket linger amount.
-	 * 
-	 * @param socketLinger
-	 *        the socket linger amount, in seconds, or {@literal 0} to disable
-	 */
-	public void setSocketLinger(int socketLinger) {
-		this.socketLinger = socketLinger;
-	}
-
-	/**
-	 * Get the socket "keep alive" flag.
-	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used;
-	 *         defaults to {@link #DEFAULT_SOCKET_KEEP_ALIVE}
-	 */
-	public boolean isSocketKeepAlive() {
-		return socketKeepAlive;
-	}
-
-	/**
-	 * Set the socket "keep alive" flag.
-	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used
-	 */
-	public void setSocketKeepAlive(boolean socketKeepAlive) {
-		this.socketKeepAlive = socketKeepAlive;
 	}
 
 }

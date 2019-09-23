@@ -152,8 +152,11 @@ public interface CanbusConnection extends Closeable {
 	 * 
 	 * @param address
 	 *        the CAN address to unsubscribe from
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
 	 */
-	void unsubscribe(int address) throws IOException;
+	void unsubscribe(int address, boolean forceExtendedAddress) throws IOException;
 
 	/**
 	 * Monitor all unfiltered CAN bus changes.

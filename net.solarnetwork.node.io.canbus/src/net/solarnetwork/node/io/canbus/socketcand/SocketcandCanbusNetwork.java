@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
-import com.github.kayak.core.SocketcandConnection;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.support.AbstractCanbusNetwork;
+import net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider;
 
 /**
  * CAN bus network implementation using the socketcand server protocol.
@@ -42,20 +42,35 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
 	/** The default port value. */
 	public static final int DEFAULT_PORT = 29536;
 
+	private final CanbusSocketProvider socketProvider;
 	private String host = DEFAULT_HOST;
 	private int port = DEFAULT_PORT;
 
-	private int socketTimeout = SocketcandCanbusConnection.DEFAULT_SOCKET_TIMEOUT;
-	private boolean socketTcpNoDelay = SocketcandCanbusConnection.DEFAULT_SOCKET_TCP_NO_DELAY;
-	private boolean socketReuseAddress = SocketcandCanbusConnection.DEFAULT_SOCKET_REUSE_ADDRESS;
-	private int socketLinger = SocketcandCanbusConnection.DEFAULT_SOCKET_LINGER;
-	private boolean socketKeepAlive = SocketcandCanbusConnection.DEFAULT_SOCKET_KEEP_ALIVE;
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * A {@link SocketCanbusSocketProvider} socket provider will be used.
+	 * </p>
+	 */
+	public SocketcandCanbusNetwork() {
+		this(new SocketCanbusSocketProvider());
+	}
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param socketProvider
+	 *        the socket provider to use
+	 * @throws IllegalArgumentException
+	 *         if {@code socketProvider} is {@literal null}
 	 */
-	public SocketcandCanbusNetwork() {
+	public SocketcandCanbusNetwork(CanbusSocketProvider socketProvider) {
 		super();
+		if ( socketProvider == null ) {
+			throw new IllegalArgumentException("The socket provider must be provided.");
+		}
+		this.socketProvider = socketProvider;
 	}
 
 	@Override
@@ -70,12 +85,8 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
 
 	@Override
 	public CanbusConnection createConnection(String busName) {
-		SocketcandCanbusConnection conn = new SocketcandCanbusConnection(getHost(), getPort(), busName);
-		conn.setSocketKeepAlive(isSocketKeepAlive());
-		conn.setSocketLinger(getSocketLinger());
-		conn.setSocketReuseAddress(isSocketReuseAddress());
-		conn.setSocketTcpNoDelay(isSocketTcpNoDelay());
-		conn.setSocketTimeout(getSocketTimeout());
+		SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, getHost(),
+				getPort(), busName);
 		return conn;
 	}
 
@@ -118,107 +129,12 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
 	}
 
 	/**
-	 * Get the timeout for blocking socket operations like reading from the
-	 * socket.
+	 * Get the socket provider.
 	 * 
-	 * @return the socket timeout, in milliseconds; defaults to
-	 *         {@link #DEFAULT_SOCKET_TIMEOUT}
+	 * @return the socket provider
 	 */
-	public int getSocketTimeout() {
-		return socketTimeout;
-	}
-
-	/**
-	 * Set the timeout for blocking socket operations like reading from the
-	 * socket.
-	 * 
-	 * @param socketTimeout
-	 *        the socket timeout to use, in milliseconds
-	 */
-	public void setSocketTimeout(int socketTimeout) {
-		this.socketTimeout = socketTimeout;
-	}
-
-	/**
-	 * Get the TCP "no delay" flag.
-	 * 
-	 * @return {@literal true} if the TCP "no delay" option should be used;
-	 *         defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_TCP_NO_DELAY}
-	 */
-	public boolean isSocketTcpNoDelay() {
-		return socketTcpNoDelay;
-	}
-
-	/**
-	 * Set the TCP "no delay" flag.
-	 * 
-	 * @param socketTcpNoDelay
-	 *        {@literal true} if the TCP "no delay" option should be used
-	 */
-	public void setSocketTcpNoDelay(boolean socketTcpNoDelay) {
-		this.socketTcpNoDelay = socketTcpNoDelay;
-	}
-
-	/**
-	 * Get the socket "reuse address" flag.
-	 * 
-	 * @return {@literal true} if the socket "reuse address" flag should be
-	 *         used; defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_REUSE_ADDRESS}
-	 */
-	public boolean isSocketReuseAddress() {
-		return socketReuseAddress;
-	}
-
-	/**
-	 * Set the socket "reuse address" flag.
-	 * 
-	 * @param socketReuseAddress
-	 *        {@literal true} if the socket "reuse address" flag should be used
-	 */
-	public void setSocketReuseAddress(boolean socketReuseAddress) {
-		this.socketReuseAddress = socketReuseAddress;
-	}
-
-	/**
-	 * Get the socket linger amount.
-	 * 
-	 * @return the socket linger amount, in seconds, or {@literal 0} to disable;
-	 *         defaults to {@link SocketcandConnection#DEFAULT_SOCKET_LINGER}
-	 */
-	public int getSocketLinger() {
-		return socketLinger;
-	}
-
-	/**
-	 * Set the socket linger amount.
-	 * 
-	 * @param socketLinger
-	 *        the socket linger amount, in seconds, or {@literal 0} to disable
-	 */
-	public void setSocketLinger(int socketLinger) {
-		this.socketLinger = socketLinger;
-	}
-
-	/**
-	 * Get the socket "keep alive" flag.
-	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used;
-	 *         defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_KEEP_ALIVE}
-	 */
-	public boolean isSocketKeepAlive() {
-		return socketKeepAlive;
-	}
-
-	/**
-	 * Set the socket "keep alive" flag.
-	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used
-	 */
-	public void setSocketKeepAlive(boolean socketKeepAlive) {
-		this.socketKeepAlive = socketKeepAlive;
+	public CanbusSocketProvider getSocketProvider() {
+		return socketProvider;
 	}
 
 }
