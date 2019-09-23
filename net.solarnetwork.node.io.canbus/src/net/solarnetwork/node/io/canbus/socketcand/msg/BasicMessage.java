@@ -107,15 +107,15 @@ public class BasicMessage implements Message {
 			return false;
 		}
 		BasicMessage other = (BasicMessage) obj;
-		return Objects.equals(arguments, other.arguments) && Objects.equals(command, other.command)
-				&& type == other.type;
+		return Objects.equals(getCommand(), other.getCommand())
+				&& Objects.equals(arguments, other.arguments);
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("BasicMessage{");
-		builder.append(command);
+		builder.append(getCommand());
 		if ( arguments != null && !arguments.isEmpty() ) {
 			builder.append(" ");
 			builder.append(StringUtils.delimitedStringFromCollection(arguments, " "));
