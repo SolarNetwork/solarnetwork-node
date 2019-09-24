@@ -63,21 +63,21 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 	protected void acquireLock() throws LockTimeoutException {
 		final String desc = getNetworkDescription();
 		if ( lock.isLocked() ) {
-			log.debug("Port {} lock already acquired", desc);
+			log.debug("CAN bus port {} lock already acquired", desc);
 			return;
 		}
-		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}",
+		log.debug("Acquiring lock on CAN bus port {}; waiting at most {} {}",
 				new Object[] { desc, getTimeout(), getTimeoutUnit() });
 		try {
 			if ( lock.tryLock(getTimeout(), getTimeoutUnit()) ) {
 				log.debug("Acquired port {} lock", desc);
 				return;
 			}
-			log.debug("Timeout acquiring port {} lock", desc);
+			log.debug("Timeout acquiring CAN bus port {} lock", desc);
 		} catch ( InterruptedException e ) {
-			log.debug("Interrupted waiting for port {} lock", desc);
+			log.debug("Interrupted waiting for CAN bus port {} lock", desc);
 		}
-		throw new LockTimeoutException("Could not acquire port " + desc + " lock");
+		throw new LockTimeoutException("Could not acquire CAN bus port " + desc + " lock");
 	}
 
 	/**
@@ -91,7 +91,7 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 	protected void releaseLock() {
 		if ( lock.isLocked() ) {
 			final String desc = getNetworkDescription();
-			log.debug("Releasing lock on {}", desc);
+			log.debug("Releasing lock on CAN bus port {}", desc);
 			lock.unlock();
 		}
 	}
