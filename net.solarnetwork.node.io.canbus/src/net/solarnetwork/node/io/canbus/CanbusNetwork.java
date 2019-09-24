@@ -52,7 +52,8 @@ public interface CanbusNetwork extends Identifiable {
 	 * 
 	 * @param busName
 	 *        the CAN bus name to connect with
-	 * @return a new connection, never {@literal null}
+	 * @return a new connection, or {@literal null} if a connection cannot be
+	 *         created, such as from lack of required configuration
 	 * @throws IllegalArgumentException
 	 *         if {@code busName} is invalid
 	 */

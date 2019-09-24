@@ -24,9 +24,9 @@ package net.solarnetwork.node.io.canbus.socketcand;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.support.AbstractCanbusNetwork;
-import net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -49,34 +49,27 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 	public static final int DEFAULT_PORT = 29536;
 
 	private final CanbusSocketProvider socketProvider;
+	private final Executor executor;
 	private String host = DEFAULT_HOST;
 	private int port = DEFAULT_PORT;
 
 	/**
 	 * Constructor.
 	 * 
-	 * <p>
-	 * A {@link SocketCanbusSocketProvider} socket provider will be used.
-	 * </p>
-	 */
-	public SocketcandCanbusNetwork() {
-		this(new SocketCanbusSocketProvider());
-	}
-
-	/**
-	 * Constructor.
-	 * 
 	 * @param socketProvider
 	 *        the socket provider to use
+	 * @param executor
+	 *        an executor to use for connection management tasks
 	 * @throws IllegalArgumentException
 	 *         if {@code socketProvider} is {@literal null}
 	 */
-	public SocketcandCanbusNetwork(CanbusSocketProvider socketProvider) {
+	public SocketcandCanbusNetwork(CanbusSocketProvider socketProvider, Executor executor) {
 		super();
 		if ( socketProvider == null ) {
 			throw new IllegalArgumentException("The socket provider must be provided.");
 		}
 		this.socketProvider = socketProvider;
+		this.executor = executor;
 	}
 
 	@Override
@@ -91,9 +84,13 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 
 	@Override
 	protected CanbusConnection createConnectionInternal(String busName) {
-		SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, getHost(),
-				getPort(), busName);
-		return conn;
+		final String host = getHost();
+		final int port = getPort();
+		if ( host == null || host.trim().isEmpty() || port < 1 ) {
+			log.info("CAN bus network missing host/port configuration); cannot create connection.");
+			return null;
+		}
+		return new SocketcandCanbusConnection(socketProvider, executor, host, port, busName);
 	}
 
 	// SettingSpecifierProvider

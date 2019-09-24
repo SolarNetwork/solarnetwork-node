@@ -24,6 +24,8 @@ package net.solarnetwork.node.io.canbus.socketcand.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -32,11 +34,17 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -46,6 +54,7 @@ import org.junit.Test;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
+import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusConnection;
 import net.solarnetwork.node.io.canbus.socketcand.msg.BasicMessage;
@@ -66,6 +75,7 @@ public class SocketcandCanbusConnectionTests {
 	private static final String TEST_BUS_NAME = "Test_Bus";
 
 	private CanbusSocketProvider socketProvider;
+	private Executor executor;
 	private TestCanbusSocket socket;
 
 	private List<Object> mocks;
@@ -77,6 +87,8 @@ public class SocketcandCanbusConnectionTests {
 
 		mocks = new ArrayList<>(8);
 		mocks.add(socketProvider);
+
+		executor = Executors.newCachedThreadPool();
 	}
 
 	public void replayAll() {
@@ -95,8 +107,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			assertThat("Socket established", conn.isEstablished(), equalTo(true));
 		}
@@ -117,8 +129,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
 		}
@@ -143,8 +155,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
 
@@ -177,8 +189,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
 
@@ -206,8 +218,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
 
@@ -249,8 +261,8 @@ public class SocketcandCanbusConnectionTests {
 
 		// WHEN
 		replayAll();
-		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
-				TEST_PORT, TEST_BUS_NAME)) {
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
 			conn.open();
 			conn.monitor(listener);
 
@@ -279,6 +291,79 @@ public class SocketcandCanbusConnectionTests {
 				Arrays.equals(f.getData(),
 						new byte[] { (byte) 0x11, (byte) 0x22, (byte) 0x33, (byte) 0x44 }),
 				equalTo(true));
+	}
+
+	@Test
+	public void verifyConnectivity_ok() throws Exception {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		// WHEN
+		replayAll();
+		Boolean verified = false;
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+
+			Future<Boolean> future = conn.verifyConnectivity();
+
+			List<Future<Message>> msgFutures = stream(conn.messageFutures().spliterator(), false)
+					.collect(toList());
+			assertThat("Message future available", msgFutures, hasSize(1));
+
+			// mock a frame message from the server
+			socket.respondMessage(new BasicMessage(MessageType.Echo));
+
+			Thread.sleep(200);
+
+			verified = future.get(1, TimeUnit.SECONDS);
+
+			msgFutures = stream(conn.messageFutures().spliterator(), false).collect(toList());
+			assertThat("Message future removed", msgFutures, hasSize(0));
+		}
+
+		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new BasicMessage(MessageType.Echo)));
+		assertThat("Connectivity verified", verified, equalTo(true));
+	}
+
+	@Test
+	public void verifyConnectivity_timeout() throws Exception {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		// WHEN
+		replayAll();
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, executor,
+				TEST_HOST, TEST_PORT, TEST_BUS_NAME)) {
+			conn.setVerifyConnectivityTimeout(100);
+
+			conn.open();
+
+			Future<Boolean> future = conn.verifyConnectivity();
+
+			// no response message...
+
+			try {
+				future.get(200, TimeUnit.MILLISECONDS);
+				fail("Expected a TimeoutException when connection not verified with Echo command.");
+			} catch ( TimeoutException e ) {
+				// perfect!
+			}
+
+			List<Future<Message>> msgFutures = stream(conn.messageFutures().spliterator(), false)
+					.collect(toList());
+			assertThat("Message future removed", msgFutures, hasSize(0));
+		}
+
+		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new BasicMessage(MessageType.Echo)));
 	}
 
 }

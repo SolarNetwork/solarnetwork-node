@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -120,7 +121,8 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 	 * 
 	 * @param busName
 	 *        the bus name
-	 * @return the new connection, never {@literal null}
+	 * @return the new connection, or {@literal null} if a connection cannot be
+	 *         created, for example from missing configuration
 	 */
 	protected abstract CanbusConnection createConnectionInternal(String busName);
 
@@ -184,6 +186,11 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 		@Override
 		public boolean isClosed() {
 			return delegate.isClosed();
+		}
+
+		@Override
+		public Future<Boolean> verifyConnectivity() {
+			return delegate.verifyConnectivity();
 		}
 
 		@Override

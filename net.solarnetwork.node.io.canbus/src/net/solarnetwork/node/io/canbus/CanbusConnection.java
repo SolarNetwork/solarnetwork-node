@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.canbus;
 import java.io.Closeable;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.concurrent.Future;
 
 /**
  * High level CAN bus connection API.
@@ -81,6 +82,21 @@ public interface CanbusConnection extends Closeable {
 	 *         connection
 	 */
 	boolean isClosed();
+
+	/**
+	 * Verify the connection is established, open, and connected successfully to
+	 * the network.
+	 * 
+	 * <p>
+	 * This method could attempt to send a message to the CAN bus to verify the
+	 * connectivity is OK.
+	 * </p>
+	 * 
+	 * @return a future that resolves to the verification result, which will be
+	 *         {@literal true} if the connection is established, open, and the
+	 *         connectivity has been verified
+	 */
+	Future<Boolean> verifyConnectivity();
 
 	/**
 	 * Subscribe to CAN bus changes.

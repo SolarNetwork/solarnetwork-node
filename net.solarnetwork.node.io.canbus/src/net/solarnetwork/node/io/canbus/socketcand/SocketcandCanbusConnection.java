@@ -22,12 +22,17 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import static java.util.stream.Collectors.toList;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -56,7 +61,11 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  */
 public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
+	/** The default value for the {@link messageTimeout} property. */
 	public static final long DEFAULT_TIMEOUT_MS = 300000L;
+
+	/** The default value for the {@link verifyConnectivityTimeout} property. */
+	public static final long DEFAULT_VERIFY_CONNECTIVITY_TIMEOUT_MS = 3000L;
 
 	private static final AtomicInteger THREAD_COUNTER = new AtomicInteger(0);
 	private static final Logger log = LoggerFactory.getLogger(SocketcandCanbusConnection.class);
@@ -65,12 +74,19 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 			0.9f, 1);
 	private final AtomicReference<CanbusFrameListener> monitorSubscription = new AtomicReference<>();
 
+	// a map of message commands -> UUID -> CompletableFuture which are registered "listeners" for 
+	// a specific message type to come in; this provides a way to do things like wait for an < echo > response
+	private final ConcurrentMap<String, ConcurrentMap<UUID, CompletableFuture<Message>>> messageFutures = new ConcurrentHashMap<>(
+			8, 0.9f, 1);
+
 	private final CanbusSocketProvider socketProvider;
 	private final String host;
 	private final int port;
 	private final String busName;
 	private long messageTimeout = DEFAULT_TIMEOUT_MS;
 	private TimeUnit messageTimeoutUnit = TimeUnit.MILLISECONDS;
+	private long verifyConnectivityTimeout = DEFAULT_VERIFY_CONNECTIVITY_TIMEOUT_MS;
+	private final Executor executor;
 
 	private Thread readerThread;
 	private CanbusSocket socket;
@@ -81,6 +97,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	 * 
 	 * @param socketProvider
 	 *        the socket provider
+	 * @param executor
+	 *        the executor to use for things like connectivity verification
 	 * @param host
 	 *        the host
 	 * @param port
@@ -88,13 +106,14 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	 * @param busName
 	 *        the CAN bus to connect to
 	 */
-	public SocketcandCanbusConnection(CanbusSocketProvider socketProvider, String host, int port,
-			String busName) {
+	public SocketcandCanbusConnection(CanbusSocketProvider socketProvider, Executor executor,
+			String host, int port, String busName) {
 		super();
 		this.socketProvider = socketProvider;
 		this.host = host;
 		this.port = port;
 		this.busName = busName;
+		this.executor = executor;
 	}
 
 	@Override
@@ -178,6 +197,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 				if ( m == null ) {
 					return;
 				}
+
+				// handle frame listeners
 				if ( m instanceof CanbusFrame ) {
 					final CanbusFrame frame = (CanbusFrame) m;
 					CanbusFrameListener listener = monitorSubscription.get();
@@ -192,6 +213,17 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 									listener.canbusFrameReceived(frame);
 								}
 							}
+						}
+					}
+				}
+
+				// handle message futures
+				final String command = m.getCommand();
+				ConcurrentMap<UUID, CompletableFuture<Message>> cmdFutures = messageFutures.get(command);
+				if ( cmdFutures != null ) {
+					for ( CompletableFuture<Message> f : cmdFutures.values() ) {
+						if ( !f.isDone() ) {
+							f.complete(m);
 						}
 					}
 				}
@@ -233,6 +265,96 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	@Override
 	public boolean isClosed() {
 		return closed;
+	}
+
+	@Override
+	public Future<Boolean> verifyConnectivity() {
+		CompletableFuture<Boolean> result = new CompletableFuture<Boolean>();
+		if ( isClosed() ) {
+			result.complete(false);
+			return result;
+		}
+		MessageFuture future = futureForNextMessage(MessageType.Echo.getCommand());
+		try {
+			writeMessage(getSocket(), new BasicMessage(MessageType.Echo));
+			future.whenCompleteAsync((m, t) -> {
+				if ( t != null ) {
+					result.completeExceptionally(t);
+				} else {
+					result.complete(m != null);
+				}
+			});
+
+			// add a task to clean out the message future
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					try {
+						future.get(getVerifyConnectivityTimeout(), TimeUnit.MILLISECONDS);
+					} catch ( Exception e ) {
+						log.warn("Unable to verify connectivity to CAN bus {}: {}", getBusName(),
+								e.toString());
+					} finally {
+						removeMessageFuture(future);
+					}
+				}
+
+			});
+		} catch ( Exception e ) {
+			log.warn("Error verifying CAN bus {} connectivity: {}", getBusName(), e.toString());
+			future.completeExceptionally(e);
+		}
+		return result;
+	}
+
+	private MessageFuture futureForNextMessage(String command) {
+		MessageFuture future = new MessageFuture(command, UUID.randomUUID());
+		messageFutures.computeIfAbsent(command, k -> new ConcurrentHashMap<>(8, 0.9f, 1))
+				.put(future.getUuid(), future);
+		return future;
+	}
+
+	private void removeMessageFuture(MessageFuture future) {
+		ConcurrentMap<UUID, CompletableFuture<Message>> cmdFutures = messageFutures
+				.get(future.getCommand());
+		if ( cmdFutures != null ) {
+			cmdFutures.remove(future.getUuid());
+		}
+	}
+
+	private static class MessageFuture extends CompletableFuture<Message> {
+
+		private final String command;
+		private final UUID uuid;
+
+		private MessageFuture(String command, UUID uuid) {
+			super();
+			this.command = command;
+			this.uuid = uuid;
+		}
+
+		private String getCommand() {
+			return command;
+		}
+
+		private UUID getUuid() {
+			return uuid;
+		}
+	}
+
+	/**
+	 * Get all available message futures.
+	 * 
+	 * <p>
+	 * This provides a view of all futures created for tracking upcoming
+	 * messages.
+	 * </p>
+	 * 
+	 * @return the message futures, never {@literal null}
+	 */
+	public Iterable<Future<Message>> messageFutures() {
+		return messageFutures.values().stream().flatMap(m -> m.values().stream()).collect(toList());
 	}
 
 	@Override
@@ -359,6 +481,25 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	 */
 	public void setMessageTimeoutUnit(TimeUnit messageTimeoutUnit) {
 		this.messageTimeoutUnit = messageTimeoutUnit;
+	}
+
+	/**
+	 * Get the timeout to use when verifying the connection connectivity.
+	 * 
+	 * @return the timeout, in milliseconds
+	 */
+	public long getVerifyConnectivityTimeout() {
+		return verifyConnectivityTimeout;
+	}
+
+	/**
+	 * Set the timeout to use when verifying the connection connectivity.
+	 * 
+	 * @param verifyConnectivityTimeout
+	 *        the timeout to use
+	 */
+	public void setVerifyConnectivityTimeout(long verifyConnectivityTimeout) {
+		this.verifyConnectivityTimeout = verifyConnectivityTimeout;
 	}
 
 }

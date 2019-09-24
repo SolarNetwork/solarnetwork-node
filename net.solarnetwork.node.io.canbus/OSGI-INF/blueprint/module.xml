@@ -37,6 +37,8 @@
 		</property>
 	</bean>
 	
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="CAN bus TCP connection"/>
@@ -45,7 +47,7 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.tcp" 
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.canbus.tcp" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.canbus.CanbusNetwork</beans:value>
@@ -55,6 +57,10 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.canbus.tcp"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusNetwork">
+			<argument>
+				<bean class="net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider"/>
+			</argument>
+			<argument ref="executor"/>
 			<property name="messageSource" ref="messageSourceTcp"/>
 		</bean>
 	</osgix:managed-service-factory>
