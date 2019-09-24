@@ -22,9 +22,15 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import java.util.ArrayList;
+import java.util.List;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.support.AbstractCanbusNetwork;
 import net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider;
+import net.solarnetwork.node.settings.MappableSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * CAN bus network implementation using the socketcand server protocol.
@@ -34,7 +40,7 @@ import net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider;
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
-public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
+public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements SettingSpecifierProvider {
 
 	/** The default host value. */
 	public static final String DEFAULT_HOST = "localhost";
@@ -89,6 +95,39 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
 				getPort(), busName);
 		return conn;
 	}
+
+	// SettingSpecifierProvider
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.io.canbus.tcp";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(12);
+		results.addAll(baseIdentifiableSettings(""));
+		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
+		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
+
+		if ( socketProvider instanceof SettingSpecifierProvider ) {
+			List<SettingSpecifier> socketSettings = ((SettingSpecifierProvider) socketProvider)
+					.getSettingSpecifiers();
+			if ( socketSettings != null ) {
+				for ( SettingSpecifier setting : socketSettings ) {
+					if ( setting instanceof MappableSpecifier ) {
+						results.add(((MappableSpecifier) setting).mappedTo("socketProvider."));
+					} else {
+						results.add(setting);
+					}
+				}
+			}
+		}
+
+		return results;
+	}
+
+	// Accessors
 
 	/**
 	 * Get the host to connect to.

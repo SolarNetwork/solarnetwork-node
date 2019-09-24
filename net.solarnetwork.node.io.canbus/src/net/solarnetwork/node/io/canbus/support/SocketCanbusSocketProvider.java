@@ -22,9 +22,16 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.context.MessageSource;
 import com.github.kayak.core.SocketcandConnection;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link CanbusSocketProvider} for {@link SocketCanbusSocket} instances.
@@ -32,7 +39,7 @@ import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
  * @author matt
  * @version 1.0
  */
-public class SocketCanbusSocketProvider implements CanbusSocketProvider {
+public class SocketCanbusSocketProvider implements CanbusSocketProvider, SettingSpecifierProvider {
 
 	private int socketTimeout = SocketCanbusSocket.DEFAULT_SOCKET_TIMEOUT;
 	private boolean socketTcpNoDelay = SocketCanbusSocket.DEFAULT_SOCKET_TCP_NO_DELAY;
@@ -50,6 +57,43 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider {
 		socket.setSocketKeepAlive(isSocketKeepAlive());
 		return socket;
 	}
+
+	// SettingSpecifierProvider
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Java Socket CanbusSocket";
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return null;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(5);
+
+		results.add(new BasicTextFieldSettingSpecifier("socketTimeout",
+				String.valueOf(SocketCanbusSocket.DEFAULT_SOCKET_TIMEOUT)));
+		results.add(new BasicTextFieldSettingSpecifier("socketLinger",
+				String.valueOf(SocketCanbusSocket.DEFAULT_SOCKET_LINGER)));
+		results.add(new BasicToggleSettingSpecifier("socketTcpNoDelay",
+				SocketCanbusSocket.DEFAULT_SOCKET_TCP_NO_DELAY));
+		results.add(new BasicToggleSettingSpecifier("socketReuseAddress",
+				SocketCanbusSocket.DEFAULT_SOCKET_REUSE_ADDRESS));
+		results.add(new BasicToggleSettingSpecifier("socketKeepAlive",
+				SocketCanbusSocket.DEFAULT_SOCKET_KEEP_ALIVE));
+
+		return results;
+	}
+
+	// Accessors
 
 	/**
 	 * Get the timeout for blocking socket operations like reading from the
