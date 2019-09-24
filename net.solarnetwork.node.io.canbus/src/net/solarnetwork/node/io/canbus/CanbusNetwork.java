@@ -52,7 +52,9 @@ public interface CanbusNetwork extends Identifiable {
 	 * 
 	 * @param busName
 	 *        the CAN bus name to connect with
-	 * @return a new connection
+	 * @return a new connection, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if {@code busName} is invalid
 	 */
 	CanbusConnection createConnection(String busName);
 

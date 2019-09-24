@@ -174,13 +174,13 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 				return;
 			}
 			try {
-				CanbusFrameListener listener = monitorSubscription.get();
 				final Message m = readNextMessage(getSocket());
 				if ( m == null ) {
 					return;
 				}
 				if ( m instanceof CanbusFrame ) {
 					final CanbusFrame frame = (CanbusFrame) m;
+					CanbusFrameListener listener = monitorSubscription.get();
 					if ( listener != null ) {
 						listener.canbusFrameReceived(frame);
 					} else {

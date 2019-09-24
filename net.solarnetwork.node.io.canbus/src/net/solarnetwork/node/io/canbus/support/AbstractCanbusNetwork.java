@@ -22,13 +22,18 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.io.canbus.CanbusConnection;
+import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -38,6 +43,15 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * Base implementation of {@link CanbusNetwork} for other implementations to
  * extend.
  * 
+ * <p>
+ * This implementation is designed to work with connections that are kept open
+ * for long periods of time. Each connection returned from
+ * {@link #createConnection(String)} will be tracked internally, and if the
+ * {@link #configurationChanged(Map)} method is called any open connections will
+ * be automatically closed, so that clients using the connection can re-open the
+ * connection with the new configuration.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
@@ -46,53 +60,30 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 	/** The default value for the {@code timeout} property. */
 	public static final long DEFAULT_TIMEOUT = 10L;
 
-	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
+	private final AtomicInteger connectionCounter = new AtomicInteger(0);
+	private final ConcurrentHashMap<Integer, CanbusConnection> connections = new ConcurrentHashMap<>(8,
+			0.9f, 1);
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	private long timeout = 10L;
-	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
-
 	/**
-	 * Acquire a network-wide lock, returning if lock acquired.
+	 * Callback after properties have been changed.
 	 * 
-	 * @throws LockTimeoutException
-	 *         if the lock cannot be obtained
+	 * @param properties
+	 *        the changed properties
 	 */
-	protected void acquireLock() throws LockTimeoutException {
-		final String desc = getNetworkDescription();
-		if ( lock.isLocked() ) {
-			log.debug("CAN bus port {} lock already acquired", desc);
-			return;
-		}
-		log.debug("Acquiring lock on CAN bus port {}; waiting at most {} {}",
-				new Object[] { desc, getTimeout(), getTimeoutUnit() });
-		try {
-			if ( lock.tryLock(getTimeout(), getTimeoutUnit()) ) {
-				log.debug("Acquired port {} lock", desc);
-				return;
+	public void configurationChanged(Map<String, Object> properties) {
+		// close all existing connections so they can be re-opened with new settings
+		for ( CanbusConnection conn : connections.values() ) {
+			if ( !conn.isClosed() ) {
+				try {
+					log.info("Closing CAN bus connection {} after network configuration change.", conn);
+					conn.close();
+				} catch ( Exception e ) {
+					// ignore
+				}
 			}
-			log.debug("Timeout acquiring CAN bus port {} lock", desc);
-		} catch ( InterruptedException e ) {
-			log.debug("Interrupted waiting for CAN bus port {} lock", desc);
-		}
-		throw new LockTimeoutException("Could not acquire CAN bus port " + desc + " lock");
-	}
-
-	/**
-	 * Release the network-wide lock previously obtained via
-	 * {@link #acquireLock()}.
-	 * 
-	 * <p>
-	 * This method is safe to call even if the lock has already been released.
-	 * </p>
-	 */
-	protected void releaseLock() {
-		if ( lock.isLocked() ) {
-			final String desc = getNetworkDescription();
-			log.debug("Releasing lock on CAN bus port {}", desc);
-			lock.unlock();
 		}
 	}
 
@@ -115,6 +106,117 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 		return this.toString();
 	}
 
+	@Override
+	public final CanbusConnection createConnection(String busName) {
+		final Integer id = connectionCounter.incrementAndGet();
+		final CanbusConnection conn = createConnection(busName);
+		TrackedCanbusConnection tconn = new TrackedCanbusConnection(id, conn);
+		connections.put(id, tconn);
+		return tconn;
+	}
+
+	/**
+	 * Create a new CAN bus connection.
+	 * 
+	 * @param busName
+	 *        the bus name
+	 * @return the new connection, never {@literal null}
+	 */
+	protected abstract CanbusConnection createConnectionInternal(String busName);
+
+	private class TrackedCanbusConnection implements CanbusConnection {
+
+		private final Integer id;
+		private final CanbusConnection delegate;
+
+		private TrackedCanbusConnection(Integer id, CanbusConnection delegate) {
+			super();
+			this.id = id;
+			this.delegate = delegate;
+		}
+
+		@Override
+		public String toString() {
+			return delegate.toString();
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(id);
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if ( this == obj ) {
+				return true;
+			}
+			if ( !(obj instanceof TrackedCanbusConnection) ) {
+				return false;
+			}
+			TrackedCanbusConnection other = (TrackedCanbusConnection) obj;
+			return Objects.equals(id, other.id);
+		}
+
+		@Override
+		public void close() throws IOException {
+			try {
+				delegate.close();
+			} finally {
+				connections.remove(id, this);
+			}
+		}
+
+		@Override
+		public String getBusName() {
+			return delegate.getBusName();
+		}
+
+		@Override
+		public void open() throws IOException {
+			delegate.open();
+		}
+
+		@Override
+		public boolean isEstablished() {
+			return delegate.isEstablished();
+		}
+
+		@Override
+		public boolean isClosed() {
+			return delegate.isClosed();
+		}
+
+		@Override
+		public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
+				CanbusFrameListener listener) throws IOException {
+			delegate.subscribe(address, forceExtendedAddress, limit, dataFilter, listener);
+		}
+
+		@Override
+		public void subscribe(int address, boolean forceExtendedAddress, Duration limit,
+				long identifierMask, Iterable<Long> dataFilters, CanbusFrameListener listener)
+				throws IOException {
+			delegate.subscribe(address, forceExtendedAddress, limit, identifierMask, dataFilters,
+					listener);
+		}
+
+		@Override
+		public void unsubscribe(int address, boolean forceExtendedAddress) throws IOException {
+			delegate.unsubscribe(address, forceExtendedAddress);
+		}
+
+		@Override
+		public void monitor(CanbusFrameListener listener) throws IOException {
+			delegate.monitor(listener);
+		}
+
+		@Override
+		public void unmonitor() throws IOException {
+			delegate.unmonitor();
+		}
+
+	}
+
 	/**
 	 * Get a list of base network settings.
 	 * 
@@ -128,44 +230,6 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "timeout", String.valueOf(DEFAULT_TIMEOUT)));
 		return results;
-	}
-
-	/**
-	 * Get the timeout value.
-	 * 
-	 * @return the timeout value, defaults to {@literal 10}
-	 */
-	public long getTimeout() {
-		return timeout;
-	}
-
-	/**
-	 * Set a timeout value.
-	 * 
-	 * @param timeout
-	 *        the timeout
-	 */
-	public void setTimeout(long timeout) {
-		this.timeout = timeout;
-	}
-
-	/**
-	 * Get the timeout unit.
-	 * 
-	 * @return the timeout unit; defaults to seconds
-	 */
-	public TimeUnit getTimeoutUnit() {
-		return timeoutUnit;
-	}
-
-	/**
-	 * Set the timeout unit.
-	 * 
-	 * @param unit
-	 *        the unit
-	 */
-	public void setTimeoutUnit(TimeUnit unit) {
-		this.timeoutUnit = unit;
 	}
 
 }

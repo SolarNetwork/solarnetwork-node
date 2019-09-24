@@ -84,7 +84,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork {
 	}
 
 	@Override
-	public CanbusConnection createConnection(String busName) {
+	protected CanbusConnection createConnectionInternal(String busName) {
 		SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, getHost(),
 				getPort(), busName);
 		return conn;
