@@ -65,9 +65,9 @@ public class TestCanbusSocket implements CanbusSocket {
 		if ( closed ) {
 			return;
 		}
-		closed = true;
 		lock.lock();
 		try {
+			closed = true;
 			haveResponse.signal();
 		} finally {
 			lock.unlock();
@@ -118,7 +118,7 @@ public class TestCanbusSocket implements CanbusSocket {
 								+ host + ":" + port);
 					}
 				} catch ( InterruptedException e ) {
-					return null;
+					return responseBuffer.poll();
 				}
 			}
 		} finally {

@@ -168,6 +168,32 @@ public class SocketcandCanbusConnectionTests {
 	}
 
 	@Test
+	public void subscribe_noReceiveOtherAddress() throws IOException {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
+		mocks.add(listener);
+
+		// WHEN
+		replayAll();
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
+				TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+			conn.subscribe(1, false, Duration.ZERO, DATA_FILTER_NONE, listener);
+
+			// mock a frame message from the server
+			socket.respondMessage(new FrameMessageImpl(asList("2 23.424242 11 22 33 44".split(" "))));
+		}
+
+		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new SubscribeMessageImpl(1, false, 0, 0)));
+	}
+
+	@Test
 	public void subscribe_receive_unsubscribe_noReceive() throws IOException {
 		// GIVEN
 		expect(socketProvider.createCanbusSocket()).andReturn(socket);
@@ -199,6 +225,51 @@ public class SocketcandCanbusConnectionTests {
 		assertThat("Sent messages", socket.getWrittenMessages(),
 				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
 						new SubscribeMessageImpl(1, false, 0, 0), new UnsubscribeMessageImpl(1, false)));
+
+		assertThat("Only 1 frame captured", frameCaptor.getValues(), hasSize(1));
+		CanbusFrame f = frameCaptor.getValue();
+		assertThat("Frame captured", f, notNullValue());
+		assertThat("Frame address", f.getAddress(), equalTo(1));
+		assertThat("Frame data",
+				Arrays.equals(f.getData(),
+						new byte[] { (byte) 0x11, (byte) 0x22, (byte) 0x33, (byte) 0x44 }),
+				equalTo(true));
+	}
+
+	@Test
+	public void monitor_receive_unmonnitor_noReceive() throws IOException, InterruptedException {
+		// GIVEN
+		expect(socketProvider.createCanbusSocket()).andReturn(socket);
+
+		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
+		mocks.add(listener);
+
+		Capture<CanbusFrame> frameCaptor = new Capture<>(CaptureType.ALL);
+		listener.canbusFrameReceived(capture(frameCaptor));
+
+		// WHEN
+		replayAll();
+		try (SocketcandCanbusConnection conn = new SocketcandCanbusConnection(socketProvider, TEST_HOST,
+				TEST_PORT, TEST_BUS_NAME)) {
+			conn.open();
+			conn.monitor(listener);
+
+			// mock a frame message from the server
+			socket.respondMessage(new FrameMessageImpl(asList("1 23.424242 11 22 33 44".split(" "))));
+
+			Thread.sleep(400);
+
+			conn.unmonitor();
+
+			// mock another frame message; should not get a callback on this one
+			socket.respondMessage(new FrameMessageImpl(asList("1 32.0 22 33 44 55".split(" "))));
+		}
+
+		// THEN
+		assertThat("Socket closed", socket.isClosed(), equalTo(true));
+		assertThat("Sent messages", socket.getWrittenMessages(),
+				contains(new BasicMessage(MessageType.Open, null, singletonList(TEST_BUS_NAME)),
+						new BasicMessage(MessageType.Rawmode), new BasicMessage(MessageType.Bcmmode)));
 
 		assertThat("Only 1 frame captured", frameCaptor.getValues(), hasSize(1));
 		CanbusFrame f = frameCaptor.getValue();

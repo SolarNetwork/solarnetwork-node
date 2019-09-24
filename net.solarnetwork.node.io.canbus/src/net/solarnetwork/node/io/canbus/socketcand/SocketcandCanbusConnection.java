@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
@@ -62,6 +63,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
 			0.9f, 1);
+	private final AtomicReference<CanbusFrameListener> monitorSubscription = new AtomicReference<>();
 
 	private final CanbusSocketProvider socketProvider;
 	private final String host;
@@ -108,16 +110,22 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		return builder.toString();
 	}
 
-	private Message readNextMessage() throws IOException {
-		CanbusSocket s = this.socket;
+	private CanbusSocket getSocket() {
+		return socket;
+	}
+
+	private void setSocket(CanbusSocket socket) {
+		this.socket = socket;
+	}
+
+	private Message readNextMessage(CanbusSocket s) throws IOException {
 		if ( s != null ) {
 			return s.nextMessage(messageTimeout, messageTimeoutUnit);
 		}
 		throw new IOException("Connection not open.");
 	}
 
-	private void writeMessage(Message message) throws IOException {
-		CanbusSocket s = this.socket;
+	private void writeMessage(CanbusSocket s, Message message) throws IOException {
 		if ( s != null ) {
 			s.writeMessage(message);
 		} else {
@@ -126,12 +134,13 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	}
 
 	@Override
-	public void open() throws IOException {
-		socket = socketProvider.createCanbusSocket();
-		socket.open(host, port);
+	public synchronized void open() throws IOException {
+		CanbusSocket s = socketProvider.createCanbusSocket();
+		s.open(host, port);
+		setSocket(s);
 
 		// the server immediately sends the Hi message when the socket connects
-		Message m = readNextMessage();
+		Message m = readNextMessage(s);
 
 		if ( m == null || m.getType() != MessageType.Hi ) {
 			log.error("Did not receive expected greeting from [{}:{}]: {}", host, port, m);
@@ -139,10 +148,10 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		}
 
 		// open the desired bus name now
-		writeMessage(new BasicMessage(MessageType.Open, null, Collections.singletonList(busName)));
+		writeMessage(s, new BasicMessage(MessageType.Open, null, Collections.singletonList(busName)));
 
 		// expect an Ok response
-		m = readNextMessage();
+		m = readNextMessage(s);
 		if ( m == null || m.getType() != MessageType.Ok ) {
 			log.error("Error opening bus [{}]: expected Ok response from Open message, but got {}",
 					busName, m);
@@ -155,7 +164,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		readerThread.setDaemon(true);
 		readerThread.start();
 
-		socket.connectionConfirmed();
+		s.connectionConfirmed();
 	}
 
 	@Override
@@ -165,18 +174,23 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 				return;
 			}
 			try {
-				Message m = readNextMessage();
+				CanbusFrameListener listener = monitorSubscription.get();
+				final Message m = readNextMessage(getSocket());
 				if ( m == null ) {
 					return;
 				}
 				if ( m instanceof CanbusFrame ) {
-					CanbusFrame frame = (CanbusFrame) m;
-					int addr = frame.getAddress();
-					for ( CanbusSubscription sub : subscriptions.values() ) {
-						if ( addr == sub.getAddress() ) {
-							CanbusFrameListener listener = sub.getListener();
-							if ( listener != null ) {
-								listener.canbusFrameReceived(frame);
+					final CanbusFrame frame = (CanbusFrame) m;
+					if ( listener != null ) {
+						listener.canbusFrameReceived(frame);
+					} else {
+						final int addr = frame.getAddress();
+						for ( CanbusSubscription sub : subscriptions.values() ) {
+							if ( addr == sub.getAddress() ) {
+								listener = sub.getListener();
+								if ( listener != null ) {
+									listener.canbusFrameReceived(frame);
+								}
 							}
 						}
 					}
@@ -189,18 +203,19 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public synchronized void close() throws IOException {
 		if ( closed ) {
 			return;
 		}
 		closed = true;
+		CanbusSocket socket = getSocket();
 		if ( socket != null ) {
 			// TODO: stop reader thread
 			try {
 				socket.close();
 				// ignore this one
 			} finally {
-				socket = null;
+				setSocket(null);
 			}
 		}
 		if ( readerThread != null && readerThread.isAlive() ) {
@@ -237,7 +252,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	private void subscribe(Message m, CanbusSubscription sub) throws IOException {
 		synchronized ( subscriptions ) {
-			writeMessage(m);
+			writeMessage(getSocket(), m);
 			CanbusSubscription old = subscriptions.put(sub.getAddress(), sub);
 			if ( old != null ) {
 				log.warn("Subscription to CAN bus [{}] {} replaced by new subscription", busName, old);
@@ -266,7 +281,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	public void unsubscribe(int address, boolean forceExtendedAddress) throws IOException {
 		Message m = new UnsubscribeMessageImpl(address, forceExtendedAddress);
 		synchronized ( subscriptions ) {
-			writeMessage(m);
+			writeMessage(getSocket(), m);
 			subscriptions.remove(address);
 			log.info("Unsubscribed to CAN bus [{}] {}", busName, address);
 		}
@@ -274,19 +289,27 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	@Override
 	public void monitor(CanbusFrameListener listener) throws IOException {
-		// TODO Auto-generated method stub
+		if ( listener == null ) {
+			throw new IllegalArgumentException("The listener must not be null.");
+		}
+		synchronized ( monitorSubscription ) {
+			writeMessage(getSocket(), new BasicMessage(MessageType.Rawmode));
+			monitorSubscription.set(listener);
+		}
 
 	}
 
 	@Override
 	public void unmonitor() throws IOException {
-		// TODO Auto-generated method stub
-
+		synchronized ( monitorSubscription ) {
+			writeMessage(getSocket(), new BasicMessage(MessageType.Bcmmode));
+			monitorSubscription.set(null);
+		}
 	}
 
 	@Override
 	public boolean isEstablished() {
-		CanbusSocket s = this.socket;
+		CanbusSocket s = getSocket();
 		return (s != null ? s.isEstablished() : false);
 	}
 
