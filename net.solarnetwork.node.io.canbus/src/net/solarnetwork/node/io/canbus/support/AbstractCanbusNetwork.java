@@ -37,6 +37,7 @@ import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingsChangeObserver;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 
@@ -56,7 +57,8 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @author matt
  * @version 1.0
  */
-public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements CanbusNetwork {
+public abstract class AbstractCanbusNetwork extends BaseIdentifiable
+		implements CanbusNetwork, SettingsChangeObserver {
 
 	/** The default value for the {@code timeout} property. */
 	public static final long DEFAULT_TIMEOUT = 10L;
@@ -68,12 +70,7 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable implements 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	/**
-	 * Callback after properties have been changed.
-	 * 
-	 * @param properties
-	 *        the changed properties
-	 */
+	@Override
 	public void configurationChanged(Map<String, Object> properties) {
 		// close all existing connections so they can be re-opened with new settings
 		for ( CanbusConnection conn : connections.values() ) {
