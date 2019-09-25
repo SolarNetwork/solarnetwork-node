@@ -192,7 +192,9 @@ public class CASettingsService
 			// key
 			List<KeyValuePair> instanceKeys = settingDao.getSettings(getFactorySettingKey(factoryPid));
 			for ( KeyValuePair instanceKey : instanceKeys ) {
-				SettingsCommand cmd = new SettingsCommand();
+				// when registering an instance from a factory, set the "force" flag so instances
+				// with only defaults are still created
+				SettingsCommand cmd = new SettingsCommand(true);
 				cmd.setProviderKey(factoryPid);
 				cmd.setInstanceKey(instanceKey.getKey());
 

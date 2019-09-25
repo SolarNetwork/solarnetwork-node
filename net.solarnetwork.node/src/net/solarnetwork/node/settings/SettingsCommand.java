@@ -40,6 +40,7 @@ public class SettingsCommand implements SettingsUpdates {
 	private String providerKey;
 	private String instanceKey;
 	private List<SettingValueBean> values;
+	private boolean force;
 
 	private final Iterable<Pattern> settingKeyPatternsToClean;
 
@@ -52,6 +53,21 @@ public class SettingsCommand implements SettingsUpdates {
 	 */
 	public SettingsCommand() {
 		this(null);
+	}
+
+	/**
+	 * Construct with a "forced" setting.
+	 * 
+	 * <p>
+	 * This can be useful when configuring an instance from a factory, where the
+	 * instance only has default settings (and thus no instance settings).
+	 * </p>
+	 * 
+	 * @param force
+	 */
+	public SettingsCommand(boolean force) {
+		this(null);
+		this.force = force;
 	}
 
 	/**
@@ -94,7 +110,7 @@ public class SettingsCommand implements SettingsUpdates {
 
 	@Override
 	public boolean hasSettingValueUpdates() {
-		return (values != null && !values.isEmpty());
+		return (force || (values != null && !values.isEmpty()));
 	}
 
 	@Override
@@ -129,6 +145,29 @@ public class SettingsCommand implements SettingsUpdates {
 
 	public void setInstanceKey(String instanceKey) {
 		this.instanceKey = instanceKey;
+	}
+
+	/**
+	 * Get the flag indicating if the update command should be forced, even if
+	 * there are no setting values.
+	 * 
+	 * @return {@literal true} if the update should be forced
+	 * @since 1.1
+	 */
+	public boolean isForce() {
+		return force;
+	}
+
+	/**
+	 * Set a flag indicating if the update command should be forced, even if
+	 * there are no setting values.
+	 * 
+	 * @param force
+	 *        {@literal true} if the update should be forced
+	 * @since 1.1
+	 */
+	public void setForce(boolean force) {
+		this.force = force;
 	}
 
 }
