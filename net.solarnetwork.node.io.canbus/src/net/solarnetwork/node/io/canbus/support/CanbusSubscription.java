@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import static java.lang.String.format;
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
+import static net.solarnetwork.node.io.canbus.CanbusFrame.MAX_STANDARD_ADDRESS;
 import java.time.Duration;
 import java.util.Objects;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
@@ -40,8 +42,10 @@ import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 public class CanbusSubscription implements Comparable<CanbusSubscription> {
 
 	private final int address;
+	private final boolean forceExtendedAddress;
 	private final Duration limit;
 	private final long dataFilter;
+	private final Iterable<Long> dataFilters;
 	private final CanbusFrameListener listener;
 
 	/**
@@ -49,6 +53,9 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 	 * 
 	 * @param address
 	 *        the CAN address to subscribe to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
 	 * @param limit
 	 *        an optional rate to limit update messages to
 	 * @param dataFilter
@@ -57,12 +64,49 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 	 * @param listener
 	 *        the listener to be notified of frame changes
 	 */
-	public CanbusSubscription(int address, Duration limit, long dataFilter,
+	public CanbusSubscription(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
 			CanbusFrameListener listener) {
 		super();
 		this.address = address;
+		this.forceExtendedAddress = forceExtendedAddress;
 		this.limit = limit;
 		this.dataFilter = dataFilter;
+		this.dataFilters = null;
+		this.listener = listener;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param address
+	 *        the CAN address to subscribe to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @param limit
+	 *        an optional rate to limit update messages to
+	 * @param identifierMask
+	 *        an 8-byte bitmask that represents which data bits represent the
+	 *        multiplex identifier
+	 * @param dataFilters
+	 *        a list of bitmask filters to limit update message to; must have at
+	 *        least one value
+	 * @param listener
+	 *        the listener to be notified of frame changes
+	 * @throws IllegalArgumentException
+	 *         if {@code dataFilters} is {@literal null} or empty
+	 */
+	public CanbusSubscription(int address, boolean forceExtendedAddress, Duration limit,
+			long identifierMask, Iterable<Long> dataFilters, CanbusFrameListener listener) {
+		super();
+		if ( dataFilters == null || !dataFilters.iterator().hasNext() ) {
+			throw new IllegalArgumentException("At least one multiplex data filter must be provided.");
+		}
+		this.address = address;
+		this.forceExtendedAddress = forceExtendedAddress;
+		this.limit = limit;
+		this.dataFilter = identifierMask;
+		this.dataFilters = dataFilters;
 		this.listener = listener;
 	}
 
@@ -105,7 +149,7 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 	}
 
 	/**
-	 * test if a data filter is configured.
+	 * Test if a data filter is configured.
 	 * 
 	 * @return {@literal true} if a data filter is configured
 	 */
@@ -113,18 +157,52 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 		return dataFilter != DATA_FILTER_NONE;
 	}
 
+	/**
+	 * Get the "force extended" flag.
+	 * 
+	 * @return {@literal true} if extended address values should be used always
+	 */
+	public boolean isForceExtendedAddress() {
+		return forceExtendedAddress;
+	}
+
+	/**
+	 * Test if multiplex data filters are configured.
+	 * 
+	 * <p>
+	 * If this method returns {@literal true} then {@link #getDataFilter()}
+	 * represents the multiplex identifier value used with the subscription.
+	 * </p>
+	 * 
+	 * @return {@literal true} if
+	 */
+	public boolean isMultiplexFilter() {
+		return dataFilters != null;
+	}
+
+	/**
+	 * Get the multiplex data filters.
+	 * 
+	 * @return the multiplex data filters, or {@literal null} if this is not a
+	 *         multiplex subscription
+	 */
+	public Iterable<Long> getDataFilters() {
+		return dataFilters;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("CanbusSubscription{");
-		builder.append(address);
+		builder.append(format(address > MAX_STANDARD_ADDRESS || forceExtendedAddress ? "0x%08X" : "0x%X",
+				address));
 		if ( hasLimit() ) {
 			builder.append(",limit=");
-			builder.append(String.format("%d.%06d", getLimitSeconds(), getLimitMicroseconds()));
+			builder.append(format("%d.%06d", getLimitSeconds(), getLimitMicroseconds()));
 		}
 		if ( hasFilter() ) {
 			builder.append(",filter=");
-			builder.append(String.format("0x%016X", dataFilter));
+			builder.append(format("0x%016X", dataFilter));
 		}
 		builder.append("}");
 		return builder.toString();

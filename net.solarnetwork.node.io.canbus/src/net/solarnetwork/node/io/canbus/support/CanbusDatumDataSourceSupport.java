@@ -22,10 +22,16 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import static java.util.stream.Collectors.toSet;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
+import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingsChangeObserver;
@@ -48,12 +55,15 @@ import net.solarnetwork.util.OptionalService;
  * @version 1.0
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
-		implements SettingsChangeObserver {
+		implements SettingsChangeObserver, CanbusFrameListener {
 
 	/** The default value for the {@code connectionCheckFrequency} property. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
 
 	private final AtomicReference<CanbusConnection> connection = new AtomicReference<CanbusConnection>();
+
+	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
+			0.9f, 1);
 
 	private OptionalService<CanbusNetwork> canbusNetwork;
 	private String busName;
@@ -116,6 +126,86 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	}
 
 	/**
+	 * Completely replace all subscriptions to be applied automatically to
+	 * connections opened by this class.
+	 * 
+	 * <p>
+	 * Any existing subscriptions will be unsubscribed.
+	 * </p>
+	 * 
+	 * @param subscriptions
+	 *        the subscriptions to apply
+	 * @throws IOException
+	 *         if the CAN bus connection is currently open and the subscription
+	 *         cannot be applied
+	 */
+	protected synchronized void configureSubscriptions(Iterable<CanbusSubscription> subscriptions)
+			throws IOException {
+		Set<Integer> subscribedAddresses = new HashSet<>(8);
+		CanbusConnection conn = connection.get();
+		for ( CanbusSubscription sub : subscriptions ) {
+			subscribedAddresses.add(sub.getAddress());
+			registerSubscription(conn, sub);
+		}
+		Set<Integer> toRemove = this.subscriptions.keySet().stream()
+				.filter(k -> !subscribedAddresses.contains(k)).collect(toSet());
+		if ( conn != null && !conn.isClosed() ) {
+			for ( Integer k : toRemove ) {
+				CanbusSubscription old = this.subscriptions.remove(k);
+				try {
+					conn.unsubscribe(old.getAddress(), old.isForceExtendedAddress());
+				} catch ( IOException e ) {
+					log.warn("Error unsubsubscribing from CAN bus {}: {}", getBusName(), old);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Register a subscription to be applied automatically to connections opened
+	 * by this class.
+	 * 
+	 * @param subscription
+	 *        the subscription to register
+	 * @throws IOException
+	 *         if the CAN bus connection is currently open and the subscription
+	 *         cannot be applied
+	 */
+	protected synchronized void registerSubscription(CanbusSubscription subscription)
+			throws IOException {
+		registerSubscription(connection.get(), subscription);
+	}
+
+	private synchronized void registerSubscription(CanbusConnection conn,
+			CanbusSubscription subscription) throws IOException {
+		CanbusSubscription old = subscriptions.replace(subscription.getAddress(), subscription);
+		if ( conn != null && !conn.isClosed() ) {
+			if ( old != null ) {
+				conn.unsubscribe(old.getAddress(), old.isForceExtendedAddress());
+			}
+			applySubscription(conn, subscription);
+		}
+	}
+
+	private synchronized void applySubscriptions(CanbusConnection conn) throws IOException {
+		for ( CanbusSubscription sub : subscriptions.values() ) {
+			applySubscription(conn, sub);
+		}
+	}
+
+	private synchronized void applySubscription(CanbusConnection conn, CanbusSubscription sub)
+			throws IOException {
+		log.info("Applying registered subscription on CAN bus {}: {}", getBusName(), sub);
+		if ( sub.isMultiplexFilter() ) {
+			conn.subscribe(sub.getAddress(), sub.isForceExtendedAddress(), sub.getLimit(),
+					sub.getDataFilter(), sub.getDataFilters(), sub.getListener());
+		} else {
+			conn.subscribe(sub.getAddress(), sub.isForceExtendedAddress(), sub.getLimit(),
+					sub.getDataFilter(), sub.getListener());
+		}
+	}
+
+	/**
 	 * Get an <b>open</b> CAN bus connection, creating and opening a new
 	 * connection if necessary.
 	 * 
@@ -161,6 +251,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 			}
 			try {
 				newConn.open();
+				applySubscriptions(newConn);
 			} catch ( Exception e ) {
 				log.error("Error opening CAN bus connection {}: {}", canbusNetworkName(), e.toString());
 				return null;

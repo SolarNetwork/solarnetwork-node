@@ -360,7 +360,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	@Override
 	public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
 			CanbusFrameListener listener) throws IOException {
-		CanbusSubscription sub = new CanbusSubscription(address, limit, dataFilter, listener);
+		CanbusSubscription sub = new CanbusSubscription(address, forceExtendedAddress, limit, dataFilter,
+				listener);
 		Message m = null;
 		if ( sub.hasFilter() ) {
 			m = new FilterMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
@@ -386,7 +387,6 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	@Override
 	public void subscribe(int address, boolean forceExtendedAddress, Duration limit, long identifierMask,
 			Iterable<Long> dataFilters, CanbusFrameListener listener) throws IOException {
-		CanbusSubscription sub = new CanbusSubscription(address, limit, identifierMask, listener);
 		List<Long> filters;
 		if ( dataFilters instanceof List<?> ) {
 			filters = (List<Long>) dataFilters;
@@ -394,6 +394,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 			filters = StreamSupport.stream(dataFilters.spliterator(), false)
 					.collect(Collectors.toList());
 		}
+		CanbusSubscription sub = new CanbusSubscription(address, forceExtendedAddress, limit,
+				identifierMask, filters, listener);
 		Message m = new MuxFilterMessageImpl(address, forceExtendedAddress, sub.getLimitSeconds(),
 				sub.getLimitMicroseconds(), identifierMask, filters);
 		subscribe(m, sub);
