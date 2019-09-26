@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import java.math.BigDecimal;
 import java.util.Set;
 import javax.measure.MeasurementException;
+import javax.measure.Quantity;
 import javax.measure.Unit;
 import javax.measure.format.UnitFormat;
 import javax.measure.spi.FormatService;
@@ -32,6 +34,7 @@ import javax.measure.spi.UnitFormatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.javax.measure.MeasurementServiceProvider;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
@@ -101,6 +104,34 @@ public class MeasurementHelper {
 			}
 		}
 		log.debug("Unit not found for unit [{}]", unitString);
+		return null;
+	}
+
+	public Quantity<?> quantityValue(Number n, final String unitString, final Number slope,
+			final Number intercept) {
+		Unit<?> unit = unitValue(unitString);
+		if ( unit == null ) {
+			return null;
+		}
+
+		if ( slope != null || intercept != null ) {
+			BigDecimal d = NumberUtils.bigDecimalForNumber(n);
+			if ( slope != null ) {
+				d = d.multiply(NumberUtils.bigDecimalForNumber(slope));
+			}
+			if ( intercept != null ) {
+				d = d.add(NumberUtils.bigDecimalForNumber(intercept));
+			}
+			n = d;
+		}
+
+		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
+			Quantity<?> q = measurementProvider.quantityForUnit(n, unit);
+			if ( q != null ) {
+				return q;
+			}
+		}
+		log.debug("Quantity not found for unit [{}]", unitString);
 		return null;
 	}
 

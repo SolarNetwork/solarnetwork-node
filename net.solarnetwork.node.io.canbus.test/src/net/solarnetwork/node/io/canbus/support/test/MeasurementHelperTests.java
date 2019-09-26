@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
+import javax.measure.Quantity;
 import javax.measure.Unit;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import com.github.kayak.core.description.BusDescription;
 import com.github.kayak.core.description.Document;
 import com.github.kayak.core.description.MessageDescription;
 import com.github.kayak.core.description.SignalDescription;
-import net.solarnetwork.javax.measure.DelegateMeasurementServiceProvider;
+import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.javax.measure.MeasurementServiceProvider;
 import net.solarnetwork.node.io.canbus.support.KcdLoader;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
@@ -44,6 +45,7 @@ import si.uom.SIServiceProvider;
 import systems.uom.common.internal.CommonServiceProvider;
 import systems.uom.ucum.internal.UCUMServiceProvider;
 import systems.uom.unicode.internal.UnicodeServiceProvider;
+import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.spi.DefaultServiceProvider;
 import tech.units.indriya.unit.Units;
 
@@ -61,11 +63,11 @@ public class MeasurementHelperTests {
 	@Before
 	public void setup() {
 		measurementProviders = new StaticOptionalServiceCollection<>(
-				asList(new DelegateMeasurementServiceProvider(new UCUMServiceProvider()),
-						new DelegateMeasurementServiceProvider(new CommonServiceProvider()),
-						new DelegateMeasurementServiceProvider(new UnicodeServiceProvider()),
-						new DelegateMeasurementServiceProvider(new SIServiceProvider()),
-						new DelegateMeasurementServiceProvider(new DefaultServiceProvider())));
+				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new CommonServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new UnicodeServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new SIServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())));
 		helper = new MeasurementHelper(measurementProviders);
 	}
 
@@ -89,6 +91,9 @@ public class MeasurementHelperTests {
 	public void unitValue_Cel() {
 		Unit<?> unit = helper.unitValue("Cel");
 		assertThat("Unit is degrees celsius", unit, equalTo(Units.CELSIUS));
+
+		Quantity<?> q = Quantities.getQuantity(40.1, unit);
+		assertThat("Quantity is expected", q, equalTo(Quantities.getQuantity(40.1, Units.CELSIUS)));
 	}
 
 	@Test
@@ -103,6 +108,12 @@ public class MeasurementHelperTests {
 		String sigUnit = sig.getUnit();
 		Unit<?> unit = helper.unitValue(sigUnit);
 		assertThat("Unit is degrees celsius", unit, equalTo(Units.CELSIUS));
+	}
+
+	@Test
+	public void quantityValue_basic() {
+		Quantity<?> q = helper.quantityValue(40.1, "Cel", null, null);
+		assertThat("Quantity is expected", q, equalTo(Quantities.getQuantity(40.1, Units.CELSIUS)));
 	}
 
 }
