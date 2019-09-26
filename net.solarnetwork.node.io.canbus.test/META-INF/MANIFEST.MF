@@ -19,6 +19,7 @@ Import-Package:
  systems.uom.common.internal;version="2.0.0",
  systems.uom.ucum.internal;version="2.0.0",
  systems.uom.unicode.internal;version="2.0.0",
+ tech.units.indriya;version="2.0.1",
  tech.units.indriya.quantity;version="2.0.1",
  tech.units.indriya.spi;version="2.0.1",
  tech.units.indriya.unit;version="2.0.1"

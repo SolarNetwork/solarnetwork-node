@@ -24,13 +24,26 @@ package net.solarnetwork.node.io.canbus.support.test;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.measure.IncommensurableException;
 import javax.measure.Quantity;
+import javax.measure.UnconvertibleException;
 import javax.measure.Unit;
+import javax.measure.UnitConverter;
+import javax.measure.format.UnitFormat;
+import javax.measure.quantity.ElectricResistance;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.github.kayak.core.description.BusDescription;
 import com.github.kayak.core.description.Document;
 import com.github.kayak.core.description.MessageDescription;
@@ -57,6 +70,8 @@ import tech.units.indriya.unit.Units;
  */
 public class MeasurementHelperTests {
 
+	private static final Logger log = LoggerFactory.getLogger(MeasurementHelperTests.class);
+
 	private OptionalServiceCollection<MeasurementServiceProvider> measurementProviders;
 	private MeasurementHelper helper;
 
@@ -71,9 +86,9 @@ public class MeasurementHelperTests {
 		helper = new MeasurementHelper(measurementProviders);
 	}
 
-	private Document testDocument() {
+	private Document testDocument(String name) {
 		try {
-			try (InputStream in = getClass().getResourceAsStream("kcd-test-01.xml")) {
+			try (InputStream in = getClass().getResourceAsStream(name)) {
 				return new KcdLoader().parse(in, "test.kcd");
 			}
 		} catch ( IOException e ) {
@@ -97,8 +112,79 @@ public class MeasurementHelperTests {
 	}
 
 	@Test
+	public void unitValue_km() {
+		Unit<?> unit = helper.unitValue("km");
+		assertThat("System unit is length", unit.getSystemUnit(), equalTo(Units.METRE));
+	}
+
+	@Test
+	public void unitValue_kWh() {
+		Unit<?> unit = helper.unitValue("kW.h");
+		assertThat("Unit ", unit.getSystemUnit(), equalTo(Units.WATT.multiply(Units.SECOND)));
+	}
+
+	@Test
+	public void unitValue_kOhm() {
+		Unit<?> unit = helper.unitValue("kOhm");
+		assertThat("Unit ", unit.getSystemUnit(), equalTo(Units.OHM));
+
+		Unit<ElectricResistance> erUnit = unit.asType(ElectricResistance.class);
+		assertThat("Unit is electric resistance", erUnit.getSystemUnit(), equalTo(Units.OHM));
+
+		Map<? extends Unit<?>, Integer> bases = unit.getBaseUnits();
+		assertThat("Bases exist", bases, notNullValue());
+		assertThat("Bases size", bases.keySet(), hasSize(2));
+		assertThat("Base amps", bases, hasEntry(Units.AMPERE, -1));
+		assertThat("Base volts", bases, hasEntry(Units.VOLT, 1));
+	}
+
+	@Test
+	public void unitValue_rpm() throws UnconvertibleException, IncommensurableException {
+		Unit<?> unit = helper.unitValue("Hz/60");
+		assertThat("Unit base is Hz", unit.isCompatible(Units.HERTZ), equalTo(true));
+
+		// The following does not work because it is parsed into Hz/one*60
+		//assertThat("Unit ", unit, equalTo(Units.HERTZ.divide(60)));
+
+		// so as an alternative check, look for identify transform
+		UnitConverter conv = unit.getConverterToAny(Units.HERTZ.divide(60));
+		assertThat("Unit is RPM", conv.isIdentity(), equalTo(true));
+	}
+
+	@Test
+	public void unitValue_rpm_2() throws UnconvertibleException, IncommensurableException {
+		Unit<?> unit = helper.unitValue("1/min");
+		assertThat("Unit ", unit.isCompatible(Units.HERTZ), equalTo(true));
+
+		UnitConverter conv = unit.getConverterToAny(Units.HERTZ.divide(60));
+		boolean ident = conv.isIdentity();
+		assertThat("Ident", ident, equalTo(true));
+	}
+
+	@Test
+	public void ucum_rpm() throws UnconvertibleException, IncommensurableException {
+		UCUMServiceProvider sp = new UCUMServiceProvider();
+
+		// the following returns the DefaultFormatService class
+		UnitFormat uf = sp.getFormatService().getUnitFormat();
+		Unit<?> unit = uf.parse("Hz/60");
+		assertThat("Unit is RPM", unit, equalTo(Units.HERTZ.divide(60)));
+
+		// the following returns the UCUMFormatService class
+		UnitFormat uf2 = sp.getUnitFormatService().getUnitFormat();
+		Unit<?> unit2 = uf2.parse("Hz/60");
+
+		// as an alternative check, look for identify transform
+		UnitConverter conv = unit2.getConverterToAny(Units.HERTZ.divide(60));
+		assertThat("Unit conversion to RPM is identity", conv.isIdentity(), equalTo(true));
+
+		// The following assert does not work because `unit` is parsed into Hz/one*60
+		// TODO assertThat("Unit is RPM", unit2, equalTo(Units.HERTZ.divide(60)));
+	}
+
+	@Test
 	public void unitValue_SignalDescription_Motor_OutsideTemp() {
-		Document d = testDocument();
+		Document d = testDocument("kcd-test-01.xml");
 		BusDescription motor = d.getBusDescriptions().stream().filter(b -> "Motor".equals(b.getName()))
 				.findFirst().get();
 		MessageDescription msg = motor.getMessages().values().stream()
@@ -114,6 +200,29 @@ public class MeasurementHelperTests {
 	public void quantityValue_basic() {
 		Quantity<?> q = helper.quantityValue(40.1, "Cel", null, null);
 		assertThat("Quantity is expected", q, equalTo(Quantities.getQuantity(40.1, Units.CELSIUS)));
+	}
+
+	@Test
+	public void unitValue_allFromTest2() {
+		Document d = testDocument("kcd-test-02.xml");
+		Set<String> seenUnits = new HashSet<>(8);
+		d.getBusDescriptions().stream().flatMap(b -> b.getMessages().values().stream())
+				.flatMap(m -> m.getSignals().stream())
+				.filter(s -> s.getUnit() != null && !s.getUnit().isEmpty()).forEachOrdered(s -> {
+
+					String sigUnit = s.getUnit();
+					if ( seenUnits.contains(sigUnit) ) {
+						return;
+					}
+					seenUnits.add(sigUnit);
+					try {
+						Unit<?> unit = helper.unitValue(sigUnit);
+						log.debug("Parsed signal unit string [{}] into unit: {}", sigUnit, unit);
+						assertThat("Unit " + sigUnit + " is parsed", unit, notNullValue());
+					} catch ( Exception e ) {
+						throw new RuntimeException("Unit " + sigUnit + " failed to parse.", e);
+					}
+				});
 	}
 
 }
