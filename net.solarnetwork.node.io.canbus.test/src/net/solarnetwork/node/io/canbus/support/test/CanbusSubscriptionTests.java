@@ -40,7 +40,7 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void hasLimit_null() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, null, DATA_FILTER_NONE, null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, null, DATA_FILTER_NONE, null);
 
 		// WHEN
 		boolean b = sub.hasLimit();
@@ -52,8 +52,8 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void hasLimit_zero() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, Duration.ofSeconds(0), DATA_FILTER_NONE,
-				null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, Duration.ofSeconds(0),
+				DATA_FILTER_NONE, null);
 
 		// WHEN
 		boolean b = sub.hasLimit();
@@ -65,8 +65,8 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void hasLimit_positive() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, Duration.ofSeconds(1), DATA_FILTER_NONE,
-				null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, Duration.ofSeconds(1),
+				DATA_FILTER_NONE, null);
 
 		// WHEN
 		boolean b = sub.hasLimit();
@@ -78,7 +78,7 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void limitValues_subsecond() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, Duration.ofSeconds(0, 100000),
+		CanbusSubscription sub = new CanbusSubscription(1, false, Duration.ofSeconds(0, 100000),
 				DATA_FILTER_NONE, null);
 
 		// WHEN
@@ -93,8 +93,8 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void limitValues_roundSecnods() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, Duration.ofSeconds(123), DATA_FILTER_NONE,
-				null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, Duration.ofSeconds(123),
+				DATA_FILTER_NONE, null);
 
 		// WHEN
 		int s = sub.getLimitSeconds();
@@ -108,7 +108,7 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void limitValues_fractionalSecnods() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, Duration.ofSeconds(332, 123123000),
+		CanbusSubscription sub = new CanbusSubscription(1, false, Duration.ofSeconds(332, 123123000),
 				DATA_FILTER_NONE, null);
 
 		// WHEN
@@ -123,7 +123,7 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void hasFilter_none() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, null, DATA_FILTER_NONE, null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, null, DATA_FILTER_NONE, null);
 
 		// WHEN
 		boolean b = sub.hasFilter();
@@ -135,7 +135,7 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void hasFilter_some() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1, null, 0xFF00000000000000L, null);
+		CanbusSubscription sub = new CanbusSubscription(1, false, null, 0xFF00000000000000L, null);
 
 		// WHEN
 		boolean b = sub.hasFilter();
@@ -147,34 +147,34 @@ public class CanbusSubscriptionTests {
 	@Test
 	public void stringValue_noLimit_noFilter() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1234, Duration.ofSeconds(0), DATA_FILTER_NONE,
-				null);
+		CanbusSubscription sub = new CanbusSubscription(1234, false, Duration.ofSeconds(0),
+				DATA_FILTER_NONE, null);
 
 		// WHEN
 		String s = sub.toString();
 
 		// THEN
-		assertThat("String without limit or filter", s, equalTo("CanbusSubscription{1234}"));
+		assertThat("String without limit or filter", s, equalTo("CanbusSubscription{0x4D2}"));
 	}
 
 	@Test
 	public void stringValue_noLimit_withFilter() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1234, Duration.ofSeconds(0), 0xFF00000000000000L,
-				null);
+		CanbusSubscription sub = new CanbusSubscription(1234, false, Duration.ofSeconds(0),
+				0xFF00000000000000L, null);
 
 		// WHEN
 		String s = sub.toString();
 
 		// THEN
 		assertThat("String without limit shows with filter", s,
-				equalTo("CanbusSubscription{1234,filter=0xFF00000000000000}"));
+				equalTo("CanbusSubscription{0x4D2,filter=0xFF00000000000000}"));
 	}
 
 	@Test
 	public void stringValue_withLimit_withFilter() {
 		// GIVEN
-		CanbusSubscription sub = new CanbusSubscription(1234, Duration.ofSeconds(123, 100000),
+		CanbusSubscription sub = new CanbusSubscription(1234, false, Duration.ofSeconds(123, 100000),
 				0x0000FF00000000FFL, null);
 
 		// WHEN
@@ -182,6 +182,6 @@ public class CanbusSubscriptionTests {
 
 		// THEN
 		assertThat("String with limit shows and filter", s,
-				equalTo("CanbusSubscription{1234,limit=123.000100,filter=0x0000FF00000000FF}"));
+				equalTo("CanbusSubscription{0x4D2,limit=123.000100,filter=0x0000FF00000000FF}"));
 	}
 }
