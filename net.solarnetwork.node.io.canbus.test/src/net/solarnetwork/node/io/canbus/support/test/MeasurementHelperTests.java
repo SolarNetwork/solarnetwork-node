@@ -40,6 +40,7 @@ import javax.measure.Unit;
 import javax.measure.UnitConverter;
 import javax.measure.format.UnitFormat;
 import javax.measure.quantity.ElectricResistance;
+import javax.measure.quantity.Frequency;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ import si.uom.SIServiceProvider;
 import systems.uom.common.internal.CommonServiceProvider;
 import systems.uom.ucum.internal.UCUMServiceProvider;
 import systems.uom.unicode.internal.UnicodeServiceProvider;
+import tech.units.indriya.ComparableUnit;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.spi.DefaultServiceProvider;
 import tech.units.indriya.unit.Units;
@@ -165,21 +167,27 @@ public class MeasurementHelperTests {
 	public void ucum_rpm() throws UnconvertibleException, IncommensurableException {
 		UCUMServiceProvider sp = new UCUMServiceProvider();
 
+		final Unit<Frequency> rpm = Units.HERTZ.divide(60);
+
 		// the following returns the DefaultFormatService class
 		UnitFormat uf = sp.getFormatService().getUnitFormat();
 		Unit<?> unit = uf.parse("Hz/60");
-		assertThat("Unit is RPM", unit, equalTo(Units.HERTZ.divide(60)));
+		assertThat("Unit is RPM", unit, equalTo(rpm));
 
 		// the following returns the UCUMFormatService class
 		UnitFormat uf2 = sp.getUnitFormatService().getUnitFormat();
 		Unit<?> unit2 = uf2.parse("Hz/60");
 
 		// as an alternative check, look for identify transform
-		UnitConverter conv = unit2.getConverterToAny(Units.HERTZ.divide(60));
+		UnitConverter conv = unit2.getConverterToAny(rpm);
 		assertThat("Unit conversion to RPM is identity", conv.isIdentity(), equalTo(true));
 
 		// The following assert does not work because `unit` is parsed into Hz/one*60
 		// TODO assertThat("Unit is RPM", unit2, equalTo(Units.HERTZ.divide(60)));
+		if ( unit2.isCompatible(rpm) && unit2 instanceof ComparableUnit<?> ) {
+			ComparableUnit<Frequency> cu2 = (ComparableUnit<Frequency>) unit2.asType(Frequency.class);
+			assertThat("Unit is RPM", cu2.isEquivalentTo(rpm), equalTo(true));
+		}
 	}
 
 	@Test
