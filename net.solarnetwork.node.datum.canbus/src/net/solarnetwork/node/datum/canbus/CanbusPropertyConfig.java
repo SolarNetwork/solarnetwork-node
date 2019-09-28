@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -33,10 +34,11 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * Configuration for a single datum property to be set via a CAN bus address.
+ * Configuration for a single datum property to be set via a CAN bus message.
  * 
  * <p>
- * The {@link #getConfig()} value represents the CAN bus address to read from.
+ * The {@link #getConfig()} value represents the CAN message bit offset to read
+ * from.
  * </p>
  * 
  * @author matt
@@ -44,16 +46,25 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Integer> {
 
-	/** The default {@code address} property value. */
-	public static final int DEFAULT_ADDRESS = 0;
+	/** The default {@code bitLength} property value. */
+	public static final int DEFAULT_BIT_LENGTH = 32;
 
-	private String name;
+	/** The default {@code bitOffset} property value. */
+	public static final int DEFAULT_BIT_OFFSET = 0;
+
+	/** The default {@code dataType} property value. */
+	public static final BitDataType DEFAULT_DATA_TYPE = BitDataType.Int32;
+
+	private BitDataType dataType = DEFAULT_DATA_TYPE;
+	private String unit;
+	private int bitOffset = DEFAULT_BIT_OFFSET;
+	private int bitLength = DEFAULT_BIT_LENGTH;
 
 	/**
 	 * Default constructor.
 	 */
 	public CanbusPropertyConfig() {
-		super(null, GeneralDatumSamplesType.Instantaneous, DEFAULT_ADDRESS);
+		super(null, GeneralDatumSamplesType.Instantaneous, DEFAULT_BIT_OFFSET);
 	}
 
 	/**
@@ -63,11 +74,11 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        the datum property name
 	 * @param datumPropertyType
 	 *        the datum property type
-	 * @param address
-	 *        the CAN bus address
+	 * @param bitOffset
+	 *        the CAN message bit offset
 	 */
-	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int address) {
-		super(name, datumPropertyType, address);
+	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int bitOffset) {
+		super(name, datumPropertyType, bitOffset);
 	}
 
 	/**
@@ -80,7 +91,6 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", ""));
 
 		// drop-down menu for propertyTypeKey
@@ -93,17 +103,29 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
 
-		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "address", String.valueOf(DEFAULT_ADDRESS)));
+		// drop-down menu for dataType
+		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "dataTypeKey", DEFAULT_DATA_TYPE.getKey());
+		Map<String, String> dataTypeTitles = new LinkedHashMap<String, String>(3);
+		for ( BitDataType e : BitDataType.values() ) {
+			dataTypeTitles.put(e.getKey(), e.getDescription());
+		}
+		dataTypeSpec.setValueTitles(dataTypeTitles);
+		results.add(dataTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitIntercept",
-				DEFAULT_INTERCEPT.toString()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitSlope", DEFAULT_SLOPE.toString()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "unit", ""));
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bitOffset",
+				String.valueOf(DEFAULT_BIT_OFFSET)));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bitLength",
+				String.valueOf(DEFAULT_BIT_LENGTH)));
+
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "slope", DEFAULT_SLOPE.toString()));
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "intercept", DEFAULT_INTERCEPT.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
+
 		return results;
 	}
 
@@ -137,22 +159,117 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
-	 * Get a friendly name for the address.
+	 * Get the data type.
 	 * 
-	 * @return the name
+	 * @return the type, never {@literal null}; defaults to
+	 *         {@link #DEFAULT_DATA_TYPE}
 	 */
-	public String getName() {
-		return name;
+	public BitDataType getDataType() {
+		return dataType;
 	}
 
 	/**
-	 * Set the friendly name for the address.
+	 * Set the data type.
 	 * 
-	 * @param name
-	 *        the name to set
+	 * @param dataType
+	 *        the type to set
 	 */
-	public void setName(String name) {
-		this.name = name;
+	public void setDataType(BitDataType dataType) {
+		if ( dataType == null ) {
+			dataType = DEFAULT_DATA_TYPE;
+		}
+		this.dataType = dataType;
+	}
+
+	/**
+	 * Get the data type as a key value.
+	 * 
+	 * @return the type as a key
+	 */
+	public String getDataTypeKey() {
+		BitDataType type = getDataType();
+		return (type != null ? type.getKey() : null);
+	}
+
+	/**
+	 * Set the data type as a string value.
+	 * 
+	 * @param dataType
+	 *        the type to set
+	 */
+	public void setDataTypeKey(String key) {
+		try {
+			setDataType(BitDataType.forKey(key));
+		} catch ( IllegalArgumentException e ) {
+			setDataType(DEFAULT_DATA_TYPE);
+		}
+	}
+
+	/**
+	 * Get the unit of the property value.
+	 * 
+	 * <p>
+	 * This represents the physical unit of the value, as unit term as described
+	 * in <a href="http://unitsofmeasure.org/ucum.html">The Unified Code for
+	 * Units of Measure</a>.
+	 * </p>
+	 * 
+	 * @return the property unit, or {@literal null} if not known
+	 */
+	public String getUnit() {
+		return unit;
+	}
+
+	/**
+	 * Set the unit of the property value.
+	 * 
+	 * @param unit
+	 *        the unit to use
+	 * @see <a href="http://unitsofmeasure.org/ucum.html">The Unified Code for
+	 *      Units of Measure</a>
+	 */
+	public void setUnit(String unit) {
+		this.unit = unit;
+	}
+
+	/**
+	 * Get the offset of the least significant bit of the property value,
+	 * relative to the least significant bit of the full message data value.
+	 * 
+	 * @return the bit offset; defaults to {@link #DEFAULT_BIT_OFFSET}
+	 */
+	public int getBitOffset() {
+		return bitOffset;
+	}
+
+	/**
+	 * Set the offset of the least significant bit of the property value,
+	 * relative to the least significant bit of the full message data value.
+	 * 
+	 * @param bitOffset
+	 *        the bit offset to use
+	 */
+	public void setBitOffset(int bitOffset) {
+		this.bitOffset = bitOffset;
+	}
+
+	/**
+	 * Get the length of the property value within the full message data value.
+	 * 
+	 * @return the bit length; defaults to {@link #DEFAULT_BIT_LENGTH}
+	 */
+	public int getBitLength() {
+		return bitLength;
+	}
+
+	/**
+	 * Set the length of the property value within the full message data value.
+	 * 
+	 * @param bitLength
+	 *        the bit length to use
+	 */
+	public void setBitLength(int bitLength) {
+		this.bitLength = bitLength;
 	}
 
 }

@@ -30,7 +30,7 @@
 		</property>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
-				<property name="prefix" value="propConfigsItem."/>
+				<property name="prefix" value="msgConfigsItem.propConfigsItem."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 						<property name="basenames">
@@ -45,7 +45,7 @@
 	</bean>
 	
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
-		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
@@ -85,7 +85,7 @@
 			</property>
 			<property name="serviceProviderConfigurations">
 				<map>
-					<entry key="multiDatumDataSource">
+					<entry key="datumDataSource">
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
@@ -108,7 +108,7 @@
 					<property name="jobDataAsMap">
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
-							<entry key="multiDatumDataSource">
+							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>

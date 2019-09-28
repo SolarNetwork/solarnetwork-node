@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.MultiDatumDataSource;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
@@ -35,6 +35,7 @@ import net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
 
@@ -45,18 +46,19 @@ import net.solarnetwork.util.ArrayUtils;
  * @author matt
  * @version 1.0
  */
-public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport implements
-		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
+public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
 
-	private CanbusPropertyConfig[] propConfigs;
+	private String sourceId;
+	private CanbusMessageConfig[] msgConfigs;
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getMultiDatumType() {
+	public Class<? extends GeneralNodeDatum> getDatumType() {
 		return GeneralNodeDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeDatum> readMultipleDatum() {
+	public GeneralNodeDatum readCurrentDatum() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -89,18 +91,19 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport implemen
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 		results.addAll(canbusDatumDataSourceSettingSpecifiers(""));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
-		CanbusPropertyConfig[] confs = getPropConfigs();
-		List<CanbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
-				: Collections.<CanbusPropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<CanbusPropertyConfig>() {
+		CanbusMessageConfig[] confs = getMsgConfigs();
+		List<CanbusMessageConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<CanbusMessageConfig> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("msgConfigs", confsList,
+				new SettingsUtil.KeyedListCallback<CanbusMessageConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(CanbusPropertyConfig value,
+					public Collection<SettingSpecifier> mapListSettingKey(CanbusMessageConfig value,
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								CanbusPropertyConfig.settings(key + "."));
+								value.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -111,48 +114,67 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport implemen
 	// Accessors
 
 	/**
-	 * Get the property configurations.
+	 * Get the message configurations.
 	 * 
-	 * @return the property configurations
+	 * @return the message configurations
 	 */
-	public CanbusPropertyConfig[] getPropConfigs() {
-		return propConfigs;
+	public CanbusMessageConfig[] getMsgConfigs() {
+		return msgConfigs;
 	}
 
 	/**
-	 * Set the property configurations to use.
+	 * Set the message configurations to use.
 	 * 
-	 * @param propConfigs
+	 * @param msgConfigs
 	 *        the configs to use
 	 */
-	public void setPropConfigs(CanbusPropertyConfig[] propConfigs) {
-		this.propConfigs = propConfigs;
+	public void setMsgConfigs(CanbusMessageConfig[] msgConfigs) {
+		this.msgConfigs = msgConfigs;
 	}
 
 	/**
-	 * Get the number of configured {@code propConfigs} elements.
+	 * Get the number of configured {@code msgConfigs} elements.
 	 * 
-	 * @return the number of {@code propConfigs} elements
+	 * @return the number of {@code msgConfigs} elements
 	 */
-	public int getPropConfigsCount() {
-		CanbusPropertyConfig[] confs = this.propConfigs;
+	public int getMsgConfigsCount() {
+		CanbusMessageConfig[] confs = this.msgConfigs;
 		return (confs == null ? 0 : confs.length);
 	}
 
 	/**
-	 * Adjust the number of configured {@code propConfigs} elements.
+	 * Adjust the number of configured {@code msgConfigs} elements.
 	 * 
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link CanbusPropertyConfig} instances.
+	 * {@link CanbusMessageConfig} instances.
 	 * </p>
 	 * 
 	 * @param count
-	 *        The desired number of {@code propConfigs} elements.
+	 *        The desired number of {@code msgConfigs} elements.
 	 */
-	public void setPropConfigsCount(int count) {
-		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
-				CanbusPropertyConfig.class, null);
+	public void setMsgConfigsCount(int count) {
+		this.msgConfigs = ArrayUtils.arrayWithLength(this.msgConfigs, count, CanbusMessageConfig.class,
+				null);
+	}
+
+	/**
+	 * Get the source ID to use for returned datum.
+	 * 
+	 * @return the source ID to use
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
+	 * Set the source ID to use for returned datum.
+	 * 
+	 * @param soruceId
+	 *        the source ID to use
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }
