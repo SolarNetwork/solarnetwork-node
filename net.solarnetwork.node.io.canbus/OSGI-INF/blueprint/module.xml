@@ -11,6 +11,12 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+	
+	<service interface="net.solarnetwork.node.io.canbus.KcdParser">
+		<bean class="net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser"/>
+	</service>
+	
 	<!-- Socketcand (TCP) CAN Bus Network -->
 	
 	<bean id="messageSourceTcp" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -36,8 +42,6 @@
 			</bean>
 		</property>
 	</bean>
-	
-	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">

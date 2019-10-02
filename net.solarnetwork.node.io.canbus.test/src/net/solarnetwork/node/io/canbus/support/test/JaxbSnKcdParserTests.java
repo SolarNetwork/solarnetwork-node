@@ -1,5 +1,5 @@
 /* ==================================================================
- * KcdLoaderTests.java - 14/09/2019 7:47:38 am
+ * JaxbSnKcdParserTests.java - 14/09/2019 7:47:38 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.canbus.support.test;
 
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
@@ -30,46 +29,60 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPOutputStream;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.stream.StreamSource;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
-import com.github.kayak.core.description.Document;
-import net.solarnetwork.node.io.canbus.support.KcdLoader;
+import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
+import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 
 /**
- * Test cases for the {@link KcdLoader} class.
+ * Test cases for the {@link JaxbSnKcdParser} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class KcdLoaderTests {
+public class JaxbSnKcdParserTests {
 
 	@Test
 	public void parseGzipStream() throws IOException {
-		Document d = null;
+		NetworkDefinitionType d = null;
 		// compress test file as GZIP, then read GZIP stream
 		try (InputStream rawIn = getClass().getResourceAsStream("kcd-test-01.xml");
 				ByteArrayOutputStream gzipData = new ByteArrayOutputStream();
 				GZIPOutputStream gzipOut = new GZIPOutputStream(gzipData)) {
 			FileCopyUtils.copy(rawIn, gzipOut);
 			try (InputStream compressedIn = new ByteArrayInputStream(gzipData.toByteArray())) {
-				d = new KcdLoader().parse(compressedIn, "test.kcd.gz");
+				d = new JaxbSnKcdParser().parseKcd(compressedIn, false);
 			}
 		}
-		assertTest01Document(d, "test.kcd.gz");
+		assertTest01Document(d);
 	}
 
 	@Test
 	public void parseStream() throws IOException {
-		Document d = null;
+		NetworkDefinitionType d = null;
 		try (InputStream in = getClass().getResourceAsStream("kcd-test-01.xml")) {
-			d = new KcdLoader().parse(in, "test.kcd");
+			d = new JaxbSnKcdParser().parseKcd(in, false);
 		}
-		assertTest01Document(d, "test.kcd");
+		assertTest01Document(d);
 	}
 
-	private void assertTest01Document(Document d, String fileName) {
+	private void assertTest01Document(NetworkDefinitionType d) {
 		assertThat("Document parsed", d, notNullValue());
-		assertThat("File name", d.getFileName(), equalTo(fileName));
+		// TODO
+	}
+
+	@Test
+	public void unmarshallSolarNodeNetworkDefinition() throws Exception {
+		JAXBContext context = JAXBContext.newInstance(new Class[] { NetworkDefinitionType.class });
+		Unmarshaller umarshall = context.createUnmarshaller();
+		JAXBElement<NetworkDefinitionType> object = umarshall.unmarshal(
+				new StreamSource(getClass().getResourceAsStream("kcd-test-03.xml")),
+				NetworkDefinitionType.class);
+		assertThat("NetworkDefinition unmarshalled", object, notNullValue());
 	}
 
 }

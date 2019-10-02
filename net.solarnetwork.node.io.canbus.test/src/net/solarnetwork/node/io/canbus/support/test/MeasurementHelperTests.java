@@ -45,13 +45,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.kayak.core.description.BusDescription;
-import com.github.kayak.core.description.Document;
-import com.github.kayak.core.description.MessageDescription;
-import com.github.kayak.core.description.SignalDescription;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.javax.measure.MeasurementServiceProvider;
-import net.solarnetwork.node.io.canbus.support.KcdLoader;
+import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
+import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
@@ -88,13 +85,13 @@ public class MeasurementHelperTests {
 		helper = new MeasurementHelper(measurementProviders);
 	}
 
-	private Document testDocument(String name) {
+	private NetworkDefinitionType testDocument(String name, boolean validating) {
 		try {
 			try (InputStream in = getClass().getResourceAsStream(name)) {
-				return new KcdLoader().parse(in, "test.kcd");
+				return new JaxbSnKcdParser().parseKcd(in, validating);
 			}
 		} catch ( IOException e ) {
-			throw new RuntimeException();
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -191,20 +188,6 @@ public class MeasurementHelperTests {
 	}
 
 	@Test
-	public void unitValue_SignalDescription_Motor_OutsideTemp() {
-		Document d = testDocument("kcd-test-01.xml");
-		BusDescription motor = d.getBusDescriptions().stream().filter(b -> "Motor".equals(b.getName()))
-				.findFirst().get();
-		MessageDescription msg = motor.getMessages().values().stream()
-				.filter(m -> "ABS".equals(m.getName())).findFirst().get();
-		SignalDescription sig = msg.getSignals().stream().filter(s -> "OutsideTemp".equals(s.getName()))
-				.findFirst().get();
-		String sigUnit = sig.getUnit();
-		Unit<?> unit = helper.unitValue(sigUnit);
-		assertThat("Unit is degrees celsius", unit, equalTo(Units.CELSIUS));
-	}
-
-	@Test
 	public void quantityValue_basic() {
 		Quantity<?> q = helper.quantityValue(40.1, "Cel", null, null);
 		assertThat("Quantity is expected", q, equalTo(Quantities.getQuantity(40.1, Units.CELSIUS)));
@@ -212,11 +195,11 @@ public class MeasurementHelperTests {
 
 	@Test
 	public void unitValue_allFromTest2() {
-		Document d = testDocument("kcd-test-02.xml");
+		NetworkDefinitionType d = testDocument("kcd-test-02.xml", false);
 		Set<String> seenUnits = new HashSet<>(8);
-		d.getBusDescriptions().stream().flatMap(b -> b.getMessages().values().stream())
-				.flatMap(m -> m.getSignals().stream())
-				.filter(s -> s.getUnit() != null && !s.getUnit().isEmpty()).forEachOrdered(s -> {
+		d.getBus().stream().flatMap(b -> b.getMessage().stream()).flatMap(m -> m.getSignal().stream())
+				.map(s -> s.getValue()).filter(s -> s.getUnit() != null && !s.getUnit().isEmpty())
+				.forEachOrdered(s -> {
 
 					String sigUnit = s.getUnit();
 					if ( seenUnits.contains(sigUnit) ) {
