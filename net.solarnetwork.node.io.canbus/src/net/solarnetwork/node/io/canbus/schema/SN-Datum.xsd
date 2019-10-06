@@ -10,6 +10,13 @@
         </xs:annotation>
     </xs:attribute>
 
+    <xs:attribute name="network-service-name" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>The service name of a network service provider to use with the
+                associated element.</xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
     <xs:attribute name="publish-interval" type="xs:nonNegativeInteger" default="60000">
         <xs:annotation>
             <xs:documentation>The frequency at which to publish the associated element, in
@@ -49,5 +56,5 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:attribute>
-    
+
 </xs:schema>

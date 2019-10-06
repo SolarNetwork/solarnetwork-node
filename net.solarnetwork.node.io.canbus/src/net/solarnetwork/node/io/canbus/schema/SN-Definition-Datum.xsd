@@ -23,7 +23,7 @@
     xmlns:sn="urn:solarnetwork:datum:1.0">
 
     <xs:import schemaLocation="SN-Datum.xsd" namespace="urn:solarnetwork:datum:1.0"/>
-    
+
     <xs:redefine schemaLocation="SN-Definition.xsd">
 
         <xs:complexType name="NodeType">
@@ -39,6 +39,13 @@
                         <xs:annotation>
                             <xs:documentation>The frequency at which to publish datum for this node,
                                 in milliseconds.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute ref="sn:network-service-name" use="optional" default="Canbus Port">
+                        <xs:annotation>
+                            <xs:documentation>The service name of the CAN Bus Connection component
+                                that provides the connection to the physical CAN bus
+                                network.</xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
                 </xs:extension>
@@ -65,5 +72,5 @@
         </xs:complexType>
 
     </xs:redefine>
-    
+
 </xs:schema>
