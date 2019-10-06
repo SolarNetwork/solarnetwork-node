@@ -42,11 +42,14 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements SettingSpecifierProvider {
 
-	/** The default host value. */
+	/** The default {@code host} value. */
 	public static final String DEFAULT_HOST = "localhost";
 
-	/** The default port value. */
+	/** The default {@code port} value. */
 	public static final int DEFAULT_PORT = 29536;
+
+	/** The default {@code uid} value. */
+	public static final String DEFAULT_UID = "Canbus Port";
 
 	private final CanbusSocketProvider socketProvider;
 	private final Executor executor;
@@ -70,6 +73,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 		}
 		this.socketProvider = socketProvider;
 		this.executor = executor;
+		setUid(DEFAULT_UID);
 	}
 
 	@Override
@@ -103,7 +107,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(12);
-		results.addAll(baseIdentifiableSettings(""));
+		results.addAll(baseIdentifiableSettings("", DEFAULT_UID, ""));
 		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 
