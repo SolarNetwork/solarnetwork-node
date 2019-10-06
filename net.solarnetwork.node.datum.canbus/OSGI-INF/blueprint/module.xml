@@ -47,15 +47,43 @@
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
-	</bean>	
-
+	</bean>
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
 	
+	<bean id="kcdParser" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.io.canbus.KcdParser"/>
+	</bean>
+	
+	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
+	
+	<bean id="kcdConfigurer" class="net.solarnetwork.node.datum.canbus.KcdConfigurer">
+		<argument ref="kcdParser"/>
+		<argument ref="settingsService"/>
+		<property name="settingPrefix" value="jobDetail.jobDataMap['datumDataSource']."/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.datum.canbus.KcdConfigurer</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
 	<!-- Published Services -->
+	
+	<service ref="kcdConfigurer">
+		<interfaces>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+	</service>
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
@@ -89,7 +117,7 @@
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.DatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">

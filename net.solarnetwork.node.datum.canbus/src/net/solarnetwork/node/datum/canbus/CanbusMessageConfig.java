@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -55,9 +56,13 @@ public class CanbusMessageConfig {
 	/** The default {@code byteOrdering} property value. */
 	public static final ByteOrdering DEFAULT_BYTE_ORDERING = ByteOrdering.BigEndian;
 
+	/** The default {@code interval} property value. */
+	public static final int DEFAULT_INTERVAL = 60000;
+
 	private int address = DEFAULT_ADDRESS;
 	private String name;
 	private ByteOrdering byteOrdering = DEFAULT_BYTE_ORDERING;
+	private int interval;
 	private CanbusPropertyConfig[] propConfigs;
 
 	public CanbusMessageConfig() {
@@ -77,8 +82,9 @@ public class CanbusMessageConfig {
 
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "address", String.valueOf(DEFAULT_ADDRESS)));
-
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "interval",
+				String.valueOf(DEFAULT_INTERVAL)));
 
 		// drop-down menu for byteOrderingCode
 		BasicMultiValueSettingSpecifier byteOrderingSpec = new BasicMultiValueSettingSpecifier(
@@ -107,6 +113,39 @@ public class CanbusMessageConfig {
 				}));
 
 		return results;
+	}
+
+	/**
+	 * Generate a list of setting values from this instance.
+	 * 
+	 * @param providerId
+	 *        the setting provider key to use
+	 * @param instanceId
+	 *        the setting provider instance key to use
+	 * @param prefix
+	 *        a prefix to append to all setting keys
+	 * @return the list of setting values, never {@literal null}
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, String prefix) {
+		List<SettingValueBean> settings = new ArrayList<>(16);
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "address",
+				String.valueOf(address)));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "name", name));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "interval",
+				String.valueOf(interval)));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "byteOrderingCode",
+				String.valueOf(byteOrdering.getCode())));
+
+		if ( propConfigs != null && propConfigs.length > 0 ) {
+			int len = propConfigs.length;
+			settings.add(new SettingValueBean(providerId, instanceId, prefix + "propConfigsCount",
+					String.valueOf(len)));
+			for ( int i = 0; i < len; i++ ) {
+				settings.addAll(propConfigs[i].toSettingValues(providerId, instanceId,
+						prefix + "propConfigs[" + i + "]."));
+			}
+		}
+		return settings;
 	}
 
 	/**
@@ -252,6 +291,27 @@ public class CanbusMessageConfig {
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
 				CanbusPropertyConfig.class, null);
+	}
+
+	/**
+	 * Get the minimum interval to limit message updates to.
+	 * 
+	 * @return the interval to subscribe to message updates, in milliseconds, or
+	 *         {@literal 0} for no limit
+	 */
+	public int getInterval() {
+		return interval;
+	}
+
+	/**
+	 * Set the minimum interval to limit message updates to.
+	 * 
+	 * @param interval
+	 *        the interval to subscribe to message updates, in milliseconds, or
+	 *        {@literal 0} for no limit
+	 */
+	public void setInterval(int interval) {
+		this.interval = interval;
 	}
 
 }

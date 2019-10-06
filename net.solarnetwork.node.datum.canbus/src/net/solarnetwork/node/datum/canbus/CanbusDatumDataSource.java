@@ -49,6 +49,9 @@ import net.solarnetwork.util.ArrayUtils;
 public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
 
+	/** The setting UID value. */
+	public static final String SETTING_UID = "net.solarnetwork.node.datum.canbus";
+
 	private String sourceId;
 	private CanbusMessageConfig[] msgConfigs;
 
@@ -79,7 +82,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.canbus";
+		return SETTING_UID;
 	}
 
 	@Override

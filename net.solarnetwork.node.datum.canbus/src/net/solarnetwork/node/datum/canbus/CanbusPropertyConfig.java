@@ -30,6 +30,7 @@ import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
@@ -57,7 +58,6 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	private BitDataType dataType = DEFAULT_DATA_TYPE;
 	private String unit;
-	private int bitOffset = DEFAULT_BIT_OFFSET;
 	private int bitLength = DEFAULT_BIT_LENGTH;
 
 	/**
@@ -130,32 +130,36 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
-	 * Get the register address to start reading data from.
+	 * Generate a list of setting values from this instance.
 	 * 
-	 * <p>
-	 * This is an alias for {@link #getConfig()}, returning {@literal 0} if that
-	 * returns {@literal null}.
-	 * </p>
-	 * 
-	 * @return the register address
+	 * @param providerId
+	 *        the setting provider key to use
+	 * @param instanceId
+	 *        the setting provider instance key to use
+	 * @param prefix
+	 *        a prefix to append to all setting keys
+	 * @return the list of setting values, never {@literal null}
 	 */
-	public int getAddress() {
-		Integer addr = getConfig();
-		return (addr != null ? addr : 0);
-	}
-
-	/**
-	 * Set the register address to start reading data from.
-	 * 
-	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
-	 * </p>
-	 * 
-	 * @param address
-	 *        the register address to set
-	 */
-	public void setAddress(int address) {
-		setConfig(address);
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, String prefix) {
+		List<SettingValueBean> settings = new ArrayList<>(10);
+		settings.add(
+				new SettingValueBean(providerId, instanceId, prefix + "propertyKey", getPropertyKey()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "propertyTypeKey",
+				getPropertyTypeKey()));
+		settings.add(
+				new SettingValueBean(providerId, instanceId, prefix + "dataTypeKey", getDataTypeKey()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "unit", unit));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "bitOffset",
+				String.valueOf(getBitOffset())));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "bitLength",
+				String.valueOf(bitLength)));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "slope",
+				getSlope().toPlainString()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "intercept",
+				getIntercept().toPlainString()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "decimalScale",
+				String.valueOf(getDecimalScale())));
+		return settings;
 	}
 
 	/**
@@ -236,21 +240,31 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * Get the offset of the least significant bit of the property value,
 	 * relative to the least significant bit of the full message data value.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getConfig()}, returning {@literal 0} if that
+	 * returns {@literal null}.
+	 * </p>
+	 * 
 	 * @return the bit offset; defaults to {@link #DEFAULT_BIT_OFFSET}
 	 */
 	public int getBitOffset() {
-		return bitOffset;
+		Integer c = getConfig();
+		return (c != null ? c.intValue() : DEFAULT_BIT_OFFSET);
 	}
 
 	/**
 	 * Set the offset of the least significant bit of the property value,
 	 * relative to the least significant bit of the full message data value.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setConfig(Integer)}.
+	 * </p>
+	 * 
 	 * @param bitOffset
 	 *        the bit offset to use
 	 */
 	public void setBitOffset(int bitOffset) {
-		this.bitOffset = bitOffset;
+		setConfig(bitOffset);
 	}
 
 	/**
