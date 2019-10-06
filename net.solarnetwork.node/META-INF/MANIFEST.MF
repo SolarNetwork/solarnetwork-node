@@ -19,7 +19,7 @@ Export-Package:
  net.solarnetwork.node.settings;version="1.12.0",
  net.solarnetwork.node.settings.support;version="1.10.0",
  net.solarnetwork.node.setup;version="1.12.0",
- net.solarnetwork.node.support;version="1.18.1",
+ net.solarnetwork.node.support;version="1.19.0",
  net.solarnetwork.node.util;version="1.7.2"
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
