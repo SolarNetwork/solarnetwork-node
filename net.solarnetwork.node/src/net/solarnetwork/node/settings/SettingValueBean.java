@@ -26,7 +26,7 @@ package net.solarnetwork.node.settings;
  * An individual setting value.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SettingValueBean implements SettingsUpdates.Change {
 
@@ -55,6 +55,27 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 */
 	public SettingValueBean(String key, String value) {
 		super();
+		this.key = key;
+		this.value = value;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param providerKey
+	 *        the provider key
+	 * @param instanceKey
+	 *        the instance key
+	 * @param key
+	 *        the key
+	 * @param value
+	 *        the value
+	 * @since 1.3
+	 */
+	public SettingValueBean(String providerKey, String instanceKey, String key, String value) {
+		super();
+		this.providerKey = providerKey;
+		this.instanceKey = instanceKey;
 		this.key = key;
 		this.value = value;
 	}
