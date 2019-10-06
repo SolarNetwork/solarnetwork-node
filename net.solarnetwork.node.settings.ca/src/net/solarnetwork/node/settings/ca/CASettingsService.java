@@ -440,42 +440,44 @@ public class CASettingsService
 			String defaultInstanceKey) {
 		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
 		Map<String, SettingsCommand> indexedGroups = null;
-		for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
-			final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
-					: defaultProviderKey;
-			final String instanceKey = change.getInstanceKey() != null ? change.getInstanceKey()
-					: defaultInstanceKey;
-			String groupKey = providerKey + (instanceKey != null ? instanceKey : "");
-			final boolean indexed = INDEXED_PROP_PATTERN.matcher(change.getKey()).find();
-			SettingsCommand cmd = null;
-			if ( indexed ) {
-				// indexed property, add in indexed groups
-				if ( indexedGroups == null ) {
-					indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
-				}
-				cmd = indexedGroups.get(groupKey);
-			} else {
-				cmd = groups.get(groupKey);
-			}
-
-			if ( cmd == null ) {
-				cmd = new SettingsCommand(null, updates.getSettingKeyPatternsToClean());
-				cmd.setProviderKey(providerKey);
-				cmd.setInstanceKey(instanceKey);
+		if ( updates != null ) {
+			for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
+				final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
+						: defaultProviderKey;
+				final String instanceKey = change.getInstanceKey() != null ? change.getInstanceKey()
+						: defaultInstanceKey;
+				String groupKey = providerKey + (instanceKey != null ? instanceKey : "");
+				final boolean indexed = INDEXED_PROP_PATTERN.matcher(change.getKey()).find();
+				SettingsCommand cmd = null;
 				if ( indexed ) {
-					indexedGroups.put(groupKey, cmd);
+					// indexed property, add in indexed groups
+					if ( indexedGroups == null ) {
+						indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
+					}
+					cmd = indexedGroups.get(groupKey);
 				} else {
-					groups.put(groupKey, cmd);
+					cmd = groups.get(groupKey);
 				}
+
+				if ( cmd == null ) {
+					cmd = new SettingsCommand(null, updates.getSettingKeyPatternsToClean());
+					cmd.setProviderKey(providerKey);
+					cmd.setInstanceKey(instanceKey);
+					if ( indexed ) {
+						indexedGroups.put(groupKey, cmd);
+					} else {
+						groups.put(groupKey, cmd);
+					}
+				}
+				SettingValueBean bean;
+				if ( change instanceof SettingValueBean ) {
+					bean = (SettingValueBean) change;
+				} else {
+					bean = new SettingValueBean(providerKey, instanceKey, change.getKey(),
+							change.getValue());
+				}
+				cmd.getValues().add(bean);
 			}
-			SettingValueBean bean;
-			if ( change instanceof SettingValueBean ) {
-				bean = (SettingValueBean) change;
-			} else {
-				bean = new SettingValueBean(providerKey, instanceKey, change.getKey(),
-						change.getValue());
-			}
-			cmd.getValues().add(bean);
 		}
 		List<SettingsCommand> result = new ArrayList<>(32);
 		result.addAll(groups.values());
