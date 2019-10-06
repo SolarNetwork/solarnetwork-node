@@ -154,6 +154,103 @@ public class CASettingsServiceTests {
 	}
 
 	@Test
+	public void importResourceWithUpdatesToOtherProvider() throws IOException {
+		// GIVEN
+		final String handlerKey = UUID.randomUUID().toString();
+		final String settingKey = "foobar";
+		final String otherProviderKey = UUID.randomUUID().toString();
+		final String daoSettingKey1 = handlerKey;
+		final String daoSettingKey2 = otherProviderKey;
+
+		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
+		mocks.add(handler);
+
+		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+
+		Configuration config1 = EasyMock.createMock(Configuration.class);
+		mocks.add(config1);
+
+		Hashtable<String, Object> configProps1 = new Hashtable<>();
+		configProps1.put("foo", "foo");
+		configProps1.put("hi", "there");
+
+		expect(ca.getConfiguration(handlerKey, null)).andReturn(config1);
+		expect(config1.getFactoryPid()).andReturn(null).anyTimes();
+		expect(config1.getPid()).andReturn(handlerKey).anyTimes();
+		expect(config1.getProperties()).andReturn(configProps1).anyTimes();
+
+		// delete .* pattern matches first
+		expect(dao.deleteSetting(daoSettingKey1, "hi")).andReturn(true);
+		expect(dao.deleteSetting(daoSettingKey1, "foo")).andReturn(true);
+
+		// then apply SettingValueBean updates
+		dao.storeSetting(daoSettingKey1, "foo", "bar");
+
+		// and finally update CA props
+		Capture<Dictionary<String, ?>> confUpdateCaptor1 = new Capture<>();
+		config1.update(capture(confUpdateCaptor1));
+
+		Configuration config2 = EasyMock.createMock(Configuration.class);
+		mocks.add(config2);
+
+		Hashtable<String, Object> configProps2 = new Hashtable<>();
+		configProps2.put("bim", "bim");
+		configProps2.put("hi", "there");
+
+		expect(ca.getConfiguration(otherProviderKey, null)).andReturn(config2);
+		expect(config2.getFactoryPid()).andReturn(null).anyTimes();
+		expect(config2.getPid()).andReturn(otherProviderKey).anyTimes();
+		expect(config2.getProperties()).andReturn(configProps2).anyTimes();
+
+		// delete .* pattern matches first
+		expect(dao.deleteSetting(daoSettingKey2, "hi")).andReturn(true);
+		expect(dao.deleteSetting(daoSettingKey2, "bim")).andReturn(true);
+
+		// then apply SettingValueBean updates
+		dao.storeSetting(daoSettingKey2, "bim", "bam");
+
+		// and finally update CA props
+		Capture<Dictionary<String, ?>> confUpdateCaptor2 = new Capture<>();
+		config2.update(capture(confUpdateCaptor2));
+
+		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		SettingsCommand updates = new SettingsCommand(
+				asList(new SettingValueBean("foo", "bar"),
+						new SettingValueBean(otherProviderKey, null, "bim", "bam")),
+				asList(Pattern.compile(".*")));
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(updates);
+
+		// WHEN
+		replayAll();
+		service.onBindHandler(handler, null);
+
+		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
+		service.importSettingResources(handlerKey, null, settingKey, singleton(r));
+
+		// THEN
+		Path expectedResourcePath = tmpDir
+				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, handlerKey, settingKey,
+						"test-resource-01.txt"));
+		assertThat("Resource path exists within subdirectory for handler ID",
+				Files.exists(expectedResourcePath), equalTo(true));
+
+		List<Resource> appliedResources = stream(resourceCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		assertThat("Applied resource same as imported", appliedResources, hasSize(1));
+		assertThat("Applied resource has expexcted path", appliedResources.get(0).getFile(),
+				equalTo(expectedResourcePath.toFile()));
+
+		Dictionary<String, ?> confUpdates1 = confUpdateCaptor1.getValue();
+		assertThat("CA conf 1 result size", confUpdates1.size(), equalTo(1));
+		assertThat("CA conf 1 result added key", confUpdates1.get("foo"), equalTo("bar"));
+
+		Dictionary<String, ?> confUpdates2 = confUpdateCaptor2.getValue();
+		assertThat("CA conf 2 result size", confUpdates2.size(), equalTo(1));
+		assertThat("CA conf 2 result added key", confUpdates2.get("bim"), equalTo("bam"));
+	}
+
+	@Test
 	public void importResourceForFactory() throws IOException {
 		// GIVEN
 		final String factoryKey = UUID.randomUUID().toString();

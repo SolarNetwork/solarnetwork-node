@@ -408,12 +408,45 @@ public class CASettingsService
 		}
 		// group all updates by provider+instance, to reduce the number of CA updates
 		// when multiple settings are changed
+		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(command, command.getProviderKey(),
+				command.getInstanceKey());
+		for ( SettingsCommand cmd : groupedUpdates ) {
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
+		}
+	}
+
+	/**
+	 * Create a list of setting updates grouped by provider and instance out of
+	 * a single updates instance.
+	 * 
+	 * <p>
+	 * The returned list of updates are grouped such that each of them can be
+	 * passed to {@link #applySettingsUpdates(SettingsUpdates, String, String)}
+	 * using the {@link SettingsCommand#getProviderKey()} and
+	 * {@link SettingsCommand#getInstanceKey()}.
+	 * </p>
+	 * 
+	 * @param updates
+	 *        the updates to break into groups
+	 * @param defaultProviderKey
+	 *        the default provider key to use, if not specified on the update
+	 *        changes
+	 * @param defaultInstanceKey
+	 *        the default instance key to use, if not specified on the update
+	 *        changes
+	 * @return the grouped updates
+	 */
+	private List<SettingsCommand> orderedUpdateGroups(SettingsUpdates updates, String defaultProviderKey,
+			String defaultInstanceKey) {
 		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
 		Map<String, SettingsCommand> indexedGroups = null;
-		for ( SettingValueBean bean : command.getValues() ) {
-			String groupKey = bean.getProviderKey()
-					+ (bean.getInstanceKey() == null ? "" : bean.getInstanceKey());
-			final boolean indexed = INDEXED_PROP_PATTERN.matcher(bean.getKey()).find();
+		for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
+			final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
+					: defaultProviderKey;
+			final String instanceKey = change.getInstanceKey() != null ? change.getInstanceKey()
+					: defaultInstanceKey;
+			String groupKey = providerKey + (instanceKey != null ? instanceKey : "");
+			final boolean indexed = INDEXED_PROP_PATTERN.matcher(change.getKey()).find();
 			SettingsCommand cmd = null;
 			if ( indexed ) {
 				// indexed property, add in indexed groups
@@ -426,25 +459,30 @@ public class CASettingsService
 			}
 
 			if ( cmd == null ) {
-				cmd = new SettingsCommand();
-				cmd.setProviderKey(bean.getProviderKey());
-				cmd.setInstanceKey(bean.getInstanceKey());
+				cmd = new SettingsCommand(null, updates.getSettingKeyPatternsToClean());
+				cmd.setProviderKey(providerKey);
+				cmd.setInstanceKey(instanceKey);
 				if ( indexed ) {
 					indexedGroups.put(groupKey, cmd);
 				} else {
 					groups.put(groupKey, cmd);
 				}
 			}
+			SettingValueBean bean;
+			if ( change instanceof SettingValueBean ) {
+				bean = (SettingValueBean) change;
+			} else {
+				bean = new SettingValueBean(providerKey, instanceKey, change.getKey(),
+						change.getValue());
+			}
 			cmd.getValues().add(bean);
 		}
-		for ( SettingsCommand cmd : groups.values() ) {
-			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
-		}
+		List<SettingsCommand> result = new ArrayList<>(32);
+		result.addAll(groups.values());
 		if ( indexedGroups != null ) {
-			for ( SettingsCommand cmd : indexedGroups.values() ) {
-				applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
-			}
+			result.addAll(indexedGroups.values());
 		}
+		return result;
 	}
 
 	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
@@ -966,7 +1004,10 @@ public class CASettingsService
 		SettingsUpdates updates = handler.applySettingResources(settingKey, finalResources);
 
 		// apply any updates returned by the handler
-		applySettingsUpdates(updates, handlerKey, instanceKey);
+		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(updates, handlerKey, instanceKey);
+		for ( SettingsCommand cmd : groupedUpdates ) {
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey());
+		}
 	}
 
 	private Path getSettingResourcePersistencePath(final String handlerKey, final String instanceKey,

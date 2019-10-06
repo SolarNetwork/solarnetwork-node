@@ -39,6 +39,21 @@ public interface SettingsUpdates {
 	interface Change {
 
 		/**
+		 * Get the setting provider ID this change is for.
+		 * 
+		 * @return the setting provider key
+		 */
+		String getProviderKey();
+
+		/**
+		 * Get the setting instance ID of the setting provider factory this is
+		 * for, or {@literal null} if the provider is not a factory
+		 * 
+		 * @return the setting instance key, or {@literal null}
+		 */
+		String getInstanceKey();
+
+		/**
 		 * Get the setting key.
 		 * 
 		 * @return the key

@@ -137,6 +137,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		this.trans = value;
 	}
 
+	@Override
 	public String getProviderKey() {
 		return providerKey;
 	}
@@ -163,6 +164,7 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		this.value = value;
 	}
 
+	@Override
 	public String getInstanceKey() {
 		return instanceKey;
 	}
