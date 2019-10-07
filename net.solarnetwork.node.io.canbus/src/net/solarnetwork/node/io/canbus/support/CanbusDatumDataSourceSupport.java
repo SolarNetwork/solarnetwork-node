@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.measure.Unit;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
@@ -60,6 +61,9 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/** The default value for the {@code connectionCheckFrequency} property. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
 
+	private static final ConcurrentMap<String, Unit<?>> UNIT_CACHE = new ConcurrentHashMap<>(16, 0.9f,
+			1);
+
 	private final AtomicReference<CanbusConnection> connection = new AtomicReference<CanbusConnection>();
 
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
@@ -69,6 +73,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	private String busName;
 	private TaskScheduler taskScheduler;
 	private long connectionCheckFrequency = DEFAULT_CONNECTION_CHECK_FREQUENCY;
+	private MeasurementHelper measurementHelper;
 
 	private ScheduledFuture<?> connectionCheckFuture;
 
@@ -305,6 +310,58 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	}
 
 	/**
+	 * Get a {@link Unit} instance from a unit string.
+	 * 
+	 * @param unit
+	 *        the unit string
+	 * @return the {@code Unit} instance, or {@literal null} if an instance
+	 *         cannot be resolved, either from the lack of a
+	 *         {@link #getMeasurementHelper()} or an unsupported unit string
+	 *         value
+	 */
+	protected Unit<?> unitValue(String unit) {
+		return UNIT_CACHE.computeIfAbsent(unit, u -> {
+			Unit<?> result = null;
+			MeasurementHelper helper = getMeasurementHelper();
+			if ( helper != null ) {
+				result = helper.unitValue(unit);
+			}
+			return result;
+		});
+	}
+
+	/**
+	 * Get a "normalized" unit for an arbitrary unit.
+	 * 
+	 * @param unit
+	 *        the unit to normalize
+	 * @return the normalized unit
+	 */
+	protected Unit<?> normalizedUnitValue(Unit<?> unit) {
+		MeasurementHelper helper = getMeasurementHelper();
+		if ( helper != null ) {
+			return helper.normalizedUnit(unit);
+		}
+		return unit;
+	}
+
+	/**
+	 * Format a {@link Unit} instance as a unit string.
+	 * 
+	 * @param unit
+	 *        the unit to format
+	 * @return the formatted string, or {@literal null} if {@code unit} is
+	 *         {@literal null}
+	 */
+	protected String formattedUnitValue(Unit<?> unit) {
+		MeasurementHelper helper = getMeasurementHelper();
+		if ( helper != null ) {
+			return helper.formatUnit(unit);
+		}
+		return (unit != null ? unit.toString() : null);
+	}
+
+	/**
 	 * Get the configured CAN bus network name.
 	 * 
 	 * @return the CAN bus network name
@@ -409,6 +466,25 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 */
 	public void setConnectionCheckFrequency(long connectionCheckFrequency) {
 		this.connectionCheckFrequency = connectionCheckFrequency;
+	}
+
+	/**
+	 * Get the measurement helper.
+	 * 
+	 * @return the measurement helper, or {@literal null}
+	 */
+	public MeasurementHelper getMeasurementHelper() {
+		return measurementHelper;
+	}
+
+	/**
+	 * Set the measurement helper.
+	 * 
+	 * @param measurementHelper
+	 *        the measurement helper to set
+	 */
+	public void setMeasurementHelper(MeasurementHelper measurementHelper) {
+		this.measurementHelper = measurementHelper;
 	}
 
 }

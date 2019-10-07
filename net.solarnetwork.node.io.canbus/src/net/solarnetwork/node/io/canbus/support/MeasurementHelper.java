@@ -24,9 +24,12 @@ package net.solarnetwork.node.io.canbus.support;
 
 import java.math.BigDecimal;
 import java.util.Set;
+import javax.measure.IncommensurableException;
 import javax.measure.MeasurementException;
 import javax.measure.Quantity;
+import javax.measure.UnconvertibleException;
 import javax.measure.Unit;
+import javax.measure.UnitConverter;
 import javax.measure.format.UnitFormat;
 import javax.measure.spi.FormatService;
 import javax.measure.spi.FormatService.FormatType;
@@ -125,14 +128,97 @@ public class MeasurementHelper {
 			n = d;
 		}
 
+		return quantityValue(n, unit);
+	}
+
+	private Quantity<?> quantityValue(final Number amount, final Unit<?> unit) {
+		if ( amount == null || unit == null ) {
+			return null;
+		}
 		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
-			Quantity<?> q = measurementProvider.quantityForUnit(n, unit);
+			Quantity<?> q = measurementProvider.quantityForUnit(amount, unit);
 			if ( q != null ) {
 				return q;
 			}
 		}
-		log.debug("Quantity not found for unit [{}]", unitString);
+		log.debug("Quantity not found for unit [{}]", unit);
 		return null;
+	}
+
+	/**
+	 * Get a "normalized" unit from an arbitrary unit.
+	 * 
+	 * @param unit
+	 *        the unit to get a normalized variant of
+	 * @return the normalized unit
+	 */
+	public Unit<?> normalizedUnit(final Unit<?> unit) {
+		if ( unit == null ) {
+			return null;
+		}
+		// TODO
+		return unit;
+	}
+
+	/**
+	 * Get a "normalized" quantity from an arbitrary quantity.
+	 * 
+	 * @param quantity
+	 *        the quantity to get an equivalent "normalized" value for
+	 * @return the normalized value, or {@literal null} if {@code quantity} is
+	 *         {@literal null}
+	 */
+	public Quantity<?> normalizedQuantity(final Quantity<?> quantity) {
+		if ( quantity == null ) {
+			return null;
+		}
+		Unit<?> normalizedUnit = normalizedUnit(quantity.getUnit());
+		if ( normalizedUnit == null ) {
+			return quantity;
+		}
+		try {
+			UnitConverter converter = quantity.getUnit().getConverterToAny(normalizedUnit);
+			if ( converter.isIdentity() ) {
+				return quantity;
+			}
+			Number convertedAmount = converter.convert(quantity.getValue());
+			return quantityValue(convertedAmount, normalizedUnit);
+		} catch ( UnconvertibleException | IncommensurableException e ) {
+			log.debug("Unable to convert {} to {}: {}", quantity.getUnit(), normalizedUnit,
+					e.toString());
+			return quantity;
+		}
+	}
+
+	/**
+	 * Format a unit as a string value.
+	 * 
+	 * @param unit
+	 *        the unit to format
+	 * @return the formatted unit value, or {@literal null} if {@code unit} is
+	 *         {@literal null}
+	 */
+	public String formatUnit(Unit<?> unit) {
+		if ( unit == null ) {
+			return null;
+		}
+		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
+			UnitFormatService ufs = measurementProvider.getUnitFormatService();
+			if ( ufs != null ) {
+				UnitFormat uf = ufs.getUnitFormat();
+				if ( uf != null ) {
+					try {
+						String result = uf.format(unit);
+						if ( result != null ) {
+							return result;
+						}
+					} catch ( Exception e ) {
+						// ignore
+					}
+				}
+			}
+		}
+		return unit.toString();
 	}
 
 	private Unit<?> unitValueFromUnitFormatService(String unitString, UnitFormatService formatService) {
