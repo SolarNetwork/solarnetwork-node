@@ -88,7 +88,9 @@ public class JaxbSnKcdParser implements KcdParser {
 			public LSInput resolveResource(String type, String namespaceURI, String publicId,
 					String systemId, String baseURI) {
 				if ( ("http://kayak.2codeornot2code.org/1.0".equals(namespaceURI)
-						|| "urn:solarnetwork:datum:1.0".equals(namespaceURI)) && systemId != null ) {
+						|| "urn:solarnetwork:datum:1.0".equals(namespaceURI)
+						|| "http://www.w3.org/XML/1998/namespace".equals(namespaceURI))
+						&& systemId != null ) {
 					return new LSInput() {
 
 						@Override
@@ -163,8 +165,13 @@ public class JaxbSnKcdParser implements KcdParser {
 
 						@Override
 						public InputStream getByteStream() {
+							String fileName = systemId;
+							int lastSlash = systemId.lastIndexOf('/');
+							if ( lastSlash >= 0 && lastSlash + 1 < systemId.length() ) {
+								fileName = systemId.substring(lastSlash + 1);
+							}
 							return JaxbSnKcdParser.this.getClass().getClassLoader().getResourceAsStream(
-									"net/solarnetwork/node/io/canbus/schema/" + systemId);
+									"net/solarnetwork/node/io/canbus/schema/" + fileName);
 						}
 
 						@Override

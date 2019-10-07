@@ -22,17 +22,25 @@
 
 package net.solarnetwork.node.datum.canbus;
 
+import static java.util.stream.Collectors.toMap;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for a single datum property to be set via a CAN bus message.
@@ -59,6 +67,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	private BitDataType dataType = DEFAULT_DATA_TYPE;
 	private String unit;
 	private int bitLength = DEFAULT_BIT_LENGTH;
+	private KeyValuePair[] localizedNames;
 
 	/**
 	 * Default constructor.
@@ -88,7 +97,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
 	 */
-	public static List<SettingSpecifier> settings(String prefix) {
+	public List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", ""));
@@ -126,6 +135,25 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
+		// localized names list
+		KeyValuePair[] names = getLocalizedNames();
+		List<KeyValuePair> namesList = (names != null ? Arrays.asList(names)
+				: Collections.<KeyValuePair> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "localizedNames", namesList,
+				new SettingsUtil.KeyedListCallback<KeyValuePair>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(KeyValuePair value, int index,
+							String key) {
+						List<SettingSpecifier> nameSettings = new ArrayList<>(2);
+						nameSettings.add(new BasicTextFieldSettingSpecifier(key + ".key", ""));
+						nameSettings.add(new BasicTextFieldSettingSpecifier(key + ".value", ""));
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								nameSettings);
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
+
 		return results;
 	}
 
@@ -141,7 +169,8 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * @return the list of setting values, never {@literal null}
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, String prefix) {
-		List<SettingValueBean> settings = new ArrayList<>(10);
+		List<SettingValueBean> settings = new ArrayList<>(16);
+
 		settings.add(
 				new SettingValueBean(providerId, instanceId, prefix + "propertyKey", getPropertyKey()));
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "propertyTypeKey",
@@ -159,6 +188,18 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 				getIntercept().toPlainString()));
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "decimalScale",
 				String.valueOf(getDecimalScale())));
+
+		KeyValuePair[] names = getLocalizedNames();
+		int len = (names != null ? names.length : 0);
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "localizedNamesCount",
+				String.valueOf(len)));
+		for ( int i = 0; i < len; i++ ) {
+			settings.add(new SettingValueBean(providerId, instanceId,
+					prefix + "localizedNames[" + i + "].key", names[i].getKey()));
+			settings.add(new SettingValueBean(providerId, instanceId,
+					prefix + "localizedNames[" + i + "].value", names[i].getValue()));
+		}
+
 		return settings;
 	}
 
@@ -284,6 +325,76 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 */
 	public void setBitLength(int bitLength) {
 		this.bitLength = bitLength;
+	}
+
+	/**
+	 * Get the localized names.
+	 * 
+	 * <p>
+	 * The {@code key} of each pair is an IETF BCP 47 language tag. The
+	 * {@code value} is the associated name in the given language.
+	 * </p>
+	 * 
+	 * @return the localized names
+	 */
+	public KeyValuePair[] getLocalizedNames() {
+		return localizedNames;
+	}
+
+	/**
+	 * Set the localized names to use.
+	 * 
+	 * @param localizedNames
+	 *        the names to use
+	 */
+	public void setLocalizedNames(KeyValuePair[] localizedNames) {
+		this.localizedNames = localizedNames;
+	}
+
+	/**
+	 * Get the number of configured {@code localizedNames} elements.
+	 * 
+	 * @return the number of {@code localizedNames} elements
+	 */
+	public int getLocalizedNamesCount() {
+		KeyValuePair[] names = this.localizedNames;
+		return (names == null ? 0 : names.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code localizedNames} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new {@link KeyValuePair}
+	 * instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code localizedNames} elements.
+	 */
+	public void setLocalizedNamesCount(int count) {
+		this.localizedNames = ArrayUtils.arrayWithLength(this.localizedNames, count, KeyValuePair.class,
+				null);
+	}
+
+	/**
+	 * Get a mapping of language codes to associated localized name values.
+	 * 
+	 * <p>
+	 * This turns the {@code localizedNames} array into a {@code Map} of
+	 * language codes with associated name values. Duplicate language codes are
+	 * ignored.
+	 * </p>
+	 * 
+	 * @return a mapping of localized names, never {@literal null}
+	 */
+	public Map<String, String> getLocalizedNamesMap() {
+		KeyValuePair[] names = getLocalizedNames();
+		if ( names == null || names.length < 1 ) {
+			return Collections.emptyMap();
+		}
+		return Arrays.stream(names)
+				.collect(toMap(KeyValuePair::getKey, KeyValuePair::getValue, (l, r) -> l));
 	}
 
 }

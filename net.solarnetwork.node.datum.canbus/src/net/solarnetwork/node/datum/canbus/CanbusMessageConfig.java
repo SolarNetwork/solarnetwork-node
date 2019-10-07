@@ -107,7 +107,7 @@ public class CanbusMessageConfig {
 					public Collection<SettingSpecifier> mapListSettingKey(CanbusPropertyConfig value,
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								CanbusPropertyConfig.settings(key + "."));
+								value.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -136,10 +136,10 @@ public class CanbusMessageConfig {
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "byteOrderingCode",
 				String.valueOf(byteOrdering.getCode())));
 
-		if ( propConfigs != null && propConfigs.length > 0 ) {
-			int len = propConfigs.length;
-			settings.add(new SettingValueBean(providerId, instanceId, prefix + "propConfigsCount",
-					String.valueOf(len)));
+		int len = (propConfigs != null ? propConfigs.length : 0);
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "propConfigsCount",
+				String.valueOf(len)));
+		if ( len > 0 ) {
 			for ( int i = 0; i < len; i++ ) {
 				settings.addAll(propConfigs[i].toSettingValues(providerId, instanceId,
 						prefix + "propConfigs[" + i + "]."));

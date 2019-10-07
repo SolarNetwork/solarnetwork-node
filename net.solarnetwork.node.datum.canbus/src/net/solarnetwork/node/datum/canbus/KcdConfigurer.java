@@ -38,6 +38,7 @@ import org.springframework.core.io.Resource;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.kcd.BusType;
 import net.solarnetwork.node.io.canbus.kcd.MessageType;
@@ -150,6 +151,7 @@ public class KcdConfigurer extends BaseIdentifiable
 					// only accept first file here
 					return settingsCommand(kcd, Locale.getDefault());
 				} catch ( Exception e ) {
+					log.error("Exception parsing KCD file {}", r, e);
 					this.lastKcdFileException = e;
 				}
 			}
@@ -381,6 +383,13 @@ public class KcdConfigurer extends BaseIdentifiable
 								propConfig.setDataType(BitDataType.Float32);
 							} else if ( "double".equalsIgnoreCase(val.getType()) ) {
 								propConfig.setDataType(BitDataType.Float64);
+							}
+
+							KeyValuePair[] names = signal.getLocalizedName().stream()
+									.map(n -> new KeyValuePair(n.getLang(), n.getValue()))
+									.toArray(KeyValuePair[]::new);
+							if ( names.length > 0 ) {
+								propConfig.setLocalizedNames(names);
 							}
 
 							propConfigs.add(propConfig);

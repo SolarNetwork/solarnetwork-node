@@ -105,7 +105,7 @@ public class KcdConfigurerTests {
 				Matchers.contains(".*"));
 		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
 				.collect(toList());
-		assertThat("Setting change count", changes, hasSize(18));
+		assertThat("Setting change count", changes, hasSize(23));
 		int i = 0;
 		for ( Change change : changes ) {
 			String msg = "Change " + i;
@@ -192,6 +192,33 @@ public class KcdConfigurerTests {
 				case 17:
 					assertChangeEquals(msg, change, instanceId,
 							"msgConfigs[0].propConfigs[0].decimalScale", "-1");
+					break;
+
+				case 18:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNamesCount", "2");
+					break;
+
+				case 19:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNames[0].key", "en");
+					break;
+
+				case 20:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNames[0].value",
+							"Battery Output Energy");
+					break;
+
+				case 21:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNames[1].key", "fr");
+					break;
+
+				case 22:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNames[1].value",
+							"Énergie de sortie de la batterie");
 					break;
 
 				default:

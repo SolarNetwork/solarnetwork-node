@@ -55,6 +55,13 @@
         <xs:complexType name="SignalType">
             <xs:complexContent>
                 <xs:extension base="kcd:SignalType">
+                    <xs:sequence>
+                        <xs:element name="Name" type="sn:LocalizedName" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Localized names of this signal.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
                     <xs:attribute ref="sn:datum-property" use="required">
                         <xs:annotation>
                             <xs:documentation>The datum property name to populate for this

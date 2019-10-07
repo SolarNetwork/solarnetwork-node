@@ -3,6 +3,8 @@
     attributeFormDefault="qualified" targetNamespace="urn:solarnetwork:datum:1.0"
     xmlns="urn:solarnetwork:datum:1.0" xmlns:sn="urn:solarnetwork:datum:1.0">
 
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd" />
+    
     <xs:attribute name="source-id" type="xs:string">
         <xs:annotation>
             <xs:documentation>A SolarNetwork Source ID to associate with datum collected for the
@@ -67,5 +69,20 @@
             <xs:restriction base="xs:int"/>
         </xs:simpleType>
     </xs:attribute>
+    
+    <xs:complexType name="LocalizedName">
+        <xs:annotation>
+            <xs:documentation>A name that is localizable.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute ref="xml:lang" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The language of this name.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
 </xs:schema>
