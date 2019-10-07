@@ -117,8 +117,7 @@ public class KcdConfigurer extends BaseIdentifiable
 				lastKcdFileException != null ? lastKcdFileException.toString() : "N/A", true));
 		results.add(new BasicTitleSettingSpecifier("lastKcdMessages",
 				lastKcdFileMessages != null && !lastKcdFileMessages.isEmpty()
-						? "<ol><li>" + StringUtils.delimitedStringFromCollection(lastKcdFileMessages,
-								"</li>\n<li>") + "</li></ol>"
+						? StringUtils.delimitedStringFromCollection(lastKcdFileMessages, "\n")
 						: "N/A",
 				true));
 
@@ -145,6 +144,8 @@ public class KcdConfigurer extends BaseIdentifiable
 		if ( RESOURCE_KEY_KCD_FILE.equals(settingKey) ) {
 			for ( Resource r : resources ) {
 				try {
+					this.lastKcdFileException = null;
+					this.lastKcdFileMessages = null;
 					NetworkDefinitionType kcd = parser.parseKcd(r.getInputStream(), true);
 					// only accept first file here
 					return settingsCommand(kcd, Locale.getDefault());
@@ -234,11 +235,10 @@ public class KcdConfigurer extends BaseIdentifiable
 							}
 						} catch ( NumberFormatException e ) {
 							parseMessages.add(getMessageSource().getMessage("message.badId",
-									new Object[] { bus.getName(), message.getId(), e.getMessage() },
-									locale));
+									new Object[] { bus.getName(), message.getId() }, locale));
 							log.error(
 									"Unable to parse Bus [{}] Message ID value [{}] as base-16 integer, skipping: {}",
-									bus.getName(), message.getId(), e.getMessage());
+									bus.getName(), message.getId(), e.toString());
 							continue;
 						}
 
@@ -270,10 +270,6 @@ public class KcdConfigurer extends BaseIdentifiable
 						msgConfig.setInterval(message.getInterval());
 
 						List<SignalType> signals = message.getSignal();
-						if ( signals == null || signals.isEmpty() ) {
-							continue;
-						}
-
 						List<CanbusPropertyConfig> propConfigs = new ArrayList<>();
 						for ( SignalType signal : signals ) {
 							// always set this; assuming all the same but if not the last message value wins
