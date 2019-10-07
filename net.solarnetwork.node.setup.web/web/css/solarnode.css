@@ -81,9 +81,15 @@ form fieldset fieldset fieldset {
 	padding-top: 20px;
 }
 
-form fieldset fieldset fieldset:nth-child(even) {
-    background-color: #fafafa;
+form .control-group.grouped + fieldset {
+	margin-left: 1em;
+	border-left: 1px dotted #e5e5e5;
 }
+
+form .control-group.grouped + fieldset > fieldset:not(:first-child) {
+    border-top: 1px dotted #e5e5e5;
+}
+
 
 .form-horizontal .controls.static {
     padding-top: 3px;
