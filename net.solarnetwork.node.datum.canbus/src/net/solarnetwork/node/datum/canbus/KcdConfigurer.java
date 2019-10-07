@@ -410,6 +410,10 @@ public class KcdConfigurer extends BaseIdentifiable
 
 		for ( Map.Entry<String, DatumDataSourceConfig> me : sourceMessageConfigMap.entrySet() ) {
 			final DatumDataSourceConfig dsConfig = me.getValue();
+			if ( dsConfig.busName == null || dsConfig.sourceId == null || dsConfig.networkUid == null ) {
+				// can happen if a Node has no associated Message/Signal elements
+				continue;
+			}
 			final String instanceId = settingsService.addProviderFactoryInstance(settingProviderId);
 			settings.add(
 					setting(instanceId, "canbusNetwork.propertyFilters['UID']", dsConfig.networkUid));
