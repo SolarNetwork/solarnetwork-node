@@ -20,6 +20,21 @@
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
 	
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
+
+	<bean id="measurementHelper" class="net.solarnetwork.node.io.canbus.support.MeasurementHelper">
+		<argument>
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.javax.measure.MeasurementServiceProvider"/>
+				<property name="serviceFilter" value="(service.name=UCUM)"/>
+			</bean>
+		</argument>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -138,7 +153,9 @@
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource">
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="measurementHelper" ref="measurementHelper"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="canbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">

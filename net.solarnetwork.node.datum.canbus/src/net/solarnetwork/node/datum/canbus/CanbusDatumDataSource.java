@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.measure.Unit;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
@@ -72,12 +74,51 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		super.configurationChanged(properties);
 		// TODO apply subscriptions based on propConfigs
+		if ( sourceId != null ) {
+			addSourceMetadata(sourceId, createMetadata());
+		}
 	}
 
 	@Override
 	public void canbusFrameReceived(CanbusFrame frame) {
 		// TODO Auto-generated method stub
 
+	}
+
+	private GeneralDatumMetadata createMetadata() {
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		CanbusMessageConfig[] messages = getMsgConfigs();
+		if ( messages != null ) {
+			final int msgLen = messages.length;
+			for ( int i = 0; i < msgLen; i++ ) {
+				CanbusMessageConfig msg = messages[i];
+				CanbusPropertyConfig[] props = msg.getPropConfigs();
+				if ( props != null ) {
+					final int propLen = props.length;
+					for ( int j = 0; j < propLen; j++ ) {
+						CanbusPropertyConfig prop = props[j];
+						String propName = prop.getPropertyKey();
+						if ( propName != null && !propName.isEmpty() ) {
+							Map<String, String> localizedNames = prop.getLocalizedNamesMap();
+							if ( !localizedNames.isEmpty() ) {
+								meta.putInfoValue(propName, "name", localizedNames);
+							}
+							Unit<?> unit = unitValue(prop.getUnit());
+							String unitValue = formattedUnitValue(unit);
+							Unit<?> normUnit = normalizedUnitValue(unit);
+							String normUnitValue = formattedUnitValue(normUnit);
+							if ( normUnitValue != null ) {
+								meta.putInfoValue(propName, "unit", normUnitValue);
+							}
+							if ( unitValue != null && !unitValue.equals(normUnitValue) ) {
+								meta.putInfoValue(propName, "sourceUnit", unitValue);
+							}
+						}
+					}
+				}
+			}
+		}
+		return meta;
 	}
 
 	@Override
