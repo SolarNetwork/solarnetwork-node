@@ -191,7 +191,7 @@ public class KcdConfigurerTests {
 
 				case 17:
 					assertChangeEquals(msg, change, instanceId,
-							"msgConfigs[0].propConfigs[0].decimalScale", "5");
+							"msgConfigs[0].propConfigs[0].decimalScale", "-1");
 					break;
 
 				default:

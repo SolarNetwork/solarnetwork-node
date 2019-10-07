@@ -57,4 +57,15 @@
         </xs:simpleType>
     </xs:attribute>
 
+    <xs:attribute name="decimal-scale">
+        <xs:annotation>
+            <xs:documentation>A maximum scale (number of digits after the decimal point) to round
+                decimal values to. Set to 0 to round to whole numbers. Set to -1 to disable
+                rounding.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+    </xs:attribute>
+
 </xs:schema>

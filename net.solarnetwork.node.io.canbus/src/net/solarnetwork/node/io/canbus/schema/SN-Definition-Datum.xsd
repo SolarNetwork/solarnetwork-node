@@ -67,6 +67,14 @@
                                 populate for this signal.</xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
+                    <xs:attribute ref="sn:decimal-scale" use="optional" default="-1">
+                        <xs:annotation>
+                            <xs:documentation>A maximum scale (number of digits after the decimal
+                                point) to round decimal values to. This is applied after all
+                                transforms. Set to 0 to round to whole numbers. Set to -1 to disable
+                                rounding.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>

@@ -332,6 +332,7 @@ public class KcdConfigurer extends BaseIdentifiable
 							propConfig.setSlope(bigDecimalValue(val.getSlope()));
 							propConfig.setIntercept(bigDecimalValue(val.getIntercept()));
 							propConfig.setUnit(val.getUnit());
+							propConfig.setDecimalScale(signal.getDecimalScale());
 							if ( "signed".equalsIgnoreCase(val.getType()) ) {
 								switch (propConfig.getBitLength()) {
 									case 8:
