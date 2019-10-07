@@ -460,7 +460,13 @@ public class CASettingsService
 				}
 
 				if ( cmd == null ) {
-					cmd = new SettingsCommand(null, updates.getSettingKeyPatternsToClean());
+					// as we're creating multiple SettingsCommands out of a single one, we need to only apply
+					// patterns to clean to the FIRST one we create, otherwise we delete previously created values
+					Iterable<Pattern> patsToClean = (groups.get(groupKey) == null
+							&& (indexedGroups == null || indexedGroups.get(groupKey) == null)
+									? updates.getSettingKeyPatternsToClean()
+									: null);
+					cmd = new SettingsCommand(null, patsToClean);
 					cmd.setProviderKey(providerKey);
 					cmd.setInstanceKey(instanceKey);
 					if ( indexed ) {
