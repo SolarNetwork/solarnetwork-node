@@ -1,5 +1,5 @@
 /* ==================================================================
- * FloatingPointInverterModelAccessor_fronius_01Tests.java - 8/10/2019 3:36:49 pm
+ * FloatingPointInverterModelAccessorTests.java - 8/10/2019 3:36:49 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
@@ -36,12 +35,13 @@ import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
  * @author matt
  * @version 1.0
  */
-public class FloatingPointInverterModelAccessor_fronius_01Tests {
+public class FloatingPointInverterModelAccessorTests {
 
-	private static final Logger log = LoggerFactory.getLogger(IntegerMeterModelAccessorTests.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(FloatingPointInverterModelAccessorTests.class);
 
 	private ModelData getTestDataInstance() {
-		return ModelDataUtils.getModelDataInstance(getClass(), "fronius-01.txt");
+		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-113-01.txt");
 	}
 
 	@Test
