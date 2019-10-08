@@ -22,9 +22,14 @@
 
 package net.solarnetwork.node.io.canbus.socketcand.msg;
 
+import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.io.canbus.socketcand.Addressed;
 import net.solarnetwork.node.io.canbus.socketcand.FrameMessage;
+import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
+import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
+import net.solarnetwork.node.io.canbus.socketcand.Temporal;
 
 /**
  * A specialized {@link Message} for a frame.
@@ -65,6 +70,43 @@ public class FrameMessageImpl extends AddressedDataMessage implements FrameMessa
 			throw new IllegalArgumentException(
 					"The time argument [" + time + "] could not be parsed as a fractional number.", e);
 		}
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param address
+	 *        the address to send the message to
+	 * @param forceExtendedAddress
+	 *        {@literal true} to force {@code address} to be treated as an
+	 *        extended address, even it if would otherwise fit
+	 * @param seconds
+	 *        the message timestamp seconds
+	 * @param microseconds
+	 *        the message timestamp microseconds
+	 * @param data
+	 *        the message data
+	 */
+	public FrameMessageImpl(int address, boolean forceExtendedAddress, int seconds, int microseconds,
+			byte[] data) {
+		super(MessageType.Frame, null,
+				generateArguments(address, forceExtendedAddress, seconds, microseconds, data), 0,
+				DATA_OFFSET, forceExtendedAddress);
+		this.seconds = seconds;
+		this.microseconds = microseconds;
+	}
+
+	private static List<String> generateArguments(int address, boolean forceExtendedAddress, int seconds,
+			int microseconds, byte[] data) {
+		List<String> args = new ArrayList<>(3);
+		args.add(Addressed.hexAddress(address, forceExtendedAddress));
+		args.add(Temporal.fractionalMicroseconds(seconds, microseconds).toPlainString());
+		final int dataLen = (data != null ? data.length : 0);
+		List<String> hexData = SocketcandUtils.encodeHexStrings(data, 0, dataLen);
+		if ( hexData != null ) {
+			args.addAll(hexData);
+		}
+		return args;
 	}
 
 	@Override
