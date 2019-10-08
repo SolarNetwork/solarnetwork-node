@@ -225,6 +225,10 @@ public class MeasurementHelper {
 		}
 
 		Map<? extends Unit<?>, Integer> baseUnits = unit.getBaseUnits();
+		if ( baseUnits == null ) {
+			// alrady a base unit
+			return unit;
+		}
 		Integer baseUnitSize = baseUnits.size();
 		if ( standardUnits.containsKey(baseUnitSize) ) {
 			for ( Unit<?> stdUnit : standardUnits.get(baseUnitSize) )
