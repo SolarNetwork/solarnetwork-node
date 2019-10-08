@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.datum.canbus;
 
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +37,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport;
+import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -73,10 +77,30 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		super.configurationChanged(properties);
-		// TODO apply subscriptions based on propConfigs
 		if ( sourceId != null ) {
 			addSourceMetadata(sourceId, createMetadata());
 		}
+		Iterable<CanbusSubscription> subscriptions = createSubscriptions(getMsgConfigs());
+		try {
+			configureSubscriptions(subscriptions);
+		} catch ( IOException e ) {
+			log.error("Error configuring CAN network {} subscriptions: {}", canbusNetworkName(),
+					e.toString(), e);
+		}
+	}
+
+	private Iterable<CanbusSubscription> createSubscriptions(CanbusMessageConfig[] msgConfigs) {
+		List<CanbusSubscription> subscriptions = new ArrayList<CanbusSubscription>(16);
+		if ( msgConfigs != null ) {
+			for ( CanbusMessageConfig message : msgConfigs ) {
+				Duration limit = (message.getInterval() > 0 ? Duration.ofMillis(message.getInterval())
+						: null);
+				CanbusSubscription sub = new CanbusSubscription(message.getAddress(), false, limit, 0,
+						this);
+				subscriptions.add(sub);
+			}
+		}
+		return subscriptions;
 	}
 
 	@Override
