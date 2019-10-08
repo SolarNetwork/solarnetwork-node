@@ -60,4 +60,9 @@ public class GenericModelId implements ModelId {
 		return ModelAccessor.class;
 	}
 
+	@Override
+	public String toString() {
+		return getDescription();
+	}
+
 }
