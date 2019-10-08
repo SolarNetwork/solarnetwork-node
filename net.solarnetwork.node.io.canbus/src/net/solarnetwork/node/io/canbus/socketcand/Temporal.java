@@ -53,7 +53,21 @@ public interface Temporal {
 	 * @return the fractional seconds, never {@literal null}
 	 */
 	default BigDecimal getFractionalSeconds() {
-		return new BigDecimal(getSeconds()).add(new BigDecimal(getMicroseconds()).scaleByPowerOfTen(-6));
+		return fractionalMicroseconds(getSeconds(), getMicroseconds());
+	}
+
+	/**
+	 * Get a fractional seconds value out of whole second and microsecond
+	 * values.
+	 * 
+	 * @param seconds
+	 *        the whole seconds
+	 * @param microseconds
+	 *        the whole microseconds
+	 * @return the fractional seconds value
+	 */
+	static BigDecimal fractionalMicroseconds(int seconds, int microseconds) {
+		return new BigDecimal(seconds).add(new BigDecimal(microseconds).scaleByPowerOfTen(-6));
 	}
 
 }
