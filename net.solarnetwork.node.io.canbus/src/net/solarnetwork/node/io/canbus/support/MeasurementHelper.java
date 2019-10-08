@@ -22,8 +22,18 @@
 
 package net.solarnetwork.node.io.canbus.support;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import javax.measure.IncommensurableException;
 import javax.measure.MeasurementException;
 import javax.measure.Quantity;
@@ -49,6 +59,12 @@ import net.solarnetwork.util.OptionalServiceCollection;
  */
 public class MeasurementHelper {
 
+	/** The properties file with the standard unit mapping data. */
+	public static final String STANDARD_UNIT_MAPPING_RESOURCE = "MeasurementHelper-standard-units.properties";
+
+	private final ConcurrentMap<String, Unit<?>> unitCache = new ConcurrentHashMap<>(16, 0.9f, 1);
+	private final Map<Integer, Set<Unit<?>>> standardUnits;
+	private final Map<String, Unit<?>> altUnits;
 	private final OptionalServiceCollection<MeasurementServiceProvider> measurementProviders;
 
 	/** A class-level logger. */
@@ -69,6 +85,47 @@ public class MeasurementHelper {
 			throw new IllegalArgumentException("Measurement provider collection must be provided.");
 		}
 		this.measurementProviders = measurementProviders;
+
+		Map<Integer, Set<Unit<?>>> std = new LinkedHashMap<>(8);
+		Map<String, Unit<?>> alts = new LinkedHashMap<>(8);
+		Properties props = new Properties();
+		try (Reader in = new InputStreamReader(MeasurementHelper.class.getResourceAsStream(
+				"MeasurementHelper-standard-units.properties"), Charset.forName("UTF-8"))) {
+			props.load(in);
+			for ( Map.Entry<Object, Object> me : props.entrySet() ) {
+				String k = me.getKey().toString();
+				if ( k.startsWith("std.") ) {
+					int split = k.indexOf('.', 4);
+					if ( split < 1 ) {
+						continue;
+					}
+					try {
+						Integer count = Integer.valueOf(k.substring(4, split));
+						Unit<?> unit = unitValueInternal(me.getValue().toString());
+						if ( unit != null ) {
+							std.computeIfAbsent(count, LinkedHashSet::new).add(unit);
+						} else {
+							log.warn("Unit not found for standard unit mapping [{}] value [{}]", k,
+									me.getValue());
+						}
+					} catch ( NumberFormatException e ) {
+						log.warn("Error parsing standard unit base count from key [{}]", k);
+					}
+				} else if ( k.startsWith("alt.") ) {
+					String unitString = k.substring(4);
+					Unit<?> unit = unitValueInternal(unitString);
+					if ( unit != null ) {
+						String alt = me.getValue().toString();
+						alts.putIfAbsent(alt, unit);
+					}
+				}
+			}
+		} catch ( IOException e ) {
+			log.warn("Error loading standard units from resource {}: {}", STANDARD_UNIT_MAPPING_RESOURCE,
+					e.toString());
+		}
+		this.standardUnits = std;
+		this.altUnits = alts;
 	}
 
 	/**
@@ -85,6 +142,15 @@ public class MeasurementHelper {
 	 *         {@literal null} or the unit cannot be determined
 	 */
 	public Unit<?> unitValue(String unitString) {
+		if ( altUnits.containsKey(unitString) ) {
+			return altUnits.get(unitString);
+		}
+		return unitCache.computeIfAbsent(unitString, u -> {
+			return unitValueInternal(unitString);
+		});
+	}
+
+	private Unit<?> unitValueInternal(String unitString) {
 		if ( unitString == null || unitString.isEmpty() ) {
 			return null;
 		}
@@ -131,12 +197,12 @@ public class MeasurementHelper {
 		return quantityValue(n, unit);
 	}
 
-	private Quantity<?> quantityValue(final Number amount, final Unit<?> unit) {
+	private <Q extends Quantity<Q>> Quantity<Q> quantityValue(final Number amount, final Unit<Q> unit) {
 		if ( amount == null || unit == null ) {
 			return null;
 		}
 		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
-			Quantity<?> q = measurementProvider.quantityForUnit(amount, unit);
+			Quantity<Q> q = measurementProvider.quantityForUnit(amount, unit);
 			if ( q != null ) {
 				return q;
 			}
@@ -152,12 +218,23 @@ public class MeasurementHelper {
 	 *        the unit to get a normalized variant of
 	 * @return the normalized unit
 	 */
-	public Unit<?> normalizedUnit(final Unit<?> unit) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	public <Q extends Quantity<Q>> Unit<Q> normalizedUnit(final Unit<Q> unit) {
 		if ( unit == null ) {
 			return null;
 		}
-		// TODO
-		return unit;
+
+		Map<? extends Unit<?>, Integer> baseUnits = unit.getBaseUnits();
+		Integer baseUnitSize = baseUnits.size();
+		if ( standardUnits.containsKey(baseUnitSize) ) {
+			for ( Unit<?> stdUnit : standardUnits.get(baseUnitSize) )
+				// look for some SolarNetwork standard units
+				if ( stdUnit.isCompatible(unit) ) {
+					return (Unit) stdUnit;
+				}
+		}
+
+		return unit.getSystemUnit();
 	}
 
 	/**
@@ -168,11 +245,11 @@ public class MeasurementHelper {
 	 * @return the normalized value, or {@literal null} if {@code quantity} is
 	 *         {@literal null}
 	 */
-	public Quantity<?> normalizedQuantity(final Quantity<?> quantity) {
+	public <Q extends Quantity<Q>> Quantity<Q> normalizedQuantity(final Quantity<Q> quantity) {
 		if ( quantity == null ) {
 			return null;
 		}
-		Unit<?> normalizedUnit = normalizedUnit(quantity.getUnit());
+		Unit<Q> normalizedUnit = normalizedUnit(quantity.getUnit());
 		if ( normalizedUnit == null ) {
 			return quantity;
 		}
@@ -201,6 +278,11 @@ public class MeasurementHelper {
 	public String formatUnit(Unit<?> unit) {
 		if ( unit == null ) {
 			return null;
+		}
+		for ( Map.Entry<String, Unit<?>> me : altUnits.entrySet() ) {
+			if ( me.getValue().isCompatible(unit) ) {
+				return me.getKey();
+			}
 		}
 		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
 			UnitFormatService ufs = measurementProvider.getUnitFormatService();

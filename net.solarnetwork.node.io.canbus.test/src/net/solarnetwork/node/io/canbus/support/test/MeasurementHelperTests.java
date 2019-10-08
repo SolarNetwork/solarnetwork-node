@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import javax.measure.IncommensurableException;
+import javax.measure.MetricPrefix;
 import javax.measure.Quantity;
 import javax.measure.UnconvertibleException;
 import javax.measure.Unit;
@@ -41,6 +42,7 @@ import javax.measure.UnitConverter;
 import javax.measure.format.UnitFormat;
 import javax.measure.quantity.ElectricResistance;
 import javax.measure.quantity.Frequency;
+import javax.measure.quantity.Power;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -52,13 +54,9 @@ import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
-import si.uom.SIServiceProvider;
-import systems.uom.common.internal.CommonServiceProvider;
 import systems.uom.ucum.internal.UCUMServiceProvider;
-import systems.uom.unicode.internal.UnicodeServiceProvider;
 import tech.units.indriya.ComparableUnit;
 import tech.units.indriya.quantity.Quantities;
-import tech.units.indriya.spi.DefaultServiceProvider;
 import tech.units.indriya.unit.Units;
 
 /**
@@ -77,11 +75,7 @@ public class MeasurementHelperTests {
 	@Before
 	public void setup() {
 		measurementProviders = new StaticOptionalServiceCollection<>(
-				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
-						new IndriyaMeasurementServiceProvider(new CommonServiceProvider()),
-						new IndriyaMeasurementServiceProvider(new UnicodeServiceProvider()),
-						new IndriyaMeasurementServiceProvider(new SIServiceProvider()),
-						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())));
+				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider())));
 		helper = new MeasurementHelper(measurementProviders);
 	}
 
@@ -214,6 +208,49 @@ public class MeasurementHelperTests {
 						throw new RuntimeException("Unit " + sigUnit + " failed to parse.", e);
 					}
 				});
+	}
+
+	@Test
+	public void unitValue_var() {
+		Unit<?> u = helper.unitValue("V.A{reactive}");
+		assertThat("Unit is expected", u.isCompatible(Units.VOLT.multiply(Units.AMPERE)), equalTo(true));
+	}
+
+	@Test
+	public void normalizedUnitValue_kW() {
+		Unit<Power> w = helper.normalizedUnit(MetricPrefix.KILO(Units.WATT));
+		assertThat("kW normalized to W", w, equalTo(Units.WATT));
+	}
+
+	@Test
+	public void normalizedUnitValue_Wh() {
+		Unit<?> wh = helper.normalizedUnit(Units.WATT.multiply(Units.HOUR));
+		assertThat("Wh normalized to Wh", wh, equalTo(Units.WATT.multiply(Units.HOUR)));
+	}
+
+	@Test
+	public void normalizedUnitValue_kWh() {
+		Unit<?> wh = helper.normalizedUnit(MetricPrefix.KILO(Units.WATT).multiply(Units.HOUR));
+		assertThat("kWh normalized to Wh", wh, equalTo(Units.WATT.multiply(Units.HOUR)));
+	}
+
+	@Test
+	public void normalizedUnitValue_VA() {
+		Unit<?> va = helper.normalizedUnit(Units.VOLT.multiply(Units.AMPERE));
+		assertThat("Wh normalized to Wh", va, equalTo(Units.VOLT.multiply(Units.AMPERE)));
+	}
+
+	@Test
+	public void formatUnit_VA() {
+		String va = helper.formatUnit(Units.VOLT.multiply(Units.AMPERE));
+		assertThat("Wh normalized to Wh", va, equalTo("V.A"));
+	}
+
+	@Test
+	public void formatUnit_VAr() {
+		Unit<?> u = helper.unitValue("V.A{reactive}");
+		String va = helper.formatUnit(u);
+		assertThat("var normalized to var", va, equalTo("var"));
 	}
 
 }

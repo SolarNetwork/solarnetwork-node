@@ -61,9 +61,6 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	/** The default value for the {@code connectionCheckFrequency} property. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
 
-	private static final ConcurrentMap<String, Unit<?>> UNIT_CACHE = new ConcurrentHashMap<>(16, 0.9f,
-			1);
-
 	private final AtomicReference<CanbusConnection> connection = new AtomicReference<CanbusConnection>();
 
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
@@ -320,14 +317,11 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 *         value
 	 */
 	protected Unit<?> unitValue(String unit) {
-		return UNIT_CACHE.computeIfAbsent(unit, u -> {
-			Unit<?> result = null;
-			MeasurementHelper helper = getMeasurementHelper();
-			if ( helper != null ) {
-				result = helper.unitValue(unit);
-			}
-			return result;
-		});
+		MeasurementHelper helper = getMeasurementHelper();
+		if ( helper != null ) {
+			return helper.unitValue(unit);
+		}
+		return null;
 	}
 
 	/**
