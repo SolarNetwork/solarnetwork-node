@@ -398,8 +398,6 @@ public class CASettingsService
 		return null;
 	}
 
-	private static final Pattern INDEXED_PROP_PATTERN = Pattern.compile("\\[\\d+\\]");
-
 	@Override
 	public void updateSettings(SettingsCommand command) {
 		if ( command.getProviderKey() != null ) {
@@ -439,7 +437,6 @@ public class CASettingsService
 	private List<SettingsCommand> orderedUpdateGroups(SettingsUpdates updates, String defaultProviderKey,
 			String defaultInstanceKey) {
 		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
-		Map<String, SettingsCommand> indexedGroups = null;
 		if ( updates != null ) {
 			for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
 				final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
@@ -447,33 +444,14 @@ public class CASettingsService
 				final String instanceKey = change.getInstanceKey() != null ? change.getInstanceKey()
 						: defaultInstanceKey;
 				String groupKey = providerKey + (instanceKey != null ? instanceKey : "");
-				final boolean indexed = INDEXED_PROP_PATTERN.matcher(change.getKey()).find();
 				SettingsCommand cmd = null;
-				if ( indexed ) {
-					// indexed property, add in indexed groups
-					if ( indexedGroups == null ) {
-						indexedGroups = new LinkedHashMap<String, SettingsCommand>(8);
-					}
-					cmd = indexedGroups.get(groupKey);
-				} else {
-					cmd = groups.get(groupKey);
-				}
+				cmd = groups.get(groupKey);
 
 				if ( cmd == null ) {
-					// as we're creating multiple SettingsCommands out of a single one, we need to only apply
-					// patterns to clean to the FIRST one we create, otherwise we delete previously created values
-					Iterable<Pattern> patsToClean = (groups.get(groupKey) == null
-							&& (indexedGroups == null || indexedGroups.get(groupKey) == null)
-									? updates.getSettingKeyPatternsToClean()
-									: null);
-					cmd = new SettingsCommand(null, patsToClean);
+					cmd = new SettingsCommand(null, updates.getSettingKeyPatternsToClean());
 					cmd.setProviderKey(providerKey);
 					cmd.setInstanceKey(instanceKey);
-					if ( indexed ) {
-						indexedGroups.put(groupKey, cmd);
-					} else {
-						groups.put(groupKey, cmd);
-					}
+					groups.put(groupKey, cmd);
 				}
 				SettingValueBean bean;
 				if ( change instanceof SettingValueBean ) {
@@ -487,9 +465,6 @@ public class CASettingsService
 		}
 		List<SettingsCommand> result = new ArrayList<>(32);
 		result.addAll(groups.values());
-		if ( indexedGroups != null ) {
-			result.addAll(indexedGroups.values());
-		}
 		return result;
 	}
 
