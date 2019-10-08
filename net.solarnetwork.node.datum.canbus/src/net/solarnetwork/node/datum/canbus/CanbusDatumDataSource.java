@@ -77,6 +77,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		super.configurationChanged(properties);
+		setupSignalParents(getMsgConfigs());
 		if ( sourceId != null ) {
 			addSourceMetadata(sourceId, createMetadata());
 		}
@@ -86,6 +87,20 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		} catch ( IOException e ) {
 			log.error("Error configuring CAN network {} subscriptions: {}", canbusNetworkName(),
 					e.toString(), e);
+		}
+	}
+
+	private void setupSignalParents(CanbusMessageConfig[] msgConfigs) {
+		if ( msgConfigs == null || msgConfigs.length < 1 ) {
+			return;
+		}
+		for ( CanbusMessageConfig message : msgConfigs ) {
+			CanbusPropertyConfig[] propConfigs = message.getPropConfigs();
+			if ( propConfigs != null && propConfigs.length > 0 ) {
+				for ( CanbusPropertyConfig prop : propConfigs ) {
+					prop.setParent(message);
+				}
+			}
 		}
 	}
 

@@ -37,6 +37,7 @@ import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
 public class AddressedDataMessage extends AddressedMessage implements DataContainer, CanbusFrame {
 
 	private final int dataIndex;
+	private volatile byte[] dataCache;
 
 	/**
 	 * Constructor.
@@ -104,11 +105,21 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 
 	@Override
 	public byte[] getData() {
-		List<String> arguments = getArguments();
-		if ( arguments == null || arguments.size() <= dataIndex ) {
-			return new byte[0];
+		// cache the decoded bytes for better (repeat) performance, as the data is immutable
+		if ( dataCache == null ) {
+			synchronized ( this ) {
+				if ( dataCache == null ) {
+					List<String> arguments = getArguments();
+					if ( arguments == null || arguments.size() <= dataIndex ) {
+						dataCache = new byte[0];
+					} else {
+						dataCache = SocketcandUtils.decodeHexStrings(arguments, dataIndex,
+								arguments.size());
+					}
+				}
+			}
 		}
-		return SocketcandUtils.decodeHexStrings(arguments, dataIndex, arguments.size());
+		return dataCache;
 	}
 
 }

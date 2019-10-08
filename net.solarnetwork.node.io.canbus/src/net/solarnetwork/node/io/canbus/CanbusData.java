@@ -28,7 +28,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import net.solarnetwork.domain.BitDataType;
+import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Object to hold raw data extracted from a CAN bus device.
@@ -242,6 +245,66 @@ public class CanbusData implements DataAccessor {
 		}
 		buf.append("}");
 		return buf.toString();
+	}
+
+	/**
+	 * Get a number value from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the number value for
+	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if the reference data type is not numeric
+	 */
+	public final Number getNumber(CanbusSignalReference ref) {
+		if ( ref == null ) {
+			return null;
+		}
+		BitDataType type = ref.getDataType();
+		if ( type == null ) {
+			type = BitDataType.UInt32;
+		}
+		final int addr = ref.getAddress();
+		final int bitOffset = ref.getBitOffset();
+		final int bitLength = ref.getBitLength();
+		final ByteOrdering ordering = ref.getByteOrdering();
+		final CanbusFrame message = dataFrames.get(addr);
+		final byte[] data = (message != null ? message.getData() : null);
+		if ( data == null ) {
+			return null;
+		}
+		final int offset = bitOffset / 8;
+		final int length = bitLength / 8;
+		Number n = ByteUtils.parseNumber(type, data, offset, length, ordering);
+		if ( bitLength % 8 != 0 ) {
+			throw new UnsupportedOperationException("Only byte-aligned number values are supported.");
+		}
+		return n;
+	}
+
+	/**
+	 * Get a byte array value from a reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the byte value for
+	 * @return the value, or {@literal null} if {@code ref} is {@literal null}
+	 */
+	public final byte[] getBytes(CanbusSignalReference ref) {
+		if ( ref == null ) {
+			return null;
+		}
+		final int addr = ref.getAddress();
+		final int bitOffset = ref.getBitOffset();
+		final int bitLength = ref.getBitLength();
+		final ByteOrdering ordering = ref.getByteOrdering();
+		final CanbusFrame message = dataFrames.get(addr);
+		final byte[] data = (message != null ? message.getData() : null);
+		if ( data == null ) {
+			return null;
+		}
+		final int offset = bitOffset / 8;
+		final int length = bitLength / 8;
+		return ByteUtils.parseBytes(data, offset, length, ordering);
 	}
 
 }

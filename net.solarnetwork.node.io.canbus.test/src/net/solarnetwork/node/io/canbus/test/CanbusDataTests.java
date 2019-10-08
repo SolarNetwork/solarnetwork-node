@@ -27,10 +27,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
+import net.solarnetwork.domain.BitDataType;
+import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.node.io.canbus.CanbusData;
 import net.solarnetwork.node.io.canbus.CanbusData.CanbusDataUpdateAction;
 import net.solarnetwork.node.io.canbus.CanbusData.MutableCanbusData;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
+import net.solarnetwork.node.io.canbus.support.SimpleCanbusSignalReference;
 
 /**
  * Test cases for the {@link CanbusData} class.
@@ -96,6 +99,52 @@ public class CanbusDataTests {
 		String str = d.dataDebugString();
 		assertThat("Debug string", str, equalTo(
 				"CanbusData{\n\t0x00000001: 0001\n\t0x00000123: AABBCC\n\t0x00000234: DDEEFF0100\n}"));
+	}
+
+	@Test
+	public void getNumber_UInt32FromLower8Bytes() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(
+				new SimpleCanbusSignalReference(0x1, BitDataType.UInt32, ByteOrdering.BigEndian, 0, 32));
+
+		// THEN
+		assertThat("Lower UInt32 parsed", n, equalTo(840293402L));
+	}
+
+	@Test
+	public void getNumber_UInt32FromUpper8Bytes() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UInt32,
+				ByteOrdering.BigEndian, 32, 32));
+
+		// THEN
+		assertThat("Upper UInt32 parsed", n, equalTo(1023894840L));
 	}
 
 }

@@ -31,9 +31,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.BitDataType;
+import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.node.io.canbus.CanbusSignalReference;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -53,7 +55,8 @@ import net.solarnetwork.util.ArrayUtils;
  * @author matt
  * @version 1.0
  */
-public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Integer> {
+public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
+		implements CanbusSignalReference {
 
 	/** The default {@code bitLength} property value. */
 	public static final int DEFAULT_BIT_LENGTH = 32;
@@ -63,6 +66,8 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/** The default {@code dataType} property value. */
 	public static final BitDataType DEFAULT_DATA_TYPE = BitDataType.Int32;
+
+	private CanbusMessageConfig parent;
 
 	private BitDataType dataType = DEFAULT_DATA_TYPE;
 	private String unit;
@@ -203,12 +208,25 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		return settings;
 	}
 
+	@Override
+	public int getAddress() {
+		CanbusMessageConfig p = getParent();
+		return (p != null ? p.getAddress() : -1);
+	}
+
+	@Override
+	public ByteOrdering getByteOrdering() {
+		CanbusMessageConfig p = getParent();
+		return (p != null ? p.getByteOrdering() : CanbusMessageConfig.DEFAULT_BYTE_ORDERING);
+	}
+
 	/**
 	 * Get the data type.
 	 * 
 	 * @return the type, never {@literal null}; defaults to
 	 *         {@link #DEFAULT_DATA_TYPE}
 	 */
+	@Override
 	public BitDataType getDataType() {
 		return dataType;
 	}
@@ -288,6 +306,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * 
 	 * @return the bit offset; defaults to {@link #DEFAULT_BIT_OFFSET}
 	 */
+	@Override
 	public int getBitOffset() {
 		Integer c = getConfig();
 		return (c != null ? c.intValue() : DEFAULT_BIT_OFFSET);
@@ -313,6 +332,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * 
 	 * @return the bit length; defaults to {@link #DEFAULT_BIT_LENGTH}
 	 */
+	@Override
 	public int getBitLength() {
 		return bitLength;
 	}
@@ -395,6 +415,30 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		}
 		return Arrays.stream(names)
 				.collect(toMap(KeyValuePair::getKey, KeyValuePair::getValue, (l, r) -> l));
+	}
+
+	/**
+	 * Get the parent message.
+	 * 
+	 * @return the parent the parent message
+	 */
+	public CanbusMessageConfig getParent() {
+		return parent;
+	}
+
+	/**
+	 * Set the parent message.
+	 * 
+	 * <p>
+	 * Configuring the parent message allows this instance to function as a
+	 * {@link CanbusSignalReference}.
+	 * </p>
+	 * 
+	 * @param parent
+	 *        the parent to set
+	 */
+	public void setParent(CanbusMessageConfig parent) {
+		this.parent = parent;
 	}
 
 }
