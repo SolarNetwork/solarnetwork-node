@@ -1,0 +1,101 @@
+/* ==================================================================
+ * CanbusDataTests.java - 9/10/2019 10:21:02 am
+ * 
+ * Copyright 2019 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.io.canbus.test;
+
+import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import net.solarnetwork.node.io.canbus.CanbusData;
+import net.solarnetwork.node.io.canbus.CanbusData.CanbusDataUpdateAction;
+import net.solarnetwork.node.io.canbus.CanbusData.MutableCanbusData;
+import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
+
+/**
+ * Test cases for the {@link CanbusData} class.
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public class CanbusDataTests {
+
+	@Test
+	public void construct() {
+		CanbusData d = new CanbusData();
+		assertThat("Initial timestamp", d.getDataTimestamp(), equalTo(0L));
+	}
+
+	@Test
+	public void performUpdateWithTimestamp() {
+		final long now = System.currentTimeMillis();
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				return true;
+			}
+		});
+
+		assertThat("Tmestamp updated", d.getDataTimestamp(), greaterThanOrEqualTo(now));
+	}
+
+	@Test
+	public void performUpdateWithoutTimestamp() {
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				return false;
+			}
+		});
+
+		assertThat("Tmestamp not updated", d.getDataTimestamp(), equalTo(0L));
+	}
+
+	@Test
+	public void debugString() {
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(
+						new FrameMessageImpl(0x123, false, 45, 676767,
+								new byte[] { (byte) 0xAA, (byte) 0xBB, (byte) 0xCC }),
+						new FrameMessageImpl(0x1, false, 45, 676767,
+								new byte[] { (byte) 0x00, (byte) 0x01 }),
+						new FrameMessageImpl(0x234, false, 56, 787878, new byte[] { (byte) 0xDD,
+								(byte) 0xEE, (byte) 0xFF, (byte) 0x01, (byte) 0x00 })));
+				return false;
+			}
+		});
+
+		String str = d.dataDebugString();
+		assertThat("Debug string", str, equalTo(
+				"CanbusData{\n\t0x00000001: 0001\n\t0x00000123: AABBCC\n\t0x00000234: DDEEFF0100\n}"));
+	}
+
+}
