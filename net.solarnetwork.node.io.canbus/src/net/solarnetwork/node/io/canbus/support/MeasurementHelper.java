@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.measure.IncommensurableException;
-import javax.measure.MeasurementException;
 import javax.measure.Quantity;
 import javax.measure.UnconvertibleException;
 import javax.measure.Unit;
@@ -113,10 +112,12 @@ public class MeasurementHelper {
 					}
 				} else if ( k.startsWith("alt.") ) {
 					String unitString = k.substring(4);
-					Unit<?> unit = unitValueInternal(unitString);
-					if ( unit != null ) {
-						String alt = me.getValue().toString();
-						alts.putIfAbsent(alt, unit);
+					Unit<?> parentUnit = unitValueInternal(me.getValue().toString());
+					Unit<?> parentSystemUnit = parentUnit.getSystemUnit();
+					Unit<?> unit = null;
+					if ( parentUnit == parentSystemUnit ) {
+						unit = parentUnit.alternate(unitString);
+						alts.putIfAbsent(unitString, unit);
 					}
 				}
 			}
@@ -283,10 +284,9 @@ public class MeasurementHelper {
 		if ( unit == null ) {
 			return null;
 		}
-		for ( Map.Entry<String, Unit<?>> me : altUnits.entrySet() ) {
-			if ( me.getValue().isCompatible(unit) ) {
-				return me.getKey();
-			}
+		String symbol = unit.getSymbol();
+		if ( symbol != null ) {
+			return symbol;
 		}
 		for ( MeasurementServiceProvider measurementProvider : measurementProviders.services() ) {
 			UnitFormatService ufs = measurementProvider.getUnitFormatService();
@@ -333,7 +333,7 @@ public class MeasurementHelper {
 				if ( unit != null ) {
 					return unit;
 				}
-			} catch ( MeasurementException | UnsupportedOperationException e ) {
+			} catch ( Exception e ) {
 				log.trace("Error parsing unit [{}]: {}", unitString, e.toString());
 			}
 		}

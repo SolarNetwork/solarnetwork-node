@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStream;
@@ -113,7 +114,14 @@ public class MeasurementHelperTests {
 	@Test
 	public void unitValue_kWh() {
 		Unit<?> unit = helper.unitValue("kW.h");
-		assertThat("Unit ", unit.getSystemUnit(), equalTo(Units.WATT.multiply(Units.SECOND)));
+		assertThat("System unit is W.s", unit.getSystemUnit(),
+				equalTo(Units.WATT.multiply(Units.SECOND)));
+	}
+
+	@Test
+	public void unitValue_W() {
+		Unit<?> unit = helper.unitValue("W");
+		assertThat("Unit is W", unit.getSystemUnit(), equalTo(Units.WATT));
 	}
 
 	@Test
@@ -211,12 +219,6 @@ public class MeasurementHelperTests {
 	}
 
 	@Test
-	public void unitValue_var() {
-		Unit<?> u = helper.unitValue("V.A{reactive}");
-		assertThat("Unit is expected", u.isCompatible(Units.VOLT.multiply(Units.AMPERE)), equalTo(true));
-	}
-
-	@Test
 	public void normalizedUnitValue_kW() {
 		Unit<Power> w = helper.normalizedUnit(MetricPrefix.KILO(Units.WATT));
 		assertThat("kW normalized to W", w, equalTo(Units.WATT));
@@ -235,22 +237,48 @@ public class MeasurementHelperTests {
 	}
 
 	@Test
+	public void unitValue_VA() {
+		Unit<?> u = helper.unitValue("VA");
+		assertThat("Unit is expected", u.isCompatible(Units.WATT), equalTo(true));
+	}
+
+	@Test
+	public void unitValue_kVA() {
+		Unit<?> u = helper.unitValue("kVA");
+		assertThat("Unit is not expected", u, nullValue());
+	}
+
+	@Test
 	public void normalizedUnitValue_VA() {
-		Unit<?> va = helper.normalizedUnit(Units.VOLT.multiply(Units.AMPERE));
-		assertThat("Wh normalized to Wh", va, equalTo(Units.VOLT.multiply(Units.AMPERE)));
+		Unit<?> u = helper.unitValue("VA");
+		Unit<?> n = helper.normalizedUnit(u);
+		assertThat("VA normalized to VA", n.isCompatible(Units.WATT), equalTo(true));
+	}
+
+	@Test
+	public void unitValue_VAr() {
+		Unit<?> u = helper.unitValue("V.A{reactive}");
+		assertThat("Unit is expected", u.isCompatible(Units.VOLT.multiply(Units.AMPERE)), equalTo(true));
+	}
+
+	@Test
+	public void unitValue_var() {
+		Unit<?> u = helper.unitValue("var");
+		assertThat("Unit is expected", u.isCompatible(Units.WATT), equalTo(true));
 	}
 
 	@Test
 	public void formatUnit_VA() {
-		String va = helper.formatUnit(Units.VOLT.multiply(Units.AMPERE));
-		assertThat("Wh normalized to Wh", va, equalTo("V.A"));
+		Unit<?> u = helper.unitValue("VA");
+		String va = helper.formatUnit(u);
+		assertThat("VA alternate formatted as VA", va, equalTo("VA"));
 	}
 
 	@Test
 	public void formatUnit_VAr() {
-		Unit<?> u = helper.unitValue("V.A{reactive}");
-		String va = helper.formatUnit(u);
-		assertThat("var normalized to var", va, equalTo("var"));
+		Unit<?> voltAmpsReactive = helper.unitValue("var");
+		String var = helper.formatUnit(voltAmpsReactive);
+		assertThat("var normalized to var", var, equalTo("var"));
 	}
 
 }
