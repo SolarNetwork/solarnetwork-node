@@ -96,6 +96,30 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
+	 * Construct with values.
+	 * 
+	 * @param name
+	 *        the datum property name
+	 * @param datumPropertyType
+	 *        the datum property type
+	 * @param bitOffset
+	 *        the CAN message bit offset
+	 * @param dataType
+	 *        the data type
+	 * @param bitLength
+	 *        the bit length
+	 * @param unit
+	 *        the unit
+	 */
+	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int bitOffset,
+			BitDataType dataType, int bitLength, String unit) {
+		this(name, datumPropertyType, bitOffset);
+		setDataType(dataType);
+		setBitLength(bitLength);
+		setUnit(unit);
+	}
+
+	/**
 	 * Get settings suitable for configuring an instance of this class.
 	 * 
 	 * @param prefix

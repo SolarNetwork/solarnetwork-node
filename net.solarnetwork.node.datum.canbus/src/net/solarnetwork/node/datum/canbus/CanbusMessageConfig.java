@@ -29,6 +29,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.ObjectFactory;
 import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -65,9 +67,46 @@ public class CanbusMessageConfig {
 	private int interval;
 	private CanbusPropertyConfig[] propConfigs;
 
+	/**
+	 * Constructor.
+	 */
 	public CanbusMessageConfig() {
 		super();
 		setPropConfigsCount(1);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param address
+	 *        the CAN address
+	 * @param byteOrdering
+	 *        the byte ordering
+	 */
+	public CanbusMessageConfig(int address, ByteOrdering byteOrdering) {
+		super();
+		setAddress(address);
+		setByteOrdering(byteOrdering);
+	}
+
+	/**
+	 * Add a new property configuration.
+	 * 
+	 * @param config
+	 *        the configuration to add
+	 * @return this object, to allow method chaining
+	 */
+	public CanbusMessageConfig addPropConfig(CanbusPropertyConfig config) {
+		config.setParent(this);
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, getPropConfigsCount() + 1,
+				CanbusPropertyConfig.class, new ObjectFactory<CanbusPropertyConfig>() {
+
+					@Override
+					public CanbusPropertyConfig getObject() throws BeansException {
+						return config;
+					}
+				});
+		return this;
 	}
 
 	/**

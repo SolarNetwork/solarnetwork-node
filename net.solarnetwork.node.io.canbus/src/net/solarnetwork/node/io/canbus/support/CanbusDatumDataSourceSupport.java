@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.measure.Quantity;
 import javax.measure.Unit;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.DatumDataSource;
@@ -317,6 +318,9 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 *         value
 	 */
 	protected Unit<?> unitValue(String unit) {
+		if ( unit == null || unit.isEmpty() ) {
+			return null;
+		}
 		MeasurementHelper helper = getMeasurementHelper();
 		if ( helper != null ) {
 			return helper.unitValue(unit);
@@ -329,14 +333,51 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * 
 	 * @param unit
 	 *        the unit to normalize
-	 * @return the normalized unit
+	 * @return the normalized unit, or {@literal null} if {@code unit} is
+	 *         {@literal null}
 	 */
 	protected Unit<?> normalizedUnitValue(Unit<?> unit) {
+		if ( unit == null ) {
+			return null;
+		}
 		MeasurementHelper helper = getMeasurementHelper();
 		if ( helper != null ) {
 			return helper.normalizedUnit(unit);
 		}
 		return unit;
+	}
+
+	/**
+	 * Get a "normalized" amount for an arbitrary amount.
+	 * 
+	 * @param amount
+	 *        the amount
+	 * @param unit
+	 *        the amount's unit
+	 * @param slope
+	 *        a slope factor
+	 * @param intercept
+	 *        an intercept factor
+	 * @return the amount, or {@literal null} if {@code amount} is
+	 *         {@literal null}
+	 */
+	protected Number normalizedAmountValue(Number amount, String unit, Number slope, Number intercept) {
+		if ( amount == null || unit == null ) {
+			return amount;
+		}
+		MeasurementHelper helper = getMeasurementHelper();
+		if ( helper == null ) {
+			return amount;
+		}
+		Quantity<?> q = helper.quantityValue(amount, unit, slope, intercept);
+		if ( q == null ) {
+			return amount;
+		}
+		Quantity<?> n = helper.normalizedQuantity(q);
+		if ( n == null ) {
+			return amount;
+		}
+		return n.getValue();
 	}
 
 	/**

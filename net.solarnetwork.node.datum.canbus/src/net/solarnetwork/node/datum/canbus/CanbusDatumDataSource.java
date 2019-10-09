@@ -28,12 +28,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.measure.Unit;
+import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.io.canbus.CanbusData;
+import net.solarnetwork.node.io.canbus.CanbusData.CanbusDataUpdateAction;
+import net.solarnetwork.node.io.canbus.CanbusData.MutableCanbusData;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport;
@@ -58,8 +64,18 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	/** The setting UID value. */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.canbus";
 
+	private final CanbusData sample;
+
 	private String sourceId;
 	private CanbusMessageConfig[] msgConfigs;
+
+	/**
+	 * Constructor.
+	 */
+	public CanbusDatumDataSource() {
+		super();
+		this.sample = new CanbusData();
+	}
 
 	@Override
 	public Class<? extends GeneralNodeDatum> getDatumType() {
@@ -68,8 +84,78 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		// TODO Auto-generated method stub
-		return null;
+		final CanbusData currSample = sample.copy();
+		return createDatum(currSample);
+	}
+
+	private GeneralNodeDatum createDatum(CanbusData data) {
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setCreated(new Date(data.getDataTimestamp()));
+		d.setSourceId(sourceId);
+		populateDatumProperties(data, d, getMsgConfigs());
+		return d;
+	}
+
+	private void populateDatumProperties(CanbusData data, GeneralNodeDatum d,
+			CanbusMessageConfig[] messages) {
+		if ( messages == null || messages.length < 1 ) {
+			return;
+		}
+		for ( CanbusMessageConfig message : messages ) {
+			CanbusPropertyConfig[] propConfigs = message.getPropConfigs();
+			if ( propConfigs != null && propConfigs.length > 0 ) {
+				for ( CanbusPropertyConfig prop : propConfigs ) {
+					final BitDataType dataType = prop.getDataType();
+					final GeneralDatumSamplesType propType = prop.getPropertyType();
+					final String propName = prop.getPropertyKey();
+					if ( dataType == null || propType == null || propName == null
+							|| propName.isEmpty() ) {
+						continue;
+					}
+					Object propVal = null;
+					try {
+						switch (dataType) {
+							case StringAscii:
+							case StringUtf8:
+								// TODO
+								break;
+
+							default:
+								propVal = data.getNumber(prop);
+						}
+					} catch ( Exception e ) {
+						log.error("Error reading property [{}]: {}", prop.getPropertyKey(), e.toString(),
+								e);
+					}
+					if ( propVal != null ) {
+						if ( propVal instanceof Number ) {
+							propVal = prop.applyTransformations((Number) propVal);
+							propVal = normalizedAmountValue((Number) propVal, prop.getUnit(), null,
+									null);
+						} else if ( !(propType == GeneralDatumSamplesType.Status
+								|| propType == GeneralDatumSamplesType.Tag) ) {
+							log.warn("Cannot set datum {} property {} to non-number value [{}]",
+									propType, propName, propVal);
+							continue;
+						}
+						d.putSampleValue(propType, propName, propVal);
+					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void canbusFrameReceived(CanbusFrame frame) {
+		CanbusData data = sample.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(Collections.singleton(frame));
+				return true;
+			}
+		}).copy();
+		postDatumCapturedEvent(createDatum(data));
 	}
 
 	// SettingsSpecifierProvider
@@ -90,11 +176,11 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		}
 	}
 
-	private void setupSignalParents(CanbusMessageConfig[] msgConfigs) {
-		if ( msgConfigs == null || msgConfigs.length < 1 ) {
+	private void setupSignalParents(CanbusMessageConfig[] messages) {
+		if ( messages == null || messages.length < 1 ) {
 			return;
 		}
-		for ( CanbusMessageConfig message : msgConfigs ) {
+		for ( CanbusMessageConfig message : messages ) {
 			CanbusPropertyConfig[] propConfigs = message.getPropConfigs();
 			if ( propConfigs != null && propConfigs.length > 0 ) {
 				for ( CanbusPropertyConfig prop : propConfigs ) {
@@ -116,12 +202,6 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			}
 		}
 		return subscriptions;
-	}
-
-	@Override
-	public void canbusFrameReceived(CanbusFrame frame) {
-		// TODO Auto-generated method stub
-
 	}
 
 	private GeneralDatumMetadata createMetadata() {
