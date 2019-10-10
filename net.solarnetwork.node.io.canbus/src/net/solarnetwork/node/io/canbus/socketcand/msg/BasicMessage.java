@@ -114,7 +114,7 @@ public class BasicMessage implements Message {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("BasicMessage{");
+		builder.append(getCommand()).append("{");
 		builder.append(getCommand());
 		if ( arguments != null && !arguments.isEmpty() ) {
 			builder.append(" ");
