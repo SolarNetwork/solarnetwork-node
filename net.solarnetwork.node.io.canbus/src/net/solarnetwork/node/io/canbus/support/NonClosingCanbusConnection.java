@@ -124,4 +124,9 @@ public class NonClosingCanbusConnection implements CanbusConnection {
 		delegate.unmonitor();
 	}
 
+	@Override
+	public boolean isMonitoring() {
+		return delegate.isMonitoring();
+	}
+
 }

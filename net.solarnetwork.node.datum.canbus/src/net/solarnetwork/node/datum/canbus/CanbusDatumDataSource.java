@@ -22,7 +22,14 @@
 
 package net.solarnetwork.node.datum.canbus;
 
+import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +38,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.measure.Unit;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumMetadata;
@@ -48,8 +56,10 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Generic CAN bus datum data source.
@@ -64,8 +74,14 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	/** The setting UID value. */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.canbus";
 
+	/** The default {@code debugLog} property value. */
+	private static final String DEFAULT_DEBUG_LOG = "var/log/canbus-%s.log";
+
 	private final CanbusData sample;
 
+	private boolean debug;
+	private String debugLogPath;
+	private final AtomicReference<PrintWriter> debugOut;
 	private String sourceId;
 	private CanbusMessageConfig[] msgConfigs;
 
@@ -75,6 +91,20 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	public CanbusDatumDataSource() {
 		super();
 		this.sample = new CanbusData();
+		this.debug = false;
+		this.debugLogPath = DEFAULT_DEBUG_LOG;
+		this.debugOut = new AtomicReference<>();
+	}
+
+	@Override
+	public synchronized void shutdown() {
+		super.shutdown();
+		closeDebugLog();
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" + canbusNetworkName() + "}";
 	}
 
 	@Override
@@ -84,8 +114,18 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
+		if ( debug ) {
+			return null;
+		}
 		final CanbusData currSample = sample.copy();
-		return createDatum(currSample);
+		if ( sample.getDataTimestamp() < 1 ) {
+			return null;
+		}
+		GeneralNodeDatum d = createDatum(currSample);
+		if ( d.getSamples() == null || d.getSamples().isEmpty() ) {
+			return null;
+		}
+		return d;
 	}
 
 	private GeneralNodeDatum createDatum(CanbusData data) {
@@ -147,6 +187,10 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 
 	@Override
 	public void canbusFrameReceived(CanbusFrame frame) {
+		if ( debug ) {
+			handleDebug(frame);
+			return;
+		}
 		CanbusData data = sample.performUpdates(new CanbusDataUpdateAction() {
 
 			@Override
@@ -158,6 +202,47 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		postDatumCapturedEvent(createDatum(data));
 	}
 
+	private void handleDebug(CanbusFrame frame) {
+		PrintWriter out = debugOut.get();
+		if ( out == null ) {
+			String outPath = getDebugLogPath();
+			if ( outPath == null || outPath.isEmpty() ) {
+				log.debug("CAN {} frame: {}", getBusName(), frame);
+				return;
+			}
+			outPath = String.format(outPath, getBusName());
+			Path p = Paths.get(outPath);
+			if ( !Files.exists(p.getParent()) ) {
+				try {
+					Files.createDirectories(p.getParent());
+				} catch ( Exception e ) {
+					log.warn("Error creating debug log directory {}: {}", p.getParent(), e.toString());
+				}
+			}
+			try {
+				PrintWriter newOut = new PrintWriter(
+						Files.newBufferedWriter(p, Charset.forName("UTF-8"), CREATE, APPEND));
+				if ( debugOut.compareAndSet(null, newOut) ) {
+					out = newOut;
+				} else {
+					out = debugOut.get();
+					newOut.close();
+				}
+			} catch ( IOException e ) {
+				log.warn("Exception creating debug log output file {}: {}", p, e.toString());
+			}
+		}
+		if ( out != null ) {
+			byte[] data = frame.getData();
+			String msg = String.format("%1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tL %2$s %3$s", new Date(),
+					frame.getAddress(),
+					ByteUtils.encodeHexString(data, 0, data != null ? data.length : 0, false));
+			out.println(msg);
+		} else {
+			log.debug("CAN {} frame: {}", getBusName(), frame);
+		}
+	}
+
 	// SettingsSpecifierProvider
 
 	@Override
@@ -167,12 +252,31 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		if ( sourceId != null ) {
 			addSourceMetadata(sourceId, createMetadata());
 		}
+		if ( isDebug() ) {
+			try {
+				registerMonitor(this);
+			} catch ( IOException e ) {
+				log.error("Error configuring CAN network {} debug monitor: {}", canbusNetworkName(),
+						e.toString(), e);
+			}
+		} else {
+			// check if debug out should be closed
+			closeDebugLog();
+		}
 		Iterable<CanbusSubscription> subscriptions = createSubscriptions(getMsgConfigs());
 		try {
 			configureSubscriptions(subscriptions);
 		} catch ( IOException e ) {
 			log.error("Error configuring CAN network {} subscriptions: {}", canbusNetworkName(),
 					e.toString(), e);
+		}
+	}
+
+	private void closeDebugLog() {
+		PrintWriter out = debugOut.get();
+		if ( out != null ) {
+			debugOut.compareAndSet(out, null);
+			out.close();
 		}
 	}
 
@@ -255,6 +359,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 		results.addAll(canbusDatumDataSourceSettingSpecifiers(""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		results.add(new BasicToggleSettingSpecifier("debug", false));
+		results.add(new BasicTextFieldSettingSpecifier("debugLogPath", DEFAULT_DEBUG_LOG));
 
 		CanbusMessageConfig[] confs = getMsgConfigs();
 		List<CanbusMessageConfig> confsList = (confs != null ? Arrays.asList(confs)
@@ -338,6 +444,59 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Get the debug mode.
+	 * 
+	 * @return {@literal true} if debug mode is enabled
+	 */
+	public boolean isDebug() {
+		return debug;
+	}
+
+	/**
+	 * Toggle debug mode.
+	 * 
+	 * <p>
+	 * Debug mode causes this data source to capture all possible messages from
+	 * the CAN bus and write them to a file specified by
+	 * {@link #setDebugLogPath(String)}. While debug mode is enabled, datum will
+	 * <b>not</b> be captured.
+	 * </p>
+	 * 
+	 * @param debug
+	 *        {@literal true} to enable debug mode, {@literal false} to disable
+	 * @see #setDebugLogPath(String)
+	 */
+	public void setDebug(boolean debug) {
+		this.debug = debug;
+	}
+
+	/**
+	 * Get the debug mode log path.
+	 * 
+	 * @return the debug log path; defaults to {@link #DEFAULT_DEBUG_LOG}
+	 */
+	public String getDebugLogPath() {
+		return debugLogPath;
+	}
+
+	/**
+	 * Set the debug mode log path.
+	 * 
+	 * <p>
+	 * This path accepts one string format parameter: the configured
+	 * {@Link #getBusName()} value.
+	 * </p>
+	 * 
+	 * @param debugLogPath
+	 *        the log path to set, including one string parameter for the bus
+	 *        name
+	 * @see #setDebug(boolean)
+	 */
+	public void setDebugLogPath(String debugLogPath) {
+		this.debugLogPath = debugLogPath;
 	}
 
 }

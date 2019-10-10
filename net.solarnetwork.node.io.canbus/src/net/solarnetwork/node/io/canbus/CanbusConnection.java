@@ -209,4 +209,14 @@ public interface CanbusConnection extends Closeable {
 	 */
 	void unmonitor() throws IOException;
 
+	/**
+	 * Test if the connection is in monitor mode.
+	 * 
+	 * @return {@literal true} if the {@link #monitor(CanbusFrameListener)} has
+	 *         been invoked, {@literal false} if the
+	 *         {@link #monitor(CanbusFrameListener)} has never been invoked, or
+	 *         {@link #unmonitor()} has been invoked to stop monitoring
+	 */
+	boolean isMonitoring();
+
 }

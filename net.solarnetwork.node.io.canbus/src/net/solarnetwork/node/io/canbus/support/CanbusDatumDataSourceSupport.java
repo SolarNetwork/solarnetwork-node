@@ -63,7 +63,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
 
 	private final AtomicReference<CanbusConnection> connection = new AtomicReference<CanbusConnection>();
-
+	private final AtomicReference<CanbusFrameListener> monitor = new AtomicReference<CanbusFrameListener>();
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
 			0.9f, 1);
 
@@ -133,7 +133,11 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * connections opened by this class.
 	 * 
 	 * <p>
-	 * Any existing subscriptions will be unsubscribed.
+	 * Any existing subscriptions will be unsubscribed. If a monitor has been
+	 * registered already via {@link #registerMonitor(CanbusFrameListener)} then
+	 * these subscriptions will still be registered, but not activated. When
+	 * {@link #unregisterMonitor()} is called, the subscriptions will then be
+	 * applied.
 	 * </p>
 	 * 
 	 * @param subscriptions
@@ -152,9 +156,9 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		}
 		Set<Integer> toRemove = this.subscriptions.keySet().stream()
 				.filter(k -> !subscribedAddresses.contains(k)).collect(toSet());
-		if ( conn != null && !conn.isClosed() ) {
-			for ( Integer k : toRemove ) {
-				CanbusSubscription old = this.subscriptions.remove(k);
+		for ( Integer k : toRemove ) {
+			CanbusSubscription old = this.subscriptions.remove(k);
+			if ( conn != null && !conn.isClosed() && !conn.isMonitoring() ) {
 				try {
 					conn.unsubscribe(old.getAddress(), old.isForceExtendedAddress());
 				} catch ( IOException e ) {
@@ -179,11 +183,47 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		registerSubscription(connection.get(), subscription);
 	}
 
+	/**
+	 * Register a monitor to be applied automatically when connections are
+	 * opened by this class.
+	 * 
+	 * @param listener
+	 *        the listener
+	 * @throws IOException
+	 *         if the CAN bus monitor cannot be applied
+	 */
+	protected synchronized void registerMonitor(CanbusFrameListener listener) throws IOException {
+		CanbusFrameListener curr = monitor.get();
+		if ( curr != listener && monitor.compareAndSet(curr, listener) ) {
+			CanbusConnection conn = connection.get();
+			if ( conn != null ) {
+				conn.monitor(listener);
+			}
+		}
+	}
+
+	/**
+	 * Unregister a monitor previously added via
+	 * {@link #registerMonitor(CanbusFrameListener)}.
+	 * 
+	 * @throws IOException
+	 *         if the monitor cannot be unregistered
+	 */
+	protected synchronized void unregisterMonitor() throws IOException {
+		CanbusFrameListener curr = monitor.get();
+		if ( curr != null && monitor.compareAndSet(curr, null) ) {
+			CanbusConnection conn = connection.get();
+			if ( conn != null ) {
+				conn.unmonitor();
+			}
+		}
+	}
+
 	private synchronized void registerSubscription(CanbusConnection conn,
 			CanbusSubscription subscription) throws IOException {
 		CanbusSubscription old = subscriptions.replace(subscription.getAddress(), subscription);
 		if ( conn != null && !conn.isClosed() ) {
-			if ( old != null ) {
+			if ( old != null && !conn.isMonitoring() ) {
 				conn.unsubscribe(old.getAddress(), old.isForceExtendedAddress());
 			}
 			applySubscription(conn, subscription);
@@ -191,13 +231,24 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	}
 
 	private synchronized void applySubscriptions(CanbusConnection conn) throws IOException {
-		for ( CanbusSubscription sub : subscriptions.values() ) {
-			applySubscription(conn, sub);
+		CanbusFrameListener mon = monitor.get();
+		if ( mon != null ) {
+			conn.monitor(mon);
+		} else {
+			for ( CanbusSubscription sub : subscriptions.values() ) {
+				applySubscription(conn, sub);
+			}
 		}
 	}
 
 	private synchronized void applySubscription(CanbusConnection conn, CanbusSubscription sub)
 			throws IOException {
+		if ( conn.isMonitoring() ) {
+			// don't add/remove while monitoring
+			log.debug("Not applying CAN bus {} subscription {} because in monitoring mode.",
+					getBusName(), sub);
+			return;
+		}
 		log.info("Applying registered subscription on CAN bus {}: {}", getBusName(), sub);
 		if ( sub.isMultiplexFilter() ) {
 			conn.subscribe(sub.getAddress(), sub.isForceExtendedAddress(), sub.getLimit(),

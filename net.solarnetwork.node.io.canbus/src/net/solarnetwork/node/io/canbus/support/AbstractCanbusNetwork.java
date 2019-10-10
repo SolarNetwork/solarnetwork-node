@@ -219,6 +219,11 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 			delegate.unmonitor();
 		}
 
+		@Override
+		public boolean isMonitoring() {
+			return delegate.isMonitoring();
+		}
+
 	}
 
 	/**

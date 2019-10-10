@@ -428,6 +428,14 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		synchronized ( monitorSubscription ) {
 			writeMessage(getSocket(), new BasicMessage(MessageType.Bcmmode));
 			monitorSubscription.set(null);
+			// TODO: verify if we have to re-subscribe to any previously registered subscriptions
+		}
+	}
+
+	@Override
+	public boolean isMonitoring() {
+		synchronized ( monitorSubscription ) {
+			return monitorSubscription.get() != null;
 		}
 	}
 
