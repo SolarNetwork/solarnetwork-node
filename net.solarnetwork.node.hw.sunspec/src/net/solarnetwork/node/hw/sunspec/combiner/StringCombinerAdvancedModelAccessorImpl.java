@@ -135,9 +135,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public Float getTemperature() {
-		Number n = getData().getNumber(StringCombinerAdvancedModelRegister.Temperature,
-				getBlockAddress());
-		return (n != null ? n.floatValue() : null);
+		return getFloatValue(StringCombinerAdvancedModelRegister.Temperature);
 	}
 
 	@Override
@@ -156,8 +154,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public Float getDCPerformanceRatio() {
-		Number n = getData().getNumber(StringCombinerAdvancedModelRegister.DcPerformanceRatio,
-				getBlockAddress());
+		Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio);
 		return (n != null ? n.floatValue() / 100f : null);
 	}
 
@@ -183,8 +180,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public List<AdvancedDcInput> getAdvancedDcInputs() {
-		Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputCount,
-				getBlockAddress());
+		Number n = getIntegerValue(StringCombinerAdvancedModelRegister.InputCount);
 		final int count = (n != null ? n.intValue() : null);
 		if ( count < 1 ) {
 			return Collections.emptyList();
@@ -208,7 +204,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 		@Override
 		public Integer getInputId() {
 			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputId,
-					getBlockAddress() + index * repeatingBlockLength);
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return (n != null ? n.intValue() : null);
 		}
 
@@ -218,7 +214,8 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCurrent
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcCurrent);
 			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCurrent, scaleReg,
-					getBlockAddress() + index * repeatingBlockLength, getBlockAddress());
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+					getBlockAddress());
 			return (n != null ? n.floatValue() : null);
 		}
 
@@ -228,21 +225,22 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge
 					: StringCombinerAdvancedModelRegister.ScaleFactorInputDcCharge);
 			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCharge, scaleReg,
-					getBlockAddress() + index * repeatingBlockLength, getBlockAddress());
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+					getBlockAddress());
 			return (n != null ? n.longValue() : null);
 		}
 
 		@Override
 		public Set<ModelEvent> getEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputEventsBitmask,
-					getBlockAddress() + index * repeatingBlockLength);
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return StringCombinerModelEvent.forBitmask(n.longValue());
 		}
 
 		@Override
 		public Set<ModelEvent> getVendorEvents() {
 			Number n = getBitfield(StringCombinerAdvancedModelRegister.InputVendorEventsBitmask,
-					getBlockAddress() + index * repeatingBlockLength);
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return GenericModelEvent.forBitmask(n.longValue());
 		}
 
@@ -252,7 +250,8 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcVoltage
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcVoltage);
 			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcCurrent, scaleReg,
-					getBlockAddress() + index * repeatingBlockLength, getBlockAddress());
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+					getBlockAddress());
 			return (n != null ? n.floatValue() : null);
 		}
 
@@ -262,7 +261,8 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcPower
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcPower);
 			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcPower, scaleReg,
-					getBlockAddress() + index * repeatingBlockLength, getBlockAddress());
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+					getBlockAddress());
 			return (n != null ? n.intValue() : null);
 		}
 
@@ -272,14 +272,15 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 					? StringCombinerAdvancedModelRegister.ScaleFactorInputDcEnergy
 					: StringCombinerAdvancedModelRegister.ScaleFactorDcEnergy);
 			Number n = getScaledValue(StringCombinerAdvancedModelRegister.InputDcEnergy, scaleReg,
-					getBlockAddress() + index * repeatingBlockLength, getBlockAddress());
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength,
+					getBlockAddress());
 			return (n != null ? n.longValue() : null);
 		}
 
 		@Override
 		public Float getDCPerformanceRatio() {
-			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.DcPerformanceRatio,
-					getBlockAddress() + index * repeatingBlockLength);
+			Float n = getFloatValue(StringCombinerAdvancedModelRegister.DcPerformanceRatio,
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return (n != null ? n.floatValue() / 100f : null);
 		}
 
@@ -289,7 +290,7 @@ public class StringCombinerAdvancedModelAccessorImpl extends BaseModelAccessor
 				return null;
 			}
 			Number n = getData().getNumber(StringCombinerAdvancedModelRegister.InputModuleCount,
-					getBlockAddress() + index * repeatingBlockLength);
+					getBlockAddress() + getFixedBlockLength() + index * repeatingBlockLength);
 			return (n != null ? n.intValue() : null);
 		}
 
