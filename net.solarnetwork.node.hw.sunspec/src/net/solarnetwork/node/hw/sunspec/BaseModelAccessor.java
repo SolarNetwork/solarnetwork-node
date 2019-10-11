@@ -125,7 +125,6 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @since 1.2
 	 */
 	protected BigDecimal getScaleFactor(ModbusReference ref, int offset) {
-
 		Number n = data.getNumber(ref, offset);
 		if ( n == null ) {
 			return BigDecimal.ONE;
