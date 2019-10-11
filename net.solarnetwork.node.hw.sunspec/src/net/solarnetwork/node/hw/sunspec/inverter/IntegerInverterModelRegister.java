@@ -77,7 +77,7 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 
 	// Voltage
 
-	/** Phase A-to-Phase C voltage, reported in V. */
+	/** Phase A-to-Phase B voltage, reported in V. */
 	VoltagePhaseAPhaseB(5, UInt16),
 
 	/** Phase B-to-Phase C voltage, reported in V. */
@@ -205,10 +205,10 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 	/** Vendor events bitmask 2. */
 	Events2VendorBitmask(44, UInt32, Bitfield),
 
-	/** Vendor events bitmask 2. */
+	/** Vendor events bitmask 3. */
 	Events3VendorBitmask(46, UInt32, Bitfield),
 
-	/** Vendor events bitmask 2. */
+	/** Vendor events bitmask 4. */
 	Events4VendorBitmask(48, UInt32, Bitfield);
 
 	private final int address;
@@ -252,11 +252,6 @@ public enum IntegerInverterModelRegister implements SunspecModbusReference {
 		return ModbusReadFunction.ReadHoldingRegister;
 	}
 
-	/**
-	 * Get the data type word length.
-	 * 
-	 * @return the word length
-	 */
 	@Override
 	public int getWordLength() {
 		return wordLength;
