@@ -25,6 +25,8 @@
 		interface="net.solarnetwork.node.IdentityService"/>
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+
+	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
 	
 	<reference id="objectMapperService" 
 		interface="net.solarnetwork.util.ObjectMapperService"
@@ -35,8 +37,13 @@
 	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.DatumMetadataService">
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.DatumMetadataService</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
 		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService">
+			<argument ref="settingsService"/>
 			<property name="objectMapper" ref="objectMapper"/>
 			<property name="identityService" ref="identityService"/>
 			<property name="sslService" ref="sslService"/>

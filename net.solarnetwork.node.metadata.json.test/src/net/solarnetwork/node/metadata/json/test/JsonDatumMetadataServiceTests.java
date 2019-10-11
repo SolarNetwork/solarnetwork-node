@@ -22,25 +22,40 @@
 
 package net.solarnetwork.node.metadata.json.test;
 
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService;
+import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
@@ -55,14 +70,16 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 	private static final String TEST_SOUCE_ID = "test.source";
 
 	private IdentityService identityService;
+	private SettingsService settingsService;
 	private SettingDao settingDao;
 	private JsonDatumMetadataService service;
 
 	@Before
 	public void setupClient() throws Exception {
 		identityService = EasyMock.createMock(IdentityService.class);
+		settingsService = EasyMock.createMock(SettingsService.class);
 		settingDao = EasyMock.createMock(SettingDao.class);
-		service = new JsonDatumMetadataService();
+		service = new JsonDatumMetadataService(settingsService);
 		service.setIdentityService(identityService);
 		service.setSettingDao(settingDao);
 
@@ -72,13 +89,13 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(identityService, settingDao);
+		EasyMock.replay(identityService, settingsService, settingDao);
 	}
 
 	@Override
 	@After
 	public void teardown() {
-		EasyMock.verify(identityService, settingDao);
+		EasyMock.verify(identityService, settingsService, settingDao);
 	}
 
 	@Test
@@ -126,15 +143,24 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 	@Test
 	public void postMetadataNotCached() throws Exception {
 		// GIVEN
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(Charset.forName("UTF-8")));
 		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
 		// no cached metadata available (first to look up, second before saving)
+		// called twice: first when looking to load cached data, 2nd when saving to cache
+		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+				.andReturn(Collections.emptyList()).times(2);
+
+		// also fall back to legacy data
 		expect(settingDao.getSetting(JsonDatumMetadataService.SETTING_KEY_SOURCE_META, TEST_SOUCE_ID))
 				.andReturn(null).times(2);
 
-		settingDao.storeSetting(JsonDatumMetadataService.SETTING_KEY_SOURCE_META, TEST_SOUCE_ID,
-				"{\"m\":{\"foo\":\"bar\"}}");
+		// then store as settings resource
+		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
 
 		TestHttpHandler handler = new TestHttpHandler() {
 
@@ -165,20 +191,37 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		service.addSourceMetadata(TEST_SOUCE_ID, meta);
 
 		// THEN
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Saved single resource", rsrcs, hasSize(1));
+		String json = FileCopyUtils.copyToString(
+				new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
+		assertThat("Cached metadata json", json, equalTo("{\"m\":{\"foo\":\"bar\"}}"));
 	}
 
 	@Test
-	public void postMetadataAlreadyCached() throws Exception {
+	public void postMetadataAlreadyCachedLegacy() throws Exception {
 		// GIVEN
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(Charset.forName("UTF-8")));
+
 		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
 		// no cached metadata available (first to look up, second before saving)
+		// called twice: first when looking to load cached data, 2nd when saving to cache
+		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+				.andReturn(Collections.emptyList()).times(2);
+
+		// legacy cached metadata *is* available (first to look up, second before saving)
 		expect(settingDao.getSetting(JsonDatumMetadataService.SETTING_KEY_SOURCE_META, TEST_SOUCE_ID))
 				.andReturn("{\"m\":{\"foo\":\"bar\"}}").times(2);
 
-		settingDao.storeSetting(JsonDatumMetadataService.SETTING_KEY_SOURCE_META, TEST_SOUCE_ID,
-				"{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}");
+		// then store as settings resource
+		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
 
 		TestHttpHandler handler = new TestHttpHandler() {
 
@@ -209,17 +252,87 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		service.addSourceMetadata(TEST_SOUCE_ID, meta);
 
 		// THEN
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Saved single resource", rsrcs, hasSize(1));
+		String json = FileCopyUtils.copyToString(
+				new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
+		assertThat("Cached metadata json", json, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
+	}
+
+	@Test
+	public void postMetadataAlreadyCached() throws Exception {
+		// GIVEN
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(Charset.forName("UTF-8")));
+
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
+
+		// no cached metadata available (first to look up, second before saving)
+		ByteArrayResource jsonResource = new ByteArrayResource(
+				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
+		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+				.andReturn(Collections.singleton(jsonResource)).times(2);
+
+		// then store as settings resource
+		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), equalTo("POST"));
+				assertThat("Request path", request.getPathInfo(),
+						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID));
+				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
+
+				String body = FileCopyUtils.copyToString(request.getReader());
+				assertThat("JSON body", body, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
+
+				respondWithJson(response, "{\"success\":true}");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// WHEN
+		replayAll();
+
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.putInfoValue("bim", "bam");
+		service.addSourceMetadata(TEST_SOUCE_ID, meta);
+
+		// THEN
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Saved single resource", rsrcs, hasSize(1));
+		String json = FileCopyUtils.copyToString(
+				new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
+		assertThat("Cached metadata json", json, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}"));
 	}
 
 	@Test
 	public void postMetadataAlreadyCachedNoChange() throws Exception {
 		// GIVEN
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(Charset.forName("UTF-8")));
+
 		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
-		// no cached metadata available (first to look up, second before saving)
-		expect(settingDao.getSetting(JsonDatumMetadataService.SETTING_KEY_SOURCE_META, TEST_SOUCE_ID))
-				.andReturn("{\"m\":{\"foo\":\"bar\"}}").times(1);
+		// cached metadata available
+		ByteArrayResource jsonResource = new ByteArrayResource(
+				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
+		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+				.andReturn(Collections.singleton(jsonResource)).times(1);
 
 		// WHEN
 		replayAll();

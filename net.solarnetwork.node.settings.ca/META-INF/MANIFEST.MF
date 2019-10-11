@@ -3,18 +3,19 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Settings Support
 Bundle-SymbolicName: net.solarnetwork.node.settings.ca
 Bundle-Description: Provides persistent storage of user-customized SolarNode settings.
-Bundle-Version: 1.10.0
+Bundle-Version: 1.11.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
+ net.solarnetwork.io;version="1.4.0",
  net.solarnetwork.node;version="1.9.0",
  net.solarnetwork.node.backup;version="1.4.0",
  net.solarnetwork.node.dao;version="1.4.0",
  net.solarnetwork.node.job;version="1.5.0",
  net.solarnetwork.node.reactor;version="1.5.0",
  net.solarnetwork.node.reactor.support;version="1.4.1",
- net.solarnetwork.node.settings;version="1.11.0",
- net.solarnetwork.node.settings.support;version="1.0.1",
+ net.solarnetwork.node.settings;version="1.12.0",
+ net.solarnetwork.node.settings.support;version="1.10.0",
  net.solarnetwork.node.support;version="1.4.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.osgi.framework;version="[1.5,2.0)",
@@ -30,6 +31,7 @@ Import-Package:
  org.springframework.scheduling.quartz;version="[4.2,5.0)",
  org.springframework.transaction;version="[4.2,5.0)",
  org.springframework.transaction.support;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)",
  org.supercsv.cellprocessor;version="[2.0,3.0)",
  org.supercsv.cellprocessor.ift;version="[2.0,3.0)",
  org.supercsv.io;version="[2.0,3.0)",

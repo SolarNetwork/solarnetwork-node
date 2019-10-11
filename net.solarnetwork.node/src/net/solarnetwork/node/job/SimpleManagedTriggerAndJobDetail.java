@@ -37,6 +37,7 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.SettingsChangeObserver;
 import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.node.util.PrefixedMessageSource;
@@ -69,6 +70,14 @@ import net.solarnetwork.node.util.TemplatedMessageSource;
  * </p>
  * 
  * <p>
+ * This class also implements {@link SettingsChangeObserver}, and when
+ * {@link #configurationChanged(Map)} is invoked, if the configured
+ * {@link SettingSpecifierProvider} <b>also</b> implements
+ * {@link SettingsChangeObserver} then the method will be delegated to that
+ * instance.
+ * </p>
+ * 
+ * <p>
  * The configurable properties of this class are:
  * </p>
  * 
@@ -95,9 +104,10 @@ import net.solarnetwork.node.util.TemplatedMessageSource;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider {
+public class SimpleManagedTriggerAndJobDetail
+		implements ManagedTriggerAndJobDetail, ServiceProvider, SettingsChangeObserver {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleManagedTriggerAndJobDetail.class);
 
@@ -228,6 +238,14 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 			messageSource = tSource;
 		}
 		return messageSource;
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		SettingSpecifierProvider ssp = getSettingSpecifierProvider();
+		if ( ssp instanceof SettingsChangeObserver ) {
+			((SettingsChangeObserver) ssp).configurationChanged(properties);
+		}
 	}
 
 	public SettingSpecifierProvider getSettingSpecifierProvider() {
