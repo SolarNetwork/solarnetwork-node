@@ -33,6 +33,7 @@ import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.MuxFilterMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.SubscribeMessageImpl;
 import net.solarnetwork.node.io.canbus.socketcand.msg.UnsubscribeMessageImpl;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Utilities for dealing with the socketcand protocol.
@@ -141,62 +142,6 @@ public final class SocketcandUtils {
 	}
 
 	/**
-	 * Convert a hex-encoded string to a byte array.
-	 * 
-	 * <p>
-	 * If the string does not have an even number of characters, a {@literal 0}
-	 * will be inserted at the start of the string.
-	 * </p>
-	 * 
-	 * @param s
-	 *        the string to decode
-	 * @return the bytes, never {@literal null}
-	 * @see #decodeHexStringPadStart(String)
-	 */
-	public static byte[] decodeHexString(String s) {
-		if ( s == null ) {
-			return new byte[0];
-		}
-		return decodeHexPadStart(s.toCharArray());
-	}
-
-	/**
-	 * Convert a hex-encoded string to a byte array.
-	 * 
-	 * <p>
-	 * If the string does not have an even number of characters, a {@literal 0}
-	 * will be inserted at the start of the string.
-	 * </p>
-	 * 
-	 * @param chars
-	 *        the characters to decode
-	 * @return the bytes, never {@literal null}
-	 */
-	public static byte[] decodeHexPadStart(final char[] chars) {
-		if ( chars == null || chars.length < 1 ) {
-			return new byte[0];
-		}
-		final int len = chars.length;
-		final boolean even = (len & 0x01) == 0;
-		final byte[] data = new byte[(even ? len : len + 1) / 2];
-		int i = 0;
-		int j = 0;
-		if ( !even ) {
-			data[i] = (byte) (Character.digit(chars[j], 16) & 0xFF);
-			i++;
-			j++;
-		}
-		for ( ; j < len; i++ ) {
-			int n = Character.digit(chars[j], 16) << 4;
-			j++;
-			n |= Character.digit(chars[j], 16);
-			j++;
-			data[i] = (byte) (n & 0xFF);
-		}
-		return data;
-	}
-
-	/**
 	 * Decode a list of hex-encoded strings into a byte array.
 	 * 
 	 * @param hexData
@@ -218,7 +163,7 @@ public final class SocketcandUtils {
 			ByteArrayOutputStream byos = new ByteArrayOutputStream(maxIndex - fromIndex);
 			for ( String hex : (fromIndex == 0 && maxIndex == hexDataSize ? hexData
 					: hexData.subList(fromIndex, maxIndex)) ) {
-				byos.write(decodeHexPadStart(hex.toCharArray()));
+				byos.write(ByteUtils.decodeHexPadStart(hex.toCharArray()));
 			}
 			return byos.toByteArray();
 		} catch ( IOException e ) {
@@ -228,41 +173,6 @@ public final class SocketcandUtils {
 	}
 
 	// adapted from Apache Commons Codec Hex.java
-
-	private static final char[] DIGITS_UPPER = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A',
-			'B', 'C', 'D', 'E', 'F' };
-
-	/*- maybe someday
-	private static char[] encodeHex(final byte[] data, final char[] toDigits) {
-		final int l = data.length;
-		final char[] out = new char[l << 1];
-		for ( int i = 0, j = 0; i < l; i++ ) {
-			encodeHex(data[i], toDigits, out, j);
-		}
-		return out;
-	}
-	*/
-
-	/**
-	 * Encode a single byte as hex characters.
-	 * 
-	 * @param b
-	 *        the byte to encode
-	 * @param toDigits
-	 *        the hex digits to use
-	 * @param dest
-	 *        the destination character buffer to write the hex encoding to
-	 * @param destIndex
-	 *        the index within {@code dest} to write the hex encoding at, along
-	 *        with {@code destIndex + 1}
-	 * @return the {@code dest} array
-	 */
-	public static char[] encodeHex(final byte b, final char[] toDigits, final char[] dest,
-			int destIndex) {
-		dest[destIndex] = toDigits[(0xF0 & b) >>> 4];
-		dest[destIndex + 1] = toDigits[0x0F & b];
-		return dest;
-	}
 
 	/**
 	 * Encode a byte array into a list of hex-encoded strings, one string for
@@ -285,7 +195,7 @@ public final class SocketcandUtils {
 		List<String> hexData = new ArrayList<>(toIndex - fromIndex);
 		char[] buffer = new char[2];
 		for ( int i = fromIndex; i < toIndex; i++ ) {
-			hexData.add(new String(encodeHex(data[i], DIGITS_UPPER, buffer, 0)));
+			hexData.add(new String(ByteUtils.encodeHexUpperCase(data[i], buffer, 0)));
 		}
 		return hexData;
 	}
@@ -327,7 +237,7 @@ public final class SocketcandUtils {
 			byte b = (byte) ((number >>> ((Long.BYTES - i - 1) * 8)) & 0xFF);
 			if ( b != 0 ) {
 				lastNonZeroIndex = i + 1;
-				result.add(new String(encodeHex(b, DIGITS_UPPER, buffer, 0)));
+				result.add(new String(ByteUtils.encodeHexUpperCase(b, buffer, 0)));
 			} else {
 				result.add("00");
 			}

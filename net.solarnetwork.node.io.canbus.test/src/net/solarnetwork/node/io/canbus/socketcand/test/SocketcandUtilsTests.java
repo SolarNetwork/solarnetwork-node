@@ -60,32 +60,6 @@ public class SocketcandUtilsTests {
 	}
 
 	@Test
-	public void decodeHexString_basic() {
-		// GIVEN
-		String s = "1F2B01";
-
-		// WHEN
-		byte[] b = SocketcandUtils.decodeHexString(s);
-
-		// THEN
-		assertThat("Decoded bytes",
-				Arrays.equals(b, new byte[] { (byte) 0x1F, (byte) 0x2B, (byte) 0x01 }), equalTo(true));
-	}
-
-	@Test
-	public void decodeHexString_oddLength() {
-		// GIVEN
-		String s = "F2B01";
-
-		// WHEN
-		byte[] b = SocketcandUtils.decodeHexString(s);
-
-		// THEN
-		assertThat("Decoded bytes",
-				Arrays.equals(b, new byte[] { (byte) 0x0F, (byte) 0x2B, (byte) 0x01 }), equalTo(true));
-	}
-
-	@Test
 	public void decodeHexStrings_basic() {
 		// GIVEN
 		List<String> hexData = asList("1", "02", "33", "FF");
