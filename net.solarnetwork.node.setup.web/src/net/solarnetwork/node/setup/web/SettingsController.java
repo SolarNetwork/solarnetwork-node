@@ -26,6 +26,7 @@ import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,12 +39,14 @@ import java.util.regex.Matcher;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import net.solarnetwork.node.IdentityService;
@@ -52,6 +55,7 @@ import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
@@ -62,12 +66,13 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
+import net.solarnetwork.web.support.MultipartFileResource;
 
 /**
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -129,19 +134,20 @@ public class SettingsController {
 			ModelMap model) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
-			Map<String, List<FactorySettingSpecifierProvider>> providers = service
+			Map<String, FactorySettingSpecifierProvider> providers = service
 					.getProvidersForFactory(factoryUID);
-			if ( providers != null && providers.size() > 1 ) {
+			if ( providers != null && !providers.isEmpty() ) {
 				// sort map keys numerically
 				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
 				Arrays.sort(instanceIds, FactoryInstanceIdComparator.INSTANCE);
-				Map<String, List<FactorySettingSpecifierProvider>> orderedProviders = new LinkedHashMap<>();
+				Map<String, FactorySettingSpecifierProvider> orderedProviders = new LinkedHashMap<>();
 				for ( String id : instanceIds ) {
 					orderedProviders.put(id, providers.get(id));
 				}
-				providers = orderedProviders;
+				model.put(KEY_PROVIDERS, orderedProviders);
+			} else {
+				model.put(KEY_PROVIDERS, Collections.emptyMap());
 			}
-			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
@@ -268,6 +274,80 @@ public class SettingsController {
 		props.put(BackupManager.BACKUP_KEY, file.getName());
 		manager.importBackupArchive(file.getInputStream(), props);
 		return "redirect:/a/settings";
+	}
+
+	/**
+	 * Import a setting resource.
+	 * 
+	 * @param handlerKey
+	 *        the {@link SettingResourceHandler} ID to import with
+	 * @param instanceKey
+	 *        the optional factory instance ID, or {@literal null}
+	 * @param key
+	 *        the resource setting key
+	 * @param file
+	 *        the resource
+	 * @return status response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "!data")
+	@ResponseBody
+	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
+			@RequestParam(name = "instanceKey", required = false) String instanceKey,
+			@RequestParam("key") String key, @RequestPart("file") MultipartFile file)
+			throws IOException {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service == null ) {
+			return new Response<Void>(false, null, "SettingsService not available.", null);
+		}
+		MultipartFileResource r = new MultipartFileResource(file);
+		service.importSettingResources(handlerKey, instanceKey, key, Collections.singleton(r));
+		return Response.response(null);
+	}
+
+	/**
+	 * Import a setting resource from direct text.
+	 * 
+	 * @param handlerKey
+	 *        the {@link SettingResourceHandler} ID to import with
+	 * @param instanceKey
+	 *        the optional factory instance ID, or {@literal null}
+	 * @param key
+	 *        the resource setting key
+	 * @param data
+	 *        the resource data
+	 * @return status response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "data")
+	@ResponseBody
+	public Response<Void> importResourceData(@RequestParam("handlerKey") String handlerKey,
+			@RequestParam(name = "instanceKey", required = false) String instanceKey,
+			@RequestParam("key") String key, @RequestParam("data") String data) throws IOException {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service == null ) {
+			return new Response<Void>(false, null, "SettingsService not available.", null);
+		}
+		NamedDataResource r = new NamedDataResource(key + "-01.txt", data);
+		service.importSettingResources(handlerKey, instanceKey, key, Collections.singleton(r));
+		return Response.response(null);
+	}
+
+	private static final class NamedDataResource extends ByteArrayResource {
+
+		private final String filename;
+
+		private NamedDataResource(String filename, String data) {
+			super(data.getBytes(Charset.forName("UTF-8")));
+			this.filename = filename;
+		}
+
+		@Override
+		public String getFilename() {
+			return filename;
+		}
 	}
 
 }

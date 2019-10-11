@@ -1,0 +1,168 @@
+<NetworkDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://kayak.2codeornot2code.org/1.0">
+	<Document name="Test 2" version="0.1" author="ChrisO" company="EVisi" date="2019-09-20"/>
+	<Node id="1" name="VCU"/>
+	<Node id="2" name="BMS"/>
+
+	<Bus name="CANB">
+		<Message id="0x0C01A709" name="Vehicle Operation Total Time" interval="6000">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="VehicleOpTime" offset="0" length="32" endianess="little">
+				<Notes>Total Vehicle Operation Total Time</Notes>
+				<Value type="unsigned" slope="0.01" intercept="0" unit="h"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C1AA7A1" name="Operation Mileage" interval="1000">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="VehicleMilage" offset="0" length="32" endianess="little">
+				<Notes>Total Vehicle Operation Mileage</Notes>
+				<Value type="unsigned" slope="0.1" intercept="0" unit="km"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C17A709" name="Battery Energy Output" interval="6000">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="BatteryOutputEnergy" offset="32" length="32" endianess="little">
+				<Notes>Battery Output Energy</Notes>
+				<Value type="unsigned" slope="0.01" intercept="0" unit="kW.h"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C18A709" name="Battery Energy Input" interval="6000">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="BatteryInputEnergy" offset="0" length="32" endianess="little">
+				<Notes>Battery Input Energy</Notes>
+				<Value type="unsigned" slope="0.01" intercept="0" unit="kW.h"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C0BA709" name="Battery Charge" interval="6000">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="Battery Charge Energy" offset="32" length="32" endianess="little">
+				<Notes>Battery Charge Energy</Notes>
+				<Value type="unsigned" slope="0.01" intercept="0" unit="kW.h"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C03A1A7" name="Motor Data" interval="100">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="PCU Input Voltage" offset="0" length="16" endianess="little">
+				<Notes>PCU Input Voltage</Notes>
+				<Value type="unsigned" slope="0.1" intercept="-1000" unit="V" min="0" max="999"/>
+			</Signal>
+			<Signal name="PCU Input Current" offset="16" length="16" endianess="little">
+				<Notes>PCU Input Current</Notes>
+				<Value type="signed" slope="0.1" intercept="-1000" unit="A" min="-999" max="999"/>
+			</Signal>
+			<Signal name="PCU Motor Torque" offset="32" length="16" endianess="little">
+				<Notes>Motor Torque</Notes>
+				<Value type="signed" slope="1" intercept="-3000" unit="N.m" min="-3000" max="3000"/>
+			</Signal>
+			<Signal name="PCU Motor Speed" offset="48" length="16" endianess="little">
+				<Notes>PCU Motor Speed</Notes>
+				<Value type="unsigned" slope="0.5" intercept="0" unit="Hz/60" min="0" max="9999"/>
+			</Signal>
+		</Message>
+		<Message id="0x0C04A1A7" name="Motor Data 2" interval="100">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="Motor Temperature" offset="0" length="8" endianess="little">
+				<Notes>Motor Temperature</Notes>
+				<Value type="signed" slope="1" intercept="-40" unit="Cel" min="-40" max="999"/>
+			</Signal>
+			<Signal name="PCU Temperature" offset="8" length="8" endianess="little">
+				<Notes>PCU Temperature</Notes>
+				<Value type="signed" slope="1" intercept="-40" unit="Cel" min="-40" max="999"/>
+			</Signal>
+			<Signal name="Error Code" offset="48" length="16" endianess="little">
+				<Notes>Motor Error Code</Notes>
+				<Value type="unsigned"/>
+				<LabelSet>
+					<Label type="error" name="No Error Code" value="0"/>
+					<Label type="error" name="Unspecific error" value="15"/>
+					<Label name="Error 1" value="1"/>
+					<Label name="Error 2" value="2"/>
+					<Label name="Error 3" value="3"/>
+					<Label name="Error 4" value="4"/>
+					<Label name="Error 5" value="5"/>
+					<Label name="Error 6" value="6"/>
+					<LabelGroup name="undefined" from="7" to="9"/>
+					<LabelGroup name="undefined" from="11" to="14"/>
+				</LabelSet>
+			</Signal>
+		</Message>
+		<Message id="0x0C06A1A7" name="Motor Other Data" interval="100">
+			<Producer>
+				<NodeRef id="1"/>
+			</Producer>
+			<Signal name="Traction Pedal Percent" offset="0" length="8" endianess="little">
+				<Notes>Accelerator Pedal %</Notes>
+				<Value type="unsigned" slope="0.4" intercept="0" unit="%" min="0" max="100"/>
+			</Signal>
+			<Signal name="Brake Pedal Percent" offset="8" length="8" endianess="little">
+				<Notes>PBrake Pedal %</Notes>
+				<Value type="unsigned" slope="0.4" intercept="0" unit="%" min="0" max="100"/>
+			</Signal>
+		</Message>
+		<Message id="0x1818D0F3" name="Battery Management 1" interval="100">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="Battery Voltage" offset="0" length="16" endianess="little">
+				<Notes>Battery Voltage</Notes>
+				<Value type="unsigned" slope="0.1" intercept="-1000" unit="V" min="0"/>
+			</Signal>
+			<Signal name="Battery Current" offset="16" length="16" endianess="little">
+				<Notes>Battery Current</Notes>
+				<Value type="unsigned" slope="0.1" intercept="-1000" unit="A" min="0"/>
+			</Signal>
+			<Signal name="Battery State of Charge" offset="32" length="8" endianess="little">
+				<Notes>Battery State of Charge</Notes>
+				<Value type="unsigned" slope="0.4" intercept="0" unit="%" min="0" max="100"/>
+			</Signal>
+		</Message>
+		<Message id="0x181AD0F3" name="Battery Management 2" interval="100">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="Positive Isolation Resistance" offset="0" length="16" endianess="little">
+				<Notes>Positive Isolation Resistance</Notes>
+				<Value type="unsigned" slope="1" intercept="0" unit="kOhm" min="0"/>
+			</Signal>
+			<Signal name="Negative Isolation Resistance" offset="16" length="16" endianess="little">
+				<Notes>Negative Isolation Resistance</Notes>
+				<Value type="unsigned" slope="1" intercept="0" unit="kOhm" min="0"/>
+			</Signal>
+			<Signal name="Max Cell Voltage" offset="32" length="16" endianess="little">
+				<Notes>Max Cell Voltage</Notes>
+				<Value type="unsigned" slope="0.01" intercept="-1000" unit="V" min="0"/>
+			</Signal>
+			<Signal name="Min Cell Voltage" offset="48" length="16" endianess="little">
+				<Notes>Min Cell Voltage</Notes>
+				<Value type="unsigned" slope="0.01" intercept="-1000" unit="V" min="0"/>
+			</Signal>
+		</Message>
+		<Message id="0x181DD0F3" name="Battery Management 3" interval="100">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="Maximum Monomer Temperature" offset="0" length="32" endianess="little">
+				<Notes>Maximum Monomer Temperature</Notes>
+				<Value type="unsigned" slope="1" intercept="-40" unit="Cel" min="0"/>
+			</Signal>
+			<Signal name="Minimum Monomer Temperature" offset="32" length="32" endianess="little">
+				<Notes>Minimum Monomer Temperature</Notes>
+				<Value type="unsigned" slope="1" intercept="-40" unit="Cel" min="0"/>
+			</Signal>
+		</Message>
+	</Bus>
+</NetworkDefinition>

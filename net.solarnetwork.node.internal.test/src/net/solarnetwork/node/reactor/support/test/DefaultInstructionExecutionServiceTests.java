@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.reactor.support;
+package net.solarnetwork.node.reactor.support.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -35,6 +35,9 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService;
 
 /**
  * Test cases for the {@link DefaultInstructionExecutionService} class.

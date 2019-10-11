@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Generic Modbus Datum Source
-Bundle-Description: Collect data from arbitrary Modbus devices devices.
+Bundle-Description: Collect data from arbitrary Modbus devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.modbus
 Bundle-Version: 1.4.2
 Bundle-Vendor: SolarNetwork

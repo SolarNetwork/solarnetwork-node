@@ -1,0 +1,20 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<NetworkDefinition xmlns="http://kayak.2codeornot2code.org/1.0" xmlns:sn="urn:solarnetwork:datum:1.0">
+	<Document name="Bus" version="0.1" author="ChrisO" company="EVisi" date="2019-09-20">Bus CAN</Document>
+	
+	<Node id="2" name="Battery" sn:source-id="/BUS1/BAT1" sn:publish-interval="60000"/>
+	
+	<Bus name="CANB">
+		<!-- Battery -->
+		<Message id="0x0C17A709" name="Battery Energy Output" interval="6000">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="BatteryOutputEnergy" offset="32" length="32" endianess="little" sn:datum-property="wattHourReading" sn:datum-property-classification="a">
+				<Value type="unsigned" slope="0.01" intercept="0" unit="kW.h"/>
+				<Name xml:lang="en">Battery Output Energy</Name>
+				<Name xml:lang="fr">Énergie de sortie de la batterie</Name>
+			</Signal>
+		</Message>
+	</Bus>
+</NetworkDefinition>

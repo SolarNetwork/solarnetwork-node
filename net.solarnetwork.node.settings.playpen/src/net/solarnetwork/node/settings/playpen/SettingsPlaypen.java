@@ -22,29 +22,46 @@
 
 package net.solarnetwork.node.settings.playpen;
 
+import static java.util.Arrays.asList;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.domain.BasicGeneralLocation;
 import net.solarnetwork.node.domain.Location;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
+import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.SettingValueBean;
+import net.solarnetwork.node.settings.SettingsCommand;
+import net.solarnetwork.node.settings.SettingsUpdates;
+import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextAreaSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.setup.SetupResourceProvider;
@@ -54,10 +71,15 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class SettingsPlaypen implements SettingSpecifierProvider {
+public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
+	private static final String PLAYPEN_SETTING_FILE_TXT = "var/playpen-setting-file-%d.txt";
+	private static final String PLAYPEN_SETTING_FILE_DAT = "var/playpen-setting-file.dat";
+	private static final String RESOURCE_KEY_FILE = "file";
+	private static final String RESOURCE_KEY_TEXT_FILES = "textFiles";
+	private static final String RESOURCE_KEY_TEXT_AREA = "textArea";
 	private static final String DEFAULT_STRING = "simple";
 	private static final Integer DEFAULT_INTEGER = 42;
 	private static final Double DEFAULT_SLIDE = 5.0;
@@ -71,10 +93,13 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 	private Double slide = DEFAULT_SLIDE;
 	private String radio = DEFAULT_RADIO[0];
 	private String menu = DEFAULT_MENU[0];
+	private String textAreaContent = null;
+	private String fileContent = null;
 
 	// group support
 	private List<String> listString = new ArrayList<String>(4);
 	private List<ComplexListItem> listComplex = new ArrayList<ComplexListItem>(4);
+	private List<String> textFilesContent = new ArrayList<>(2);
 
 	private OptionalServiceTracker<LocationService> locationService;
 	private Long locationId;
@@ -139,6 +164,26 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// text area
+		results.add(new BasicTextAreaSettingSpecifier(RESOURCE_KEY_TEXT_AREA, ""));
+		results.add(new BasicTitleSettingSpecifier(RESOURCE_KEY_TEXT_AREA + "Content", textAreaContent,
+				true));
+
+		// file
+		results.add(new BasicFileSettingSpecifier(RESOURCE_KEY_FILE, null,
+				new LinkedHashSet<>(asList(".txt", "text/*")), false));
+		results.add(new BasicTitleSettingSpecifier(RESOURCE_KEY_FILE + "Content", fileContent, true));
+
+		// text files
+		results.add(new BasicFileSettingSpecifier(RESOURCE_KEY_TEXT_FILES, null,
+				new LinkedHashSet<>(asList(".txt", "text/*")), true));
+		if ( textFilesContent != null ) {
+			for ( String content : textFilesContent ) {
+				results.add(new BasicTitleSettingSpecifier(RESOURCE_KEY_TEXT_FILES + "Content", content,
+						true));
+			}
+		}
 
 		// custom UI
 		results.add(new BasicSetupResourceSettingSpecifier(customSettingResourceProvider,
@@ -265,6 +310,72 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		setWeatherLocationId(newLocationId);
 		setWeatherSourceId(newSourceId);
 	}
+
+	// SettingResourceHandler -----
+
+	@Override
+	public Iterable<Resource> currentSettingResources(String settingKey) {
+		List<Resource> result = new ArrayList<>(2);
+		if ( RESOURCE_KEY_FILE.equals(settingKey) ) {
+			Resource r = new FileSystemResource(PLAYPEN_SETTING_FILE_DAT);
+			if ( r.exists() ) {
+				result.add(r);
+			}
+		} else if ( RESOURCE_KEY_TEXT_FILES.equals(settingKey) ) {
+			int i = 1;
+			while ( true ) {
+				Resource r = new FileSystemResource(String.format(PLAYPEN_SETTING_FILE_TXT, i));
+				if ( !r.exists() ) {
+					break;
+				}
+				result.add(r);
+				i++;
+			}
+		}
+		return result;
+	}
+
+	@Override
+	public SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources)
+			throws IOException {
+		if ( resources == null ) {
+			return null;
+		}
+		if ( RESOURCE_KEY_TEXT_AREA.equals(settingKey) ) {
+			for ( Resource r : resources ) {
+				String s = FileCopyUtils.copyToString(
+						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				return new SettingsCommand(
+						Arrays.asList(new SettingValueBean(RESOURCE_KEY_TEXT_AREA + "Content", s)));
+			}
+		} else if ( RESOURCE_KEY_FILE.equals(settingKey) ) {
+			for ( Resource r : resources ) {
+				String s = FileCopyUtils.copyToString(
+						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				return new SettingsCommand(
+						Arrays.asList(new SettingValueBean(RESOURCE_KEY_FILE + "Content", s)));
+			}
+		} else if ( RESOURCE_KEY_TEXT_FILES.equals(settingKey) ) {
+			int i = 0;
+			SettingsCommand updates = new SettingsCommand(null,
+					asList(Pattern.compile("textFilesContent\\[.*")));
+			for ( Resource r : resources ) {
+				String s = FileCopyUtils.copyToString(
+						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				updates.getValues().add(new SettingValueBean(
+						String.format("%sContent[%d]", RESOURCE_KEY_TEXT_FILES, i), s));
+				i++;
+			}
+			updates.getValues().add(0,
+					new SettingValueBean(RESOURCE_KEY_TEXT_FILES + "ContentCount", String.valueOf(i)));
+			return updates;
+		} else {
+			log.warn("Ignoring setting resource key [{}]", settingKey);
+		}
+		return null;
+	}
+
+	// Accessors -----
 
 	public String getString() {
 		return string;
@@ -468,4 +579,60 @@ public class SettingsPlaypen implements SettingSpecifierProvider {
 		this.customSettingResourceProvider = customSettingResourceProvider;
 	}
 
+	public String getTextAreaContent() {
+		return textAreaContent;
+	}
+
+	public void setTextAreaContent(String textArea) {
+		this.textAreaContent = textArea;
+	}
+
+	public String getFileContent() {
+		return fileContent;
+	}
+
+	public void setFileContent(String textFile) {
+		this.fileContent = textFile;
+	}
+
+	public List<String> getTextFilesContent() {
+		return textFilesContent;
+	}
+
+	public void setTextFilesContent(List<String> textFiles) {
+		this.textFilesContent = textFiles;
+	}
+
+	/**
+	 * Get the number of configured {@code listString} elements.
+	 * 
+	 * @return The number of {@code listString} elements.
+	 */
+	public int getTextFilesContentCount() {
+		List<String> l = getTextFilesContent();
+		return (l == null ? 0 : l.size());
+	}
+
+	/**
+	 * Adjust the number of configured {@code textFilesContent} elements. Any
+	 * newly added element values will be empty strings.
+	 * 
+	 * @param count
+	 *        The desired number of {@code listString} elements.
+	 */
+	public void setTextFilesContentCount(int count) {
+		if ( count < 0 ) {
+			count = 0;
+		}
+		List<String> l = getTextFilesContent();
+		int lCount = (l == null ? 0 : l.size());
+		while ( lCount > count ) {
+			l.remove(l.size() - 1);
+			lCount--;
+		}
+		while ( lCount < count ) {
+			l.add("");
+			lCount++;
+		}
+	}
 }

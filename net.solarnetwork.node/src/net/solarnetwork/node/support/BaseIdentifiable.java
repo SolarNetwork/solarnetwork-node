@@ -38,7 +38,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.67
  */
 public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork.domain.Identifiable {
@@ -50,17 +50,40 @@ public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork
 	/**
 	 * Get settings for the configurable properties of {@link BaseIdentifiable}.
 	 * 
+	 * <p>
+	 * Empty strings are used for the default {@code uid} and {@code groupUid}
+	 * setting values.
+	 * </p>
+	 * 
 	 * @param prefix
 	 *        an optional prefix to include in all setting keys
 	 * @return the settings
+	 * @see #baseIdentifiableSettings(String, String, String)
 	 */
 	public static List<SettingSpecifier> baseIdentifiableSettings(String prefix) {
+		return baseIdentifiableSettings(prefix, "", "");
+	}
+
+	/**
+	 * Get settings for the configurable properties of {@link BaseIdentifiable}.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to include in all setting keys
+	 * @param defaultUid
+	 *        the default {@code uid} value to use
+	 * @param defaultGroupUid
+	 *        the default {@code groupUid} value to use
+	 * @return the settings
+	 * @since 1.1
+	 */
+	public static List<SettingSpecifier> baseIdentifiableSettings(String prefix, String defaultUid,
+			String defaultGroupUid) {
 		if ( prefix == null ) {
 			prefix = "";
 		}
 		List<SettingSpecifier> results = new ArrayList<>(8);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", ""));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", defaultUid));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", defaultGroupUid));
 		return results;
 	}
 
