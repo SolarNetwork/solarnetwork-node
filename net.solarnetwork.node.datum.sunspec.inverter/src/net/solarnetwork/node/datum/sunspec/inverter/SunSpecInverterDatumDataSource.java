@@ -40,18 +40,21 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -117,6 +120,16 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			}
 		}
 		SunSpecInverterDatum d = new SunSpecInverterDatum(data, ACPhase.Total);
+
+		Set<Integer> secondaryModelIds = getSecondaryModelIds();
+		if ( secondaryModelIds != null
+				&& secondaryModelIds.contains(InverterModelId.MultipleMpptInverterExtension.getId()) ) {
+			// populate DC modules
+			InverterMpptExtensionModelAccessor mppt = currSample
+					.findTypedModel(InverterMpptExtensionModelAccessor.class);
+			d.populateDcModulesProperties(mppt);
+		}
+
 		d.setSourceId(getSourceId());
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
@@ -160,6 +173,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			SunSpecInverterDatumDataSource iDefaults = (SunSpecInverterDatumDataSource) defaults;
 			results.add(new BasicTextFieldSettingSpecifier("ignoreStatesValue",
 					iDefaults.getIgnoreStatesValue()));
+			results.add(new BasicToggleSettingSpecifier("includeDcModules", false));
 		}
 
 		return results;
@@ -211,6 +225,28 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 		buf.append("W = ").append(data.getActivePower());
 		buf.append(", freq = ").append(data.getFrequency());
 		buf.append(", Wh exp = ").append(data.getActiveEnergyExported());
+
+		InverterMpptExtensionModelAccessor mppt = sample
+				.findTypedModel(InverterMpptExtensionModelAccessor.class);
+		if ( mppt != null ) {
+			for ( InverterMpptExtensionModelAccessor.DcModule module : mppt.getDcModules() ) {
+				Integer moduleId = module.getInputId();
+				if ( moduleId == null ) {
+					continue;
+				}
+				Float moduleCurrent = module.getDCCurrent();
+				if ( moduleCurrent == null ) {
+					continue;
+				}
+				buf.append(", DC module ").append(moduleId).append(" A = ").append(moduleCurrent);
+				Float moduleVoltage = module.getDCVoltage();
+				if ( moduleVoltage != null ) {
+					buf.append(", DC module ").append(moduleId).append(" V = ").append(moduleVoltage);
+				}
+
+			}
+		}
+
 		buf.append("; sampled at ")
 				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
 		return buf.toString();
