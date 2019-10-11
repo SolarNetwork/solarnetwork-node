@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.canbus.support;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.context.MessageSource;
-import com.github.kayak.core.SocketcandConnection;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -122,7 +121,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	 * 
 	 * @return {@literal true} if the TCP "no delay" option should be used;
 	 *         defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_TCP_NO_DELAY}
+	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_TCP_NO_DELAY}
 	 */
 	public boolean isSocketTcpNoDelay() {
 		return socketTcpNoDelay;
@@ -143,7 +142,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	 * 
 	 * @return {@literal true} if the socket "reuse address" flag should be
 	 *         used; defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_REUSE_ADDRESS}
+	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_REUSE_ADDRESS}
 	 */
 	public boolean isSocketReuseAddress() {
 		return socketReuseAddress;
@@ -163,7 +162,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	 * Get the socket linger amount.
 	 * 
 	 * @return the socket linger amount, in seconds, or {@literal 0} to disable;
-	 *         defaults to {@link SocketcandConnection#DEFAULT_SOCKET_LINGER}
+	 *         defaults to {@link SocketCanbusSocket#DEFAULT_SOCKET_LINGER}
 	 */
 	public int getSocketLinger() {
 		return socketLinger;
@@ -183,8 +182,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	 * Get the socket "keep alive" flag.
 	 * 
 	 * @return {@literal true} if the socket "keep alive" flag should be used;
-	 *         defaults to
-	 *         {@link SocketcandConnection#DEFAULT_SOCKET_KEEP_ALIVE}
+	 *         defaults to {@link SocketCanbusSocket#DEFAULT_SOCKET_KEEP_ALIVE}
 	 */
 	public boolean isSocketKeepAlive() {
 		return socketKeepAlive;
