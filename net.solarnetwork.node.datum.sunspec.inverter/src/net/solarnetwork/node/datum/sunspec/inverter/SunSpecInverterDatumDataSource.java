@@ -47,7 +47,6 @@ import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupp
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -173,7 +172,6 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			SunSpecInverterDatumDataSource iDefaults = (SunSpecInverterDatumDataSource) defaults;
 			results.add(new BasicTextFieldSettingSpecifier("ignoreStatesValue",
 					iDefaults.getIgnoreStatesValue()));
-			results.add(new BasicToggleSettingSpecifier("includeDcModules", false));
 		}
 
 		return results;
