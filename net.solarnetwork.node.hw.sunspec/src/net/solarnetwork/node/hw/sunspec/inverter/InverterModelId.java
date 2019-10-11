@@ -39,6 +39,12 @@ public enum InverterModelId implements ModelId {
 
 	ThreePhaseInverterInteger(103, "3-phase inverter"),
 
+	SinglePhaseInverterFloatingPoint(111, "Single phase inverter (floating point)"),
+
+	SplitPhaseInverterFloatingPoint(112, "Split phase inverter (floating point)"),
+
+	ThreePhaseInverterFloatingPoint(113, "3-phase inverter (floating point)"),
+
 	MultipleMpptInverterExtension(
 			160,
 			"Multiple MPPT Inverter Extension Model",
