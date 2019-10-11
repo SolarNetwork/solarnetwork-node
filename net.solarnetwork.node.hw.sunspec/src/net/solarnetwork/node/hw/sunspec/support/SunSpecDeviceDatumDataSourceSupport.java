@@ -358,7 +358,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *         available
 	 */
 	protected String getSecondaryTypesMessage(ModelData sample) {
-		List<ModelAccessor> accessors = sample.getModels();
+		List<ModelAccessor> accessors = (sample != null ? sample.getModels() : null);
 		if ( accessors == null || accessors.size() < 2 ) {
 			return "N/A";
 		}
