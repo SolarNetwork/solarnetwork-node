@@ -1,7 +1,7 @@
 /* ==================================================================
- * IntegerInverterModelAccessor_103_02Tests.java - 8/10/2018 7:06:15 AM
+ * FloatingPointInverterModelAccessor_113_01Tests.java - 11/10/2019 6:01:49 pm
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2019 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -23,32 +23,31 @@
 package net.solarnetwork.node.hw.sunspec.inverter.test;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
+import net.solarnetwork.node.hw.sunspec.inverter.FloatingPointInverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterBasicSettingsModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterBasicSettingsModelAccessorImpl;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterControlModelId;
-import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
- * Test cases for the {@link InverterBasicSettingsModelAccessor} class.
+ * Test cases for the {@link InverterBasicSettingsModelAccessor} class on a
+ * {@link FloatingPointInverterModelAccessor}.
  * 
  * @author matt
  * @version 1.0
  */
-public class InverterBasicSettingsModelAccessorImpl_101_01Tests {
+public class FloatingPointInverterModelAccessor_113_01Tests {
 
-	private static final Logger log = LoggerFactory.getLogger(IntegerMeterModelAccessorTests.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(FloatingPointInverterModelAccessorTests.class);
 
 	private ModelData getTestDataInstance() {
-		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-101-01.txt");
+		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-113-01.txt");
 	}
 
 	@Test
@@ -58,30 +57,11 @@ public class InverterBasicSettingsModelAccessorImpl_101_01Tests {
 	}
 
 	@Test
-	public void commonModelProperties() {
-		CommonModelAccessor data = getTestDataInstance();
-		assertThat("Manufacturer", data.getManufacturer(), equalTo("Fronius"));
-		assertThat("Model name", data.getModelName(), equalTo("IG+V11.4"));
-		assertThat("Options", data.getOptions(), equalTo("2.1.18"));
-		assertThat("Version", data.getVersion(), equalTo("5.10.0"));
-		assertThat("Serial number", data.getSerialNumber(), equalTo("50.213262"));
-		assertThat("Device address", data.getDeviceAddress(), equalTo(5));
-	}
-
-	@Test
-	public void findTypedModel() {
-		ModelData data = getTestDataInstance();
-		InverterBasicSettingsModelAccessor accessor = data
-				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat(accessor, instanceOf(InverterBasicSettingsModelAccessorImpl.class));
-	}
-
-	@Test
 	public void block() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("Model base address", model.getBaseAddress(), equalTo(149));
-		assertThat("Model block address", model.getBlockAddress(), equalTo(151));
+		assertThat("Model base address", model.getBaseAddress(), equalTo(159));
+		assertThat("Model block address", model.getBlockAddress(), equalTo(161));
 		assertThat("Model ID", model.getModelId(), equalTo(InverterControlModelId.BasicSettings));
 		assertThat("Model fixed length", model.getFixedBlockLength(), equalTo(30));
 		assertThat("Model repeating instance length", model.getRepeatingBlockInstanceLength(),
@@ -94,7 +74,7 @@ public class InverterBasicSettingsModelAccessorImpl_101_01Tests {
 	public void activePowerMaximum() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("Active power max", model.getActivePowerMaximum(), equalTo(11400));
+		assertThat("Active power max", model.getActivePowerMaximum(), equalTo(3000));
 	}
 
 	@Test
@@ -115,28 +95,28 @@ public class InverterBasicSettingsModelAccessorImpl_101_01Tests {
 	public void voltageMax() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("Voltage max", model.getVoltageMaximum(), equalTo(269.0f));
+		assertThat("Voltage max", model.getVoltageMaximum(), nullValue());
 	}
 
 	@Test
 	public void voltageMin() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("Voltage min", model.getVoltageMinimum(), equalTo(206.0f));
+		assertThat("Voltage min", model.getVoltageMinimum(), nullValue());
 	}
 
 	@Test
 	public void apparentPowerMax() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("VA max", model.getApparentPowerMaximum(), equalTo(11400));
+		assertThat("VA max", model.getApparentPowerMaximum(), equalTo(3000));
 	}
 
 	@Test
 	public void reactivePowerQ1Max() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("VAR Q1 max", model.getReactivePowerQ1Maximum(), equalTo(6000));
+		assertThat("VAR Q1 max", model.getReactivePowerQ1Maximum(), equalTo(2140));
 	}
 
 	@Test
@@ -157,7 +137,7 @@ public class InverterBasicSettingsModelAccessorImpl_101_01Tests {
 	public void reactivePowerQ4Max() {
 		InverterBasicSettingsModelAccessor model = getTestDataInstance()
 				.findTypedModel(InverterBasicSettingsModelAccessor.class);
-		assertThat("VAR Q4 max", model.getReactivePowerQ4Maximum(), equalTo(-6000));
+		assertThat("VAR Q4 max", model.getReactivePowerQ4Maximum(), equalTo(-2140));
 	}
 
 	@Test
