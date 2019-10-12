@@ -96,8 +96,8 @@ public enum MeterModelEvent implements ModelEvent {
 
 	OEM_16(31, "OEM 16");
 
-	final private int index;
-	final private String description;
+	private final int index;
+	private final String description;
 
 	private MeterModelEvent(int index, String description) {
 		this.index = index;

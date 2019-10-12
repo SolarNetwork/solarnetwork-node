@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.sunspec.inverter;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.solarnetwork.node.domain.ACPhase;
@@ -32,6 +33,8 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.util.SerializeIgnore;
 
@@ -39,7 +42,7 @@ import net.solarnetwork.util.SerializeIgnore;
  * Datum for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PVEnergyDatum {
 
@@ -96,6 +99,45 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 
 		setOperatingState(data.getOperatingState());
 		setEvents(data.getEvents());
+	}
+
+	private String modulePropertyName(String baseName, Integer moduleId) {
+		return String.format("%s_%d", baseName, moduleId);
+	}
+
+	/**
+	 * Populate DC module level properties extracted from a MPPT extension model
+	 * accessor.
+	 * 
+	 * @param mppt
+	 *        the MPPT accessor
+	 * @since 1.1
+	 */
+	public void populateDcModulesProperties(InverterMpptExtensionModelAccessor mppt) {
+		List<DcModule> modules = (mppt != null ? mppt.getDcModules() : null);
+		if ( modules == null || modules.isEmpty() ) {
+			return;
+		}
+		for ( DcModule module : modules ) {
+			Integer moduleId = module.getInputId();
+			Float moduleVoltage = module.getDCVoltage();
+			Integer modulePower = module.getDCPower();
+			if ( moduleId == null || moduleVoltage == null || modulePower == null ) {
+				continue;
+			}
+			putInstantaneousSampleValue(modulePropertyName(DC_VOLTAGE_KEY, moduleId), moduleVoltage);
+			putInstantaneousSampleValue(modulePropertyName(DC_POWER_KEY, moduleId), module.getDCPower());
+			putAccumulatingSampleValue(modulePropertyName(WATT_HOUR_READING_KEY, moduleId),
+					module.getDCEnergyDelivered());
+			putInstantaneousSampleValue(modulePropertyName("temp", moduleId), module.getTemperature());
+
+			OperatingState moduleState = module.getOperatingState();
+			putStatusSampleValue(modulePropertyName(OPERATING_STATE_KEY, moduleId),
+					moduleState != null ? moduleState.getCode() : null);
+
+			long moduleEvents = ModelEvent.bitField32Value(module.getEvents());
+			putStatusSampleValue(modulePropertyName(EVENTS_KEY, moduleId), moduleEvents);
+		}
 	}
 
 	/**
@@ -190,4 +232,5 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 		long bitmask = ModelEvent.bitField32Value(events);
 		putStatusSampleValue(EVENTS_KEY, bitmask);
 	}
+
 }

@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
  * Enumeration of SunSpec meter model IDs.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum MeterModelId implements ModelId {
 
@@ -48,12 +49,18 @@ public enum MeterModelId implements ModelId {
 
 	DeltaConnectThreePhaseMeterFloat(214, "Delta connect 3-phase (ABC) meter");
 
-	final private int id;
-	final private String description;
+	private final int id;
+	private final String description;
+	private final Class<? extends ModelAccessor> accessorType;
 
 	private MeterModelId(int id, String description) {
+		this(id, description, MeterModelAccessor.class);
+	}
+
+	private MeterModelId(int id, String description, Class<? extends ModelAccessor> accessorType) {
 		this.id = id;
 		this.description = description;
+		this.accessorType = accessorType;
 	}
 
 	@Override
@@ -64,6 +71,11 @@ public enum MeterModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return accessorType;
 	}
 
 	/**

@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterBasicSettingsModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterBasicSettingsModelAccessorImpl;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterControlModelId;
@@ -39,7 +38,7 @@ import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTest
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
- * Test cases for the {@link IntegerInverterModelAccessor} class.
+ * Test cases for the {@link InverterBasicSettingsModelAccessor} class.
  * 
  * @author matt
  * @version 1.0
