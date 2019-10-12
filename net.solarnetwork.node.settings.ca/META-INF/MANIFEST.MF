@@ -7,10 +7,11 @@ Bundle-Version: 1.11.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
+ net.solarnetwork.domain;version="1.18.0",
  net.solarnetwork.io;version="1.4.0",
  net.solarnetwork.node;version="1.9.0",
  net.solarnetwork.node.backup;version="1.4.0",
- net.solarnetwork.node.dao;version="1.4.0",
+ net.solarnetwork.node.dao;version="1.10.0",
  net.solarnetwork.node.job;version="1.5.0",
  net.solarnetwork.node.reactor;version="1.5.0",
  net.solarnetwork.node.reactor.support;version="1.4.1",

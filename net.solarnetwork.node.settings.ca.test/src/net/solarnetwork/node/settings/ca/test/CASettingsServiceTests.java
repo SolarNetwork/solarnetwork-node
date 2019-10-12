@@ -273,7 +273,7 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
 		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
-		expect(dao.getSettings(factoryKey + ".FACTORY")).andReturn(emptyList());
+		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
 		expect(config.getPid()).andReturn(instancePid).anyTimes();
@@ -336,7 +336,7 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
 		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
-		expect(dao.getSettings(factoryKey + ".FACTORY")).andReturn(emptyList());
+		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
 		expect(config.getPid()).andReturn(instancePid).anyTimes();

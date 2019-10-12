@@ -86,6 +86,7 @@ import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.io.TransferrableResource;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
@@ -118,7 +119,6 @@ import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
-import net.solarnetwork.node.support.KeyValuePair;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -128,7 +128,6 @@ import net.solarnetwork.node.support.KeyValuePair;
  * @author matt
  * @version 1.7
  */
-@SuppressWarnings("deprecation")
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
 
@@ -190,7 +189,8 @@ public class CASettingsService
 			// configurations now. First we look up all registered factory
 			// instances, so each returned result returns a configured instance
 			// key
-			List<KeyValuePair> instanceKeys = settingDao.getSettings(getFactorySettingKey(factoryPid));
+			List<KeyValuePair> instanceKeys = settingDao
+					.getSettingValues(getFactorySettingKey(factoryPid));
 			for ( KeyValuePair instanceKey : instanceKeys ) {
 				// when registering an instance from a factory, set the "force" flag so instances
 				// with only defaults are still created
@@ -199,8 +199,8 @@ public class CASettingsService
 				cmd.setInstanceKey(instanceKey.getKey());
 
 				// now lookup all settings for the configured instance
-				List<KeyValuePair> settings = settingDao
-						.getSettings(getFactoryInstanceSettingKey(factoryPid, instanceKey.getKey()));
+				List<KeyValuePair> settings = settingDao.getSettingValues(
+						getFactoryInstanceSettingKey(factoryPid, instanceKey.getKey()));
 				for ( KeyValuePair setting : settings ) {
 					SettingValueBean bean = new SettingValueBean();
 					bean.setKey(setting.getKey());
@@ -279,7 +279,7 @@ public class CASettingsService
 
 		final String settingKey = getFactoryInstanceSettingKey(pid, factoryInstanceKey);
 
-		List<KeyValuePair> settings = settingDao.getSettings(settingKey);
+		List<KeyValuePair> settings = settingDao.getSettingValues(settingKey);
 		if ( settings.size() < 1 ) {
 			return;
 		}
@@ -531,7 +531,8 @@ public class CASettingsService
 	@Override
 	public String addProviderFactoryInstance(String factoryUID) {
 		synchronized ( factories ) {
-			List<KeyValuePair> instanceKeys = settingDao.getSettings(getFactorySettingKey(factoryUID));
+			List<KeyValuePair> instanceKeys = settingDao
+					.getSettingValues(getFactorySettingKey(factoryUID));
 			int next = instanceKeys.size() + 1;
 			// verify key doesn't exist
 			boolean done = false;
