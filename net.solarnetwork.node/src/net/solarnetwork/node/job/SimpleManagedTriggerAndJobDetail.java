@@ -37,11 +37,11 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingsChangeObserver;
 import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.node.util.TemplatedMessageSource;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a

@@ -44,9 +44,9 @@ import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingsChangeObserver;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.OptionalService;
 
 /**
