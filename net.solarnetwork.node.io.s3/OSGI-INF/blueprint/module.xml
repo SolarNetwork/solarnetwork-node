@@ -18,8 +18,6 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
 	</bean>	
 	
-	<!-- Socketcand (TCP) CAN Bus Network -->
-	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
