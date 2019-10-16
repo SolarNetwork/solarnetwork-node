@@ -72,6 +72,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 		super();
 		this.identityService = identityService;
 		this.delegate = new S3ResourceStorageService(executor);
+		this.nodeIdPrefix = true;
 	}
 
 	@Override
@@ -110,6 +111,24 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	}
 
 	// ResourceStorageService
+
+	@Override
+	public String toString() {
+		final S3ResourceStorageService s = getDelegate();
+		StringBuilder buf = new StringBuilder("NodeS3ResourceStorageService{uid=");
+		buf.append(getUid());
+		if ( s != null && s.isConfigured() ) {
+			buf.append(",client=").append(s.getS3Client());
+			try {
+				String prefix = pathPrefix();
+				buf.append(",path=").append(prefix);
+			} catch ( Exception e ) {
+				// ignore (missing node ID)
+			}
+		}
+		buf.append("}");
+		return buf.toString();
+	}
 
 	@Override
 	public boolean isConfigured() {
@@ -171,6 +190,15 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	 */
 	public OptionalService<IdentityService> getIdentityService() {
 		return identityService;
+	}
+
+	/**
+	 * Get the delegate.
+	 * 
+	 * @return the delegate
+	 */
+	public S3ResourceStorageService getDelegate() {
+		return delegate;
 	}
 
 	/**
