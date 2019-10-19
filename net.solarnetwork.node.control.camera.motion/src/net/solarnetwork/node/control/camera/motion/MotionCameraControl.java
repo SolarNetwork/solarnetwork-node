@@ -25,15 +25,25 @@ package net.solarnetwork.node.control.camera.motion;
 import static net.solarnetwork.node.setup.SetupResource.WEB_CONSUMER_TYPES;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -48,17 +58,15 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.setup.ResourceSetupResource;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.support.BaseIdentifiable;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Integrate with the <a href="https://motion-project.github.io/">motion</a>
+ * image change detection program.
  * 
  * @author matt
  * @version 1.0
@@ -72,12 +80,22 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	/** The default value of the {@code latestSnapshotFilename} property. */
 	public static final String DEFAULT_LATEST_SNAPSHOT_FILENAME = "lastsnap.jpg";
 
+	/** The default value for the {@code pathFilter} property. */
+	public static final Pattern DEFAULT_PATH_FILTER = Pattern.compile(".+\\.jpg");
+
+	/** The default value for the {@code resourceCacheSecs} property. */
+	public static final int DEFAULT_RESOURCE_CACHE_SECS = 15;
+
+	private static final String MEDIA_RESOURCE_LAST_MODIFIED = "media-resource-last-modified";
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private String controlId;
 	private String path = DEFAULT_PATH;
+	private Pattern pathFilter;
 	private String latestSnapshotFilename = DEFAULT_LATEST_SNAPSHOT_FILENAME;
-	private SetupResourceProvider snapshotResourceProvider;
+	private SetupResourceProvider mediaResourceProvider;
+	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
 
 	// NodeControlProvider
 
@@ -117,32 +135,73 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		return DigestUtils.md5DigestAsHex(name) + ".jpg";
 	}
 
+	private String latestResourceId() {
+		String controlId = getControlId();
+		if ( controlId == null ) {
+			return null;
+		}
+		byte[] name = (controlId + "-latest").getBytes();
+		return DigestUtils.md5DigestAsHex(name) + ".jpg";
+	}
+
 	private Resource snapshotResource() {
-		String path = getPath();
-		if ( path == null || path.isEmpty() ) {
+		String dir = getPath();
+		if ( dir == null || dir.isEmpty() ) {
 			return null;
 		}
 		Path snapPath = null;
 
 		String latestName = getLatestSnapshotFilename();
 		if ( latestName != null && !latestName.isEmpty() ) {
-			snapPath = Paths.get(path, latestName);
-		} else {
-			// search based on modification date
 			try {
-				snapPath = Files.list(Paths.get(path))
-						.filter(p -> !Files.isDirectory(p, LinkOption.NOFOLLOW_LINKS))
-						.max(Comparator.comparingLong(p -> {
-							try {
-								return Files.getLastModifiedTime(p).toMillis();
-							} catch ( IOException e ) {
-								return 0;
-							}
-						})).orElse(null);
-			} catch ( IOException e ) {
-				log.warn("Error searching for latest snapshot image file: {}", e.toString());
-				return null;
+				snapPath = Paths.get(dir, latestName);
+			} catch ( InvalidPathException e ) {
+				log.error("Cannot determine snapshot file because of invalid path value [{}]: {}", dir,
+						e.getMessage());
 			}
+		}
+		if ( snapPath != null && Files.isReadable(snapPath) ) {
+			return new FileSystemResource(snapPath.toFile());
+		}
+		return null;
+	}
+
+	private boolean matchesLatestResource(Path p) {
+		Pattern pat = getPathFilter();
+		String name = p.getFileName().toString();
+		boolean match = (pat != null ? pat.matcher(name).matches() : false);
+		if ( match ) {
+			// verify not the "latest snapshot" name
+			String latestName = getLatestSnapshotFilename();
+			if ( latestName != null && !latestName.isEmpty() ) {
+				match = !latestName.equalsIgnoreCase(name);
+			}
+		}
+		return match;
+	}
+
+	private Resource latestResource() {
+		String dir = getPath();
+		if ( dir == null || dir.isEmpty() ) {
+			return null;
+		}
+		Path snapPath = null;
+		// search based on modification date
+		try {
+			snapPath = Files.list(Paths.get(dir)).filter(
+					p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) && matchesLatestResource(p))
+					.max(Comparator.comparingLong(p -> {
+						try {
+							return Files.getLastModifiedTime(p).toMillis();
+						} catch ( IOException e ) {
+							return 0;
+						}
+					})).orElse(null);
+		} catch ( InvalidPathException e ) {
+			log.error("Cannot determine latest resource file because of invalid path value [{}]: {}",
+					dir, e.getMessage());
+		} catch ( IOException e ) {
+			log.warn("Error searching for latest snapshot image file: {}", e.toString());
 		}
 		if ( snapPath != null && Files.isReadable(snapPath) ) {
 			return new FileSystemResource(snapPath.toFile());
@@ -152,16 +211,25 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 
 	@Override
 	public SetupResource getSetupResource(String resourceUID, Locale locale) {
-		String snapResourceId = snapshotResourceId();
-		if ( snapResourceId != null && snapResourceId.equals(resourceUID) ) {
-			Resource snapshotResource = snapshotResource();
-			if ( snapshotResource != null ) {
-				try {
-					return new ResourceSetupResource(snapshotResource, snapResourceId, "image/jpeg", 15,
-							WEB_CONSUMER_TYPES, null);
-				} catch ( IOException e ) {
-					log.warn("Error getting latest snapshot image file: {}", e.toString());
-				}
+		Resource resource = null;
+		final String latestResourceId = latestResourceId();
+		if ( latestResourceId != null && latestResourceId.equals(resourceUID) ) {
+			resource = latestResource();
+		} else {
+			final String snapResourceId = snapshotResourceId();
+			if ( snapResourceId != null && snapResourceId.equals(resourceUID) ) {
+				resource = snapshotResource();
+			}
+		}
+		if ( resource != null ) {
+			String filename = resource.getFilename();
+			MediaResourceMimeType type = MediaResourceMimeType.forFilename(filename);
+			String mimeType = (type != null ? type.getMimeType() : "application/octet-stream");
+			try {
+				return new ResourceSetupResource(resource, resourceUID, mimeType, resourceCacheSecs,
+						WEB_CONSUMER_TYPES, null);
+			} catch ( IOException e ) {
+				log.warn("Error getting latest snapshot image file: {}", e.toString());
 			}
 		}
 		return null;
@@ -184,25 +252,148 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		return "Motion Camera Control";
 	}
 
+	private Map<String, Object> mediaResourceProperties(Resource resource, String resourceId) {
+		if ( resource == null ) {
+			return Collections.emptyMap();
+		}
+		Map<String, Object> m = new HashMap<>(4);
+		m.put("media-resource-id", resourceId);
+
+		try {
+			long modified = resource.lastModified();
+			if ( modified > 0 ) {
+				m.put(MEDIA_RESOURCE_LAST_MODIFIED, modified);
+			}
+		} catch ( IOException e ) {
+			log.warn("Last modified date not available for resource {}: {}", resource, e.getMessage());
+		}
+
+		return m;
+	}
+
+	private String mediaResourceFormattedDateProperty(Map<String, Object> props, String propName) {
+		Object p = props.get(propName);
+		ZonedDateTime d = null;
+		if ( p instanceof Long ) {
+			d = Instant.ofEpochMilli((Long) p).atZone(ZoneId.systemDefault());
+		}
+		if ( d != null ) {
+			DateTimeFormatter fmt = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM,
+					FormatStyle.MEDIUM);
+			return d.format(fmt);
+		}
+		return "N/A";
+	}
+
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
 
-		SetupResourceProvider snapProvider = getSnapshotResourceProvider();
+		SetupResourceProvider snapProvider = getMediaResourceProvider();
 		if ( snapProvider != null ) {
-			String resourceId = snapshotResourceId();
-			if ( resourceId != null ) {
-				results.add(new BasicSetupResourceSettingSpecifier(snapshotResourceProvider,
-						Collections.singletonMap("snap-id", resourceId)));
+			Resource latestResource = latestResource();
+			if ( latestResource != null ) {
+				String latestResourceId = latestResourceId();
+				if ( latestResourceId != null ) {
+					Map<String, Object> props = mediaResourceProperties(latestResource,
+							latestResourceId);
+					results.add(
+							new BasicTitleSettingSpecifier("latestImage",
+									getMessageSource().getMessage("latestImage.info",
+											new Object[] { mediaResourceFormattedDateProperty(props,
+													MEDIA_RESOURCE_LAST_MODIFIED) },
+											Locale.getDefault())));
+					results.add(new BasicSetupResourceSettingSpecifier(mediaResourceProvider, props));
+				}
+			}
+
+			String snapResourceId = snapshotResourceId();
+			Resource snapResource = snapshotResource();
+			if ( snapResource != null ) {
+				if ( snapResourceId != null ) {
+					Map<String, Object> props = mediaResourceProperties(snapResource, snapResourceId);
+					results.add(
+							new BasicTitleSettingSpecifier("snapImage",
+									getMessageSource().getMessage("snapImage.info",
+											new Object[] { mediaResourceFormattedDateProperty(props,
+													MEDIA_RESOURCE_LAST_MODIFIED) },
+											Locale.getDefault())));
+					results.add(new BasicSetupResourceSettingSpecifier(mediaResourceProvider, props));
+				}
 			}
 		}
 
 		results.add(new BasicTextFieldSettingSpecifier("controlId", ""));
 		results.add(new BasicTextFieldSettingSpecifier("path", DEFAULT_PATH));
+		results.add(
+				new BasicTextFieldSettingSpecifier("pathFilterValue", DEFAULT_PATH_FILTER.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("latestSnapshotFilename",
 				DEFAULT_LATEST_SNAPSHOT_FILENAME));
 
 		return results;
+	}
+
+	// Accessors
+
+	/**
+	 * Get the file name path filter pattern.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be saved.
+	 * </p>
+	 * 
+	 * @return the file name path filter pattern
+	 */
+	public Pattern getPathFilter() {
+		return pathFilter;
+	}
+
+	/**
+	 * Set the file name path filter pattern.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be saved.
+	 * </p>
+	 * 
+	 * @param filterm
+	 *        the file name path filter pattern to use, or {@literal null} for
+	 *        all files
+	 */
+	public void setPathFilter(Pattern filter) {
+		this.pathFilter = filter;
+	}
+
+	/**
+	 * Get the file name path filter pattern, as a string.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be saved.
+	 * </p>
+	 * 
+	 * @return the file name path filter pattern
+	 */
+	public String getPathFilterValue() {
+		Pattern f = getPathFilter();
+		return f != null ? f.pattern() : null;
+	}
+
+	/**
+	 * Set the file name path filter pattern, as a string.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be saved.
+	 * </p>
+	 * 
+	 * @param filterm
+	 *        the file name path filter pattern to use, or {@literal null} for
+	 *        all files
+	 */
+	public synchronized void setPathFilterValue(String filterValue) {
+		try {
+			setPathFilter(Pattern.compile(filterValue, Pattern.CASE_INSENSITIVE));
+		} catch ( PatternSyntaxException e ) {
+			log.error("Invalid pathFilter pattern `{}`: {}", filterValue, e.getMessage());
+		}
 	}
 
 	/**
@@ -258,22 +449,41 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	}
 
 	/**
-	 * Get a setup resource provider to support viewing snapshot images.
+	 * Get a setup resource provider to support viewing media images.
 	 * 
 	 * @return the setup resource provider
 	 */
-	public SetupResourceProvider getSnapshotResourceProvider() {
-		return snapshotResourceProvider;
+	public SetupResourceProvider getMediaResourceProvider() {
+		return mediaResourceProvider;
 	}
 
 	/**
-	 * Set a setup resource provider to support viewing snapshot images.
+	 * Set a setup resource provider to support viewing media images.
 	 * 
-	 * @param snapshotResourceProvider
+	 * @param mediaResourceProvider
 	 *        the setup resource provider
 	 */
-	public void setSnapshotResourceProvider(SetupResourceProvider snapshotResourceProvider) {
-		this.snapshotResourceProvider = snapshotResourceProvider;
+	public void setMediaResourceProvider(SetupResourceProvider mediaResourceProvider) {
+		this.mediaResourceProvider = mediaResourceProvider;
+	}
+
+	/**
+	 * Get the number of seconds to allow for caching media setup resources.
+	 * 
+	 * @return the number of seconds to cache
+	 */
+	public int getResourceCacheSecs() {
+		return resourceCacheSecs;
+	}
+
+	/**
+	 * Set the number of seconds to allow for caching media setup resources.
+	 * 
+	 * @param resourceCacheSecs
+	 *        the number of seconds to cache
+	 */
+	public void setResourceCacheSecs(int resourceCacheSecs) {
+		this.resourceCacheSecs = resourceCacheSecs;
 	}
 
 }

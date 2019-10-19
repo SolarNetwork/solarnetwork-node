@@ -3,8 +3,10 @@ $(document).ready(function() {
 	
 	$('img.camera-motion').each(function() {
 		var img = $(this),
-			imgId = img.closest('.setup-resource-container').data('snapId');
-		img.attr('src', '../rsrc/'+imgId);
+			imgId = img.closest('.setup-resource-container').data('mediaResourceId');
+		if ( imgId ) {
+			img.attr('src', '../rsrc/'+imgId);
+		}
 	});
 
 });

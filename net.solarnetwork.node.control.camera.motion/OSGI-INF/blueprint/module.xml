@@ -28,10 +28,10 @@
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
 
-	<bean id="snapshotResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+	<bean id="mediaResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
 		<property name="basenames">
 			<list>
-				<value>META-INF/settings/camera-motion-snapshot</value>
+				<value>META-INF/settings/camera-motion-media</value>
 			</list>
 		</property>
 	</bean>
@@ -82,7 +82,7 @@
 		<bean id="controller" class="net.solarnetwork.node.control.camera.motion.MotionCameraControl">
 			<property name="messageSource" ref="messageSource"/>
 			<!--property name="eventAdmin" ref="eventAdmin"/-->
-			<property name="snapshotResourceProvider" ref="snapshotResourceProvider"/>
+			<property name="mediaResourceProvider" ref="mediaResourceProvider"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
