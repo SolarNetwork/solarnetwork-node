@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static net.solarnetwork.node.settings.support.SettingsUtil.adapt;
 import static net.solarnetwork.settings.support.SettingUtils.mappedWithPrefix;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +140,11 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	public CompletableFuture<Iterable<Resource>> listResources(String pathPrefix) {
 		String prefix = pathPrefixMapper().apply(pathPrefix);
 		return delegate.listResources(prefix);
+	}
+
+	@Override
+	public URL resourceStorageUrl(String path) {
+		return delegate.resourceStorageUrl(path);
 	}
 
 	@Override
