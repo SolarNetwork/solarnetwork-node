@@ -57,6 +57,7 @@ import net.solarnetwork.io.ResourceStorageService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher;
+import net.solarnetwork.test.CallingThreadExecutorService;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
@@ -84,8 +85,8 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 		storageService = EasyMock.createMock(ResourceStorageService.class);
 		datumDao = EasyMock.createMock(DatumDao.class);
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
-		watcher = new ResourceStorageServiceDirectoryWatcher(
-				new StaticOptionalService<>(storageService));
+		watcher = new ResourceStorageServiceDirectoryWatcher(new StaticOptionalService<>(storageService),
+				new CallingThreadExecutorService());
 		watcher.setPath(tmpDir.toAbsolutePath().toString());
 		watcher.setResourceStorageDatumSourceId(TEST_SOURCE_ID);
 		watcher.setDatumDao(new StaticOptionalService<>(datumDao));

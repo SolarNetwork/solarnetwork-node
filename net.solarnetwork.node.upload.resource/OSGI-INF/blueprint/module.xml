@@ -11,6 +11,19 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+
+	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	</bean>
+
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -44,7 +57,10 @@
 					<property name="serviceClassName" value="net.solarnetwork.io.ResourceStorageService"/>
 				</bean>	
 			</argument>
+			<argument ref="executor"/>
 			<property name="messageSource" ref="messageSource"/>
+			<property name="datumDao" ref="generalNodeDatumDao"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 		</bean>
 	</osgix:managed-service-factory>
 		

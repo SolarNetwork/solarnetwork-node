@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -85,6 +86,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<ResourceStorageService> storageService;
+	private final Executor executor;
 	private final AtomicIntegerArray statistics;
 	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
 	private OptionalService<EventAdmin> eventAdmin;
@@ -101,11 +103,20 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 * 
 	 * @param storageService
 	 *        the storage service to use
+	 * @param executor
+	 *        the executor to use
 	 */
-	public ResourceStorageServiceDirectoryWatcher(
-			OptionalService<ResourceStorageService> storageService) {
+	public ResourceStorageServiceDirectoryWatcher(OptionalService<ResourceStorageService> storageService,
+			Executor executor) {
 		super();
+		if ( storageService == null ) {
+			throw new IllegalArgumentException("The storageService argument must not be null.");
+		}
 		this.storageService = storageService;
+		if ( executor == null ) {
+			throw new IllegalArgumentException("The executor argument must not be null.");
+		}
+		this.executor = executor;
 		this.statistics = new AtomicIntegerArray(Statistic.values().length);
 		this.filter = DEFAULT_FILTER;
 	}
@@ -168,6 +179,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		result.add(new BasicTextFieldSettingSpecifier("path", ""));
 		result.add(new BasicTextFieldSettingSpecifier("filterValue", DEFAULT_FILTER.pattern()));
 		result.add(new BasicToggleSettingSpecifier("recursive", Boolean.FALSE));
+		result.add(new BasicTextFieldSettingSpecifier("resourceStorageDatumSourceId", ""));
 		return result;
 	}
 
@@ -208,7 +220,16 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 						statistics.incrementAndGet(Statistic.Saved.ordinal());
 						log.info("Resource {} saved to {}.", resourcePath, service);
 					}
-					generateDatum(service, savePath, resourcePath);
+
+					// save any generated datum in a new thread so we don't block ForkJoinPool
+					executor.execute(new Runnable() {
+
+						@Override
+						public void run() {
+							generateDatum(service, savePath, resourcePath);
+						}
+
+					});
 				});
 	}
 
@@ -238,6 +259,14 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		final GeneralNodeDatum d = new GeneralNodeDatum();
 		d.setSourceId(sourceId);
 		d.setCreated(new Date());
+		if ( Files.isReadable(resourcePath) ) {
+			try {
+				d.setCreated(new Date(Files.getLastModifiedTime(resourcePath).toMillis()));
+			} catch ( IOException e ) {
+				log.warn("Unable to determine modified time of resource {}: {}", resourcePath,
+						e.toString());
+			}
+		}
 
 		final URL resourceStorageUrl = service.resourceStorageUrl(savePath);
 		if ( resourceStorageUrl != null ) {
