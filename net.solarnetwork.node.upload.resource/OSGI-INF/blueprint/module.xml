@@ -39,7 +39,7 @@
 		<bean class="net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher"
 				init-method="startup" destroy-method="shutdown">
 			<argument>
-				<bean id="identityService" class="net.solarnetwork.util.DynamicServiceTracker">
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
 					<property name="bundleContext" ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.io.ResourceStorageService"/>
 				</bean>	
