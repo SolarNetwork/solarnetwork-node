@@ -29,6 +29,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -78,7 +79,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	public static final String DEFAULT_PATH = "/var/lib/motion";
 
 	/** The default value of the {@code latestSnapshotFilename} property. */
-	public static final String DEFAULT_LATEST_SNAPSHOT_FILENAME = "lastsnap.jpg";
+	public static final Pattern DEFAULT_PATH_SNAPSHOT_FILTER = Pattern.compile(".+-snapshot\\.jpg");
 
 	/** The default value for the {@code pathFilter} property. */
 	public static final Pattern DEFAULT_PATH_FILTER = Pattern.compile(".+\\.jpg");
@@ -93,7 +94,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	private String controlId;
 	private String path = DEFAULT_PATH;
 	private Pattern pathFilter;
-	private String latestSnapshotFilename = DEFAULT_LATEST_SNAPSHOT_FILENAME;
+	private Pattern pathSnapshotFilter = DEFAULT_PATH_SNAPSHOT_FILTER;
 	private SetupResourceProvider mediaResourceProvider;
 	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
 
@@ -150,15 +151,31 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 			return null;
 		}
 		Path snapPath = null;
-
-		String latestName = getLatestSnapshotFilename();
-		if ( latestName != null && !latestName.isEmpty() ) {
-			try {
-				snapPath = Paths.get(dir, latestName);
-			} catch ( InvalidPathException e ) {
-				log.error("Cannot determine snapshot file because of invalid path value [{}]: {}", dir,
-						e.getMessage());
-			}
+		// search based on modification date
+		try {
+			snapPath = Files.list(Paths.get(dir)).filter(p -> {
+				BasicFileAttributes attrs;
+				try {
+					attrs = Files.readAttributes(p, BasicFileAttributes.class,
+							LinkOption.NOFOLLOW_LINKS);
+					return attrs.isRegularFile() && !attrs.isSymbolicLink()
+							&& matchesSnapshotResource(p);
+				} catch ( IOException e ) {
+					return false;
+				}
+			}).max(Comparator.comparingLong(p -> {
+				try {
+					return Files.getLastModifiedTime(p).toMillis();
+				} catch ( IOException e ) {
+					return 0;
+				}
+			})).orElse(null);
+		} catch ( InvalidPathException e ) {
+			log.error(
+					"Cannot determine latest snapshot resource file because of invalid path value [{}]: {}",
+					dir, e.getMessage());
+		} catch ( IOException e ) {
+			log.warn("Error searching for latest snapshot image file: {}", e.toString());
 		}
 		if ( snapPath != null && Files.isReadable(snapPath) ) {
 			return new FileSystemResource(snapPath.toFile());
@@ -166,21 +183,25 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		return null;
 	}
 
-	private boolean matchesLatestResource(Path p) {
+	private boolean matchesNonSnapshotResource(Path p) {
 		Pattern pat = getPathFilter();
 		String name = p.getFileName().toString();
 		boolean match = (pat != null ? pat.matcher(name).matches() : false);
 		if ( match ) {
-			// verify not the "latest snapshot" name
-			String latestName = getLatestSnapshotFilename();
-			if ( latestName != null && !latestName.isEmpty() ) {
-				match = !latestName.equalsIgnoreCase(name);
-			}
+			// verify not a "snapshot" name
+			Pattern snapPat = getPathSnapshotFilter();
+			match = (snapPat != null ? !snapPat.matcher(name).matches() : true);
 		}
 		return match;
 	}
 
-	private Resource latestResource() {
+	private boolean matchesSnapshotResource(Path p) {
+		Pattern pat = getPathSnapshotFilter();
+		String name = p.getFileName().toString();
+		return (pat != null ? pat.matcher(name).matches() : false);
+	}
+
+	private Resource latestNonSnapshotResource() {
 		String dir = getPath();
 		if ( dir == null || dir.isEmpty() ) {
 			return null;
@@ -188,15 +209,23 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		Path snapPath = null;
 		// search based on modification date
 		try {
-			snapPath = Files.list(Paths.get(dir)).filter(
-					p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS) && matchesLatestResource(p))
-					.max(Comparator.comparingLong(p -> {
-						try {
-							return Files.getLastModifiedTime(p).toMillis();
-						} catch ( IOException e ) {
-							return 0;
-						}
-					})).orElse(null);
+			snapPath = Files.list(Paths.get(dir)).filter(p -> {
+				BasicFileAttributes attrs;
+				try {
+					attrs = Files.readAttributes(p, BasicFileAttributes.class,
+							LinkOption.NOFOLLOW_LINKS);
+					return attrs.isRegularFile() && !attrs.isSymbolicLink()
+							&& matchesNonSnapshotResource(p);
+				} catch ( IOException e ) {
+					return false;
+				}
+			}).max(Comparator.comparingLong(p -> {
+				try {
+					return Files.getLastModifiedTime(p).toMillis();
+				} catch ( IOException e ) {
+					return 0;
+				}
+			})).orElse(null);
 		} catch ( InvalidPathException e ) {
 			log.error("Cannot determine latest resource file because of invalid path value [{}]: {}",
 					dir, e.getMessage());
@@ -214,7 +243,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		Resource resource = null;
 		final String latestResourceId = latestResourceId();
 		if ( latestResourceId != null && latestResourceId.equals(resourceUID) ) {
-			resource = latestResource();
+			resource = latestNonSnapshotResource();
 		} else {
 			final String snapResourceId = snapshotResourceId();
 			if ( snapResourceId != null && snapResourceId.equals(resourceUID) ) {
@@ -291,7 +320,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 
 		SetupResourceProvider snapProvider = getMediaResourceProvider();
 		if ( snapProvider != null ) {
-			Resource latestResource = latestResource();
+			Resource latestResource = latestNonSnapshotResource();
 			if ( latestResource != null ) {
 				String latestResourceId = latestResourceId();
 				if ( latestResourceId != null ) {
@@ -327,8 +356,8 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		results.add(new BasicTextFieldSettingSpecifier("path", DEFAULT_PATH));
 		results.add(
 				new BasicTextFieldSettingSpecifier("pathFilterValue", DEFAULT_PATH_FILTER.pattern()));
-		results.add(new BasicTextFieldSettingSpecifier("latestSnapshotFilename",
-				DEFAULT_LATEST_SNAPSHOT_FILENAME));
+		results.add(new BasicTextFieldSettingSpecifier("pathSnapshotFilterValue",
+				DEFAULT_PATH_SNAPSHOT_FILTER.pattern()));
 
 		return results;
 	}
@@ -337,10 +366,6 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 
 	/**
 	 * Get the file name path filter pattern.
-	 * 
-	 * <p>
-	 * Only file names that match this pattern will be saved.
-	 * </p>
 	 * 
 	 * @return the file name path filter pattern
 	 */
@@ -352,7 +377,8 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	 * Set the file name path filter pattern.
 	 * 
 	 * <p>
-	 * Only file names that match this pattern will be saved.
+	 * Only file names that match this pattern will be considered a media
+	 * resource.
 	 * </p>
 	 * 
 	 * @param filterm
@@ -366,10 +392,6 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	/**
 	 * Get the file name path filter pattern, as a string.
 	 * 
-	 * <p>
-	 * Only file names that match this pattern will be saved.
-	 * </p>
-	 * 
 	 * @return the file name path filter pattern
 	 */
 	public String getPathFilterValue() {
@@ -381,14 +403,15 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	 * Set the file name path filter pattern, as a string.
 	 * 
 	 * <p>
-	 * Only file names that match this pattern will be saved.
+	 * Only file names that match this pattern will be considered a media
+	 * resource.
 	 * </p>
 	 * 
 	 * @param filterm
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
-	public synchronized void setPathFilterValue(String filterValue) {
+	public void setPathFilterValue(String filterValue) {
 		try {
 			setPathFilter(Pattern.compile(filterValue, Pattern.CASE_INSENSITIVE));
 		} catch ( PatternSyntaxException e ) {
@@ -429,26 +452,6 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	}
 
 	/**
-	 * Get the name of the "latest snapshot" file within {@code path}.
-	 * 
-	 * @return the filename
-	 */
-	public String getLatestSnapshotFilename() {
-		return latestSnapshotFilename;
-	}
-
-	/**
-	 * Set the name of the "latest snapshot" file within {@code path}.
-	 * 
-	 * @param latestSnapshotFilename
-	 *        the filename to set, or {@literal null} if file modification dates
-	 *        must be used
-	 */
-	public void setLatestSnapshotFilename(String latestSnapshotFilename) {
-		this.latestSnapshotFilename = latestSnapshotFilename;
-	}
-
-	/**
 	 * Get a setup resource provider to support viewing media images.
 	 * 
 	 * @return the setup resource provider
@@ -484,6 +487,61 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	 */
 	public void setResourceCacheSecs(int resourceCacheSecs) {
 		this.resourceCacheSecs = resourceCacheSecs;
+	}
+
+	/**
+	 * Get the snapshot file name path filter pattern.
+	 * 
+	 * @return the file name path filter pattern
+	 */
+	public Pattern getPathSnapshotFilter() {
+		return pathSnapshotFilter;
+	}
+
+	/**
+	 * Set the snapshot file name path filter pattern.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be considered as a snapshot
+	 * media resource.
+	 * </p>
+	 * 
+	 * @param filterm
+	 *        the file name path filter pattern to use, or {@literal null} for
+	 *        all files
+	 */
+	public void setPathSnapshotFilter(Pattern filter) {
+		this.pathSnapshotFilter = filter;
+	}
+
+	/**
+	 * Get the snapshot file name path filter pattern, as a string.
+	 * 
+	 * @return the file name path filter pattern
+	 */
+	public String getPathSnapshotFilterValue() {
+		Pattern f = getPathSnapshotFilter();
+		return f != null ? f.pattern() : null;
+	}
+
+	/**
+	 * Set the snapshot file name path filter pattern, as a string.
+	 * 
+	 * <p>
+	 * Only file names that match this pattern will be considered as a snapshot
+	 * media resource.
+	 * </p>
+	 * 
+	 * @param filterm
+	 *        the file name path filter pattern to use, or {@literal null} for
+	 *        all files
+	 */
+	public void setPathSnapshotFilterValue(String filterValue) {
+		try {
+			setPathSnapshotFilter(Pattern.compile(filterValue, Pattern.CASE_INSENSITIVE));
+		} catch ( PatternSyntaxException e ) {
+			log.error("Invalid pathSnapshotFilter pattern `{}`: {}", filterValue, e.getMessage());
+		}
 	}
 
 }
