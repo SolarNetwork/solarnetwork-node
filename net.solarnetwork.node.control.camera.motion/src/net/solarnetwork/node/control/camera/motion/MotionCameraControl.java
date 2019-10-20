@@ -51,6 +51,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.io.ResultStatusException;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -64,6 +65,7 @@ import net.solarnetwork.node.setup.ResourceSetupResource;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.util.UrlUtils;
 
 /**
  * Integrate with the <a href="https://motion-project.github.io/">motion</a>
@@ -87,6 +89,18 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	/** The default value for the {@code resourceCacheSecs} property. */
 	public static final int DEFAULT_RESOURCE_CACHE_SECS = 15;
 
+	/** The default value for the {@code motionBaseUrl} property. */
+	public static final String DEFAULT_MOTION_BASE_URL = "http://localhost:8180";
+
+	/** The instruction signal name for initiating a snapshot. */
+	public static final String SIGNAL_SNAPSHOT = "snapshot";
+
+	/** An instruction parameter for the motion camera ID to operate on. */
+	public static final String CAMERA_ID_PARAM = "cameraId";
+
+	/** The default value for the {@code connectionTimeout} property. */
+	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+
 	private static final String MEDIA_RESOURCE_LAST_MODIFIED = "media-resource-last-modified";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -97,6 +111,8 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	private Pattern pathSnapshotFilter = DEFAULT_PATH_SNAPSHOT_FILTER;
 	private SetupResourceProvider mediaResourceProvider;
 	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
+	private String motionBaseUrl;
+	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 
 	// NodeControlProvider
 
@@ -117,12 +133,60 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return false;
+		return InstructionHandler.TOPIC_SIGNAL.equals(topic);
 	}
 
 	@Override
 	public InstructionState processInstruction(Instruction instruction) {
-		return null;
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		if ( !InstructionHandler.TOPIC_SIGNAL.equals(topic) ) {
+			return null;
+		}
+		final String controlId = getControlId();
+		if ( controlId == null || controlId.isEmpty() ) {
+			return null;
+		}
+		final String signal = instruction.getParameterValue(controlId);
+		if ( signal == null ) {
+			return null;
+		}
+		if ( instruction.isParameterAvailable(CAMERA_ID_PARAM) ) {
+			int cameraId = -1;
+			try {
+				cameraId = Integer.parseInt(instruction.getParameterValue(CAMERA_ID_PARAM));
+			} catch ( NumberFormatException e ) {
+				log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(),
+						instruction.getParameterValue(CAMERA_ID_PARAM));
+			}
+			if ( cameraId > 0 ) {
+				try {
+					if ( SIGNAL_SNAPSHOT.equalsIgnoreCase(signal) ) {
+						if ( takeSnapshot(cameraId) ) {
+							return InstructionState.Completed;
+						}
+					}
+				} catch ( IOException e ) {
+					log.error("Communication error with motion camera {} at {}", cameraId,
+							motionBaseUrl);
+				} catch ( ResultStatusException e ) {
+					log.error("Error response code received from motion camera {} request {}: {}",
+							cameraId, e.getUrl(), e.getStatusCode());
+				}
+			} else {
+				log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(),
+						cameraId);
+			}
+		}
+		return InstructionState.Declined;
+	}
+
+	private boolean takeSnapshot(final int cameraId) throws IOException {
+		final String baseUrl = getMotionBaseUrl();
+		String result = UrlUtils.getURLForString(
+				MotionWebApi.ActionSnapshot.absoluteUrl(baseUrl, cameraId, null), UrlUtils.ACCEPT_TEXT,
+				null, connectionTimeout, null);
+		log.info("Snapshot successful for motion camera {} at {}: {}", cameraId, baseUrl, result);
+		return true;
 	}
 
 	// SetupResourceProvider
@@ -353,6 +417,9 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		}
 
 		results.add(new BasicTextFieldSettingSpecifier("controlId", ""));
+		results.add(new BasicTextFieldSettingSpecifier("motionBaseUrl", DEFAULT_MOTION_BASE_URL));
+		results.add(new BasicTextFieldSettingSpecifier("connectionTimeout",
+				String.valueOf(DEFAULT_CONNECTION_TIMEOUT)));
 		results.add(new BasicTextFieldSettingSpecifier("path", DEFAULT_PATH));
 		results.add(
 				new BasicTextFieldSettingSpecifier("pathFilterValue", DEFAULT_PATH_FILTER.pattern()));
@@ -542,6 +609,45 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		} catch ( PatternSyntaxException e ) {
 			log.error("Invalid pathSnapshotFilter pattern `{}`: {}", filterValue, e.getMessage());
 		}
+	}
+
+	/**
+	 * Get the base URL to the motion web server.
+	 * 
+	 * @return the base URL; defaults to {@link #DEFAULT_MOTION_BASE_URL}
+	 */
+	public String getMotionBaseUrl() {
+		return motionBaseUrl;
+	}
+
+	/**
+	 * Set the base URL to the motion web server.
+	 * 
+	 * @param motionBaseUrl
+	 *        the base URL to set
+	 */
+	public void setMotionBaseUrl(String motionBaseUrl) {
+		this.motionBaseUrl = motionBaseUrl;
+	}
+
+	/**
+	 * Get the motion web server connection timeout.
+	 * 
+	 * @return the connection timeout, in milliseconds; defaults to
+	 *         {@link #DEFAULT_CONNECTION_TIMEOUT}
+	 */
+	public int getConnectionTimeout() {
+		return connectionTimeout;
+	}
+
+	/**
+	 * Set the motion web server connection timeout.
+	 * 
+	 * @param connectionTimeout
+	 *        the timeout to set, in milliseconds
+	 */
+	public void setConnectionTimeout(int connectionTimeout) {
+		this.connectionTimeout = connectionTimeout;
 	}
 
 }

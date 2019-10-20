@@ -23,11 +23,6 @@
 		</property>
 	</bean>
 	
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-
 	<bean id="mediaResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
 		<property name="basenames">
 			<list>
@@ -79,9 +74,8 @@
 				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean id="controller" class="net.solarnetwork.node.control.camera.motion.MotionCameraControl">
+		<bean class="net.solarnetwork.node.control.camera.motion.MotionCameraControl">
 			<property name="messageSource" ref="messageSource"/>
-			<!--property name="eventAdmin" ref="eventAdmin"/-->
 			<property name="mediaResourceProvider" ref="mediaResourceProvider"/>
 		</bean>
 	</osgix:managed-service-factory>
