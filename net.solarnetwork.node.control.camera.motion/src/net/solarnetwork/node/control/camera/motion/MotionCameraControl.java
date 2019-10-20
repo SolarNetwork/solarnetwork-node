@@ -111,7 +111,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	private Pattern pathSnapshotFilter = DEFAULT_PATH_SNAPSHOT_FILTER;
 	private SetupResourceProvider mediaResourceProvider;
 	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
-	private String motionBaseUrl;
+	private String motionBaseUrl = DEFAULT_MOTION_BASE_URL;
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 
 	// NodeControlProvider
@@ -150,38 +150,44 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		if ( signal == null ) {
 			return null;
 		}
+		int cameraId = 1;
 		if ( instruction.isParameterAvailable(CAMERA_ID_PARAM) ) {
-			int cameraId = -1;
 			try {
 				cameraId = Integer.parseInt(instruction.getParameterValue(CAMERA_ID_PARAM));
 			} catch ( NumberFormatException e ) {
-				log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(),
+				log.error("Instruction {} cameraId parameter invalid: {}",
+						instruction.getRemoteInstructionId(),
 						instruction.getParameterValue(CAMERA_ID_PARAM));
+				return InstructionState.Declined;
 			}
-			if ( cameraId > 0 ) {
-				try {
-					if ( SIGNAL_SNAPSHOT.equalsIgnoreCase(signal) ) {
-						if ( takeSnapshot(cameraId) ) {
-							return InstructionState.Completed;
-						}
+		}
+		if ( cameraId > 0 ) {
+			try {
+				if ( SIGNAL_SNAPSHOT.equalsIgnoreCase(signal) ) {
+					if ( takeSnapshot(cameraId) ) {
+						return InstructionState.Completed;
 					}
-				} catch ( IOException e ) {
-					log.error("Communication error with motion camera {} at {}", cameraId,
-							motionBaseUrl);
-				} catch ( ResultStatusException e ) {
-					log.error("Error response code received from motion camera {} request {}: {}",
-							cameraId, e.getUrl(), e.getStatusCode());
 				}
-			} else {
-				log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(),
-						cameraId);
+			} catch ( IOException e ) {
+				log.error("Communication error with motion camera {} at {}: {}", cameraId, motionBaseUrl,
+						e.toString());
+			} catch ( ResultStatusException e ) {
+				log.error("Error response code received from motion camera {} request {}: {}", cameraId,
+						e.getUrl(), e.getStatusCode());
 			}
+		} else {
+			log.error("Instruction {} cameraId parameter invalid: {}",
+					instruction.getRemoteInstructionId(), cameraId);
 		}
 		return InstructionState.Declined;
 	}
 
 	private boolean takeSnapshot(final int cameraId) throws IOException {
 		final String baseUrl = getMotionBaseUrl();
+		if ( baseUrl == null ) {
+			log.error("No motion URL configured to take camera {} snapshot with.", cameraId);
+			return false;
+		}
 		String result = UrlUtils.getURLForString(
 				MotionWebApi.ActionSnapshot.absoluteUrl(baseUrl, cameraId, null), UrlUtils.ACCEPT_TEXT,
 				null, connectionTimeout, null);
