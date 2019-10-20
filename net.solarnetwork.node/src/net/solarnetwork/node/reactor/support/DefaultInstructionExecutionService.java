@@ -39,7 +39,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * Default implementation of {@link InstructionExecutionService}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.58
  */
 public class DefaultInstructionExecutionService implements InstructionExecutionService {
@@ -73,7 +73,7 @@ public class DefaultInstructionExecutionService implements InstructionExecutionS
 		}
 		final String topic = instruction.getTopic();
 		log.trace("Passing instruction {} {} to {} handlers",
-				new Object[] { instruction.getId(), topic, allHandlers.size() });
+				new Object[] { instruction.getRemoteInstructionId(), topic, allHandlers.size() });
 		for ( InstructionHandler handler : allHandlers ) {
 			log.trace("Handler {} handles topic {}: {}",
 					new Object[] { handler, topic, handler.handlesTopic(topic) });
@@ -84,15 +84,16 @@ public class DefaultInstructionExecutionService implements InstructionExecutionS
 								.processInstructionWithFeedback(instruction);
 						if ( status != null
 								&& (startingStatus == null || !startingStatus.equals(status)) ) {
-							log.info("Instruction {} {} state changed to {}", instruction.getId(), topic,
+							log.info("Instruction {} {} state changed to {}",
+									instruction.getRemoteInstructionId(), topic,
 									status.getInstructionState());
 							return status;
 						}
 					} else {
 						InstructionState state = handler.processInstruction(instruction);
 						if ( state != null && !startingState.equals(state) ) {
-							log.info("Instruction {} {} state changed to {}", instruction.getId(), topic,
-									state);
+							log.info("Instruction {} {} state changed to {}",
+									instruction.getRemoteInstructionId(), topic, state);
 							return (startingStatus != null ? startingStatus.newCopyWithState(state)
 									: new BasicInstructionStatus(instruction.getId(), state,
 											new Date()));
@@ -100,15 +101,15 @@ public class DefaultInstructionExecutionService implements InstructionExecutionS
 					}
 				} catch ( Exception e ) {
 					log.error("Handler {} threw exception processing instruction {} ({})", handler,
-							instruction.getId(), topic, e);
+							instruction.getRemoteInstructionId(), topic, e);
 				}
 			}
 		}
 		if ( instruction.getInstructionDate() != null ) {
 			long diffMs = now - instruction.getInstructionDate().getTime();
 			if ( diffMs > timeLimitMs ) {
-				log.info("Instruction {} {} not handled within {} hours; declining", instruction.getId(),
-						topic, executionReceivedHourLimit);
+				log.info("Instruction {} {} not handled within {} hours; declining",
+						instruction.getRemoteInstructionId(), topic, executionReceivedHourLimit);
 				return (startingStatus != null
 						? startingStatus.newCopyWithState(InstructionState.Declined)
 						: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
