@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
@@ -41,7 +39,7 @@ import java.util.Date;
  * </p>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public interface Instruction {
 
@@ -97,7 +95,7 @@ public interface Instruction {
 	 * 
 	 * @param parameterName
 	 *        the parameter name to test for
-	 * @return <em>true</em> if the parameter name has at least one value
+	 * @return {@literal true} if the parameter name has at least one value
 	 *         available
 	 */
 	boolean isParameterAvailable(String parameterName);
@@ -107,7 +105,7 @@ public interface Instruction {
 	 * 
 	 * @param parameterName
 	 *        the parameter name to get the value for
-	 * @return the first available parameter name, or <em>null</em> if not
+	 * @return the first available parameter name, or {@literal null} if not
 	 *         available
 	 */
 	String getParameterValue(String parameterName);
@@ -117,7 +115,8 @@ public interface Instruction {
 	 * 
 	 * @param parameterName
 	 *        the parameter name to get the values for
-	 * @return all available parameter values, or <em>null</em> if not available
+	 * @return all available parameter values, or {@literal null} if not
+	 *         available
 	 */
 	String[] getAllParameterValues(String parameterName);
 
