@@ -31,7 +31,6 @@ import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.net.URL;
@@ -183,7 +182,6 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 
 		// WHEN
 		replayAll();
-		final long start = System.currentTimeMillis();
 		watcher.startup();
 
 		Thread.sleep(500);
@@ -204,7 +202,8 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 
 		GeneralNodeDatum d = datumCaptor.getValue();
 		assertThat("Generated datum source ID", d.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Generated datum date", d.getCreated().getTime(), greaterThanOrEqualTo(start));
+		assertThat("Generated datum date equal to file modification time", d.getCreated().getTime(),
+				equalTo(Files.getLastModifiedTime(newFile).toMillis()));
 		Map<String, ?> props = d.asSimpleMap();
 		assertThat("Generated datum properties", props.keySet(), containsInAnyOrder("created",
 				"sourceId", "url", "path", "size", "_DatumType", "_DatumTypes"));

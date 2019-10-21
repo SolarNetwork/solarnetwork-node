@@ -44,8 +44,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicIntegerArray;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.osgi.service.event.Event;
@@ -55,6 +59,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.io.ResourceStorageService;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
@@ -83,17 +88,25 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	/** The default value for the {@code filter} property. */
 	public static final Pattern DEFAULT_FILTER = Pattern.compile(".+\\..+");
 
+	/** The default value for the {@code saveDelay} property. */
+	public static final long DEFAULT_SAVE_DELAY = 10000L;
+
+	private final ConcurrentMap<Path, ScheduledFuture<?>> delayedSaves = new ConcurrentHashMap<>(8, 0.9f,
+			1);
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<ResourceStorageService> storageService;
 	private final Executor executor;
 	private final AtomicIntegerArray statistics;
+	private TaskScheduler taskScheduler;
 	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
 	private OptionalService<EventAdmin> eventAdmin;
 	private String resourceStorageDatumSourceId;
 	private String path;
 	private boolean recursive;
 	private Pattern filter;
+	private long saveDelay = DEFAULT_SAVE_DELAY;
 
 	private Throwable watchException;
 	private Watcher watchThread;
@@ -179,6 +192,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		result.add(new BasicTextFieldSettingSpecifier("path", ""));
 		result.add(new BasicTextFieldSettingSpecifier("filterValue", DEFAULT_FILTER.pattern()));
 		result.add(new BasicToggleSettingSpecifier("recursive", Boolean.FALSE));
+		result.add(new BasicTextFieldSettingSpecifier("saveDelay", String.valueOf(DEFAULT_SAVE_DELAY)));
 		result.add(new BasicTextFieldSettingSpecifier("resourceStorageDatumSourceId", ""));
 		return result;
 	}
@@ -231,6 +245,10 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 					});
 				});
+	}
+
+	private long effectiveSaveDelay(TaskScheduler scheduler) {
+		return (scheduler != null ? getSaveDelay() : 0);
 	}
 
 	private DatumDao<GeneralNodeDatum> datumDao() {
@@ -424,6 +442,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 						continue;
 					}
 
+					final TaskScheduler scheduler = getTaskScheduler();
 					final Pattern filenameFilter = getFilter();
 
 					for ( WatchEvent<?> event : key.pollEvents() ) {
@@ -460,7 +479,38 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 									continue;
 								}
 								Path rel = root.relativize(child);
-								saveResource(rel.toString(), child);
+								long delay = effectiveSaveDelay(scheduler);
+								if ( delay > 0 ) {
+									delayedSaves.compute(child, (p, f) -> {
+										if ( f != null ) {
+											// cancel existing (coalesce events)
+											f.cancel(false);
+										}
+										log.info("Delaying save of watched file {} for {}ms", child,
+												delay);
+										AtomicReference<ScheduledFuture<?>> futureRef = new AtomicReference<>();
+										Runnable saveTask = new Runnable() {
+
+											@Override
+											public void run() {
+												try {
+													saveResource(rel.toString(), child);
+												} finally {
+													ScheduledFuture<?> future = futureRef.get();
+													if ( future != null ) {
+														delayedSaves.remove(child, future);
+													}
+												}
+											}
+										};
+										ScheduledFuture<?> future = scheduler.schedule(saveTask,
+												new Date(System.currentTimeMillis() + delay));
+										futureRef.set(future);
+										return future;
+									});
+								} else {
+									saveResource(rel.toString(), child);
+								}
 							}
 						} catch ( IOException e ) {
 							statistics.incrementAndGet(Statistic.Failed.ordinal());
@@ -651,6 +701,65 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	/**
+	 * Get the task scheduler to handle delayed save operations with.
+	 * 
+	 * @return the task scheduler
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Set the task scheduler to handle delayed save operations with.
+	 * 
+	 * <p>
+	 * This scheduler is used only if {@link #getSaveDelay()} is greater than
+	 * {@literal 0}, in which case the actual save operation is scheduled to run
+	 * after this amount of delay.
+	 * </p>
+	 * 
+	 * @param taskScheduler
+	 *        the task scheduler to use
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the save delay.
+	 * 
+	 * @return the save delay, in milliseconds; defaults to
+	 *         {@link #DEFAULT_SAVE_DELAY}
+	 */
+	public long getSaveDelay() {
+		return saveDelay;
+	}
+
+	/**
+	 * Set the save delay.
+	 * 
+	 * 
+	 * <p>
+	 * This delay, when greater than {@literal 0} will cause save operations
+	 * triggered by file change events to be delayed by this amount of time. If
+	 * additional events are monitored for a given resource before this delay
+	 * has passed, the delay is restarted. In this way if a file is continually
+	 * being modified it will not be saved until after the modifications stop.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>Note</b> that for the delay to be used, a {@link #getTaskScheduler()}
+	 * must be available.
+	 * </p>
+	 * 
+	 * @param saveDelay
+	 *        the delay for save operations, in milliseconds
+	 */
+	public void setSaveDelay(long saveDelay) {
+		this.saveDelay = saveDelay;
 	}
 
 }

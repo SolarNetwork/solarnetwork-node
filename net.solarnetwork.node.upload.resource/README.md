@@ -23,7 +23,16 @@ Each service configuration contains the following settings:
 | Path            | The OS file system path to monitor. |
 | Filter          | A regular expression to filter, so that only files matching the filter are copied. |
 | Sub-folders     | Toggle watching for files in sub-folders of <b>Path</b>. |
+| Save Delay      | Number of milliseconds after a file change is detected to wait before saving the file to the Storage Service. |
 | Datum Source ID | If configured then datum will be generated each time a file is saved to the configured Storage Service, with this source ID and a `url` property that links to the stored resource. |
+
+## Configuration notes
+
+The <b>Save Delay</b> can be useful if the program generating the files in the watched directory
+also modifies the files after it creates them. The creation and modification of the file can both
+trigger change events. Also if the program continually modifies a file over a period of time, for 
+example a streaming video file that is captured over a window of time, this delay helps so the
+file is only saved _after_ it stops being modified for at least this amount of time.
 
 # Generated Datum
 

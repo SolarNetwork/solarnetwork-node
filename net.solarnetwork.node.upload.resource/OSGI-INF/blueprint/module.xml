@@ -13,6 +13,8 @@
 
 	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
 
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
+
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -61,6 +63,7 @@
 			<property name="messageSource" ref="messageSource"/>
 			<property name="datumDao" ref="generalNodeDatumDao"/>
 			<property name="eventAdmin" ref="eventAdmin"/>
+			<property name="taskScheduler" ref="taskScheduler"/>
 		</bean>
 	</osgix:managed-service-factory>
 		
