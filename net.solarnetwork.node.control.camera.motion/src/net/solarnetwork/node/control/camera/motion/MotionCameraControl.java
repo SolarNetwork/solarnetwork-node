@@ -107,7 +107,7 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 
 	private String controlId;
 	private String path = DEFAULT_PATH;
-	private Pattern pathFilter;
+	private Pattern pathFilter = DEFAULT_PATH_FILTER;
 	private Pattern pathSnapshotFilter = DEFAULT_PATH_SNAPSHOT_FILTER;
 	private SetupResourceProvider mediaResourceProvider;
 	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
