@@ -144,7 +144,8 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 
 	@Override
 	public URL resourceStorageUrl(String path) {
-		return delegate.resourceStorageUrl(path);
+		String p = pathPrefixMapper().apply(path);
+		return delegate.resourceStorageUrl(p);
 	}
 
 	@Override
