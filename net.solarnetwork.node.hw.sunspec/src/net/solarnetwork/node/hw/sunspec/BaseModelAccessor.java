@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import net.solarnetwork.node.io.modbus.ModbusReference;
@@ -30,7 +31,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Base class for {@link ModelAccessor} implementations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class BaseModelAccessor implements ModelAccessor {
 
@@ -109,7 +110,23 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @return the decimal multiplier to use, never {@literal null}
 	 */
 	protected BigDecimal getScaleFactor(ModbusReference ref) {
-		Number n = data.getNumber(ref, blockAddress);
+		return getScaleFactor(ref, blockAddress);
+	}
+
+	/**
+	 * Get a decimal value suitable for multiplication against a data property
+	 * for a scale factor.
+	 * 
+	 * @param ref
+	 *        the block address relative reference to the scale factor register,
+	 *        which is expected to contain a signed integer from -10..10
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @return the decimal multiplier to use, never {@literal null}
+	 * @since 1.2
+	 */
+	protected BigDecimal getScaleFactor(ModbusReference ref, int offset) {
+		Number n = data.getNumber(ref, offset);
 		if ( n == null ) {
 			return BigDecimal.ONE;
 		}
@@ -129,7 +146,21 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @since 1.1
 	 */
 	protected Number getBitfield(ModbusReference ref) {
-		Number v = data.getNumber(ref, blockAddress);
+		return getBitfield(ref, blockAddress);
+	}
+
+	/**
+	 * Get a bitfield register value.
+	 * 
+	 * @param ref
+	 *        the block address relative reference to the bitfield register(s)
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @return the value, never {@literal null}
+	 * @since 1.2
+	 */
+	protected Number getBitfield(ModbusReference ref, int offset) {
+		Number v = data.getNumber(ref, offset);
 		if ( v == null ) {
 			return 0;
 		}
@@ -161,7 +192,64 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	 * @return the scaled value, or {@literal null} if not available
 	 */
 	public BigDecimal getScaledValue(ModbusReference dataRef, ModbusReference scaleRef) {
-		Number v = data.getNumber(dataRef, blockAddress);
+		return getScaledValue(dataRef, scaleRef, blockAddress, blockAddress);
+	}
+
+	/**
+	 * Get a scaled data property value.
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param scaleRef
+	 *        the block address relative reference to the scale factor
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @param scaleOffset
+	 *        the scale address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the scaled value, or {@literal null} if not available
+	 */
+	public BigDecimal getScaledValue(ModbusReference dataRef, ModbusReference scaleRef, int dataOffset,
+			int scaleOffset) {
+		Number v = getValue(dataRef, dataOffset);
+		if ( v == null ) {
+			return null;
+		}
+
+		BigDecimal sf = getScaleFactor(scaleRef, scaleOffset);
+		BigDecimal d = new BigDecimal(v.toString());
+		if ( sf.equals(BigDecimal.ONE) || d.compareTo(BigDecimal.ZERO) == 0 ) {
+			return d;
+		}
+		return d.multiply(sf);
+	}
+
+	/**
+	 * Get an non-scaled data property value.
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Number getValue(ModbusReference dataRef) {
+		return getValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get a non-scaled data property value.
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Number getValue(ModbusReference dataRef, int dataOffset) {
+		Number v = data.getNumber(dataRef, dataOffset);
 		if ( v == null ) {
 			return null;
 		}
@@ -225,12 +313,107 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 			default:
 				// continue
 		}
-
-		BigDecimal sf = getScaleFactor(scaleRef);
-		BigDecimal d = new BigDecimal(v.toString());
-		if ( sf.equals(BigDecimal.ONE) || d.compareTo(BigDecimal.ZERO) == 0 ) {
-			return d;
-		}
-		return d.multiply(sf);
+		return v;
 	}
+
+	/**
+	 * Get a float data property value.
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Float getFloatValue(ModbusReference dataRef) {
+		return getFloatValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get a float data property value.
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Float getFloatValue(ModbusReference dataRef, int dataOffset) {
+		Number n = getValue(dataRef, dataOffset);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	/**
+	 * Get an integer data property value.
+	 * 
+	 * <p>
+	 * The value will be rounded, if necessary.
+	 * </p>
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Integer getIntegerValue(ModbusReference dataRef) {
+		return getIntegerValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get an integer data property value.
+	 * 
+	 * <p>
+	 * The value will be rounded, if necessary.
+	 * </p>
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Integer getIntegerValue(ModbusReference dataRef, int dataOffset) {
+		Number n = maximumDecimalScale(getValue(dataRef, dataOffset), 0);
+		return (n != null ? n.intValue() : null);
+	}
+
+	/**
+	 * Get a long data property value.
+	 * 
+	 * <p>
+	 * The value will be rounded, if necessary.
+	 * </p>
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Long getLongValue(ModbusReference dataRef) {
+		return getLongValue(dataRef, blockAddress);
+	}
+
+	/**
+	 * Get a long data property value.
+	 * 
+	 * <p>
+	 * The value will be rounded, if necessary.
+	 * </p>
+	 * 
+	 * @param dataRef
+	 *        the block address relative reference to the data property
+	 * @param dataOffset
+	 *        the data address offset to add to
+	 *        {@link ModbusReference#getAddress()}
+	 * @return the value, or {@literal null} if not available
+	 * @since 1.2
+	 */
+	public Long getLongValue(ModbusReference dataRef, int dataOffset) {
+		Number n = maximumDecimalScale(getValue(dataRef, dataOffset), 0);
+		return (n != null ? n.longValue() : null);
+	}
+
 }

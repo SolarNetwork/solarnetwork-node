@@ -19,5 +19,7 @@
 		<!-- Testing support -->
 		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 		<dependency org="org.apache.tomcat" name="tomcat-jdbc" rev="7.0.64" conf="runtime"/>	
+		
+		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>
 </ivy-module>

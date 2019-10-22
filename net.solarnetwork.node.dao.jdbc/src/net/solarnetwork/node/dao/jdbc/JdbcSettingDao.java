@@ -48,6 +48,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
@@ -71,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -200,6 +201,17 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 								rs.getString(2));
 					}
 				}, key);
+	}
+
+	@Override
+	public List<KeyValuePair> getSettingValues(String key) {
+		return getJdbcTemplate().query(this.sqlFind, new RowMapper<KeyValuePair>() {
+
+			@Override
+			public KeyValuePair mapRow(ResultSet rs, int rowNum) throws SQLException {
+				return new KeyValuePair(rs.getString(1), rs.getString(2));
+			}
+		}, key);
 	}
 
 	@Override

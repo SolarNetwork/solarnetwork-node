@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
  * Enumeration of SunSpec inverter model IDs.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum InverterModelId implements ModelId {
 
@@ -36,14 +37,31 @@ public enum InverterModelId implements ModelId {
 
 	SplitPhaseInverterInteger(102, "Split phase inverter"),
 
-	ThreePhaseInverterInteger(103, "3-phase inverter");
+	ThreePhaseInverterInteger(103, "3-phase inverter"),
 
-	final private int id;
-	final private String description;
+	SinglePhaseInverterFloatingPoint(111, "Single phase inverter (floating point)"),
+
+	SplitPhaseInverterFloatingPoint(112, "Split phase inverter (floating point)"),
+
+	ThreePhaseInverterFloatingPoint(113, "3-phase inverter (floating point)"),
+
+	MultipleMpptInverterExtension(
+			160,
+			"Multiple MPPT Inverter Extension Model",
+			InverterMpptExtensionModelAccessor.class);
+
+	private final int id;
+	private final String description;
+	private final Class<? extends ModelAccessor> accessorType;
 
 	private InverterModelId(int id, String description) {
+		this(id, description, InverterModelAccessor.class);
+	}
+
+	private InverterModelId(int id, String description, Class<? extends ModelAccessor> accessorType) {
 		this.id = id;
 		this.description = description;
+		this.accessorType = accessorType;
 	}
 
 	@Override
@@ -54,6 +72,11 @@ public enum InverterModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return accessorType;
 	}
 
 	/**

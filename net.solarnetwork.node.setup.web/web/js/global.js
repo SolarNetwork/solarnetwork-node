@@ -364,6 +364,38 @@ SolarNode.tryGotoURL = function(destURL) {
 	tryLoadUrl(SolarNode.context.path('/csrf'));
 };
 
+SolarNode.GlobalProgress = (function() {
+	var self = {};
+
+	function getModal() {
+		return $('#generic-progress-modal');
+	}
+	
+	function show(percentComplete, title, message) {
+		var modal = getModal(),
+			titleEl = modal.find('.info-title'),
+			messageEl = modal.find('.info-message');
+		titleEl.text(title || titleEl.data('default-message'));
+		messageEl.text(message || messageEl.data('default-message'));
+		modal.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		modal.modal('show');
+	}
+	
+	function update(percentComplete) {
+		getModal().find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+	}
+	
+	function hide() {
+		getModal().modal('hide');
+	}
+		
+	return Object.defineProperties(self, {
+		show : { value : show },
+		update : { value : update },
+		hide : { value : hide },
+	});
+}());
+
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');

@@ -27,7 +27,7 @@ package net.solarnetwork.node.hw.sunspec;
  * encountered.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.1
  */
 public class GenericModelId implements ModelId {
@@ -53,6 +53,16 @@ public class GenericModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return "Model " + id;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return ModelAccessor.class;
+	}
+
+	@Override
+	public String toString() {
+		return getDescription();
 	}
 
 }

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"
+    attributeFormDefault="qualified" targetNamespace="urn:solarnetwork:datum:1.0"
+    xmlns="urn:solarnetwork:datum:1.0" xmlns:sn="urn:solarnetwork:datum:1.0">
+
+    <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd" />
+    
+    <xs:attribute name="source-id" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>A SolarNetwork Source ID to associate with datum collected for the
+                associated element.</xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="network-service-name" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>The service name of a network service provider to use with the
+                associated element.</xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="publish-interval" type="xs:nonNegativeInteger" default="60000">
+        <xs:annotation>
+            <xs:documentation>The frequency at which to publish the associated element, in
+                milliseconds.</xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="datum-property" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>A datum property name to use with the associated
+                element.</xs:documentation>
+        </xs:annotation>
+    </xs:attribute>
+
+    <xs:attribute name="datum-property-classification">
+        <xs:annotation>
+            <xs:documentation>A datum property classification to use with the associated
+                element.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:token">
+                <xs:enumeration value="i">
+                    <xs:annotation>
+                        <xs:documentation>The instantaneous classification.</xs:documentation>
+                    </xs:annotation>
+                </xs:enumeration>
+                <xs:enumeration value="a">
+                    <xs:annotation>
+                        <xs:documentation>The accumulating classification.</xs:documentation>
+                    </xs:annotation>
+                </xs:enumeration>
+                <xs:enumeration value="s">
+                    <xs:annotation>
+                        <xs:documentation>The status classification.</xs:documentation>
+                    </xs:annotation>
+                </xs:enumeration>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+
+    <xs:attribute name="decimal-scale">
+        <xs:annotation>
+            <xs:documentation>A maximum scale (number of digits after the decimal point) to round
+                decimal values to. Set to 0 to round to whole numbers. Set to -1 to disable
+                rounding.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int"/>
+        </xs:simpleType>
+    </xs:attribute>
+    
+    <xs:complexType name="LocalizedName">
+        <xs:annotation>
+            <xs:documentation>A name that is localizable.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute ref="xml:lang" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The language of this name.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+</xs:schema>

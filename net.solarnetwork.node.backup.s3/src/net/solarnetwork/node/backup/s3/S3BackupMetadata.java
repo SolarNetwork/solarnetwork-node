@@ -25,6 +25,7 @@ package net.solarnetwork.node.backup.s3;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupIdentity;
 import net.solarnetwork.node.backup.BackupResource;

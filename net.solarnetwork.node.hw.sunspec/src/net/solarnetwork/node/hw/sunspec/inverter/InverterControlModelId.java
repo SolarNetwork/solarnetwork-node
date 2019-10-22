@@ -22,19 +22,23 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
  * Enumeration of SunSpec inverter control model IDs.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum InverterControlModelId implements ModelId {
 
-	NameplateRatings(120, "Inverter controls nameplate ratings"),
+	NameplateRatings(
+			120,
+			"Inverter controls nameplate ratings",
+			InverterNameplateRatingsModelAccessor.class),
 
-	BasicSettings(121, "Inverter controls basic settings"),
+	BasicSettings(121, "Inverter controls basic settings", InverterBasicSettingsModelAccessor.class),
 
 	ExtendedMeasurements(122, "Inverter controls extended measurements and status"),
 
@@ -84,12 +88,19 @@ public enum InverterControlModelId implements ModelId {
 
 	ExtendedSettings(145, "Inverter controls extended settings");
 
-	final private int id;
-	final private String description;
+	private final int id;
+	private final String description;
+	private final Class<? extends ModelAccessor> accessorType;
 
 	private InverterControlModelId(int id, String description) {
+		this(id, description, ModelAccessor.class);
+	}
+
+	private InverterControlModelId(int id, String description,
+			Class<? extends ModelAccessor> accessorType) {
 		this.id = id;
 		this.description = description;
+		this.accessorType = accessorType;
 	}
 
 	@Override
@@ -100,6 +111,11 @@ public enum InverterControlModelId implements ModelId {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public Class<? extends ModelAccessor> getModelAccessorType() {
+		return accessorType;
 	}
 
 	/**
