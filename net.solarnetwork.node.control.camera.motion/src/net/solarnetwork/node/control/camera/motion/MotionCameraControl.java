@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.control.camera.motion;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.setup.SetupResource.WEB_CONSUMER_TYPES;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,6 +48,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import org.quartz.JobDataMap;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.Trigger;
+import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
@@ -53,18 +61,24 @@ import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.io.ResultStatusException;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.job.JobUtils;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.setup.ResourceSetupResource;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.UrlUtils;
 
 /**
@@ -72,10 +86,11 @@ import net.solarnetwork.util.UrlUtils;
  * image change detection program.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class MotionCameraControl extends BaseIdentifiable implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler, SetupResourceProvider {
+public class MotionCameraControl extends BaseIdentifiable
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
+		SetupResourceProvider, SettingsChangeObserver, MotionService {
 
 	/** The default value of the {@code path} property. */
 	public static final String DEFAULT_PATH = "/var/lib/motion";
@@ -101,10 +116,32 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	/** The default value for the {@code connectionTimeout} property. */
 	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
 
+	/**
+	 * The group name used to schedule the invoker jobs as.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String SNAPSHOT_JOB_NAME = "MotionSnapshot";
+
+	/**
+	 * The group name used to schedule the invoker jobs as.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String SNAPSHOT_JOB_GROUP = "MotionCameraControl";
+
+	/**
+	 * The key used for the snapshot job.
+	 * 
+	 * @since 1.1
+	 */
+	public static final JobKey SNAPSHOT_JOB_KEY = new JobKey(SNAPSHOT_JOB_NAME, SNAPSHOT_JOB_GROUP);
+
 	private static final String MEDIA_RESOURCE_LAST_MODIFIED = "media-resource-last-modified";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	private OptionalService<Scheduler> scheduler;
 	private String controlId;
 	private String path = DEFAULT_PATH;
 	private Pattern pathFilter = DEFAULT_PATH_FILTER;
@@ -113,6 +150,85 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	private int resourceCacheSecs = DEFAULT_RESOURCE_CACHE_SECS;
 	private String motionBaseUrl = DEFAULT_MOTION_BASE_URL;
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+	private MotionSnapshotConfig[] snapshotConfigurations;
+
+	private final List<ScheduledMotionSnapshot> activeSnapshotConfigurations = new ArrayList<>(2);
+
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		rescheduleSnapshotJobs();
+	}
+
+	/**
+	 * Call when this service is no longer needed to clean up resources.
+	 */
+	public synchronized void shutdown() {
+		unscheduleSnapshotJobs(activeSnapshotConfigurations);
+	}
+
+	private synchronized void rescheduleSnapshotJobs() {
+		unscheduleSnapshotJobs(activeSnapshotConfigurations);
+
+		final Scheduler s = scheduler();
+		if ( s == null ) {
+			return;
+		}
+		if ( snapshotConfigurations == null || snapshotConfigurations.length < 1 ) {
+			return;
+		}
+		for ( MotionSnapshotConfig config : snapshotConfigurations ) {
+			if ( !config.isValid() ) {
+				continue;
+			}
+			final String schedule = config.getSchedule();
+			final String jobDesc = snapshotJobDescription(config.getCameraId());
+			final TriggerKey triggerKey = triggerKey(config.getCameraId());
+			final JobDataMap props = new JobDataMap();
+			props.put("cameraId", config.getCameraId());
+			props.put("service", this);
+			Trigger trigger = JobUtils.scheduleJob(s, MotionSnapshotJob.class, SNAPSHOT_JOB_KEY, jobDesc,
+					schedule, triggerKey, props);
+			activeSnapshotConfigurations.add(new ScheduledMotionSnapshot(config.getCameraId(), trigger));
+		}
+	}
+
+	private void unscheduleSnapshotJobs(List<ScheduledMotionSnapshot> configurations) {
+		if ( configurations == null || configurations.isEmpty() ) {
+			return;
+		}
+
+		Scheduler s = scheduler();
+		if ( s == null ) {
+			return;
+		}
+		for ( ScheduledMotionSnapshot config : configurations ) {
+			try {
+				JobUtils.unscheduleJob(s, snapshotJobDescription(config.getCameraId()),
+						triggerKey(config.getCameraId()));
+			} catch ( Exception e ) {
+				// ignore
+			}
+		}
+		configurations.clear();
+	}
+
+	private String snapshotJobDescription(int cameraId) {
+		return String.format("Motion auto-snapshot [%s-%d]", controlId, cameraId);
+	}
+
+	private TriggerKey triggerKey(int cameraId) {
+		String controlId = getControlId();
+		if ( controlId == null ) {
+
+		}
+		String triggerKey = String.format("%s-%d", controlId, cameraId);
+		return new TriggerKey(triggerKey, SNAPSHOT_JOB_GROUP);
+	}
+
+	private Scheduler scheduler() {
+		OptionalService<Scheduler> optional = getScheduler();
+		return (optional != null ? optional.service() : null);
+	}
 
 	// NodeControlProvider
 
@@ -182,7 +298,8 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		return InstructionState.Declined;
 	}
 
-	private boolean takeSnapshot(final int cameraId) throws IOException {
+	@Override
+	public boolean takeSnapshot(final int cameraId) throws IOException {
 		final String baseUrl = getMotionBaseUrl();
 		if ( baseUrl == null ) {
 			log.error("No motion URL configured to take camera {} snapshot with.", cameraId);
@@ -432,6 +549,20 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 		results.add(new BasicTextFieldSettingSpecifier("pathSnapshotFilterValue",
 				DEFAULT_PATH_SNAPSHOT_FILTER.pattern()));
 
+		MotionSnapshotConfig[] confs = getSnapshotConfigurations();
+		List<MotionSnapshotConfig> confsList = (confs != null ? asList(confs) : emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("snapshotConfigurations", confsList,
+				new SettingsUtil.KeyedListCallback<MotionSnapshotConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(MotionSnapshotConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								MotionSnapshotConfig.settings(key + "."));
+						return singletonList(configGroup);
+					}
+				}));
+
 		return results;
 	}
 
@@ -654,6 +785,75 @@ public class MotionCameraControl extends BaseIdentifiable implements SettingSpec
 	 */
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
+	}
+
+	/**
+	 * Get the scheduler.
+	 * 
+	 * @return the scheduler
+	 */
+	public OptionalService<Scheduler> getScheduler() {
+		return scheduler;
+	}
+
+	/**
+	 * Set the scheduler.
+	 * 
+	 * @param scheduler
+	 *        the scheduler
+	 * @since 1.1
+	 */
+	public void setScheduler(OptionalService<Scheduler> scheduler) {
+		this.scheduler = scheduler;
+	}
+
+	/**
+	 * Get the auto-snapshot configurations.
+	 * 
+	 * @return the configurations
+	 * @since 1.1
+	 */
+	public MotionSnapshotConfig[] getSnapshotConfigurations() {
+		return snapshotConfigurations;
+	}
+
+	/**
+	 * Set the auto-snapshot configurations.
+	 * 
+	 * @param snapshotConfigurations
+	 *        the snapshot configurations
+	 * @since 1.1
+	 */
+	public void setSnapshotConfigurations(MotionSnapshotConfig[] snapshotConfigurations) {
+		this.snapshotConfigurations = snapshotConfigurations;
+	}
+
+	/**
+	 * Get the number of configured {@code snapshotConfigurations} elements.
+	 * 
+	 * @return the number of {@code snapshotConfigurations} elements
+	 * @since 1.1
+	 */
+	public int getSnapshotConfigurationsCount() {
+		MotionSnapshotConfig[] confs = getSnapshotConfigurations();
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code snapshotConfigurations} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link MotionSnapshotConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code snapshotConfigurations} elements.
+	 * @since 1.1
+	 */
+	public void setSnapshotConfigurationsCount(int count) {
+		this.snapshotConfigurations = ArrayUtils.arrayWithLength(getSnapshotConfigurations(), count,
+				MotionSnapshotConfig.class, null);
 	}
 
 }
