@@ -425,27 +425,27 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	@Override
 	public String getManufacturer() {
-		return getAsciiString(CommonModelRegister.Manufacturer, blockAddress, true);
+		return getLatin1String(CommonModelRegister.Manufacturer, blockAddress, true);
 	}
 
 	@Override
 	public String getModelName() {
-		return getAsciiString(CommonModelRegister.Model, blockAddress, true);
+		return getLatin1String(CommonModelRegister.Model, blockAddress, true);
 	}
 
 	@Override
 	public String getOptions() {
-		return getAsciiString(CommonModelRegister.Options, blockAddress, true);
+		return getLatin1String(CommonModelRegister.Options, blockAddress, true);
 	}
 
 	@Override
 	public String getVersion() {
-		return getAsciiString(CommonModelRegister.Version, blockAddress, true);
+		return getLatin1String(CommonModelRegister.Version, blockAddress, true);
 	}
 
 	@Override
 	public String getSerialNumber() {
-		return getAsciiString(CommonModelRegister.SerialNumber, blockAddress, true);
+		return getLatin1String(CommonModelRegister.SerialNumber, blockAddress, true);
 	}
 
 	@Override
