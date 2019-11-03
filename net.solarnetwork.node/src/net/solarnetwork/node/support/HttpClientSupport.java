@@ -43,14 +43,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class HttpClientSupport {
 
@@ -196,7 +196,7 @@ public abstract class HttpClientSupport {
 		if ( sslService != null && conn instanceof HttpsURLConnection ) {
 			SSLService service = sslService.service();
 			if ( service != null ) {
-				SSLSocketFactory factory = service.getSolarInSocketFactory();
+				SSLSocketFactory factory = service.getSSLSocketFactory();
 				if ( factory != null ) {
 					HttpsURLConnection hConn = (HttpsURLConnection) conn;
 					hConn.setSSLSocketFactory(factory);
