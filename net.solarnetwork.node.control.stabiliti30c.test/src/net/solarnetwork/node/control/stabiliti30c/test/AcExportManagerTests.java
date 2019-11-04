@@ -25,9 +25,11 @@ package net.solarnetwork.node.control.stabiliti30c.test;
 import static java.lang.System.arraycopy;
 import static net.solarnetwork.node.io.modbus.ModbusReadFunction.ReadHoldingRegister;
 import static net.solarnetwork.node.io.modbus.ModbusWriteFunction.WriteHoldingRegister;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
@@ -65,7 +67,7 @@ public class AcExportManagerTests {
 
 	private static final String TEST_CONTROL_ID = "/test/power/1";
 	private static final int TEST_UNIT_ID = 35;
-	private static final long TEST_SAMPLE_CACHE_MS = 123;
+	private static final long TEST_SAMPLE_CACHE_MS = 123L;
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private static final int[] TEST_SERIAL_NUM = new int[] { 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -269,13 +271,18 @@ public class AcExportManagerTests {
 	}
 
 	@Test
-	public void handleShedLoadInstruction() throws IOException {
+	public void handleShedLoadInstruction() throws Exception {
 		// GIVEN
 		startupResetsDeviceStateToKnownValues();
+
 		resetAll();
 
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
+
+		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
+		eventAdmin.postEvent(anyObject());
+		expectLastCall().anyTimes();
 
 		// first reset state to known safe values...
 		expectResetSafeDeviceState();
@@ -310,6 +317,10 @@ public class AcExportManagerTests {
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
 
+		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
+		eventAdmin.postEvent(anyObject());
+		expectLastCall().anyTimes();
+
 		// first reset state to known safe values...
 		expectResetSafeDeviceState();
 
@@ -337,6 +348,10 @@ public class AcExportManagerTests {
 
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
+
+		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
+		eventAdmin.postEvent(anyObject());
+		expectLastCall().anyTimes();
 
 		// first reset state to known safe values...
 		expectResetSafeDeviceState();
@@ -370,6 +385,10 @@ public class AcExportManagerTests {
 
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
+
+		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
+		eventAdmin.postEvent(anyObject());
+		expectLastCall().anyTimes();
 
 		// first reset state to known safe values...
 		expectResetSafeDeviceState();
