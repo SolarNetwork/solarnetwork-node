@@ -24,7 +24,8 @@ package net.solarnetwork.node.backup.s3;
 
 import java.io.IOException;
 import java.io.InputStream;
-import com.amazonaws.services.s3.model.S3Object;
+import net.solarnetwork.common.s3.S3Client;
+import net.solarnetwork.common.s3.S3Object;
 import net.solarnetwork.node.backup.BackupResource;
 
 /**
@@ -56,8 +57,8 @@ public class S3BackupResource implements BackupResource {
 
 	@Override
 	public InputStream getInputStream() throws IOException {
-		S3Object obj = client.getObject(metadata.getObjectKey());
-		return obj.getObjectContent();
+		S3Object obj = client.getObject(metadata.getObjectKey(), null, null);
+		return obj.getInputStream();
 	}
 
 	@Override

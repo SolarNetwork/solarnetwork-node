@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.sunspec;
  * API for a model identifier.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface ModelId {
 
@@ -46,5 +46,12 @@ public interface ModelId {
 	 * @return a description
 	 */
 	String getDescription();
+
+	/**
+	 * Get a model accessor type suitable for this model.
+	 * 
+	 * @return the model accessor type
+	 */
+	Class<? extends ModelAccessor> getModelAccessorType();
 
 }

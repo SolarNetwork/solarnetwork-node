@@ -22,13 +22,21 @@
 
 package net.solarnetwork.node.metadata.json;
 
+import static java.util.Collections.singleton;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collection;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Iterator;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.settings.SettingResourceHandler;
+import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 
 /**
@@ -36,36 +44,53 @@ import net.solarnetwork.node.support.JsonHttpClientSupport;
  * 
  * <p>
  * This implementation caches the metadata for each source using
- * {@link SettingDao} and thus might have limitations on how much metadata can
- * be effectively associated with a given source ID.
+ * {@link SettingsService} using the {@link SettingResourceHandler} API, saving
+ * one JSON resource per source ID.
  * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>baseUrl</dt>
- * <dd>The SolarIn relative source-level metadata base URL path.</dd>
- * 
- * <dt>compress</dt>
- * <dd>Flag to compress the HTTP body content, defaults to <em>true</em>.</dd>
- * 
- * <dt>objectMapper</dt>
- * <dd>The {@link ObjectMapper} to marshall objects to JSON with and parse the
- * response with.</dd>
- * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService {
+public class JsonDatumMetadataService extends JsonHttpClientSupport
+		implements DatumMetadataService, SettingResourceHandler {
 
 	public static final String SETTING_KEY_SOURCE_META = "JsonDatumMetadataService.sourceMeta";
 
+	private static final Charset UTF8 = Charset.forName("UTF-8");
+
 	private String baseUrl = "/api/v1/sec/datum/meta";
 
+	private final SettingsService settingsService;
 	private SettingDao settingDao;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingsService
+	 *        the settings service to use
+	 */
+	public JsonDatumMetadataService(SettingsService settingsService) {
+		super();
+		this.settingsService = settingsService;
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.metadata.json.JsonDatumMetadataService";
+	}
+
+	@Override
+	public Iterable<Resource> currentSettingResources(String settingKey) {
+		// not supported
+		return null;
+	}
+
+	@Override
+	public SettingsUpdates applySettingResources(String settingKey, Iterable<Resource> resources)
+			throws IOException {
+		// not used
+		return null;
+	}
 
 	private String nodeSourceMetadataUrl(String sourceId) {
 		StringBuilder buf = new StringBuilder();
@@ -96,6 +121,31 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	}
 
 	private GeneralDatumMetadata cachedMetadata(String sourceId) {
+		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+		try {
+			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUID(), null,
+					sourceKey);
+			if ( resources != null ) {
+				// use only first resource
+				Iterator<Resource> itr = resources.iterator();
+				if ( itr.hasNext() ) {
+					Resource r = itr.next();
+					if ( r != null ) {
+						try (InputStream in = r.getInputStream()) {
+							return getObjectMapper().readValue(in, GeneralDatumMetadata.class);
+						}
+					}
+				}
+			}
+		} catch ( IOException e ) {
+			log.debug("Error loading cached metadata for source {}: {}", sourceId, e.getMessage());
+		}
+
+		// check for legacy DAO data
+		return legacyCachedMetadata(sourceId);
+	}
+
+	private GeneralDatumMetadata legacyCachedMetadata(String sourceId) {
 		String json = settingDao.getSetting(SETTING_KEY_SOURCE_META, sourceId);
 		if ( json != null ) {
 			try {
@@ -118,10 +168,11 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		}
 		if ( newMeta != null && newMeta.equals(currMeta) == false ) {
 			// have changes, so persist
-			String json;
 			try {
-				json = getObjectMapper().writeValueAsString(newMeta);
-				settingDao.storeSetting(SETTING_KEY_SOURCE_META, sourceId, json);
+				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+				byte[] json = getObjectMapper().writeValueAsBytes(newMeta);
+				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
+				settingsService.importSettingResources(getSettingUID(), null, sourceKey, singleton(r));
 			} catch ( IOException e ) {
 				log.error("Error generating cached metadata JSON for source {}: {}", sourceId,
 						e.getMessage());
@@ -159,20 +210,47 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		}
 	}
 
-	public String getBaseUrl() {
-		return baseUrl;
-	}
-
-	public void setBaseUrl(String baseUrl) {
-		this.baseUrl = baseUrl;
-	}
-
+	/**
+	 * Get the setting DAO.
+	 * 
+	 * @return the settingDao the setting DAO
+	 */
 	public SettingDao getSettingDao() {
 		return settingDao;
 	}
 
+	/**
+	 * Set the setting DAO.
+	 * 
+	 * <p>
+	 * This is used for backwards compatibility in migrating cached metadata
+	 * from the DAO to setting resources.
+	 * </p>
+	 * 
+	 * @param settingDao
+	 *        the settingDao to set
+	 */
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
+	}
+
+	/**
+	 * Get the SolarIn relative source-level metadata base URL path.
+	 * 
+	 * @return the metadata base URL path
+	 */
+	public String getBaseUrl() {
+		return baseUrl;
+	}
+
+	/**
+	 * Set the SolarIn relative source-level metadata base URL path.
+	 * 
+	 * @param baseUrl
+	 *        the metadata base URL path to use
+	 */
+	public void setBaseUrl(String baseUrl) {
+		this.baseUrl = baseUrl;
 	}
 
 }

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor.support;
@@ -31,7 +29,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 
@@ -39,7 +36,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * Basic implementation of {@link Instruction}.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public class BasicInstruction implements Instruction, Serializable {
 
@@ -53,13 +50,13 @@ public class BasicInstruction implements Instruction, Serializable {
 	private final InstructionStatus status;
 	private final Map<String, List<String>> parameters;
 
-	public BasicInstruction(String topic, Date instructionDate,
-			String remoteInstructionId, String instructorId, InstructionStatus status) {
+	public BasicInstruction(String topic, Date instructionDate, String remoteInstructionId,
+			String instructorId, InstructionStatus status) {
 		this(null, topic, instructionDate, remoteInstructionId, instructorId, status);
 	}
-	
-	public BasicInstruction(Long id, String topic, Date instructionDate,
-			String remoteInstructionId, String instructorId, InstructionStatus status) {
+
+	public BasicInstruction(Long id, String topic, Date instructionDate, String remoteInstructionId,
+			String instructorId, InstructionStatus status) {
 		this.id = id;
 		this.topic = topic;
 		this.instructionDate = instructionDate;
@@ -68,7 +65,20 @@ public class BasicInstruction implements Instruction, Serializable {
 		this.status = status;
 		this.parameters = new LinkedHashMap<String, List<String>>();
 	}
-	
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("BasicInstruction{topic=");
+		builder.append(topic);
+		builder.append(",remoteInstructionId=");
+		builder.append(remoteInstructionId);
+		builder.append(",status=");
+		builder.append(status);
+		builder.append("}");
+		return builder.toString();
+	}
+
 	@Override
 	public Long getId() {
 		return id;
@@ -93,7 +103,7 @@ public class BasicInstruction implements Instruction, Serializable {
 	public String getInstructorId() {
 		return instructorId;
 	}
-	
+
 	@Override
 	public Iterable<String> getParameterNames() {
 		return Collections.unmodifiableSet(parameters.keySet());
@@ -124,12 +134,14 @@ public class BasicInstruction implements Instruction, Serializable {
 	public InstructionStatus getStatus() {
 		return status;
 	}
-	
+
 	/**
 	 * Add a new parameter value.
 	 * 
-	 * @param name the parameter name
-	 * @param value the parameter value
+	 * @param name
+	 *        the parameter name
+	 * @param value
+	 *        the parameter value
 	 */
 	public void addParameter(String name, String value) {
 		assert name != null && value != null;

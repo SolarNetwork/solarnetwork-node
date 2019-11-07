@@ -29,7 +29,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
- * Inverter type events
+ * Inverter type events.
  * 
  * @author matt
  * @version 1.0
@@ -100,8 +100,8 @@ public enum InverterModelEvent implements ModelEvent {
 
 	OEM_16(31, "OEM 16");
 
-	final private int index;
-	final private String description;
+	private final int index;
+	private final String description;
 
 	private InverterModelEvent(int index, String description) {
 		this.index = index;

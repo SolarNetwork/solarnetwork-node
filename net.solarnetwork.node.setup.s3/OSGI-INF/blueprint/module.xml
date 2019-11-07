@@ -16,7 +16,7 @@
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
-	<reference id="s3Client" interface="net.solarnetwork.node.backup.s3.S3Client"/>
+	<reference id="s3Client" interface="net.solarnetwork.common.s3.S3Client" filter="(function=backup)"/>
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	

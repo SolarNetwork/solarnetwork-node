@@ -41,7 +41,6 @@ import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
@@ -53,6 +52,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 

@@ -31,6 +31,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -67,6 +68,9 @@ import net.solarnetwork.node.support.GeneralNodeDatumSerializer;
 import net.solarnetwork.node.support.InstructionSerializer;
 import net.solarnetwork.node.support.NodeControlInfoSerializer;
 import net.solarnetwork.node.upload.mqtt.MqttUploadService;
+import net.solarnetwork.test.mqtt.MqttServerSupport;
+import net.solarnetwork.test.mqtt.TestingInterceptHandler;
+import net.solarnetwork.test.mqtt.TestingMqttCallback;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 import net.solarnetwork.util.StaticOptionalService;
 
@@ -391,10 +395,15 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		TestingInterceptHandler session = getTestingInterceptHandler();
 		session.setCallback(new TestingInterceptHandler.Callback() {
 
+			int count = 0;
+
 			@Override
 			public void handleInterceptMessage(InterceptMessage msg) {
 				if ( msg instanceof InterceptPublishMessage ) {
-					mqttServer.stopServer();
+					if ( count == 1 ) {
+						mqttServer.stopServer();
+					}
+					count++;
 				}
 			}
 		});
@@ -411,7 +420,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		Thread.sleep(1000); // allow time for subscription to take
 
 		String instrTopic = instructionTopic(nodeId);
-		mqttClient.publish(instrTopic, testInstructions.getBytes("UTF-8"), 1, false);
+		try {
+			mqttClient.publish(instrTopic, testInstructions.getBytes("UTF-8"), 1, false);
+		} catch ( Exception e ) {
+			log.warn("Exception caught publishing message.", e);
+		}
 
 		Thread.sleep(2000); // allow time for messages to process
 
@@ -420,7 +433,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		// then
 
 		// should have published acknowledgement on datum topic
-		assertThat("Published instruction and ack", session.publishMessages, hasSize(1));
+		assertThat("Published instruction and ack", session.publishMessages, not(hasSize(0)));
 
 		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
 		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));

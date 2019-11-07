@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<bean id="scheduler" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.quartz.Scheduler"/>
+		<property name="serviceFilter" value="(function=node)"/>
+	</bean>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.camera.motion.MotionCameraControl</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="mediaResourceProvider" class="net.solarnetwork.node.setup.PatternMatchingSetupResourceProvider">
+		<property name="basenames">
+			<list>
+				<value>META-INF/settings/camera-motion-media</value>
+			</list>
+		</property>
+	</bean>
+	
+	<!-- Published Services -->
+
+	<service interface="net.solarnetwork.node.setup.SetupResourceProvider">
+		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceProvider">
+			<property name="resources">
+				<list>
+					<bean class="net.solarnetwork.node.setup.ClasspathSetupResource">
+						<argument value="camera-motion.js"/>
+						<argument value="camera-motion.js"/>
+						<argument value="net.solarnetwork.node.control.camera.motion.MotionCameraControl"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).JAVASCRIPT_CONTENT_TYPE}"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).WEB_CONSUMER_TYPES}"/>
+						<argument value="#{T(net.solarnetwork.node.setup.SetupResource).USER_ROLES}"/>
+					</bean>
+				</list>
+			</property>
+		</bean>
+	</service>
+	
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Motion Camera Control"/>
+			<property name="factoryUID" value="net.solarnetwork.node.control.camera.motion"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.camera.motion" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.setup.SetupResourceProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.control.camera.motion"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>Signal</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.control.camera.motion.MotionCameraControl">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="mediaResourceProvider" ref="mediaResourceProvider"/>
+			<property name="scheduler" ref="scheduler"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

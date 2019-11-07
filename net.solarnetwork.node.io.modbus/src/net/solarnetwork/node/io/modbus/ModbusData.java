@@ -52,7 +52,7 @@ import net.solarnetwork.node.domain.DataAccessor;
  * </p>
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -545,7 +545,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusDataUtils.UTF8_CHARSET);
+				ModbusTransactionUtils.UTF8_CHARSET);
 	}
 
 	/**
@@ -576,9 +576,27 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 * @since 1.4
 	 */
-	public String getAsciiString(final ModbusReference ref, int offset, final boolean trim) {
+	public String getAsciiString(final ModbusReference ref, final int offset, final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusDataUtils.ASCII_CHARSET);
+				ModbusTransactionUtils.ASCII_CHARSET);
+	}
+
+	/**
+	 * Construct an ISO-LATIN-1 string from a relative reference.
+	 * 
+	 * @param ref
+	 *        the reference to get the string value for
+	 * @param offset
+	 *        the address offset to add to {@link ModbusReference#getAddress()}
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @return the parsed string
+	 * @since 1.8
+	 */
+	public String getLatin1String(final ModbusReference ref, final int offset, final boolean trim) {
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
+				ModbusTransactionUtils.LATIN1_CHARSET);
 	}
 
 	/**

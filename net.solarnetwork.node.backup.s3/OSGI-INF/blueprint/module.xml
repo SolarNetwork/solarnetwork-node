@@ -21,16 +21,21 @@
 		</interfaces>
 	</service>
 	
-	<service ref="s3Client" interface="net.solarnetwork.node.backup.s3.S3Client"/>
+	<service ref="s3Client" interface="net.solarnetwork.common.s3.S3Client">
+		<service-properties>
+			<entry key="function" value="backup"/>
+		</service-properties>
+	</service>
 	
 	<!-- Supporting Services -->
 	
-	<bean id="s3Client" class="net.solarnetwork.node.backup.s3.SdkS3Client"/>
+	<bean id="s3Client" class="net.solarnetwork.common.s3.sdk.SdkS3Client"/>
 
 	<bean id="s3BackupService" class="net.solarnetwork.node.backup.s3.S3BackupService">
 		<osgix:managed-properties 
 			persistent-id="net.solarnetwork.node.backup.s3.S3BackupService" 
-			autowire-on-update="true"/>
+			autowire-on-update="true"
+			update-method="configurationChanged"/>
 		<property name="s3Client" ref="s3Client"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">

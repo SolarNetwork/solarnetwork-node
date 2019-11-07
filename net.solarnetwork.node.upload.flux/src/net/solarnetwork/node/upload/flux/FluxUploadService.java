@@ -47,18 +47,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.io.mqtt.support.MqttServiceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class FluxUploadService extends MqttServiceSupport
 		implements EventHandler, SettingSpecifierProvider {
@@ -322,6 +322,7 @@ public class FluxUploadService extends MqttServiceSupport
 	 * @param messageSource
 	 *        the message source
 	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

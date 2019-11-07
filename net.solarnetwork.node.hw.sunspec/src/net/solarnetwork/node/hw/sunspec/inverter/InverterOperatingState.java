@@ -29,7 +29,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * Operating state for inverters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum InverterOperatingState implements OperatingState {
 
@@ -49,10 +49,12 @@ public enum InverterOperatingState implements OperatingState {
 
 	Fault(7, "One or more faults exist"),
 
-	Standby(8, "Device is in standby mode");
+	Standby(8, "Device is in standby mode"),
 
-	final private int code;
-	final private String description;
+	Test(9, "Device is in test mode");
+
+	private final int code;
+	private final String description;
 
 	private InverterOperatingState(int index, String description) {
 		this.code = index;

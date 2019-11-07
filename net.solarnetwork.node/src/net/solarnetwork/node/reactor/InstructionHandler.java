@@ -28,7 +28,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public interface InstructionHandler {
 
@@ -87,6 +87,20 @@ public interface InstructionHandler {
 	 * @since 1.3
 	 */
 	String TOPIC_SET_OPERATING_STATE = "SetOperatingState";
+
+	/**
+	 * The instruction topic for a request to signal a control or device.
+	 * 
+	 * <p>
+	 * By convention the instruction should have a parameter whose key is the ID
+	 * of the control that should respond to the request and whose value is a
+	 * string representing the signal name. Signal names are control/device
+	 * specific.
+	 * </p>
+	 * 
+	 * @since 1.4
+	 */
+	String TOPIC_SIGNAL = "Signal";
 
 	/**
 	 * Test if a topic is handled by this handler.

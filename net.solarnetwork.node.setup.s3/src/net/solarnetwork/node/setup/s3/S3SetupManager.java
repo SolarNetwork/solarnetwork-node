@@ -59,9 +59,11 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.common.s3.S3Client;
+import net.solarnetwork.common.s3.S3Object;
+import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.NodeMetadataService;
@@ -73,9 +75,6 @@ import net.solarnetwork.node.PlatformService.PlatformTaskStatusHandler;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.SystemService;
-import net.solarnetwork.node.backup.s3.S3BackupService;
-import net.solarnetwork.node.backup.s3.S3Client;
-import net.solarnetwork.node.backup.s3.S3ObjectReference;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
@@ -92,7 +91,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -124,6 +123,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	/** The default package timeout value. */
 	public static final long DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS = TimeUnit.MINUTES.toSeconds(5);
 
+	/** The default value for the {@code objectKeyPrefix} property. */
+	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
+
 	private static final Pattern VERSION_PAT = Pattern.compile(".*/(\\d+)");
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
@@ -151,7 +153,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	private S3Client s3Client;
-	private String objectKeyPrefix = S3BackupService.DEFAULT_OBJECT_KEY_PREFIX;
+	private String objectKeyPrefix = DEFAULT_OBJECT_KEY_PREFIX;
 	private SettingDao settingDao;
 	private String maxVersion = null;
 	private boolean performFirstTimeUpdate = true;
@@ -509,7 +511,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				}
 
 				setState(S3SetupManagerPlatformTaskState.DownloadingAsset, dataObjKey);
-				S3Object obj = s3Client.getObject(dataObjKey);
+				S3Object obj = s3Client.getObject(dataObjKey, null, null);
 				if ( obj == null ) {
 					log.warn("S3 setup resource {} not found, cannot apply setup", dataObjKey);
 					continue;
@@ -529,10 +531,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					dataObjFilename += "." + dataObjFilenameExt;
 				}
 				File dataObjFile = new File(workDir, dataObjFilename);
-				try (InputStream in = obj.getObjectContent();
+				try (InputStream in = obj.getInputStream();
 						OutputStream out = new BufferedOutputStream(new FileOutputStream(dataObjFile))) {
 					log.info("Downloading S3 setup resource {} -> {}", dataObjKey, dataObjFile);
-					FileCopyUtils.copy(obj.getObjectContent(), out);
+					FileCopyUtils.copy(in, out);
 
 					// extract archive
 					setStateAndIncrementStep(S3SetupManagerPlatformTaskState.InstallingAsset,

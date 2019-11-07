@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<bindings xmlns="http://java.sun.com/xml/ns/jaxb"
+	xmlns:xsi="http://www.w3.org/2000/10/XMLSchema-instance"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:sn="urn:solarnetwork:datum:1.0"
+	version="2.1">
+
+	<!-- See: https://docs.oracle.com/javase/tutorial/jaxb/intro/custom.html
+	     for documentation on customizing JAXB bindings. -->
+
+	<bindings schemaLocation="SN-Definition-Datum.xsd">
+		<schemaBindings>
+			<package name="net.solarnetwork.node.io.canbus.kcd"/>
+		</schemaBindings>
+		<bindings node="//xs:element[@name='Name' and @type='sn:LocalizedName']">
+			<property name="localizedName"/>
+		</bindings>
+	</bindings>
+	
+	<bindings schemaLocation="SN-Datum.xsd">
+		<schemaBindings>
+			<package name="net.solarnetwork.node.io.canbus.kcd"/>
+		</schemaBindings>
+	</bindings>
+	
+</bindings>
