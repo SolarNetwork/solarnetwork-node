@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  */
 public enum SubCombinerRegister implements ModbusReference {
 
-	/** The firmware identification, in XXX.YY form. */
+	/** The firmware identification, in {@literal XXX.YY} form. */
 	InfoFirmwareVersion(30010, UInt16),
 
 	/** The serial number, in least-to-most significant word order. */
