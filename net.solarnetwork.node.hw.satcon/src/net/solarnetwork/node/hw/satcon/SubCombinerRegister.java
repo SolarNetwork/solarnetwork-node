@@ -22,9 +22,13 @@
 
 package net.solarnetwork.node.hw.satcon;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import java.util.HashSet;
+import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
@@ -281,6 +285,60 @@ public enum SubCombinerRegister implements ModbusReference {
 	@Override
 	public int getWordLength() {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
+	}
+
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
+	private static final IntRangeSet COMBINER_REGISTER_ADDRESS_SET = createCombinerRegisterAddressSet();
+
+	private static IntRangeSet createConfigRegisterAddressSet() {
+		return createRegisterAddressSet(SubCombinerRegister.class, new HashSet<>(asList("Info")));
+	}
+
+	private static IntRangeSet createCombinerRegisterAddressSet() {
+		return createRegisterAddressSet(SubCombinerRegister.class,
+				new HashSet<>(asList("Combiner", "Status")));
+	}
+
+	/**
+	 * Get an address range set that covers all the registers defined in this
+	 * enumeration.
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getRegisterAddressSet() {
+		IntRangeSet s = new IntRangeSet(CONFIG_REGISTER_ADDRESS_SET);
+		s.addAll(COMBINER_REGISTER_ADDRESS_SET);
+		return s;
+	}
+
+	/**
+	 * Get an address range set that covers all the configuration and info
+	 * registers defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getConfigRegisterAddressSet() {
+		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+	}
+
+	/**
+	 * Get an address range set that covers all the subcombiner registers
+	 * defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 */
+	public static IntRangeSet getCombinerRegisterAddressSet() {
+		return (IntRangeSet) COMBINER_REGISTER_ADDRESS_SET.clone();
 	}
 
 }
