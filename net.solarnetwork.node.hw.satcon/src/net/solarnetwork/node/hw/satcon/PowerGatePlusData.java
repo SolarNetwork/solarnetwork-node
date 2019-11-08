@@ -30,6 +30,8 @@ import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Implementation for accessing Power Gate Plus data.
@@ -202,56 +204,61 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 
 	@Override
 	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public ACEnergyDataAccessor reversed() {
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public Float getFrequency() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterFrequency);
+		n = NumberUtils.scaled(n, -2);
+		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
 	public Float getCurrent() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterCurrentAverage);
+		return (n != null ? n.floatValue() : 0);
 	}
 
 	@Override
 	public Float getNeutralCurrent() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterCurrentNeutral);
+		n = NumberUtils.scaled(n, -1);
+		return (n != null ? n.floatValue() : 0);
 	}
 
 	@Override
 	public Float getVoltage() {
-		// TODO Auto-generated method stub
-		return null;
+		return getLineVoltage();
 	}
 
 	@Override
 	public Float getLineVoltage() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterVoltageAverage);
+		return (n != null ? n.floatValue() : 0);
 	}
 
 	@Override
 	public Float getPowerFactor() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterPowerFactor);
+		n = NumberUtils.scaled(n, -3);
+		return (n != null ? n.floatValue() : 0);
+	}
+
+	private Integer getHectoValueAsInteger(ModbusReference ref) {
+		Number n = getNumber(ref);
+		n = NumberUtils.scaled(n, 2);
+		return (n != null ? n.intValue() : null);
 	}
 
 	@Override
 	public Integer getActivePower() {
-		// TODO Auto-generated method stub
-		return null;
+		return getHectoValueAsInteger(PowerGatePlusRegister.InverterActivePowerTotal);
 	}
 
 	@Override

@@ -157,7 +157,7 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	/** Active energy delivered today, in kWh. */
 	InverterActiveEnergyDeliveredToday(134, Int16),
 
-	/** The AC frequency, in Hz. */
+	/** The AC frequency, in centi-Hz. */
 	InverterFrequency(176, Int16),
 
 	/** The operating state, see {@link PowerGateOperatingState}. */

@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.HashSet;
+import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.hw.satcon.Fault;
 import net.solarnetwork.node.hw.satcon.PowerGateFault0;
@@ -48,15 +49,18 @@ import net.solarnetwork.node.test.DataUtils;
  */
 public class PowerGatePlusDataTests {
 
-	private PowerGatePlusData dataInstance(String resource) {
+	private PowerGatePlusData data;
+
+	private static PowerGatePlusData dataInstance(String resource) {
 		PowerGatePlusData data = new PowerGatePlusData();
 		data.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				try {
-					m.saveDataMap(DataUtils.parseModbusHexRegisterMappingLines(new BufferedReader(
-							new InputStreamReader(getClass().getResourceAsStream(resource),
+					m.saveDataMap(DataUtils
+							.parseModbusHexRegisterMappingLines(new BufferedReader(new InputStreamReader(
+									PowerGatePlusDataTests.class.getResourceAsStream(resource),
 									Charset.forName("UTF-8")))));
 				} catch ( IOException e ) {
 					throw new RuntimeException(e);
@@ -68,24 +72,61 @@ public class PowerGatePlusDataTests {
 		return data;
 	}
 
+	@Before
+	public void setup() {
+		data = dataInstance("test-satcon-data-01.txt");
+	}
+
 	@Test
 	public void firmwareVersion() {
-		PowerGatePlusData data = dataInstance("test-satcon-data-01.txt");
 		assertThat("Firware version", data.getFirmwareVersion(), equalTo("6.46"));
 	}
 
 	@Test
 	public void serialNumber() {
-		PowerGatePlusData data = dataInstance("test-satcon-data-01.txt");
 		assertThat("Firware version", data.getSerialNumber(), equalTo("304109A-001"));
 	}
 
 	@Test
 	public void getFaults() {
-		PowerGatePlusData data = dataInstance("test-satcon-data-01.txt");
 		assertThat("Firware version", data.getFaults(),
 				equalTo(new HashSet<>(asList((Fault) PowerGateFault0.DoorOpen,
 						PowerGateFault3.ReactorOverTemperature, PowerGateFault6.FanFault2))));
+	}
+
+	@Test
+	public void frequency() {
+		assertThat("Frequency", data.getFrequency(), equalTo(59.94f));
+	}
+
+	@Test
+	public void current() {
+		assertThat("Current", data.getCurrent(), equalTo(2f));
+	}
+
+	@Test
+	public void neutralCurrent() {
+		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.3f));
+	}
+
+	@Test
+	public void voltage() {
+		assertThat("Voltage", data.getVoltage(), equalTo(282f));
+	}
+
+	@Test
+	public void lineVoltage() {
+		assertThat("Line voltage", data.getLineVoltage(), equalTo(282f));
+	}
+
+	@Test
+	public void powerFactor() {
+		assertThat("Power factor", data.getPowerFactor(), equalTo(0.989f));
+	}
+
+	@Test
+	public void activePower() {
+		assertThat("Active power", data.getActivePower(), equalTo(-900));
 	}
 
 }
