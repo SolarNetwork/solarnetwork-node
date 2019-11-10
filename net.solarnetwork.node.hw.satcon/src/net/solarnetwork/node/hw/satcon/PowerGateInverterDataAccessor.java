@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.satcon;
 
 import java.util.Set;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -33,6 +34,20 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * @version 1.0
  */
 public interface PowerGateInverterDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+
+	/**
+	 * Get the operating state.
+	 * 
+	 * @return the state
+	 */
+	PowerGateOperatingState getOperatingState();
+
+	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the state
+	 */
+	DeviceOperatingState getDeviceOperatingState();
 
 	/**
 	 * Get the device serial number.
@@ -63,5 +78,46 @@ public interface PowerGateInverterDataAccessor extends PVEnergyDataAccessor, ACE
 	 * @return the faults
 	 */
 	Set<? extends Fault> getFaults(int group);
+
+	/**
+	 * Get the internal (ambient) temperature, in degrees Celsius.
+	 * 
+	 * @return the internal temperature
+	 */
+	Float getInternalTemperature();
+
+	/**
+	 * Get the transformer temperature, in degrees Celsius.
+	 * 
+	 * @return the transformer temperature
+	 */
+	Float getInverterTemperature();
+
+	/**
+	 * Get the number of heat sink temperature modules avaialable.
+	 * 
+	 * @return the number of heatsink tempeature modules
+	 */
+	int getHeatsinkTemperatureCount();
+
+	/**
+	 * Get the heat sink temperature, in degrees Celsius.
+	 * 
+	 * 
+	 * @param index
+	 *        the heatsink module to get the temperature for, starting at
+	 *        {@literal 1} and up to {@link #getHeatsinkTemperatureCount()}
+	 * @return the heatshink temperature, in degrees Celsius
+	 * @throws IllegalArgumentException
+	 *         if {@code index} is out of range
+	 */
+	Float getHeatsinkTemperature(int index);
+
+	/**
+	 * Get the active energy delivered today, in Wh.
+	 * 
+	 * @return the delivered active energy today only
+	 */
+	Long getActiveEnergyDeliveredToday();
 
 }

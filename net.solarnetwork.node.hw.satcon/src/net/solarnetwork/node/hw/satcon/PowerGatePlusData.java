@@ -22,9 +22,15 @@
 
 package net.solarnetwork.node.hw.satcon;
 
+import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import static net.solarnetwork.util.NumberUtils.scaled;
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -103,6 +109,49 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	public final void readControlData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				PowerGatePlusRegister.getControlRegisterAddressSet(), MAX_RESULTS);
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		PowerGateInverterDataAccessor data = getSnapshot();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String version = data.getFirmwareVersion();
+		if ( version != null ) {
+			result.put("Firmware Version", version);
+		}
+		String s = data.getSerialNumber();
+		if ( s != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		PowerGateOperatingState opState = getOperatingState();
+		if ( opState != null ) {
+			result.put("Operating state", opState);
+		}
+		Set<? extends Fault> faults = data.getFaults();
+		if ( faults != null && !faults.isEmpty() ) {
+			result.put("Warnings", commaDelimitedStringFromCollection(faults));
+		}
+		return result;
+	}
+
+	@Override
+	public PowerGateOperatingState getOperatingState() {
+		Number n = getNumber(PowerGatePlusRegister.StatusOperatingState);
+		PowerGateOperatingState state = null;
+		if ( n != null ) {
+			try {
+				state = PowerGateOperatingState.forCode(n.intValue());
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		}
+		return state;
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		PowerGateOperatingState state = getOperatingState();
+		return (state != null ? state.asDeviceOperatingState() : DeviceOperatingState.Unknown);
 	}
 
 	@Override
@@ -246,13 +295,13 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	@Override
 	public Float getPowerFactor() {
 		Number n = getNumber(PowerGatePlusRegister.InverterPowerFactor);
-		n = NumberUtils.scaled(n, -3);
+		n = scaled(n, -3);
 		return (n != null ? n.floatValue() : 0);
 	}
 
 	private Integer getHectoValueAsInteger(ModbusReference ref) {
 		Number n = getNumber(ref);
-		n = NumberUtils.scaled(n, 2);
+		n = scaled(n, 2);
 		return (n != null ? n.intValue() : null);
 	}
 
@@ -262,63 +311,97 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	}
 
 	@Override
+	public Integer getApparentPower() {
+		return getHectoValueAsInteger(PowerGatePlusRegister.InverterApparentPowerTotal);
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		return getHectoValueAsInteger(PowerGatePlusRegister.InverterReactivePowerTotal);
+	}
+
+	@Override
 	public Long getActiveEnergyDelivered() {
-		// TODO Auto-generated method stub
-		return null;
+		Number w = getNumber(PowerGatePlusRegister.InverterActiveEnergyDelivered);
+		Number kw = getNumber(PowerGatePlusRegister.InverterActiveEnergyDeliveredKilo);
+		Number mw = getNumber(PowerGatePlusRegister.InverterActiveEnergyDeliveredMega);
+		Number n = scaled(mw, 6).add(scaled(kw, 3)).add(bigDecimalForNumber(w));
+		return (n != null ? n.longValue() : null);
+	}
+
+	@Override
+	public Long getActiveEnergyDeliveredToday() {
+		Number n = scaled(getNumber(PowerGatePlusRegister.InverterActiveEnergyDeliveredToday), 3);
+		return (n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public Long getActiveEnergyReceived() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Integer getApparentPower() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Long getApparentEnergyDelivered() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Long getApparentEnergyReceived() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Integer getReactivePower() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Long getReactiveEnergyDelivered() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Long getReactiveEnergyReceived() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Float getDCVoltage() {
-		// TODO Auto-generated method stub
-		return null;
+		Number n = getNumber(PowerGatePlusRegister.InverterDcLinkVoltage);
+		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
 	public Integer getDCPower() {
-		// TODO Auto-generated method stub
-		return null;
+		Number v = getNumber(PowerGatePlusRegister.InverterDcLinkVoltage);
+		Number a = getNumber(PowerGatePlusRegister.InverterDcLinkCurrent);
+		return (v != null && a != null
+				? bigDecimalForNumber(v).multiply(bigDecimalForNumber(a)).intValue()
+				: null);
+	}
+
+	@Override
+	public Float getInternalTemperature() {
+		Number n = getNumber(PowerGatePlusRegister.InverterInternalAirTemperature);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Float getInverterTemperature() {
+		Number n = getNumber(PowerGatePlusRegister.InverterInverterAirTemperature);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public int getHeatsinkTemperatureCount() {
+		Number n = getNumber(PowerGatePlusRegister.InfoTemperatureSensorCount);
+		return (n != null ? n.intValue() : 0);
+	}
+
+	@Override
+	public Float getHeatsinkTemperature(final int index) {
+		if ( index < 1 || index > 6 ) {
+			throw new IllegalArgumentException(
+					"Heatsink temperature module number " + index + " out of range 1-6.");
+		}
+		int size = PowerGatePlusRegister.InverterHeatsinkTemperature1.getWordLength();
+		Number n = getNumber(PowerGatePlusRegister.InverterHeatsinkTemperature1, (index - 1) * size);
+		return (n != null ? n.floatValue() : null);
 	}
 
 }

@@ -146,6 +146,9 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	/** Ground impedance, in kilo-Ohms. */
 	InverterGroundImpedance(50, Int16),
 
+	/** Total active energy delivered, least 3 significant digits, in Wh. */
+	InverterActiveEnergyDelivered(131, Int16),
+
 	/** Total active energy delivered, least 3 significant digits, in kWh. */
 	InverterActiveEnergyDeliveredKilo(132, Int16),
 
@@ -164,10 +167,10 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	StatusOperatingState(280, UInt16),
 
 	/** Air temperature inside the general enclosure, in degrees celsius. */
-	InternalInternalAirTemperature(281, Int16),
+	InverterInternalAirTemperature(281, Int16),
 
 	/** Air temperature inside the inverter enclosure, in degrees celsius. */
-	InverterInternalAirTemperature(282, Int16),
+	InverterInverterAirTemperature(282, Int16),
 
 	/** Temperature of inverter heatsink 1, in degrees celsius. */
 	InverterHeatsinkTemperature1(283, Int16),

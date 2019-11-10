@@ -58,4 +58,21 @@ public class PowerGatePlusRegisterTests {
 		assertThat("Set available", norm, notNullValue());
 	}
 
+	@Test
+	public void registerSet() {
+		IntRangeSet set = PowerGatePlusRegister.getRegisterAddressSet();
+		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
+		// [9-49,130-175,279-327]
+		assertThat("Set available", norm, notNullValue());
+	}
+
+	@Test
+	public void registerSetCombined() {
+		IntRangeSet set = PowerGatePlusRegister.getRegisterAddressSet();
+		set.addAll(PowerGatePlusRegister.getControlRegisterAddressSet());
+		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
+		// [9-49,130-175,279-327,436-475]
+		assertThat("Set available", norm, notNullValue());
+	}
+
 }

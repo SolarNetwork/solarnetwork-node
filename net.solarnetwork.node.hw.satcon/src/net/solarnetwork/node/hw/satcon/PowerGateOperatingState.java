@@ -50,13 +50,13 @@ public enum PowerGateOperatingState {
 
 	Test1(8, "Factory test 1"),
 
-	Test2(8, "Factory test 2"),
+	Test2(9, "Factory test 2"),
 
-	Test3(8, "Factory test 3"),
+	Test3(10, "Factory test 3"),
 
-	Test4(8, "Factory test 4"),
+	Test4(11, "Factory test 4"),
 
-	Test5(8, "Factory test 5");
+	Test5(12, "Factory test 5");
 
 	private final int code;
 	private final String description;
