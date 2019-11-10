@@ -1,0 +1,36 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Satcon PowerGate Inverter Data Source
+Bundle-Description: Collect data from Satcon PowerGate series inverters.
+Bundle-SymbolicName: net.solarnetwork.node.datum.satcon.powergate
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.datum.satcon.powergate
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.domain;version="1.18.0",
+ net.solarnetwork.node;version="1.29.0",
+ net.solarnetwork.node.domain;version="1.18.0",
+ net.solarnetwork.node.hw.satcon;version="1.0.0",
+ net.solarnetwork.node.io.modbus;version="2.13.0",
+ net.solarnetwork.node.job;version="1.15.0",
+ net.solarnetwork.node.reactor;version="1.6.0",
+ net.solarnetwork.node.reactor.support;version="1.4.1",
+ net.solarnetwork.node.settings;version="1.12.0",
+ net.solarnetwork.node.settings.support;version="1.10.0",
+ net.solarnetwork.node.support;version="1.20.0",
+ net.solarnetwork.node.util;version="1.7.2",
+ net.solarnetwork.util;version="1.39.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.base;version="[2.4,3.0)",
+ org.joda.time.format;version="[2.4,3.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core;version="[4.2,5.0)",
+ org.springframework.scheduling.quartz;version="[4.2,5.0)"
