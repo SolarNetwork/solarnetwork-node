@@ -48,7 +48,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
  * Helper class for performing login key-based logins.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.41
  * @see LoginKeyAuthenticationFilter
  */
@@ -112,6 +112,7 @@ public class LoginKeyHelper {
 	 * @return the encryption key
 	 */
 	public LoginKey generateKey(String username, String salt) {
+		log.debug("Generating login key for [{}] using salt [{}]", username, salt);
 		byte[] saltBytes = (salt != null ? Base64.decodeBase64(salt) : null);
 		if ( saltBytes == null || saltBytes.length != SALT_LENGTH ) {
 			throw new IllegalArgumentException("Salt must be exactly " + SALT_LENGTH + " bytes.");
@@ -124,7 +125,12 @@ public class LoginKeyHelper {
 		Secret secret = secret();
 		byte[] key = new HmacUtils(HMAC_ALG, secret.data).hmac(saltyUsernameBytes);
 
-		return new LoginKey(encodeBase64String(secret.iv), encodeBase64String(key));
+		LoginKey result = new LoginKey(encodeBase64String(secret.iv), encodeBase64String(key));
+		if ( log.isDebugEnabled() ) {
+			log.debug("Generated login key for [{}] using salt [{}]: secret = [{}], key = [{}]",
+					username, salt, encodeBase64String(secret.data), result.getKey());
+		}
+		return result;
 	}
 
 	private Cipher createCipher(boolean encrypt, byte[] iv, byte[] key) throws InvalidKeyException,
@@ -175,10 +181,21 @@ public class LoginKeyHelper {
 	private UsernamePasswordAuthenticationToken decrypt(Secret secret, byte[] usernameBytes,
 			String username, String cipherText) {
 		byte[] key = new HmacUtils(HMAC_ALG, secret.data).hmac(usernameBytes);
+		if ( log.isDebugEnabled() ) {
+			log.debug("Decrypting login password [{}] for username [{}] with key = [{}], secret = [{}]",
+					cipherText, username, encodeBase64String(key), encodeBase64String(secret.data));
+		}
 		try {
 			Cipher cipher = createCipher(false, secret.iv, key);
 			byte[] passwordBytes = cipher.doFinal(decodeBase64(cipherText));
-			return new UsernamePasswordAuthenticationToken(username, new String(passwordBytes, UTF8));
+			UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
+					username, new String(passwordBytes, UTF8));
+			if ( log.isDebugEnabled() ) {
+				log.debug(
+						"Decrypted login password [{}] successfully for username [{}] with key = [{}], secret = [{}]",
+						cipherText, username, encodeBase64String(key), encodeBase64String(secret.data));
+			}
+			return result;
 		} catch ( Exception e ) {
 			log.info("Login password decryption error for {}: {}", username, e.toString());
 			throw new BadCredentialsException("Invalid password.");
