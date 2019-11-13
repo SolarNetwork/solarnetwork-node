@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdClientTests.java - 13/11/2019 9:07:38 am
+ * GpsdClientServiceTests.java - 13/11/2019 9:07:38 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -24,9 +24,11 @@ package net.solarnetwork.node.hw.gpsd.service.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
@@ -34,20 +36,21 @@ import org.junit.Test;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
-import net.solarnetwork.node.hw.gpsd.service.GpsdClient;
+import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.service.GpsdClientService;
 import net.solarnetwork.node.hw.gpsd.test.GpsdMessageHandlerLatch;
 import net.solarnetwork.node.hw.gpsd.test.GpsdServerTestSupport;
 
 /**
- * Test cases for the {@link GpsdClient} class.
+ * Test cases for the {@link GpsdClientService} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class GpsdClientTests extends GpsdServerTestSupport {
+public class GpsdClientServiceTests extends GpsdServerTestSupport {
 
 	private TaskScheduler taskScheduler;
-	private GpsdClient client;
+	private GpsdClientService client;
 
 	@Override
 	@Before
@@ -55,7 +58,7 @@ public class GpsdClientTests extends GpsdServerTestSupport {
 		super.setup();
 		setupGpsdServer();
 		taskScheduler = new ThreadPoolTaskScheduler();
-		client = new GpsdClient(getMapper(), taskScheduler);
+		client = new GpsdClientService(getMapper(), taskScheduler);
 		client.setHost("127.0.0.1");
 		client.setPort(gpsdServerPort());
 	}
@@ -82,6 +85,23 @@ public class GpsdClientTests extends GpsdServerTestSupport {
 		List<GpsdMessage> messages = handler.getMessages();
 		assertThat("Handled messages size 1 for version", messages, hasSize(1));
 		assertThat("Handled message is version", messages.get(0), equalTo(DEFAULT_GPSD_VERSION));
+	}
+
+	@Test
+	public void requestVersion() throws Exception {
+		// GIVEN
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+		client.startup();
+		handler.await(5, TimeUnit.SECONDS);
+
+		// WHEN
+		Future<VersionMessage> result = client.requestGpsdVersion();
+
+		// THEN
+		assertThat("Future returned", result, notNullValue());
+		VersionMessage response = result.get(5, TimeUnit.SECONDS);
+		assertThat("Response is expected version", response, equalTo(DEFAULT_GPSD_VERSION));
 	}
 
 }

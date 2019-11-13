@@ -38,8 +38,8 @@ import io.netty.handler.codec.string.StringEncoder;
  */
 public class GpsdClientChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-	private static final JsonObjectDecoder DECODER = new JsonObjectDecoder();
-	private static final StringEncoder ENCODER = new StringEncoder(Charset.forName("US-ASCII"));
+	private final JsonObjectDecoder DECODER = new JsonObjectDecoder();
+	private final StringEncoder ENCODER = new StringEncoder(Charset.forName("US-ASCII"));
 
 	private final ChannelHandler handler;
 

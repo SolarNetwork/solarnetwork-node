@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.gpsd.test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,6 +35,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
+import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
 
 /**
@@ -96,14 +99,35 @@ public class GpsdServerHandler extends SimpleChannelInboundHandler<String>
 		publishMessageInternal(ctx, version);
 	}
 
+	private static final Pattern CMD_PAT = Pattern.compile("\\?(\\w+)[;=](.*)");
+
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, String request) throws Exception {
-		log.debug("REQ: {}" + request);
+		log.debug("REQ: {}", request);
 		ObjectNode n = mapper.createObjectNode();
-		n.put("class", "ECHO");
-		n.put("message", request);
-		String resp = mapper.writeValueAsString(n);
-		ctx.write(resp + "\n");
+		Matcher m = CMD_PAT.matcher(request);
+		if ( !m.matches() ) {
+			n.put("class", "ERROR");
+			n.put("message", "Invalid request syntax.");
+		} else {
+			String command = m.group(1);
+			String args = m.group(2);
+			GpsdMessageType type = GpsdMessageType.forName(command);
+			switch (type) {
+				case Version:
+					publishMessageInternal(ctx, version);
+					break;
+
+				default:
+					n.put("class", "ERROR");
+					n.put("message", "Unsupported command.");
+					break;
+			}
+		}
+		if ( n.size() > 0 ) {
+			String resp = mapper.writeValueAsString(n);
+			ctx.writeAndFlush(resp + "\n");
+		}
 	}
 
 	@Override

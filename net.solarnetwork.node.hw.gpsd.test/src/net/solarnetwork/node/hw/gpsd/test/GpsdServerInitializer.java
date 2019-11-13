@@ -28,6 +28,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.Delimiters;
+import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 
 /**
@@ -38,8 +39,8 @@ import io.netty.handler.codec.string.StringEncoder;
  */
 public class GpsdServerInitializer extends ChannelInitializer<SocketChannel> {
 
-	private static final StringEncoder DECODER = new StringEncoder(Charset.forName("US-ASCII"));
-	private static final StringEncoder ENCODER = new StringEncoder(Charset.forName("US-ASCII"));
+	private final StringDecoder DECODER = new StringDecoder(Charset.forName("US-ASCII"));
+	private final StringEncoder ENCODER = new StringEncoder(Charset.forName("US-ASCII"));
 
 	private final GpsdServerHandler serverHandler;
 
@@ -58,9 +59,7 @@ public class GpsdServerInitializer extends ChannelInitializer<SocketChannel> {
 	protected void initChannel(SocketChannel ch) throws Exception {
 		ChannelPipeline pipeline = ch.pipeline();
 		pipeline.addLast(new DelimiterBasedFrameDecoder(128, Delimiters.lineDelimiter()));
-		pipeline.addLast(DECODER);
-		pipeline.addLast(ENCODER);
-		pipeline.addLast(serverHandler);
+		pipeline.addLast(DECODER, ENCODER, serverHandler);
 	}
 
 }

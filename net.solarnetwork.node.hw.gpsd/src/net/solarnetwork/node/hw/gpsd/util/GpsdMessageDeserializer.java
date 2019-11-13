@@ -68,9 +68,11 @@ public class GpsdMessageDeserializer extends StdScalarDeserializer<GpsdMessage> 
 				switch (messageType) {
 					case TpvReport:
 						parser = TpvReportMessage.builder();
+						break;
 
 					case Version:
 						parser = VersionMessage.builder();
+						break;
 
 					default:
 						result = new UnknownMessage(messageType, json);

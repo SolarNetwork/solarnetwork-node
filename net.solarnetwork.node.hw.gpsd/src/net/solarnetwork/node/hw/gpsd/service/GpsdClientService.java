@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdClient.java - 11/11/2019 5:09:34 pm
+ * GpsdClientService.java - 11/11/2019 5:09:34 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -37,18 +37,18 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
+import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
+import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * GSPd client component.
@@ -56,7 +56,8 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * @author matt
  * @version 1.0
  */
-public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserver {
+public class GpsdClientService extends BaseIdentifiable
+		implements GpsdClientConnection, SettingsChangeObserver {
 
 	/** The default {@code host} property value. */
 	public static final String DEFAULT_HOST = "localhost";
@@ -70,11 +71,15 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 	/** The default {@code reconnectSeconds} property value. */
 	public static final int DEFAULT_SHUTDOWN_SECONDS = 5;
 
+	/** The default {@code responseTimeoutSeconds} property value. */
+	public static final int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final ObjectMapper mapper;
 	private final TaskScheduler taskScheduler;
 	private final Bootstrap bootstrap;
+	private final GpsdClientChannelHandler sender;
 	private String host;
 	private int port;
 	private int reconnectSeconds;
@@ -93,11 +98,22 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 	 * @param taskScheduler
 	 *        the task scheduler
 	 */
-	public GpsdClient(ObjectMapper mapper, TaskScheduler taskScheduler) {
+	public GpsdClientService(ObjectMapper mapper, TaskScheduler taskScheduler) {
 		super();
 		this.mapper = mapper;
 		this.taskScheduler = taskScheduler;
-		this.bootstrap = createBootstrap();
+
+		GpsdClientChannelHandler handler = new GpsdClientChannelHandler(mapper,
+				new OptionalService<GpsdMessageHandler>() {
+
+					@Override
+					public GpsdMessageHandler service() {
+						return getMessageHandler();
+					}
+				});
+		this.sender = handler;
+		this.bootstrap = createBootstrap(handler);
+
 		this.host = DEFAULT_HOST;
 		this.port = DEFAULT_PORT;
 		this.reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
@@ -105,16 +121,16 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 		this.shutdown = false;
 	}
 
-	private Bootstrap createBootstrap() {
+	private Bootstrap createBootstrap(ChannelHandler handler) {
 		CustomizableThreadFactory tf = new CustomizableThreadFactory("gpsd-");
-		//tf.setDaemon(true);
+		tf.setDaemon(true);
 
 		Bootstrap b = new Bootstrap();
 		b.group(new NioEventLoopGroup(0, tf)).channel(NioSocketChannel.class)
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
 						(int) TimeUnit.SECONDS.toMillis(DEFAULT_RECONNECT_SECONDS))
 				.option(ChannelOption.SO_KEEPALIVE, true)
-				.handler(new GpsdClientChannelInitializer(new ChannelHandler()));
+				.handler(new GpsdClientChannelInitializer(handler));
 		return b;
 	}
 
@@ -150,7 +166,11 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 		synchronized ( this ) {
 			shutdown = false;
 		}
-		start();
+		try {
+			start().get(shutdownSeconds, TimeUnit.SECONDS);
+		} catch ( ExecutionException | InterruptedException | TimeoutException e ) {
+			log.warn("Error waiting for GSPd connection to start: {}", e.toString(), e);
+		}
 	}
 
 	/**
@@ -167,37 +187,12 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 		}
 	}
 
-	private class ChannelHandler extends SimpleChannelInboundHandler<Object> {
-
-		@Override
-		protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-			log.trace("Got GPSd raw message: " + msg);
-			ByteBuf buf = (ByteBuf) msg;
-			int len = buf.readableBytes();
-			if ( len > 0 ) {
-				byte[] b = new byte[len];
-				buf.readBytes(b);
-				GpsdMessage message = mapper.readValue(b, GpsdMessage.class);
-				if ( message != null ) {
-					GpsdMessageHandler handler = getMessageHandler();
-					if ( log.isDebugEnabled() ) {
-						log.debug("Got GPSd message: " + message);
-					}
-					if ( handler != null ) {
-						handler.handleGpsdMessage(message);
-					}
-				}
-			}
-		}
-
-		@Override
-		public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-			log.error("Error handling GPSd", cause);
-		}
-
+	@Override
+	public Future<VersionMessage> requestGpsdVersion() {
+		return sender.sendCommand(GpsdMessageType.Version, null);
 	}
 
-	private synchronized void start() {
+	private synchronized Future<?> start() {
 		final String host = getHost();
 		final int port = getPort();
 		if ( host == null || host.isEmpty() ) {
@@ -211,6 +206,7 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 
 		ChannelFuture f = bootstrap.connect(host, port);
 		f.addListener(new ConnectFuture());
+		return f;
 	}
 
 	private class ConnectFuture implements ChannelFutureListener {
@@ -234,7 +230,7 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
-			synchronized ( GpsdClient.this ) {
+			synchronized ( GpsdClientService.this ) {
 				if ( !shutdown ) {
 					scheduleConnect();
 				}
@@ -373,6 +369,26 @@ public class GpsdClient extends BaseIdentifiable implements SettingsChangeObserv
 	 */
 	public void setShutdownSeconds(int shutdownSeconds) {
 		this.shutdownSeconds = shutdownSeconds;
+	}
+
+	/**
+	 * Get the maximum number of seconds to wait for a command response.
+	 * 
+	 * @return the seconds; defaults to
+	 *         {@link #DEFAULT_RESPONSE_TIMEOUT_SECONDS}
+	 */
+	public int getResponseTimeoutSeconds() {
+		return this.sender.getResponseTimeoutSeconds();
+	}
+
+	/**
+	 * Set the maximum number of seconds to wait for a command response.
+	 * 
+	 * @param responseTimeoutSeconds
+	 *        the seconds to set
+	 */
+	public void setResponseTimeoutSeconds(int responseTimeoutSeconds) {
+		this.sender.setResponseTimeoutSeconds(responseTimeoutSeconds);
 	}
 
 	/**
