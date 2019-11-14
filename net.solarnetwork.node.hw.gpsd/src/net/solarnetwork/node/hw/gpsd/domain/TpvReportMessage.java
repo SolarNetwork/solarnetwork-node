@@ -22,11 +22,28 @@
 
 package net.solarnetwork.node.hw.gpsd.domain;
 
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.ALTITUDE_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.ALTITUDE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.CLIMB_RATE_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.CLIMB_RATE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.COURSE_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.COURSE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.DEVICE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.LATITUDE_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.LATITUDE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.LONGITUDE_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.LONGITUDE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.MODE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.SPEED_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.SPEED_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.TIMESTAMP_ERROR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.TIMESTAMP_FIELD;
 import java.time.Instant;
 import java.util.Objects;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * A time-position-velocity report message.
@@ -35,6 +52,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @version 1.0
  */
 @JsonDeserialize(builder = TpvReportMessage.Builder.class)
+@JsonSerialize(using = net.solarnetwork.node.hw.gpsd.util.TpvReportMessageSerializer.class)
 public class TpvReportMessage extends AbstractGpsdMessage {
 
 	private final String device;
@@ -202,31 +220,120 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 				return null;
 			}
 			JsonNode json = (JsonNode) node;
-			return withDevice(json.path("device").textValue())
-					.withMode(NmeaMode.forCode(json.path("mode").intValue()))
-					.withTimestamp(json.path("time").textValue())
-					.withTimestampError(json.path("ept").numberValue())
-					.withLatitude(json.path("lat").numberValue())
-					.withLongitude(json.path("lon").numberValue())
-					.withAltitude(json.path("alt").numberValue())
-					.withLongitudeError(json.path("epx").numberValue())
-					.withLatitudeError(json.path("epy").numberValue())
-					.withAltitudeError(json.path("epv").numberValue())
-					.withCourse(json.path("track").numberValue())
-					.withSpeed(json.path("speed").numberValue())
-					.withClimbRate(json.path("climb").numberValue())
-					.withCourseError(json.path("epd").numberValue())
-					.withSpeedError(json.path("eps").numberValue())
-					.withClimbRateError(json.path("epc").numberValue()).build();
+			return withDevice(json.path(DEVICE_FIELD).textValue())
+					.withMode(NmeaMode.forCode(json.path(MODE_FIELD).intValue()))
+					.withTimestamp(json.path(TIMESTAMP_FIELD).textValue())
+					.withTimestampError(json.path(TIMESTAMP_ERROR_FIELD).numberValue())
+					.withLatitude(json.path(LATITUDE_FIELD).numberValue())
+					.withLongitude(json.path(LONGITUDE_FIELD).numberValue())
+					.withAltitude(json.path(ALTITUDE_FIELD).numberValue())
+					.withLongitudeError(json.path(LONGITUDE_ERROR_FIELD).numberValue())
+					.withLatitudeError(json.path(LATITUDE_ERROR_FIELD).numberValue())
+					.withAltitudeError(json.path(ALTITUDE_ERROR_FIELD).numberValue())
+					.withCourse(json.path(COURSE_FIELD).numberValue())
+					.withSpeed(json.path(SPEED_FIELD).numberValue())
+					.withClimbRate(json.path(CLIMB_RATE_FIELD).numberValue())
+					.withCourseError(json.path(COURSE_ERROR_FIELD).numberValue())
+					.withSpeedError(json.path(SPEED_ERROR_FIELD).numberValue())
+					.withClimbRateError(json.path(CLIMB_RATE_ERROR_FIELD).numberValue()).build();
 		}
 
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("TpvReportMessage{");
+		if ( device != null ) {
+			buf.append("device=");
+			buf.append(device);
+			buf.append(", ");
+		}
+		if ( mode != null ) {
+			buf.append("mode=");
+			buf.append(mode);
+			buf.append(", ");
+		}
+		if ( timestamp != null ) {
+			buf.append("timestamp=");
+			buf.append(timestamp);
+			buf.append(", ");
+		}
+		if ( timestampError != null ) {
+			buf.append("timestampError=");
+			buf.append(timestampError);
+			buf.append(", ");
+		}
+		if ( latitude != null ) {
+			buf.append("latitude=");
+			buf.append(latitude);
+			buf.append(", ");
+		}
+		if ( longitude != null ) {
+			buf.append("longitude=");
+			buf.append(longitude);
+			buf.append(", ");
+		}
+		if ( altitude != null ) {
+			buf.append("altitude=");
+			buf.append(altitude);
+			buf.append(", ");
+		}
+		if ( latitudeError != null ) {
+			buf.append("latitudeError=");
+			buf.append(latitudeError);
+			buf.append(", ");
+		}
+		if ( longitudeError != null ) {
+			buf.append("longitudeError=");
+			buf.append(longitudeError);
+			buf.append(", ");
+		}
+		if ( altitudeError != null ) {
+			buf.append("altitudeError=");
+			buf.append(altitudeError);
+			buf.append(", ");
+		}
+		if ( course != null ) {
+			buf.append("course=");
+			buf.append(course);
+			buf.append(", ");
+		}
+		if ( speed != null ) {
+			buf.append("speed=");
+			buf.append(speed);
+			buf.append(", ");
+		}
+		if ( climbRate != null ) {
+			buf.append("climbRate=");
+			buf.append(climbRate);
+			buf.append(", ");
+		}
+		if ( courseError != null ) {
+			buf.append("courseError=");
+			buf.append(courseError);
+			buf.append(", ");
+		}
+		if ( speedError != null ) {
+			buf.append("speedError=");
+			buf.append(speedError);
+			buf.append(", ");
+		}
+		if ( climbRateError != null ) {
+			buf.append("climbRateError=");
+			buf.append(climbRateError);
+		}
+		buf.append("}");
+		return buf.toString();
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + Objects.hash(device, mode, timestamp);
+		result = prime * result + Objects.hash(altitude, altitudeError, climbRate, climbRateError,
+				course, courseError, device, latitude, latitudeError, longitude, longitudeError, mode,
+				speed, speedError, timestamp, timestampError);
 		return result;
 	}
 
@@ -242,8 +349,18 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 			return false;
 		}
 		TpvReportMessage other = (TpvReportMessage) obj;
-		return Objects.equals(device, other.device) && mode == other.mode
-				&& Objects.equals(timestamp, other.timestamp);
+		return Objects.equals(altitude, other.altitude)
+				&& Objects.equals(altitudeError, other.altitudeError)
+				&& Objects.equals(climbRate, other.climbRate)
+				&& Objects.equals(climbRateError, other.climbRateError)
+				&& Objects.equals(course, other.course) && Objects.equals(courseError, other.courseError)
+				&& Objects.equals(device, other.device) && Objects.equals(latitude, other.latitude)
+				&& Objects.equals(latitudeError, other.latitudeError)
+				&& Objects.equals(longitude, other.longitude)
+				&& Objects.equals(longitudeError, other.longitudeError) && mode == other.mode
+				&& Objects.equals(speed, other.speed) && Objects.equals(speedError, other.speedError)
+				&& Objects.equals(timestamp, other.timestamp)
+				&& Objects.equals(timestampError, other.timestampError);
 	}
 
 	/**

@@ -29,7 +29,10 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -39,9 +42,12 @@ import org.junit.Test;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
+import net.solarnetwork.node.hw.gpsd.domain.NmeaMode;
+import net.solarnetwork.node.hw.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
 import net.solarnetwork.node.hw.gpsd.service.GpsdMessageHandler;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageListener;
 import net.solarnetwork.node.hw.gpsd.service.impl.GpsdClientService;
 import net.solarnetwork.node.hw.gpsd.test.GpsdMessageHandlerLatch;
 import net.solarnetwork.node.hw.gpsd.test.GpsdServerTestSupport;
@@ -138,7 +144,45 @@ public class GpsdClientServiceTests extends GpsdServerTestSupport {
 		assertThat("Future returned", result, notNullValue());
 		WatchMessage response = result.get(5, TimeUnit.SECONDS);
 		assertThat("Response is expected", response, allOf(not(sameInstance(watch)), equalTo(watch)));
+	}
 
+	@Test
+	public void receiveTpvReport() throws Exception {
+		// GIVEN
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+		client.startup();
+		handler.await(5, TimeUnit.SECONDS);
+
+		// @formatter:off
+		TpvReportMessage tpv = TpvReportMessage.builder().withDevice("/dev/pts/1")
+				.withTimestamp(Instant.now())
+				.withTimestampError(new BigDecimal("0.005"))
+				.withLatitude(new BigDecimal("46.498293369"))
+				.withLongitude(new BigDecimal("7.567411672"))
+				.withAltitude(new BigDecimal("1343.127"))
+				.withCourse(new BigDecimal("10.3788"))
+				.withSpeed(new BigDecimal("0.091"))
+				.withClimbRate(new BigDecimal("-0.085"))
+				.withMode(NmeaMode.ThreeDimensional)
+				.build();
+		// @formatter:on
+
+		CompletableFuture<TpvReportMessage> received = new CompletableFuture<TpvReportMessage>();
+		client.addMessageListener(TpvReportMessage.class, new GpsdMessageListener<TpvReportMessage>() {
+
+			@Override
+			public void onGpsdMessage(TpvReportMessage message) {
+				received.complete(message);
+			}
+		});
+
+		// WHEN
+		getGpsdServerMessagePublisher().publishMessage(tpv);
+
+		// THEN
+		TpvReportMessage result = received.get(5, TimeUnit.SECONDS);
+		assertThat("TPV report", result, equalTo(tpv));
 	}
 
 }

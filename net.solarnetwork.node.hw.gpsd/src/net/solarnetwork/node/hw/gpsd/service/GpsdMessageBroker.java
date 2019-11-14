@@ -37,25 +37,25 @@ public interface GpsdMessageBroker {
 	 * 
 	 * @param <M>
 	 *        the message type to listen for
-	 * @param listener
-	 *        the listener
 	 * @param messageType
 	 *        the message type class
+	 * @param listener
+	 *        the listener
 	 */
-	<M extends GpsdMessage> void addMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType);
+	<M extends GpsdMessage> void addMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener);
 
 	/**
 	 * Remove a message listener.
 	 * 
 	 * @param <M>
 	 *        the message type of the listener to remove
-	 * @param listener
-	 *        the listener
 	 * @param messageType
 	 *        the message type class
+	 * @param listener
+	 *        the listener
 	 */
-	<M extends GpsdMessage> void removeMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType);
+	<M extends GpsdMessage> void removeMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener);
 
 }

@@ -291,15 +291,15 @@ public class GpsdClientService extends BaseIdentifiable
 	}
 
 	@Override
-	public <M extends GpsdMessage> void addMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType) {
-		handler.addMessageListener(listener, messageType);
+	public <M extends GpsdMessage> void addMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener) {
+		handler.addMessageListener(messageType, listener);
 	}
 
 	@Override
-	public <M extends GpsdMessage> void removeMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType) {
-		handler.removeMessageListener(listener, messageType);
+	public <M extends GpsdMessage> void removeMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener) {
+		handler.removeMessageListener(messageType, listener);
 	}
 
 	@Override

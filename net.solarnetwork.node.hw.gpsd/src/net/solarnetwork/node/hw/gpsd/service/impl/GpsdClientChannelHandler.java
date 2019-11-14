@@ -91,15 +91,15 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 
 	@SuppressWarnings({ "unchecked" })
 	@Override
-	public <M extends GpsdMessage> void addMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType) {
+	public <M extends GpsdMessage> void addMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener) {
 		messageListeners.computeIfAbsent(messageType, k -> new CopyOnWriteArraySet<>())
 				.add((GpsdMessageListener<GpsdMessage>) listener);
 	}
 
 	@Override
-	public <M extends GpsdMessage> void removeMessageListener(GpsdMessageListener<M> listener,
-			Class<? extends M> messageType) {
+	public <M extends GpsdMessage> void removeMessageListener(Class<? extends M> messageType,
+			GpsdMessageListener<M> listener) {
 		messageListeners.compute(messageType, (k, v) -> {
 			if ( v != null && v.remove(listener) ) {
 				if ( v.isEmpty() ) {
