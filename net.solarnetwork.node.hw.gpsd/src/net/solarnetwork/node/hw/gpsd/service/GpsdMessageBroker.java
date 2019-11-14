@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdCommandSender.java - 14/11/2019 7:29:56 am
+ * GpsdMessageBroker.java - 15/11/2019 6:46:14 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,29 +22,40 @@
 
 package net.solarnetwork.node.hw.gpsd.service;
 
-import java.util.concurrent.Future;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
-import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 
 /**
- * API for service that can send commands to GPSd.
+ * API for a GPSd message broker service.
  * 
  * @author matt
  * @version 1.0
  */
-public interface GpsdCommandSender {
+public interface GpsdMessageBroker {
 
 	/**
-	 * Send a command to the GPSd server.
+	 * Add a message listener.
 	 * 
-	 * @param <T>
-	 *        the expected response type
-	 * @param command
-	 *        the command type
-	 * @param argument
-	 *        the optional argument, which if provided will be serialized to
-	 *        JSON
-	 * @return a future for the response
+	 * @param <M>
+	 *        the message type to listen for
+	 * @param listener
+	 *        the listener
+	 * @param messageType
+	 *        the message type class
 	 */
-	<T extends GpsdMessage> Future<T> sendCommand(GpsdMessageType command, Object argument);
+	<M extends GpsdMessage> void addMessageListener(GpsdMessageListener<M> listener,
+			Class<? extends M> messageType);
+
+	/**
+	 * Remove a message listener.
+	 * 
+	 * @param <M>
+	 *        the message type of the listener to remove
+	 * @param listener
+	 *        the listener
+	 * @param messageType
+	 *        the message type class
+	 */
+	<M extends GpsdMessage> void removeMessageListener(GpsdMessageListener<M> listener,
+			Class<? extends M> messageType);
+
 }

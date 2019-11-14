@@ -36,6 +36,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageHandler;
 import net.solarnetwork.node.hw.gpsd.util.GpsdMessageDeserializer;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 
@@ -53,6 +54,7 @@ public class GpsdServerTestSupport {
 	private EventLoopGroup gpsdBossGroup;
 	private EventLoopGroup gpsdWorkerGroup;
 	private Channel gpsdChannel;
+	private GpsdServerHandler handler;
 	private ObjectMapper mapper;
 
 	/**
@@ -123,10 +125,11 @@ public class GpsdServerTestSupport {
 		gpsdBossGroup = new NioEventLoopGroup(1);
 		gpsdWorkerGroup = new NioEventLoopGroup();
 
+		handler = new GpsdServerHandler(version, mapper);
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(gpsdBossGroup, gpsdWorkerGroup).channel(NioServerSocketChannel.class)
 				.handler(new LoggingHandler(LogLevel.INFO))
-				.childHandler(new GpsdServerInitializer(new GpsdServerHandler(version, mapper)));
+				.childHandler(new GpsdServerInitializer(handler));
 
 		try {
 			gpsdChannel = b.bind(0).sync().channel();
@@ -142,5 +145,34 @@ public class GpsdServerTestSupport {
 	 */
 	protected int gpsdServerPort() {
 		return (gpsdChannel != null ? ((InetSocketAddress) gpsdChannel.localAddress()).getPort() : -1);
+	}
+
+	/**
+	 * Configure a message handler on the GPSd server.
+	 * 
+	 * <p>
+	 * The {@link #setupGpsdServer()} method must be called before invoking this
+	 * method. Then all incoming message received by the server will be passed
+	 * to the given handler.
+	 * </p>
+	 * 
+	 * @param messageHandler
+	 *        the handler to set
+	 */
+	protected void setGpsdServerMessageHandler(GpsdMessageHandler messageHandler) {
+		if ( handler == null ) {
+			throw new RuntimeException("Must call setupGpsdServer() before calling this method.");
+		}
+		handler.setMessageHandler(messageHandler);
+	}
+
+	/**
+	 * Get the server message publisher, to send messages to the client.
+	 * 
+	 * @return the message publisher, or {@literal null} if
+	 *         {@link #setupGpsdServer()} has not been called yet
+	 */
+	protected GpsdMessagePublisher getGpsdServerMessagePublisher() {
+		return handler;
 	}
 }

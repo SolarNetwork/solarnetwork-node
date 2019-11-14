@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.gpsd.service;
 
 import java.util.concurrent.Future;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
 
 /**
  * API for a GPSd client.
@@ -31,7 +32,7 @@ import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
  * @author matt
  * @version 1.0
  */
-public interface GpsdClientConnection {
+public interface GpsdClientConnection extends GpsdMessageBroker {
 
 	/**
 	 * Get the GPSd version information.
@@ -39,5 +40,17 @@ public interface GpsdClientConnection {
 	 * @return the version
 	 */
 	Future<VersionMessage> requestGpsdVersion();
+
+	/**
+	 * Configure and enable/disable "watch" mode to receive future
+	 * {@literal SKY} and {@literal TPV} messages on any configured message
+	 * listeners.
+	 * </p>
+	 * 
+	 * @param config
+	 *        the watch mode configuration to set
+	 * @return the watch configuration response
+	 */
+	Future<WatchMessage> configureWatchMode(WatchMessage config);
 
 }

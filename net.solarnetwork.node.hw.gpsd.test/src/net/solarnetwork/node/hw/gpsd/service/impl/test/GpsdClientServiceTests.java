@@ -20,11 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.gpsd.service.test;
+package net.solarnetwork.node.hw.gpsd.service.impl.test;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -37,7 +40,9 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
-import net.solarnetwork.node.hw.gpsd.service.GpsdClientService;
+import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageHandler;
+import net.solarnetwork.node.hw.gpsd.service.impl.GpsdClientService;
 import net.solarnetwork.node.hw.gpsd.test.GpsdMessageHandlerLatch;
 import net.solarnetwork.node.hw.gpsd.test.GpsdServerTestSupport;
 
@@ -102,6 +107,38 @@ public class GpsdClientServiceTests extends GpsdServerTestSupport {
 		assertThat("Future returned", result, notNullValue());
 		VersionMessage response = result.get(5, TimeUnit.SECONDS);
 		assertThat("Response is expected version", response, equalTo(DEFAULT_GPSD_VERSION));
+	}
+
+	@Test
+	public void requestWatch() throws Exception {
+		// GIVEN
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+		client.startup();
+		handler.await(5, TimeUnit.SECONDS);
+
+		WatchMessage watch = WatchMessage.builder().withDevice("/dev/pts/1").withEnable(true)
+				.withDumpJson(true).build();
+
+		setGpsdServerMessageHandler(new GpsdMessageHandler() {
+
+			@Override
+			public void handleGpsdMessage(GpsdMessage message) {
+				assertThat("Received message is WATCH", message, equalTo(watch));
+
+				// echo same WATCH message in resopnse
+				getGpsdServerMessagePublisher().publishMessage(watch);
+			}
+		});
+
+		// WHEN
+		Future<WatchMessage> result = client.configureWatchMode(watch);
+
+		// THEN
+		assertThat("Future returned", result, notNullValue());
+		WatchMessage response = result.get(5, TimeUnit.SECONDS);
+		assertThat("Response is expected", response, allOf(not(sameInstance(watch)), equalTo(watch)));
+
 	}
 
 }

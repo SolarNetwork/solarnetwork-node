@@ -37,6 +37,7 @@ import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.hw.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.UnknownMessage;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
 
 /**
  * JSON deserializer for {@link GpsdMessage} objects.
@@ -82,6 +83,10 @@ public class GpsdMessageDeserializer extends StdScalarDeserializer<GpsdMessage> 
 
 					case Version:
 						parser = VersionMessage.builder();
+						break;
+
+					case Watch:
+						parser = WatchMessage.builder();
 						break;
 
 					default:

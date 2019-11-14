@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdCommandSender.java - 14/11/2019 7:29:56 am
+ * GpsdMessageListener.java - 15/11/2019 6:35:52 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,29 +22,24 @@
 
 package net.solarnetwork.node.hw.gpsd.service;
 
-import java.util.concurrent.Future;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
-import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 
 /**
- * API for service that can send commands to GPSd.
+ * API for an observer of GPSd messages.
  * 
+ * @param T
+ *        the type of message this listener handles
  * @author matt
  * @version 1.0
  */
-public interface GpsdCommandSender {
+public interface GpsdMessageListener<T extends GpsdMessage> {
 
 	/**
-	 * Send a command to the GPSd server.
+	 * Handle a GPSd message.
 	 * 
-	 * @param <T>
-	 *        the expected response type
-	 * @param command
-	 *        the command type
-	 * @param argument
-	 *        the optional argument, which if provided will be serialized to
-	 *        JSON
-	 * @return a future for the response
+	 * @param message
+	 *        the message
 	 */
-	<T extends GpsdMessage> Future<T> sendCommand(GpsdMessageType command, Object argument);
+	void onGpsdMessage(T message);
+
 }

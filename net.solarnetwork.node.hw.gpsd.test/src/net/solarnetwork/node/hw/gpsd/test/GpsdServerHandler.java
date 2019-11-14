@@ -37,6 +37,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageHandler;
 
 /**
  * GPSd server handler.
@@ -52,6 +53,7 @@ public class GpsdServerHandler extends SimpleChannelInboundHandler<String>
 	private final VersionMessage version;
 	private final ObjectMapper mapper;
 	private ChannelHandlerContext context;
+	private GpsdMessageHandler messageHandler;
 
 	/**
 	 * Constructor.
@@ -90,7 +92,7 @@ public class GpsdServerHandler extends SimpleChannelInboundHandler<String>
 		} catch ( JsonProcessingException e ) {
 			return ctx.newFailedFuture(e);
 		}
-		log.debug("Publishing GPSd message: " + msg);
+		log.debug("RES: " + msg);
 		return ctx.writeAndFlush(msg);
 	}
 
@@ -113,15 +115,22 @@ public class GpsdServerHandler extends SimpleChannelInboundHandler<String>
 			String command = m.group(1);
 			String args = m.group(2);
 			GpsdMessageType type = GpsdMessageType.forName(command);
+			GpsdMessage message = null;
+			if ( args != null && !args.isEmpty() ) {
+				message = mapper.readValue(args, GpsdMessage.class);
+			}
 			switch (type) {
 				case Version:
 					publishMessageInternal(ctx, version);
-					break;
+					return;
 
 				default:
 					n.put("class", "ERROR");
 					n.put("message", "Unsupported command.");
 					break;
+			}
+			if ( message != null ) {
+				handleMessage(message);
 			}
 		}
 		if ( n.size() > 0 ) {
@@ -134,6 +143,32 @@ public class GpsdServerHandler extends SimpleChannelInboundHandler<String>
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		log.error("GPSd server exception: {}", cause.getMessage(), cause);
 		ctx.close();
+	}
+
+	private void handleMessage(GpsdMessage message) {
+		GpsdMessageHandler h = getMessageHandler();
+		if ( h != null ) {
+			h.handleGpsdMessage(message);
+		}
+	}
+
+	/**
+	 * Get the message handler.
+	 * 
+	 * @return the messageHandler
+	 */
+	public GpsdMessageHandler getMessageHandler() {
+		return messageHandler;
+	}
+
+	/**
+	 * Set the message handler.
+	 * 
+	 * @param messageHandler
+	 *        the messageHandler to set
+	 */
+	public void setMessageHandler(GpsdMessageHandler messageHandler) {
+		this.messageHandler = messageHandler;
 	}
 
 }

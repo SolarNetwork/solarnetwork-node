@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.gpsd.service;
+package net.solarnetwork.node.hw.gpsd.service.impl;
 
 import java.net.InetSocketAddress;
 import java.util.Date;
@@ -44,8 +44,14 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
+import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
+import net.solarnetwork.node.hw.gpsd.service.GpsdClientConnection;
+import net.solarnetwork.node.hw.gpsd.service.GpsdClientStatus;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageHandler;
+import net.solarnetwork.node.hw.gpsd.service.GpsdMessageListener;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.OptionalService;
@@ -76,10 +82,9 @@ public class GpsdClientService extends BaseIdentifiable
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private final ObjectMapper mapper;
 	private final TaskScheduler taskScheduler;
 	private final Bootstrap bootstrap;
-	private final GpsdClientChannelHandler sender;
+	private final GpsdClientChannelHandler handler;
 	private String host;
 	private int port;
 	private int reconnectSeconds;
@@ -100,7 +105,6 @@ public class GpsdClientService extends BaseIdentifiable
 	 */
 	public GpsdClientService(ObjectMapper mapper, TaskScheduler taskScheduler) {
 		super();
-		this.mapper = mapper;
 		this.taskScheduler = taskScheduler;
 
 		GpsdClientChannelHandler handler = new GpsdClientChannelHandler(mapper,
@@ -111,7 +115,7 @@ public class GpsdClientService extends BaseIdentifiable
 						return getMessageHandler();
 					}
 				});
-		this.sender = handler;
+		this.handler = handler;
 		this.bootstrap = createBootstrap(handler);
 
 		this.host = DEFAULT_HOST;
@@ -185,11 +189,6 @@ public class GpsdClientService extends BaseIdentifiable
 		} catch ( ExecutionException | InterruptedException | TimeoutException e ) {
 			log.warn("Error waiting for GSPd connection to close gracefully: {}", e.toString(), e);
 		}
-	}
-
-	@Override
-	public Future<VersionMessage> requestGpsdVersion() {
-		return sender.sendCommand(GpsdMessageType.Version, null);
 	}
 
 	private synchronized Future<?> start() {
@@ -291,6 +290,28 @@ public class GpsdClientService extends BaseIdentifiable
 		return "GPSd Client";
 	}
 
+	@Override
+	public <M extends GpsdMessage> void addMessageListener(GpsdMessageListener<M> listener,
+			Class<? extends M> messageType) {
+		handler.addMessageListener(listener, messageType);
+	}
+
+	@Override
+	public <M extends GpsdMessage> void removeMessageListener(GpsdMessageListener<M> listener,
+			Class<? extends M> messageType) {
+		handler.removeMessageListener(listener, messageType);
+	}
+
+	@Override
+	public Future<VersionMessage> requestGpsdVersion() {
+		return handler.sendCommand(GpsdMessageType.Version, null);
+	}
+
+	@Override
+	public Future<WatchMessage> configureWatchMode(WatchMessage config) {
+		return handler.sendCommand(GpsdMessageType.Watch, config);
+	}
+
 	// Accessors
 
 	/**
@@ -378,7 +399,7 @@ public class GpsdClientService extends BaseIdentifiable
 	 *         {@link #DEFAULT_RESPONSE_TIMEOUT_SECONDS}
 	 */
 	public int getResponseTimeoutSeconds() {
-		return this.sender.getResponseTimeoutSeconds();
+		return this.handler.getResponseTimeoutSeconds();
 	}
 
 	/**
@@ -388,7 +409,7 @@ public class GpsdClientService extends BaseIdentifiable
 	 *        the seconds to set
 	 */
 	public void setResponseTimeoutSeconds(int responseTimeoutSeconds) {
-		this.sender.setResponseTimeoutSeconds(responseTimeoutSeconds);
+		this.handler.setResponseTimeoutSeconds(responseTimeoutSeconds);
 	}
 
 	/**

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.gpsd.service;
+package net.solarnetwork.node.hw.gpsd.service.impl;
 
 import java.nio.charset.Charset;
 import io.netty.channel.ChannelHandler;
