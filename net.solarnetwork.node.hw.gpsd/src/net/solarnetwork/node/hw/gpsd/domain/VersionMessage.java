@@ -22,11 +22,16 @@
 
 package net.solarnetwork.node.hw.gpsd.domain;
 
+import static net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.PROTOCOL_MAJOR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.PROTOCOL_MINOR_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.RELEASE_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.REMOTE_URL_FIELD;
+import static net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.REVISION_FIELD;
 import java.util.Objects;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
  * Message for the {@literal VERSION} command.
@@ -35,6 +40,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @version 1.0
  */
 @JsonDeserialize(builder = VersionMessage.Builder.class)
+@JsonSerialize(using = net.solarnetwork.node.hw.gpsd.util.VersionMessageSerializer.class)
 public class VersionMessage extends AbstractGpsdMessage {
 
 	private final String release;
@@ -110,11 +116,11 @@ public class VersionMessage extends AbstractGpsdMessage {
 				return null;
 			}
 			JsonNode json = (JsonNode) node;
-			return withRelease(json.path("release").textValue())
-					.withRevision(json.path("rev").textValue())
-					.withProtocolMajor(json.path("proto_major").numberValue())
-					.withProtocolMinor(json.path("proto_minor").numberValue())
-					.withRemoteUrl(json.path("remote").textValue()).build();
+			return withRelease(json.path(RELEASE_FIELD).textValue())
+					.withRevision(json.path(REVISION_FIELD).textValue())
+					.withProtocolMajor(json.path(PROTOCOL_MAJOR_FIELD).numberValue())
+					.withProtocolMinor(json.path(PROTOCOL_MINOR_FIELD).numberValue())
+					.withRemoteUrl(json.path(REMOTE_URL_FIELD).textValue()).build();
 		}
 
 	}
@@ -168,7 +174,6 @@ public class VersionMessage extends AbstractGpsdMessage {
 	 * 
 	 * @return the release
 	 */
-	@JsonProperty("release")
 	public String getRelease() {
 		return release;
 	}
@@ -178,7 +183,6 @@ public class VersionMessage extends AbstractGpsdMessage {
 	 * 
 	 * @return the revision
 	 */
-	@JsonProperty("rev")
 	public String getRevision() {
 		return revision;
 	}
@@ -188,7 +192,6 @@ public class VersionMessage extends AbstractGpsdMessage {
 	 * 
 	 * @return the protocol major revision
 	 */
-	@JsonProperty("proto_major")
 	public Number getProtocolMajor() {
 		return protocolMajor;
 	}
@@ -198,7 +201,6 @@ public class VersionMessage extends AbstractGpsdMessage {
 	 * 
 	 * @return the protocol minor revision
 	 */
-	@JsonProperty("proto_minor")
 	public Number getProtocolMinor() {
 		return protocolMinor;
 	}
@@ -212,7 +214,6 @@ public class VersionMessage extends AbstractGpsdMessage {
 	 * 
 	 * @return the remote URL
 	 */
-	@JsonProperty("remote")
 	public String getRemoteUrl() {
 		return remoteUrl;
 	}

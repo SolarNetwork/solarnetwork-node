@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdMessageJsonParser.java - 12/11/2019 9:05:45 am
+ * Parity.java - 14/11/2019 3:02:45 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,54 @@
 
 package net.solarnetwork.node.hw.gpsd.domain;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import com.fasterxml.jackson.core.TreeNode;
-
 /**
- * API for parsing JSON data into {@link GpsdMessage} instances.
+ * Parity enumeration.
  * 
- * @param <T>
- *        the supported message type
  * @author matt
  * @version 1.0
  */
-public interface GpsdMessageJsonParser<T extends GpsdMessage> {
+public enum Parity {
+
+	/** No parity. */
+	None("N"),
+
+	/** Odd parity. */
+	Odd("O"),
+
+	/** Even parity. */
+	Even("E");
+
+	private final String key;
+
+	private Parity(String key) {
+		this.key = key;
+	}
 
 	/**
-	 * Parse a JSON tree into a message instance.
+	 * Get the key value.
 	 * 
-	 * @param node
-	 *        the JSON to parse
-	 * @return the message instance, or {@literal null} if the message cannot be
-	 *         parsed
+	 * @return the key the key
 	 */
-	T parseJsonTree(TreeNode node);
+	public String getKey() {
+		return key;
+	}
 
 	/**
-	 * Parse an ISO 8601 timestamp value into an {@link Instant}.
+	 * Get an enumeration instance from a key value.
 	 * 
-	 * @param timestamp
-	 *        the timestamp value
-	 * @return the instant, or {@literal null} if {@code timestamp} is
-	 *         {@literal null}, empty, or cannot be parsed
+	 * @param key
+	 *        the key value to get an enum for
+	 * @return the mode, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if {@code key} is not a supported value
 	 */
-	static Instant iso8610Timestamp(String timestamp) {
-		Instant ts = null;
-		if ( timestamp != null && !timestamp.isEmpty() ) {
-			try {
-				ts = Instant.parse(timestamp);
-			} catch ( DateTimeParseException e ) {
-				// ignore
+	public static Parity forKey(final String key) {
+		for ( Parity e : Parity.values() ) {
+			if ( e.getKey().equalsIgnoreCase(key) ) {
+				return e;
 			}
 		}
-		return ts;
+		throw new IllegalArgumentException("Parity key [" + key + "] not supported.");
 	}
 
 }

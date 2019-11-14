@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
 
@@ -55,6 +56,37 @@ public class VersionMessageTests extends DomainTestSupport {
 		assertThat("Protocol major", msg.getProtocolMajor(), equalTo(3));
 		assertThat("Protocol minor", msg.getProtocolMinor(), equalTo(1));
 		assertThat("Remote URL", msg.getRemoteUrl(), equalTo("http://gpsd.localdomain:9999"));
+	}
+
+	@Test
+	public void serializeSample() throws Exception {
+		// GIVEN
+		ObjectMapper m = new ObjectMapper();
+		VersionMessage msg = VersionMessage.builder().withRelease("1.0.0").withRevision("1")
+				.withProtocolMajor(3).withProtocolMinor(1).withRemoteUrl("http://gpsd.localdomain:9999")
+				.build();
+
+		// WHEN
+		String json = m.writeValueAsString(msg);
+
+		// THEN
+		assertThat("JSON", json, equalTo(
+				"{\"class\":\"VERSION\",\"release\":\"1.0.0\",\"rev\":\"1\",\"proto_major\":3,\"proto_minor\":1,\"remote\":\"http://gpsd.localdomain:9999\"}"));
+	}
+
+	@Test
+	public void serializeWithoutRemote() throws Exception {
+		// GIVEN
+		ObjectMapper m = new ObjectMapper();
+		VersionMessage msg = VersionMessage.builder().withRelease("1.0.0").withRevision("1")
+				.withProtocolMajor(3).withProtocolMinor(1).build();
+
+		// WHEN
+		String json = m.writeValueAsString(msg);
+
+		// THEN
+		assertThat("JSON", json, equalTo(
+				"{\"class\":\"VERSION\",\"release\":\"1.0.0\",\"rev\":\"1\",\"proto_major\":3,\"proto_minor\":1}"));
 	}
 
 }

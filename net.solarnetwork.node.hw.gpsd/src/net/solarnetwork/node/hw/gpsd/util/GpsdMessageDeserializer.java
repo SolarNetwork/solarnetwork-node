@@ -29,6 +29,8 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
+import net.solarnetwork.node.hw.gpsd.domain.DeviceMessage;
+import net.solarnetwork.node.hw.gpsd.domain.ErrorMessage;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageJsonParser;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
@@ -66,6 +68,14 @@ public class GpsdMessageDeserializer extends StdScalarDeserializer<GpsdMessage> 
 				result = new UnknownMessage(messageName, json);
 			} else {
 				switch (messageType) {
+					case Device:
+						parser = DeviceMessage.builder();
+						break;
+
+					case Error:
+						parser = ErrorMessage.builder();
+						break;
+
 					case TpvReport:
 						parser = TpvReportMessage.builder();
 						break;

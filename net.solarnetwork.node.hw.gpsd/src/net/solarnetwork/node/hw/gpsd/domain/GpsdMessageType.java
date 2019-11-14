@@ -35,14 +35,29 @@ public enum GpsdMessageType {
 
 	Unknown("!"),
 
+	/** A single device. */
+	Device("DEVICE"),
+
+	/** A list of devices. */
+	Devices("DEVICES"),
+
+	/** An error. */
+	Error("ERROR"),
+
+	/** Most recent data from connected devices. */
+	Poll("POLL"),
+
+	/** Sky view of GPS positions. */
+	Sky("SKY"),
+
 	/** A time-position-velocity report. */
 	TpvReport("TPV"),
 
-	/** Watch mode configuration. */
-	Watch("WATCH"),
-
 	/** GPSd version information. */
-	Version("VERSION");
+	Version("VERSION"),
+
+	/** Watch mode configuration. */
+	Watch("WATCH");
 
 	private static final Map<String, GpsdMessageType> nameMapping = createNameMapping();
 

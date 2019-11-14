@@ -23,7 +23,6 @@
 package net.solarnetwork.node.hw.gpsd.domain;
 
 import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -120,15 +119,7 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 		}
 
 		public Builder withTimestamp(String timestamp) {
-			Instant ts = null;
-			if ( timestamp != null && !timestamp.isEmpty() ) {
-				try {
-					ts = Instant.parse(timestamp);
-				} catch ( DateTimeParseException e ) {
-					// ignore
-				}
-			}
-			return withTimestamp(ts);
+			return withTimestamp(GpsdMessageJsonParser.iso8610Timestamp(timestamp));
 		}
 
 		public Builder withTimestamp(Instant timestamp) {
