@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.gpsd.util;
 
+import static net.solarnetwork.node.hw.gpsd.util.JsonUtils.writeNumberField;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;

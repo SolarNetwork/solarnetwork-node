@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -43,6 +44,8 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.hw.gpsd.domain.NmeaMode;
+import net.solarnetwork.node.hw.gpsd.domain.SatelliteInfo;
+import net.solarnetwork.node.hw.gpsd.domain.SkyReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.hw.gpsd.domain.WatchMessage;
@@ -178,11 +181,68 @@ public class GpsdClientServiceTests extends GpsdServerTestSupport {
 		});
 
 		// WHEN
-		getGpsdServerMessagePublisher().publishMessage(tpv);
+		getGpsdServerMessagePublisher().publishMessage(tpv).get(5, TimeUnit.SECONDS);
 
 		// THEN
 		TpvReportMessage result = received.get(5, TimeUnit.SECONDS);
 		assertThat("TPV report", result, equalTo(tpv));
+	}
+
+	@Test
+	public void receiveSkyReport() throws Exception {
+		// GIVEN
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+		client.startup();
+		handler.await(5, TimeUnit.SECONDS);
+
+		// @formatter:off
+		List<SatelliteInfo> sats = Arrays.asList(
+				SatelliteInfo.builder()
+					.withPrn(1)
+					.withElevation(2)
+					.withAzimuth(3)
+					.withSignalStrength(4)
+					.withUsed(false)
+					.build(),
+				SatelliteInfo.builder()
+					.withPrn(2)
+					.withElevation(3)
+					.withAzimuth(4)
+					.withSignalStrength(5)
+					.withUsed(true)
+					.build()
+				);
+
+		SkyReportMessage sky = SkyReportMessage.builder()
+				.withDevice("/dev/pts/1")
+				.withTimestamp(Instant.now())
+				.withLongitudeDop(1)
+				.withLatitudeDop(2)
+				.withAltitudeDop(3)
+				.withTimestampDop(4)
+				.withHorizontalDop(5)
+				.withSphericalDop(6)
+				.withHypersphericalDop(7)
+				.withSatellites(sats)
+				.build();
+		// @formatter:on
+
+		CompletableFuture<SkyReportMessage> received = new CompletableFuture<SkyReportMessage>();
+		client.addMessageListener(SkyReportMessage.class, new GpsdMessageListener<SkyReportMessage>() {
+
+			@Override
+			public void onGpsdMessage(SkyReportMessage message) {
+				received.complete(message);
+			}
+		});
+
+		// WHEN
+		getGpsdServerMessagePublisher().publishMessage(sky).get(5, TimeUnit.SECONDS);
+
+		// THEN
+		SkyReportMessage result = received.get(5, TimeUnit.SECONDS);
+		assertThat("SKY report", result, equalTo(sky));
 	}
 
 }

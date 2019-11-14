@@ -57,7 +57,7 @@ public class ErrorMessage extends AbstractGpsdMessage {
 	/**
 	 * Builder to build {@link ErrorMessage}.
 	 */
-	public static final class Builder implements GpsdMessageJsonParser<ErrorMessage> {
+	public static final class Builder implements GpsdJsonParser<ErrorMessage> {
 
 		private String message;
 

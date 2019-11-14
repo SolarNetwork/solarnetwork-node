@@ -44,6 +44,7 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.solarnetwork.node.hw.gpsd.util.JsonUtils;
 
 /**
  * A time-position-velocity report message.
@@ -104,7 +105,7 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 	/**
 	 * Builder to build {@link TpvReportMessage}.
 	 */
-	public static final class Builder implements GpsdMessageJsonParser<TpvReportMessage> {
+	public static final class Builder implements GpsdJsonParser<TpvReportMessage> {
 
 		private String device;
 		private NmeaMode mode;
@@ -137,7 +138,7 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 		}
 
 		public Builder withTimestamp(String timestamp) {
-			return withTimestamp(GpsdMessageJsonParser.iso8610Timestamp(timestamp));
+			return withTimestamp(JsonUtils.iso8610Timestamp(timestamp));
 		}
 
 		public Builder withTimestamp(Instant timestamp) {

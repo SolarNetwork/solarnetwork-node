@@ -82,7 +82,7 @@ public class WatchMessage extends AbstractGpsdMessage {
 	/**
 	 * Builder to build {@link WatchMessage}.
 	 */
-	public static final class Builder implements GpsdMessageJsonParser<WatchMessage> {
+	public static final class Builder implements GpsdJsonParser<WatchMessage> {
 
 		private boolean enable = true;
 		private boolean dumpJson = false;

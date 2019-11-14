@@ -23,21 +23,16 @@
 package net.solarnetwork.node.hw.gpsd.util;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.time.Instant;
-import java.time.format.DateTimeFormatter;
-import java.util.Set;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
-import net.solarnetwork.util.NumberUtils;
 
 /**
  * Base class to support JSON serialization of {@link GpsdMessage} objects.
  * 
+ * @param <T>
+ *        the message type
  * @author matt
  * @version 1.0
  */
@@ -90,99 +85,5 @@ public abstract class AbstractGpsdMessageSerializer<T extends GpsdMessage> exten
 	 */
 	protected abstract void serializeFields(T value, JsonGenerator gen, SerializerProvider provider)
 			throws IOException;
-
-	/**
-	 * Write a number field value using the smallest possible number type.
-	 * 
-	 * <p>
-	 * If {@code value} is {@literal null} then <b>nothing</b> will be
-	 * generated.
-	 * </p>
-	 * 
-	 * @param gen
-	 *        the JSON generator
-	 * @param fieldName
-	 *        the field name
-	 * @param value
-	 *        the number value
-	 * @throws IOException
-	 *         if any IO error occurs
-	 */
-	protected void writeNumberField(JsonGenerator gen, String fieldName, Number value)
-			throws IOException {
-		if ( value == null ) {
-			return;
-		}
-		if ( value instanceof Double ) {
-			gen.writeNumberField(fieldName, (Double) value);
-		} else if ( value instanceof Float ) {
-			gen.writeNumberField(fieldName, (Float) value);
-		} else if ( value instanceof Long ) {
-			gen.writeNumberField(fieldName, (Long) value);
-		} else if ( value instanceof Integer ) {
-			gen.writeNumberField(fieldName, (Integer) value);
-		} else if ( value instanceof Short ) {
-			gen.writeFieldName(fieldName);
-			gen.writeNumber((Short) value);
-		} else if ( value instanceof BigInteger ) {
-			gen.writeFieldName(fieldName);
-			gen.writeNumber((BigInteger) value);
-		} else {
-			BigDecimal d = NumberUtils.bigDecimalForNumber(value);
-			if ( d != null ) {
-				gen.writeNumberField(fieldName, d);
-			}
-		}
-	}
-
-	/**
-	 * Write a timestamp field value in ISO 8601 form.
-	 * 
-	 * <p>
-	 * If {@code value} is {@literal null} then <b>nothing</b> will be
-	 * generated.
-	 * </p>
-	 * 
-	 * @param gen
-	 *        the JSON generator
-	 * @param fieldName
-	 *        the field name
-	 * @param value
-	 *        the instant value
-	 * @throws IOException
-	 *         if any IO error occurs
-	 */
-	protected void writeIso8601Timestamp(JsonGenerator gen, String fieldName, Instant value)
-			throws IOException {
-		if ( value == null ) {
-			return;
-		}
-		gen.writeStringField(fieldName, DateTimeFormatter.ISO_INSTANT.format(value));
-	}
-
-	/**
-	 * Write a bitmask set as a field number value.
-	 * 
-	 * <p>
-	 * If {@code value} is {@literal null} or empty then <b>nothing</b> will be
-	 * generated.
-	 * </p>
-	 * 
-	 * @param gen
-	 *        the JSON generator
-	 * @param fieldName
-	 *        the field name
-	 * @param value
-	 *        the instant value
-	 * @throws IOException
-	 *         if any IO error occurs
-	 */
-	protected void writeBitmaskValue(JsonGenerator gen, String fieldName,
-			Set<? extends Bitmaskable> value) throws IOException {
-		int v = Bitmaskable.bitmaskValue(value);
-		if ( v > 0 ) {
-			gen.writeNumberField(fieldName, v);
-		}
-	}
 
 }

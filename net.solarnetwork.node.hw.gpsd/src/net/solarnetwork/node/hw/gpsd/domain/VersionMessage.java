@@ -70,7 +70,7 @@ public class VersionMessage extends AbstractGpsdMessage {
 	/**
 	 * Builder to build {@link VersionMessage}.
 	 */
-	public static final class Builder implements GpsdMessageJsonParser<VersionMessage> {
+	public static final class Builder implements GpsdJsonParser<VersionMessage> {
 
 		private String release;
 		private String revision;

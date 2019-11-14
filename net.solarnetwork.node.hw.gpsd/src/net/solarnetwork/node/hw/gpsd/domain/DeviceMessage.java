@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import net.solarnetwork.node.hw.gpsd.util.JsonUtils;
 
 /**
  * Message for the {@literal DEVICE} command.
@@ -90,7 +91,7 @@ public class DeviceMessage extends AbstractGpsdMessage {
 	/**
 	 * Builder to build {@link DeviceMessage}.
 	 */
-	public static final class Builder implements GpsdMessageJsonParser<DeviceMessage> {
+	public static final class Builder implements GpsdJsonParser<DeviceMessage> {
 
 		private String path;
 		private Instant activated;
@@ -113,7 +114,7 @@ public class DeviceMessage extends AbstractGpsdMessage {
 		}
 
 		public Builder withActivated(String timestamp) {
-			return withActivated(GpsdMessageJsonParser.iso8610Timestamp(timestamp));
+			return withActivated(JsonUtils.iso8610Timestamp(timestamp));
 		}
 
 		public Builder withActivated(Instant activated) {

@@ -1,5 +1,5 @@
 /* ==================================================================
- * GpsdMessageJsonParser.java - 12/11/2019 9:05:45 am
+ * GpsdJsonParser.java - 15/11/2019 11:28:55 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,24 @@
 
 package net.solarnetwork.node.hw.gpsd.domain;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
 import com.fasterxml.jackson.core.TreeNode;
 
 /**
- * API for parsing JSON data into {@link GpsdMessage} instances.
+ * API for parsing a JSON tree into an object.
  * 
- * @param <T>
- *        the supported message type
  * @author matt
  * @version 1.0
  */
-public interface GpsdMessageJsonParser<T extends GpsdMessage> {
+public interface GpsdJsonParser<T> {
 
 	/**
-	 * Parse a JSON tree into a message instance.
+	 * Parse a JSON tree into an object instance.
 	 * 
 	 * @param node
 	 *        the JSON to parse
-	 * @return the message instance, or {@literal null} if the message cannot be
+	 * @return the object instance, or {@literal null} if the message cannot be
 	 *         parsed
 	 */
 	T parseJsonTree(TreeNode node);
-
-	/**
-	 * Parse an ISO 8601 timestamp value into an {@link Instant}.
-	 * 
-	 * @param timestamp
-	 *        the timestamp value
-	 * @return the instant, or {@literal null} if {@code timestamp} is
-	 *         {@literal null}, empty, or cannot be parsed
-	 */
-	static Instant iso8610Timestamp(String timestamp) {
-		Instant ts = null;
-		if ( timestamp != null && !timestamp.isEmpty() ) {
-			try {
-				ts = Instant.parse(timestamp);
-			} catch ( DateTimeParseException e ) {
-				// ignore
-			}
-		}
-		return ts;
-	}
 
 }

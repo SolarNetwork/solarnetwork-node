@@ -47,8 +47,8 @@ public enum GpsdMessageType {
 	/** Most recent data from connected devices. */
 	Poll("POLL"),
 
-	/** Sky view of GPS positions. */
-	Sky("SKY"),
+	/** SkyReport view of GPS positions. */
+	SkyReport("SKY"),
 
 	/** A time-position-velocity report. */
 	TpvReport("TPV"),

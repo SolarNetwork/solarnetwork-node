@@ -31,9 +31,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
 import net.solarnetwork.node.hw.gpsd.domain.DeviceMessage;
 import net.solarnetwork.node.hw.gpsd.domain.ErrorMessage;
+import net.solarnetwork.node.hw.gpsd.domain.GpsdJsonParser;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessage;
-import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageJsonParser;
 import net.solarnetwork.node.hw.gpsd.domain.GpsdMessageType;
+import net.solarnetwork.node.hw.gpsd.domain.SkyReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.hw.gpsd.domain.UnknownMessage;
 import net.solarnetwork.node.hw.gpsd.domain.VersionMessage;
@@ -64,7 +65,7 @@ public class GpsdMessageDeserializer extends StdScalarDeserializer<GpsdMessage> 
 			JsonNode json = p.readValueAsTree();
 			String messageName = (json != null ? json.path("class").textValue() : null);
 			GpsdMessageType messageType = GpsdMessageType.forName(messageName);
-			GpsdMessageJsonParser<? extends GpsdMessage> parser = null;
+			GpsdJsonParser<? extends GpsdMessage> parser = null;
 			if ( messageType == GpsdMessageType.Unknown ) {
 				result = new UnknownMessage(messageName, json);
 			} else {
@@ -75,6 +76,10 @@ public class GpsdMessageDeserializer extends StdScalarDeserializer<GpsdMessage> 
 
 					case Error:
 						parser = ErrorMessage.builder();
+						break;
+
+					case SkyReport:
+						parser = SkyReportMessage.builder();
 						break;
 
 					case TpvReport:
