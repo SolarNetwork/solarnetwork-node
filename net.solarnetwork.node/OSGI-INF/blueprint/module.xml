@@ -18,6 +18,7 @@
 
 	<osgix:cm-properties id="core.cfg" persistent-id="net.solarnetwork.node.core">
 		<beans:prop key="scheduler.startupDelay">60</beans:prop>
+		<beans:prop key="taskScheduler.poolSize">2</beans:prop>
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 	</osgix:cm-properties>
 	
@@ -209,7 +210,9 @@
 	
 	<!-- Task scheduler for simple repeating tasks -->
 	<bean id="taskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
-		<property name="poolSize" value="1"/>
+		<property name="poolSize" value="${taskScheduler.poolSize}"/>
+		<property name="threadNamePrefix" value="SolarNode-TaskScheduler-"/>	
+		<property name="removeOnCancelPolicy" value="true"/>
 	</bean>
 	
 	<!-- Task executor for simple tasks -->
