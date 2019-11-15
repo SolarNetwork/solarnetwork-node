@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -34,6 +35,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
@@ -49,6 +52,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
+import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
@@ -59,6 +63,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.OptionalService;
@@ -69,8 +74,8 @@ import net.solarnetwork.util.OptionalService;
  * @author matt
  * @version 1.0
  */
-public class GpsdClientService extends BaseIdentifiable
-		implements GpsdClientConnection, SettingsChangeObserver, SettingSpecifierProvider {
+public class GpsdClientService extends BaseIdentifiable implements GpsdClientConnection,
+		SettingsChangeObserver, SettingSpecifierProvider, GpsdMessageHandler {
 
 	/** The default {@code host} property value. */
 	public static final String DEFAULT_HOST = "localhost";
@@ -87,6 +92,9 @@ public class GpsdClientService extends BaseIdentifiable
 	/** The default {@code responseTimeoutSeconds} property value. */
 	public static final int DEFAULT_RESPONSE_TIMEOUT_SECONDS = 5;
 
+	/** The default {@code autoWatch} property value. */
+	public static final boolean DEFAULT_AUTO_WATCH = false;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final TaskScheduler taskScheduler;
@@ -97,9 +105,11 @@ public class GpsdClientService extends BaseIdentifiable
 	private int reconnectSeconds;
 	private int shutdownSeconds;
 	private GpsdMessageHandler messageHandler;
+	private OptionalService<EventAdmin> eventAdmin;
 
 	private boolean shutdown;
 	private ScheduledFuture<?> connectFuture;
+	private ChannelFuture startFuture;
 	private Channel channel;
 
 	/**
@@ -114,14 +124,7 @@ public class GpsdClientService extends BaseIdentifiable
 		super();
 		this.taskScheduler = taskScheduler;
 
-		GpsdClientChannelHandler handler = new GpsdClientChannelHandler(mapper,
-				new OptionalService<GpsdMessageHandler>() {
-
-					@Override
-					public GpsdMessageHandler service() {
-						return getMessageHandler();
-					}
-				});
+		GpsdClientChannelHandler handler = new GpsdClientChannelHandler(mapper, this);
 		this.handler = handler;
 		this.bootstrap = createBootstrap(handler);
 
@@ -129,6 +132,8 @@ public class GpsdClientService extends BaseIdentifiable
 		this.port = DEFAULT_PORT;
 		this.reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
 		this.shutdownSeconds = DEFAULT_SHUTDOWN_SECONDS;
+		setResponseTimeoutSeconds(DEFAULT_RESPONSE_TIMEOUT_SECONDS);
+		setAutoWatch(DEFAULT_AUTO_WATCH);
 		this.shutdown = false;
 	}
 
@@ -177,6 +182,16 @@ public class GpsdClientService extends BaseIdentifiable
 	}
 
 	/**
+	 * Call once after properties configured to initialize at a future date.
+	 */
+	public Future<?> startupLater() {
+		synchronized ( this ) {
+			shutdown = false;
+		}
+		return scheduleConnect();
+	}
+
+	/**
 	 * Call to close all connections and free resources.
 	 */
 	public void shutdown() {
@@ -196,13 +211,13 @@ public class GpsdClientService extends BaseIdentifiable
 		if ( host == null || host.isEmpty() ) {
 			log.info("Cannot start GPSd client: host not configured.");
 		}
-		if ( channel != null ) {
-			stop();
+		if ( channel != null || startFuture != null ) {
+			return restart();
 		}
-
 		log.info("Connecting to GPSd @ {}:{}", host, port);
 		ChannelFuture f = bootstrap.connect(host, port);
 		f.addListener(new ConnectFuture());
+		this.startFuture = f;
 		return f;
 	}
 
@@ -211,7 +226,13 @@ public class GpsdClientService extends BaseIdentifiable
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
 			if ( !future.isSuccess() ) {
-				future.channel().close();
+				try {
+					future.channel().close().sync();
+				} finally {
+					synchronized ( GpsdClientService.this ) {
+						startFuture = null;
+					}
+				}
 				Throwable t = future.cause();
 				Throwable root = t;
 				if ( root != null ) {
@@ -229,10 +250,15 @@ public class GpsdClientService extends BaseIdentifiable
 					scheduleConnect();
 				}
 			} else {
-				channel = future.channel();
-				InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
-				log.info("Connected to to GPSd @ {}:{}", addr.getHostString(), addr.getPort());
-				channel.closeFuture().addListener(new ReconnectFuture());
+				synchronized ( GpsdClientService.this ) {
+					Channel ch = future.channel();
+					InetSocketAddress addr = (InetSocketAddress) ch.remoteAddress();
+					log.info("Connected to to GPSd @ {}:{}", addr.getHostString(), addr.getPort());
+					ch.closeFuture().addListener(new ReconnectFuture());
+					channel = ch;
+					startFuture = null;
+					postClientStatusChangeEvent(GpsdClientStatus.Connected);
+				}
 			}
 		}
 
@@ -243,7 +269,9 @@ public class GpsdClientService extends BaseIdentifiable
 		@Override
 		public void operationComplete(ChannelFuture future) throws Exception {
 			synchronized ( GpsdClientService.this ) {
+				postClientStatusChangeEvent(GpsdClientStatus.Closed);
 				if ( !shutdown ) {
+					log.info("Connection to GPSd @ {}:{} closed; will auto-reconnect.", host, port);
 					scheduleConnect();
 				}
 			}
@@ -252,18 +280,48 @@ public class GpsdClientService extends BaseIdentifiable
 
 	private synchronized Future<?> stop() {
 		if ( connectFuture != null && !connectFuture.isDone() ) {
-			connectFuture.cancel(true);
+			connectFuture.cancel(false);
 			connectFuture = null;
 		}
 		Future<?> result = null;
-		if ( channel != null ) {
-			InetSocketAddress addr = (InetSocketAddress) channel.remoteAddress();
+		Channel ch = this.channel;
+		if ( startFuture != null ) {
+			ch = startFuture.channel();
+			startFuture.cancel(false);
+			startFuture = null;
+		}
+		if ( ch != null ) {
+			final InetSocketAddress addr = (InetSocketAddress) ch.remoteAddress();
 			log.info("Closing connection to GPSd @ {}:{}", addr.getHostString(), addr.getPort());
-			try {
-				result = channel.close();
-			} finally {
-				this.channel = null;
-			}
+			result = ch.close().addListener(new ChannelFutureListener() {
+
+				@Override
+				public void operationComplete(ChannelFuture future) throws Exception {
+					try {
+						if ( future.isSuccess() ) {
+							log.info("Closed connection to GPSd @ {}:{}", addr.getHostString(),
+									addr.getPort());
+						} else {
+							Throwable root = future.cause();
+							while ( root.getCause() != null ) {
+								root = root.getCause();
+							}
+							if ( root instanceof IOException ) {
+								log.warn("Unable to close connection to GPSd @ {}:{}: {}",
+										addr.getHostString(), addr.getPort(), root.getMessage());
+							} else {
+								log.error("Error closing connection to GSPd @ {}:{}: {}",
+										addr.getHostString(), addr.getPort(), root.toString(),
+										future.cause());
+							}
+						}
+					} finally {
+						synchronized ( GpsdClientService.this ) {
+							channel = null;
+						}
+					}
+				}
+			});
 		} else {
 			CompletableFuture<Void> cf = new CompletableFuture<>();
 			cf.complete(null);
@@ -272,29 +330,90 @@ public class GpsdClientService extends BaseIdentifiable
 		return result;
 	}
 
-	private synchronized void restart() {
+	private synchronized Future<?> restart() {
+		Future<?> f = null;
 		try {
 			stop().get(shutdownSeconds, TimeUnit.SECONDS);
 		} catch ( ExecutionException | InterruptedException | TimeoutException e ) {
 			log.warn("Error waiting for GSPd connection to close gracefully: {}", e.toString());
 		} finally {
-			scheduleConnect();
+			f = scheduleConnect();
 		}
+		return f;
 	}
 
-	private synchronized void scheduleConnect() {
+	private synchronized Future<?> scheduleConnect() {
+		if ( connectFuture != null && !connectFuture.isDone() ) {
+			// already scheduled
+			return connectFuture;
+		}
 		final int delay = getReconnectSeconds();
 		if ( delay > 0 ) {
 			log.info("Scheduling attempt to reconnect to GPSd @ {}:{} in {}s", host, port, delay);
-			connectFuture = taskScheduler.schedule(new Runnable() {
+			ScheduledFuture<?> f = taskScheduler.schedule(new Runnable() {
 
 				@Override
 				public void run() {
-					start();
+					try {
+						start();
+					} finally {
+						synchronized ( GpsdClientService.this ) {
+							connectFuture = null;
+						}
+					}
 				}
 			}, new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delay)));
+			connectFuture = f;
+			postClientStatusChangeEvent(GpsdClientStatus.ConnectionScheduled);
+			return f;
 		} else {
-			start();
+			return start();
+		}
+	}
+
+	private void postClientStatusChangeEvent(GpsdClientStatus status) {
+		String uid = getUid();
+		if ( uid == null ) {
+			return;
+		}
+		Map<String, Object> props = new HashMap<String, Object>();
+		props.put(UID_PROPERTY, uid);
+		if ( getGroupUid() != null ) {
+			props.put(GROUP_UID_PROPERTY, getGroupUid());
+		}
+		props.put(STATUS_PROPERTY, status);
+		postEvent(new Event(EVENT_TOPIC_CLIENT_STATUS_CHANGE, props));
+	}
+
+	private void postReportMessageCapturedEvent(GpsdReportMessage message) {
+		String uid = getUid();
+		if ( uid == null ) {
+			return;
+		}
+		Map<String, Object> props = new HashMap<String, Object>();
+		props.put(UID_PROPERTY, uid);
+		if ( getGroupUid() != null ) {
+			props.put(GROUP_UID_PROPERTY, getGroupUid());
+		}
+		props.put(MESSAGE_PROPERTY, message);
+		postEvent(new Event(EVENT_TOPIC_REPORT_MESSAGE_CAPTURED, props));
+	}
+
+	private void postEvent(Event event) {
+		EventAdmin ea = (eventAdmin != null ? eventAdmin.service() : null);
+		if ( ea != null ) {
+			ea.postEvent(event);
+		}
+	}
+
+	@Override
+	public final void handleGpsdMessage(GpsdMessage message) {
+		if ( message instanceof GpsdReportMessage ) {
+			postReportMessageCapturedEvent((GpsdReportMessage) message);
+		}
+		GpsdMessageHandler delegate = getMessageHandler();
+		if ( delegate != null ) {
+			delegate.handleGpsdMessage(message);
 		}
 	}
 
@@ -341,6 +460,7 @@ public class GpsdClientService extends BaseIdentifiable
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 		results.add(new BasicTextFieldSettingSpecifier("reconnectSeconds",
 				String.valueOf(DEFAULT_RECONNECT_SECONDS)));
+		results.add(new BasicToggleSettingSpecifier("autoWatch", DEFAULT_AUTO_WATCH));
 		return results;
 	}
 
@@ -445,6 +565,27 @@ public class GpsdClientService extends BaseIdentifiable
 	}
 
 	/**
+	 * Get the "auto watch" mode flag.
+	 * 
+	 * @return {@literal true} to automatically issue a {@literal ?WATCH}
+	 *         command when connecting to GPSd; default is
+	 *         {@link #DEFAULT_AUTO_WATCH}
+	 */
+	public boolean isAutoWatch() {
+		return handler.isAutoWatch();
+	}
+
+	/**
+	 * Set the "auto watch" mode flag.
+	 * 
+	 * @param autoWatch
+	 *        the mode to set
+	 */
+	public void setAutoWatch(boolean autoWatch) {
+		handler.setAutoWatch(autoWatch);
+	}
+
+	/**
 	 * Get the message handler.
 	 * 
 	 * @return the handler, or {@literal null}
@@ -461,6 +602,25 @@ public class GpsdClientService extends BaseIdentifiable
 	 */
 	public void setMessageHandler(GpsdMessageHandler messageHandler) {
 		this.messageHandler = messageHandler;
+	}
+
+	/**
+	 * Get the {@link EventAdmin} service.
+	 * 
+	 * @return the EventAdmin service
+	 */
+	public OptionalService<EventAdmin> getEventAdmin() {
+		return eventAdmin;
+	}
+
+	/**
+	 * Set an {@link EventAdmin} service to use.
+	 * 
+	 * @param eventAdmin
+	 *        the EventAdmin to use
+	 */
+	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
+		this.eventAdmin = eventAdmin;
 	}
 
 }

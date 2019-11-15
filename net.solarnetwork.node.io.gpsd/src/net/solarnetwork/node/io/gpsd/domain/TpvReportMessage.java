@@ -54,11 +54,10 @@ import net.solarnetwork.node.io.gpsd.util.JsonUtils;
  */
 @JsonDeserialize(builder = TpvReportMessage.Builder.class)
 @JsonSerialize(using = net.solarnetwork.node.io.gpsd.util.TpvReportMessageSerializer.class)
-public class TpvReportMessage extends AbstractGpsdMessage {
+public class TpvReportMessage extends AbstractGpsdReportMessage {
 
 	private final String device;
 	private final NmeaMode mode;
-	private final Instant timestamp;
 	private final Number timestampError;
 	private final Number latitude;
 	private final Number longitude;
@@ -74,10 +73,9 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 	private final Number climbRateError;
 
 	private TpvReportMessage(Builder builder) {
-		super(GpsdMessageType.TpvReport, null);
+		super(GpsdMessageType.TpvReport, builder.timestamp);
 		this.device = builder.device;
 		this.mode = builder.mode;
-		this.timestamp = builder.timestamp;
 		this.timestampError = builder.timestampError;
 		this.latitude = builder.latitude;
 		this.longitude = builder.longitude;
@@ -100,6 +98,11 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 	 */
 	public static Builder builder() {
 		return new Builder();
+	}
+
+	@Override
+	public GpsdReportMessage withTimestamp(Instant timestamp) {
+		return new Builder(this).withTimestamp(timestamp).build();
 	}
 
 	/**
@@ -125,6 +128,28 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 		private Number climbRateError;
 
 		private Builder() {
+		}
+
+		private Builder(TpvReportMessage other) {
+			if ( other == null ) {
+				return;
+			}
+			withDevice(other.device);
+			withMode(other.mode);
+			withTimestamp(other.getTimestamp());
+			withTimestampError(other.timestampError);
+			withLatitude(other.latitude);
+			withLongitude(other.longitude);
+			withAltitude(other.altitude);
+			withLongitudeError(other.longitudeError);
+			withLatitudeError(other.latitudeError);
+			withAltitudeError(other.longitudeError);
+			withCourse(other.course);
+			withSpeed(other.speed);
+			withClimbRate(other.climbRate);
+			withCourseError(other.courseError);
+			withSpeedError(other.speedError);
+			withClimbRateError(other.climbRateError);
 		}
 
 		public Builder withDevice(String device) {
@@ -255,9 +280,9 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 			buf.append(mode);
 			buf.append(", ");
 		}
-		if ( timestamp != null ) {
+		if ( getTimestamp() != null ) {
 			buf.append("timestamp=");
-			buf.append(timestamp);
+			buf.append(getTimestamp());
 			buf.append(", ");
 		}
 		if ( timestampError != null ) {
@@ -334,7 +359,7 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 		int result = super.hashCode();
 		result = prime * result + Objects.hash(altitude, altitudeError, climbRate, climbRateError,
 				course, courseError, device, latitude, latitudeError, longitude, longitudeError, mode,
-				speed, speedError, timestamp, timestampError);
+				speed, speedError, timestampError);
 		return result;
 	}
 
@@ -360,7 +385,6 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 				&& Objects.equals(longitude, other.longitude)
 				&& Objects.equals(longitudeError, other.longitudeError) && mode == other.mode
 				&& Objects.equals(speed, other.speed) && Objects.equals(speedError, other.speedError)
-				&& Objects.equals(timestamp, other.timestamp)
 				&& Objects.equals(timestampError, other.timestampError);
 	}
 
@@ -380,15 +404,6 @@ public class TpvReportMessage extends AbstractGpsdMessage {
 	 */
 	public NmeaMode getMode() {
 		return mode;
-	}
-
-	/**
-	 * Get the timestamp.
-	 * 
-	 * @return the timestamp, or {@literal null}
-	 */
-	public Instant getTimestamp() {
-		return timestamp;
 	}
 
 	/**

@@ -23,6 +23,9 @@
 package net.solarnetwork.node.io.gpsd.service;
 
 import java.util.concurrent.Future;
+import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
+import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
 
@@ -32,7 +35,47 @@ import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
  * @author matt
  * @version 1.0
  */
-public interface GpsdClientConnection extends GpsdMessageBroker {
+public interface GpsdClientConnection
+		extends GpsdMessageBroker, Identifiable, net.solarnetwork.domain.Identifiable {
+
+	/**
+	 * An {@link org.osgi.service.event.Event} topic for when a
+	 * {@link GpsdClientStatus} changes.
+	 * 
+	 * <p>
+	 * The following event properties will be available:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * available</li>
+	 * <li>{@link #STATUS_PROPERTY}</li>
+	 * </ul>
+	 */
+	String EVENT_TOPIC_CLIENT_STATUS_CHANGE = "net/solarnetwork/node/io/gpsd/CLIENT_STATUS_CHANGE";
+
+	/**
+	 * The event topic for when a {@link GpsdReportMessage} is received.
+	 * 
+	 * <p>
+	 * The following event properties will be available:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * available</li>
+	 * <li>{@link #MESSAGE_PROPERTY}</li>
+	 * </ul>
+	 */
+	String EVENT_TOPIC_REPORT_MESSAGE_CAPTURED = "net/solarnetwork/node/io/gpsd/REPORT_MESSAGE_CAPTURED";
+
+	/** The event property for a {@link GpsdClientStatus} instance. */
+	String STATUS_PROPERTY = "status";
+
+	/** The event property for a {@link GpsdMessage} instance. */
+	String MESSAGE_PROPERTY = "message";
 
 	/**
 	 * Get the status of the client connection.

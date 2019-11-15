@@ -34,6 +34,7 @@ import static net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.TIME
 import static net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.TIMESTAMP_FIELD;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -51,10 +52,9 @@ import net.solarnetwork.node.io.gpsd.util.JsonUtils;
  */
 @JsonDeserialize(builder = SkyReportMessage.Builder.class)
 @JsonSerialize(using = net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.class)
-public class SkyReportMessage extends AbstractGpsdMessage {
+public class SkyReportMessage extends AbstractGpsdReportMessage {
 
 	private final String device;
-	private final Instant timestamp;
 	private final Number longitudeDop;
 	private final Number latitudeDop;
 	private final Number altitudeDop;
@@ -65,9 +65,8 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 	private final Iterable<SatelliteInfo> satellites;
 
 	private SkyReportMessage(Builder builder) {
-		super(GpsdMessageType.SkyReport);
+		super(GpsdMessageType.SkyReport, builder.timestamp);
 		this.device = builder.device;
-		this.timestamp = builder.timestamp;
 		this.longitudeDop = builder.longitudeDop;
 		this.latitudeDop = builder.latitudeDop;
 		this.altitudeDop = builder.altitudeDop;
@@ -87,6 +86,11 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 		return new Builder();
 	}
 
+	@Override
+	public GpsdReportMessage withTimestamp(Instant timestamp) {
+		return new Builder(this).withTimestamp(timestamp).build();
+	}
+
 	/**
 	 * Builder to build {@link SkyReportMessage}.
 	 */
@@ -104,6 +108,22 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 		private Iterable<SatelliteInfo> satellites = Collections.emptyList();
 
 		private Builder() {
+		}
+
+		private Builder(SkyReportMessage other) {
+			if ( other == null ) {
+				return;
+			}
+			withDevice(other.device);
+			withTimestamp(other.getTimestamp());
+			withLongitudeDop(other.longitudeDop);
+			withLatitudeDop(other.latitudeDop);
+			withAltitudeDop(other.altitudeDop);
+			withTimestampDop(other.timestampDop);
+			withHorizontalDop(other.horizontalDop);
+			withSphericalDop(other.hypersphericalDop);
+			withHypersphericalDop(other.hypersphericalDop);
+			withSatellites(other.satellites);
 		}
 
 		public Builder withDevice(String device) {
@@ -195,26 +215,56 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 	@Override
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("SkyReportMessage{device=");
-		buf.append(device);
-		buf.append(", timestamp=");
-		buf.append(timestamp);
-		buf.append(", longitudeDop=");
-		buf.append(longitudeDop);
-		buf.append(", latitudeDop=");
-		buf.append(latitudeDop);
-		buf.append(", altitudeDop=");
-		buf.append(altitudeDop);
-		buf.append(", timestampDop=");
-		buf.append(timestampDop);
-		buf.append(", horizontalDop=");
-		buf.append(horizontalDop);
-		buf.append(", sphericalDop=");
-		buf.append(sphericalDop);
-		buf.append(", hypersphericalDop=");
-		buf.append(hypersphericalDop);
-		buf.append(", satellites=");
-		buf.append(satellites);
+		buf.append("SkyReportMessage{");
+		if ( device != null ) {
+			buf.append("device=");
+			buf.append(device);
+			buf.append(", ");
+		}
+		if ( getTimestamp() != null ) {
+			buf.append("timestamp=");
+			buf.append(getTimestamp());
+			buf.append(", ");
+		}
+		if ( longitudeDop != null ) {
+			buf.append("longitudeDop=");
+			buf.append(longitudeDop);
+			buf.append(", ");
+		}
+		if ( latitudeDop != null ) {
+			buf.append("latitudeDop=");
+			buf.append(latitudeDop);
+			buf.append(", ");
+		}
+		if ( altitudeDop != null ) {
+			buf.append("altitudeDop=");
+			buf.append(altitudeDop);
+			buf.append(", ");
+		}
+		if ( timestampDop != null ) {
+			buf.append("timestampDop=");
+			buf.append(timestampDop);
+			buf.append(", ");
+		}
+		if ( horizontalDop != null ) {
+			buf.append("horizontalDop=");
+			buf.append(horizontalDop);
+			buf.append(", ");
+		}
+		if ( sphericalDop != null ) {
+			buf.append("sphericalDop=");
+			buf.append(sphericalDop);
+			buf.append(", ");
+		}
+		if ( hypersphericalDop != null ) {
+			buf.append("hypersphericalDop=");
+			buf.append(hypersphericalDop);
+			buf.append(", ");
+		}
+		if ( satellites instanceof Collection<?> ) {
+			buf.append("satelliteCount=");
+			buf.append(((Collection<?>) satellites).size());
+		}
 		buf.append("}");
 		return buf.toString();
 	}
@@ -224,7 +274,7 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 		final int prime = 31;
 		int result = super.hashCode();
 		result = prime * result + Objects.hash(altitudeDop, device, horizontalDop, hypersphericalDop,
-				latitudeDop, longitudeDop, satellites, sphericalDop, timestamp, timestampDop);
+				latitudeDop, longitudeDop, satellites, sphericalDop, timestampDop);
 		return result;
 	}
 
@@ -247,7 +297,6 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 				&& Objects.equals(longitudeDop, other.longitudeDop)
 				&& Objects.equals(satellites, other.satellites)
 				&& Objects.equals(sphericalDop, other.sphericalDop)
-				&& Objects.equals(timestamp, other.timestamp)
 				&& Objects.equals(timestampDop, other.timestampDop);
 	}
 
@@ -258,19 +307,6 @@ public class SkyReportMessage extends AbstractGpsdMessage {
 	 */
 	public String getDevice() {
 		return device;
-	}
-
-	/**
-	 * Get the time/date stamp.
-	 * 
-	 * <p>
-	 * May have a fractional part of up to .001sec precision.
-	 * </p>
-	 * 
-	 * @return the timestamp
-	 */
-	public Instant getTimestamp() {
-		return timestamp;
 	}
 
 	/**

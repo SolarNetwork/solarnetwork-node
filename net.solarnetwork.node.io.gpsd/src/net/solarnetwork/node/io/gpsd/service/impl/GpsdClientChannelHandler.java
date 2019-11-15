@@ -41,17 +41,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.util.concurrent.GenericFutureListener;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
+import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdCommandSender;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageBroker;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageHandler;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Channel handler for GPSd protocol.
@@ -70,9 +70,10 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 			8, 0.9f, 1);
 
 	private final ObjectMapper mapper;
-	private final OptionalService<GpsdMessageHandler> messageHandler;
+	private final GpsdMessageHandler messageHandler;
 
 	private int responseTimeoutSeconds;
+	private boolean autoWatch;
 
 	private ChannelHandlerContext context;
 
@@ -84,8 +85,7 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 	 * @param messageHandler
 	 *        the optional message handler
 	 */
-	public GpsdClientChannelHandler(ObjectMapper mapper,
-			OptionalService<GpsdMessageHandler> messageHandler) {
+	public GpsdClientChannelHandler(ObjectMapper mapper, GpsdMessageHandler messageHandler) {
 		super();
 		this.mapper = mapper;
 		this.messageHandler = messageHandler;
@@ -137,11 +137,10 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 			}
 		}
 		ChannelFuture f = publishMessageInternal(ctx, command, argJson);
-		f.addListener(new GenericFutureListener<io.netty.util.concurrent.Future<? super Void>>() {
+		f.addListener(new ChannelFutureListener() {
 
 			@Override
-			public void operationComplete(io.netty.util.concurrent.Future<? super Void> future)
-					throws Exception {
+			public void operationComplete(ChannelFuture future) throws Exception {
 				try {
 					future.await(responseTimeoutSeconds, TimeUnit.SECONDS);
 					if ( !future.isSuccess() ) {
@@ -188,11 +187,14 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		this.context = ctx;
+		if ( autoWatch ) {
+			sendCommand(GpsdMessageType.Watch,
+					WatchMessage.builder().withEnable(true).withDumpJson(true).build());
+		}
 	}
 
 	@Override
 	protected void channelRead0(ChannelHandlerContext ctx, Object msg) throws Exception {
-		log.trace("Got GPSd raw message: " + msg);
 		ByteBuf buf = (ByteBuf) msg;
 		int len = buf.readableBytes();
 		if ( len > 0 ) {
@@ -200,6 +202,8 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 			buf.readBytes(b);
 			GpsdMessage message = mapper.readValue(b, GpsdMessage.class);
 			if ( message != null ) {
+				log.trace("Got GPSd message: {}", message);
+
 				synchronized ( responseQueue ) {
 					final long now = System.currentTimeMillis();
 					for ( Iterator<MessageResponseHolder> itr = responseQueue.iterator(); itr
@@ -216,12 +220,9 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 						}
 					}
 				}
-				if ( log.isDebugEnabled() ) {
-					log.debug("Got GPSd message: " + message);
-				}
-				GpsdMessageHandler handler = messageHandler();
-				if ( handler != null ) {
-					handler.handleGpsdMessage(message);
+
+				if ( messageHandler != null ) {
+					messageHandler.handleGpsdMessage(message);
 				}
 				Class<? extends GpsdMessage> messageType = message.getClass();
 				for ( Entry<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> me : messageListeners
@@ -235,6 +236,8 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 						}
 					}
 				}
+			} else {
+				log.trace("Got GPSd raw message: {}", msg);
 			}
 		}
 	}
@@ -259,10 +262,6 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 		}
 	}
 
-	private GpsdMessageHandler messageHandler() {
-		return (messageHandler != null ? messageHandler.service() : null);
-	}
-
 	/**
 	 * Get the maximum number of seconds to wait for a command response.
 	 * 
@@ -281,6 +280,27 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 	 */
 	public void setResponseTimeoutSeconds(int responseTimeoutSeconds) {
 		this.responseTimeoutSeconds = responseTimeoutSeconds;
+	}
+
+	/**
+	 * Get the "auto watch" mode flag.
+	 * 
+	 * @return {@literal true} to automatically issue a {@literal ?WATCH}
+	 *         command when connecting to GPSd; default is
+	 *         {@link #DEFAULT_AUTO_WATCH}
+	 */
+	public boolean isAutoWatch() {
+		return autoWatch;
+	}
+
+	/**
+	 * Set the "auto watch" mode flag.
+	 * 
+	 * @param autoWatch
+	 *        the mode to set
+	 */
+	public void setAutoWatch(boolean autoWatch) {
+		this.autoWatch = autoWatch;
 	}
 
 }

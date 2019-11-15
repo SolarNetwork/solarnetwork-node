@@ -16,6 +16,11 @@
 	
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="deserializers">
 			<list>
@@ -49,10 +54,11 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.gpsd.client"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.gpsd.service.impl.GpsdClientService" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.io.gpsd.service.impl.GpsdClientService" init-method="startupLater" destroy-method="shutdown">
 			<argument ref="objectMapper"/>
 			<argument ref="taskScheduler"/>
 			<property name="messageSource" ref="gpsdClientMessageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 		</bean>
 	</osgix:managed-service-factory>
 		
