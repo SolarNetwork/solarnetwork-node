@@ -211,7 +211,7 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 							break;
 						} else if ( h.expireDate < now ) {
 							h.future.completeExceptionally(new TimeoutException("The expected " + h.type
-									+ " response has not been recieved within the expected time."));
+									+ " response has not been received within the expected time."));
 							itr.remove();
 						}
 					}
