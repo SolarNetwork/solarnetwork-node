@@ -162,6 +162,28 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	// EventHandler
 
 	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("GpsDatumDataSource{");
+		GpsdClientConnection conn = connection();
+		if ( conn != null ) {
+			buf.append("conn=");
+			buf.append(conn.getUid());
+			buf.append(";");
+			buf.append(conn);
+		}
+		if ( sourceId != null ) {
+			if ( conn != null ) {
+				buf.append(", ");
+			}
+			buf.append("sourceId=");
+			buf.append(sourceId);
+		}
+		buf.append("}");
+		return buf.toString();
+	}
+
+	@Override
 	public void handleEvent(Event event) {
 		if ( GpsdClientConnection.EVENT_TOPIC_CLIENT_STATUS_CHANGE.equals(event.getTopic()) ) {
 			handleStatusChangeEvent(event);
