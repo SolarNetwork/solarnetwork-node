@@ -205,6 +205,23 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		}
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("GpsdClient");
+		final String host = getHost();
+		final int port = getPort();
+		if ( host != null ) {
+			buf.append("@");
+			buf.append(host);
+			buf.append(":");
+			buf.append(port);
+		} else {
+			buf.append("{unconfigured}");
+		}
+		return buf.toString();
+	}
+
 	private synchronized Future<?> start() {
 		final String host = getHost();
 		final int port = getPort();
