@@ -38,6 +38,7 @@ import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
+import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientStatus;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
@@ -63,11 +64,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 			4, 0.9f, 1);
 	private final OptionalService<GpsdClientConnection> client;
 
-	/** The {@code sampleCacheMs} property default value. */
-	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
-
 	private String sourceId;
-	private long sampleCacheMs;
 
 	/**
 	 * Constructor.
@@ -78,7 +75,6 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	public GpsDatumDataSource(OptionalService<GpsdClientConnection> client) {
 		super();
 		this.client = client;
-		this.sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	}
 
 	/**
@@ -100,10 +96,9 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
 		GpsdReportMessage msg = messageSamples.get(GpsdMessageType.TpvReport);
-		if ( msg == null ) {
-			return null;
+		if ( msg instanceof TpvReportMessage ) {
+			return createTpvDatum((TpvReportMessage) msg);
 		}
-		// TODO
 		return null;
 	}
 
@@ -114,8 +109,14 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public Collection<GeneralNodeDatum> readMultipleDatum() {
-		// TODO Auto-generated method stub
-		return null;
+		List<GeneralNodeDatum> results = new ArrayList<>();
+		for ( GpsdReportMessage msg : messageSamples.values() ) {
+			GeneralNodeDatum d = createDatum(msg);
+			if ( d != null ) {
+				results.add(d);
+			}
+		}
+		return results;
 	}
 
 	private GpsdClientConnection connection() {
@@ -134,6 +135,28 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 			message = message.withTimestamp(t);
 		}
 		messageSamples.put(type, message);
+
+		GeneralNodeDatum d = createDatum(message);
+		if ( d != null ) {
+			postDatumCapturedEvent(d);
+		}
+	}
+
+	private GeneralNodeDatum createDatum(GpsdReportMessage message) {
+		GeneralNodeDatum d = null;
+		if ( message instanceof TpvReportMessage ) {
+			d = createTpvDatum((TpvReportMessage) message);
+		}
+		return d;
+	}
+
+	private TpvGpsDatum createTpvDatum(TpvReportMessage tpv) {
+		if ( tpv == null ) {
+			return null;
+		}
+		TpvGpsDatum d = new TpvGpsDatum(tpv);
+		d.setSourceId(getSourceId());
+		return d;
 	}
 
 	// EventHandler
@@ -183,8 +206,6 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("client.propertyFilters['UID']", "GPSD"));
 
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
 		return results;
@@ -248,25 +269,6 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
-	}
-
-	/**
-	 * Get the sample cache maximum age, in milliseconds.
-	 * 
-	 * @return the cache milliseconds
-	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheSecondsMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }
