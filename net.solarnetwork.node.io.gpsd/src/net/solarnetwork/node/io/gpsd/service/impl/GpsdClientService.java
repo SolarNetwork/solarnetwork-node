@@ -24,6 +24,10 @@ package net.solarnetwork.node.io.gpsd.service.impl;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -95,6 +99,9 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 	/** The default {@code autoWatch} property value. */
 	public static final boolean DEFAULT_AUTO_WATCH = false;
 
+	/** The default {@code gpsRolloverCompensation} property value. */
+	public static final boolean DEFAULT_GPS_ROLLOVER_COMPENSATION = true;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final TaskScheduler taskScheduler;
@@ -104,6 +111,7 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 	private int port;
 	private int reconnectSeconds;
 	private int shutdownSeconds;
+	private boolean gpsRolloverCompensation;
 	private GpsdMessageHandler messageHandler;
 	private OptionalService<EventAdmin> eventAdmin;
 
@@ -132,6 +140,7 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		this.port = DEFAULT_PORT;
 		this.reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
 		this.shutdownSeconds = DEFAULT_SHUTDOWN_SECONDS;
+		this.gpsRolloverCompensation = DEFAULT_GPS_ROLLOVER_COMPENSATION;
 		setResponseTimeoutSeconds(DEFAULT_RESPONSE_TIMEOUT_SECONDS);
 		setAutoWatch(DEFAULT_AUTO_WATCH);
 		this.shutdown = false;
@@ -426,6 +435,20 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 	@Override
 	public final void handleGpsdMessage(GpsdMessage message) {
 		if ( message instanceof GpsdReportMessage ) {
+			if ( gpsRolloverCompensation && ((GpsdReportMessage) message).getTimestamp() != null ) {
+				OffsetDateTime localTime = Instant.now().atOffset(ZoneOffset.UTC);
+				OffsetDateTime reportTime = ((GpsdReportMessage) message).getTimestamp()
+						.atOffset(ZoneOffset.UTC);
+				// this is a quick and dirty check: if local time hour  > 1 hour ahead of report time hour,
+				// use local time value instead of report time
+				if ( localTime.get(ChronoField.YEAR) - reportTime.get(ChronoField.YEAR) > 10 ) {
+					OffsetDateTime newTime = reportTime.withYear(localTime.get(ChronoField.YEAR))
+							.withDayOfYear(localTime.get(ChronoField.DAY_OF_YEAR));
+					log.debug("GPS rollover time compensation: replacing {} with {}", reportTime,
+							newTime);
+					message = ((GpsdReportMessage) message).withTimestamp(newTime.toInstant());
+				}
+			}
 			postReportMessageCapturedEvent((GpsdReportMessage) message);
 		}
 		GpsdMessageHandler delegate = getMessageHandler();
@@ -478,6 +501,8 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		results.add(new BasicTextFieldSettingSpecifier("reconnectSeconds",
 				String.valueOf(DEFAULT_RECONNECT_SECONDS)));
 		results.add(new BasicToggleSettingSpecifier("autoWatch", DEFAULT_AUTO_WATCH));
+		results.add(new BasicToggleSettingSpecifier("gpsRolloverCompensation",
+				DEFAULT_GPS_ROLLOVER_COMPENSATION));
 		return results;
 	}
 
@@ -638,6 +663,27 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
+	}
+
+	/**
+	 * Get the GPS week rollover compensation mode.
+	 * 
+	 * @return the mode; defaults to {@link #DEFAULT_GPS_ROLLOVER_COMPENSATION}
+	 */
+	public boolean isGpsRolloverCompensation() {
+		return gpsRolloverCompensation;
+	}
+
+	/**
+	 * Set the GPS week rollover compensation mode.
+	 * 
+	 * @param gpsRolloverCompensation
+	 *        {@literal true} if the GPS date should be compensated for hardware
+	 *        that does not correctly handle week rollover peiods (every 20
+	 *        years)
+	 */
+	public void setGpsRolloverCompensation(boolean gpsRolloverCompensation) {
+		this.gpsRolloverCompensation = gpsRolloverCompensation;
 	}
 
 }

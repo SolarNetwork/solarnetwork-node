@@ -25,12 +25,16 @@ package net.solarnetwork.node.io.gpsd.service.impl.test;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -243,6 +247,53 @@ public class GpsdClientServiceTests extends GpsdServerTestSupport {
 		// THEN
 		SkyReportMessage result = received.get(5, TimeUnit.SECONDS);
 		assertThat("SKY report", result, equalTo(sky));
+	}
+
+	@Test
+	public void ignoreRolloverTimeCompensation() throws Exception {
+		// GIVEN
+		client.setGpsRolloverCompensation(false);
+
+		Instant inputTime = Instant.parse("2000-04-02T00:48:39.000Z");
+		TpvReportMessage msg = TpvReportMessage.builder().withTimestamp(inputTime).build();
+
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+
+		// WHEN
+		client.handleGpsdMessage(msg);
+
+		handler.await(5, TimeUnit.SECONDS);
+		assertThat("Message available", handler.getMessages(), hasSize(1));
+		GpsdMessage result = handler.getMessages().get(0);
+		assertThat("TpvReportMessage passed", result, instanceOf(TpvReportMessage.class));
+		assertThat("Report time not adjusted", ((TpvReportMessage) result).getTimestamp(),
+				equalTo(inputTime));
+	}
+
+	@Test
+	public void handleRolloverTimeCompensation() throws Exception {
+		// GIVEN
+		OffsetDateTime now = Instant.now().atOffset(ZoneOffset.UTC);
+		Instant inputTime = Instant.parse("2000-04-02T00:48:39.000Z");
+		TpvReportMessage msg = TpvReportMessage.builder().withTimestamp(inputTime).build();
+
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+
+		// WHEN
+		client.handleGpsdMessage(msg);
+
+		handler.await(5, TimeUnit.SECONDS);
+		assertThat("Message available", handler.getMessages(), hasSize(1));
+		GpsdMessage result = handler.getMessages().get(0);
+		assertThat("TpvReportMessage passed", result, instanceOf(TpvReportMessage.class));
+		OffsetDateTime reportTime = ((TpvReportMessage) result).getTimestamp().atOffset(ZoneOffset.UTC);
+
+		assertThat("Report time year adjusted", reportTime.get(ChronoField.YEAR),
+				equalTo(now.get(ChronoField.YEAR)));
+		assertThat("Report time day-of-year adjusted", reportTime.get(ChronoField.DAY_OF_YEAR),
+				equalTo(now.get(ChronoField.DAY_OF_YEAR)));
 	}
 
 }
