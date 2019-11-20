@@ -24,12 +24,12 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.node.io.canbus.socketcand.Addressed;
+import net.solarnetwork.node.io.canbus.Addressed;
+import net.solarnetwork.node.io.canbus.Temporal;
 import net.solarnetwork.node.io.canbus.socketcand.FrameMessage;
 import net.solarnetwork.node.io.canbus.socketcand.Message;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
-import net.solarnetwork.node.io.canbus.socketcand.Temporal;
 
 /**
  * A specialized {@link Message} for a frame.

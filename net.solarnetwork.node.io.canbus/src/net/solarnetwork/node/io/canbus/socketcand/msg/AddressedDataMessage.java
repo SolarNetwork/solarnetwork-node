@@ -93,11 +93,6 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 	}
 
 	@Override
-	public boolean isExtendedFrame() {
-		return isExtendedAddress();
-	}
-
-	@Override
 	public int getDataLength() {
 		List<String> arguments = getArguments();
 		return (arguments != null && arguments.size() > dataIndex ? arguments.size() - dataIndex : 0);

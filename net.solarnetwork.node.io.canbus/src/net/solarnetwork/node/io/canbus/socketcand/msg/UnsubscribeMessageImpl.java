@@ -24,7 +24,7 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.io.canbus.socketcand.Addressed;
+import net.solarnetwork.node.io.canbus.Addressed;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.UnsubscribeMessage;
 

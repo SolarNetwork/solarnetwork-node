@@ -52,6 +52,7 @@ import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport;
 import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
+import net.solarnetwork.node.io.canbus.util.CanbusUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -59,7 +60,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.ByteUtils;
 
 /**
  * Generic CAN bus datum data source.
@@ -191,6 +191,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			handleDebug(frame);
 			return;
 		}
+		log.trace("CAN message received for {}: {}", this, frame);
 		CanbusData data = sample.performUpdates(new CanbusDataUpdateAction() {
 
 			@Override
@@ -224,6 +225,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 						Files.newBufferedWriter(p, Charset.forName("UTF-8"), CREATE, APPEND));
 				if ( debugOut.compareAndSet(null, newOut) ) {
 					out = newOut;
+					log.info("Capturing CAN frames for {} to {}", this, p.toAbsolutePath());
 				} else {
 					out = debugOut.get();
 					newOut.close();
@@ -233,11 +235,10 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			}
 		}
 		if ( out != null ) {
-			byte[] data = frame.getData();
-			String msg = String.format("%1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tL %2$s %3$s", new Date(),
-					frame.getAddress(),
-					ByteUtils.encodeHexString(data, 0, data != null ? data.length : 0, false));
-			out.println(msg);
+			String comment = String.format("# %1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tLZ", new Date());
+			out.println(comment);
+			out.println(CanbusUtils.encodeCandumpLog(frame, getBusName()));
+			out.flush();
 		} else {
 			log.debug("CAN {} frame: {}", getBusName(), frame);
 		}
@@ -261,6 +262,12 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			}
 		} else {
 			// check if debug out should be closed
+			try {
+				unregisterMonitor();
+			} catch ( IOException e ) {
+				log.error("Error removing CAN network {} debug monitor: {}", canbusNetworkName(),
+						e.toString(), e);
+			}
 			closeDebugLog();
 		}
 		Iterable<CanbusSubscription> subscriptions = createSubscriptions(getMsgConfigs());

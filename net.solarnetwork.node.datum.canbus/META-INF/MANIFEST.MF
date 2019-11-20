@@ -18,6 +18,7 @@ Import-Package:
  net.solarnetwork.node.io.canbus;version="1.0.0",
  net.solarnetwork.node.io.canbus.kcd;version="1.0.0",
  net.solarnetwork.node.io.canbus.support;version="1.0.0",
+ net.solarnetwork.node.io.canbus.util;version="1.0.0",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.settings;version="1.12.0",
  net.solarnetwork.node.settings.support;version="1.10.0",
@@ -40,4 +41,5 @@ Import-Package:
  org.springframework.core;version="[4.2,5.0)",
  org.springframework.core.io;version="[4.2,5.0)",
  org.springframework.expression;version="[4.2,5.0)",
+ org.springframework.scheduling;version="[4.2,5.0)",
  org.springframework.scheduling.quartz;version="[4.2,5.0)"

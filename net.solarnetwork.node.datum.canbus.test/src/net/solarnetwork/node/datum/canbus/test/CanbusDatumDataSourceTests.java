@@ -273,14 +273,15 @@ public class CanbusDatumDataSourceTests {
 				equalTo(new BigDecimal("17000")));
 	}
 
-	private static final Pattern DEBUG_LOG_PAT = Pattern
-			.compile("(\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}) (\\d+) ([0-9A-F]*)");
+	private static final Pattern DEBUG_LOG_PAT = Pattern.compile(
+			"# \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\n\\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
 
 	@Test
 	public void frameReceived_debug() throws IOException {
 		// GIVEN
 		Path tmpFile = Files.createTempFile("canbus-debug-out-test-", ".log");
 		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setBusName("can0");
 		dataSource.setDebug(true);
 		dataSource.setDebugLogPath(tmpFile.toAbsolutePath().toString());
 
@@ -295,9 +296,10 @@ public class CanbusDatumDataSourceTests {
 		String logData = FileCopyUtils.copyToString(Files.newBufferedReader(tmpFile));
 		assertThat("Log data captured one line", logData, not(isEmptyOrNullString()));
 		Matcher m = DEBUG_LOG_PAT.matcher(logData.trim());
-		assertThat("Log line formatted with timestamp, address, hex data", m.matches(), equalTo(true));
-		assertThat("Log line address", m.group(2), equalTo("1"));
-		assertThat("Log line hex data", m.group(3), equalTo("1100FD"));
+		assertThat("Log line formatted with comment and timestamp, address, hex data", m.matches(),
+				equalTo(true));
+		assertThat("Log line address", m.group(1), equalTo("1"));
+		assertThat("Log line hex data", m.group(2), equalTo("1100FD"));
 
 		Files.deleteIfExists(tmpFile);
 	}

@@ -20,12 +20,12 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.canbus.socketcand;
+package net.solarnetwork.node.io.canbus;
 
 import java.math.BigDecimal;
 
 /**
- * API for something that has a relation to time within the socketcand bus.
+ * API for something that has a relation to time within the CAN bus.
  * 
  * @author matt
  * @version 1.0
@@ -48,12 +48,22 @@ public interface Temporal {
 
 	/**
 	 * Get the fractional seconds represented by the {@code seconds} and
-	 * {@code microseconds}
+	 * {@code microseconds}.
 	 * 
 	 * @return the fractional seconds, never {@literal null}
 	 */
 	default BigDecimal getFractionalSeconds() {
 		return fractionalMicroseconds(getSeconds(), getMicroseconds());
+	}
+
+	/**
+	 * Get the fractional seconds represented by the {@code seconds} and
+	 * {@code microseconds} as a string.
+	 * 
+	 * @return the string value
+	 */
+	default String toFractionalSecondsString() {
+		return String.format("%d.%06d", getSeconds(), getMicroseconds());
 	}
 
 	/**

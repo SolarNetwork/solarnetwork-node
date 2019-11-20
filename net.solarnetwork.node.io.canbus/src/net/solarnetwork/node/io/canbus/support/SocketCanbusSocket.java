@@ -44,7 +44,7 @@ import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
 public class SocketCanbusSocket implements CanbusSocket {
 
 	/** The default value for the {@code socketTimeout} property. */
-	public static final int DEFAULT_SOCKET_TIMEOUT = 400;
+	public static final int DEFAULT_SOCKET_TIMEOUT = 300000;
 
 	/** The default value for the {@code socketTcpNoDelay} property. */
 	public static final boolean DEFAULT_SOCKET_TCP_NO_DELAY = true;
@@ -80,7 +80,7 @@ public class SocketCanbusSocket implements CanbusSocket {
 	}
 
 	@Override
-	public void open(String host, int port) throws IOException {
+	public synchronized void open(String host, int port) throws IOException {
 		socket = new Socket(host, port);
 		socket.setTcpNoDelay(socketTcpNoDelay);
 		socket.setSoLinger(socketLinger > 0, socketLinger);
@@ -98,24 +98,34 @@ public class SocketCanbusSocket implements CanbusSocket {
 	public void connectionConfirmed() throws IOException {
 		// change socket timeout to normal value now
 		socket.setSoTimeout(socketTimeout);
-
-		// TODO: start reader thread
 		established = true;
 	}
 
 	@Override
-	public synchronized Message nextMessage(long timeout, TimeUnit unit) throws IOException {
-		if ( input != null ) {
-			return SocketcandUtils.readMessage(input, buffer);
+	public Message nextMessage(long timeout, TimeUnit unit) throws IOException {
+		Reader in;
+		synchronized ( this ) {
+			in = this.input;
+		}
+		if ( in != null ) {
+			synchronized ( buffer ) {
+				return SocketcandUtils.readMessage(in, buffer);
+			}
 		}
 		throw new IOException("Connection not open.");
 	}
 
 	@Override
-	public synchronized void writeMessage(Message message) throws IOException {
-		if ( output != null ) {
-			message.write(output);
-			output.flush();
+	public void writeMessage(Message message) throws IOException {
+		Writer out;
+		synchronized ( this ) {
+			out = this.output;
+		}
+		if ( out != null ) {
+			synchronized ( out ) {
+				message.write(out);
+				out.flush();
+			}
 		} else {
 			throw new IOException("Connection not open.");
 		}
@@ -127,7 +137,7 @@ public class SocketCanbusSocket implements CanbusSocket {
 	}
 
 	@Override
-	public void close() throws IOException {
+	public synchronized void close() throws IOException {
 		if ( socket == null ) {
 			return;
 		}

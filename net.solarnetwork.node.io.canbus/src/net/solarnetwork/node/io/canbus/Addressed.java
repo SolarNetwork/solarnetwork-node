@@ -20,9 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.canbus.socketcand;
-
-import net.solarnetwork.node.io.canbus.CanbusFrame;
+package net.solarnetwork.node.io.canbus;
 
 /**
  * API for something that has an address within the socketcand bus.
@@ -31,6 +29,12 @@ import net.solarnetwork.node.io.canbus.CanbusFrame;
  * @version 1.0
  */
 public interface Addressed {
+
+	/** The maximum value a "standard" message address can have (11 bits). */
+	int MAX_STANDARD_ADDRESS = 0x7FF;
+
+	/** The maximum value an "extended" message address can have (29 bits). */
+	int MAX_EXTENDED_ADDRESS = 0x1FFFFFFF;
 
 	/**
 	 * Get the address.
@@ -46,7 +50,7 @@ public interface Addressed {
 	 *         otherwise a CAN 2.0A 11-bit address is assumed
 	 */
 	default boolean isExtendedAddress() {
-		return (getAddress() > CanbusFrame.MAX_STANDARD_ADDRESS);
+		return (getAddress() > MAX_STANDARD_ADDRESS);
 	}
 
 	/**
@@ -60,7 +64,7 @@ public interface Addressed {
 	 * @return the hex-formatted address
 	 */
 	static String hexAddress(int address, boolean forceExtendedAddress) {
-		final boolean extended = forceExtendedAddress || address > CanbusFrame.MAX_STANDARD_ADDRESS;
+		final boolean extended = forceExtendedAddress || address > MAX_STANDARD_ADDRESS;
 		return String.format(extended ? "%08X" : "%X", address);
 	}
 

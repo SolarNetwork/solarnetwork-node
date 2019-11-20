@@ -94,8 +94,17 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * Call once after properties are configured to start up the service.
 	 */
 	public synchronized void startup() {
+		rescheduleConnectionCheck();
+	}
+
+	private synchronized void rescheduleConnectionCheck() {
+		if ( connectionCheckFuture != null ) {
+			connectionCheckFuture.cancel(true);
+			connectionCheckFuture = null;
+		}
 		if ( taskScheduler != null && connectionCheckFuture == null ) {
-			log.info("Scheduling CAN bus connectivity check for {}ms", connectionCheckFrequency);
+			log.info("Scheduling CAN bus [{}] connectivity check for {}ms", busName,
+					connectionCheckFrequency);
 			connectionCheckFuture = taskScheduler.scheduleWithFixedDelay(new ConnectionCheck(),
 					new Date(System.currentTimeMillis() + 10000L), connectionCheckFrequency);
 		}
@@ -114,6 +123,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 */
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
+		rescheduleConnectionCheck();
 		closeSharedCanbusConnection();
 	}
 
@@ -221,8 +231,8 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	private synchronized void registerSubscription(CanbusConnection conn,
 			CanbusSubscription subscription) throws IOException {
-		CanbusSubscription old = subscriptions.replace(subscription.getAddress(), subscription);
-		if ( conn != null && !conn.isClosed() ) {
+		CanbusSubscription old = subscriptions.put(subscription.getAddress(), subscription);
+		if ( conn != null && !conn.isClosed() && subscription != old ) {
 			if ( old != null && !conn.isMonitoring() ) {
 				conn.unsubscribe(old.getAddress(), old.isForceExtendedAddress());
 			}
@@ -278,7 +288,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	}
 
 	@SuppressWarnings("resource")
-	private CanbusConnection sharedCanbusConnection() {
+	private synchronized CanbusConnection sharedCanbusConnection() {
 		CanbusConnection curr, newConn = null;
 		do {
 			if ( newConn != null && !newConn.isClosed() ) {
