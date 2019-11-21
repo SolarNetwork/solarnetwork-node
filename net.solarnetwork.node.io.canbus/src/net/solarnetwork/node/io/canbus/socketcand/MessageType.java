@@ -36,6 +36,8 @@ public enum MessageType {
 
 	Ok("ok"),
 
+	Error("error"),
+
 	Add("add"),
 
 	Update("update"),
@@ -99,6 +101,9 @@ public enum MessageType {
 
 			case "ok":
 				return Ok;
+
+			case "error":
+				return Error;
 
 			case "hi":
 				return Hi;

@@ -27,6 +27,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
+import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 
 /**
  * Decode a Cannelloni byte stream into {@link CanbusFrame} instances.
@@ -115,7 +116,7 @@ public class CannelloniCanbusFrameDecoder extends MessageToMessageDecoder<ByteBu
 		if ( in.readableBytes() < 4 ) {
 			return null;
 		}
-		final int address = in.getInt(in.readerIndex()) & 0x1FFFFFFF;
+		final int address = in.getInt(in.readerIndex());
 		final byte size = in.getByte(in.readerIndex() + 4);
 		byte fdFlags = 0;
 		int len = 0;
@@ -129,12 +130,28 @@ public class CannelloniCanbusFrameDecoder extends MessageToMessageDecoder<ByteBu
 			skipLen = 5;
 			len = size & 0xF;
 		}
+
+		// RTR frame allowed to contain DLC (len) byte; but no data actually included
+		final int rtrMask = 1 << CanbusFrameFlag.RemoteTransmissionRequest.bitmaskBitOffset();
+		final boolean rtr = (address & rtrMask) == rtrMask;
+		if ( rtr ) {
+			len = 0;
+		}
+
 		if ( in.readableBytes() < (skipLen + len) ) {
 			return null;
 		}
+
 		in.skipBytes(skipLen);
-		final byte[] data = new byte[fdFlags > 0 ? len : len];
-		in.readBytes(data);
+
+		final byte[] data;
+		if ( rtr ) {
+			// preserve any DLC value with RTR
+			data = new byte[] { size };
+		} else {
+			data = new byte[fdFlags > 0 ? len : len];
+			in.readBytes(data);
+		}
 		remainingCanFrameCount--;
 		return new BasicCanbusFrame(address, fdFlags, data);
 	}

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.canbus.cannelloni;
 
 import net.solarnetwork.node.io.canbus.CanbusFrame;
+import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 import net.solarnetwork.util.ByteUtils;
 
 /**
@@ -41,7 +42,7 @@ public class BasicCanbusFrame implements CanbusFrame {
 	 * Constructor.
 	 * 
 	 * @param address
-	 *        the CAN address (ID)
+	 *        the 32-bit CAN address (ID) and frame flags
 	 * @param fdFlags
 	 *        the CAN FD flags, or {@literal 0}
 	 * @param data
@@ -58,7 +59,13 @@ public class BasicCanbusFrame implements CanbusFrame {
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
 		buf.append("CanbusFrame{address=");
-		buf.append(Integer.toHexString(address));
+		buf.append(Integer.toHexString(getAddress()));
+		if ( isErrorMessage() ) {
+			buf.append(", ERR");
+		}
+		if ( isRemoteTransmissionRequest() ) {
+			buf.append(", RTR");
+		}
 		if ( fdFlags > 0 ) {
 			buf.append(", fdFlags=");
 			buf.append(fdFlags);
@@ -74,7 +81,7 @@ public class BasicCanbusFrame implements CanbusFrame {
 
 	@Override
 	public int getAddress() {
-		return address;
+		return address & MAX_EXTENDED_ADDRESS;
 	}
 
 	/**
@@ -94,6 +101,35 @@ public class BasicCanbusFrame implements CanbusFrame {
 	@Override
 	public byte[] getData() {
 		return data;
+	}
+
+	@Override
+	public boolean isExtendedAddress() {
+		return isFlagged(CanbusFrameFlag.ExtendedFormat);
+	}
+
+	@Override
+	public boolean isFlagged(CanbusFrameFlag flag) {
+		final int mask = 1 << flag.bitmaskBitOffset();
+		return (address & mask) == mask;
+	}
+
+	/**
+	 * Test if the frame is an error frame.
+	 * 
+	 * @return {@literal true} if the frame is an error message
+	 */
+	public boolean isErrorMessage() {
+		return isFlagged(CanbusFrameFlag.ErrorMessage);
+	}
+
+	/**
+	 * Test if the frame is a remote transmission request.
+	 * 
+	 * @return {@literal true} if the frame is a remote transmission request
+	 */
+	public boolean isRemoteTransmissionRequest() {
+		return isFlagged(CanbusFrameFlag.RemoteTransmissionRequest);
 	}
 
 }

@@ -1,5 +1,5 @@
 /* ==================================================================
- * CanbusFrame.java - 23/09/2019 8:55:08 am
+ * CanbusFrameFlag.java - 22/11/2019 11:24:08 am
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -22,35 +22,40 @@
 
 package net.solarnetwork.node.io.canbus;
 
+import net.solarnetwork.domain.Bitmaskable;
+
 /**
- * General API for a CAN bus message, or frame.
+ * Flags applied to a {@link CanbusFrame}.
+ * 
+ * <p>
+ * This enumeration implements {@link Bitmaskable} with bit indexes structured
+ * to match the SocketCAN frame structure used in Linux. The bitmask values
+ * might not apply to other contexts.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public interface CanbusFrame extends Addressed {
+public enum CanbusFrameFlag implements Bitmaskable {
 
-	/**
-	 * Get the count of data bytes.
-	 * 
-	 * @return the count of data bytes
-	 */
-	int getDataLength();
+	/** Error message frame. */
+	ErrorMessage(29),
 
-	/**
-	 * Get the data.
-	 * 
-	 * @return the data, never {@literal null}
-	 */
-	byte[] getData();
+	/** Remote transmission request. */
+	RemoteTransmissionRequest(30),
 
-	/**
-	 * Test if a specific frame flag is enabled.
-	 * 
-	 * @param flag
-	 *        the flag
-	 * @return {@literal true} if the flag is enabled
-	 */
-	boolean isFlagged(CanbusFrameFlag flag);
+	/** Extended (29-bit address) vs standard (11-bit address) frame format. */
+	ExtendedFormat(31);
+
+	private final int index;
+
+	private CanbusFrameFlag(int index) {
+		this.index = index;
+	}
+
+	@Override
+	public int bitmaskBitOffset() {
+		return index;
+	}
 
 }
