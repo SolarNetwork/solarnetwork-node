@@ -73,7 +73,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * GSPd client component.
+ * GPSd client component.
  * 
  * @author matt
  * @version 1.0
@@ -210,7 +210,7 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		try {
 			stop().get(shutdownSeconds, TimeUnit.SECONDS);
 		} catch ( ExecutionException | InterruptedException | TimeoutException e ) {
-			log.warn("Error waiting for GSPd connection to close gracefully: {}", e.toString(), e);
+			log.warn("Error waiting for GPSd connection to close gracefully: {}", e.toString(), e);
 		}
 	}
 
@@ -268,7 +268,7 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 					if ( root instanceof IOException ) {
 						log.warn("Unable to connect to GPSd @ {}:{}: {}", host, port, root.getMessage());
 					} else {
-						log.error("Error connecting to GSPd @ {}:{}: {}", host, port, root.toString(),
+						log.error("Error connecting to GPSd @ {}:{}: {}", host, port, root.toString(),
 								t);
 					}
 				}
@@ -317,28 +317,35 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 			startFuture = null;
 		}
 		if ( ch != null ) {
-			final InetSocketAddress addr = (InetSocketAddress) ch.remoteAddress();
-			log.info("Closing connection to GPSd @ {}:{}", addr.getHostString(), addr.getPort());
+			final String host;
+			final int port;
+			if ( ch.remoteAddress() != null ) {
+				final InetSocketAddress addr = (InetSocketAddress) ch.remoteAddress();
+				host = addr.getHostString();
+				port = addr.getPort();
+			} else {
+				host = this.host;
+				port = this.port;
+			}
+			log.info("Closing connection to GPSd @ {}:{}", host, port);
 			result = ch.close().addListener(new ChannelFutureListener() {
 
 				@Override
 				public void operationComplete(ChannelFuture future) throws Exception {
 					try {
 						if ( future.isSuccess() ) {
-							log.info("Closed connection to GPSd @ {}:{}", addr.getHostString(),
-									addr.getPort());
+							log.info("Closed connection to GPSd @ {}:{}", host, port);
 						} else {
 							Throwable root = future.cause();
 							while ( root.getCause() != null ) {
 								root = root.getCause();
 							}
 							if ( root instanceof IOException ) {
-								log.warn("Unable to close connection to GPSd @ {}:{}: {}",
-										addr.getHostString(), addr.getPort(), root.getMessage());
+								log.warn("Unable to close connection to GPSd @ {}:{}: {}", host, port,
+										root.getMessage());
 							} else {
-								log.error("Error closing connection to GSPd @ {}:{}: {}",
-										addr.getHostString(), addr.getPort(), root.toString(),
-										future.cause());
+								log.error("Error closing connection to GPSd @ {}:{}: {}", host, port,
+										root.toString(), future.cause());
 							}
 						}
 					} finally {
@@ -361,7 +368,7 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		try {
 			stop().get(shutdownSeconds, TimeUnit.SECONDS);
 		} catch ( ExecutionException | InterruptedException | TimeoutException e ) {
-			log.warn("Error waiting for GSPd connection to close gracefully: {}", e.toString());
+			log.warn("Error waiting for GPSd connection to close gracefully: {}", e.toString());
 		} finally {
 			f = scheduleConnect();
 		}
