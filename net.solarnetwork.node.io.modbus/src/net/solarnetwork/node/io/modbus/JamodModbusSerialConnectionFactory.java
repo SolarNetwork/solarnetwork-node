@@ -142,7 +142,7 @@ public class JamodModbusSerialConnectionFactory
 	 *         if the lock cannot be obtained
 	 */
 	private void acquireLock() throws LockTimeoutException {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Port {} lock already acquired", serialParams.getPortName());
 			return;
 		}
@@ -165,7 +165,7 @@ public class JamodModbusSerialConnectionFactory
 	 * method is safe to call even if the lock has already been released.
 	 */
 	private void releaseLock() {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
 			lock.unlock();
 		}
