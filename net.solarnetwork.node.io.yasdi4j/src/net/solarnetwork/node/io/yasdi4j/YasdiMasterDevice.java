@@ -29,16 +29,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.LockTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import de.michaeldenk.yasdi4j.YasdiDevice;
+import net.solarnetwork.node.LockTimeoutException;
 
 /**
  * Implementation of {@link YasdiMaster}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class YasdiMasterDevice implements YasdiMaster {
 
@@ -118,7 +118,7 @@ public class YasdiMasterDevice implements YasdiMaster {
 		if ( lock == null ) {
 			throw new RuntimeException("No lock available for device " + device);
 		}
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("YasdiDevice {} lock already acquired", deviceID);
 			return;
 		}
@@ -144,7 +144,7 @@ public class YasdiMasterDevice implements YasdiMaster {
 		if ( lock == null ) {
 			throw new RuntimeException("No lock available for YasdiDevice " + deviceID);
 		}
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Releasing lock on YasdiDevice {}", deviceID);
 			lock.unlock();
 		} else if ( log.isDebugEnabled() ) {
