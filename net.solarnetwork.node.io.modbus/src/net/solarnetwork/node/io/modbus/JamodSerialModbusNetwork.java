@@ -42,7 +42,7 @@ import net.wimpi.modbus.util.SerialParameters;
  * Jamod implementation of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.1.20191125_A
  * @since 2.0
  */
 public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifierProvider {
@@ -155,7 +155,7 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 	 *         if the lock cannot be obtained
 	 */
 	private void acquireLock() throws LockTimeoutException {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Port {} lock already acquired", serialParams.getPortName());
 			return;
 		}
@@ -178,7 +178,7 @@ public class JamodSerialModbusNetwork implements ModbusNetwork, SettingSpecifier
 	 * method is safe to call even if the lock has already been released.
 	 */
 	private void releaseLock() {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
 			lock.unlock();
 		}
