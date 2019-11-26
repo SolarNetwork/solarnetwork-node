@@ -43,7 +43,7 @@ import org.springframework.context.support.ResourceBundleMessageSource;
  * Default implementation of {@link ModbusSerialConnectionFactory}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.1.20191127_A
  */
 public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectionFactory,
 		SettingSpecifierProvider {
@@ -142,7 +142,7 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	 *         if the lock cannot be obtained
 	 */
 	private void acquireLock() throws LockTimeoutException {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Port {} lock already acquired", serialParams.getPortName());
 			return;
 		}
@@ -165,7 +165,7 @@ public class JamodModbusSerialConnectionFactory implements ModbusSerialConnectio
 	 * method is safe to call even if the lock has already been released.
 	 */
 	private void releaseLock() {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Releasing lock on Modbus port {}", serialParams.getPortName());
 			lock.unlock();
 		}
