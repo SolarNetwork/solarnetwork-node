@@ -1,5 +1,5 @@
 /* ==================================================================
- * BaseIdentifiable.java - 15/05/2019 3:42:21 pm
+ * BasicIdentifiable.java - 15/05/2019 3:42:21 pm
  * 
  * Copyright 2019 SolarNetwork.net Dev Team
  * 
@@ -28,6 +28,7 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.support.BasicIdentifiable;
 
 /**
  * Basic implementation of {@link Identifiable} and
@@ -38,17 +39,15 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.67
  */
-public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork.domain.Identifiable {
-
-	private String uid;
-	private String groupUid;
-	private MessageSource messageSource;
+public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIdentifiable
+		implements Identifiable, net.solarnetwork.domain.Identifiable {
 
 	/**
-	 * Get settings for the configurable properties of {@link BaseIdentifiable}.
+	 * Get settings for the configurable properties of
+	 * {@link BasicIdentifiable}.
 	 * 
 	 * <p>
 	 * Empty strings are used for the default {@code uid} and {@code groupUid}
@@ -65,7 +64,8 @@ public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork
 	}
 
 	/**
-	 * Get settings for the configurable properties of {@link BaseIdentifiable}.
+	 * Get settings for the configurable properties of
+	 * {@link BasicIdentifiable}.
 	 * 
 	 * @param prefix
 	 *        an optional prefix to include in all setting keys
@@ -85,36 +85,6 @@ public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", defaultUid));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", defaultGroupUid));
 		return results;
-	}
-
-	@Override
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the UID.
-	 * 
-	 * @param uid
-	 *        the UID to set
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUid() {
-		return groupUid;
-	}
-
-	/**
-	 * Set the group UID.
-	 * 
-	 * @param groupUid
-	 *        the group UID to set
-	 */
-	public void setGroupUid(String groupUid) {
-		this.groupUid = groupUid;
 	}
 
 	/**
@@ -165,23 +135,44 @@ public abstract class BaseIdentifiable implements Identifiable, net.solarnetwork
 		setGroupUid(groupUid);
 	}
 
-	/**
-	 * Get a message source, to use for localizing this service with.
-	 * 
-	 * @return a message source
-	 */
-	public MessageSource getMessageSource() {
-		return messageSource;
+	/*-----
+	 * The following methods are here for package-import
+	 * backwards-compatibility, before BasicIdentifiable existed.
+	 *----- */
+
+	@Override
+	public String getUid() {
+		return super.getUid();
 	}
 
-	/**
-	 * Set a message source, to use for localizing this service with.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 */
+	@Override
+	public void setUid(String uid) {
+		super.setUid(uid);
+	}
+
+	@Override
+	public String getGroupUid() {
+		return super.getGroupUid();
+	}
+
+	@Override
+	public void setGroupUid(String groupUid) {
+		super.setGroupUid(groupUid);
+	}
+
+	@Override
+	public void setDisplayName(String displayName) {
+		super.setDisplayName(displayName);
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return super.getMessageSource();
+	}
+
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+		super.setMessageSource(messageSource);
 	}
 
 }
