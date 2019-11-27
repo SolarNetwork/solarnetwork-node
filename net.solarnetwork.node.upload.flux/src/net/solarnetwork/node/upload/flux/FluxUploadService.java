@@ -30,44 +30,39 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.codec.binary.Hex;
-import org.eclipse.paho.client.mqttv3.IMqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
-import org.springframework.context.MessageSource;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
+import net.solarnetwork.common.mqtt.BasicMqttMessage;
+import net.solarnetwork.common.mqtt.MqttConnection;
+import net.solarnetwork.common.mqtt.MqttConnectionFactory;
+import net.solarnetwork.common.mqtt.MqttQos;
+import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.io.mqtt.support.MqttServiceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.support.SSLService;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class FluxUploadService extends MqttServiceSupport
+public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider {
 
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%d/datum/0/%s";
-
-	/** The default value for the {@code persistencePath} property. */
-	public static final String DEFAULT_PERSISTENCE_PATH = "var/flux";
 
 	/** The default value for the {@code mqttHost} property. */
 	public static final String DEFAULT_MQTT_HOST = "mqtts://influx.solarnetwork.net:8884";
@@ -80,34 +75,35 @@ public class FluxUploadService extends MqttServiceSupport
 	 */
 	public static final Pattern DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN = Pattern.compile("_.*");
 
+	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
-	private MessageSource messageSource;
-	private String mqttHost = DEFAULT_MQTT_HOST;
-	private String mqttUsername = DEFAULT_MQTT_USERNAME;
-	private String mqttPassword;
 	private String requiredOperationalMode;
 	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
 	private OperationalModesService opModesService;
-	private TaskExecutor taskExecutor;
+	private Executor executor;
 
 	/**
 	 * Constructor.
 	 * 
+	 * @param connectionFactory
+	 *        the factory to use for {@link MqttConnection} instances
 	 * @param objectMapper
 	 *        the object mapper to use
-	 * @param taskScheduler
-	 *        an optional task scheduler to auto-connect with, or
-	 *        {@literal null} for no auto-connect support
-	 * @param sslService
-	 *        the optional SSL service
 	 * @param identityService
 	 *        the identity service
 	 */
-	public FluxUploadService(ObjectMapper objectMapper, TaskScheduler taskScheduler,
-			OptionalService<SSLService> sslService, IdentityService identityService) {
-		super(objectMapper, taskScheduler, sslService);
-		setPersistencePath(DEFAULT_PERSISTENCE_PATH);
+	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
+			IdentityService identityService) {
+		super(connectionFactory, new MqttStats("SolarFluxUpload", 100));
+		this.objectMapper = objectMapper;
 		this.identityService = identityService;
+		setPublishQos(MqttQos.AtMostOnce);
+		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
+		try {
+			getMqttConfig().setServerUri(new URI(DEFAULT_MQTT_HOST));
+		} catch ( URISyntaxException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -122,33 +118,13 @@ public class FluxUploadService extends MqttServiceSupport
 				return;
 			}
 		}
+		getMqttConfig().setClientId(getMqttClientId());
 		super.init();
 	}
 
-	@Override
-	protected String getMqttClientId() {
+	private String getMqttClientId() {
 		final Long nodeId = identityService.getNodeId();
 		return (nodeId != null ? nodeId.toString() : null);
-	}
-
-	@Override
-	protected MqttConnectOptions createMqttConnectOptions(URI uri) {
-		MqttConnectOptions opts = super.createMqttConnectOptions(uri);
-		opts.setUserName(mqttUsername);
-		if ( mqttPassword != null ) {
-			opts.setPassword(mqttPassword.toCharArray());
-		}
-		return opts;
-	}
-
-	@Override
-	protected URI getMqttUri() {
-		try {
-			return new URI(mqttHost);
-		} catch ( NullPointerException | URISyntaxException e1 ) {
-			log.error("Invalid MQTT URL: " + mqttHost);
-			return null;
-		}
 	}
 
 	@Override
@@ -165,7 +141,7 @@ public class FluxUploadService extends MqttServiceSupport
 				init();
 			} else {
 				// operational mode is no longer active, shut down MQTT connection
-				close();
+				shutdown();
 			}
 			return;
 		} else if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
@@ -182,18 +158,7 @@ public class FluxUploadService extends MqttServiceSupport
 		if ( data == null ) {
 			return;
 		}
-		TaskExecutor executor = this.taskExecutor;
-		if ( executor != null ) {
-			executor.execute(new Runnable() {
-
-				@Override
-				public void run() {
-					publishDatum(data);
-				}
-			});
-		} else {
-			publishDatum(data);
-		}
+		publishDatum(data);
 	}
 
 	private void publishDatum(Map<String, Object> data) {
@@ -212,9 +177,8 @@ public class FluxUploadService extends MqttServiceSupport
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
-		IMqttClient client = getClient();
-		ObjectMapper objectMapper = getObjectMapper();
-		if ( client != null ) {
+		MqttConnection conn = connection();
+		if ( conn != null ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
 				JsonNode jsonData = objectMapper.valueToTree(data);
@@ -223,11 +187,11 @@ public class FluxUploadService extends MqttServiceSupport
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
 					log.trace("Publishing to MQTT topic {}\n{}", topic, Hex.encodeHexString(payload));
 				}
-				client.publish(topic, payload, 0, true);
+				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload));
 				log.debug("Published to MQTT topic {}: {}", topic, data);
-			} catch ( MqttException | IOException e ) {
+			} catch ( IOException e ) {
 				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
-						client.getServerURI(), e.getMessage());
+						getMqttConfig().getServerUri(), e.getMessage());
 			}
 		}
 	}
@@ -266,11 +230,6 @@ public class FluxUploadService extends MqttServiceSupport
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
@@ -280,6 +239,11 @@ public class FluxUploadService extends MqttServiceSupport
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
 		return results;
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
 	}
 
 	/**
@@ -293,7 +257,7 @@ public class FluxUploadService extends MqttServiceSupport
 	 *        the MQTT host to use
 	 */
 	public void setMqttHost(String mqttHost) {
-		this.mqttHost = mqttHost;
+		getMqttConfig().setServerUriValue(mqttHost);
 	}
 
 	/**
@@ -303,7 +267,7 @@ public class FluxUploadService extends MqttServiceSupport
 	 *        the username
 	 */
 	public void setMqttUsername(String mqttUsername) {
-		this.mqttUsername = mqttUsername;
+		getMqttConfig().setUsername(mqttUsername);
 	}
 
 	/**
@@ -313,35 +277,7 @@ public class FluxUploadService extends MqttServiceSupport
 	 *        the password, or {@literal null} for no password
 	 */
 	public void setMqttPassword(String mqttPassword) {
-		this.mqttPassword = mqttPassword;
-	}
-
-	/**
-	 * Set the message source to use for settings.
-	 * 
-	 * @param messageSource
-	 *        the message source
-	 */
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	/**
-	 * Configure an executor for handling datum captured events with.
-	 * 
-	 * <p>
-	 * If this is configured, then the {@link #handleEvent(Event)} will create a
-	 * task for each event and pass them to this executor. This helps prevent
-	 * blacklisting by the event publisher, and is recommended in production
-	 * deployments.
-	 * </p>
-	 * 
-	 * @param taskExecutor
-	 *        the task executor to use
-	 */
-	public void setTaskExecutor(TaskExecutor taskExecutor) {
-		this.taskExecutor = taskExecutor;
+		getMqttConfig().setPassword(mqttPassword);
 	}
 
 	/**
@@ -362,26 +298,38 @@ public class FluxUploadService extends MqttServiceSupport
 
 			@Override
 			public void run() {
-				IMqttClient client = getClient();
+				MqttConnection client = connection();
 				if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
 					if ( client == null ) {
 						// start up client now
-						init();
+						startup();
 					}
 				} else if ( client != null ) {
 					if ( opModesService == null
 							|| !opModesService.isOperationalModeActive(requiredOperationalMode) ) {
 						// shut down client, op mode no longer active
-						close();
+						shutdown();
 					}
 				}
 			}
 		};
-		if ( taskExecutor != null ) {
-			taskExecutor.execute(task);
+		Executor e = this.executor;
+		if ( e != null ) {
+			e.execute(task);
 		} else {
 			task.run();
 		}
+	}
+
+	/**
+	 * Set an executor to use for internal tasks.
+	 * 
+	 * @param executor
+	 *        the executor
+	 * @since 1.3
+	 */
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
 	}
 
 	/**
