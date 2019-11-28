@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux
-Bundle-Version: 1.2.0
+Bundle-Version: 1.3.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -15,20 +15,18 @@ Import-Package:
  com.fasterxml.jackson.dataformat.cbor;version="[2.8,3.0)",
  javax.net,
  javax.net.ssl,
- net.solarnetwork.common.mqtt.support;version="1.0.0",
+ net.solarnetwork.common.mqtt;version="1.0.0",
  net.solarnetwork.domain;version="1.14.0",
  net.solarnetwork.node;version="1.25.0",
  net.solarnetwork.node.dao;version="1.8.0",
  net.solarnetwork.node.domain;version="1.12.0",
- net.solarnetwork.node.io.mqtt.support;version="1.0.1",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.1",
  net.solarnetwork.node.support;version="1.15.0",
+ net.solarnetwork.settings;version="1.2.0",
  net.solarnetwork.support;version="1.9.0",
  net.solarnetwork.util;version="1.32.0",
  org.apache.commons.codec.binary;version="1.11.0",
- org.eclipse.paho.client.mqttv3;version="[1.2,2.0)",
- org.eclipse.paho.client.mqttv3.persist;version="[1.2,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.2,5.0)",
