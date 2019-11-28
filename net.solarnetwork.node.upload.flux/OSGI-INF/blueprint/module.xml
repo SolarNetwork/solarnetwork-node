@@ -11,8 +11,6 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
-	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
-	
 	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
 	
 	<reference id="opModesService" interface="net.solarnetwork.node.OperationalModesService"/>
@@ -58,7 +56,8 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.upload.flux" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.upload.flux" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>

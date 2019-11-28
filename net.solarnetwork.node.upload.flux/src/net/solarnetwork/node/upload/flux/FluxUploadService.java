@@ -23,14 +23,14 @@
 package net.solarnetwork.node.upload.flux;
 
 import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.codec.binary.Hex;
@@ -45,12 +45,14 @@ import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
+import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
@@ -59,7 +61,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @version 1.3
  */
 public class FluxUploadService extends BaseMqttConnectionService
-		implements EventHandler, SettingSpecifierProvider {
+		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
 
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%d/datum/0/%s";
@@ -94,16 +96,12 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
 			IdentityService identityService) {
-		super(connectionFactory, new MqttStats("SolarFluxUpload", 100));
+		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		setPublishQos(MqttQos.AtMostOnce);
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
-		try {
-			getMqttConfig().setServerUri(new URI(DEFAULT_MQTT_HOST));
-		} catch ( URISyntaxException e ) {
-			throw new RuntimeException(e);
-		}
+		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 	}
 
 	@Override
@@ -118,8 +116,18 @@ public class FluxUploadService extends BaseMqttConnectionService
 				return;
 			}
 		}
+		getMqttConfig().setUid("SolarFluxUpload-" + getMqttConfig().getServerUriValue());
 		getMqttConfig().setClientId(getMqttClientId());
 		super.init();
+	}
+
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		getMqttConfig().setUid("SolarFluxUpload-" + getMqttConfig().getServerUriValue());
+		MqttConnection conn = connection();
+		if ( conn instanceof ReconfigurableMqttConnection ) {
+			((ReconfigurableMqttConnection) conn).reconfigure();
+		}
 	}
 
 	private String getMqttClientId() {
@@ -129,36 +137,64 @@ public class FluxUploadService extends BaseMqttConnectionService
 
 	@Override
 	public void handleEvent(Event event) {
-		String topic = event.getTopic();
-		if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
-			if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
-				return;
+		final String topic = event.getTopic();
+		if ( !(OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic)
+				|| DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic)) ) {
+			return;
+		}
+		Runnable task = new Runnable() {
+
+			@Override
+			public void run() {
+				if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
+					if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
+						return;
+					}
+					log.trace("Operational modes changed; required = [{}]; active = {}",
+							requiredOperationalMode, event.getProperty(
+									OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES));
+					if ( hasActiveOperationalMode(event, requiredOperationalMode) ) {
+						// operational mode is active, bring up MQTT connection
+						Future<?> f = startup();
+						try {
+							f.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
+						} catch ( Exception e ) {
+							Throwable root = e;
+							while ( root.getCause() != null ) {
+								root = root.getCause();
+							}
+							String msg = (root instanceof TimeoutException ? "timeout"
+									: root.getMessage());
+							log.error("Error starting up connection to SolarFlux at {}: {}",
+									getMqttConfig().getServerUri(), msg);
+						}
+					} else {
+						// operational mode is no longer active, shut down MQTT connection
+						shutdown();
+					}
+				} else {
+					// EVENT_TOPIC_DATUM_CAPTURED
+					if ( requiredOperationalMode != null && !requiredOperationalMode.isEmpty()
+							&& (opModesService == null || !opModesService
+									.isOperationalModeActive(requiredOperationalMode)) ) {
+						log.trace("Not posting to SolarFlux because operational mode [{}] not active",
+								requiredOperationalMode);
+						return;
+					}
+					Map<String, Object> data = mapForEvent(event);
+					if ( data == null ) {
+						return;
+					}
+					publishDatum(data);
+				}
 			}
-			log.trace("Operational modes changed; required = [{}]; active = {}", requiredOperationalMode,
-					event.getProperty(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES));
-			if ( hasActiveOperationalMode(event, requiredOperationalMode) ) {
-				// operational mode is active, bring up MQTT connection
-				init();
-			} else {
-				// operational mode is no longer active, shut down MQTT connection
-				shutdown();
-			}
-			return;
-		} else if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
-			return;
+		};
+		Executor e = this.executor;
+		if ( e != null ) {
+			e.execute(task);
+		} else {
+			task.run();
 		}
-		if ( requiredOperationalMode != null && !requiredOperationalMode.isEmpty()
-				&& (opModesService == null
-						|| !opModesService.isOperationalModeActive(requiredOperationalMode)) ) {
-			log.trace("Not posting to SolarFlux because operational mode [{}] not active",
-					requiredOperationalMode);
-			return;
-		}
-		Map<String, Object> data = mapForEvent(event);
-		if ( data == null ) {
-			return;
-		}
-		publishDatum(data);
 	}
 
 	private void publishDatum(Map<String, Object> data) {
@@ -178,7 +214,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 			return;
 		}
 		MqttConnection conn = connection();
-		if ( conn != null ) {
+		if ( conn != null && conn.isEstablished() ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
 				JsonNode jsonData = objectMapper.valueToTree(data);
@@ -187,11 +223,17 @@ public class FluxUploadService extends BaseMqttConnectionService
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
 					log.trace("Publishing to MQTT topic {}\n{}", topic, Hex.encodeHexString(payload));
 				}
-				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload));
+				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload))
+						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 				log.debug("Published to MQTT topic {}: {}", topic, data);
-			} catch ( IOException e ) {
+			} catch ( Exception e ) {
+				Throwable root = e;
+				while ( root.getCause() != null ) {
+					root = root.getCause();
+				}
+				String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
 				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
-						getMqttConfig().getServerUri(), e.getMessage());
+						getMqttConfig().getServerUri(), msg);
 			}
 		}
 	}
