@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -84,6 +86,9 @@ public class MqttUploadService extends BaseMqttConnectionService
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
 	private final OptionalService<EventAdmin> eventAdminOpt;
+	private Executor executor;
+
+	private CompletableFuture<?> startupFuture;
 
 	/**
 	 * Constructor.
@@ -108,20 +113,83 @@ public class MqttUploadService extends BaseMqttConnectionService
 			IdentityService identityService, OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService,
 			OptionalService<EventAdmin> eventAdmin) {
-		super(connectionFactory, new MqttStats("MqttUpload", 100));
+		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.reactorServiceOpt = reactorService;
 		this.instructionExecutionServiceOpt = instructionExecutionService;
 		this.eventAdminOpt = eventAdmin;
 		setPublishQos(MqttQos.AtLeastOnce);
+		getMqttConfig().setUid("SolarIn/MQTT");
 	}
 
 	@Override
 	public synchronized Future<?> startup() {
-		getMqttConfig().setClientId(getMqttClientId());
-		getMqttConfig().setServerUri(getMqttUri());
-		return super.startup();
+		if ( startupFuture != null ) {
+			return startupFuture;
+		}
+		// bump to another thread, because getMqttUri() can block
+		Executor e = this.executor;
+		CompletableFuture<Void> result = new CompletableFuture<Void>();
+		Runnable startup = new Runnable() {
+
+			@Override
+			public void run() {
+				final String clientId = getMqttClientId();
+				final URI uri = getMqttUri();
+				if ( clientId == null || uri == null ) {
+					// defer!
+					log.info(
+							"Node ID or SolarIn/MQTT URI not available yet, waiting to try to connect to SolarIn/MQTT.");
+					try {
+						Thread.sleep(60_000L);
+					} catch ( InterruptedException e ) {
+						// ignore
+					}
+					if ( e != null ) {
+						e.execute(this);
+					} else {
+						run();
+					}
+				} else {
+					getMqttConfig().setClientId(clientId);
+					getMqttConfig().setServerUri(uri);
+					Future<?> f = MqttUploadService.super.startup();
+					try {
+						f.get();
+						result.complete(null);
+					} catch ( Exception e ) {
+						result.completeExceptionally(e);
+					} finally {
+						synchronized ( MqttUploadService.this ) {
+							if ( startupFuture == result ) {
+								startupFuture = null;
+							}
+						}
+					}
+				}
+			}
+		};
+		if ( e != null ) {
+			e.execute(startup);
+		} else {
+			startup.run();
+		}
+		this.startupFuture = result;
+		return result;
+	}
+
+	@Override
+	public synchronized void shutdown() {
+		if ( startupFuture != null ) {
+			try {
+				startupFuture.cancel(true);
+			} catch ( Exception e ) {
+				// ignore
+			}
+			startupFuture = null;
+		}
+		super.shutdown();
 	}
 
 	private String getMqttClientId() {
@@ -130,8 +198,9 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	private URI getMqttUri() {
+		final String uri = identityService.getSolarInMqttUrl();
 		try {
-			return new URI(identityService.getSolarInMqttUrl());
+			return new URI(uri);
 		} catch ( NullPointerException e ) {
 			// perhaps not configured yet
 			return null;
@@ -143,7 +212,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	@Override
 	public String getKey() {
-		return "MqttUploadService:" + identityService.getSolarInMqttUrl();
+		return "MqttUploadService:" + getMqttConfig().getServerUri();
 	}
 
 	@Override
@@ -236,7 +305,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 						objectMapper.writeValueAsBytes(instr)))
 						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 				return true;
-			} catch ( IOException | InterruptedException | ExecutionException | TimeoutException e ) {
+			} catch ( Exception e ) {
 				Throwable root = e;
 				while ( root.getCause() != null ) {
 					root = root.getCause();
@@ -306,7 +375,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 					List<Instruction> resultInstructions = new ArrayList<>(8);
 					// manually parse instruction, so we can immediately execute
 					List<Instruction> instructions = reactor.parseInstructions(
-							identityService.getSolarInMqttUrl(), instrArray, JSON_MIME_TYPE, null);
+							getMqttConfig().getServerUriValue(), instrArray, JSON_MIME_TYPE, null);
 					MqttConnection conn = connection();
 					Long nodeId = identityService.getNodeId();
 					for ( Instruction instr : instructions ) {
@@ -378,4 +447,14 @@ public class MqttUploadService extends BaseMqttConnectionService
 		}
 	}
 
+	/**
+	 * Set an executor to use for internal tasks.
+	 * 
+	 * @param executor
+	 *        the executor
+	 * @since 1.2
+	 */
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
+	}
 }
