@@ -116,9 +116,16 @@ public class FluxUploadService extends BaseMqttConnectionService
 				return;
 			}
 		}
-		getMqttConfig().setUid("SolarFluxUpload-" + getMqttConfig().getServerUriValue());
-		getMqttConfig().setClientId(getMqttClientId());
 		super.init();
+	}
+
+	@Override
+	public synchronized Future<?> startup() {
+		if ( getMqttConfig().getClientId() == null ) {
+			getMqttConfig().setUid("SolarFluxUpload-" + getMqttConfig().getServerUriValue());
+			getMqttConfig().setClientId(getMqttClientId());
+		}
+		return super.startup();
 	}
 
 	@Override
