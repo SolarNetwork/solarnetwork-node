@@ -40,7 +40,8 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
- * @version 1.4
+ * @author matt
+ * @version 1.5
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -377,7 +378,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	@Override
 	public String getSerialNumber() {
 		Number n = getNumber(KTLCTRegister.InfoSerialNumber);
-		return (n != null ? n.toString() : null);
+		return (n != null ? Long.toString(n.longValue(), 16) : null);
 	}
 
 	@Override

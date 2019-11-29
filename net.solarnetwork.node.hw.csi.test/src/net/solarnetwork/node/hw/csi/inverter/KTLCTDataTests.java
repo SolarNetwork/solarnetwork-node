@@ -125,7 +125,7 @@ public class KTLCTDataTests {
 
 	@Test
 	public void serialNumber() {
-		assertThat("Serial number", data.getSerialNumber(), equalTo("282791139098658"));
+		assertThat("Serial number", data.getSerialNumber(), equalTo("1013271644022"));
 	}
 
 	@Test
