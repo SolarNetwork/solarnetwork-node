@@ -107,7 +107,7 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 	@Override
 	public final CanbusConnection createConnection(String busName) {
 		final Integer id = connectionCounter.incrementAndGet();
-		final CanbusConnection conn = createConnection(busName);
+		final CanbusConnection conn = createConnectionInternal(busName);
 		TrackedCanbusConnection tconn = new TrackedCanbusConnection(id, conn);
 		connections.put(id, tconn);
 		return tconn;

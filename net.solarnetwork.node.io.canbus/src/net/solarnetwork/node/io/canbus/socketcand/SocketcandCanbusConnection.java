@@ -24,6 +24,8 @@ package net.solarnetwork.node.io.canbus.socketcand;
 
 import static java.util.stream.Collectors.toList;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -139,14 +141,27 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	private Message readNextMessage(CanbusSocket s) throws IOException {
 		if ( s != null ) {
-			return s.nextMessage(messageTimeout, messageTimeoutUnit);
+			Message m = s.nextMessage(messageTimeout, messageTimeoutUnit);
+			if ( log.isTraceEnabled() ) {
+				StringWriter out = new StringWriter();
+				m.write(out);
+				log.trace("{} <- {}", busName, out);
+			}
+			return m;
 		}
 		throw new IOException("Connection not open.");
 	}
 
 	private void writeMessage(CanbusSocket s, Message message) throws IOException {
 		if ( s != null ) {
-			s.writeMessage(message);
+			if ( message != null ) {
+				if ( log.isTraceEnabled() ) {
+					StringWriter out = new StringWriter();
+					message.write(out);
+					log.trace("{} -> {}", busName, out);
+				}
+				s.writeMessage(message);
+			}
 		} else {
 			throw new IOException("Connection not open.");
 		}
@@ -176,6 +191,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 					busName, m);
 			throw new IOException("Error opening bus [" + busName + "]: " + m);
 		}
+
+		log.info("Connected to CAN bus {}", this);
 
 		// create reader thread
 		readerThread = new Thread(this);
@@ -227,6 +244,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 						}
 					}
 				}
+			} catch ( SocketTimeoutException e ) {
+				log.trace("Timeout waiting for CAN bus message from {}", this);
 			} catch ( IOException e ) {
 				log.debug("Communication error in CanbusSocket message reader thread: {}", e.toString());
 				// ignore?

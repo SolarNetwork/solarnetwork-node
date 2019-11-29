@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import net.solarnetwork.node.io.canbus.Addressed;
+import net.solarnetwork.node.io.canbus.Temporal;
+
 /**
  * Specialized message for socketcand {@literal subscribe} commands.
  * 

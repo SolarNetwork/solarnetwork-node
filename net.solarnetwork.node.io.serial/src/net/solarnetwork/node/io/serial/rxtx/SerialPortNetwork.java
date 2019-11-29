@@ -171,7 +171,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 	 *         if the lock cannot be obtained
 	 */
 	private void acquireLock() throws LockTimeoutException {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Port {} lock already acquired", serialParams.getSerialPort());
 			return;
 		}
@@ -195,7 +195,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 	 * method is safe to call even if the lock has already been released.
 	 */
 	private void releaseLock() {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Releasing lock on serial port {}", serialParams.getSerialPort());
 			lock.unlock();
 		}

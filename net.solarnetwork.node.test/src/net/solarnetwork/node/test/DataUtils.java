@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * other tools for use in unit tests.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public final class DataUtils {
 
@@ -168,6 +168,28 @@ public final class DataUtils {
 			}
 		});
 		return result;
+	}
+
+	/**
+	 * Extract an array of integer values based on a range of keys in a map.
+	 * 
+	 * @param data
+	 *        the data map
+	 * @param start
+	 *        the starting address (map key)
+	 * @param len
+	 *        the length of the output slice
+	 * @return the slice of data
+	 * @since 1.1
+	 */
+	public static int[] mapSlice(Map<Integer, Integer> data, int start, int len) {
+		int[] slice = new int[len];
+		for ( int i = start, end = start + len; i < end; i++ ) {
+			Integer k = i;
+			Integer v = data.get(k);
+			slice[i - start] = (v != null ? v.intValue() : 0);
+		}
+		return slice;
 	}
 
 }

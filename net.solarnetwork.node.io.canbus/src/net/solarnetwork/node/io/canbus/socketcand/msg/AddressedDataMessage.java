@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.List;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
+import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 import net.solarnetwork.node.io.canbus.socketcand.DataContainer;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
@@ -93,8 +94,18 @@ public class AddressedDataMessage extends AddressedMessage implements DataContai
 	}
 
 	@Override
-	public boolean isExtendedFrame() {
-		return isExtendedAddress();
+	public boolean isFlagged(CanbusFrameFlag flag) {
+		switch (flag) {
+			case ErrorMessage:
+				return getType() == MessageType.Error;
+
+			case ExtendedFormat:
+				return isExtendedAddress();
+
+			default:
+				// not supported
+		}
+		return false;
 	}
 
 	@Override

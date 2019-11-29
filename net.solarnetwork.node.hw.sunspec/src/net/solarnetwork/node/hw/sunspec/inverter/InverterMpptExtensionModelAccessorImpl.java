@@ -36,7 +36,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * Data access object for an inverter MPPT extensions model.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
@@ -133,7 +133,7 @@ public class InverterMpptExtensionModelAccessorImpl extends BaseModelAccessor
 
 		@Override
 		public String getInputName() {
-			return getData().getAsciiString(InverterMpptExtensionModelRegister.ModuleName,
+			return getData().getLatin1String(InverterMpptExtensionModelRegister.ModuleName,
 					getBlockAddress() + getFixedBlockLength() + index * REPEATING_BLOCK_LENGTH, true);
 		}
 

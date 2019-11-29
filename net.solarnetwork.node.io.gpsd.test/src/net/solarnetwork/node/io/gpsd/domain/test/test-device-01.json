@@ -1,0 +1,3 @@
+{"class":"DEVICE","bps":4800,"parity":"N","stopbits":1,"native":0,
+	"path":"/dev/pts/1","activated":"2005-06-08T10:34:48.283Z",
+	"flags":5,"cycle":1.5,"mincycle":0.5}

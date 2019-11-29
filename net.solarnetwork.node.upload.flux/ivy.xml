@@ -13,13 +13,10 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.8.7" />
 		<dependency org="com.fasterxml.jackson.dataformat" name="jackson-dataformat-cbor" rev="2.8.7" />
-		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.48,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.62,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.mqtt" rev="[1.0.1,2.0)"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.56,2.0)"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.mqtt" rev="[2.0,3.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.71,2.0)"/>
 		<dependency org="joda-time" name="joda-time" rev="2.4"/>
-		<dependency org="org.eclipse.paho" name="org.eclipse.paho.client.mqttv3" rev="1.2.0">
-			<artifact name="org.eclipse.paho.client.mqttv3" type="jar"/>
-		</dependency>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 	</dependencies>
 </ivy-module>

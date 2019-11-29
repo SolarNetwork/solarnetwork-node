@@ -107,7 +107,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 */
 	protected void acquireLock() throws LockTimeoutException {
 		final String desc = getNetworkDescription();
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			log.debug("Port {} lock already acquired", desc);
 			return;
 		}
@@ -134,7 +134,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 * </p>
 	 */
 	protected void releaseLock() {
-		if ( lock.isLocked() ) {
+		if ( lock.isHeldByCurrentThread() ) {
 			final String desc = getNetworkDescription();
 			log.debug("Releasing lock on {}", desc);
 			lock.unlock();

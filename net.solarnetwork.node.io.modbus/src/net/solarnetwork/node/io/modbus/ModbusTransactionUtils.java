@@ -55,7 +55,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.4
  */
 public class ModbusTransactionUtils {
@@ -65,6 +65,12 @@ public class ModbusTransactionUtils {
 
 	/** The ASCII character set name. */
 	public static final String ASCII_CHARSET = "US-ASCII";
+
+	/**
+	 * The ISO-8859-1 (ISO-LATIN-1) character set name.
+	 * @since 1.3 
+	 */
+	public static final String LATIN1_CHARSET = "ISO-8859-1";
 
 	private static final Logger LOG = LoggerFactory.getLogger(ModbusTransactionUtils.class);
 

@@ -24,9 +24,9 @@ package net.solarnetwork.node.io.canbus.support;
 
 import static java.lang.String.format;
 import static net.solarnetwork.node.io.canbus.CanbusConnection.DATA_FILTER_NONE;
-import static net.solarnetwork.node.io.canbus.CanbusFrame.MAX_STANDARD_ADDRESS;
 import java.time.Duration;
 import java.util.Objects;
+import net.solarnetwork.node.io.canbus.Addressed;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 
 /**
@@ -194,7 +194,8 @@ public class CanbusSubscription implements Comparable<CanbusSubscription> {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("CanbusSubscription{");
-		builder.append(format(address > MAX_STANDARD_ADDRESS || forceExtendedAddress ? "0x%08X" : "0x%X",
+		builder.append(format(
+				address > Addressed.MAX_STANDARD_ADDRESS || forceExtendedAddress ? "0x%08X" : "0x%X",
 				address));
 		if ( hasLimit() ) {
 			builder.append(",limit=");

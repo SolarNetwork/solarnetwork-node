@@ -11,13 +11,13 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
-	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
-	
-	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
 	
 	<reference id="opModesService" interface="net.solarnetwork.node.OperationalModesService"/>
 
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
+
+	<reference id="mqttConnectionFactory" interface="net.solarnetwork.common.mqtt.MqttConnectionFactory"/>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -56,7 +56,8 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.upload.flux" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.upload.flux" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
@@ -70,14 +71,14 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.upload.flux.FluxUploadService" init-method="init" destroy-method="close">
+		<bean class="net.solarnetwork.node.upload.flux.FluxUploadService" init-method="init" destroy-method="shutdown">
+			<argument ref="mqttConnectionFactory"/>
 			<argument ref="objectMapper"/>
-			<argument ref="taskScheduler"/>
-			<argument ref="sslService"/>
 			<argument ref="identityService"/>
 			<property name="messageSource" ref="messageSource"/>
-			<property name="taskExecutor" ref="taskExecutor"/>
+			<property name="executor" ref="executor"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="mqttConfig.optionalSslService" ref="sslService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

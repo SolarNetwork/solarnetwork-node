@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import org.hamcrest.Matchers;
 import org.junit.Test;
-import net.solarnetwork.node.io.canbus.socketcand.Temporal;
+import net.solarnetwork.node.io.canbus.Temporal;
 
 /**
  * Test cases for the {@link Temporal} class.

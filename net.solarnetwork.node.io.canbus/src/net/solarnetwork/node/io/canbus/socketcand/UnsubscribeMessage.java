@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.canbus.socketcand;
 
+import net.solarnetwork.node.io.canbus.Addressed;
+
 /**
  * Specialized message for socketcand {@literal unsubscribe} commands.
  * 

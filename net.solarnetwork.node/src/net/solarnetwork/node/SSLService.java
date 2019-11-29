@@ -28,15 +28,18 @@ import javax.net.ssl.SSLSocketFactory;
  * API for dealing with SSL connections.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
+ * @deprecated since 1.71; use {@link net.solarnetwork.support.SSLService}
+ *             instead
  */
-public interface SSLService {
+@Deprecated
+public interface SSLService extends net.solarnetwork.support.SSLService {
 
 	/**
 	 * Get a SSLSocketFactory configured appropriately for the SolarIn
 	 * application.
 	 * 
-	 * @return
+	 * @return the SSL socket factory
 	 */
 	SSLSocketFactory getSolarInSocketFactory();
 

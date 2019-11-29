@@ -24,8 +24,8 @@ package net.solarnetwork.node.io.canbus.socketcand.msg;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.io.canbus.Addressed;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
-import net.solarnetwork.node.io.canbus.socketcand.Addressed;
 import net.solarnetwork.node.io.canbus.socketcand.MessageType;
 import net.solarnetwork.node.io.canbus.socketcand.MuxFilterMessage;
 import net.solarnetwork.node.io.canbus.socketcand.SocketcandUtils;
