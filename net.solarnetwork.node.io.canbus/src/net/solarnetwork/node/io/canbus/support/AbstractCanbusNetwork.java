@@ -71,8 +71,20 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(Map<String, Object> properties) {
 		// close all existing connections so they can be re-opened with new settings
+		closeAllConnections();
+	}
+
+	/**
+	 * Call when service no longer needed to close connections and free
+	 * resources.
+	 */
+	public synchronized void shutdown() {
+		closeAllConnections();
+	}
+
+	private void closeAllConnections() {
 		for ( CanbusConnection conn : connections.values() ) {
 			if ( !conn.isClosed() ) {
 				try {
