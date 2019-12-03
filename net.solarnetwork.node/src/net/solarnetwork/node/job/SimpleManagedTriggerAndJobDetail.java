@@ -42,6 +42,7 @@ import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.node.util.TemplatedMessageSource;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.support.ServiceLifecycleObserver;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a
@@ -78,6 +79,12 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * <p>
+ * This class also implements {@link ServiceLifecycleObserver} and will delegate
+ * those methods to all objects in the job detail that also implement
+ * {@link ServiceLifecycleObserver}.
+ * </p>
+ * 
+ * <p>
  * The configurable properties of this class are:
  * </p>
  * 
@@ -104,10 +111,10 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
-public class SimpleManagedTriggerAndJobDetail
-		implements ManagedTriggerAndJobDetail, ServiceProvider, SettingsChangeObserver {
+public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider,
+		SettingsChangeObserver, ServiceLifecycleObserver {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SimpleManagedTriggerAndJobDetail.class);
 
@@ -245,6 +252,38 @@ public class SimpleManagedTriggerAndJobDetail
 		SettingSpecifierProvider ssp = getSettingSpecifierProvider();
 		if ( ssp instanceof SettingsChangeObserver ) {
 			((SettingsChangeObserver) ssp).configurationChanged(properties);
+		}
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		for ( Map.Entry<String, Object> me : jobDetail.getJobDataMap().entrySet() ) {
+			Object o = me.getValue();
+			if ( o instanceof ServiceLifecycleObserver ) {
+				ServiceLifecycleObserver observer = (ServiceLifecycleObserver) o;
+				try {
+					observer.serviceDidStartup();
+				} catch ( Exception e ) {
+					LOG.error("Error delegating service lifecycle startup to {}: {}", observer,
+							e.toString(), e);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		for ( Map.Entry<String, Object> me : jobDetail.getJobDataMap().entrySet() ) {
+			Object o = me.getValue();
+			if ( o instanceof ServiceLifecycleObserver ) {
+				ServiceLifecycleObserver observer = (ServiceLifecycleObserver) o;
+				try {
+					observer.serviceDidShutdown();
+				} catch ( Exception e ) {
+					LOG.error("Error delegating service lifecycle startup to {}: {}", observer,
+							e.toString(), e);
+				}
+			}
 		}
 	}
 
