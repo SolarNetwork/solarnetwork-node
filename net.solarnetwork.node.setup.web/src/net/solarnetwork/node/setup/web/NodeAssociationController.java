@@ -69,6 +69,7 @@ import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
+import net.solarnetwork.support.RemoteServiceException;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -77,7 +78,7 @@ import net.solarnetwork.web.domain.Response;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -297,9 +298,18 @@ public class NodeAssociationController extends BaseSetupController {
 			BackupService service = backupManager.activeBackupService();
 			model.put(KEY_BACKUP_SERVICE, service);
 			if ( service != null ) {
-				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
-				model.put(KEY_BACKUPS, backups);
+				try {
+					List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
+					Collections.sort(backups, SortByNodeAndDate.DEFAULT);
+					model.put(KEY_BACKUPS, backups);
+				} catch ( RemoteServiceException e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					log.error("Error listing backups with BackupService {}: {}", service,
+							root.getMessage());
+				}
 			}
 		}
 		return PAGE_IMPORT_FROM_BACKUP;
