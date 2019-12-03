@@ -97,8 +97,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	}
 
 	@Override
-	public synchronized void shutdown() {
-		super.shutdown();
+	public synchronized void serviceDidShutdown() {
+		super.serviceDidShutdown();
 		closeDebugLog();
 	}
 

@@ -40,6 +40,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.support.ServiceLifecycleObserver;
 
 /**
  * Base implementation of {@link CanbusNetwork} for other implementations to
@@ -58,7 +59,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * @version 1.0
  */
 public abstract class AbstractCanbusNetwork extends BaseIdentifiable
-		implements CanbusNetwork, SettingsChangeObserver {
+		implements CanbusNetwork, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/** The default value for the {@code timeout} property. */
 	public static final long DEFAULT_TIMEOUT = 10L;
@@ -76,11 +77,13 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 		closeAllConnections();
 	}
 
-	/**
-	 * Call when service no longer needed to close connections and free
-	 * resources.
-	 */
-	public synchronized void shutdown() {
+	@Override
+	public void serviceDidStartup() {
+		// extending classes can override
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
 		closeAllConnections();
 	}
 
@@ -117,9 +120,12 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 	}
 
 	@Override
-	public final CanbusConnection createConnection(String busName) {
+	public final synchronized CanbusConnection createConnection(String busName) {
 		final Integer id = connectionCounter.incrementAndGet();
 		final CanbusConnection conn = createConnectionInternal(busName);
+		if ( conn == null ) {
+			return null;
+		}
 		TrackedCanbusConnection tconn = new TrackedCanbusConnection(id, conn);
 		connections.put(id, tconn);
 		return tconn;

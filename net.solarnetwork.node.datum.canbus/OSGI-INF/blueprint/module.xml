@@ -119,7 +119,8 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.canbus"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 					<property name="name" value="canbusDatumLoggerTrigger"/>
@@ -154,8 +155,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource"
-										init-method="startup" destroy-method="shutdown">
+								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource">
 									<property name="taskScheduler" ref="taskScheduler"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="eventAdmin" ref="eventAdmin"/>
