@@ -290,7 +290,7 @@ public class CanbusDatumDataSourceTests {
 		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2,
 				new byte[] { (byte) 0x11, (byte) 0x00, (byte) 0xFD });
 		dataSource.canbusFrameReceived(f);
-		dataSource.shutdown();
+		dataSource.serviceDidShutdown();
 
 		// THEN
 		String logData = FileCopyUtils.copyToString(Files.newBufferedReader(tmpFile));

@@ -47,6 +47,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.support.ServiceLifecycleObserver;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -57,7 +58,7 @@ import net.solarnetwork.util.OptionalService;
  * @version 1.0
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
-		implements SettingsChangeObserver, CanbusFrameListener {
+		implements SettingsChangeObserver, ServiceLifecycleObserver, CanbusFrameListener {
 
 	/** The default value for the {@code connectionCheckFrequency} property. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
@@ -90,13 +91,6 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		return results;
 	}
 
-	/**
-	 * Call once after properties are configured to start up the service.
-	 */
-	public synchronized void startup() {
-		rescheduleConnectionCheck();
-	}
-
 	private synchronized void rescheduleConnectionCheck() {
 		if ( connectionCheckFuture != null ) {
 			connectionCheckFuture.cancel(true);
@@ -127,10 +121,13 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		closeSharedCanbusConnection();
 	}
 
-	/**
-	 * Call when the service is no longer needed to clean up resources.
-	 */
-	public synchronized void shutdown() {
+	@Override
+	public synchronized void serviceDidStartup() {
+		rescheduleConnectionCheck();
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
 		if ( connectionCheckFuture != null ) {
 			connectionCheckFuture.cancel(true);
 			connectionCheckFuture = null;

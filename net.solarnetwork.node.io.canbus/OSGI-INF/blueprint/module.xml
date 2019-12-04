@@ -60,7 +60,8 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.canbus.tcp"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusNetwork">
+		<bean class="net.solarnetwork.node.io.canbus.socketcand.SocketcandCanbusNetwork" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
 				<bean class="net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider"/>
 			</argument>
