@@ -47,7 +47,7 @@ import net.solarnetwork.node.settings.SettingsService;
  * to import a previously-exported settings CSV resource.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SettingsImporter extends FileBackupResourceProvider {
 
@@ -59,7 +59,7 @@ public class SettingsImporter extends FileBackupResourceProvider {
 	public SettingsImporter() {
 		super();
 		setResourceDirectories(new String[] { "conf" });
-		setFileNamePattern("^auto-settings\\..*");
+		setFileNamePattern("^auto-settings\\.csv$");
 	}
 
 	/**
