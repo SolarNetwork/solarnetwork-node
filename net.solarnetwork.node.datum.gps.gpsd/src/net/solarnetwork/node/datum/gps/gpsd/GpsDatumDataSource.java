@@ -154,8 +154,12 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		if ( tpv == null ) {
 			return null;
 		}
+		final String sourceId = getSourceId();
+		if ( sourceId == null ) {
+			return null;
+		}
 		TpvGpsDatum d = new TpvGpsDatum(tpv);
-		d.setSourceId(getSourceId());
+		d.setSourceId(sourceId);
 		return d;
 	}
 
