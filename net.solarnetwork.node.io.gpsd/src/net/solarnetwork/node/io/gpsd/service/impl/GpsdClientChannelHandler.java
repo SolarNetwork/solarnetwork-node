@@ -24,14 +24,9 @@ package net.solarnetwork.node.io.gpsd.service.impl;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -49,9 +44,7 @@ import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdCommandSender;
-import net.solarnetwork.node.io.gpsd.service.GpsdMessageBroker;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageHandler;
-import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
 
 /**
  * Channel handler for GPSd protocol.
@@ -61,13 +54,11 @@ import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
  */
 @Sharable
 public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object>
-		implements GpsdCommandSender, GpsdMessageBroker {
+		implements GpsdCommandSender {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final Queue<MessageResponseHolder> responseQueue = new ConcurrentLinkedQueue<>();
-	private final ConcurrentMap<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> messageListeners = new ConcurrentHashMap<>(
-			8, 0.9f, 1);
 
 	private final ObjectMapper mapper;
 	private final GpsdMessageHandler messageHandler;
@@ -89,27 +80,6 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 		super();
 		this.mapper = mapper;
 		this.messageHandler = messageHandler;
-	}
-
-	@SuppressWarnings({ "unchecked" })
-	@Override
-	public <M extends GpsdMessage> void addMessageListener(Class<? extends M> messageType,
-			GpsdMessageListener<M> listener) {
-		messageListeners.computeIfAbsent(messageType, k -> new CopyOnWriteArraySet<>())
-				.add((GpsdMessageListener<GpsdMessage>) listener);
-	}
-
-	@Override
-	public <M extends GpsdMessage> void removeMessageListener(Class<? extends M> messageType,
-			GpsdMessageListener<M> listener) {
-		messageListeners.compute(messageType, (k, v) -> {
-			if ( v != null && v.remove(listener) ) {
-				if ( v.isEmpty() ) {
-					return null;
-				}
-			}
-			return v;
-		});
 	}
 
 	@Override
@@ -223,18 +193,6 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 
 				if ( messageHandler != null ) {
 					messageHandler.handleGpsdMessage(message);
-				}
-				Class<? extends GpsdMessage> messageType = message.getClass();
-				for ( Entry<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> me : messageListeners
-						.entrySet() ) {
-					if ( me.getKey().isAssignableFrom(messageType) ) {
-						Set<GpsdMessageListener<GpsdMessage>> listeners = me.getValue();
-						if ( listeners != null ) {
-							for ( GpsdMessageListener<GpsdMessage> listener : listeners ) {
-								listener.onGpsdMessage(message);
-							}
-						}
-					}
 				}
 			} else {
 				log.trace("Got GPSd raw message: {}", msg);

@@ -33,7 +33,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
@@ -101,6 +106,9 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 
 	/** The default {@code gpsRolloverCompensation} property value. */
 	public static final boolean DEFAULT_GPS_ROLLOVER_COMPENSATION = true;
+
+	private final ConcurrentMap<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> messageListeners = new ConcurrentHashMap<>(
+			8, 0.9f, 1);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -458,6 +466,18 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 			}
 			postReportMessageCapturedEvent((GpsdReportMessage) message);
 		}
+		Class<? extends GpsdMessage> messageType = message.getClass();
+		for ( Entry<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> me : messageListeners
+				.entrySet() ) {
+			if ( me.getKey().isAssignableFrom(messageType) ) {
+				Set<GpsdMessageListener<GpsdMessage>> listeners = me.getValue();
+				if ( listeners != null ) {
+					for ( GpsdMessageListener<GpsdMessage> listener : listeners ) {
+						listener.onGpsdMessage(message);
+					}
+				}
+			}
+		}
 		GpsdMessageHandler delegate = getMessageHandler();
 		if ( delegate != null ) {
 			delegate.handleGpsdMessage(message);
@@ -469,16 +489,25 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 		return "GPSd Client";
 	}
 
+	@SuppressWarnings({ "unchecked" })
 	@Override
 	public <M extends GpsdMessage> void addMessageListener(Class<? extends M> messageType,
 			GpsdMessageListener<M> listener) {
-		handler.addMessageListener(messageType, listener);
+		messageListeners.computeIfAbsent(messageType, k -> new CopyOnWriteArraySet<>())
+				.add((GpsdMessageListener<GpsdMessage>) listener);
 	}
 
 	@Override
 	public <M extends GpsdMessage> void removeMessageListener(Class<? extends M> messageType,
 			GpsdMessageListener<M> listener) {
-		handler.removeMessageListener(messageType, listener);
+		messageListeners.compute(messageType, (k, v) -> {
+			if ( v != null && v.remove(listener) ) {
+				if ( v.isEmpty() ) {
+					return null;
+				}
+			}
+			return v;
+		});
 	}
 
 	@Override
