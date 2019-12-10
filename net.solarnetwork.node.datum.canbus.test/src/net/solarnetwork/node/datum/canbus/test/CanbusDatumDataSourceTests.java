@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.canbus.test;
 
+import static net.solarnetwork.util.ByteUtils.decodeHexString;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -304,4 +305,35 @@ public class CanbusDatumDataSourceTests {
 		Files.deleteIfExists(tmpFile);
 	}
 
+	@Test
+	public void frameReceived_subFrame() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous,
+				32, BitDataType.UInt32, 32, "W"));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, decodeHexString("00000000002B5F1E"));
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		Map<String, Object> expectedData = Collections.singletonMap("watts", new BigDecimal("2842398"));
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
+				equalTo(new BigDecimal("2842398")));
+	}
 }
