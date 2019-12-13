@@ -146,6 +146,12 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( conn instanceof ReconfigurableMqttConnection ) {
 			((ReconfigurableMqttConnection) conn).reconfigure();
 		}
+		FluxFilterConfig[] filters = getFilters();
+		if ( filters != null ) {
+			for ( FluxFilterConfig f : filters ) {
+				f.configurationChanged(properties);
+			}
+		}
 	}
 
 	private String getMqttClientId() {

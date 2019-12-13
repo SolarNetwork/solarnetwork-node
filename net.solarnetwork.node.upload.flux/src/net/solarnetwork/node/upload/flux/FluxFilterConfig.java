@@ -42,6 +42,7 @@ import org.springframework.beans.factory.ObjectFactory;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -51,39 +52,25 @@ import net.solarnetwork.util.ArrayUtils;
  * @version 1.0
  * @since 1.4
  */
-public class FluxFilterConfig {
+public class FluxFilterConfig implements SettingsChangeObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(FluxFilterConfig.class);
 
-	private static final class NullPatternObjectFactor implements ObjectFactory<Pattern> {
+	private static final class NullStringObjectFactory implements ObjectFactory<String> {
 
 		@Override
-		public Pattern getObject() throws BeansException {
+		public String getObject() throws BeansException {
 			return null;
 		}
 	}
 
 	private Pattern sourceIdRegex;
 	private Integer frequencySeconds;
+	private String[] propIncludeValues;
+	private String[] propExcludeValues;
+
 	private Pattern[] propIncludes;
 	private Pattern[] propExcludes;
-
-	private static String[] patternValues(Pattern[] pats) {
-		if ( pats == null ) {
-			return null;
-		}
-		String[] res = new String[pats.length];
-		for ( int i = 0, len = res.length; i < len; i++ ) {
-			String r = null;
-			Pattern p = pats[i];
-			if ( p != null ) {
-				r = p.pattern();
-			}
-			res[i] = r;
-		}
-		return res;
-
-	}
 
 	private static Pattern[] patterns(String[] expr) {
 		if ( expr == null ) {
@@ -111,6 +98,12 @@ public class FluxFilterConfig {
 		public Collection<SettingSpecifier> mapListSettingKey(String value, int index, String key) {
 			return singletonList(new BasicTextFieldSettingSpecifier(key, ""));
 		}
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		this.propIncludes = patterns(propIncludeValues);
+		this.propExcludes = patterns(propExcludeValues);
 	}
 
 	/**
@@ -148,15 +141,15 @@ public class FluxFilterConfig {
 		}
 
 		// check for special case of "exclude all" pattern, to short-circuit property checking
-		Pattern[] excludes = getPropExcludes();
+		final Pattern[] excludes = this.propExcludes;
 		if ( excludes != null && excludes.length == 1 && excludes[0] != null
 				&& excludes[0].pattern().equals(".*") ) {
 			log.trace("Filtering {} because of global property exclude filter", sourceId);
 			return false;
 		}
 
-		Pattern[] includes = getPropIncludes();
-		if ( includes != null ) {
+		final Pattern[] includes = this.propIncludes;
+		if ( includes != null && includes.length > 0 ) {
 			for ( Iterator<String> itr = datum.keySet().iterator(); itr.hasNext(); ) {
 				String propName = itr.next();
 				if ( propName == null ) {
@@ -336,38 +329,13 @@ public class FluxFilterConfig {
 	}
 
 	/**
-	 * Get a list of property name regular expressions to limit datum to.
-	 * 
-	 * @return a list of patterns, or {@literal null}
-	 */
-	public Pattern[] getPropIncludes() {
-		return propIncludes;
-	}
-
-	/**
 	 * Get a list of property name regular expression values to limit data to.
 	 * 
 	 * @return a list of expressions, or {@literal null}
 	 * @see #getPropIncludes()
 	 */
 	public String[] getPropIncludeValues() {
-		return patternValues(this.propIncludes);
-	}
-
-	/**
-	 * Set a list of property name regular expressions to limit datum to.
-	 * 
-	 * <p>
-	 * If any property include patterns are defined, then <b>only</b> properties
-	 * matching one of these patterns will be included in datum posted to
-	 * SolarFlux.
-	 * </p>
-	 * 
-	 * @param propIncludes
-	 *        a list of patterns, or {@literal null}
-	 */
-	public void setPropIncludes(Pattern[] propIncludes) {
-		this.propIncludes = propIncludes;
+		return propIncludeValues;
 	}
 
 	/**
@@ -378,7 +346,7 @@ public class FluxFilterConfig {
 	 * @see #setPropIncludes(Pattern[])
 	 */
 	public void setPropIncludeValues(String[] propIncludes) {
-		setPropIncludes(patterns(propIncludes));
+		this.propIncludeValues = propIncludes;
 	}
 
 	/**
@@ -387,7 +355,7 @@ public class FluxFilterConfig {
 	 * @return The number of {@code excludes} elements.
 	 */
 	public int getPropIncludeValuesCount() {
-		Pattern[] pats = getPropIncludes();
+		String[] pats = getPropIncludeValues();
 		return (pats == null ? 0 : pats.length);
 	}
 
@@ -399,17 +367,8 @@ public class FluxFilterConfig {
 	 *        The desired number of {@code excludes} elements.
 	 */
 	public void setPropIncludeValuesCount(int count) {
-		this.propIncludes = ArrayUtils.arrayWithLength(this.propIncludes, count, Pattern.class,
-				new NullPatternObjectFactor());
-	}
-
-	/**
-	 * Get a list of property name regular expressions to exclude from datum.
-	 * 
-	 * @return a list of patterns, or {@literal null}
-	 */
-	public Pattern[] getPropExcludes() {
-		return propExcludes;
+		this.propIncludeValues = ArrayUtils.arrayWithLength(this.propIncludeValues, count, String.class,
+				new NullStringObjectFactory());
 	}
 
 	/**
@@ -420,23 +379,7 @@ public class FluxFilterConfig {
 	 * @see #getPropExcludes()
 	 */
 	public String[] getPropExcludeValues() {
-		return patternValues(propExcludes);
-	}
-
-	/**
-	 * Set a list of property name regular expressions to exclude from datum.
-	 * 
-	 * <p>
-	 * Any properties matching one of these patterns will be excluded from datum
-	 * posted to SolarFlux. These are applied <b>after</b> evaluating any
-	 * {@link #getPropIncludes()} patterns.
-	 * </p>
-	 * 
-	 * @param propExcludes
-	 *        a lit of patterns, or {@literal null}
-	 */
-	public void setPropExcludes(Pattern[] propExcludes) {
-		this.propExcludes = propExcludes;
+		return propExcludeValues;
 	}
 
 	/**
@@ -448,7 +391,7 @@ public class FluxFilterConfig {
 	 * @see #setPropExcludes(Pattern[])
 	 */
 	public void setPropExcludeValues(String[] propExcludes) {
-		setPropExcludes(patterns(propExcludes));
+		this.propExcludeValues = propExcludes;
 	}
 
 	/**
@@ -457,7 +400,7 @@ public class FluxFilterConfig {
 	 * @return The number of {@code excludes} elements.
 	 */
 	public int getPropExcludeValuesCount() {
-		Pattern[] pats = getPropExcludes();
+		String[] pats = getPropExcludeValues();
 		return (pats == null ? 0 : pats.length);
 	}
 
@@ -469,7 +412,7 @@ public class FluxFilterConfig {
 	 *        The desired number of {@code excludes} elements.
 	 */
 	public void setPropExcludeValuesCount(int count) {
-		this.propExcludes = ArrayUtils.arrayWithLength(this.propExcludes, count, Pattern.class,
-				new NullPatternObjectFactor());
+		this.propExcludeValues = ArrayUtils.arrayWithLength(this.propExcludeValues, count, String.class,
+				new NullStringObjectFactory());
 	}
 }

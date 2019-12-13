@@ -163,6 +163,7 @@ public class FluxUploadServiceTests {
 		// GIVEN
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setPropExcludeValues(new String[] { ".*" });
+		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
 		expectMqttConnectionSetup();
@@ -186,6 +187,7 @@ public class FluxUploadServiceTests {
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setSourceIdRegexValue("^test");
 		filter.setPropExcludeValues(new String[] { ".*" });
+		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
 		expectMqttConnectionSetup();
@@ -215,6 +217,7 @@ public class FluxUploadServiceTests {
 		// GIVEN
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setPropIncludeValues(new String[] { "^watt" });
+		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
 		expectMqttConnectionSetup();
@@ -244,10 +247,78 @@ public class FluxUploadServiceTests {
 	}
 
 	@Test
+	public void postDatum_excludeProps() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setPropExcludeValues(new String[] { "^watt" });
+		filter.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.remove("watts");
+		filteredDatum.remove("wattHours");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
+	public void postDatum_includeAndExcludeProps() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setPropIncludeValues(new String[] { "^(created|sourceId)$", "^watt" });
+		filter.setPropExcludeValues(new String[] { "^wattHours" });
+		filter.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.remove("foo");
+		filteredDatum.remove("wattHours");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
 	public void postDatum_throttle_anySource() throws Exception {
 		// GIVEN
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setFrequencySeconds(1);
+		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
 		expectMqttConnectionSetup();
@@ -285,6 +356,7 @@ public class FluxUploadServiceTests {
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setSourceIdRegexValue("^test");
 		filter.setFrequencySeconds(1);
+		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
 		expectMqttConnectionSetup();
