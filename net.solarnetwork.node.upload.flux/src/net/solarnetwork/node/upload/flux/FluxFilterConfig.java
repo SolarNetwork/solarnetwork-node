@@ -137,9 +137,14 @@ public class FluxFilterConfig {
 			}
 		}
 
-		if ( frequencySeconds != null && frequencySeconds > 0 && previousSourceIdPublishDate != null
-				&& previousSourceIdPublishDate + (frequencySeconds * 1000) > currentTimeMillis() ) {
-			return false;
+		if ( frequencySeconds != null && frequencySeconds > 0 && previousSourceIdPublishDate != null ) {
+			long remainingMs = previousSourceIdPublishDate + (frequencySeconds * 1000)
+					- currentTimeMillis();
+			if ( remainingMs > 0 ) {
+				log.trace("Filtering {} because throttled @ {}s ({}ms to go)", sourceId,
+						frequencySeconds, remainingMs);
+				return false;
+			}
 		}
 
 		// check for special case of "exclude all" pattern, to short-circuit property checking

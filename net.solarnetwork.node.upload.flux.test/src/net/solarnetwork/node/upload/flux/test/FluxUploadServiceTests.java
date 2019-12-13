@@ -123,6 +123,19 @@ public class FluxUploadServiceTests {
 		assertThat("Published data as map", publishedMsgBody, equalTo(datum));
 	}
 
+	private Map<String, Object> publishLoop(long length, Map<String, Object> datum) throws Exception {
+		final long end = System.currentTimeMillis() + length;
+		Map<String, Object> result = null;
+		while ( System.currentTimeMillis() < end ) {
+			postEvent(datum);
+			if ( result == null ) {
+				result = new LinkedHashMap<>(datum);
+			}
+			Thread.sleep(200);
+		}
+		return result;
+	}
+
 	@Test
 	public void postDatum() throws Exception {
 		// GIVEN
@@ -198,6 +211,39 @@ public class FluxUploadServiceTests {
 	}
 
 	@Test
+	public void postDatum_includeProps() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setPropIncludeValues(new String[] { "^watt" });
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.remove("created");
+		filteredDatum.remove("foo");
+		filteredDatum.remove("sourceId");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
 	public void postDatum_throttle_anySource() throws Exception {
 		// GIVEN
 		FluxFilterConfig filter = new FluxFilterConfig();
@@ -215,44 +261,22 @@ public class FluxUploadServiceTests {
 
 		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
 		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put(Datum.SOURCE_ID, "s1");
 		datum.put("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
-		long end = System.currentTimeMillis() + 1000;
-		boolean first = true;
-		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
-			if ( first ) {
-				publishedDatum.add(new LinkedHashMap<>(datum));
-				first = false;
-			}
-			Thread.sleep(200);
-		}
+		publishedDatum.add(publishLoop(1000, datum));
 
 		Thread.sleep(200);
 
-		end = System.currentTimeMillis() + 1000;
-		first = true;
-		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
-			if ( first ) {
-				publishedDatum.add(new LinkedHashMap<>(datum));
-				first = false;
-			}
-			Thread.sleep(200);
-		}
+		publishedDatum.add(publishLoop(1000, datum));
 
 		// THEN
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
 		assertThat("Only 2 MQTT messages published because of throttle filter", publishedMsgs,
 				hasSize(2));
-
-		MqttMessage publishedMsg = publishedMsgs.get(0);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, publishedDatum.get(0));
-
-		publishedMsg = publishedMsgs.get(1);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, publishedDatum.get(1));
+		assertMessage(publishedMsgs.get(0), "s1", publishedDatum.get(0));
+		assertMessage(publishedMsgs.get(1), "s1", publishedDatum.get(1));
 	}
 
 	@Test
@@ -278,38 +302,15 @@ public class FluxUploadServiceTests {
 		datum.put("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
-		long end = System.currentTimeMillis() + 1000;
-		boolean first = true;
-		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
-			if ( first ) {
-				publishedDatum.add(new LinkedHashMap<>(datum));
-				first = false;
-			}
-			Thread.sleep(200);
-		}
+		publishedDatum.add(publishLoop(1000, datum));
 
 		Thread.sleep(200);
 
-		end = System.currentTimeMillis() + 1000;
-		first = true;
-		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
-			if ( first ) {
-				publishedDatum.add(new LinkedHashMap<>(datum));
-				first = false;
-			}
-			Thread.sleep(200);
-		}
+		publishedDatum.add(publishLoop(1000, datum));
 
 		// switch source ID to non-matching
 		datum.put(Datum.SOURCE_ID, "not.throttled.source");
-		end = System.currentTimeMillis() + 1000;
-		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
-			publishedDatum.add(new LinkedHashMap<>(datum));
-			Thread.sleep(200);
-		}
+		publishLoop(1000, datum);
 
 		// THEN
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
@@ -322,7 +323,7 @@ public class FluxUploadServiceTests {
 		publishedMsg = publishedMsgs.get(1);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, publishedDatum.get(1));
 
-		// remaining messages should all be other source
+		// remaining message should be other source
 		for ( int i = 2; i < publishedMsgs.size(); i++ ) {
 			publishedMsg = publishedMsgs.get(i);
 			assertThat("MQTT message topic", publishedMsg.getTopic(),
