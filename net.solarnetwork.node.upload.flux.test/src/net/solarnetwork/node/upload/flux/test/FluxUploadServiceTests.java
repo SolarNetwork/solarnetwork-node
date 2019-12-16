@@ -87,6 +87,7 @@ public class FluxUploadServiceTests {
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
 
 		this.service = new FluxUploadService(connectionFactory, objectMapper, identityService);
+		this.service.setIncludeVersionTag(false);
 	}
 
 	private void replayAll() {
@@ -155,6 +156,30 @@ public class FluxUploadServiceTests {
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+	}
+
+	@Test
+	public void postDatum_withVersionTag() throws Exception {
+		// GIVEN
+		service.setIncludeVersionTag(true);
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+		datum.put(FluxUploadService.TAG_VERSION, 2);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
 	}
 

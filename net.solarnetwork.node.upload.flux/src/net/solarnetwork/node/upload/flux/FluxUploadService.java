@@ -68,7 +68,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -87,6 +87,12 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public static final Pattern DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN = Pattern.compile("_.*");
 
+	/** A tag to indicate that CBOR encoding v2 is in use. */
+	public static final String TAG_VERSION = "_v";
+
+	/** The default value for the {@code includeVersionTag} property. */
+	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
+
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
 	private String requiredOperationalMode;
@@ -94,6 +100,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private OperationalModesService opModesService;
 	private Executor executor;
 	private FluxFilterConfig[] filters;
+	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 
 	/**
 	 * Constructor.
@@ -268,6 +275,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( conn != null && conn.isEstablished() ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
+				if ( includeVersionTag ) {
+					data.put(TAG_VERSION, 2);
+				}
 				JsonNode jsonData = objectMapper.valueToTree(data);
 				byte[] payload = objectMapper.writeValueAsBytes(jsonData);
 				if ( log.isTraceEnabled() ) {
@@ -531,4 +541,29 @@ public class FluxUploadService extends BaseMqttConnectionService
 	public void setFiltersCount(int count) {
 		this.filters = ArrayUtils.arrayWithLength(this.filters, count, FluxFilterConfig.class, null);
 	}
+
+	/**
+	 * Get the "include version tag" toggle.
+	 * 
+	 * @return {@literal true} to include the {@literal _v} version tag with
+	 *         each datum; defaults to {@link #DEFAULT_INCLUDE_VERSION_TAG}
+	 * @since 1.5
+	 */
+	public boolean isIncludeVersionTag() {
+		return includeVersionTag;
+	}
+
+	/**
+	 * Set the "inclue version tag" toggle.
+	 * 
+	 * @param includeVersionTag
+	 *        {@literal true} to include the {@link #TAG_VERSION} property with
+	 *        each datum; only disable if you can be sure that all receivers of
+	 *        SolarFlux messages interpret the data in the same way
+	 * @since 1.5
+	 */
+	public void setIncludeVersionTag(boolean includeVersionTag) {
+		this.includeVersionTag = includeVersionTag;
+	}
+
 }
