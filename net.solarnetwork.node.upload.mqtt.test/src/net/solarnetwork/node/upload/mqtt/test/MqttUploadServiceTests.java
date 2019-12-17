@@ -284,6 +284,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
 		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		datum.addTag(MqttUploadService.TAG_VERSION_2);
 		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
 
@@ -325,6 +327,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
 		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		datum.addTag(MqttUploadService.TAG_VERSION_2);
 		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
 
