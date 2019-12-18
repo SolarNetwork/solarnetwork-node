@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.canbus;
+package net.solarnetwork.node.datum.canbus.test;
 
 import static java.util.Collections.singleton;
 import java.io.BufferedReader;
@@ -32,6 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -43,10 +44,16 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
+import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
+import net.solarnetwork.node.datum.canbus.KcdConfigurer;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
+import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -60,7 +67,10 @@ import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.JsonUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.util.StaticOptionalServiceCollection;
+import systems.uom.ucum.internal.UCUMServiceProvider;
 
 /**
  * Simulate the effects of CAN bus messages on a {@link CanbusDatumDataSource}.
@@ -83,6 +93,9 @@ public class CanbusDatumDataSourceSimulator {
 			.compile("\\((\\d+)\\.(\\d+)\\)\\s+(\\w+)\\s+([0-9A-F]+)\\#([0-9A-F]+)");
 
 	private final Map<String, CanbusDatumDataSource> dataSources;
+	private final MeasurementHelper measurementHelper = new MeasurementHelper(
+			new StaticOptionalServiceCollection<>(
+					Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()))));
 
 	/**
 	 * Constructor.
@@ -113,9 +126,13 @@ public class CanbusDatumDataSourceSimulator {
 				props.put(c.getKey(), c.getValue());
 			}
 		}
+		OptionalService<DatumMetadataService> metadataService = new StaticOptionalService<>(
+				new InternalMetadataService());
 		for ( Map.Entry<String, Map<String, Object>> me : propMap.entrySet() ) {
 			CanbusDatumDataSource ds = new CanbusDatumDataSource();
 			ds.setUid(me.getKey());
+			ds.setMeasurementHelper(measurementHelper);
+			ds.setDatumMetadataService(metadataService);
 			ClassUtils.setBeanProperties(ds, me.getValue(), true);
 			ds.configurationChanged(me.getValue());
 			dsMap.put(me.getKey(), ds);
@@ -211,6 +228,28 @@ public class CanbusDatumDataSourceSimulator {
 
 		@Override
 		public Reader getReaderForBackup(SettingsBackup backup) {
+			return null;
+		}
+
+	}
+
+	private static final class InternalMetadataService implements DatumMetadataService {
+
+		@Override
+		public void addSourceMetadata(String sourceId, GeneralDatumMetadata meta) {
+			System.err.println("Source " + sourceId + " metadata:");
+			String json = null;
+			try {
+				json = JsonUtils.newObjectMapper().writerWithDefaultPrettyPrinter()
+						.writeValueAsString(meta);
+			} catch ( IOException e ) {
+				json = JsonUtils.getJSONString(meta, "{}");
+			}
+			System.err.println(json);
+		}
+
+		@Override
+		public GeneralDatumMetadata getSourceMetadata(String sourceId) {
 			return null;
 		}
 
