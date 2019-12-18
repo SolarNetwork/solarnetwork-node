@@ -70,6 +70,17 @@
         </xs:simpleType>
     </xs:attribute>
     
+    <xs:attribute name="normalized-unit">
+         <xs:annotation>
+             <xs:documentation>Physical unit of the value written as unit term as described in
+                 "The Unified Code for Units of Measure"
+                 (http://unitsofmeasure.org/ucum.html)</xs:documentation>
+         </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:attribute>
+    
     <xs:complexType name="LocalizedName">
         <xs:annotation>
             <xs:documentation>A name that is localizable.</xs:documentation>

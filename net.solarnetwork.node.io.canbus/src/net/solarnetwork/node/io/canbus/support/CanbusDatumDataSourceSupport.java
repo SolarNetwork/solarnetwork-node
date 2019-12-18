@@ -412,6 +412,9 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 *        the amount
 	 * @param unit
 	 *        the amount's unit
+	 * @param normalizedUnit
+	 *        the desired normalized unit, or [@literal null} to deduce this
+	 *        from {@code unit} itself
 	 * @param slope
 	 *        a slope factor
 	 * @param intercept
@@ -419,7 +422,9 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * @return the amount, or {@literal null} if {@code amount} is
 	 *         {@literal null}
 	 */
-	protected Number normalizedAmountValue(Number amount, String unit, Number slope, Number intercept) {
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected Number normalizedAmountValue(Number amount, String unit, String normalizedUnit,
+			Number slope, Number intercept) {
 		if ( amount == null || unit == null ) {
 			return amount;
 		}
@@ -431,7 +436,20 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		if ( q == null ) {
 			return amount;
 		}
-		Quantity<?> n = helper.normalizedQuantity(q);
+
+		Quantity<?> n;
+		if ( normalizedUnit != null ) {
+			Unit<?> u = helper.unitValue(normalizedUnit);
+			try {
+				n = helper.convertedQuantity((Quantity) q, (Unit) u);
+			} catch ( RuntimeException e ) {
+				log.warn("Error converting quantity [{}] to unit [{}], will not convert: "
+						+ e.toString());
+				n = helper.normalizedQuantity(q);
+			}
+		} else {
+			n = helper.normalizedQuantity(q);
+		}
 		if ( n == null ) {
 			return amount;
 		}
