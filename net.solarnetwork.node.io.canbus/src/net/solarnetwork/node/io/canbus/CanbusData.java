@@ -270,16 +270,15 @@ public class CanbusData implements DataAccessor {
 		final ByteOrdering ordering = ref.getByteOrdering();
 		final CanbusFrame message = dataFrames.get(addr);
 		final byte[] data = (message != null ? message.getData() : null);
+		if ( bitLength % 8 != 0 ) {
+			throw new UnsupportedOperationException("Only byte-aligned number values are supported.");
+		}
 		if ( data == null ) {
 			return null;
 		}
 		final int offset = bitOffset / 8;
 		final int length = bitLength / 8;
-		Number n = ByteUtils.parseNumber(type, data, offset, length, ordering);
-		if ( bitLength % 8 != 0 ) {
-			throw new UnsupportedOperationException("Only byte-aligned number values are supported.");
-		}
-		return n;
+		return ByteUtils.parseNumber(type, data, offset, length, ordering);
 	}
 
 	/**
