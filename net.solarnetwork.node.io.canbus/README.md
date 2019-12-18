@@ -11,7 +11,18 @@ daemon.
 ```
 xjc src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xsd \
   -b src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xjb.xml \
-  -d src -mark-generated
+  -d src
+```
+
+You might need to specify a `JAVA_HOME` property that points to a JDK with the `xjc` tool
+available, for example if your default JDK is Java 11 which doesn't include this tool.
+For example:
+
+```
+JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home xjc \
+  src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xsd \
+  -b src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xjb.xml \
+  -d src
 ```
 
 [socketcand]: https://github.com/linux-can/socketcand
