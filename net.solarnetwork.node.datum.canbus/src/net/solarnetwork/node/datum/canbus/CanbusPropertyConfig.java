@@ -156,6 +156,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		results.add(dataTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unit", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "normalizedUnit", ""));
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "bitOffset",
 				String.valueOf(DEFAULT_BIT_OFFSET)));
