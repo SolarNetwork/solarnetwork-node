@@ -71,6 +71,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	private BitDataType dataType = DEFAULT_DATA_TYPE;
 	private String unit;
+	private String normalizedUnit;
 	private int bitLength = DEFAULT_BIT_LENGTH;
 	private KeyValuePair[] localizedNames;
 
@@ -110,13 +111,16 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        the bit length
 	 * @param unit
 	 *        the unit
+	 * @param normalizedUnit
+	 *        the normalized unit
 	 */
 	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int bitOffset,
-			BitDataType dataType, int bitLength, String unit) {
+			BitDataType dataType, int bitLength, String unit, String normalizedUnit) {
 		this(name, datumPropertyType, bitOffset);
 		setDataType(dataType);
 		setBitLength(bitLength);
 		setUnit(unit);
+		setNormalizedUnit(normalizedUnit);
 	}
 
 	/**
@@ -152,6 +156,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		results.add(dataTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unit", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "normalizedUnit", ""));
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "bitOffset",
 				String.valueOf(DEFAULT_BIT_OFFSET)));
@@ -207,6 +212,10 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		settings.add(
 				new SettingValueBean(providerId, instanceId, prefix + "dataTypeKey", getDataTypeKey()));
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "unit", unit));
+		if ( normalizedUnit != null && !normalizedUnit.isEmpty() ) {
+			settings.add(new SettingValueBean(providerId, instanceId, prefix + "normalizedUnit",
+					normalizedUnit));
+		}
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "bitOffset",
 				String.valueOf(getBitOffset())));
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "bitLength",
@@ -317,6 +326,35 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 */
 	public void setUnit(String unit) {
 		this.unit = unit;
+	}
+
+	/**
+	 * Get the desired normalized unit of the property value.
+	 * 
+	 * <p>
+	 * This represents the desired normalized physical unit of the value, as
+	 * unit term as described in
+	 * <a href="http://unitsofmeasure.org/ucum.html">The Unified Code for Units
+	 * of Measure</a>.
+	 * </p>
+	 * 
+	 * @return the property normalized unit, or {@literal null} if a standard
+	 *         normalization should be used
+	 */
+	public String getNormalizedUnit() {
+		return normalizedUnit;
+	}
+
+	/**
+	 * Set the desired normalized unit of the property value.
+	 * 
+	 * @param normalizedUnit
+	 *        the normalized unit to use
+	 * @see <a href="http://unitsofmeasure.org/ucum.html">The Unified Code for
+	 *      Units of Measure</a>
+	 */
+	public void setNormalizedUnit(String normalizedUnit) {
+		this.normalizedUnit = normalizedUnit;
 	}
 
 	/**

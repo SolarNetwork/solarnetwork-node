@@ -170,8 +170,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 					if ( propVal != null ) {
 						if ( propVal instanceof Number ) {
 							propVal = prop.applyTransformations((Number) propVal);
-							propVal = normalizedAmountValue((Number) propVal, prop.getUnit(), null,
-									null);
+							propVal = normalizedAmountValue((Number) propVal, prop.getUnit(),
+									prop.getNormalizedUnit(), null, null);
 						} else if ( !(propType == GeneralDatumSamplesType.Status
 								|| propType == GeneralDatumSamplesType.Tag) ) {
 							log.warn("Cannot set datum {} property {} to non-number value [{}]",
@@ -334,9 +334,12 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 								meta.putInfoValue(propName, "name", localizedNames);
 							}
 							Unit<?> unit = unitValue(prop.getUnit());
-							String unitValue = formattedUnitValue(unit);
-							Unit<?> normUnit = normalizedUnitValue(unit);
-							String normUnitValue = formattedUnitValue(normUnit);
+							String unitValue = prop.getUnit();
+							String normUnitValue = prop.getNormalizedUnit();
+							if ( normUnitValue == null ) {
+								Unit<?> normUnit = normalizedUnitValue(unit);
+								normUnitValue = formattedUnitValue(normUnit);
+							}
 							if ( normUnitValue != null ) {
 								meta.putInfoValue(propName, "unit", normUnitValue);
 							}

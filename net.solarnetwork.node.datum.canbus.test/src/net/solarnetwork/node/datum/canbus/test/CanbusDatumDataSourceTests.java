@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.datum.canbus.test;
 
+import static java.util.Collections.singletonMap;
+import static net.solarnetwork.util.ByteUtils.decodeHexString;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -168,8 +170,10 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Event creation date at least", (Long) evtProps.get("created"),
 				greaterThanOrEqualTo(minDate));
 		for ( Map.Entry<String, Object> me : expectedData.entrySet() ) {
-			assertThat("Event property " + me.getKey() + " value", evtProps.get(me.getKey()),
-					equalTo(me.getValue()));
+			if ( me.getValue() != null ) {
+				assertThat("Event property " + me.getKey() + " value", evtProps.get(me.getKey()),
+						equalTo(me.getValue()));
+			}
 		}
 	}
 
@@ -178,7 +182,7 @@ public class CanbusDatumDataSourceTests {
 		// GIVEN
 		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
 		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous, 0,
-				BitDataType.UInt8, 8, "W"));
+				BitDataType.UInt8, 8, "W", null));
 
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
@@ -210,7 +214,7 @@ public class CanbusDatumDataSourceTests {
 		// GIVEN
 		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
 		CanbusPropertyConfig prop = new CanbusPropertyConfig("watts",
-				GeneralDatumSamplesType.Instantaneous, 0, BitDataType.UInt8, 8, "W");
+				GeneralDatumSamplesType.Instantaneous, 0, BitDataType.UInt8, 8, "W", null);
 		prop.setSlope(new BigDecimal("0.1"));
 		prop.setIntercept(new BigDecimal("33"));
 		message.addPropConfig(prop);
@@ -246,7 +250,7 @@ public class CanbusDatumDataSourceTests {
 		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
 		// the raw data is in kW, which should be automagically parsed into W
 		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous, 0,
-				BitDataType.UInt8, 8, "kW"));
+				BitDataType.UInt8, 8, "kW", null));
 
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
@@ -271,6 +275,71 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
 				equalTo(new BigDecimal("17000")));
+	}
+
+	@Test
+	public void frameReceived_customNormalization_identity() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("torque", GeneralDatumSamplesType.Instantaneous,
+				0, BitDataType.UInt8, 8, "N.m", "N.m"));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, new byte[] { (byte) 0x11 });
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		Map<String, Object> expectedData = singletonMap("torque", new BigDecimal("17"));
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum distance instantaneous value", d.getInstantaneousSampleBigDecimal("torque"),
+				equalTo(new BigDecimal("17")));
+	}
+
+	@Test
+	public void frameReceived_customNormalization_converted() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("distance", GeneralDatumSamplesType.Instantaneous,
+				0, BitDataType.UInt8, 8, "m", "km"));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, new byte[] { (byte) 0x11 });
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, singletonMap("distance", null));
+		assertThat("Event distance", ((Number) evt.getProperty("distance")).toString(),
+				equalTo("0.017"));
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum distance instantaneous value", d.getInstantaneousSampleBigDecimal("distance"),
+				equalTo(new BigDecimal("0.017")));
 	}
 
 	private static final Pattern DEBUG_LOG_PAT = Pattern.compile(
@@ -304,4 +373,35 @@ public class CanbusDatumDataSourceTests {
 		Files.deleteIfExists(tmpFile);
 	}
 
+	@Test
+	public void frameReceived_subFrame() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous,
+				32, BitDataType.UInt32, 32, "W", null));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, decodeHexString("00000000002B5F1E"));
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		Map<String, Object> expectedData = Collections.singletonMap("watts", new BigDecimal("2842398"));
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
+				equalTo(new BigDecimal("2842398")));
+	}
 }

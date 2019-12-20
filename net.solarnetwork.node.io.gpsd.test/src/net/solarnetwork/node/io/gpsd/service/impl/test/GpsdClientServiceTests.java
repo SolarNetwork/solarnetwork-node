@@ -296,4 +296,42 @@ public class GpsdClientServiceTests extends GpsdServerTestSupport {
 				equalTo(now.get(ChronoField.DAY_OF_YEAR)));
 	}
 
+	@Test
+	public void handleRolloverTimeCompensationWithListener() throws Exception {
+		// GIVEN
+		OffsetDateTime now = Instant.now().atOffset(ZoneOffset.UTC);
+		Instant inputTime = Instant.parse("2000-04-02T00:48:39.000Z");
+		TpvReportMessage msg = TpvReportMessage.builder().withTimestamp(inputTime).build();
+
+		GpsdMessageHandlerLatch handler = new GpsdMessageHandlerLatch(new CountDownLatch(1));
+		client.setMessageHandler(handler);
+
+		CompletableFuture<TpvReportMessage> received = new CompletableFuture<TpvReportMessage>();
+		client.addMessageListener(TpvReportMessage.class, new GpsdMessageListener<TpvReportMessage>() {
+
+			@Override
+			public void onGpsdMessage(TpvReportMessage message) {
+				received.complete(message);
+			}
+		});
+
+		// WHEN
+		client.handleGpsdMessage(msg);
+
+		handler.await(5, TimeUnit.SECONDS);
+		assertThat("Message available", handler.getMessages(), hasSize(1));
+		GpsdMessage result = handler.getMessages().get(0);
+		assertThat("TpvReportMessage passed", result, instanceOf(TpvReportMessage.class));
+		OffsetDateTime reportTime = ((TpvReportMessage) result).getTimestamp().atOffset(ZoneOffset.UTC);
+
+		assertThat("Report time year adjusted", reportTime.get(ChronoField.YEAR),
+				equalTo(now.get(ChronoField.YEAR)));
+		assertThat("Report time day-of-year adjusted", reportTime.get(ChronoField.DAY_OF_YEAR),
+				equalTo(now.get(ChronoField.DAY_OF_YEAR)));
+
+		TpvReportMessage report = received.getNow(null);
+		assertThat("Listener received report", report, notNullValue());
+		assertThat("Listener message same as handler", report, sameInstance(result));
+	}
+
 }

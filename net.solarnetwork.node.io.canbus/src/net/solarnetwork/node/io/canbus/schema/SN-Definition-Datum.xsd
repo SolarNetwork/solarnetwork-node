@@ -86,6 +86,19 @@
             </xs:complexContent>
         </xs:complexType>
 
+        <xs:complexType name="ValueType">
+            <xs:complexContent>
+                <xs:extension base="kcd:ValueType">
+                    <xs:attribute ref="sn:normalized-unit" use="optional">
+                        <xs:annotation>
+                            <xs:documentation>If provided, the desired normalized unit to use. If not
+                            provided then standard normalization rules will apply.</xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:complexContent>
+        </xs:complexType>
+
     </xs:redefine>
 
 </xs:schema>

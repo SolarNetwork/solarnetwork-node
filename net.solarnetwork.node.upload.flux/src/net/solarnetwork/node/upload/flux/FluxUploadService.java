@@ -22,11 +22,18 @@
 
 package net.solarnetwork.node.upload.flux;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
+import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -51,14 +58,17 @@ import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.5
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -77,12 +87,20 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public static final Pattern DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN = Pattern.compile("_.*");
 
+	/** A tag to indicate that CBOR encoding v2 is in use. */
+	public static final String TAG_VERSION = "_v";
+
+	/** The default value for the {@code includeVersionTag} property. */
+	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
+
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
 	private String requiredOperationalMode;
 	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
 	private OperationalModesService opModesService;
 	private Executor executor;
+	private FluxFilterConfig[] filters;
+	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 
 	/**
 	 * Constructor.
@@ -134,6 +152,12 @@ public class FluxUploadService extends BaseMqttConnectionService
 		MqttConnection conn = connection();
 		if ( conn instanceof ReconfigurableMqttConnection ) {
 			((ReconfigurableMqttConnection) conn).reconfigure();
+		}
+		FluxFilterConfig[] filters = getFilters();
+		if ( filters != null ) {
+			for ( FluxFilterConfig f : filters ) {
+				f.configurationChanged(properties);
+			}
 		}
 	}
 
@@ -189,12 +213,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 						return;
 					}
 					Map<String, Object> data = mapForEvent(event);
-					if ( data == null ) {
+					if ( data == null || data.isEmpty() ) {
 						return;
 					}
 					publishDatum(data);
 				}
 			}
+
 		};
 		Executor e = this.executor;
 		if ( e != null ) {
@@ -202,6 +227,29 @@ public class FluxUploadService extends BaseMqttConnectionService
 		} else {
 			task.run();
 		}
+	}
+
+	private static ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
+			2);
+
+	private boolean shouldPublishDatum(String sourceId, Map<String, Object> data) {
+		FluxFilterConfig[] filters = getFilters();
+		Long ts = System.currentTimeMillis();
+		Long prevTs = SOURCE_CAPTURE_TIMES.get(sourceId);
+		if ( filters != null ) {
+			for ( FluxFilterConfig filter : filters ) {
+				if ( filter == null ) {
+					continue;
+				}
+				if ( !filter.isPublishAllowed(prevTs, sourceId, data) ) {
+					return false;
+				}
+			}
+		}
+		SOURCE_CAPTURE_TIMES.compute(sourceId, (k, v) -> {
+			return ((v == null && prevTs == null) || (v != null && v.equals(prevTs)) ? ts : v);
+		});
+		return true;
 	}
 
 	private void publishDatum(Map<String, Object> data) {
@@ -214,6 +262,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 			return;
 		}
 		String sourceId = sourceIdObj.toString().trim();
+		if ( !shouldPublishDatum(sourceId, data) ) {
+			return;
+		}
 		if ( sourceId.startsWith("/") ) {
 			sourceId = sourceId.substring(1);
 		}
@@ -224,6 +275,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( conn != null && conn.isEstablished() ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
+				if ( includeVersionTag ) {
+					data.put(TAG_VERSION, 2);
+				}
 				JsonNode jsonData = objectMapper.valueToTree(data);
 				byte[] payload = objectMapper.writeValueAsBytes(jsonData);
 				if ( log.isTraceEnabled() ) {
@@ -287,6 +341,22 @@ public class FluxUploadService extends BaseMqttConnectionService
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+
+		// filter list
+		FluxFilterConfig[] confs = getFilters();
+		List<FluxFilterConfig> confsList = (confs != null ? asList(confs) : emptyList());
+		results.add(dynamicListSettingSpecifier("filters", confsList,
+				new SettingsUtil.KeyedListCallback<FluxFilterConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(FluxFilterConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								value.getSettingSpecifiers(key + "."));
+						return singletonList(configGroup);
+					}
+				}));
+
 		return results;
 	}
 
@@ -418,6 +488,82 @@ public class FluxUploadService extends BaseMqttConnectionService
 			// ignore
 		}
 		this.excludePropertyNamesPattern = p;
+	}
+
+	/**
+	 * Get a list of filter configurations to apply to datum.
+	 * 
+	 * @return the filters to apply, or {@literal null}
+	 * @since 1.4
+	 */
+	public FluxFilterConfig[] getFilters() {
+		return filters;
+	}
+
+	/**
+	 * Set a list of filter configurations to apply to datum.
+	 * 
+	 * <p>
+	 * These filters are applied in array order.
+	 * </p>
+	 * 
+	 * @param filters
+	 *        the filters to apply, or {@literal null}
+	 * @since 1.4
+	 */
+	public void setFilters(FluxFilterConfig[] filters) {
+		this.filters = filters;
+	}
+
+	/**
+	 * Get the number of configured {@code filters} elements.
+	 * 
+	 * @return The number of {@code filters} elements.
+	 * @since 1.4
+	 */
+	public int getFiltersCount() {
+		FluxFilterConfig[] list = getFilters();
+		return (list == null ? 0 : list.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code filters} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link FluxFilterConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code filters} elements.
+	 * @since 1.4
+	 */
+	public void setFiltersCount(int count) {
+		this.filters = ArrayUtils.arrayWithLength(this.filters, count, FluxFilterConfig.class, null);
+	}
+
+	/**
+	 * Get the "include version tag" toggle.
+	 * 
+	 * @return {@literal true} to include the {@literal _v} version tag with
+	 *         each datum; defaults to {@link #DEFAULT_INCLUDE_VERSION_TAG}
+	 * @since 1.5
+	 */
+	public boolean isIncludeVersionTag() {
+		return includeVersionTag;
+	}
+
+	/**
+	 * Set the "inclue version tag" toggle.
+	 * 
+	 * @param includeVersionTag
+	 *        {@literal true} to include the {@link #TAG_VERSION} property with
+	 *        each datum; only disable if you can be sure that all receivers of
+	 *        SolarFlux messages interpret the data in the same way
+	 * @since 1.5
+	 */
+	public void setIncludeVersionTag(boolean includeVersionTag) {
+		this.includeVersionTag = includeVersionTag;
 	}
 
 }

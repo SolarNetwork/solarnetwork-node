@@ -40,6 +40,9 @@ import org.osgi.service.event.EventAdmin;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeCreator;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.MqttConnection;
@@ -67,7 +70,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver {
@@ -81,12 +84,19 @@ public class MqttUploadService extends BaseMqttConnectionService
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%s/datum";
 
+	/** The default value for the {@code includeVersionTag} property. */
+	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
+
+	/** A tag to indicate that CBOR encoding v2 is in use. */
+	public static final String TAG_VERSION_2 = "_v2";
+
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
 	private final OptionalService<EventAdmin> eventAdminOpt;
 	private Executor executor;
+	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 
 	private CompletableFuture<?> startupFuture;
 
@@ -224,6 +234,31 @@ public class MqttUploadService extends BaseMqttConnectionService
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId);
 				try {
 					JsonNode jsonData = objectMapper.valueToTree(data);
+					if ( includeVersionTag ) {
+						JsonNode samplesData = jsonData.path("samples");
+						if ( samplesData.isObject() ) {
+							JsonNode tagsData = samplesData.path("t");
+							ArrayNode tagsArrayNode = null;
+							if ( tagsData.isArray() ) {
+								tagsArrayNode = (ArrayNode) tagsData;
+							} else if ( tagsData.isNull() || tagsData.isMissingNode() ) {
+								tagsArrayNode = ((JsonNodeCreator) samplesData).arrayNode(1);
+								((ObjectNode) samplesData).set("t", tagsArrayNode);
+							}
+							if ( tagsArrayNode != null ) {
+								boolean found = false;
+								for ( JsonNode t : tagsArrayNode ) {
+									if ( TAG_VERSION_2.equals(t.textValue()) ) {
+										found = true;
+										break;
+									}
+								}
+								if ( !found ) {
+									tagsArrayNode.add(TAG_VERSION_2);
+								}
+							}
+						}
+					}
 					if ( jsonData != null && !jsonData.isNull() ) {
 						conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
 								objectMapper.writeValueAsBytes(jsonData)))
@@ -456,5 +491,29 @@ public class MqttUploadService extends BaseMqttConnectionService
 	 */
 	public void setExecutor(Executor executor) {
 		this.executor = executor;
+	}
+
+	/**
+	 * Get the "include version tag" toggle.
+	 * 
+	 * @return {@literal true} to include the {@literal _v} version tag with
+	 *         each datum; defaults to {@link #DEFAULT_INCLUDE_VERSION_TAG}
+	 * @since 1.3
+	 */
+	public boolean isIncludeVersionTag() {
+		return includeVersionTag;
+	}
+
+	/**
+	 * Set the "inclue version tag" toggle.
+	 * 
+	 * @param includeVersionTag
+	 *        {@literal true} to include the {@link #TAG_VERSION} property with
+	 *        each datum; only disable if you can be sure that all receivers of
+	 *        SolarFlux messages interpret the data in the same way
+	 * @since 1.3
+	 */
+	public void setIncludeVersionTag(boolean includeVersionTag) {
+		this.includeVersionTag = includeVersionTag;
 	}
 }

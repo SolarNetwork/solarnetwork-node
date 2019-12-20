@@ -227,10 +227,13 @@ public class MeasurementHelper {
 
 		Map<? extends Unit<?>, Integer> baseUnits = unit.getBaseUnits();
 		if ( baseUnits == null ) {
-			// alrady a base unit
-			return unit;
+			Unit<Q> sysUnit = unit.getSystemUnit();
+			if ( sysUnit.getConverterTo(unit).isIdentity() ) {
+				// already a base unit
+				return unit;
+			}
 		}
-		Integer baseUnitSize = baseUnits.size();
+		Integer baseUnitSize = (baseUnits != null ? baseUnits.size() : 0);
 		if ( standardUnits.containsKey(baseUnitSize) ) {
 			for ( Unit<?> stdUnit : standardUnits.get(baseUnitSize) )
 				// look for some SolarNetwork standard units
@@ -245,6 +248,8 @@ public class MeasurementHelper {
 	/**
 	 * Get a "normalized" quantity from an arbitrary quantity.
 	 * 
+	 * @param <Q>
+	 *        the type of quantity
 	 * @param quantity
 	 *        the quantity to get an equivalent "normalized" value for
 	 * @return the normalized value, or {@literal null} if {@code quantity} is
@@ -258,17 +263,35 @@ public class MeasurementHelper {
 		if ( normalizedUnit == null ) {
 			return quantity;
 		}
+		return convertedQuantity(quantity, normalizedUnit);
+	}
+
+	/**
+	 * Convert a quantity into another (compatible) unit.
+	 * 
+	 * @param <Q>
+	 *        the type of quantity
+	 * @param src
+	 *        the quantity to convert
+	 * @param dest
+	 *        the desired output unit
+	 * @return the converted quantity
+	 */
+	public <Q extends Quantity<Q>> Quantity<Q> convertedQuantity(final Quantity<Q> src,
+			final Unit<Q> dest) {
+		if ( src == null || dest == null ) {
+			return src;
+		}
 		try {
-			UnitConverter converter = quantity.getUnit().getConverterToAny(normalizedUnit);
+			UnitConverter converter = src.getUnit().getConverterToAny(dest);
 			if ( converter.isIdentity() ) {
-				return quantity;
+				return src;
 			}
-			Number convertedAmount = converter.convert(quantity.getValue());
-			return quantityValue(convertedAmount, normalizedUnit);
+			Number convertedAmount = converter.convert(src.getValue());
+			return quantityValue(convertedAmount, dest);
 		} catch ( UnconvertibleException | IncommensurableException e ) {
-			log.debug("Unable to convert {} to {}: {}", quantity.getUnit(), normalizedUnit,
-					e.toString());
-			return quantity;
+			log.debug("Unable to convert {} to {}: {}", src.getUnit(), dest, e.toString());
+			return src;
 		}
 	}
 
