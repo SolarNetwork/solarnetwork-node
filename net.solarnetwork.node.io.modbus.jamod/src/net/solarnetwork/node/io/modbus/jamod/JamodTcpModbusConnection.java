@@ -1,7 +1,7 @@
 /* ==================================================================
- * JamodModbusConnection.java - Jul 29, 2014 12:58:25 PM
+ * JamodTcpModbusConnection.java - 3/02/2018 8:30:47 AM
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2018 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,55 +20,62 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.jamod;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Map;
-import net.wimpi.modbus.io.ModbusSerialTransaction;
-import net.wimpi.modbus.net.SerialConnection;
+import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.util.ClassUtils;
+import net.wimpi.modbus.io.ModbusTCPTransaction;
+import net.wimpi.modbus.net.TCPMasterConnection;
 
 /**
- * Jamod serial implementation of {@link ModbusConnection}.
+ * Jamod TCP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.3
- * @since 2.1
+ * @version 1.0
  */
-public class JamodModbusConnection extends AbstractModbusConnection implements ModbusConnection {
+public class JamodTcpModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
-	private final SerialConnection connection;
+	private final TCPMasterConnection connection;
 
-	public JamodModbusConnection(SerialConnection conn, int unitId) {
-		this(conn, unitId, true);
+	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId) {
+		this(conn, unitId, false);
 	}
 
-	public JamodModbusConnection(SerialConnection conn, int unitId, boolean headless) {
+	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId, boolean headless) {
 		super(unitId, headless);
 		this.connection = conn;
-	}
-
-	final SerialConnection getSerialConnection() {
-		return connection;
 	}
 
 	@Override
 	public String toString() {
 		String portName;
 		try {
-			portName = connection.getSerialPort().getName();
+			portName = connection.getAddress().toString() + ':' + connection.getPort();
 		} catch ( RuntimeException e ) {
 			portName = "UNKNOWN";
 		}
-		return "JamodModbusConnection{port=" + portName + ",unit=" + getUnitId() + '}';
+		return "JamodTcpModbusConnection{host=" + portName + ",unit=" + getUnitId() + '}';
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		close();
+		super.finalize();
 	}
 
 	@Override
 	public void open() throws IOException {
-		if ( !connection.isOpen() ) {
+		if ( !connection.isConnected() ) {
 			try {
-				connection.open();
+				connection.connect();
 			} catch ( IOException e ) {
 				throw e;
 			} catch ( Exception e ) {
@@ -79,14 +86,21 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 
 	@Override
 	public void close() {
-		if ( connection.isOpen() ) {
+		if ( connection.isConnected() ) {
 			connection.close();
 		}
 	}
 
-	private ModbusSerialTransaction createTransaction() {
-		ModbusSerialTransaction tx = new ModbusSerialTransaction(connection);
+	private ModbusTCPTransaction createTransaction() {
+		ModbusTCPTransaction tx = new ModbusTCPTransaction(connection);
 		tx.setRetries(getRetries());
+
+		// SN extended feature support; don't assume we are using this
+		Map<String, Object> extendedProperties = new HashMap<String, Object>(2);
+		extendedProperties.put("retryDelayMillis", getRetryDelayMs());
+		extendedProperties.put("retryReconnect", isRetryReconnect());
+		ClassUtils.setBeanProperties(tx, extendedProperties, true);
+
 		return tx;
 	}
 
@@ -148,12 +162,6 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	@Override
 	public Integer[] readValues(Integer address, int count) {
 		return integerArray(readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count));
-	}
-
-	@Override
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
 	}
 
 	@Override

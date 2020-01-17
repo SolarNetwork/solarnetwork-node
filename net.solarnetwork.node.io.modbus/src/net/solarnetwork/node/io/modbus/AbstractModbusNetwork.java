@@ -24,7 +24,10 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
@@ -34,13 +37,12 @@ import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.wimpi.modbus.ModbusIOException;
 
 /**
  * Abstract implementation of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.4
  */
 public abstract class AbstractModbusNetwork implements ModbusNetwork {
@@ -59,10 +61,81 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	private TimeUnit retryDelayUnit = TimeUnit.MILLISECONDS;
 	private boolean retryReconnect = false;
 
+	private Set<String> classNamesToTreatAsIoException = defaultClassNamesToTreatAsIoException();
+
+	private static final Set<String> defaultClassNamesToTreatAsIoException() {
+		return Collections.singleton("net.wimpi.modbus.ModbusIOException");
+	}
+
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Get the set of class names to convert to {@link IOException} instances if
+	 * caught at runtime.
+	 * 
+	 * @return the set of class names
+	 * @since 2.0
+	 */
+	protected final Set<String> getClassNamesToTreatAsIoException() {
+		return classNamesToTreatAsIoException;
+	}
+
+	/**
+	 * Add class names to the set of names to convert to {@link IOException} if
+	 * caught at runtime.
+	 * 
+	 * @param classNames
+	 *        the names to convert when caught
+	 * @return the final set of configured names
+	 * @since 2.0
+	 */
+	protected final Set<String> addClassNamesToTreatAsIoException(Iterable<String> classNames) {
+		if ( classNames == null ) {
+			return classNamesToTreatAsIoException;
+		}
+		Set<String> s = new LinkedHashSet<>(classNamesToTreatAsIoException);
+		for ( String name : classNames ) {
+			s.add(name);
+		}
+		s = Collections.unmodifiableSet(s);
+		classNamesToTreatAsIoException = s;
+		return s;
+	}
+
+	/**
+	 * Remove class names from the set of names to convert to
+	 * {@link IOException} if caught at runtime.
+	 * 
+	 * @param classNames
+	 *        the names to no longer convert when caught
+	 * @return the final set of configured names
+	 * @since 2.0
+	 */
+	protected final Set<String> removeClassNamesToTreatAsIoException(Iterable<String> classNames) {
+		if ( classNames == null ) {
+			return classNamesToTreatAsIoException;
+		}
+		Set<String> s = new LinkedHashSet<>(classNamesToTreatAsIoException);
+		for ( String name : classNames ) {
+			s.remove(name);
+		}
+		s = Collections.unmodifiableSet(s);
+		classNamesToTreatAsIoException = s;
+		return s;
+	}
+
+	private final boolean shouldConvertToIoException(Throwable t) {
+		Class<?>[] classes = t.getClass().getClasses();
+		for ( Class<?> c : classes ) {
+			if ( classNamesToTreatAsIoException.contains(c.getName()) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	@Override
 	public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
@@ -81,7 +154,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 			log.warn("{} performing action {} on device {}", t.getClass().getSimpleName(), action,
 					unitId);
 
-			if ( t instanceof ModbusIOException ) {
+			if ( shouldConvertToIoException(t) ) {
 				throw new IOException(t.getMessage(), t);
 			}
 			if ( t instanceof RuntimeException ) {

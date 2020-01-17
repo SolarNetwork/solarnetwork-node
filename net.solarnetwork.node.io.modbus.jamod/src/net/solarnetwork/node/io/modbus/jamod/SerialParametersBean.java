@@ -1,5 +1,5 @@
 /* ==================================================================
- * ModbusConnectionCallback.java - Jul 15, 2013 7:54:17 AM
+ * SerialParametersBean.java - Jul 12, 2013 9:52:18 AM
  * 
  * Copyright 2007-2013 SolarNetwork.net Dev Team
  * 
@@ -20,35 +20,36 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.jamod;
 
-import java.io.IOException;
-import net.wimpi.modbus.net.SerialConnection;
+import net.wimpi.modbus.util.SerialParameters;
 
 /**
- * Callback API for performing an action with a Modbus {@link SerialConnection}.
+ * A JavaBean wrapper around SerialParameters to make working with dependency
+ * inject easier.
  * 
  * <p>
- * If no result object is needed, simply use {@link Object} as the parameter
- * type and return <em>null</em> from {@link #doInConnection(SerialConnection)}.
+ * The {@link SerialParameters} class defines many JavaBean-esque accessor
+ * methods, but violates the JavaBeans contract in some cases where different
+ * method types are used on the same bean property. For example, the
+ * <i>parity</i> property has {#link {@link SerialParameters#getParity()} that
+ * returns an <i>int</i> and {@link SerialParameters#setParity(String)} as well
+ * as {@link SerialParameters#setParity(int)}. This breaks JavaBean access in
+ * some JVMs.
  * </p>
  * 
- * @param <T>
- *        the action return type
+ * @author matt
+ * @version 1.0
  */
-public interface ModbusConnectionCallback<T> {
+public class SerialParametersBean extends SerialParameters {
 
 	/**
-	 * Perform an action with a Modbus {@link SerialConnection}.
+	 * Set the parity as a String value.
 	 * 
-	 * <p>
-	 * If no result object is needed, simply return <em>null</em>.
-	 * </p>
-	 * 
-	 * @param conn
-	 *        the connection
-	 * @return the result
-	 * @throws IOException
+	 * @param parity
 	 */
-	T doInConnection(SerialConnection conn) throws IOException;
+	public void setParityString(String parity) {
+		setParity(parity);
+	}
+
 }

@@ -20,12 +20,16 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.jamod;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.Map;
+import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.wimpi.modbus.io.ModbusUDPTransaction;
 import net.wimpi.modbus.net.UDPMasterConnection;
 
@@ -33,8 +37,7 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * Jamod UDP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.1
- * @since 2.4
+ * @version 1.0
  */
 public class JamodUdpModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 

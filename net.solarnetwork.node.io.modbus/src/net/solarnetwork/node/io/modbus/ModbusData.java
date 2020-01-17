@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.AbstractMap;
@@ -36,9 +35,9 @@ import java.util.Set;
 import bak.pcj.map.IntKeyShortMap;
 import bak.pcj.map.IntKeyShortMapIterator;
 import bak.pcj.map.IntKeyShortOpenHashMap;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
@@ -52,7 +51,7 @@ import net.solarnetwork.node.domain.DataAccessor;
  * </p>
  * 
  * @author matt
- * @version 1.8
+ * @version 2.0
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -545,7 +544,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.UTF8_CHARSET);
+				ModbusDataUtils.UTF8_CHARSET);
 	}
 
 	/**
@@ -578,7 +577,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public String getAsciiString(final ModbusReference ref, final int offset, final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.ASCII_CHARSET);
+				ModbusDataUtils.ASCII_CHARSET);
 	}
 
 	/**
@@ -596,7 +595,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public String getLatin1String(final ModbusReference ref, final int offset, final boolean trim) {
 		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.LATIN1_CHARSET);
+				ModbusDataUtils.LATIN1_CHARSET);
 	}
 
 	/**

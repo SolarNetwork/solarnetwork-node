@@ -20,13 +20,16 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.jamod;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
+import net.solarnetwork.node.io.modbus.AbstractModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -42,7 +45,6 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * 
  * @author matt
  * @version 1.0
- * @since 2.4
  */
 public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 

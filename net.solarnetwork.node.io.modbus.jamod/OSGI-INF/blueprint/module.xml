@@ -16,7 +16,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.modbus.JamodSerialModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.jamod.JamodSerialModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
 			</list>
 		</property>
@@ -38,7 +38,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.JamodSerialModbusNetwork">
+		<bean class="net.solarnetwork.node.io.modbus.jamod.JamodSerialModbusNetwork">
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -48,7 +48,7 @@
 	<bean id="messageSourceTcp" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.modbus.JamodTcpModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.jamod.JamodTcpModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
 			</list>
 		</property>
@@ -70,7 +70,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.tcp"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.JamodTcpModbusNetwork">
+		<bean class="net.solarnetwork.node.io.modbus.jamod.JamodTcpModbusNetwork">
 			<property name="messageSource" ref="messageSourceTcp"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -80,7 +80,7 @@
 	<bean id="messageSourceUdp" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.modbus.JamodUdpModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.jamod.JamodUdpModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
 			</list>
 		</property>
@@ -102,7 +102,7 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.udp"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.JamodUdpModbusNetwork">
+		<bean class="net.solarnetwork.node.io.modbus.jamod.JamodUdpModbusNetwork">
 			<property name="messageSource" ref="messageSourceUdp"/>
 		</bean>
 	</osgix:managed-service-factory>

@@ -31,16 +31,19 @@ import java.util.Arrays;
  * Utilities for converting to/from Modbus 16-bit register values.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 2.6
  */
 public final class ModbusDataUtils {
 
 	/** The UTF-8 character set name. */
-	public static final String UTF8_CHARSET = ModbusTransactionUtils.UTF8_CHARSET;
+	public static final String UTF8_CHARSET = "UTF-8";
 
 	/** The ASCII character set name. */
-	public static final String ASCII_CHARSET = ModbusTransactionUtils.ASCII_CHARSET;
+	public static final String ASCII_CHARSET = "US-ASCII";
+
+	/** The ISO-8859-1 (ISO-LATIN-1) character set name. */
+	public static final String LATIN1_CHARSET = "ISO-8859-1";
 
 	/**
 	 * Convert an array of ints to Integer objects.

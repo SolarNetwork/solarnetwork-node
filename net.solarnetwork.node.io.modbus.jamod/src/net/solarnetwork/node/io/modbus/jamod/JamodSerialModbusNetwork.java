@@ -20,12 +20,15 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.jamod;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+import net.solarnetwork.node.io.modbus.AbstractModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -36,8 +39,7 @@ import net.wimpi.modbus.util.SerialParameters;
  * Jamod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
- * @version 1.2
- * @since 2.0
+ * @version 1.0
  */
 public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
