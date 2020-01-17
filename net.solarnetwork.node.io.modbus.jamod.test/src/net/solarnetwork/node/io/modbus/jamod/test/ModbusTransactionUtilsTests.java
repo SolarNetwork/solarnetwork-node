@@ -20,14 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus.test;
+package net.solarnetwork.node.io.modbus.jamod.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusTransactionUtils;
+import net.solarnetwork.node.io.modbus.jamod.ModbusTransactionUtils;
 import net.wimpi.modbus.msg.ModbusRequest;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
