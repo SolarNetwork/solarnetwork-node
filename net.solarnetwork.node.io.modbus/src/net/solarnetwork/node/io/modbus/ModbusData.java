@@ -24,20 +24,14 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import bak.pcj.map.IntKeyShortMap;
-import bak.pcj.map.IntKeyShortMapIterator;
-import bak.pcj.map.IntKeyShortOpenHashMap;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.util.CollectionUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
@@ -56,7 +50,7 @@ import net.solarnetwork.util.IntRangeSet;
  */
 public class ModbusData implements DataAccessor {
 
-	private final IntKeyShortMap dataRegisters;
+	private final IntShortMap dataRegisters;
 	private long dataTimestamp = 0;
 	private ModbusWordOrder wordOrder;
 
@@ -65,7 +59,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public ModbusData() {
 		super();
-		this.dataRegisters = new IntKeyShortOpenHashMap(64);
+		this.dataRegisters = new IntShortMap(64);
 		this.wordOrder = ModbusWordOrder.MostToLeastSignificant;
 	}
 
@@ -81,7 +75,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public ModbusData(ModbusData other) {
 		synchronized ( other.dataRegisters ) {
-			this.dataRegisters = new IntKeyShortOpenHashMap(other.dataRegisters);
+			this.dataRegisters = (IntShortMap) other.dataRegisters.clone();
 			this.dataTimestamp = other.dataTimestamp;
 			this.wordOrder = other.wordOrder;
 		}
@@ -819,29 +813,26 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final String dataDebugString() {
 		final StringBuilder buf = new StringBuilder(getClass().getSimpleName()).append("{");
-		int[] keys = dataRegisters.keySet().toArray();
-		if ( keys.length > 0 ) {
-			Arrays.sort(keys);
-			boolean odd = false;
-			int last = -2;
-			for ( int k : keys ) {
-				odd = k % 2 == 1 ? true : false;
-				if ( k > last + 1 ) {
+		if ( !dataRegisters.isEmpty() ) {
+			final int[] last = new int[] { -2 };
+			dataRegisters.forEachOrdered((k, v) -> {
+				boolean odd = k % 2 == 1 ? true : false;
+				if ( k > last[0] + 1 ) {
 					int rowAddr = odd ? k - 1 : k;
 					buf.append("\n\t").append(String.format("%5d", rowAddr)).append(": ");
 					if ( odd ) {
 						// fill in empty space for start of row
 						buf.append("      , ");
 					}
-					last = k;
+					last[0] = k;
 					if ( odd ) {
-						last -= 1;
+						last[0] -= 1;
 					}
 				} else if ( odd ) {
 					buf.append(", ");
 				}
-				buf.append(String.format("0x%04X", dataRegisters.get(k)));
-			}
+				buf.append(String.format("0x%04X", v));
+			});
 			buf.append("\n");
 		}
 		buf.append("}");
@@ -905,15 +896,14 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
 			final IntRangeSet rangeSet, final int maxResults) {
-		final IntRangeSet reducedRangeSet = combineToReduceSize(rangeSet, maxResults);
+		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxResults);
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				IntRange[] ranges = reducedRangeSet.ranges();
 				for ( IntRange r : ranges ) {
-					int[] data = conn.readUnsignedShorts(readFunction, r.first(), r.length());
-					m.saveDataArray(data, r.first());
+					int[] data = conn.readUnsignedShorts(readFunction, r.getMin(), r.length());
+					m.saveDataArray(data, r.getMin());
 				}
 				return true;
 			}
@@ -928,64 +918,8 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.7
 	 */
 	public Map<Integer, Integer> getUnsignedDataMap() {
-		final ModbusData copy = this.copy();
-		final IntKeyShortMap data = copy.dataRegisters;
-		Set<Entry<Integer, Integer>> entrySet = new AbstractSet<Map.Entry<Integer, Integer>>() {
-
-			@Override
-			public Iterator<Entry<Integer, Integer>> iterator() {
-				IntKeyShortMapIterator itr = data.entries();
-				return new Iterator<Map.Entry<Integer, Integer>>() {
-
-					@Override
-					public boolean hasNext() {
-						return itr.hasNext();
-					}
-
-					@Override
-					public Entry<Integer, Integer> next() {
-						itr.next();
-						return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(itr.getKey(),
-								Short.toUnsignedInt(itr.getValue()));
-					}
-				};
-			}
-
-			@Override
-			public int size() {
-				return data.size();
-			}
-		};
-		return new AbstractMap<Integer, Integer>() {
-
-			@Override
-			public boolean containsKey(Object key) {
-				boolean result = false;
-				if ( key instanceof Number ) {
-					final int r = ((Number) key).intValue();
-					result = data.containsKey(r);
-				}
-				return result;
-			}
-
-			@Override
-			public Integer get(Object key) {
-				Integer result = null;
-				if ( key instanceof Number ) {
-					final int r = ((Number) key).intValue();
-					if ( data.containsKey(r) ) {
-						result = Short.toUnsignedInt(data.get(r));
-					}
-				}
-				return result;
-			}
-
-			@Override
-			public Set<Entry<Integer, Integer>> entrySet() {
-				return entrySet;
-			}
-
-		};
+		final IntShortMap data = (IntShortMap) this.dataRegisters.clone();
+		return data.unsignedMap();
 	}
 
 }
