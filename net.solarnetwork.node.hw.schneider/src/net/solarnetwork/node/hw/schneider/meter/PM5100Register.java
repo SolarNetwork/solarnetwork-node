@@ -22,21 +22,24 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int64;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
-import bak.pcj.set.IntRangeSet;
+import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 2.4
  */
 public enum PM5100Register implements ModbusReference {
@@ -172,8 +175,10 @@ public enum PM5100Register implements ModbusReference {
 	/** Total apparent energy received (exported), in VAh. */
 	MeterApparentEnergyReceived(3239, Int64);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createMeterRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			PM5100Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			PM5100Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;
 	private final ModbusDataType dataType;
@@ -187,34 +192,6 @@ public enum PM5100Register implements ModbusReference {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
-	}
-
-	private static IntRangeSet createMeterRegisterAddressSet() {
-		IntRangeSet set = new IntRangeSet();
-		for ( PM5100Register r : PM5100Register.values() ) {
-			if ( !r.name().startsWith("Meter") ) {
-				continue;
-			}
-			int len = r.getWordLength();
-			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len - 1);
-			}
-		}
-		return set;
-	}
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		IntRangeSet set = new IntRangeSet();
-		for ( PM5100Register r : PM5100Register.values() ) {
-			if ( !(r.name().startsWith("Info") || r.name().startsWith("Config")) ) {
-				continue;
-			}
-			int len = r.getWordLength();
-			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len - 1);
-			}
-		}
-		return set;
 	}
 
 	@Override
@@ -266,7 +243,7 @@ public enum PM5100Register implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -281,7 +258,7 @@ public enum PM5100Register implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getMeterRegisterAddressSet() {
-		return (IntRangeSet) METER_REGISTER_ADDRESS_SET.clone();
+		return METER_REGISTER_ADDRESS_SET;
 	}
 
 }

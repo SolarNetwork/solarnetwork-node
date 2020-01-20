@@ -22,19 +22,22 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
-import bak.pcj.set.IntRangeSet;
+import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the ION6200 series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 2.4
  */
 public enum ION6200Register implements ModbusReference {
@@ -175,8 +178,10 @@ public enum ION6200Register implements ModbusReference {
 	/** The programmable power scale (PPS) enumeration. */
 	ConfigProgrammablePowerScale(4014, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createMeterRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			ION6200Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			ION6200Register.class, new HashSet<>(asList("ConfigProgrammable", "Meter"))).immutableCopy();
 
 	private final int address;
 	private final ModbusDataType dataType;
@@ -184,34 +189,6 @@ public enum ION6200Register implements ModbusReference {
 	private ION6200Register(int address, ModbusDataType dataType) {
 		this.address = address;
 		this.dataType = dataType;
-	}
-
-	private static IntRangeSet createMeterRegisterAddressSet() {
-		IntRangeSet set = new IntRangeSet();
-		for ( ION6200Register r : ION6200Register.values() ) {
-			if ( !(r.name().startsWith("Meter") || r.name().startsWith("ConfigProgrammable")) ) {
-				continue;
-			}
-			int len = r.getDataType().getWordLength();
-			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len - 1);
-			}
-		}
-		return set;
-	}
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		IntRangeSet set = new IntRangeSet();
-		for ( ION6200Register r : ION6200Register.values() ) {
-			if ( !(r.name().startsWith("Info") || r.name().startsWith("Config")) ) {
-				continue;
-			}
-			int len = r.getDataType().getWordLength();
-			if ( len > 0 ) {
-				set.addAll(r.getAddress(), r.getAddress() + len - 1);
-			}
-		}
-		return set;
 	}
 
 	@Override
@@ -258,7 +235,7 @@ public enum ION6200Register implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -273,7 +250,7 @@ public enum ION6200Register implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getMeterRegisterAddressSet() {
-		return (IntRangeSet) METER_REGISTER_ADDRESS_SET.clone();
+		return METER_REGISTER_ADDRESS_SET;
 	}
 
 }

@@ -22,21 +22,21 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
+import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import java.util.Collection;
 import java.util.Map;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Data object for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 2.4
  */
 public class PM5100Data extends ModbusData implements PM5100DataAccessor {
@@ -88,7 +88,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 			public boolean updateModbusData(MutableModbusData m) {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
 				updateData(conn, m,
-						combineToReduceSize(PM5100Register.getRegisterAddressSet(), MAX_RESULTS));
+						coveringIntRanges(PM5100Register.getRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});
@@ -106,18 +106,17 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				updateData(conn, m,
-						combineToReduceSize(PM5100Register.getMeterRegisterAddressSet(), MAX_RESULTS));
+						coveringIntRanges(PM5100Register.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
 			}
 		});
 	}
 
-	private void updateData(ModbusConnection conn, MutableModbusData m, IntRangeSet rangeSet) {
-		IntRange[] ranges = rangeSet.ranges();
+	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
 		for ( IntRange r : ranges ) {
-			int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, r.first(),
+			int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());
-			m.saveDataArray(data, r.first());
+			m.saveDataArray(data, r.getMin());
 		}
 	}
 
