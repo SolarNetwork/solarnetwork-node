@@ -73,7 +73,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class ModbusPCMController extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -149,11 +149,14 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * A value of 0 represent a 0% output setting, while 15 represents 100%.
 	 * </p>
 	 * 
+	 * @param bits
+	 *        a set with bits corresponding to the configured
+	 *        {@code d[1-4]Address} values
 	 * @return an integer between 0 and 15
 	 */
 	private Integer integerValueForBitSet(BitSet bits) {
-		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2)
-				| ((bits.get(3) ? 1 : 0) << 3));
+		return ((bits.get(d1Address) ? 1 : 0) | ((bits.get(d2Address) ? 1 : 0) << 1)
+				| ((bits.get(d3Address) ? 1 : 0) << 2) | ((bits.get(d4Address) ? 1 : 0) << 3));
 	}
 
 	private static final int PCM_LEVEL_0 = 0;
