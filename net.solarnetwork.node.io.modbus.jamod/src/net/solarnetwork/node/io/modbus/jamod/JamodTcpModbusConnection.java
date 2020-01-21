@@ -161,7 +161,7 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public Integer[] readValues(Integer address, int count) {
-		return integerArray(readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count));
+		return integerArray(readSignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count));
 	}
 
 	@Override

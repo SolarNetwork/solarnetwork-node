@@ -22,29 +22,33 @@
 
 package net.solarnetwork.node.io.modbus.test;
 
-import net.solarnetwork.node.io.modbus.ModbusHelper;
-import org.junit.Assert;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import org.junit.Test;
+import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 
 /**
  * Test cases for the {@link ModbusHelper} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusHelperTests {
 
 	@Test
-	public void testParseFloat32() {
-		Float result = ModbusHelper.parseFloat32(new Integer[] { 0x403F, 0xA7F6 });
-		Assert.assertNotNull(result);
-		Assert.assertEquals("Float value", 2.994626, result.doubleValue(), 0.000001);
+	public void functionForCode_read() {
+		for ( ModbusReadFunction f : ModbusReadFunction.values() ) {
+			assertThat("Code returned", ModbusHelper.functionForCode(f.getCode()), equalTo(f));
+		}
 	}
 
 	@Test
-	public void testParseFloat32NaN() {
-		Float result = ModbusHelper.parseFloat32(new Integer[] { 0xFFC0, 0x0000 });
-		Assert.assertNull("Float value is NaN", result);
+	public void functionForCode_write() {
+		for ( ModbusWriteFunction f : ModbusWriteFunction.values() ) {
+			assertThat("Code returned", ModbusHelper.functionForCode(f.getCode()), equalTo(f));
+		}
 	}
 
 }

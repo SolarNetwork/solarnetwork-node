@@ -422,16 +422,45 @@ public class ModbusTransactionUtils {
 		} catch ( ModbusException e ) {
 			throw new RuntimeException(e);
 		}
-		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
+		ModbusResponse response = trans.getResponse();
 		short[] result = new short[count];
-		for ( int w = 0; w < res.getWordCount(); w++ ) {
-			if ( LOG.isTraceEnabled() ) {
-				LOG.trace("Got Modbus read {} response {}", address + w, res.getRegisterValue(w));
+		if ( response instanceof ReadMultipleRegistersResponse ) {
+			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) response;
+			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+				result[w] = res.getRegister(w).toShort();
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
 			}
-			result[w] = res.getRegister(w).toShort();
+		} else if ( response instanceof ReadInputRegistersResponse ) {
+			ReadInputRegistersResponse res = (ReadInputRegistersResponse) response;
+			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+				result[w] = res.getRegister(w).toShort();
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
+		} else if ( response instanceof ReadInputDiscretesResponse ) {
+			ReadInputDiscretesResponse res = (ReadInputDiscretesResponse) response;
+			BitVector bv = res.getDiscretes();
+			for ( int w = 0; w < count; w += 1 ) {
+				result[w] = bv.getBit(w) ? (short) 1 : (short) 0;
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
+		} else if ( response instanceof ReadCoilsResponse ) {
+			ReadCoilsResponse res = (ReadCoilsResponse) response;
+			BitVector bv = res.getCoils();
+			for ( int w = 0; w < count; w += 1 ) {
+				result[w] = bv.getBit(w) ? (short) 1 : (short) 0;
+				if ( LOG.isTraceEnabled() ) {
+					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
+				}
+			}
 		}
 		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus register {} count {} shorts: {}",
+			LOG.debug("Read Modbus register {} count {} values: {}",
 					new Object[] { address, count, result });
 		}
 		return result;

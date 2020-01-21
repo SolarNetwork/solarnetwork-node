@@ -39,7 +39,7 @@ import net.solarnetwork.util.StringUtils;
  * A base helper class to support {@link ModbusNetwork} based services.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 2.0
  */
 public abstract class ModbusDeviceSupport extends BaseIdentifiable {
@@ -123,41 +123,6 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @return a map with general device information populated
 	 */
 	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn);
-
-	/**
-	 * Parse a big-endian 32-bit float value from a data array.
-	 * 
-	 * @param data
-	 *        the data array
-	 * @param offset
-	 *        the offset within the array to parse the value from
-	 * @return the float, or <em>null</em> if not available
-	 */
-	public static Float parseBigEndianFloat32(Integer[] data, int offset) {
-		Float result = null;
-		if ( data != null && offset >= 0 && data.length > (offset + 1) ) {
-			result = ModbusHelper.parseFloat32(new Integer[] { data[offset], data[offset + 1] });
-		}
-		return result;
-	}
-
-	/**
-	 * Parse a big-endian 64-bit integer value from a data array.
-	 * 
-	 * @param data
-	 *        the data array
-	 * @param offset
-	 *        the offset within the array to parse the value from
-	 * @return the long, or <em>null</em> if not available
-	 */
-	public static Long parseBigEndianInt64(Integer[] data, int offset) {
-		Long result = null;
-		if ( data != null && offset >= 0 && data.length > (offset + 3) ) {
-			result = ModbusHelper.parseInt64(new Integer[] { data[offset], data[offset + 1],
-					data[offset + 2], data[offset + 3] });
-		}
-		return result;
-	}
 
 	/**
 	 * Return an informational message composed of general device info. This

@@ -845,6 +845,28 @@ public class ModbusData implements DataAccessor {
 	}
 
 	/**
+	 * Copy the raw modbus data for a set of addresses into an array.
+	 * 
+	 * @param dest
+	 *        the destination array
+	 * @param destFrom
+	 *        the starting destination array index to populate
+	 * @param address
+	 *        the Modbus address to start from
+	 * @param length
+	 *        the number of Modbus registers to copy
+	 * @since 2.0
+	 */
+	public final void slice(short[] dest, int destFrom, int address, int length) {
+		dataRegisters.forEachOrdered(address, address + length, (i, v) -> {
+			int idx = i - address + destFrom;
+			if ( idx < dest.length ) {
+				dest[idx] = v;
+			}
+		});
+	}
+
+	/**
 	 * Get the word ordering to use when reading multi-register data types.
 	 * 
 	 * @return the word order
@@ -907,7 +929,7 @@ public class ModbusData implements DataAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				for ( IntRange r : ranges ) {
-					int[] data = conn.readUnsignedShorts(readFunction, r.getMin(), r.length());
+					short[] data = conn.readSignedShorts(readFunction, r.getMin(), r.length());
 					m.saveDataArray(data, r.getMin());
 				}
 				return true;

@@ -36,7 +36,7 @@ import net.solarnetwork.node.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 2.0
  */
 public interface ModbusConnection {
@@ -287,6 +287,16 @@ public interface ModbusConnection {
 	/**
 	 * Get the values of specific registers as an array of signed 16-bit shorts.
 	 * 
+	 * <p>
+	 * Note that the raw short values can be treated as unsigned shorts by
+	 * converting them to integers, like
+	 * {@code int unsigned = ((int)s) && 0xFFFF}, or by calling
+	 * {@link Short#toUnsignedInt(short)}. Thus the values returned by this
+	 * method are technically the same as those returned by
+	 * {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}, without
+	 * having been cast to ints.
+	 * </p>
+	 * 
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
@@ -315,6 +325,14 @@ public interface ModbusConnection {
 	/**
 	 * Get the values of specific registers as an array of unsigned 16-bit
 	 * shorts.
+	 * 
+	 * <p>
+	 * Note that the raw int values can be treated as signed shorts by casting
+	 * them to shorts, like {@code short signed = (short)s}. Thus the values
+	 * returned by this method are technically the same as those returned by
+	 * {@link #readSignedShorts(ModbusReadFunction, Integer, int)}, having been
+	 * cast to ints.
+	 * </p>
 	 * 
 	 * @param function
 	 *        the Modbus function code to use

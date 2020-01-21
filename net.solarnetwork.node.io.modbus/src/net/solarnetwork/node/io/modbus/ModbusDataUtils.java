@@ -30,6 +30,11 @@ import java.util.Arrays;
 /**
  * Utilities for converting to/from Modbus 16-bit register values.
  * 
+ * <p>
+ * All Modbus register values are stored using {@code short} values, which in
+ * Java are always treated as 16-bit signed integers.
+ * </p>
+ * 
  * @author matt
  * @version 2.0
  * @since 2.6
@@ -46,21 +51,41 @@ public final class ModbusDataUtils {
 	public static final String LATIN1_CHARSET = "ISO-8859-1";
 
 	/**
-	 * Convert an array of ints to Integer objects.
+	 * Convert an array of shorts to Integer objects.
 	 * 
 	 * @param array
 	 *        the array to convert
 	 * @return the converted array, or {@literal null} if {@code array} is
 	 *         {@literal null}
 	 */
-	public static Integer[] integerArray(int[] array) {
+	public static Integer[] integerArray(short[] array) {
 		if ( array == null ) {
 			return null;
 		}
-		int count = array.length;
-		Integer[] result = new Integer[count];
+		final int count = array.length;
+		final Integer[] result = new Integer[count];
 		for ( int i = 0; i < count; i++ ) {
-			result[i] = array[i];
+			result[i] = array[i] & 0xFFFF;
+		}
+		return result;
+	}
+
+	/**
+	 * Convert an array of ints to shorts.
+	 * 
+	 * @param array
+	 *        the array to convert
+	 * @return the converted array, or {@literal null} if {@code array} is
+	 *         {@literal null}
+	 */
+	public static short[] shortArray(int[] array) {
+		if ( array == null ) {
+			return null;
+		}
+		final int count = array.length;
+		final short[] result = new short[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = (short) array[i];
 		}
 		return result;
 	}
@@ -78,7 +103,7 @@ public final class ModbusDataUtils {
 	 *         if {@code dataType} is not supported
 	 * @see #encodeNumber(ModbusDataType, Number, ModbusWordOrder)
 	 */
-	public static int[] encodeNumber(ModbusDataType dataType, Number number) {
+	public static short[] encodeNumber(ModbusDataType dataType, Number number) {
 		return encodeNumber(dataType, number, MostToLeastSignificant);
 	}
 
@@ -102,11 +127,13 @@ public final class ModbusDataUtils {
 	 *         if {@code dataType} is not supported
 	 * @since 1.1
 	 */
-	public static int[] encodeNumber(ModbusDataType dataType, Number number, ModbusWordOrder wordOrder) {
-		int[] result = null;
+	public static short[] encodeNumber(ModbusDataType dataType, Number number,
+			ModbusWordOrder wordOrder) {
+		short[] result = null;
 		switch (dataType) {
 			case Boolean:
-				result = new int[] { (number != null && number.intValue() != 0 ? 1 : 0) };
+				result = new short[] {
+						(number != null && number.intValue() != 0 ? (short) 1 : (short) 0) };
 				break;
 
 			case Float32:
@@ -151,7 +178,7 @@ public final class ModbusDataUtils {
 					result = encodeUnsignedInteger(number instanceof BigInteger ? (BigInteger) number
 							: number != null ? new BigInteger(number.toString()) : BigInteger.ZERO);
 				} catch ( NumberFormatException e ) {
-					result = new int[] { 0 };
+					result = new short[] { 0 };
 				}
 				break;
 
@@ -174,9 +201,9 @@ public final class ModbusDataUtils {
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
 	 */
-	public static int[] encodeInt16(Short value) {
+	public static short[] encodeInt16(Short value) {
 		short bits = (value != null ? value.shortValue() : (short) 0);
-		return new int[] { bits };
+		return new short[] { bits };
 	}
 
 	/**
@@ -187,9 +214,9 @@ public final class ModbusDataUtils {
 	 *        the value to encode
 	 * @return the register values, which will have a length of {@literal 1}
 	 */
-	public static int[] encodeUnsignedInt16(Integer value) {
+	public static short[] encodeUnsignedInt16(Integer value) {
 		int bits = (value != null ? value : 0);
-		return new int[] { (bits & 0xFFFF) };
+		return new short[] { (short) (bits & 0xFFFF) };
 	}
 
 	/**
@@ -201,7 +228,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeInt32(Integer value) {
+	public static short[] encodeInt32(Integer value) {
 		return encodeInt32(value, MostToLeastSignificant);
 	}
 
@@ -216,9 +243,9 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static int[] encodeInt32(Integer value, ModbusWordOrder wordOrder) {
+	public static short[] encodeInt32(Integer value, ModbusWordOrder wordOrder) {
 		int bits = (value != null ? value : 0);
-		int[] result = new int[] { (bits >> 16) & 0xFFFF, bits & 0xFFFF };
+		short[] result = new short[] { (short) ((bits >> 16) & 0xFFFF), (short) (bits & 0xFFFF) };
 		if ( wordOrder == LeastToMostSignificant ) {
 			swapWordOrder(result);
 		}
@@ -234,7 +261,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeUnsignedInt32(Long value) {
+	public static short[] encodeUnsignedInt32(Long value) {
 		return encodeUnsignedInt32(value, MostToLeastSignificant);
 	}
 
@@ -249,12 +276,12 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static int[] encodeUnsignedInt32(Long value, ModbusWordOrder wordOrder) {
-		int[] words = encodeInt64(value, wordOrder);
+	public static short[] encodeUnsignedInt32(Long value, ModbusWordOrder wordOrder) {
+		short[] words = encodeInt64(value, wordOrder);
 		if ( wordOrder == MostToLeastSignificant ) {
-			return new int[] { words[2], words[3] };
+			return new short[] { words[2], words[3] };
 		}
-		return new int[] { words[0], words[1] };
+		return new short[] { words[0], words[1] };
 	}
 
 	/**
@@ -266,7 +293,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeInt64(Long value) {
+	public static short[] encodeInt64(Long value) {
 		return encodeInt64(value, MostToLeastSignificant);
 	}
 
@@ -281,10 +308,10 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4}
 	 * @since 1.1
 	 */
-	public static int[] encodeInt64(Long value, ModbusWordOrder wordOrder) {
+	public static short[] encodeInt64(Long value, ModbusWordOrder wordOrder) {
 		long bits = (value != null ? value : 0);
-		int[] result = new int[] { (int) ((bits >> 48) & 0xFFFF), (int) ((bits >> 32) & 0xFFFF),
-				(int) ((bits >> 16) & 0xFFFF), (int) (bits & 0xFFFF) };
+		short[] result = new short[] { (short) ((bits >> 48) & 0xFFFF), (short) ((bits >> 32) & 0xFFFF),
+				(short) ((bits >> 16) & 0xFFFF), (short) (bits & 0xFFFF) };
 		if ( wordOrder == LeastToMostSignificant ) {
 			swapWordOrder(result);
 		}
@@ -300,7 +327,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeUnsignedInt64(BigInteger value) {
+	public static short[] encodeUnsignedInt64(BigInteger value) {
 		return encodeUnsignedInt64(value, MostToLeastSignificant);
 	}
 
@@ -315,7 +342,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4}
 	 * @since 1.1
 	 */
-	public static int[] encodeUnsignedInt64(BigInteger value, ModbusWordOrder wordOrder) {
+	public static short[] encodeUnsignedInt64(BigInteger value, ModbusWordOrder wordOrder) {
 		byte[] bytes = value.toByteArray();
 
 		// drop sign byte, if present and not already an even number of bytes
@@ -335,14 +362,14 @@ public final class ModbusDataUtils {
 			bytes = tmp;
 		}
 
-		int[] words = new int[4];
+		short[] words = new short[4];
 		int offset = (8 - bytes.length) / 2;
 		for ( int i = 0; i < bytes.length; i += 2 ) {
 			int v = ((bytes[i] & 0xFF) << 8);
 			if ( i + 1 < bytes.length ) {
 				v |= (bytes[i + 1] & 0xFF);
 			}
-			words[offset + i / 2] = v;
+			words[offset + i / 2] = (short) (v & 0xFFFF);
 		}
 
 		if ( wordOrder == LeastToMostSignificant ) {
@@ -362,7 +389,7 @@ public final class ModbusDataUtils {
 	 *         of registers required to store the full value and use
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeUnsignedInteger(BigInteger value) {
+	public static short[] encodeUnsignedInteger(BigInteger value) {
 		return encodeUnsignedInteger(value, MostToLeastSignificant);
 	}
 
@@ -378,7 +405,7 @@ public final class ModbusDataUtils {
 	 *         of registers required to store the full value
 	 * @since 1.1
 	 */
-	public static int[] encodeUnsignedInteger(BigInteger value, ModbusWordOrder wordOrder) {
+	public static short[] encodeUnsignedInteger(BigInteger value, ModbusWordOrder wordOrder) {
 		byte[] bytes = value.toByteArray();
 
 		// drop sign byte, if present and not already an even number of bytes
@@ -393,13 +420,13 @@ public final class ModbusDataUtils {
 			bytes = tmp;
 		}
 
-		int[] words = new int[bytes.length / 2];
+		short[] words = new short[bytes.length / 2];
 		for ( int i = 0; i < bytes.length; i += 2 ) {
 			int v = ((bytes[i] & 0xFF) << 8);
 			if ( i + 1 < bytes.length ) {
 				v |= (bytes[i + 1] & 0xFF);
 			}
-			words[i / 2] = v;
+			words[i / 2] = (short) v;
 		}
 
 		if ( wordOrder == LeastToMostSignificant ) {
@@ -420,9 +447,9 @@ public final class ModbusDataUtils {
 	 *        the data to swap
 	 * @since 1.1
 	 */
-	public static void swapWordOrder(int[] array) {
+	public static void swapWordOrder(short[] array) {
 		for ( int i = 0; i < array.length / 2; i++ ) {
-			int temp = array[i];
+			short temp = array[i];
 			array[i] = array[array.length - i - 1];
 			array[array.length - i - 1] = temp;
 		}
@@ -437,7 +464,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeFloat32(Float value) {
+	public static short[] encodeFloat32(Float value) {
 		return encodeFloat32(value, MostToLeastSignificant);
 	}
 
@@ -452,7 +479,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 2}
 	 * @since 1.1
 	 */
-	public static int[] encodeFloat32(Float value, ModbusWordOrder wordOrder) {
+	public static short[] encodeFloat32(Float value, ModbusWordOrder wordOrder) {
 		int bits = Float.floatToIntBits(value != null ? value : 0f);
 		return encodeInt32(bits, wordOrder);
 	}
@@ -466,7 +493,7 @@ public final class ModbusDataUtils {
 	 * @return the register values, which will have a length of {@literal 4} and
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeFloat64(Double value) {
+	public static short[] encodeFloat64(Double value) {
 		return encodeFloat64(value, MostToLeastSignificant);
 	}
 
@@ -482,7 +509,7 @@ public final class ModbusDataUtils {
 	 *         use {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 * @since 1.1
 	 */
-	public static int[] encodeFloat64(Double value, ModbusWordOrder wordOrder) {
+	public static short[] encodeFloat64(Double value, ModbusWordOrder wordOrder) {
 		long bits = Double.doubleToLongBits(value != null ? value : 0.0);
 		return encodeInt64(bits, wordOrder);
 	}
@@ -500,7 +527,7 @@ public final class ModbusDataUtils {
 	 *         {@code data.length / 2} and use
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} word order
 	 */
-	public static int[] encodeBytes(byte[] data) {
+	public static short[] encodeBytes(byte[] data) {
 		return encodeBytes(data, MostToLeastSignificant);
 	}
 
@@ -519,15 +546,15 @@ public final class ModbusDataUtils {
 	 *         {@code data.length / 2}
 	 * @since 1.1
 	 */
-	public static int[] encodeBytes(byte[] data, ModbusWordOrder wordOrder) {
+	public static short[] encodeBytes(byte[] data, ModbusWordOrder wordOrder) {
 		if ( data == null || data.length < 1 ) {
-			return new int[0];
+			return new short[0];
 		}
-		int[] words = new int[(int) Math.ceil(data.length / 2.0)];
+		short[] words = new short[(int) Math.ceil(data.length / 2.0)];
 		for ( int i = 0, p = 0; i < data.length; i += 2, p += 1 ) {
-			int n = ((data[i] & 0xFF) << 8);
+			short n = (short) ((data[i] & 0xFF) << 8);
 			if ( i + 1 < data.length ) {
-				n = n | (data[i + 1] & 0xFF);
+				n = (short) (n | (data[i + 1] & 0xFF));
 			}
 			words[p] = n;
 		}
@@ -552,7 +579,7 @@ public final class ModbusDataUtils {
 	 * @throws IllegalArgumentException
 	 *         if {@code dataType} is not supported
 	 */
-	public static Number parseNumber(ModbusDataType dataType, int[] words, int offset) {
+	public static Number parseNumber(ModbusDataType dataType, short[] words, int offset) {
 		return parseNumber(dataType, words, offset, MostToLeastSignificant);
 	}
 
@@ -573,13 +600,13 @@ public final class ModbusDataUtils {
 	 *         if {@code dataType} is not supported
 	 * @since 1.1
 	 */
-	public static Number parseNumber(ModbusDataType dataType, int[] words, int offset,
+	public static Number parseNumber(ModbusDataType dataType, short[] words, int offset,
 			ModbusWordOrder wordOrder) {
 		Number result = null;
 		switch (dataType) {
 			case Boolean:
 				if ( offset < words.length ) {
-					result = words[offset] == 0 ? 0 : 1;
+					result = words[offset] == 0 ? (byte) 0 : (byte) 1;
 				}
 				break;
 
@@ -680,7 +707,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static Short parseInt16(final int lo) {
+	public static Short parseInt16(final short lo) {
 		return (short) lo;
 	}
 
@@ -691,7 +718,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static Integer parseUnsignedInt16(final int lo) {
+	public static Integer parseUnsignedInt16(final short lo) {
 		return (lo & 0xFFFF);
 	}
 
@@ -704,7 +731,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static Integer parseInt32(final int hi, final int lo) {
+	public static Integer parseInt32(final short hi, final short lo) {
 		return (((hi & 0xFFFF) << 16) | lo & 0xFFFF);
 	}
 
@@ -721,7 +748,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static Long parseUnsignedInt32(final int hi, final int lo) {
+	public static Long parseUnsignedInt32(final short hi, final short lo) {
 		return (((hi & 0xFFFFL) << 16) | lo & 0xFFFFL);
 	}
 
@@ -738,7 +765,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static Long parseInt64(final int h1, final int h2, final int l1, final int l2) {
+	public static Long parseInt64(final short h1, final short h2, final short l1, final short l2) {
 		return (((h1 & 0xFFFFL) << 48) | ((h2 & 0xFFFFL) << 32) | ((l1 & 0xFFFFL) << 16)
 				| (l2 & 0xFFFFL));
 	}
@@ -756,7 +783,8 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed integer, never {@literal null}
 	 */
-	public static BigInteger parseUnsignedInt64(final int h1, final int h2, final int l1, final int l2) {
+	public static BigInteger parseUnsignedInt64(final short h1, final short h2, final short l1,
+			final short l2) {
 		int[] data = new int[] { h1, h2, l1, l2 };
 		BigInteger r = new BigInteger("0");
 		for ( int i = 0; i < 4; i++ ) {
@@ -778,7 +806,7 @@ public final class ModbusDataUtils {
 	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
-	public static Float parseFloat32(final int hi, final int lo) {
+	public static Float parseFloat32(final short hi, final short lo) {
 		Integer int32 = parseInt32(hi, lo);
 		Float result = Float.intBitsToFloat(int32.intValue());
 		if ( result.isNaN() ) {
@@ -801,7 +829,7 @@ public final class ModbusDataUtils {
 	 *        bits 15-0
 	 * @return the parsed float, or {@literal null} if the result is {@code NaN}
 	 */
-	public static Double parseFloat64(final int h1, final int h2, final int l1, final int l2) {
+	public static Double parseFloat64(final short h1, final short h2, final short l1, final short l2) {
 		Long l = parseInt64(h1, h2, l1, l2);
 		Double result = Double.longBitsToDouble(l);
 		if ( result.isNaN() ) {
@@ -820,7 +848,7 @@ public final class ModbusDataUtils {
 	 *        the word offset to start from
 	 * @return the parsed bytes
 	 */
-	public static byte[] parseBytes(int[] words, int offset) {
+	public static byte[] parseBytes(short[] words, int offset) {
 		return parseBytes(words, offset, MostToLeastSignificant);
 	}
 
@@ -836,7 +864,7 @@ public final class ModbusDataUtils {
 	 * @return the parsed bytes
 	 * @since 1.1
 	 */
-	public static byte[] parseBytes(int[] words, int offset, ModbusWordOrder wordOrder) {
+	public static byte[] parseBytes(short[] words, int offset, ModbusWordOrder wordOrder) {
 		byte[] bytes = new byte[2
 				* (words == null || offset >= words.length ? 0 : (words.length - offset))];
 		if ( bytes.length > 0 ) {
@@ -860,7 +888,7 @@ public final class ModbusDataUtils {
 	 *        the offset within words to start reading from
 	 * @return the integer value
 	 */
-	public static BigInteger parseUnsignedInteger(int[] words, int offset) {
+	public static BigInteger parseUnsignedInteger(short[] words, int offset) {
 		return parseUnsignedInteger(words, offset, MostToLeastSignificant);
 	}
 
@@ -877,7 +905,7 @@ public final class ModbusDataUtils {
 	 * @return the integer value
 	 * @since 1.1
 	 */
-	public static BigInteger parseUnsignedInteger(int[] words, int offset, ModbusWordOrder wordOrder) {
+	public static BigInteger parseUnsignedInteger(short[] words, int offset, ModbusWordOrder wordOrder) {
 		byte[] bytes = parseBytes(words, offset, wordOrder);
 		if ( bytes.length > 0 && bytes[0] != (byte) 0 ) {
 			byte[] tmp = new byte[bytes.length + 1];
