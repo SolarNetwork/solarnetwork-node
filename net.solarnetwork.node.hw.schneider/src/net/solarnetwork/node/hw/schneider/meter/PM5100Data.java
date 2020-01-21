@@ -114,7 +114,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 
 	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
 		for ( IntRange r : ranges ) {
-			int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
+			short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());
 			m.saveDataArray(data, r.getMin());
 		}
@@ -200,12 +200,12 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	}
 
 	@Override
-	public PM5100PowerSystem getPowerSystem() {
+	public PowerSystem getPowerSystem() {
 		Number n = getNumber(PM5100Register.ConfigPowerSystem);
-		PM5100PowerSystem m = null;
+		PowerSystem m = null;
 		if ( n != null ) {
 			try {
-				m = PM5100PowerSystem.forCode(n.intValue());
+				m = PowerSystem.forCode(n.intValue());
 			} catch ( IllegalArgumentException e ) {
 				// ignore
 			}
@@ -340,7 +340,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public PM5100PowerSystem getPowerSystem() {
+		public PowerSystem getPowerSystem() {
 			return PM5100Data.this.getPowerSystem();
 		}
 
@@ -544,7 +544,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public PM5100PowerSystem getPowerSystem() {
+		public PowerSystem getPowerSystem() {
 			return delegate.getPowerSystem();
 		}
 

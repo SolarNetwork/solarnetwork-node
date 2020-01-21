@@ -1,7 +1,7 @@
 /* ==================================================================
- * PM5100DataAccessor.java - 17/05/2018 3:13:41 PM
+ * PM3200DataAccessor.java - 20/01/2020 5:40:58 pm
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,14 +22,22 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
+import org.joda.time.LocalDateTime;
+
 /**
- * API for reading PM5100 series meter data.
+ * API for reading PM3200 series meter data.
  * 
  * @author matt
  * @version 1.0
- * @since 2.4
  */
-public interface PM5100DataAccessor extends MeterDataAccessor {
+public interface PM3200DataAccessor extends MeterDataAccessor {
+
+	/**
+	 * Get the device name.
+	 * 
+	 * @return the name
+	 */
+	String getName();
 
 	/**
 	 * Get the device serial number.
@@ -50,7 +58,21 @@ public interface PM5100DataAccessor extends MeterDataAccessor {
 	 * 
 	 * @return the model
 	 */
-	PM5100Model getModel();
+	String getModel();
+
+	/**
+	 * Get the manufacture date.
+	 * 
+	 * @return the data
+	 */
+	LocalDateTime getManufactureDate();
+
+	/**
+	 * Get the manufacturer name.
+	 * 
+	 * @return the manufacturer name
+	 */
+	String getManufacturer();
 
 	/**
 	 * Get the number of phases configured.

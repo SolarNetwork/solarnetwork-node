@@ -22,243 +22,102 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import java.util.Arrays;
-import gnu.trove.map.TIntIntMap;
-import gnu.trove.map.hash.TIntIntHashMap;
+import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import java.util.Collection;
+import java.util.Map;
+import org.joda.time.LocalDateTime;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDataUtils;
+import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class PM3200Data {
+public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
-	// current (Float32)
-	public static final int ADDR_DATA_I1 = 2999;
-	public static final int ADDR_DATA_I2 = 3001;
-	public static final int ADDR_DATA_I3 = 3003;
-	public static final int ADDR_DATA_I_NEUTRAL = 3005;
-	public static final int ADDR_DATA_I_AVERAGE = 3009;
-
-	// voltage
-	public static final int ADDR_DATA_V_L1_L2 = 3019;
-	public static final int ADDR_DATA_V_L2_L3 = 3021;
-	public static final int ADDR_DATA_V_L3_L1 = 3023;
-	public static final int ADDR_DATA_V_L_L_AVERAGE = 3025;
-	public static final int ADDR_DATA_V_L1_NEUTRAL = 3027;
-	public static final int ADDR_DATA_V_L2_NEUTRAL = 3029;
-	public static final int ADDR_DATA_V_L3_NEUTRAL = 3031;
-	public static final int ADDR_DATA_V_NEUTRAL_AVERAGE = 3035;
-
-	// power (Float32)
-	public static final int ADDR_DATA_ACTIVE_POWER_P1 = 3053;
-	public static final int ADDR_DATA_ACTIVE_POWER_P2 = 3055;
-	public static final int ADDR_DATA_ACTIVE_POWER_P3 = 3057;
-	public static final int ADDR_DATA_ACTIVE_POWER_TOTAL = 3059;
-	public static final int ADDR_DATA_REACTIVE_POWER_P1 = 3061;
-	public static final int ADDR_DATA_REACTIVE_POWER_P2 = 3063;
-	public static final int ADDR_DATA_REACTIVE_POWER_P3 = 3065;
-	public static final int ADDR_DATA_REACTIVE_POWER_TOTAL = 3067;
-	public static final int ADDR_DATA_APPARENT_POWER_P1 = 3069;
-	public static final int ADDR_DATA_APPARENT_POWER_P2 = 3071;
-	public static final int ADDR_DATA_APPARENT_POWER_P3 = 3073;
-	public static final int ADDR_DATA_APPARENT_POWER_TOTAL = 3075;
-
-	// power factor (Float32)
-	public static final int ADDR_DATA_POWER_FACTOR_P1 = 3077;
-	public static final int ADDR_DATA_POWER_FACTOR_P2 = 3079;
-	public static final int ADDR_DATA_POWER_FACTOR_P3 = 3081;
-	public static final int ADDR_DATA_POWER_FACTOR_TOTAL = 3083;
-
-	// tangent phi, frequency, temp (Float32)
-	public static final int ADDR_DATA_REACTIVE_FACTOR_TOTAL = 3107;
-	public static final int ADDR_DATA_FREQUENCY = 3109;
-	public static final int ADDR_DATA_TEMP = 3131;
-
-	// total energy (Int64)
-	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL = 3203;
-	public static final int ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL = 3207;
-	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL = 3219;
-	public static final int ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL = 3223;
-	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_TOTAL = 3235;
-	public static final int ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL = 3239;
-
-	// total energy (Int64) - deprecated
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL;
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL;
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL;
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL;
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_IMPORT = ADDR_DATA_APPARENT_ENERGY_IMPORT_TOTAL;
-	@Deprecated
-	public static final int ADDR_DATA_TOTAL_APPARENT_ENERGY_EXPORT = ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL;
-
-	// total phase energy import (Int64)
-	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1 = 3517;
-	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P2 = 3521;
-	public static final int ADDR_DATA_ACTIVE_ENERGY_IMPORT_P3 = 3525;
-
-	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P1 = 3529;
-	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P2 = 3533;
-	public static final int ADDR_DATA_REACTIVE_ENERGY_IMPORT_P3 = 3537;
-
-	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P1 = 3541;
-	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P2 = 3545;
-	public static final int ADDR_DATA_APPARENT_ENERGY_IMPORT_P3 = 3549;
-
-	private final TIntIntMap dataRegisters;
-	private long dataTimestamp = 0;
+	private static final int MAX_RESULTS = 64;
 
 	/**
-	 * Default constructor.
+	 * Constructor.
 	 */
 	public PM3200Data() {
 		super();
-		this.dataRegisters = new TIntIntHashMap(64);
 	}
 
 	/**
 	 * Copy constructor.
 	 * 
 	 * @param other
-	 *        the object to copy
+	 *        the meter data to copy
 	 */
-	public PM3200Data(PM3200Data other) {
-		super();
-		this.dataRegisters = new TIntIntHashMap(other.dataRegisters);
-		this.dataTimestamp = other.dataTimestamp;
+	public PM3200Data(ModbusData other) {
+		super(other);
 	}
 
 	@Override
-	public String toString() {
-		return "PM3200Data{V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL) + ",V2="
-				+ getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3=" + getVoltage(ADDR_DATA_V_L3_NEUTRAL)
-				+ ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2=" + getCurrent(ADDR_DATA_I2) + ",A3="
-				+ getCurrent(ADDR_DATA_I3) + ",PF=" + getPowerFactor(ADDR_DATA_REACTIVE_FACTOR_TOTAL)
-				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
-				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
-				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
-				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
-				+ getEnergy(ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL) + ",varh-I="
-				+ getEnergy(ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL) + ",Wh-E="
-				+ getEnergy(ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL) + ",varh-E="
-				+ getEnergy(ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL) + "}";
+	public ModbusData copy() {
+		return new PM3200Data(this);
 	}
 
 	/**
-	 * Get a string of data values, useful for debugging. The generated string
-	 * will contain a register address followed by two register values per line,
-	 * printed as hexidecimal integers, with a prefix and suffix line. The
-	 * register addresses will be printed as {@bold 1-based} values, to match
-	 * Schneider's documentation. For example:
+	 * Get a snapshot copy of the data.
 	 * 
-	 * <pre>
-	 * PM3200Data{
-	 *      3000: 0x4141, 0x727E
-	 *      3002: 0xFFC0, 0x0000
-	 *      ...
-	 *      3240: 0x0000, 0x0000
-	 * }
-	 * </pre>
-	 * 
-	 * @return debug string
+	 * @return a copy of the data
+	 * @see ION6200Data#copy()
 	 */
-	public String dataDebugString() {
-		final StringBuilder buf = new StringBuilder("PM3200Data{\n");
-		PM3200Data snapshot = new PM3200Data(this);
-		int[] keys = snapshot.dataRegisters.keys();
-		Arrays.sort(keys);
-		boolean odd = true;
-		for ( int k : keys ) {
-			if ( odd ) {
-				buf.append("\t").append(String.format("%5d", k + 1)).append(": ");
-			}
-			buf.append(String.format("0x%04X", snapshot.dataRegisters.get(k)));
-			if ( odd ) {
-				buf.append(", ");
-			} else {
-				buf.append("\n");
-			}
-			odd = !odd;
-		}
-		buf.append("}");
-		return buf.toString();
+	public PM3200Data getSnapshot() {
+		return (PM3200Data) copy();
 	}
 
 	/**
-	 * Read data from the meter and store it internally. If data is populated
-	 * successfully, the {@link dataTimestamp} will be updated to the current
-	 * system time. <b>Note</b> this does <b>not</b> call
-	 * {@link #readEnergyRatios(SerialConnection, int)}. Those values are not
-	 * expected to change much, so those values should be called manually as
-	 * needed.
+	 * Read the configuration and information registers from the device.
 	 * 
 	 * @param conn
-	 *        the Modbus connection
+	 *        the connection
 	 */
-	public synchronized void readMeterData(final ModbusConnection conn) {
-		// current
-		readIntData(conn, ADDR_DATA_I1, ADDR_DATA_I_AVERAGE + 1);
+	public final void readConfigurationData(final ModbusConnection conn) {
+		performUpdates(new ModbusDataUpdateAction() {
 
-		// voltage
-		readIntData(conn, ADDR_DATA_V_L1_L2, ADDR_DATA_V_NEUTRAL_AVERAGE + 1);
-
-		// power, power factor
-		readIntData(conn, ADDR_DATA_ACTIVE_POWER_P1, ADDR_DATA_POWER_FACTOR_TOTAL + 1);
-
-		// tangent phi, frequency, temp (Float32)
-		readIntData(conn, ADDR_DATA_REACTIVE_FACTOR_TOTAL, ADDR_DATA_TEMP + 1);
-
-		// total energy (Int64)
-		readIntData(conn, ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL,
-				ADDR_DATA_APPARENT_ENERGY_EXPORT_TOTAL + 3);
-
-		// total phase energy import (Int64)
-		readIntData(conn, ADDR_DATA_ACTIVE_ENERGY_IMPORT_P1, ADDR_DATA_APPARENT_ENERGY_IMPORT_P3 + 3);
-
-		dataTimestamp = System.currentTimeMillis();
-	}
-
-	private void readIntData(final ModbusConnection conn, final int startAddr, final int endAddr) {
-		int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, startAddr,
-				(endAddr - startAddr + 1));
-		saveDataArray(data, startAddr);
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				// we actually read ALL registers here, so our snapshot timestamp includes everything
+				updateData(conn, m,
+						coveringIntRanges(PM3200Register.getRegisterAddressSet(), MAX_RESULTS));
+				return true;
+			}
+		});
 	}
 
 	/**
-	 * Internally store an array of integer register data values, starting at a
-	 * given address.
+	 * Read the meter registers from the device.
 	 * 
-	 * @param data
-	 *        the data array to save
-	 * @param addr
-	 *        the starting address of the data
+	 * @param conn
+	 *        the connection
 	 */
-	protected void saveDataArray(final int[] data, int addr) {
-		if ( data == null || data.length < 1 ) {
-			return;
-		}
-		for ( int v : data ) {
-			dataRegisters.put(addr, v);
-			addr++;
-		}
+	public final void readMeterData(final ModbusConnection conn) {
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				updateData(conn, m,
+						coveringIntRanges(PM3200Register.getMeterRegisterAddressSet(), MAX_RESULTS));
+				return true;
+			}
+		});
 	}
 
-	private Float getFloat32(final int addr) {
-		return ModbusDataUtils.parseFloat32(dataRegisters.get(addr), dataRegisters.get(addr + 1));
-	}
-
-	private Long getInt64(final int addr) {
-		return ModbusDataUtils.parseInt64(dataRegisters.get(addr), dataRegisters.get(addr + 1),
-				dataRegisters.get(addr + 2), dataRegisters.get(addr + 3));
+	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
+		for ( IntRange r : ranges ) {
+			short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
+					r.length());
+			m.saveDataArray(data, r.getMin());
+		}
 	}
 
 	/**
@@ -323,7 +182,7 @@ public class PM3200Data {
 	 * @return the effective power factor
 	 */
 	public Float getEffectiveTotalPowerFactor() {
-		Float tangentPhi = getFloat32(ADDR_DATA_REACTIVE_FACTOR_TOTAL);
+		Float tangentPhi = getFloat32(PM3200Register.MeterReactivePowerFactorTotal.getAddress());
 		if ( tangentPhi == null ) {
 			return null;
 		}
@@ -362,8 +221,615 @@ public class PM3200Data {
 		return getInt64(addr);
 	}
 
-	public long getDataTimestamp() {
-		return dataTimestamp;
+	/**
+	 * Get an accessor for a specific phase.
+	 * 
+	 * <p>
+	 * This class implements {@link ION6200DataAccessor} for the {@code Total}
+	 * phase. Call this method to get an accessor for a different phase.
+	 * </p>
+	 * 
+	 * @param phase
+	 *        the phase to get an accessor for
+	 * @return the accessor
+	 */
+	public PM3200DataAccessor dataAccessorForPhase(ACPhase phase) {
+		if ( phase == ACPhase.Total ) {
+			return this;
+		}
+		return new PhaseMeterDataAccessor(phase);
 	}
 
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		return dataAccessorForPhase(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return new ReversedMeterDataAccessor(this);
+	}
+
+	public Integer getPowerValue(PM3200Register reg) {
+		Number n = getNumber(reg);
+		return (n != null ? Math.round(n.floatValue() * 1000.0f) : null);
+	}
+
+	private Float getCurrentValue(PM3200Register reg) {
+		Number n = getNumber(reg);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	private Float getVoltageValue(PM3200Register reg) {
+		Number n = getNumber(reg);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	private Long getEnergyValue(PM3200Register reg) {
+		Number n = getNumber(reg);
+		return (n != null ? n.longValue() : null);
+	}
+
+	@Override
+	public Long getSerialNumber() {
+		Number n = getNumber(PM3200Register.InfoSerialNumber);
+		return (n != null ? n.longValue() : null);
+	}
+
+	@Override
+	public String getFirmwareRevision() {
+		Number n = getNumber(PM3200Register.InfoFirmwareRevision);
+		if ( n == null ) {
+			return null;
+		}
+		String s = n.toString();
+		if ( s.length() < 3 ) {
+			return null;
+		}
+		return String.format("%c.%c.%s", s.charAt(0), s.charAt(1), s.substring(2));
+	}
+
+	@Override
+	public String getModel() {
+		return getUtf8String(PM3200Register.InfoModel, true);
+	}
+
+	@Override
+	public String getName() {
+		return getUtf8String(PM3200Register.InfoName, true);
+	}
+
+	@Override
+	public String getManufacturer() {
+		return getUtf8String(PM3200Register.InfoManufacturer, true);
+	}
+
+	@Override
+	public LocalDateTime getManufactureDate() {
+		PM3200Register r = PM3200Register.InfoManufactureDate;
+		short[] data = new short[r.getWordLength()];
+		slice(data, 0, r.getAddress(), r.getWordLength());
+		return DataUtils.parseDateTime(data);
+	}
+
+	@Override
+	public PowerSystem getPowerSystem() {
+		Number n = getNumber(PM3200Register.ConfigPowerSystem);
+		PowerSystem m = null;
+		if ( n != null ) {
+			try {
+				m = PowerSystem.forCode(n.intValue());
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		}
+		return m;
+	}
+
+	@Override
+	public Integer getPhaseCount() {
+		return getInt16(PM3200Register.ConfigNumPhases.getAddress());
+	}
+
+	@Override
+	public Integer getWireCount() {
+		return getInt16(PM3200Register.ConfigNumWires.getAddress());
+	}
+
+	@Override
+	public Float getFrequency() {
+		Float v = getFloat32(PM3200Register.MeterFrequency.getAddress());
+		return (v != null ? v.floatValue() : null);
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		Number v = getNumber(PM3200Register.MeterPowerFactorTotal);
+		return (v != null ? v.floatValue() : null);
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return getPowerValue(PM3200Register.MeterActivePowerTotal);
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		return getPowerValue(PM3200Register.MeterApparentPowerTotal);
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		return getPowerValue(PM3200Register.MeterReactivePowerTotal);
+	}
+
+	@Override
+	public Float getCurrent() {
+		return getCurrentValue(PM3200Register.MeterCurrentAverage);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return getCurrentValue(PM3200Register.MeterCurrentNeutral);
+	}
+
+	@Override
+	public Float getVoltage() {
+		return getVoltageValue(PM3200Register.MeterVoltageLineNeutralAverage);
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		return getVoltageValue(PM3200Register.MeterVoltageLineLineAverage);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getEnergyValue(PM3200Register.MeterActiveEnergyDelivered);
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return getEnergyValue(PM3200Register.MeterActiveEnergyReceived);
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return getEnergyValue(PM3200Register.MeterReactiveEnergyDelivered);
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return getEnergyValue(PM3200Register.MeterReactiveEnergyReceived);
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return getEnergyValue(PM3200Register.MeterApparentEnergyDelivered);
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return getEnergyValue(PM3200Register.MeterApparentEnergyReceived);
+	}
+
+	private class PhaseMeterDataAccessor implements PM3200DataAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterDataAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return PM3200Data.this.getDeviceInfo();
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return PM3200Data.this.getSerialNumber();
+		}
+
+		@Override
+		public String getModel() {
+			return PM3200Data.this.getModel();
+		}
+
+		@Override
+		public String getName() {
+			return PM3200Data.this.getName();
+		}
+
+		@Override
+		public LocalDateTime getManufactureDate() {
+			return PM3200Data.this.getManufactureDate();
+		}
+
+		@Override
+		public String getManufacturer() {
+			return PM3200Data.this.getManufacturer();
+		}
+
+		@Override
+		public Integer getPhaseCount() {
+			return PM3200Data.this.getPhaseCount();
+		}
+
+		@Override
+		public Integer getWireCount() {
+			return PM3200Data.this.getWireCount();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return PM3200Data.this.getFirmwareRevision();
+		}
+
+		@Override
+		public PowerSystem getPowerSystem() {
+			return PM3200Data.this.getPowerSystem();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return PM3200Data.this.getDataTimestamp();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return PM3200Data.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return new ReversedMeterDataAccessor(this);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return PM3200Data.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getCurrentValue(PM3200Register.MeterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getCurrentValue(PM3200Register.MeterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getCurrentValue(PM3200Register.MeterCurrentPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getCurrent();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return PM3200Data.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineLinePhaseAPhaseB);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineLinePhaseBPhaseC);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(PM3200Register.MeterVoltageLineLinePhaseCPhaseA);
+					break;
+
+				default:
+					n = PM3200Data.this.getLineVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return PM3200Data.this.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getPowerValue(PM3200Register.MeterActivePowerPhaseA);
+					break;
+
+				case PhaseB:
+					n = getPowerValue(PM3200Register.MeterActivePowerPhaseB);
+					break;
+
+				case PhaseC:
+					n = getPowerValue(PM3200Register.MeterActivePowerPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getActivePower();
+			}
+			return n;
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return PM3200Data.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return PM3200Data.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			Long n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getEnergyValue(PM3200Register.MeterActiveEnergyDeliveredPhaseA);
+					break;
+				case PhaseB:
+					n = getEnergyValue(PM3200Register.MeterActiveEnergyDeliveredPhaseB);
+					break;
+				case PhaseC:
+					n = getEnergyValue(PM3200Register.MeterActiveEnergyDeliveredPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getActiveEnergyDelivered();
+
+			}
+			return n;
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return PM3200Data.this.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			Long n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getEnergyValue(PM3200Register.MeterReactiveEnergyDeliveredPhaseA);
+					break;
+				case PhaseB:
+					n = getEnergyValue(PM3200Register.MeterReactiveEnergyDeliveredPhaseB);
+					break;
+				case PhaseC:
+					n = getEnergyValue(PM3200Register.MeterReactiveEnergyDeliveredPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getReactiveEnergyDelivered();
+
+			}
+			return n;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return PM3200Data.this.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			Long n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getEnergyValue(PM3200Register.MeterApparentEnergyDeliveredPhaseA);
+					break;
+				case PhaseB:
+					n = getEnergyValue(PM3200Register.MeterApparentEnergyDeliveredPhaseB);
+					break;
+				case PhaseC:
+					n = getEnergyValue(PM3200Register.MeterApparentEnergyDeliveredPhaseC);
+					break;
+
+				default:
+					n = PM3200Data.this.getApparentEnergyDelivered();
+
+			}
+			return n;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return PM3200Data.this.getActiveEnergyReceived();
+		}
+
+	}
+
+	private static class ReversedMeterDataAccessor implements PM3200DataAccessor {
+
+		private final PM3200DataAccessor delegate;
+
+		private ReversedMeterDataAccessor(PM3200DataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return new ReversedMeterDataAccessor((PM3200DataAccessor) delegate.accessorForPhase(phase));
+		}
+
+		@Override
+		public Long getSerialNumber() {
+			return delegate.getSerialNumber();
+		}
+
+		@Override
+		public String getModel() {
+			return delegate.getModel();
+		}
+
+		@Override
+		public String getName() {
+			return delegate.getName();
+		}
+
+		@Override
+		public LocalDateTime getManufactureDate() {
+			return delegate.getManufactureDate();
+		}
+
+		@Override
+		public String getManufacturer() {
+			return delegate.getManufacturer();
+		}
+
+		@Override
+		public Integer getPhaseCount() {
+			return delegate.getPhaseCount();
+		}
+
+		@Override
+		public Integer getWireCount() {
+			return delegate.getWireCount();
+		}
+
+		@Override
+		public PowerSystem getPowerSystem() {
+			return delegate.getPowerSystem();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return delegate.getFirmwareRevision();
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
+		}
+
+	}
 }

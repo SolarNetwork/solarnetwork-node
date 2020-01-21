@@ -1,7 +1,7 @@
 /* ==================================================================
- * PM5100Register.java - 17/05/2018 3:13:57 PM
+ * PM3200Register.java - 20/01/2020 5:49:24 pm
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -36,160 +36,207 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.IntRangeSet;
 
 /**
- * Enumeration of Modbus register mappings for the PM5100 series meter.
+ * Enumeration of Modbus register mappings for the PM3200 series meter.
  * 
  * @author matt
- * @version 2.0
- * @since 2.4
+ * @version 1.0
+ * @since 3.0
  */
-public enum PM5100Register implements ModbusReference {
+public enum PM3200Register implements ModbusReference {
+
+	/*
+	 * NOTE: constructor indexes are 1-baesd to match Schneider documentation.
+	 */
 
 	// Information
 
 	/** Meter name. */
-	InfoName(29, StringUtf8, 20),
+	InfoName(30, StringUtf8, 20),
 
-	/** Meter model, see {@link PM5100Model}. */
-	InfoModel(89, UInt16),
+	/** Meter model. */
+	InfoModel(50, StringUtf8, 20),
 
-	/** Manufacturing unit ID. */
-	InfoManufacturingUnitId(128, UInt16),
+	/** Manufacturer. */
+	InfoManufacturer(70, StringUtf8, 20),
 
 	/** Serial number. */
-	InfoSerialNumber(129, UInt32),
+	InfoSerialNumber(130, UInt32),
 
 	/** Manufacture date, in Schneider "date time" format. */
-	InfoManufactureDate(131, UInt16, 4),
+	InfoManufactureDate(132, UInt16, 4),
 
-	/** Firmware major revision. */
-	InfoFirmwareRevisionMajor(1637, UInt16),
-
-	/** Firmware minor revision. */
-	InfoFirmwareRevisionMinor(1638, UInt16),
-
-	/** Firmware patch revision. */
-	InfoFirmwareRevisionPatch(1640, UInt16),
+	/** Firmware revision in X.Y.ZTT format. */
+	InfoFirmwareRevision(1637, UInt16),
 
 	// Configuration
 
 	/** Number of phases. */
-	ConfigNumPhases(2013, UInt16),
+	ConfigNumPhases(2014, UInt16),
 
 	/** Number of wires. */
-	ConfigNumWires(2014, UInt16),
+	ConfigNumWires(2015, UInt16),
 
 	/** Power system, see {@link PowerSystem}. */
-	ConfigPowerSystem(2015, UInt16),
+	ConfigPowerSystem(2016, UInt16),
 
 	// Meter data
 
 	/** Current average, reported in A. */
-	MeterCurrentPhaseA(2999, Float32),
+	MeterCurrentPhaseA(3000, Float32),
 
 	/** Current average, reported in A. */
-	MeterCurrentPhaseB(3001, Float32),
+	MeterCurrentPhaseB(3002, Float32),
 
 	/** Current average, reported in A. */
-	MeterCurrentPhaseC(3003, Float32),
+	MeterCurrentPhaseC(3004, Float32),
 
-	/**
-	 * Neutral current, reported in A.
-	 * 
-	 * @since 1.2
-	 */
-	MeterCurrentNeutral(3005, Float32),
-
-	/**
-	 * Ground current, reported in A.
-	 * 
-	 * @since 1.2
-	 */
-	MeterCurrentGround(3007, Float32),
+	/** Neutral current, reported in A. */
+	MeterCurrentNeutral(3006, Float32),
 
 	/** Current average, reported in A. */
-	MeterCurrentAverage(3009, Float32),
+	MeterCurrentAverage(3010, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineLinePhaseAPhaseB(3019, Float32),
+	MeterVoltageLineLinePhaseAPhaseB(3020, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineLinePhaseBPhaseC(3021, Float32),
+	MeterVoltageLineLinePhaseBPhaseC(3022, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineLinePhaseCPhaseA(3023, Float32),
+	MeterVoltageLineLinePhaseCPhaseA(3024, Float32),
 
 	/** Line-to-neutral voltage average, reported in V. */
-	MeterVoltageLineLineAverage(3025, Float32),
+	MeterVoltageLineLineAverage(3026, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineNeutralPhaseA(3027, Float32),
+	MeterVoltageLineNeutralPhaseA(3028, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineNeutralPhaseB(3029, Float32),
+	MeterVoltageLineNeutralPhaseB(3030, Float32),
 
 	/** Line-to-neutral voltage for phase A, reported in V. */
-	MeterVoltageLineNeutralPhaseC(3031, Float32),
+	MeterVoltageLineNeutralPhaseC(3032, Float32),
 
 	/** Line-to-neutral voltage average, reported in V. */
-	MeterVoltageLineNeutralAverage(3035, Float32),
+	MeterVoltageLineNeutralAverage(3036, Float32),
+
+	/** Active power for phase A, reported in kW. */
+	MeterActivePowerPhaseA(3054, Float32),
+
+	/** Active power for phase B, reported in kW. */
+	MeterActivePowerPhaseB(3056, Float32),
+
+	/** Active power for phase C, reported in kW. */
+	MeterActivePowerPhaseC(3058, Float32),
 
 	/** Active power total, reported in kW. */
-	MeterActivePowerPhaseA(3053, Float32),
+	MeterActivePowerTotal(3060, Float32),
 
-	/** Active power total, reported in kW. */
-	MeterActivePowerPhaseB(3055, Float32),
+	/** Reactive power for phase A, reported in kVAR. */
+	MeterReactivePowerPhaseA(3062, Float32),
 
-	/** Active power total, reported in kW. */
-	MeterActivePowerPhaseC(3057, Float32),
+	/** Reactive power for phase B, reported in kVAR. */
+	MeterReactivePowerPhaseB(3064, Float32),
 
-	/** Active power total, reported in kW. */
-	MeterActivePowerTotal(3059, Float32),
+	/** Reactive power for phase C, reported in kVAR. */
+	MeterReactivePowerPhaseC(3066, Float32),
 
 	/** Reactive power total, reported in kVAR. */
-	MeterReactivePowerTotal(3067, Float32),
+	MeterReactivePowerTotal(3068, Float32),
+
+	/** Apparent power for phase A, reported in kVA. */
+	MeterApparentPowerPhaseA(3070, Float32),
+
+	/** Apparent power for phase B, reported in kVA. */
+	MeterApparentPowerPhaseB(3072, Float32),
+
+	/** Apparent power for phase C, reported in kVA. */
+	MeterApparentPowerPhaseC(3074, Float32),
 
 	/** Apparent power total, reported in kVA. */
-	MeterApparentPowerTotal(3075, Float32),
+	MeterApparentPowerTotal(3076, Float32),
+
+	/** Power factor for phase A, in 4Q FP PF. */
+	MeterPowerFactorPhaseA(3078, Float32),
+
+	/** Power factor for phase B, in 4Q FP PF. */
+	MeterPowerFactorPhaseB(3080, Float32),
+
+	/** Power factor for phase C, in 4Q FP PF. */
+	MeterPowerFactorPhaseC(3082, Float32),
 
 	/** Power factor total, in 4Q FP PF. */
-	MeterPowerFactorTotal(3083, Float32),
+	MeterPowerFactorTotal(3084, Float32),
+
+	/** Reactive power factor total, in tangent phi. */
+	MeterReactivePowerFactorTotal(3108, Float32),
 
 	/** AC frequency, reported in Hz. */
-	MeterFrequency(3109, Float32),
+	MeterFrequency(3110, Float32),
+
+	/** Meter temperature, in degrees celsius. */
+	MeterTemperature(3132, Float32),
 
 	/** Total energy delivered (imported), in Wh. */
-	MeterActiveEnergyDelivered(3203, Int64),
+	MeterActiveEnergyDelivered(3204, Int64),
 
 	/** Total energy received (exported), in Wh. */
-	MeterActiveEnergyReceived(3207, Int64),
+	MeterActiveEnergyReceived(3208, Int64),
 
 	/** Total reactive energy delivered (imported), in VARh. */
-	MeterReactiveEnergyDelivered(3219, Int64),
+	MeterReactiveEnergyDelivered(3220, Int64),
 
 	/** Total reactive energy received (exported), in VARh. */
-	MeterReactiveEnergyReceived(3223, Int64),
+	MeterReactiveEnergyReceived(3224, Int64),
 
 	/** Total apparent energy delivered (imported), in VAh. */
-	MeterApparentEnergyDelivered(3235, Int64),
+	MeterApparentEnergyDelivered(3236, Int64),
 
 	/** Total apparent energy received (exported), in VAh. */
-	MeterApparentEnergyReceived(3239, Int64);
+	MeterApparentEnergyReceived(3240, Int64),
+
+	/** Phase A energy delivered (imported), in Wh. */
+	MeterActiveEnergyDeliveredPhaseA(3518, Int64),
+
+	/** Phase B energy delivered (imported), in Wh. */
+	MeterActiveEnergyDeliveredPhaseB(3522, Int64),
+
+	/** Phase C energy delivered (imported), in Wh. */
+	MeterActiveEnergyDeliveredPhaseC(3526, Int64),
+
+	/** Phase A reactive energy delivered (imported), in VARh. */
+	MeterReactiveEnergyDeliveredPhaseA(3530, Int64),
+
+	/** Phase B reactive energy delivered (imported), in VARh. */
+	MeterReactiveEnergyDeliveredPhaseB(3534, Int64),
+
+	/** Phase C reactive energy delivered (imported), in VARh. */
+	MeterReactiveEnergyDeliveredPhaseC(3538, Int64),
+
+	/** Phase A apparent energy delivered (imported), in VAh. */
+	MeterApparentEnergyDeliveredPhaseA(3542, Int64),
+
+	/** Phase B apparent energy delivered (imported), in VAh. */
+	MeterApparentEnergyDeliveredPhaseB(3546, Int64),
+
+	/** Phase C apparent energy delivered (imported), in VAh. */
+	MeterApparentEnergyDeliveredPhaseC(3550, Int64);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
-			PM5100Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+			PM3200Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
 	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
-			PM5100Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
+			PM3200Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;
 	private final ModbusDataType dataType;
 	private final int wordLength;
 
-	private PM5100Register(int address, ModbusDataType dataType) {
+	private PM3200Register(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
-	private PM5100Register(int address, ModbusDataType dataType, int wordLength) {
-		this.address = address;
+	private PM3200Register(int address, ModbusDataType dataType, int wordLength) {
+		this.address = address - 1;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
 	}
