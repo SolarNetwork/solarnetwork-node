@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusDataUtils;
  * Test cases for the {@link ModbusDataUtils} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class ModbusDataUtilsTests {
 
