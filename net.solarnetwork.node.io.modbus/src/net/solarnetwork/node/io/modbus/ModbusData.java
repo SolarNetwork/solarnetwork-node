@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -607,7 +608,7 @@ public class ModbusData implements DataAccessor {
 	public final ModbusData performUpdates(ModbusDataUpdateAction action) {
 		synchronized ( dataRegisters ) {
 			final long now = System.currentTimeMillis();
-			if ( action.updateModbusData(new MutableModbusDataView()) ) {
+			if ( action.updateModbusData(new MutableModbusDataView(dataRegisters, wordOrder)) ) {
 				dataTimestamp = now;
 			}
 		}
@@ -728,14 +729,32 @@ public class ModbusData implements DataAccessor {
 	}
 
 	/**
-	 * Internal mutable view of this class, meant to be used for thread-safe
+	 * Mutable view of Modbus data registers, meant to be used for thread-safe
 	 * writes.
 	 * 
 	 * <p>
 	 * All methods are assumed to be synchronized on {@code dataRegsiters}.
 	 * </p>
 	 */
-	private class MutableModbusDataView implements MutableModbusData {
+	public static class MutableModbusDataView implements MutableModbusData {
+
+		private final IntShortMap dataRegisters;
+		private final ModbusWordOrder wordOrder;
+
+		/**
+		 * Construct with data registers to mutate.
+		 * 
+		 * @param dataRegisters
+		 *        the registers to mutate; calling code should by synchronized
+		 *        on this instance
+		 * @param wordOrder
+		 *        the word order to use
+		 */
+		public MutableModbusDataView(IntShortMap dataRegisters, ModbusWordOrder wordOrder) {
+			super();
+			this.dataRegisters = dataRegisters;
+			this.wordOrder = wordOrder;
+		}
 
 		@Override
 		public final void saveDataMap(final Map<Integer, ? extends Number> data) {
@@ -924,17 +943,52 @@ public class ModbusData implements DataAccessor {
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
 			final IntRangeSet rangeSet, final int maxResults) {
 		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxResults);
+		refreshData(conn, readFunction, ranges);
+	}
+
+	/**
+	 * Refresh a range of data from the Modbus device into this object.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param readFunction
+	 *        the Modbus read function to use
+	 * @param rangeSet
+	 *        the Modbus registers to read, where each {@link IntRange} in the
+	 *        set defines <i>inclusive</i> address ranges to read
+	 * @since 2.0
+	 */
+	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
+			final Collection<IntRange> ranges) {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				for ( IntRange r : ranges ) {
-					short[] data = conn.readSignedShorts(readFunction, r.getMin(), r.length());
-					m.saveDataArray(data, r.getMin());
-				}
+				refreshData(conn, readFunction, ranges, m);
 				return true;
 			}
 		});
+	}
+
+	/**
+	 * Read data from the device and update a mutable data instance.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param readFunction
+	 *        the read function
+	 * @param ranges
+	 *        the ranges of Modbus addresses to read/update
+	 * @param m
+	 *        the mutable data to update
+	 * @since 2.0
+	 */
+	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
+			final Collection<IntRange> ranges, final MutableModbusData m) {
+		for ( IntRange r : ranges ) {
+			short[] data = conn.readSignedShorts(readFunction, r.getMin(), r.length());
+			m.saveDataArray(data, r.getMin());
+		}
 	}
 
 	/**
