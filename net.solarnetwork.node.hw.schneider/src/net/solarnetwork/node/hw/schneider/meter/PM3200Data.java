@@ -69,7 +69,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 	 * Get a snapshot copy of the data.
 	 * 
 	 * @return a copy of the data
-	 * @see ION6200Data#copy()
+	 * @see #copy()
 	 */
 	public PM3200Data getSnapshot() {
 		return (PM3200Data) copy();
@@ -675,7 +675,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
 		@Override
 		public Long getApparentEnergyReceived() {
-			return PM3200Data.this.getActiveEnergyReceived();
+			return PM3200Data.this.getApparentEnergyReceived();
 		}
 
 	}

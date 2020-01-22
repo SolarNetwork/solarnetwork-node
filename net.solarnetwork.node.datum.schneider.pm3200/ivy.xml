@@ -12,8 +12,8 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.70,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[2.15,3.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.schneider" rev="[2.5,3.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[3.0,4.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.schneider" rev="[3.0,4.0)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
 	</dependencies>

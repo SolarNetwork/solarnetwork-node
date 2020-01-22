@@ -25,23 +25,30 @@ package net.solarnetwork.node.consumption.schneider.pm3200.test;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.AbstractNodeTest;
+import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
- * Test cases for the {@link PM3200ConsumptionDatumDataSource} class.
+ * Test cases for the {@link PM3200DatumDataSource} class.
  * 
  * @author matt
  * @version 1.1
@@ -51,15 +58,13 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 	private final int UNIT_ID = 1;
 
 	private ModbusNetwork modbus;
-	private ModbusConnection conn;
-	private PM3200ConsumptionDatumDataSource service;
+	private PM3200DatumDataSource service;
 
 	@Before
 	public void setup() {
-		service = new PM3200ConsumptionDatumDataSource();
+		service = new PM3200DatumDataSource();
 		service.setUnitId(UNIT_ID);
 		modbus = EasyMock.createMock(ModbusNetwork.class);
-		conn = EasyMock.createMock(ModbusConnection.class);
 		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
 	}
 
@@ -68,36 +73,23 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 		return EasyMock.anyObject(ModbusConnectionAction.class);
 	}
 
-	// 2099
-	private final int[] TEST_DATA_SET_1 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+	private static final Logger log = LoggerFactory
+			.getLogger(PM3200ConsumptionDatumDataSourceTests.class);
 
-	// 3019
-	private final int[] TEST_DATA_SET_2 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-			16, 17, 18 };
-
-	// 3053
-	private final int[] TEST_DATA_SET_3 = new int[] { 1, 2, 3, 4, 5, 6,
-			((Float.floatToIntBits(.12f) >> 16) & 0xFFFF), (Float.floatToIntBits(.12f) & 0xFFFF), 9, 10,
-			11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
-
-	// 3107
-	private final int[] TEST_DATA_SET_4 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-			16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 };
-
-	// 3203
-	private final int[] TEST_DATA_SET_5 = new int[] { (int) ((2323L >> 48) & 0xFFFF),
-			(int) ((2323L >> 32) & 0xFFFF), (int) ((2323L >> 16) & 0xFFFF),
-			(int) ((2323L >> 0) & 0xFFFF), (int) ((1212L >> 48) & 0xFFFF),
-			(int) ((1212L >> 32) & 0xFFFF), (int) ((1212L >> 16) & 0xFFFF),
-			(int) ((1212L >> 0) & 0xFFFF), 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-			25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40 };
-
-	// 3517
-	private final int[] TEST_DATA_SET_6 = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-			16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 };
+	private static Map<Integer, Integer> parseTestData(String resource) {
+		try {
+			return DataUtils.parseModbusHexRegisterMappingLines(new BufferedReader(new InputStreamReader(
+					PM3200ConsumptionDatumDataSourceTests.class.getResourceAsStream(resource))));
+		} catch ( IOException e ) {
+			log.error("Error reading modbus data resource [{}]", resource, e);
+			return Collections.emptyMap();
+		}
+	}
 
 	@Test
 	public void testReadConsumptionDatumMain() throws IOException {
+		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
+				parseTestData("test-data-01.txt"));
 		expect(modbus.performAction(anyAction(PM3200Data.class), EasyMock.eq(UNIT_ID)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
@@ -109,29 +101,15 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 
 				});
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 2999, 12))
-				.andReturn(TEST_DATA_SET_1);
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 3019, 18))
-				.andReturn(TEST_DATA_SET_2);
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 3053, 32))
-				.andReturn(TEST_DATA_SET_3);
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 3107, 26))
-				.andReturn(TEST_DATA_SET_4);
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 3203, 40))
-				.andReturn(TEST_DATA_SET_5);
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 3517, 36))
-				.andReturn(TEST_DATA_SET_6);
-
-		replay(modbus, conn);
+		replay(modbus);
 
 		GeneralNodeACEnergyDatum result = service.readCurrentDatum();
 		log.debug("Read GeneralNodeACEnergyDatum: {}", result);
 
-		verify(modbus, conn);
+		verify(modbus);
 
 		Assert.assertNotNull("GeneralNodeACEnergyDatum", result);
-		Assert.assertEquals("Source ID", PM3200ConsumptionDatumDataSource.MAIN_SOURCE_ID,
-				result.getSourceId());
+		Assert.assertEquals("Source ID", PM3200DatumDataSource.MAIN_SOURCE_ID, result.getSourceId());
 		Assert.assertEquals("Watts", Integer.valueOf(120), result.getWatts());
 		Assert.assertEquals("Total energy", Long.valueOf(2323), result.getWattHourReading());
 		Assert.assertEquals("Total energy export", Long.valueOf(1212),
