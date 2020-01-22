@@ -28,16 +28,16 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.Bytes;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import java.util.HashSet;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for PowerGate Plus Series inverters.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum PowerGatePlusRegister implements ModbusReference {
 
@@ -287,9 +287,12 @@ public enum PowerGatePlusRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet()
+			.immutableCopy();
+	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet()
+			.immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet()
+			.immutableCopy();
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
 		return createRegisterAddressSet(PowerGatePlusRegister.class,
@@ -329,7 +332,7 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -344,7 +347,7 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getInverterRegisterAddressSet() {
-		return (IntRangeSet) INVERTER_REGISTER_ADDRESS_SET.clone();
+		return INVERTER_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -359,6 +362,6 @@ public enum PowerGatePlusRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getControlRegisterAddressSet() {
-		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
+		return CONTROL_REGISTER_ADDRESS_SET;
 	}
 }

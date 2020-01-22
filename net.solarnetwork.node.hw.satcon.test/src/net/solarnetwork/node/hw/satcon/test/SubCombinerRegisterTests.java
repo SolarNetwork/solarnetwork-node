@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.hw.satcon.test;
 
-import static org.hamcrest.Matchers.notNullValue;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.hw.satcon.SubCombinerRegister;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
+import net.solarnetwork.util.CollectionUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for the {@link SubCombinerRegister} class.
@@ -40,9 +43,9 @@ public class SubCombinerRegisterTests {
 	@Test
 	public void inverterRegisterSet() {
 		IntRangeSet set = SubCombinerRegister.getRegisterAddressSet();
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		// [30010-30058,30070-30099,36061-36112,36131-36172]
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm, contains(rangeOf(30010, 30073), rangeOf(30074, 30099),
+				rangeOf(36061, 36112), rangeOf(36131, 36172)));
 	}
 
 }

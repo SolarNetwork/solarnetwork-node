@@ -28,17 +28,17 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import java.util.HashSet;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for Smart SubCombiner and Solstice
  * Subcombiner devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum SubCombinerRegister implements ModbusReference {
 
@@ -287,8 +287,10 @@ public enum SubCombinerRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet COMBINER_REGISTER_ADDRESS_SET = createCombinerRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet()
+			.immutableCopy();
+	private static final IntRangeSet COMBINER_REGISTER_ADDRESS_SET = createCombinerRegisterAddressSet()
+			.immutableCopy();
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
 		return createRegisterAddressSet(SubCombinerRegister.class, new HashSet<>(asList("Info")));
@@ -323,7 +325,7 @@ public enum SubCombinerRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -338,7 +340,7 @@ public enum SubCombinerRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getCombinerRegisterAddressSet() {
-		return (IntRangeSet) COMBINER_REGISTER_ADDRESS_SET.clone();
+		return COMBINER_REGISTER_ADDRESS_SET;
 	}
 
 }

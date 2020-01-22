@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.hw.satcon.test;
 
-import static org.hamcrest.Matchers.notNullValue;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.hw.satcon.PowerGatePlusRegister;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
+import net.solarnetwork.util.CollectionUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for the {@link PowerGatePlusRegister} class.
@@ -40,39 +43,40 @@ public class PowerGatePlusRegisterTests {
 	@Test
 	public void configRegisterSet() {
 		IntRangeSet set = PowerGatePlusRegister.getConfigRegisterAddressSet();
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm, contains(rangeOf(9, 19), rangeOf(301, 327)));
 	}
 
 	@Test
 	public void inverterRegisterSet() {
 		IntRangeSet set = PowerGatePlusRegister.getInverterRegisterAddressSet();
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm,
+				contains(rangeOf(10, 49), rangeOf(130, 175), rangeOf(279, 291)));
 	}
 
 	@Test
 	public void controlRegisterSet() {
 		IntRangeSet set = PowerGatePlusRegister.getControlRegisterAddressSet();
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm, contains(rangeOf(436, 475)));
 	}
 
 	@Test
 	public void registerSet() {
 		IntRangeSet set = PowerGatePlusRegister.getRegisterAddressSet();
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		// [9-49,130-175,279-327]
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm,
+				contains(rangeOf(9, 49), rangeOf(130, 175), rangeOf(279, 327)));
 	}
 
 	@Test
 	public void registerSetCombined() {
 		IntRangeSet set = PowerGatePlusRegister.getRegisterAddressSet();
 		set.addAll(PowerGatePlusRegister.getControlRegisterAddressSet());
-		IntRangeSet norm = IntRangeSetUtils.combineToReduceSize(set, 64);
-		// [9-49,130-175,279-327,436-475]
-		assertThat("Set available", norm, notNullValue());
+		List<IntRange> norm = CollectionUtils.coveringIntRanges(set, 64);
+		assertThat("Inverter registers", norm,
+				contains(rangeOf(9, 49), rangeOf(130, 175), rangeOf(279, 327), rangeOf(436, 475)));
 	}
 
 }
