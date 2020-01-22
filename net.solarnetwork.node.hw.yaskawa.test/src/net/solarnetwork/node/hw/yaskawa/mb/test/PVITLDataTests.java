@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.yaskawa.mb.test;
 
 import static java.util.Arrays.copyOfRange;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
+import static net.solarnetwork.node.test.DataUtils.parseModbusHexRegisterLines;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -41,27 +43,26 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.test.DataUtils;
 
 /**
  * Test cases for the {@link PVITLData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PVITLDataTests {
 
-	private static final int[] TEST_DATA = parseTestData("data-01.txt");
+	private static final short[] TEST_DATA = parseTestData("data-01.txt");
 
 	private static final Logger log = LoggerFactory.getLogger(PVITLDataTests.class);
 
-	private static int[] parseTestData(String resource) {
+	private static short[] parseTestData(String resource) {
 		try {
-			return DataUtils.parseModbusHexRegisterLines(new BufferedReader(
-					new InputStreamReader(PVITLDataTests.class.getResourceAsStream(resource))));
+			return shortArray(parseModbusHexRegisterLines(new BufferedReader(
+					new InputStreamReader(PVITLDataTests.class.getResourceAsStream(resource)))));
 		} catch ( IOException e ) {
 			log.error("Error reading modbus data resource [{}]", resource, e);
-			return new int[0];
+			return new short[0];
 		}
 	}
 
@@ -85,7 +86,7 @@ public class PVITLDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 5, 43))
+		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 5, 43))
 				.andReturn(copyOfRange(TEST_DATA, 5, 43));
 
 		// when
@@ -102,7 +103,7 @@ public class PVITLDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0x16, (0x2F - 0x16) + 1))
+		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0x16, (0x2F - 0x16) + 1))
 				.andReturn(copyOfRange(TEST_DATA, 0x16, (0x2F - 0x16) + 1));
 
 		// when
