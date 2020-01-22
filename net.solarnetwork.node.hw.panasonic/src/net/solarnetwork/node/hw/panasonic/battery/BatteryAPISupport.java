@@ -25,24 +25,24 @@ package net.solarnetwork.node.hw.panasonic.battery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting class for {@link BatteryAPIClient} use.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BatteryAPISupport {
 
@@ -129,20 +129,20 @@ public class BatteryAPISupport {
 	 * <p>
 	 * This method will populate all simple properties of the given
 	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * {@link Datum#DATUM_TYPE_PROPERTY}.
 	 * 
 	 * @param datum
 	 *        the datum to create the event for
 	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 *        the Datum class to use for the {@link Datum#DATUM_TYPE_PROPERTY}
+	 *        property
 	 * @return the new Event instance
 	 * @since 1.3
 	 */
 	protected Event createDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
 		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		props.put(Datum.DATUM_TYPE_PROPERTY, eventDatumType.getName());
 		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
