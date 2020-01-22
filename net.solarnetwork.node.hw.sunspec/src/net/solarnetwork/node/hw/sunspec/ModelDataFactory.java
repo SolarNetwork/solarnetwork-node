@@ -171,11 +171,11 @@ public class ModelDataFactory {
 		ModelAccessor model = data;
 		do {
 			int nextModelAddress = model.getBlockAddress() + model.getModelLength();
-			int[] words = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+			short[] words = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister,
 					nextModelAddress, 2);
 			model = null;
 			if ( words != null && words.length > 1 ) {
-				if ( words[0] != ModelId.SUN_SPEC_END_ID ) {
+				if ( (words[0] & 0xFFFF) != ModelId.SUN_SPEC_END_ID ) {
 					ModelAccessor accessor = createAccessor(data, nextModelAddress, words[0], words[1]);
 					data.addModel(words[1], accessor);
 					model = accessor;
