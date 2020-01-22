@@ -29,17 +29,17 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import java.util.HashSet;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for Stabiliti Series power conversion
  * system devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum Stabiliti30cRegister implements ModbusReference {
 
@@ -284,16 +284,17 @@ public enum Stabiliti30cRegister implements ModbusReference {
 
 	private static IntRangeSet createConfigRegisterAddressSet() {
 		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("Info", "Config")));
+				new HashSet<>(asList("Info", "Config"))).immutableCopy();
 	}
 
 	private static IntRangeSet createPowerControlRegisterAddressSet() {
 		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("PowerControl", "Status")));
+				new HashSet<>(asList("PowerControl", "Status"))).immutableCopy();
 	}
 
 	private static IntRangeSet createControlRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class, new HashSet<>(asList("Control")));
+		return createRegisterAddressSet(Stabiliti30cRegister.class, new HashSet<>(asList("Control")))
+				.immutableCopy();
 	}
 
 	/**
@@ -320,7 +321,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -335,7 +336,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getPowerControlRegisterAddressSet() {
-		return (IntRangeSet) POWER_CONTROL_REGISTER_ADDRESS_SET.clone();
+		return POWER_CONTROL_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -350,6 +351,6 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getControlRegisterAddressSet() {
-		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
+		return CONTROL_REGISTER_ADDRESS_SET;
 	}
 }
