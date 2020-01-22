@@ -37,16 +37,33 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class StaticDataReadonlyModbusConnection extends ModbusConnectionSupport {
 
-	private final int[] data;
+	private final short[] data;
 
 	/**
 	 * Construct with the data.
+	 * 
+	 * @param data
+	 *        the data, as unsigned short values
 	 */
 	public StaticDataReadonlyModbusConnection(int[] data) {
+		super();
+		this.data = new short[data.length];
+		for ( int i = 0; i < data.length; i++ ) {
+			this.data[i] = (short) data[i];
+		}
+	}
+
+	/**
+	 * Construct with the data.
+	 * 
+	 * @param data
+	 *        the data
+	 */
+	public StaticDataReadonlyModbusConnection(short[] data) {
 		super();
 		this.data = data;
 	}
@@ -55,7 +72,7 @@ public class StaticDataReadonlyModbusConnection extends ModbusConnectionSupport 
 	public Integer[] readValues(Integer address, int count) {
 		Integer[] out = new Integer[count];
 		for ( int i = address, len = address + count; i < len; i++ ) {
-			out[i - address] = data[i];
+			out[i - address] = Integer.valueOf(data[i] & 0xFFFF);
 		}
 		return out;
 	}
@@ -96,8 +113,10 @@ public class StaticDataReadonlyModbusConnection extends ModbusConnectionSupport 
 	@Override
 	public short[] readSignedShorts(Integer address, int count) {
 		short[] out = new short[count];
-		for ( int i = 0; i < count; i++ ) {
-			out[i] = (short) data[i];
+		try {
+			System.arraycopy(data, address, out, 0, count);
+		} catch ( IndexOutOfBoundsException e ) {
+			return null;
 		}
 		return out;
 	}
@@ -105,10 +124,8 @@ public class StaticDataReadonlyModbusConnection extends ModbusConnectionSupport 
 	@Override
 	public int[] readInts(Integer address, int count) {
 		int[] out = new int[count];
-		try {
-			System.arraycopy(data, address, out, 0, count);
-		} catch ( IndexOutOfBoundsException e ) {
-			return null;
+		for ( int i = 0; i < count; i++ ) {
+			out[i] = data[address + i] & 0xFFFF;
 		}
 		return out;
 	}
@@ -123,7 +140,7 @@ public class StaticDataReadonlyModbusConnection extends ModbusConnectionSupport 
 		Map<Integer, Integer> out = new LinkedHashMap<Integer, Integer>();
 		for ( Integer a : addresses ) {
 			for ( int i = a, len = a + count; i < len; i++ ) {
-				out.put(i, data[i]);
+				out.put(i, Integer.valueOf(data[i] & 0xFFFF));
 			}
 		}
 		return out;
