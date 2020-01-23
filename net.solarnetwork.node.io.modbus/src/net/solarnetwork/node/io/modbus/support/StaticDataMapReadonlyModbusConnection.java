@@ -111,7 +111,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			String charsetName) {
 		final byte[] bytes = readBytes(function, address, count);
 		String result = null;
@@ -162,7 +162,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
+	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
 		byte[] result = new byte[count * 2];
 		for ( int i = 0; i < count; i++ ) {
 			final int d = data.getValue(address + i);

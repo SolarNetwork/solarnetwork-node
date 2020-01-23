@@ -152,26 +152,26 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
+	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
 		return ModbusTransactionUtils.readBytes(createTransaction(), getUnitId(), isHeadless(), function,
 				address, count);
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
 		ModbusTransactionUtils.writeBytes(createTransaction(), getUnitId(), isHeadless(), function,
 				address, values);
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			String charsetName) {
 		return ModbusTransactionUtils.readString(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count, trim, charsetName);
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, Integer address, String value,
+	public void writeString(ModbusWriteFunction function, int address, String value,
 			String charsetName) {
 		ModbusTransactionUtils.writeString(createTransaction(), getUnitId(), isHeadless(), function,
 				address, value, charsetName);

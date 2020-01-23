@@ -67,7 +67,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, Integer address, String value,
+	public void writeString(ModbusWriteFunction function, int address, String value,
 			String charsetName) {
 		throw new UnsupportedOperationException();
 	}
@@ -78,7 +78,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -88,7 +88,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			String charsetName) {
 		return null;
 	}
@@ -119,7 +119,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
+	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
 		return null;
 	}
 

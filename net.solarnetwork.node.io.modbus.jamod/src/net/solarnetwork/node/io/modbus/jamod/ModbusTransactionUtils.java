@@ -25,8 +25,6 @@ package net.solarnetwork.node.io.modbus.jamod;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
@@ -236,47 +234,6 @@ public class ModbusTransactionUtils {
 	}
 
 	/**
-	 * Get the values of specific "input" type registers.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 4} request.
-	 * </p>
-	 * 
-	 * @param trans
-	 *        the Modbus transaction to use
-	 * @param addresses
-	 *        the Modbus register addresses to read
-	 * @param count
-	 *        the number of Modbus "words" to read from each address
-	 * @param unitId
-	 *        the Modbus unit ID to use in the read request
-	 * @param headless
-	 *        {@literal true} for headless (serial) mode
-	 * @return map of integer addresses to corresponding integer values, there
-	 *         should be {@code count} values for each {@code address} read
-	 * @see #readUnsignedShorts(ModbusTransaction, int, ModbusReadFunction,
-	 *      Integer, int)
-	 */
-	public static Map<Integer, Integer> readInputValues(ModbusTransaction trans, Integer[] addresses,
-			int count, int unitId, boolean headless) {
-		Map<Integer, Integer> result = new LinkedHashMap<Integer, Integer>(
-				(addresses == null ? 0 : addresses.length) * count);
-		for ( int i = 0; i < addresses.length; i++ ) {
-			int[] data = readUnsignedShorts(trans, unitId, headless,
-					ModbusReadFunction.ReadInputRegister, addresses[i], count);
-			if ( data != null ) {
-				for ( int j = 0; j < data.length; j++ ) {
-					result.put(addresses[i] + j, data[j]);
-				}
-			}
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus input registers {} values: {}", addresses, result);
-		}
-		return result;
-	}
-
-	/**
 	 * Read a set of "holding" type registers and interpret as a US-ASCII
 	 * encoded string.
 	 * 
@@ -293,9 +250,9 @@ public class ModbusTransactionUtils {
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a US-ASCII encoded string
 	 * @see #readString(ModbusTransaction, int, boolean, ModbusReadFunction,
-	 *      Integer, int, boolean, String)
+	 *      int, int, boolean, String)
 	 */
-	public static String readASCIIString(final ModbusTransaction trans, final Integer address,
+	public static String readASCIIString(final ModbusTransaction trans, final int address,
 			final int count, final int unitId, final boolean trim) {
 		return readString(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count,
 				trim, ModbusDataUtils.ASCII_CHARSET);
@@ -318,9 +275,9 @@ public class ModbusTransactionUtils {
 	 *        resulting string
 	 * @return String from interpreting raw bytes as a UTF-8 encoded string
 	 * @see #readString(ModbusTransaction, int, boolean, ModbusReadFunction,
-	 *      Integer, int, boolean, String)
+	 *      int, int, boolean, String)
 	 */
-	public static String readUTF8String(final ModbusTransaction trans, final Integer address,
+	public static String readUTF8String(final ModbusTransaction trans, final int address,
 			final int count, final int unitId, final boolean trim) {
 		return readString(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count,
 				trim, ModbusDataUtils.UTF8_CHARSET);
@@ -344,8 +301,8 @@ public class ModbusTransactionUtils {
 	 * @throws UnsupportedOperationException
 	 *         if the function is not supported
 	 */
-	public static ModbusRequest modbusReadRequest(ModbusReadFunction function, int unitId,
-			boolean headless, int address, int count) {
+	public static ModbusRequest modbusReadRequest(final ModbusReadFunction function, final int unitId,
+			final boolean headless, final int address, final int count) {
 		ModbusRequest req;
 		switch (function) {
 			case ReadCoil:
@@ -394,8 +351,8 @@ public class ModbusTransactionUtils {
 	 * @throws UnsupportedOperationException
 	 *         if the function is not supported
 	 */
-	public static ModbusRequest modbusWriteRequest(ModbusWriteFunction function, int unitId,
-			boolean headless, int address, int count) {
+	public static ModbusRequest modbusWriteRequest(final ModbusWriteFunction function, final int unitId,
+			final boolean headless, final int address, final int count) {
 		ModbusRequest req;
 		switch (function) {
 			case WriteHoldingRegister:
@@ -511,8 +468,9 @@ public class ModbusTransactionUtils {
 	 * @param values
 	 *        the signed 16-bit values to write
 	 */
-	public static void writeWords(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, int address, short[] values) {
+	public static void writeWords(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusWriteFunction function, final int address,
+			final short[] values) {
 		ModbusRequest request = modbusWriteRequest(function, unitId, headless, address,
 				(values != null ? values.length : 0));
 		if ( request instanceof WriteMultipleRegistersRequest ) {
@@ -575,8 +533,9 @@ public class ModbusTransactionUtils {
 	 * @see #writeWords(ModbusTransaction, int, boolean, ModbusWriteFunction,
 	 *      int, short[])
 	 */
-	public static void writeWords(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, int address, int[] values) {
+	public static void writeWords(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusWriteFunction function, final int address,
+			final int[] values) {
 		writeWords(trans, unitId, headless, function, address, shortArray(values));
 	}
 
@@ -599,8 +558,9 @@ public class ModbusTransactionUtils {
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
 	 */
-	public static int[] readUnsignedShorts(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusReadFunction function, Integer address, int count) {
+	public static int[] readUnsignedShorts(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusReadFunction function, final Integer address,
+			final int count) {
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
@@ -670,8 +630,9 @@ public class ModbusTransactionUtils {
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
 	 */
-	public static byte[] readBytes(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusReadFunction function, Integer address, int count) {
+	public static byte[] readBytes(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusReadFunction function, final int address,
+			final int count) {
 		byte[] result = new byte[count * 2];
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
@@ -714,8 +675,9 @@ public class ModbusTransactionUtils {
 	 * @param values
 	 *        the byte values to write
 	 */
-	public static void writeBytes(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, Integer address, byte[] values) {
+	public static void writeBytes(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusWriteFunction function, final int address,
+			final byte[] values) {
 		int[] unsigned = new int[(int) Math.ceil(values.length / 2.0)];
 		for ( int i = 0; i < values.length; i += 2 ) {
 			int v = ((values[i] & 0xFF) << 8);
@@ -748,11 +710,12 @@ public class ModbusTransactionUtils {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
-	 * @see #readBytes(ModbusTransaction, int, boolean, ModbusReadFunction,
-	 *      Integer, int)
+	 * @see #readBytes(ModbusTransaction, int, boolean, ModbusReadFunction, int,
+	 *      int)
 	 */
-	public static String readString(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusReadFunction function, Integer address, int count, boolean trim, String charsetName) {
+	public static String readString(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusReadFunction function, final int address,
+			final int count, final boolean trim, final String charsetName) {
 		final byte[] bytes = readBytes(trans, unitId, headless, function, address, count);
 		String result = null;
 		if ( bytes != null ) {
@@ -790,8 +753,9 @@ public class ModbusTransactionUtils {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 */
-	public static void writeString(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, Integer address, String value, String charsetName) {
+	public static void writeString(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusWriteFunction function, final int address,
+			final String value, final String charsetName) {
 		try {
 			byte[] bytes = value.getBytes(charsetName);
 			writeBytes(trans, unitId, headless, function, address, bytes);

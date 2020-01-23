@@ -224,7 +224,7 @@ public interface ModbusConnection {
 	 *         {@code count * 2}
 	 * @since 1.2
 	 */
-	byte[] readBytes(ModbusReadFunction function, Integer address, int count);
+	byte[] readBytes(ModbusReadFunction function, int address, int count);
 
 	/**
 	 * Write raw byte values to registers.
@@ -238,7 +238,7 @@ public interface ModbusConnection {
 	 *        the byte values to write
 	 * @since 1.2
 	 */
-	void writeBytes(ModbusWriteFunction function, Integer address, byte[] values);
+	void writeBytes(ModbusWriteFunction function, int address, byte[] values);
 
 	/**
 	 * Read a set of registers as bytes and interpret as a string.
@@ -255,10 +255,10 @@ public interface ModbusConnection {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
-	 * @see #readBytes(ModbusReadFunction, Integer, int)
+	 * @see #readBytes(ModbusReadFunction, int, int)
 	 * @since 1.2
 	 */
-	String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
+	String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			String charsetName);
 
 	/**
@@ -274,6 +274,6 @@ public interface ModbusConnection {
 	 *        the character set to interpret the bytes as
 	 * @since 1.2
 	 */
-	void writeString(ModbusWriteFunction function, Integer address, String value, String charsetName);
+	void writeString(ModbusWriteFunction function, int address, String value, String charsetName);
 
 }

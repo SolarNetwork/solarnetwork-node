@@ -60,7 +60,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, Integer address, String value,
+	public void writeString(ModbusWriteFunction function, int address, String value,
 			String charsetName) {
 		if ( value == null || value.isEmpty() ) {
 			return;
@@ -91,7 +91,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
 		int[] unsigned = new int[(int) Math.ceil(values.length / 2.0)];
 		for ( int i = 0; i < values.length; i += 2 ) {
 			int v = ((values[i] & 0xFF) << 8);
