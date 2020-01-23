@@ -120,11 +120,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public int[] readInputValues(Integer address, int count) {
-		return null;
-	}
-
-	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
 		return null;
 	}

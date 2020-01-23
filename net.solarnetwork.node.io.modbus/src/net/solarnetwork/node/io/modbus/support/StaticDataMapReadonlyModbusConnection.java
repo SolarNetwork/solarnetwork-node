@@ -164,11 +164,6 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public int[] readInputValues(Integer address, int count) {
-		return readInts(address, count);
-	}
-
-	@Override
 	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
 		Map<Integer, Integer> out = new LinkedHashMap<Integer, Integer>();
 		for ( int address : addresses ) {

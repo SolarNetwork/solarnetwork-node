@@ -152,24 +152,6 @@ public interface ModbusConnection {
 	Map<Integer, Integer> readInputValues(Integer[] addresses, int count);
 
 	/**
-	 * Get the values of specific "input" type registers. This uses a Modbus
-	 * function code {@code 4} request.
-	 * 
-	 * @param address
-	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @return array of register values; the result will have a length equal to
-	 *         {@code count}
-	 * @since 1.1
-	 * @deprecated use
-	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
-	 *             with a {@link ModbusReadFunction#ReadInputRegister}
-	 */
-	@Deprecated
-	int[] readInputValues(Integer address, int count);
-
-	/**
 	 * Read a set of "input" type registers and interpret as a string.
 	 * 
 	 * <p>
