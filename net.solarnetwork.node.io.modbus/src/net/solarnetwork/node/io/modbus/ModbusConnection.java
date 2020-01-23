@@ -131,26 +131,6 @@ public interface ModbusConnection {
 	BitSet readInputDiscreteValues(int address, int count);
 
 	/**
-	 * Get the values of specific registers as an array.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 3} request.
-	 * </p>
-	 * 
-	 * @param address
-	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @return array of register values; the result will have a length equal to
-	 *         {@code count}
-	 * @deprecated use
-	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
-	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
-	 */
-	@Deprecated
-	Integer[] readValues(Integer address, int count);
-
-	/**
 	 * Get the values of specific registers as an array of signed 16-bit shorts.
 	 * 
 	 * <p>

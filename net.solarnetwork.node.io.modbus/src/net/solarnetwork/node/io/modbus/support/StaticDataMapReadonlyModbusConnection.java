@@ -102,15 +102,6 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public Integer[] readValues(Integer address, int count) {
-		Integer[] out = new Integer[count];
-		for ( int i = address, len = address + count; i < len; i++ ) {
-			out[i - address] = data.getValue(i) & 0xFFFF;
-		}
-		return out;
-	}
-
-	@Override
 	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
 		int[] out = new int[count];
 		data.forEachOrdered(address, address + count, (k, v) -> {
