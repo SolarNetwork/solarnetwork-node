@@ -22,23 +22,23 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public enum KTLCTRegister implements ModbusReference {
 
@@ -158,9 +158,12 @@ public enum KTLCTRegister implements ModbusReference {
 	 */
 	ControlDevicePowerLimit(0x1001, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			KTLCTRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			KTLCTRegister.class, new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			KTLCTRegister.class, new HashSet<>(asList("Control"))).immutableCopy();
 
 	private final int address;
 	private final int length;
@@ -174,34 +177,6 @@ public enum KTLCTRegister implements ModbusReference {
 		this.address = address;
 		this.length = length;
 		this.dataType = dataType;
-	}
-
-	private static IntRangeSet createRegisterAddressSet(Set<String> prefixes) {
-		IntRangeSet set = new IntRangeSet();
-		for ( KTLCTRegister r : KTLCTRegister.values() ) {
-			for ( String prefix : prefixes ) {
-				if ( r.name().startsWith(prefix) ) {
-					int len = r.getWordLength();
-					if ( len > 0 ) {
-						set.addAll(r.getAddress(), r.getAddress() + len - 1);
-					}
-					break;
-				}
-			}
-		}
-		return set;
-	}
-
-	private static IntRangeSet createInverterRegisterAddressSet() {
-		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Inverter", "Status")));
-	}
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Info", "Config")));
-	}
-
-	private static IntRangeSet createControlRegisterAddressSet() {
-		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Control")));
 	}
 
 	@Override
@@ -248,7 +223,7 @@ public enum KTLCTRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -263,7 +238,7 @@ public enum KTLCTRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getInverterRegisterAddressSet() {
-		return (IntRangeSet) INVERTER_REGISTER_ADDRESS_SET.clone();
+		return INVERTER_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -279,7 +254,7 @@ public enum KTLCTRegister implements ModbusReference {
 	 * @since 1.2
 	 */
 	public static IntRangeSet getControlRegisterAddressSet() {
-		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
+		return CONTROL_REGISTER_ADDRESS_SET;
 	}
 
 }

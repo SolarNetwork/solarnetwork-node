@@ -69,12 +69,12 @@ public class KTLCTDataTests {
 		}
 	}
 
-	private static int[] mapSlice(Map<Integer, Integer> data, int start, int len) {
-		int[] slice = new int[len];
+	private static short[] mapSlice(Map<Integer, Integer> data, int start, int len) {
+		short[] slice = new short[len];
 		for ( int i = start, end = start + len; i < end; i++ ) {
 			Integer k = i;
 			Integer v = data.get(k);
-			slice[i - start] = (v != null ? v.intValue() : 0);
+			slice[i - start] = (v != null ? v.shortValue() : 0);
 		}
 		return slice;
 	}
@@ -99,9 +99,9 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
+		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
 				.andReturn(mapSlice(TEST_DATA, 0, 59));
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
+		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
 				.andReturn(mapSlice(TEST_DATA, 4096, 2));
 
 		// when
