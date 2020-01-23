@@ -58,7 +58,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusTransactionUtils {
 
@@ -68,41 +68,7 @@ public class ModbusTransactionUtils {
 	 * Get the values of a set of "coil" type registers, as a BitSet.
 	 * 
 	 * <p>
-	 * This uses a Modbus function code {@code 1} request.
-	 * </p>
-	 * 
-	 * @param trans
-	 *        the Modbus transaction to use
-	 * @param addresses
-	 *        the Modbus register addresses to read
-	 * @param count
-	 *        the count of registers to read with each address
-	 * @param unitId
-	 *        the Modbus unit ID to use in the read request
-	 * @param headless
-	 *        {@literal true} for headless (serial) mode
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>addresses</code> parameter
-	 */
-	public static BitSet readDiscreetValues(ModbusTransaction trans, Integer[] addresses, int count,
-			int unitId, boolean headless) {
-
-		BitSet result = new BitSet(addresses.length);
-		for ( int i = 0; i < addresses.length; i++ ) {
-			BitSet set = readDiscreteValues(trans, addresses[i], count, unitId, true);
-			result.or(set);
-		}
-		if ( LOG.isDebugEnabled() ) {
-			LOG.debug("Read Modbus coil {} values: {}", addresses, result);
-		}
-		return result;
-	}
-
-	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 1} request.
+	 * This uses a Modbus function code {@literal 1} request.
 	 * </p>
 	 * 
 	 * @param trans
@@ -115,11 +81,10 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @param headless
 	 *        {@literal true} for headless (serial) mode
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>address</code> parameter
+	 * @return BitSet, with indexes set from {@literal 0} to a {@code count - 1}
 	 */
-	public static BitSet readDiscreteValues(ModbusTransaction trans, Integer address, int count,
-			int unitId, boolean headless) {
+	public static BitSet readDiscreteValues(final ModbusTransaction trans, final int address,
+			final int count, final int unitId, final boolean headless) {
 		BitSet result = new BitSet(count);
 		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
 		req.setUnitID(unitId);
@@ -135,7 +100,7 @@ public class ModbusTransactionUtils {
 			LOG.trace("Got Modbus read coil {} response [{}]", address, res.getCoils());
 		}
 		for ( int i = 0; i < res.getBitCount(); i++ ) {
-			result.set(address + i, res.getCoilStatus(i));
+			result.set(i, res.getCoilStatus(i));
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read {} Modbus coil {} values: {}", count, address, result);
@@ -143,8 +108,67 @@ public class ModbusTransactionUtils {
 		return result;
 	}
 
-	public static Boolean writeDiscreetValues(ModbusTransaction trans, Integer[] addresses, BitSet bits,
-			int unitId, boolean headless) {
+	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@literal 1} request. The returned set
+	 * will have a size equal to {@code addresses.length * count}.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param addresses
+	 *        the Modbus register addresses to read
+	 * @param count
+	 *        the count of registers to read with each address
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @return BitSet, with each {@code count} indexes for each index in the
+	 *         {@code addresses} parameter
+	 */
+	public static BitSet readDiscreetValues(final ModbusTransaction trans, final int[] addresses,
+			final int count, final int unitId, final boolean headless) {
+		BitSet result = new BitSet(addresses.length);
+		for ( int i = 0, w = 0; i < addresses.length; i++ ) {
+			BitSet set = readDiscreteValues(trans, addresses[i], count, unitId, true);
+			for ( int j = 0; j < count; j++ ) {
+				// map individual bitset index to overall output bitset index
+				result.set(w++, set.get(j));
+			}
+		}
+		if ( LOG.isDebugEnabled() ) {
+			LOG.debug("Read Modbus coil {} x {} values: {}", addresses, count, result);
+		}
+		return result;
+	}
+
+	/**
+	 * Write values of a set of "coil" type registers, via a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@literal 5} request, once for each
+	 * address in {@code addresses}. Each address at index <em>i</em>
+	 * corresponds to the value of bit at index <em>i</em>. Thus bits
+	 * {@literal 0} to {@code addresses.length - 1} are used.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param addresses
+	 *        the Modbus register addresses to start writing to
+	 * @param bits
+	 *        the bits to write, each index corresponding to an index in
+	 *        {@code addresses}
+	 * @param unitId
+	 *        the Modbus unit ID to use in the read request
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 */
+	public static void writeDiscreetValues(final ModbusTransaction trans, final int[] addresses,
+			final BitSet bits, final int unitId, final boolean headless) {
 		for ( int i = 0; i < addresses.length; i++ ) {
 			WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
 			req.setUnitID(unitId);
@@ -162,14 +186,15 @@ public class ModbusTransactionUtils {
 				LOG.trace("Got write {} response [{}]", addresses[i], res.getCoil());
 			}
 		}
-		return Boolean.TRUE;
 	}
 
 	/**
 	 * Get the values of a set of "input discrete" type registers, as a BitSet.
 	 * 
 	 * <p>
-	 * This uses a Modbus function code {@code 2} request.
+	 * This uses a Modbus function code {@literal 2} request. The returned
+	 * bitset will have {@code count} values set, from {@literal 0} to
+	 * {@code count - 1}.
 	 * </p>
 	 * 
 	 * @param trans
@@ -182,11 +207,10 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @param headless
 	 *        {@literal true} for headless (serial) mode
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         <code>address</code> parameter
+	 * @return BitSet, with each {@literal 0} to {@code count} indexes
 	 */
-	public static BitSet readInputDiscreteValues(ModbusTransaction trans, Integer address, int count,
-			int unitId, boolean headless) {
+	public static BitSet readInputDiscreteValues(final ModbusTransaction trans, final int address,
+			final int count, final int unitId, final boolean headless) {
 		BitSet result = new BitSet(count);
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
 		req.setUnitID(unitId);
@@ -202,7 +226,7 @@ public class ModbusTransactionUtils {
 			LOG.trace("Got Modbus read input discretes {} response [{}]", address, res.getDiscretes());
 		}
 		for ( int i = 0; i < res.getBitCount(); i++ ) {
-			result.set(address + i, res.getDiscreteStatus(i));
+			result.set(i, res.getDiscreteStatus(i));
 		}
 		if ( LOG.isDebugEnabled() ) {
 			LOG.debug("Read {} Modbus input discrete {} values: {}", count, address, result);

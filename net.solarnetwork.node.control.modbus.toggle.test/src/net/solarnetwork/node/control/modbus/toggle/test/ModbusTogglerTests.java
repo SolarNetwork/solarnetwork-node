@@ -61,7 +61,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link ModbusToggler} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusTogglerTests {
 
@@ -155,8 +155,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0);
-		expect(conn.writeDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(writeBitSet)))
-				.andReturn(true);
+		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -196,8 +195,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0, false);
-		expect(conn.writeDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(writeBitSet)))
-				.andReturn(true);
+		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -237,7 +235,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -283,7 +281,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, false);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -330,7 +328,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -351,8 +349,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet)
-				.times(2);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet).times(2);
 
 		// when
 		replayAll();

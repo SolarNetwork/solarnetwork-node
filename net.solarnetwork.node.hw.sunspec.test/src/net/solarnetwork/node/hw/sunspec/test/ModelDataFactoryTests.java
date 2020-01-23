@@ -41,6 +41,7 @@ import net.solarnetwork.node.hw.sunspec.ModelRegister;
 import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
@@ -66,7 +67,7 @@ public class ModelDataFactoryTests {
 
 		// find base address
 		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister, 40000, 2, true,
-				ModbusConnection.ASCII_CHARSET)).andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);
+				ModbusDataUtils.ASCII_CHARSET)).andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);
 
 		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40002, 2))
 				.andReturn(new short[] { 1, 65 });

@@ -30,6 +30,7 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
@@ -117,7 +118,7 @@ public class ModelDataFactory {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
 			try {
 				String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
-						r.getWordLength(), true, ModbusConnection.ASCII_CHARSET);
+						r.getWordLength(), true, ModbusDataUtils.ASCII_CHARSET);
 				if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
 					return r.getAddress();
 				}

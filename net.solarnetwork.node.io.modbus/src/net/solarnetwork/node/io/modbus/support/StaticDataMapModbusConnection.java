@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.io.modbus.support;
 
+import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * {@link ModbusConnection} for reading/writing static data.
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.16
  */
 public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusConnection {
@@ -46,37 +47,47 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	 * @param data
 	 *        the starting data
 	 */
-	public StaticDataMapModbusConnection(Map<Integer, Integer> data) {
+	public StaticDataMapModbusConnection(IntShortMap data) {
 		super(data);
 	}
 
 	@Override
 	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
-		Map<Integer, Integer> data = getData();
+		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
-			data.put(address + i, values[i]);
+			data.putValue(address + i, values[i]);
 		}
 	}
 
 	@Override
 	public void writeString(ModbusWriteFunction function, Integer address, String value,
 			String charsetName) {
-		// TODO Auto-generated method stub
-		super.writeString(function, address, value, charsetName);
+		if ( value == null || value.isEmpty() ) {
+			return;
+		}
+		byte[] data;
+		try {
+			data = value.getBytes(charsetName);
+		} catch ( UnsupportedEncodingException e ) {
+			throw new RuntimeException("Unsupported charset [" + charsetName + "]", e);
+		}
+		writeBytes(function, address, data);
 	}
 
 	@Override
 	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		Map<Integer, Integer> data = getData();
+		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
-			data.put(address + i, (int) values[i]);
+			data.putValue(address + i, (int) values[i]);
 		}
 	}
 
 	@Override
-	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		// TODO Auto-generated method stub
-		return super.writeDiscreetValues(addresses, bits);
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+		final IntShortMap data = getData();
+		for ( int i = 0; i < addresses.length; i++ ) {
+			data.putValue(addresses[i], bits.get(i) ? (short) 1 : (short) 0);
+		}
 	}
 
 	@Override

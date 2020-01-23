@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.sma.pcm;
 
+import static java.lang.String.valueOf;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -73,7 +74,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 public class ModbusPCMController extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -86,14 +87,27 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 */
 	public static final String PERCENT_CONTROL_ID_SUFFIX = "?percent";
 
-	private Integer d1Address = 0x4000;
-	private Integer d2Address = 0x4002;
-	private Integer d3Address = 0x4004;
-	private Integer d4Address = 0x4006;
+	/**
+	 * The default {@code controlId} property value.
+	 * 
+	 * @since 2.0
+	 */
+	public static final String DEFAULT_CONTROL_ID = "/power/pcm/1";
 
-	private String controlId = "/power/pcm/1";
+	/**
+	 * The default {@code sampleCacheSeconds} property value.
+	 * 
+	 * @since 2.0
+	 */
+	public static final int DEFAULT_SAMPLE_CACHE_SECS = 1;
+
+	private static final int[] DEFAULT_ADDRESSES = new int[] { 0x4000, 0x4002, 0x4004, 0x4006 };
+
+	private final int[] addresses = DEFAULT_ADDRESSES.clone();
+
+	private String controlId = DEFAULT_CONTROL_ID;
 	private String groupUID;
-	private int sampleCacheSeconds = 1;
+	private int sampleCacheSeconds = DEFAULT_SAMPLE_CACHE_SECS;
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private MessageSource messageSource;
@@ -127,8 +141,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 				@Override
 				public BitSet doWithConnection(ModbusConnection conn) throws IOException {
-					return conn.readDiscreetValues(
-							new Integer[] { d1Address, d2Address, d3Address, d4Address }, 1);
+					return conn.readDiscreetValues(addresses, 1);
 				}
 			});
 			log.debug("Read discreet PCM values: {}", result);
@@ -155,8 +168,8 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * @return an integer between 0 and 15
 	 */
 	private Integer integerValueForBitSet(BitSet bits) {
-		return ((bits.get(d1Address) ? 1 : 0) | ((bits.get(d2Address) ? 1 : 0) << 1)
-				| ((bits.get(d3Address) ? 1 : 0) << 2) | ((bits.get(d4Address) ? 1 : 0) << 3));
+		return ((bits.get(0) ? 1 : 0) | ((bits.get(1) ? 1 : 0) << 1) | ((bits.get(2) ? 1 : 0) << 2)
+				| ((bits.get(3) ? 1 : 0) << 3));
 	}
 
 	private static final int PCM_LEVEL_0 = 0;
@@ -287,13 +300,13 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		}
 		log.info("Setting PCM status to {} ({}%)", desiredValue,
 				percentValueForIntegerValue(desiredValue));
-		final Integer[] addresses = new Integer[] { d1Address, d2Address, d3Address, d4Address };
 		try {
 			return performAction(new ModbusConnectionAction<Boolean>() {
 
 				@Override
 				public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-					return conn.writeDiscreetValues(addresses, bits);
+					conn.writeDiscreetValues(addresses, bits);
+					return true;
 				}
 			});
 		} catch ( IOException e ) {
@@ -444,7 +457,6 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		ModbusPCMController defaults = new ModbusPCMController();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
 		// get current value
@@ -464,18 +476,17 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		}
 		results.add(status);
 
-		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
-				"Serial Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
-		results.add(new BasicTextFieldSettingSpecifier("d1Address", defaults.d1Address.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("d2Address", defaults.d2Address.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("d3Address", defaults.d3Address.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("d4Address", defaults.d4Address.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", DEFAULT_CONTROL_ID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", valueOf(DEFAULT_UNIT_ID)));
+		results.add(new BasicTextFieldSettingSpecifier("d1Address", valueOf(DEFAULT_ADDRESSES[0])));
+		results.add(new BasicTextFieldSettingSpecifier("d2Address", valueOf(DEFAULT_ADDRESSES[1])));
+		results.add(new BasicTextFieldSettingSpecifier("d3Address", valueOf(DEFAULT_ADDRESSES[2])));
+		results.add(new BasicTextFieldSettingSpecifier("d4Address", valueOf(DEFAULT_ADDRESSES[3])));
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheSeconds",
-				String.valueOf(defaults.getSampleCacheSeconds())));
+				valueOf(DEFAULT_SAMPLE_CACHE_SECS)));
 
 		return results;
 	}
@@ -490,36 +501,36 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		this.messageSource = messageSource;
 	}
 
-	public Integer getD1Address() {
-		return d1Address;
+	public int getD1Address() {
+		return addresses[0];
 	}
 
-	public void setD1Address(Integer d1Address) {
-		this.d1Address = d1Address;
+	public void setD1Address(int d1Address) {
+		addresses[0] = d1Address;
 	}
 
-	public Integer getD2Address() {
-		return d2Address;
+	public int getD2Address() {
+		return addresses[1];
 	}
 
-	public void setD2Address(Integer d2Address) {
-		this.d2Address = d2Address;
+	public void setD2Address(int d2Address) {
+		addresses[1] = d2Address;
 	}
 
-	public Integer getD3Address() {
-		return d3Address;
+	public int getD3Address() {
+		return addresses[2];
 	}
 
-	public void setD3Address(Integer d3Address) {
-		this.d3Address = d3Address;
+	public void setD3Address(int d3Address) {
+		addresses[2] = d3Address;
 	}
 
-	public Integer getD4Address() {
-		return d4Address;
+	public int getD4Address() {
+		return addresses[3];
 	}
 
 	public void setD4Address(Integer d4Address) {
-		this.d4Address = d4Address;
+		addresses[3] = d4Address;
 	}
 
 	public String getControlId() {

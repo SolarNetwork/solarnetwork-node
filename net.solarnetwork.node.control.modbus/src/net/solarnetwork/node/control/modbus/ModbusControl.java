@@ -72,7 +72,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
@@ -237,7 +237,8 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
-					return conn.writeDiscreetValues(new Integer[] { address }, bits);
+					conn.writeDiscreetValues(new int[] { address }, bits);
+					return true;
 				}
 
 				short[] dataToWrite = null;

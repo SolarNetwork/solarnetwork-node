@@ -31,14 +31,14 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.support.StaticDataReadonlyModbusConnection;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
 
 /**
  * Helper utility methods for model data testing.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public final class ModelDataUtils {
 
@@ -88,7 +88,8 @@ public final class ModelDataUtils {
 	 * @see #parseTestData(Class, String)
 	 */
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource) {
-		ModbusConnection conn = new StaticDataReadonlyModbusConnection(parseTestData(clazz, resource));
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
+				parseTestData(clazz, resource));
 		return ModelDataFactory.getInstance().getModelData(conn);
 	}
 
@@ -115,7 +116,8 @@ public final class ModelDataUtils {
 	 * @see #parseTestData(Class, String)
 	 */
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource, boolean parseOffsets) {
-		ModbusConnection conn = new StaticDataReadonlyModbusConnection(parseTestData(clazz, resource));
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
+				parseTestData(clazz, resource));
 		return ModelDataFactory.getInstance().getModelData(conn);
 	}
 

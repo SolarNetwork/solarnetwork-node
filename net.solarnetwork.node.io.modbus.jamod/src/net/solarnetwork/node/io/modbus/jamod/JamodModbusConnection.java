@@ -37,7 +37,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Jamod serial implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class JamodModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -94,25 +94,25 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public BitSet readDiscreetValues(Integer[] addresses, int count) {
+	public BitSet readDiscreetValues(final int[] addresses, final int count) {
 		return ModbusTransactionUtils.readDiscreetValues(createTransaction(), addresses, count,
 				getUnitId(), isHeadless());
 	}
 
 	@Override
-	public BitSet readDiscreetValues(Integer address, int count) {
+	public BitSet readDiscreetValues(final int address, final int count) {
 		return ModbusTransactionUtils.readDiscreteValues(createTransaction(), address, count,
 				getUnitId(), isHeadless());
 	}
 
 	@Override
-	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		return ModbusTransactionUtils.writeDiscreetValues(createTransaction(), addresses, bits,
-				getUnitId(), isHeadless());
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+		ModbusTransactionUtils.writeDiscreetValues(createTransaction(), addresses, bits, getUnitId(),
+				isHeadless());
 	}
 
 	@Override
-	public BitSet readInputDiscreteValues(Integer address, int count) {
+	public BitSet readInputDiscreteValues(final int address, final int count) {
 		return ModbusTransactionUtils.readInputDiscreteValues(createTransaction(), address, count,
 				getUnitId(), isHeadless());
 	}

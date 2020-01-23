@@ -41,12 +41,6 @@ import net.solarnetwork.node.LockTimeoutException;
  */
 public interface ModbusConnection {
 
-	/** The UTF-8 character set. */
-	String UTF8_CHARSET = "UTF-8";
-
-	/** The US-ASCII character set. */
-	String ASCII_CHARSET = "US-ASCII";
-
 	/**
 	 * Get the Modbus Unit ID this device represents.
 	 * 
@@ -72,76 +66,70 @@ public interface ModbusConnection {
 	 * Get the values of a set of "coil" type registers, as a BitSet.
 	 * 
 	 * <p>
-	 * This uses a Modbus function code {@code 1} request.
+	 * This uses a Modbus function code {@literal 1} request.
+	 * </p>
+	 * 
+	 * @param address
+	 *        the 0-based Modbus register address to read
+	 * @param count
+	 *        the count of discreet registers to read
+	 * @return BitSet, with indexes set from {@literal 0} to a {@code count - 1}
+	 * @since 1.1
+	 */
+	BitSet readDiscreetValues(int address, int count);
+
+	/**
+	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * 
+	 * <p>
+	 * This uses a Modbus function code {@literal 1} request. The returned set
+	 * will have a size equal to {@code addresses.length * count}.
 	 * </p>
 	 * 
 	 * @param addresses
 	 *        the 0-based Modbus register addresses to read
 	 * @param count
 	 *        the count of coils to read with each address
-	 * @return BitSet, with each index corresponding to an index in the
-	 *         {@code addresses} parameter plus each bit in the set
-	 * @return BitSet, with each index corresponding to an index offset by each
-	 *         {@code address}, e.g. if the first {@code address} were
-	 *         {@literal 100} the first returned index would be {@literal 100},
-	 *         then {@literal 101}, etc.
+	 * @return BitSet, with each {@code count} indexes for each index in the
+	 *         {@code addresses} parameter
 	 */
-	BitSet readDiscreetValues(Integer[] addresses, int count);
+	BitSet readDiscreetValues(int[] addresses, int count);
 
 	/**
-	 * Set the value of a set of "coil" type registers.
+	 * Write values of a set of "coil" type registers, via a BitSet.
 	 * 
 	 * <p>
-	 * This uses a Modbus function code {@code 5} request.
+	 * This uses a Modbus function code {@literal 5} request, once for each
+	 * address in {@code addresses}. Each address at index <em>i</em>
+	 * corresponds to the value of bit at index <em>i</em>. Thus bits
+	 * {@literal 0} to {@code addresses.length - 1} are used.
 	 * </p>
 	 * 
 	 * @param addresses
-	 *        the 0-based Modbus register addresses to read
+	 *        the Modbus register addresses to start writing to
 	 * @param bits
-	 *        a BitSet representing the value to set for each corresponding
-	 *        {@code addresses} value
+	 *        the bits to write, each index corresponding to an index in
+	 *        {@code addresses}
 	 * @return {@literal true} if the write succeeded
 	 */
-	Boolean writeDiscreetValues(Integer[] addresses, BitSet bits);
+	void writeDiscreetValues(int[] addresses, BitSet bits);
 
 	/**
-	 * Get the values of a set of "coil" type registers, as a BitSet.
+	 * Get the values of a set of "input discrete" type registers, as a BitSet.
 	 * 
 	 * <p>
-	 * This uses a Modbus function code {@code 1} request.
-	 * </p>
-	 * 
-	 * @param addresses
-	 *        the 0-based Modbus register addresses to read
-	 * @param count
-	 *        the count of 16-bit registers to read
-	 * @return BitSet, with each index corresponding to an bit index offset by
-	 *         {@code address}, e.g. if {@code address} were {@literal 100} the
-	 *         first returned index would be {@literal 100}, then
-	 *         {@literal 101}, etc.
-	 * @since 1.1
-	 */
-	BitSet readDiscreetValues(Integer address, int count);
-
-	/**
-	 * Get the values of a set of "input discrete" type registers, as a
-	 * {@code BitSet}.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 2} request.
+	 * This uses a Modbus function code {@literal 2} request. The returned
+	 * bitset will have {@code count} values set, from {@literal 0} to
+	 * {@code count - 1}.
 	 * </p>
 	 * 
 	 * @param address
-	 *        the 0-based Modbus register addresses to start reading from
+	 *        the Modbus register addresses to start reading from
 	 * @param count
-	 *        the count of 16-bit registers to read
-	 * @return BitSet, with each index corresponding to an bit index offset by
-	 *         {@code address}, e.g. if {@code address} were {@literal 100} the
-	 *         first returned index would be {@literal 100}, then
-	 *         {@literal 101}, etc.
-	 * @since 1.1
+	 *        the count of registers to read
+	 * @return BitSet, with each {@literal 0} to {@code count} indexes
 	 */
-	BitSet readInputDiscreteValues(Integer address, int count);
+	BitSet readInputDiscreteValues(int address, int count);
 
 	/**
 	 * Get the values of specific "input" type registers.

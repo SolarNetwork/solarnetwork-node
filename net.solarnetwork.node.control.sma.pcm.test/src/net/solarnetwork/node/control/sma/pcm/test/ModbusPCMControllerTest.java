@@ -27,10 +27,13 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.UUID;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,6 +44,7 @@ import net.solarnetwork.node.control.sma.pcm.ModbusPCMController;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -56,7 +60,7 @@ import net.solarnetwork.util.StaticOptionalService;
 public class ModbusPCMControllerTest {
 
 	private static final String TEST_CONTROL_ID = "/power/pcm/test";
-	private static final Integer[] DEFAULT_PCM_ADDRESSES = new Integer[] { 0, 1, 2, 3 };
+	private static final int[] DEFAULT_PCM_ADDRESSES = new int[] { 0, 1, 2, 3 };
 
 	private final int UNIT_ID = 1;
 
@@ -102,8 +106,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(conn.writeDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(expectedBitSet)))
-				.andReturn(Boolean.TRUE);
+		conn.writeDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(expectedBitSet));
 
 		replay(modbus, conn);
 
@@ -145,9 +148,9 @@ public class ModbusPCMControllerTest {
 
 		verify(modbus, conn);
 
-		Assert.assertEquals("Read control ID", TEST_CONTROL_ID, info.getControlId());
-		Assert.assertEquals("Read value type", NodeControlPropertyType.Integer, info.getType());
-		Assert.assertEquals("Read value", String.valueOf(8), info.getValue());
+		assertThat("Read control ID", info.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Read value type", info.getType(), equalTo(NodeControlPropertyType.Integer));
+		assertThat("Read value", info.getValue(), equalTo(String.valueOf(8)));
 	}
 
 	@Test
@@ -179,4 +182,70 @@ public class ModbusPCMControllerTest {
 		Assert.assertEquals("Read value", String.valueOf(50), info.getValue());
 	}
 
+	@Test
+	public void readControlInfoWithDefaultAddresses() throws IOException {
+		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
+				new int[] { 0, 0, 0, 0, 0, 0, 1, 0 }, 0x4000);
+		ModbusPCMController service = new ModbusPCMController();
+		service.setControlId(TEST_CONTROL_ID);
+		service.setUnitId(UNIT_ID);
+		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		expect(modbus.performAction(anyAction(BitSet.class), eq(UNIT_ID)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+
+		replay(modbus);
+
+		NodeControlInfo info = service.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		verify(modbus);
+
+		assertThat("Read control ID", info.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Read value type", info.getType(), equalTo(NodeControlPropertyType.Integer));
+		assertThat("Read value", info.getValue(), equalTo(String.valueOf(8)));
+	}
+
+	@Test
+	public void handleDemandBalanceInstructionWithDefaultAddresses() throws IOException {
+		ModbusPCMController service = new ModbusPCMController();
+		service.setControlId(TEST_CONTROL_ID);
+		service.setUnitId(UNIT_ID);
+		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		expect(modbus.performAction(anyAction(Boolean.class), eq(UNIT_ID)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+		conn.writeDiscreetValues(aryEq(new int[] { 0x4000, 0x4002, 0x4004, 0x4006 }),
+				eq(expectedBitSet));
+
+		replay(modbus, conn);
+
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
+				new Date(), UUID.randomUUID().toString(), null, null);
+		instr.addParameter(TEST_CONTROL_ID, "50"); // request 50%
+
+		InstructionStatus.InstructionState result = service.processInstruction(instr);
+
+		verify(modbus, conn);
+
+		assertThat("Result", result, equalTo(InstructionStatus.InstructionState.Completed));
+	}
 }

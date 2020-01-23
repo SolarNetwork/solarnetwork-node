@@ -41,7 +41,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusConnectionSupport extends AbstractModbusConnection implements ModbusConnection {
 
@@ -75,11 +75,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -121,7 +116,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public int[] readInts(Integer address, int count) {
-		return null;
+		return readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
 
 	@Override
@@ -135,17 +130,22 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public BitSet readInputDiscreteValues(Integer address, int count) {
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public BitSet readInputDiscreteValues(final int address, final int count) {
 		return null;
 	}
 
 	@Override
-	public BitSet readDiscreetValues(Integer address, int count) {
+	public BitSet readDiscreetValues(final int address, final int count) {
 		return null;
 	}
 
 	@Override
-	public BitSet readDiscreetValues(Integer[] addresses, int count) {
+	public BitSet readDiscreetValues(final int[] addresses, final int count) {
 		return null;
 	}
 

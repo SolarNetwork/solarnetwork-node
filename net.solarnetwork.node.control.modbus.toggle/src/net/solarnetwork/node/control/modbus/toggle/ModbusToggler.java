@@ -60,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class ModbusToggler extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -113,7 +113,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
 				if ( function == ModbusWriteFunction.WriteCoil
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
-					BitSet bits = conn.readDiscreetValues(new Integer[] { address }, 1);
+					BitSet bits = conn.readDiscreetValues(address, 1);
 					return (bits != null ? bits.get(0) : null);
 				}
 
@@ -155,7 +155,8 @@ public class ModbusToggler extends ModbusDeviceSupport
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue);
-					return conn.writeDiscreetValues(new Integer[] { address }, bits);
+					conn.writeDiscreetValues(new int[] { address }, bits);
+					return true;
 				}
 
 				// for all other functions, write as unsigned short value with 1 for true, 0 for false

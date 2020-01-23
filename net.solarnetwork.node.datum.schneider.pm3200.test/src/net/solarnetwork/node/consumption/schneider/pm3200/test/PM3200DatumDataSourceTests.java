@@ -1,5 +1,5 @@
 /* ==================================================================
- * PM3200ConsumptionDatumDataSourceTests.java - 1/03/2014 12:24:49 PM
+ * PM3200DatumDataSourceTests.java - 1/03/2014 12:24:49 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -25,13 +25,15 @@ package net.solarnetwork.node.consumption.schneider.pm3200.test;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.easymock.EasyMock;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -45,15 +47,15 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.test.DataUtils;
+import net.solarnetwork.util.IntShortMap;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link PM3200DatumDataSource} class.
  * 
- * @author matt
- * @version 1.1
+ * @author matt2.01.1
  */
-public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
+public class PM3200DatumDataSourceTests extends AbstractNodeTest {
 
 	private final int UNIT_ID = 1;
 
@@ -73,17 +75,21 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 		return EasyMock.anyObject(ModbusConnectionAction.class);
 	}
 
-	private static final Logger log = LoggerFactory
-			.getLogger(PM3200ConsumptionDatumDataSourceTests.class);
+	private static final Logger log = LoggerFactory.getLogger(PM3200DatumDataSourceTests.class);
 
-	private static Map<Integer, Integer> parseTestData(String resource) {
+	private static IntShortMap parseTestData(String resource) {
+		IntShortMap result = new IntShortMap();
 		try {
-			return DataUtils.parseModbusHexRegisterMappingLines(new BufferedReader(new InputStreamReader(
-					PM3200ConsumptionDatumDataSourceTests.class.getResourceAsStream(resource))));
+			Map<Integer, Integer> m = DataUtils
+					.parseModbusHexRegisterMappingLines(new BufferedReader(new InputStreamReader(
+							PM3200DatumDataSourceTests.class.getResourceAsStream(resource))));
+			for ( Entry<Integer, Integer> e : m.entrySet() ) {
+				result.putValue(e.getKey(), e.getValue());
+			}
 		} catch ( IOException e ) {
 			log.error("Error reading modbus data resource [{}]", resource, e);
-			return Collections.emptyMap();
 		}
+		return result;
 	}
 
 	@Test
@@ -108,11 +114,10 @@ public class PM3200ConsumptionDatumDataSourceTests extends AbstractNodeTest {
 
 		verify(modbus);
 
-		Assert.assertNotNull("GeneralNodeACEnergyDatum", result);
-		Assert.assertEquals("Source ID", PM3200DatumDataSource.MAIN_SOURCE_ID, result.getSourceId());
-		Assert.assertEquals("Watts", Integer.valueOf(120), result.getWatts());
-		Assert.assertEquals("Total energy", Long.valueOf(2323), result.getWattHourReading());
-		Assert.assertEquals("Total energy export", Long.valueOf(1212),
-				result.getReverseWattHourReading());
+		assertThat("Result", result, notNullValue());
+		assertThat("Source ID", result.getSourceId(), equalTo(PM3200DatumDataSource.MAIN_SOURCE_ID));
+		assertThat("Watts", result.getWatts(), equalTo(120));
+		assertThat("Energy reading", result.getWattHourReading(), equalTo(2323L));
+		assertThat("Energy reading reverse", result.getReverseWattHourReading(), equalTo(1212L));
 	}
 }
