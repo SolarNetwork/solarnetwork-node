@@ -31,8 +31,8 @@ import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -56,7 +56,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -85,9 +85,9 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 						public GeneralNodeACEnergyDatum doWithConnection(ModbusConnection conn)
 								throws IOException {
 							GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-							int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister,
+							short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister,
 									ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
-							Long hectoWh = ModbusHelper.parseInt32(data, 0);
+							Integer hectoWh = ModbusDataUtils.parseInt32(data[0], data[1]);
 							if ( hectoWh != null ) {
 								d.setWattHourReading(hectoWh * 100L);
 							}
