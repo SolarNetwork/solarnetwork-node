@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -117,11 +116,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	@Override
 	public int[] readInts(Integer address, int count) {
 		return readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
-	}
-
-	@Override
-	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return null;
 	}
 
 	@Override

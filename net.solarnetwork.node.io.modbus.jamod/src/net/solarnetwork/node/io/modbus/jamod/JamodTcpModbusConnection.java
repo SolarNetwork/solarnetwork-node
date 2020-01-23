@@ -129,12 +129,6 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readInputValues(createTransaction(), addresses, count, getUnitId(),
-				isHeadless());
-	}
-
-	@Override
 	public String readString(Integer address, int count, boolean trim, String charsetName) {
 		return readString(ModbusReadFunction.ReadHoldingRegister, address, count, trim, charsetName);
 	}

@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.modbus.jamod;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -117,12 +116,6 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 	public BitSet readInputDiscreteValues(final int address, final int count) {
 		return ModbusTransactionUtils.readInputDiscreteValues(createTransaction(), address, count,
 				getUnitId(), isHeadless());
-	}
-
-	@Override
-	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return ModbusTransactionUtils.readInputValues(createTransaction(), addresses, count, getUnitId(),
-				isHeadless());
 	}
 
 	@Override

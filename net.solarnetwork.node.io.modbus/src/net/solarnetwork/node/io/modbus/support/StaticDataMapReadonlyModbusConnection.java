@@ -24,8 +24,6 @@ package net.solarnetwork.node.io.modbus.support;
 
 import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -160,17 +158,6 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 		data.forEachOrdered(address, address + count, (k, v) -> {
 			out[k - address] = v & 0xFFFF;
 		});
-		return out;
-	}
-
-	@Override
-	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		Map<Integer, Integer> out = new LinkedHashMap<Integer, Integer>();
-		for ( int address : addresses ) {
-			data.forEachOrdered(address, address + count, (k, v) -> {
-				out.put(k, v & 0xFFFF);
-			});
-		}
 		return out;
 	}
 

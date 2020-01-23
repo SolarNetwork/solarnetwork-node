@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.LockTimeoutException;
 
 /**
@@ -130,26 +129,6 @@ public interface ModbusConnection {
 	 * @return BitSet, with each {@literal 0} to {@code count} indexes
 	 */
 	BitSet readInputDiscreteValues(int address, int count);
-
-	/**
-	 * Get the values of specific "input" type registers.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 4} request.
-	 * </p>
-	 * 
-	 * @param addresses
-	 *        the 0-based Modbus register addresses to read
-	 * @param count
-	 *        the number of Modbus "words" to read from each address
-	 * @return map of integer addresses to corresponding integer values, there
-	 *         should be {@code count} values for each {@code address} read
-	 * @deprecated use
-	 *             {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}
-	 *             with a {@link ModbusReadFunction#ReadInputRegister}
-	 */
-	@Deprecated
-	Map<Integer, Integer> readInputValues(Integer[] addresses, int count);
 
 	/**
 	 * Read a set of "input" type registers and interpret as a string.
