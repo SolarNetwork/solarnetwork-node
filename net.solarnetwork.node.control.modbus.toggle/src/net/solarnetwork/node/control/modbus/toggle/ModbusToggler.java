@@ -160,7 +160,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 				}
 
 				// for all other functions, write as unsigned short value with 1 for true, 0 for false
-				conn.writeUnsignedShorts(function, address,
+				conn.writeWords(function, address,
 						new int[] { Boolean.TRUE.equals(desiredValue) ? 1 : 0 });
 				return true;
 			}

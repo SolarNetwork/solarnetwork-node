@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.jamod;
 
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 import java.util.LinkedHashMap;
@@ -512,12 +513,71 @@ public class ModbusTransactionUtils {
 	 */
 	public static void writeWords(ModbusTransaction trans, int unitId, boolean headless,
 			ModbusWriteFunction function, int address, short[] values) {
-		int len = values.length;
-		int[] unsigned = new int[len];
-		for ( int i = 0; i < len; i += 1 ) {
-			unsigned[i] = values[i] & 0xFFFF;
+		ModbusRequest request = modbusWriteRequest(function, unitId, headless, address,
+				(values != null ? values.length : 0));
+		if ( request instanceof WriteMultipleRegistersRequest ) {
+			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
+			int len = values.length;
+			Register[] regs = new Register[len];
+			for ( int i = 0; i < len; i += 1 ) {
+				regs[i] = new SimpleRegister();
+				regs[i].setValue(values[i]);
+			}
+			req.setRegisters(regs);
+		} else if ( request instanceof WriteSingleRegisterRequest ) {
+			WriteSingleRegisterRequest req = (WriteSingleRegisterRequest) request;
+			Register reg = new SimpleRegister();
+			reg.setValue(values[0]);
+			req.setRegister(reg);
+		} else {
+			throw new UnsupportedOperationException("Funciton " + function + " not supported");
 		}
-		writeUnsignedShorts(trans, unitId, headless, function, address, unsigned);
+
+		trans.setRequest(request);
+		try {
+			trans.execute();
+		} catch ( ModbusException e ) {
+			throw new RuntimeException(e);
+		}
+
+		if ( LOG.isTraceEnabled() ) {
+			ModbusResponse response = trans.getResponse();
+			if ( response instanceof WriteMultipleRegistersResponse ) {
+				WriteMultipleRegistersResponse res = (WriteMultipleRegistersResponse) response;
+				LOG.trace("Got write {} response count {}", address, res.getWordCount());
+			} else if ( response instanceof WriteSingleRegisterResponse ) {
+				WriteSingleRegisterResponse res = (WriteSingleRegisterResponse) response;
+				LOG.trace("Got write {} response [{}]", address, res.getRegisterValue());
+			}
+		}
+	}
+
+	/**
+	 * Write unsigned 16-bit word values to 16-bit Modbus registers.
+	 * 
+	 * <p>
+	 * All the elements in {@code values} will be truncated to 16-bits and then
+	 * stored in Modbus registers.
+	 * </p>
+	 * 
+	 * @param trans
+	 *        the Modbus transaction to use
+	 * @param unitId
+	 *        the Modbus unit ID to direct the request to
+	 * @param headless
+	 *        {@literal true} for headless (serial) mode
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the unsigned 16-bit values to write
+	 * @see #writeWords(ModbusTransaction, int, boolean, ModbusWriteFunction,
+	 *      int, short[])
+	 */
+	public static void writeWords(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusWriteFunction function, int address, int[] values) {
+		writeWords(trans, unitId, headless, function, address, shortArray(values));
 	}
 
 	/**
@@ -593,60 +653,6 @@ public class ModbusTransactionUtils {
 	}
 
 	/**
-	 * Write unsigned 16-bit short values to registers.
-	 * 
-	 * @param trans
-	 *        the Modbus transaction to use
-	 * @param unitId
-	 *        the Modbus unit ID to direct the request to
-	 * @param headless
-	 *        {@literal true} for headless (serial) mode
-	 * @param function
-	 *        the Modbus function code to use
-	 * @param address
-	 *        the 0-based Modbus register address to start writing to
-	 * @param values
-	 *        the unsigned 16-bit values to write
-	 */
-	public static void writeUnsignedShorts(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusRequest request = modbusWriteRequest(function, unitId, headless, address,
-				(values != null ? values.length : 0));
-		if ( request instanceof WriteMultipleRegistersRequest ) {
-			WriteMultipleRegistersRequest req = (WriteMultipleRegistersRequest) request;
-			int len = values.length;
-			Register[] regs = new Register[len];
-			for ( int i = 0; i < len; i += 1 ) {
-				regs[i] = new SimpleRegister(values[i]);
-			}
-			req.setRegisters(regs);
-		} else if ( request instanceof WriteSingleRegisterRequest ) {
-			WriteSingleRegisterRequest req = (WriteSingleRegisterRequest) request;
-			req.setRegister(new SimpleRegister(values[0]));
-		} else {
-			throw new UnsupportedOperationException("Funciton " + function + " not supported");
-		}
-
-		trans.setRequest(request);
-		try {
-			trans.execute();
-		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
-		}
-
-		if ( LOG.isTraceEnabled() ) {
-			ModbusResponse response = trans.getResponse();
-			if ( response instanceof WriteMultipleRegistersResponse ) {
-				WriteMultipleRegistersResponse res = (WriteMultipleRegistersResponse) response;
-				LOG.trace("Got write {} response count {}", address, res.getWordCount());
-			} else if ( response instanceof WriteSingleRegisterResponse ) {
-				WriteSingleRegisterResponse res = (WriteSingleRegisterResponse) response;
-				LOG.trace("Got write {} response [{}]", address, res.getRegisterValue());
-			}
-		}
-	}
-
-	/**
 	 * Get the raw bytes of specific registers.
 	 * 
 	 * @param trans
@@ -718,7 +724,7 @@ public class ModbusTransactionUtils {
 			}
 			unsigned[i / 2] = v;
 		}
-		writeUnsignedShorts(trans, unitId, headless, function, address, unsigned);
+		writeWords(trans, unitId, headless, function, address, unsigned);
 	}
 
 	/**

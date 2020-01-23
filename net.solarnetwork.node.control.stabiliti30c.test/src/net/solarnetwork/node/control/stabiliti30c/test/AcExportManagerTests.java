@@ -204,36 +204,36 @@ public class AcExportManagerTests {
 	}
 
 	private void expectStartupResetDeviceState() throws IOException {
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cAcControlMethod.Net.getCode() }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP3ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cDcControlMethod.Mppt.getCode() }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
 				aryEq(new int[] { 0 }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlManualModeStop.getAddress()), aryEq(new int[] { 1 }));
 	}
 
 	private void expectResetSafeDeviceState() throws IOException {
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cAcControlMethod.Idle.getCode() }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP2ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP3ControlMethod.getAddress()),
 				aryEq(new int[] { Stabiliti30cDcControlMethod.Idle.getCode() }));
 	}
@@ -288,11 +288,11 @@ public class AcExportManagerTests {
 		expectResetSafeDeviceState();
 
 		final int shedPowerAmount = 1000;
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
 				aryEq(new int[] { shedPowerAmount / 10 }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlManualModeStart.getAddress()), aryEq(new int[] { 1 }));
 
 		// WHEN
@@ -357,11 +357,11 @@ public class AcExportManagerTests {
 		expectResetSafeDeviceState();
 
 		final int shedPowerAmount = 1000;
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlP1RealPowerSetpoint.getAddress()),
 				aryEq(new int[] { shedPowerAmount / 10 }));
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister),
+		conn.writeWords(eq(WriteHoldingRegister),
 				eq(Stabiliti30cRegister.ControlManualModeStart.getAddress()), aryEq(new int[] { 1 }));
 
 		// WHEN

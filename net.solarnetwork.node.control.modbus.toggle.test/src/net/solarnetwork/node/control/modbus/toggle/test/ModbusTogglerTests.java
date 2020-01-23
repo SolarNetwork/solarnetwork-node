@@ -174,7 +174,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
 				aryEq(new int[] { 1 }));
 
 		// when
@@ -214,7 +214,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
 				aryEq(new int[] { 0 }));
 
 		// when

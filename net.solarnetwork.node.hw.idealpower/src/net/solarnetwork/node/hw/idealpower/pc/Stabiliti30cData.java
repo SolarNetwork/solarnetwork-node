@@ -501,7 +501,7 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 
 		private void update(final ModbusReference register, final int[] data) {
 			final int addr = register.getAddress();
-			conn.writeUnsignedShorts(WriteHoldingRegister, addr, data);
+			conn.writeWords(WriteHoldingRegister, addr, data);
 			if ( state != null ) {
 				state.saveDataArray(data, addr);
 			}

@@ -140,8 +140,8 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
-		ModbusTransactionUtils.writeUnsignedShorts(createTransaction(), getUnitId(), isHeadless(),
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
+		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(),
 				function, address, values);
 	}
 

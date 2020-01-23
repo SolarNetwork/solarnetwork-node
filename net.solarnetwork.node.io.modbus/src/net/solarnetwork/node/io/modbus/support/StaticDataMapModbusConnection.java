@@ -52,7 +52,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
 		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
 			data.putValue(address + i, values[i]);
@@ -100,7 +100,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 			}
 			unsigned[i / 2] = v;
 		}
-		writeUnsignedShorts(function, address, unsigned);
+		writeWords(function, address, unsigned);
 	}
 
 }

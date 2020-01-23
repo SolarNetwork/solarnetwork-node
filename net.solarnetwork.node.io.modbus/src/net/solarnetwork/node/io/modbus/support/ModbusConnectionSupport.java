@@ -62,7 +62,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
 		throw new UnsupportedOperationException();
 	}
 

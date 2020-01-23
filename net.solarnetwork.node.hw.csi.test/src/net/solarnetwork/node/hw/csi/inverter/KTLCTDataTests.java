@@ -197,7 +197,7 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister),
 				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
 				aryEq(new int[] { KTLCTData.POWER_SWITCH_OFF }));
 
@@ -226,7 +226,7 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister),
 				eq(KTLCTRegister.ControlDevicePowerSwitch.getAddress()),
 				aryEq(new int[] { KTLCTData.POWER_SWITCH_ON }));
 

@@ -142,7 +142,7 @@ public class WatchdogTests {
 		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
 				.andDelegateTo(new TestModbusNetwork());
 
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(40), aryEq(new int[] { 44 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(40), aryEq(new int[] { 44 }));
 
 		// WHEN
 		replayAll();

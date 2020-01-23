@@ -170,6 +170,24 @@ public interface ModbusConnection {
 	void writeWords(ModbusWriteFunction function, int address, short[] values);
 
 	/**
+	 * Write unsigned 16-bit word values to 16-bit Modbus registers.
+	 * 
+	 * <p>
+	 * All the elements in {@code values} will be truncated to 16-bits and then
+	 * stored in Modbus registers.
+	 * </p>
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start writing to
+	 * @param values
+	 *        the unsigned 16-bit values to write
+	 * @since 1.2
+	 */
+	void writeWords(ModbusWriteFunction function, int address, int[] values);
+
+	/**
 	 * Get the values of specific registers as an array of unsigned 16-bit
 	 * shorts.
 	 * 
@@ -192,19 +210,6 @@ public interface ModbusConnection {
 	 * @since 1.2
 	 */
 	int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count);
-
-	/**
-	 * Write unsigned 16-bit short values to registers.
-	 * 
-	 * @param function
-	 *        the Modbus function code to use
-	 * @param address
-	 *        the 0-based Modbus register address to start writing to
-	 * @param values
-	 *        the unsigned 16-bit values to write
-	 * @since 1.2
-	 */
-	void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values);
 
 	/**
 	 * Get the raw bytes of specific registers.
