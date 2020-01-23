@@ -124,11 +124,6 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public int[] readInts(Integer address, int count) {
-		return readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
-	}
-
-	@Override
 	public short[] readSignedShorts(Integer address, int count) {
 		return readSignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
 	}
