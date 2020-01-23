@@ -131,30 +131,6 @@ public interface ModbusConnection {
 	BitSet readInputDiscreteValues(int address, int count);
 
 	/**
-	 * Read a set of "input" type registers and interpret as a string.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 3} request.
-	 * </p>
-	 * 
-	 * @param address
-	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @param trim
-	 *        if <em>true</em> then remove leading/trailing whitespace from the
-	 *        resulting string
-	 * @param charsetName
-	 *        the character set to interpret the bytes as
-	 * @return String from interpreting raw bytes as a string
-	 * @deprecated use
-	 *             {@link #readString(ModbusReadFunction, Integer, int, boolean, String)}
-	 *             with a {@link ModbusReadFunction#ReadHoldingRegister}
-	 */
-	@Deprecated
-	String readString(Integer address, int count, boolean trim, String charsetName);
-
-	/**
 	 * Get the values of specific registers as an array.
 	 * 
 	 * <p>

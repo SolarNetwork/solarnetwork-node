@@ -99,11 +99,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public String readString(Integer address, int count, boolean trim, String charsetName) {
-		return null;
-	}
-
-	@Override
 	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
 		return null;
 	}

@@ -122,12 +122,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	@Override
 	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
 			String charsetName) {
-		return readString(address, count, trim, charsetName);
-	}
-
-	@Override
-	public String readString(Integer address, int count, boolean trim, String charsetName) {
-		final byte[] bytes = readBytes(ModbusReadFunction.ReadHoldingRegister, address, count);
+		final byte[] bytes = readBytes(function, address, count);
 		String result = null;
 		if ( bytes != null ) {
 			try {
