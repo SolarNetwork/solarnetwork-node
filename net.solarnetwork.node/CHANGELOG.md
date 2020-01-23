@@ -3,7 +3,9 @@
 ## 1.73.1 - 2020-01-23
 
  * Add support for a `jobScheduler.poolSize` configuration property in the `net.solarnetwork.node.core`
-   configuration, so that the number of job threads is configurable. Defaults to 3.
+   configuration, so that the number of job threads is configurable. Defaults to 10.
+ * Change default value of `scheduler.startupDelay` from 60 to 180, as that is what was configured
+   in the solarnode-base package anyway.
 
 ## 1.70 - 2019-10-10
 

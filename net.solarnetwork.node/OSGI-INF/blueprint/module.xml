@@ -17,9 +17,9 @@
 	<!-- Configuration -->
 
 	<osgix:cm-properties id="core.cfg" persistent-id="net.solarnetwork.node.core">
-		<beans:prop key="scheduler.startupDelay">60</beans:prop>
+		<beans:prop key="scheduler.startupDelay">180</beans:prop>
 		<beans:prop key="taskScheduler.poolSize">2</beans:prop>
-		<beans:prop key="jobScheduler.poolSize">3</beans:prop>
+		<beans:prop key="jobScheduler.poolSize">10</beans:prop>
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 	</osgix:cm-properties>
 	
