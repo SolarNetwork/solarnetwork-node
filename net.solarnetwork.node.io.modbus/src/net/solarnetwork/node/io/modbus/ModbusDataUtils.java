@@ -71,6 +71,26 @@ public final class ModbusDataUtils {
 	}
 
 	/**
+	 * Convert an array of shorts to unsigned short int values.
+	 * 
+	 * @param array
+	 *        the array to convert
+	 * @return the converted array, or {@literal null} if {@code array} is
+	 *         {@literal null}
+	 */
+	public static int[] unsignedIntArray(short[] array) {
+		if ( array == null ) {
+			return null;
+		}
+		final int count = array.length;
+		final int[] result = new int[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = array[i] & 0xFFFF;
+		}
+		return result;
+	}
+
+	/**
 	 * Convert an array of ints to shorts.
 	 * 
 	 * @param array

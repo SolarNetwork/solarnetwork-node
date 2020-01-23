@@ -540,8 +540,8 @@ public class ModbusTransactionUtils {
 	}
 
 	/**
-	 * Get the values of specific registers as an array of unsigned 16-bit
-	 * shorts.
+	 * Get the values of specific 16-bit Modbus registers as an array of
+	 * unsigned 16-bit words.
 	 * 
 	 * @param trans
 	 *        the Modbus transaction to use
@@ -554,12 +554,12 @@ public class ModbusTransactionUtils {
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
 	 * @param count
-	 *        the number of Modbus 16-bit registers to read
+	 *        the number of 16-bit Modbus registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
 	 */
-	public static int[] readUnsignedShorts(final ModbusTransaction trans, final int unitId,
-			final boolean headless, final ModbusReadFunction function, final Integer address,
+	public static int[] readWordsUnsigned(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusReadFunction function, final int address,
 			final int count) {
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);

@@ -140,8 +140,8 @@ public interface ModbusConnection {
 	 * {@code int unsigned = ((int)s) && 0xFFFF}, or by calling
 	 * {@link Short#toUnsignedInt(short)}. Thus the values returned by this
 	 * method are technically the same as those returned by
-	 * {@link #readUnsignedShorts(ModbusReadFunction, Integer, int)}, without
-	 * having been cast to ints.
+	 * {@link #readWordsUnsigned(ModbusReadFunction, int, int)}, without having
+	 * been cast to ints.
 	 * </p>
 	 * 
 	 * @param function
@@ -152,9 +152,31 @@ public interface ModbusConnection {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
-	 * @since 2.0
 	 */
 	short[] readWords(ModbusReadFunction function, int address, int count);
+
+	/**
+	 * Get the values of specific 16-bit Modbus registers as an array of
+	 * unsigned 16-bit words.
+	 * 
+	 * <p>
+	 * Note that the raw int values can be treated as signed shorts by casting
+	 * them to shorts, like {@code short signed = (short)s}. Thus the values
+	 * returned by this method are technically the same as those returned by
+	 * {@link #readWords(ModbusReadFunction, int, int)}, having been cast to
+	 * ints.
+	 * </p>
+	 * 
+	 * @param function
+	 *        the Modbus function code to use
+	 * @param address
+	 *        the 0-based Modbus register address to start reading from
+	 * @param count
+	 *        the number of 16-bit Modbus registers to read
+	 * @return array of register values; the result will have a length equal to
+	 *         {@code count}
+	 */
+	int[] readWordsUnsigned(ModbusReadFunction function, int address, int count);
 
 	/**
 	 * Write 16-bit word values to 16-bit Modbus registers.
@@ -165,7 +187,6 @@ public interface ModbusConnection {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the 16-bit values to write
-	 * @since 2.0
 	 */
 	void writeWords(ModbusWriteFunction function, int address, short[] values);
 
@@ -183,33 +204,8 @@ public interface ModbusConnection {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the unsigned 16-bit values to write
-	 * @since 1.2
 	 */
 	void writeWords(ModbusWriteFunction function, int address, int[] values);
-
-	/**
-	 * Get the values of specific registers as an array of unsigned 16-bit
-	 * shorts.
-	 * 
-	 * <p>
-	 * Note that the raw int values can be treated as signed shorts by casting
-	 * them to shorts, like {@code short signed = (short)s}. Thus the values
-	 * returned by this method are technically the same as those returned by
-	 * {@link #readWords(ModbusReadFunction, int, int)}, having been cast to
-	 * ints.
-	 * </p>
-	 * 
-	 * @param function
-	 *        the Modbus function code to use
-	 * @param address
-	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus 16-bit registers to read
-	 * @return array of register values; the result will have a length equal to
-	 *         {@code count}
-	 * @since 1.2
-	 */
-	int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count);
 
 	/**
 	 * Get the raw bytes of specific registers.
@@ -222,7 +218,6 @@ public interface ModbusConnection {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
-	 * @since 1.2
 	 */
 	byte[] readBytes(ModbusReadFunction function, int address, int count);
 
@@ -236,7 +231,6 @@ public interface ModbusConnection {
 	 *        {@code values.length * 2} 16-bit registers will be written
 	 * @param values
 	 *        the byte values to write
-	 * @since 1.2
 	 */
 	void writeBytes(ModbusWriteFunction function, int address, byte[] values);
 
@@ -256,7 +250,6 @@ public interface ModbusConnection {
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(ModbusReadFunction, int, int)
-	 * @since 1.2
 	 */
 	String readString(ModbusReadFunction function, int address, int count, boolean trim,
 			String charsetName);
@@ -272,7 +265,6 @@ public interface ModbusConnection {
 	 *        the string value to write
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
-	 * @since 1.2
 	 */
 	void writeString(ModbusWriteFunction function, int address, String value, String charsetName);
 

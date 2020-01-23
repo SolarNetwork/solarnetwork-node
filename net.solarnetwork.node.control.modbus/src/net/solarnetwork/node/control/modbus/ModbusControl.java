@@ -379,12 +379,12 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 								break;
 
 							case ReadHoldingRegister:
-								m.saveDataArray(conn.readUnsignedShorts(
+								m.saveDataArray(conn.readWordsUnsigned(
 										ModbusReadFunction.ReadHoldingRegister, start, len), start);
 								break;
 
 							case ReadInputRegister:
-								m.saveDataArray(conn.readUnsignedShorts(
+								m.saveDataArray(conn.readWordsUnsigned(
 										ModbusReadFunction.ReadInputRegister, start, len), start);
 								break;
 						}

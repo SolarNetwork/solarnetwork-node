@@ -120,7 +120,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 				// for all other functions, write as unsigned short value with 1 for true, 0 for false
 				ModbusFunction readFunction = function.oppositeFunction();
 				if ( readFunction != null ) {
-					int[] data = conn.readUnsignedShorts(
+					int[] data = conn.readWordsUnsigned(
 							ModbusReadFunction.forCode(readFunction.getCode()), address, 1);
 					return (data != null && data.length > 0 && data[0] == 1 ? true : false);
 				} else {

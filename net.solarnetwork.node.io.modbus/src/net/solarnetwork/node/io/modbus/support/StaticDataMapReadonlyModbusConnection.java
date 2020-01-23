@@ -102,7 +102,7 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 	}
 
 	@Override
-	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
+	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
 		int[] out = new int[count];
 		data.forEachOrdered(address, address + count, (k, v) -> {
 			out[k - address] = v & 0xFFFF;

@@ -62,7 +62,7 @@ public class StaticDataMapReadonlyModbusConnectionTests {
 			data.putValue((10 + i), raw[i]);
 		}
 		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(data);
-		int[] result = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 10, raw.length);
+		int[] result = conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, 10, raw.length);
 		assertThat("Read data", result.length, equalTo(raw.length));
 		for ( int i = 0; i < raw.length; i++ ) {
 			assertThat("Read data " + (10 + i), result[i], equalTo(raw[i]));

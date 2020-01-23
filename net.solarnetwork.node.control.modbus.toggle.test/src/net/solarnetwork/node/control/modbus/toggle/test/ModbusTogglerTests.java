@@ -257,7 +257,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+		expect(conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
 				.andReturn(new int[] { 1 });
 
 		// when
@@ -303,7 +303,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+		expect(conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
 				.andReturn(new int[] { 0 });
 
 		// when
