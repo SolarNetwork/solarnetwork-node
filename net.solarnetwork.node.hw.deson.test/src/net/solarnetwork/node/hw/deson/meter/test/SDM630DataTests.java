@@ -87,7 +87,7 @@ public class SDM630DataTests {
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
-						SDM630Register.ControlConfigWiringMode.getAddress());
+						SDM630Register.ConfigWiringMode.getAddress());
 				return true;
 			}
 		});
@@ -103,7 +103,7 @@ public class SDM630DataTests {
 		assertThat("Info", info,
 				allOf(hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "SDM-630"),
 						hasEntry(SDMData.INFO_KEY_DEVICE_WIRING_TYPE, "3 phase, 4 wire"),
-						hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, "123456.0")));
+						hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, "123456")));
 	}
 
 	@Test
@@ -118,7 +118,7 @@ public class SDM630DataTests {
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
-						SDM630Register.ControlConfigWiringMode.getAddress());
+						SDM630Register.ConfigWiringMode.getAddress());
 				return true;
 			}
 		});
@@ -137,7 +137,7 @@ public class SDM630DataTests {
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
-						SDM630Register.ControlConfigWiringMode.getAddress());
+						SDM630Register.ConfigWiringMode.getAddress());
 				return true;
 			}
 		});
@@ -156,7 +156,7 @@ public class SDM630DataTests {
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
 								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
-						SDM630Register.ControlConfigWiringMode.getAddress());
+						SDM630Register.ConfigWiringMode.getAddress());
 				return true;
 			}
 		});

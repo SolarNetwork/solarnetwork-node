@@ -46,6 +46,13 @@ public interface SDMDataAccessor extends ACEnergyDataAccessor {
 	boolean supportsPhase(ACPhase phase);
 
 	/**
+	 * Get the device serial number.
+	 * 
+	 * @return the servial number
+	 */
+	String getSerialNumber();
+
+	/**
 	 * Get the device type.
 	 * 
 	 * @return the device type

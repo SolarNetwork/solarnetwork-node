@@ -43,10 +43,10 @@ public enum SDM630Register implements ModbusReference {
 	// Configuration
 
 	/** Power system, see {@link SDMWiringMode}. */
-	ControlConfigWiringMode(10),
+	ConfigWiringMode(10),
 
 	/** Serial number. */
-	ControlInfoSerialNumber(42),
+	InfoSerialNumber(42),
 
 	// Meter data
 
@@ -152,8 +152,8 @@ public enum SDM630Register implements ModbusReference {
 	/** Total reactive energy received (exported), in kVARh. */
 	MeterReactiveEnergyReceived(78);
 
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createRegisterAddressSet(
-			SDM630Register.class, new HashSet<>(asList("Control"))).immutableCopy();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+			SDM630Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
 	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
 			SDM630Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
@@ -187,17 +187,12 @@ public enum SDM630Register implements ModbusReference {
 
 	@Override
 	public ModbusReadFunction getFunction() {
-		if ( name().startsWith("Control") ) {
+		if ( !name().startsWith("Meter") ) {
 			return ModbusReadFunction.ReadHoldingRegister;
 		}
 		return ModbusReadFunction.ReadInputRegister;
 	}
 
-	/**
-	 * Get the data type word length.
-	 * 
-	 * @return the word length
-	 */
 	@Override
 	public int getWordLength() {
 		return wordLength;
@@ -224,8 +219,8 @@ public enum SDM630Register implements ModbusReference {
 	 * 
 	 * @return the range set
 	 */
-	public static IntRangeSet getControlRegisterAddressSet() {
-		return CONTROL_REGISTER_ADDRESS_SET;
+	public static IntRangeSet getConfigRegisterAddressSet() {
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**

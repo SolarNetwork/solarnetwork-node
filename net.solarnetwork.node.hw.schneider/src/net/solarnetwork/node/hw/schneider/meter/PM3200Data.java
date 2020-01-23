@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.joda.time.LocalDateTime;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -61,18 +62,36 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 	}
 
 	@Override
-	public ModbusData copy() {
+	public PM3200Data copy() {
 		return new PM3200Data(this);
 	}
 
-	/**
-	 * Get a snapshot copy of the data.
-	 * 
-	 * @return a copy of the data
-	 * @see #copy()
-	 */
-	public PM3200Data getSnapshot() {
-		return (PM3200Data) copy();
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		PM3200DataAccessor data = copy();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		String manufacturer = data.getManufacturer();
+		if ( manufacturer != null ) {
+			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+		}
+		String model = data.getModel();
+		if ( model != null ) {
+			String version = data.getFirmwareRevision();
+			if ( version != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+			} else {
+				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+			}
+		}
+		Long sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+		}
+		LocalDateTime date = data.getManufactureDate();
+		if ( date != null ) {
+			result.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
+		}
+		return result;
 	}
 
 	/**

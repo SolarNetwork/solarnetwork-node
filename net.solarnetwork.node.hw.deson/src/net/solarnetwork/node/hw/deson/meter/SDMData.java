@@ -197,8 +197,7 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	@Override
 	public SDMWiringMode getWiringMode() {
 		if ( deviceType == SDMDeviceType.SDM630 ) {
-			final Float wiringType = getControlFloat32(
-					SDM630Register.ControlConfigWiringMode.getAddress());
+			final Float wiringType = getControlFloat32(SDM630Register.ConfigWiringMode.getAddress());
 			if ( wiringType == null ) {
 				return null;
 			}
@@ -221,14 +220,15 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		return mode.getDescription();
 	}
 
+	@Override
 	public String getSerialNumber() {
 		final Float serialNumber;
 		if ( deviceType == SDMDeviceType.SDM630 ) {
-			serialNumber = getControlFloat32(SDM630Register.ControlInfoSerialNumber.getAddress());
+			serialNumber = getControlFloat32(SDM630Register.InfoSerialNumber.getAddress());
 		} else {
 			serialNumber = null;
 		}
-		return (serialNumber == null ? "N/A" : serialNumber.toString());
+		return serialNumber != null ? String.valueOf(serialNumber.intValue()) : null;
 	}
 
 	@Override
@@ -236,7 +236,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(4);
 		result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, deviceType.getDescription());
 		result.put(INFO_KEY_DEVICE_WIRING_TYPE, getWiringType());
-		if ( deviceType == SDMDeviceType.SDM630 ) {
+		String sn = getSerialNumber();
+		if ( sn != null ) {
 			result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, getSerialNumber());
 		}
 		return result;
@@ -268,8 +269,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		readMeterData(conn);
 		if ( deviceType == SDMDeviceType.SDM630 ) {
-			final List<IntRange> ranges = coveringIntRanges(
-					SDM630Register.getControlRegisterAddressSet(), MAX_RESULTS);
+			final List<IntRange> ranges = coveringIntRanges(SDM630Register.getConfigRegisterAddressSet(),
+					MAX_RESULTS);
 			performControlUpdates(new ModbusDataUpdateAction() {
 
 				@Override
@@ -501,6 +502,11 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		@Override
 		public boolean supportsPhase(ACPhase phase) {
 			return SDMData.this.supportsPhase(phase);
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return SDMData.this.getSerialNumber();
 		}
 
 		@Override
@@ -745,6 +751,11 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		@Override
 		public boolean supportsPhase(ACPhase phase) {
 			return delegate.supportsPhase(phase);
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return delegate.getSerialNumber();
 		}
 
 		@Override

@@ -38,7 +38,7 @@ import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
-import net.solarnetwork.node.hw.schneider.meter.PM5100PowerSystem;
+import net.solarnetwork.node.hw.schneider.meter.PowerSystem;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
@@ -168,7 +168,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
-		PM5100PowerSystem wiringMode = data.getPowerSystem();
+		PowerSystem wiringMode = data.getPowerSystem();
 		if ( wiringMode != null ) {
 			result.put("Wiring Mode", wiringMode.getDescription());
 		}

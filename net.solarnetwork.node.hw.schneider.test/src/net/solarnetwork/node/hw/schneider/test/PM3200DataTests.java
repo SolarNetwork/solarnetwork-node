@@ -35,12 +35,15 @@ import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterPower
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterVoltageLineNeutralAverage;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterVoltageLineNeutralPhaseA;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.Map;
+import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -52,6 +55,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Register;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
+import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.test.DataUtils;
 
 /**
@@ -176,6 +180,21 @@ public class PM3200DataTests {
 		assertThat("Manufacturer", data.getManufacturer(), equalTo("Schneider Electric"));
 		assertThat("Manufacture date", data.getManufactureDate(),
 				equalTo(new LocalDateTime(2016, 6, 1, 0, 0)));
+	}
+
+	@Test
+	public void deviceInfo() {
+		PM3200DataAccessor data = getTestDataInstance("test-pm3200-data-01.txt");
+		Map<String, Object> info = data.getDeviceInfo();
+		assertThat("Info size", info.keySet(), hasSize(4));
+		assertThat("Model", info,
+				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "iEM3255 (version 1.3.007)"));
+		assertThat("Manufacturer", info,
+				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER, "Schneider Electric"));
+		assertThat("Serial number", info,
+				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, 16233039L));
+		assertThat("Manufacture date", info, hasEntry(
+				ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE, new LocalDate(2016, 6, 1)));
 	}
 
 	@Test
