@@ -53,7 +53,6 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusTransactionUtils;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -241,18 +240,18 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 					return conn.writeDiscreetValues(new Integer[] { address }, bits);
 				}
 
-				int[] dataToWrite = null;
+				short[] dataToWrite = null;
 				switch (config.getDataType()) {
 					case StringAscii:
 						conn.writeString(function, address,
 								desiredValue != null ? desiredValue.toString() : "",
-								ModbusTransactionUtils.ASCII_CHARSET);
+								ModbusDataUtils.ASCII_CHARSET);
 						break;
 
 					case StringUtf8:
 						conn.writeString(function, address,
 								desiredValue != null ? desiredValue.toString() : "",
-								ModbusTransactionUtils.UTF8_CHARSET);
+								ModbusDataUtils.UTF8_CHARSET);
 						break;
 
 					case Bytes:
@@ -260,9 +259,10 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 						break;
 
 					case Boolean:
-						dataToWrite = new int[] {
-								desiredValue != null && ((Boolean) desiredValue).booleanValue() ? 1
-										: 0 };
+						dataToWrite = new short[] {
+								desiredValue != null && ((Boolean) desiredValue).booleanValue()
+										? (short) 1
+										: (short) 0 };
 						break;
 
 					case Float32:
@@ -286,7 +286,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 				}
 				if ( dataToWrite != null && dataToWrite.length > 0 ) {
-					conn.writeUnsignedShorts(function, address, dataToWrite);
+					conn.writeSignedShorts(function, address, dataToWrite);
 					return true;
 				}
 				return false;
