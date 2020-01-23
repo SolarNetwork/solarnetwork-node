@@ -170,25 +170,6 @@ public interface ModbusConnection {
 	int[] readInputValues(Integer address, int count);
 
 	/**
-	 * Get the raw bytes of specific registers as an array.
-	 * 
-	 * <p>
-	 * This uses a Modbus function code {@code 3} request.
-	 * </p>
-	 * 
-	 * @param address
-	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus 2-byte "words" to read
-	 * @return array of register bytes; the result will have a length equal to
-	 *         {@code count * 2}
-	 * @deprecated use {@link #readBytes(ModbusReadFunction, Integer, int)} with
-	 *             a {@link ModbusReadFunction#ReadHoldingRegister}
-	 */
-	@Deprecated
-	byte[] readBytes(Integer address, int count);
-
-	/**
 	 * Read a set of "input" type registers and interpret as a string.
 	 * 
 	 * <p>

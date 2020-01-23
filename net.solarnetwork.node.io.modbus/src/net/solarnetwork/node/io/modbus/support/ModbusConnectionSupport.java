@@ -154,9 +154,4 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 		return null;
 	}
 
-	@Override
-	public byte[] readBytes(Integer address, int count) {
-		return null;
-	}
-
 }
