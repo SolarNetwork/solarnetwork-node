@@ -347,12 +347,12 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
 	@Override
 	public Integer getPhaseCount() {
-		return getInt16(PM3200Register.ConfigNumPhases.getAddress());
+		return getUnsignedInt16(PM3200Register.ConfigNumPhases.getAddress());
 	}
 
 	@Override
 	public Integer getWireCount() {
-		return getInt16(PM3200Register.ConfigNumWires.getAddress());
+		return getUnsignedInt16(PM3200Register.ConfigNumWires.getAddress());
 	}
 
 	@Override

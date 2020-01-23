@@ -120,19 +120,19 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				break;
 
 			case Int16:
-				propVal = sample.getSignedInt16(config.getAddress());
-				break;
-
-			case UInt16:
 				propVal = sample.getInt16(config.getAddress());
 				break;
 
+			case UInt16:
+				propVal = sample.getUnsignedInt16(config.getAddress());
+				break;
+
 			case Int32:
-				propVal = sample.getSignedInt32(config.getAddress());
+				propVal = sample.getInt32(config.getAddress());
 				break;
 
 			case UInt32:
-				propVal = sample.getInt32(config.getAddress());
+				propVal = sample.getUnsignedInt32(config.getAddress());
 				break;
 
 			case Int64:

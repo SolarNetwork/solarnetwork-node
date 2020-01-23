@@ -157,10 +157,10 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	@Override
 	public String getSerialNumber() {
 		final int baseAddress = PowerGatePlusRegister.InfoSerialNumber.getAddress();
-		int x = getInt16(baseAddress);
-		int y = getInt16(baseAddress + 1);
-		int a = getInt16(baseAddress + 2);
-		int z = getInt16(baseAddress + 3);
+		int x = getUnsignedInt16(baseAddress);
+		int y = getUnsignedInt16(baseAddress + 1);
+		int a = getUnsignedInt16(baseAddress + 2);
+		int z = getUnsignedInt16(baseAddress + 3);
 		return String.format("%d%03d%c-%03d", x, y, 'A' + a - 1, z);
 	}
 

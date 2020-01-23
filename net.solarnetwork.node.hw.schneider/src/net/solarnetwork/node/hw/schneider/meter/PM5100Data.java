@@ -215,12 +215,12 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 
 	@Override
 	public Integer getPhaseCount() {
-		return getInt16(PM5100Register.ConfigNumPhases.getAddress());
+		return getUnsignedInt16(PM5100Register.ConfigNumPhases.getAddress());
 	}
 
 	@Override
 	public Integer getWireCount() {
-		return getInt16(PM5100Register.ConfigNumWires.getAddress());
+		return getUnsignedInt16(PM5100Register.ConfigNumWires.getAddress());
 	}
 
 	@Override

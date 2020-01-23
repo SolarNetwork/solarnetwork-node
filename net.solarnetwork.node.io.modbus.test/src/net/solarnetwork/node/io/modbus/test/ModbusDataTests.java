@@ -101,7 +101,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -117,7 +117,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -134,7 +134,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -151,7 +151,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("Unsigned 32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("Unsigned 32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -404,7 +404,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("Signed 16-bit integer", d.getSignedInt16(0), equalTo(s));
+		assertThat("Signed 16-bit integer", d.getInt16(0), equalTo(s));
 	}
 
 	@Test

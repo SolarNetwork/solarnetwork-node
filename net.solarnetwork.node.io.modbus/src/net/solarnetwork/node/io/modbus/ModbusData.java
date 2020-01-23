@@ -152,19 +152,19 @@ public class ModbusData implements DataAccessor {
 				return getFloat64(addr);
 
 			case Int16:
-				return getSignedInt16(addr);
+				return getInt16(addr);
 
 			case Int32:
-				return getSignedInt32(addr);
+				return getInt32(addr);
 
 			case Int64:
 				return getInt64(addr);
 
 			case UInt16:
-				return getInt16(addr);
+				return getUnsignedInt16(addr);
 
 			case UInt32:
-				return getInt32(addr);
+				return getUnsignedInt32(addr);
 
 			case UInt64:
 				return getUnsignedInt64(addr);
@@ -192,8 +192,7 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 * @return the integer, never {@literal null}
 	 */
-	// TODO: refactor to getUnsignedInt16
-	public final Integer getInt16(final int addr) {
+	public final Integer getUnsignedInt16(final int addr) {
 		short s = dataRegisters.getValue(addr);
 		return s & 0xFFFF;
 	}
@@ -204,8 +203,7 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 * @return the short, never {@literal null}
 	 */
-	// TODO: refactor to getInt16
-	public final Short getSignedInt16(final int addr) {
+	public final Short getInt16(final int addr) {
 		return dataRegisters.getValue(addr);
 	}
 
@@ -218,8 +216,7 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the low 16 bits
 	 * @return the parsed value, or {@literal null} if not available
 	 */
-	// TODO: refactor to getUnsignedInt32
-	public final Long getInt32(final int hiAddr, final int loAddr) {
+	public final Long getUnsignedInt32(final int hiAddr, final int loAddr) {
 		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.getValue(hiAddr),
 				dataRegisters.getValue(loAddr));
 	}
@@ -234,8 +231,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
-	// TODO: refactor to getInt32
-	public final Integer getSignedInt32(final int hiAddr, final int loAddr) {
+	public final Integer getInt32(final int hiAddr, final int loAddr) {
 		return ModbusDataUtils.parseInt32(dataRegisters.getValue(hiAddr),
 				dataRegisters.getValue(loAddr));
 	}
@@ -253,10 +249,9 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
-	// TODO: refactor to getInt32
-	public final Integer getSignedInt32(final int addr) {
-		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getSignedInt32(addr, addr + 1)
-				: getSignedInt32(addr + 1, addr));
+	public final Integer getInt32(final int addr) {
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
+				: getInt32(addr + 1, addr));
 	}
 
 	/**
@@ -272,10 +267,9 @@ public class ModbusData implements DataAccessor {
 	 *        to be {@code addr + 1}
 	 * @return the parsed value, or {@literal null} if not available
 	 */
-	// TODO: refactor to getUnsignedInt32
-	public final Long getInt32(final int addr) {
-		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
-				: getInt32(addr + 1, addr));
+	public final Long getUnsignedInt32(final int addr) {
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getUnsignedInt32(addr, addr + 1)
+				: getUnsignedInt32(addr + 1, addr));
 	}
 
 	/**

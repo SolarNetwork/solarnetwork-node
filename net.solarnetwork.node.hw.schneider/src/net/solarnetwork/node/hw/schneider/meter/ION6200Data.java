@@ -194,22 +194,22 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 
 	@Override
 	public Long getSerialNumber() {
-		return getInt32(ION6200Register.InfoSerialNumber.getAddress());
+		return getUnsignedInt32(ION6200Register.InfoSerialNumber.getAddress());
 	}
 
 	@Override
 	public Integer getFirmwareRevision() {
-		return getInt16(ION6200Register.InfoFirmwareVersion.getAddress());
+		return getUnsignedInt16(ION6200Register.InfoFirmwareVersion.getAddress());
 	}
 
 	@Override
 	public Integer getDeviceType() {
-		return getInt16(ION6200Register.InfoDeviceType.getAddress());
+		return getUnsignedInt16(ION6200Register.InfoDeviceType.getAddress());
 	}
 
 	@Override
 	public ION6200VoltsMode getVoltsMode() {
-		Integer v = getInt16(ION6200Register.ConfigVoltsMode.getAddress());
+		Integer v = getUnsignedInt16(ION6200Register.ConfigVoltsMode.getAddress());
 		ION6200VoltsMode m = null;
 		if ( v != null ) {
 			try {
@@ -223,7 +223,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 
 	@Override
 	public Float getFrequency() {
-		Short v = getSignedInt16(ION6200Register.MeterFrequency.getAddress());
+		Short v = getInt16(ION6200Register.MeterFrequency.getAddress());
 		return (v != null ? v.floatValue() / 100.0f : null);
 	}
 
@@ -234,7 +234,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	}
 
 	private BigDecimal getProgrammableScale(ION6200Register reg) {
-		Integer v = getInt16(reg.getAddress());
+		Integer v = getUnsignedInt16(reg.getAddress());
 		if ( v == null ) {
 			return BigDecimal.ONE;
 		}
@@ -325,7 +325,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	}
 
 	private Long getEnergyValue(ION6200Register reg) {
-		Long v = getInt32(reg.getAddress());
+		Long v = getUnsignedInt32(reg.getAddress());
 		if ( v == null ) {
 			return null;
 		}
