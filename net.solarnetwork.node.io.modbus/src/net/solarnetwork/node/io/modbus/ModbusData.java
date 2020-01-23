@@ -986,7 +986,7 @@ public class ModbusData implements DataAccessor {
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
 			final Collection<IntRange> ranges, final MutableModbusData m) {
 		for ( IntRange r : ranges ) {
-			short[] data = conn.readSignedShorts(readFunction, r.getMin(), r.length());
+			short[] data = conn.readWords(readFunction, r.getMin(), r.length());
 			m.saveDataArray(data, r.getMin());
 		}
 	}

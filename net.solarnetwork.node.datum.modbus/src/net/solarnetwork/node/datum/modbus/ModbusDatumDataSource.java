@@ -617,12 +617,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 									break;
 
 								case ReadHoldingRegister:
-									m.saveDataArray(conn.readSignedShorts(
+									m.saveDataArray(conn.readWords(
 											ModbusReadFunction.ReadHoldingRegister, start, len), start);
 									break;
 
 								case ReadInputRegister:
-									m.saveDataArray(conn.readSignedShorts(
+									m.saveDataArray(conn.readWords(
 											ModbusReadFunction.ReadInputRegister, start, len), start);
 									break;
 							}
@@ -638,7 +638,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 						for ( int start = range.getMin(), stop = start
 								+ range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
-							m.saveDataArray(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister,
+							m.saveDataArray(conn.readWords(ModbusReadFunction.ReadHoldingRegister,
 									start, len), start);
 							start += len;
 						}

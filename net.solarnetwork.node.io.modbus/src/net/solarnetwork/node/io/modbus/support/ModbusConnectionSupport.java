@@ -94,7 +94,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
+	public short[] readWords(ModbusReadFunction function, int address, int count) {
 		return null;
 	}
 

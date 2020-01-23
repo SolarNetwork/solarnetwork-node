@@ -99,9 +99,9 @@ public class KTLCTDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0, 59))
+		expect(conn.readWords(ModbusReadFunction.ReadInputRegister, 0, 59))
 				.andReturn(mapSlice(TEST_DATA, 0, 59));
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
 				.andReturn(mapSlice(TEST_DATA, 4096, 2));
 
 		// when

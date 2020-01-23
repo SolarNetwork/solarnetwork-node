@@ -86,7 +86,7 @@ public class PVITLDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 5, 43))
+		expect(conn.readWords(ModbusReadFunction.ReadInputRegister, 5, 43))
 				.andReturn(copyOfRange(TEST_DATA, 5, 43));
 
 		// when
@@ -103,7 +103,7 @@ public class PVITLDataTests {
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0x16, (0x2F - 0x16) + 1))
+		expect(conn.readWords(ModbusReadFunction.ReadInputRegister, 0x16, (0x2F - 0x16) + 1))
 				.andReturn(copyOfRange(TEST_DATA, 0x16, (0x2F - 0x16) + 1));
 
 		// when

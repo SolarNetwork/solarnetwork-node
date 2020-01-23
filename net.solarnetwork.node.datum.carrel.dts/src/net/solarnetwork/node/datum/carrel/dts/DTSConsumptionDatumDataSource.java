@@ -85,7 +85,7 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 						public GeneralNodeACEnergyDatum doWithConnection(ModbusConnection conn)
 								throws IOException {
 							GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-							short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister,
+							short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister,
 									ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
 							Integer hectoWh = ModbusDataUtils.parseInt32(data[0], data[1]);
 							if ( hectoWh != null ) {

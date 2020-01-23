@@ -177,9 +177,9 @@ public class ModbusDatumDataSourceTests {
 		final short[] range1 = shortArray(
 				new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee });
 		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(range1);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 200, 6))
 				.andReturn(range2);
 
 		replayAll();
@@ -231,7 +231,7 @@ public class ModbusDatumDataSourceTests {
 		final String message = "Hello, world.";
 		final short[] strWords = stringToModbusWordArray(message, ModbusDataUtils.UTF8_CHARSET,
 				propConfig.getWordLength());
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(strWords);
 
 		replayAll();
@@ -274,7 +274,7 @@ public class ModbusDatumDataSourceTests {
 
 		final short[] range1 = shortArray(new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee,
 				0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -324,7 +324,7 @@ public class ModbusDatumDataSourceTests {
 
 		final short[] range1 = shortArray(new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee,
 				0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -375,7 +375,7 @@ public class ModbusDatumDataSourceTests {
 
 		final short[] range1 = shortArray(new int[] { 0x68e7, 0x02e3, 0xdfee, 0x1512, 0x1376, 0x0002,
 				0xc651, 0x44f6, 0x8ce7, 0x6328, 0xd3d1, 0x4172 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -421,7 +421,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadInputRegister, 0, 2))
 				.andReturn(range1);
 
 		replayAll();
@@ -465,7 +465,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		// no metadata returned
@@ -533,7 +533,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		final long now = System.currentTimeMillis();
@@ -613,11 +613,11 @@ public class ModbusDatumDataSourceTests {
 				}).times(2);
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 }); // 1974.1974
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range2);
 
 		final long now = System.currentTimeMillis();
@@ -710,7 +710,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		final long now = System.currentTimeMillis();
@@ -798,9 +798,9 @@ public class ModbusDatumDataSourceTests {
 		final short[] range1 = shortArray(
 				new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee });
 		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(range1);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 200, 6))
 				.andReturn(range2);
 
 		replayAll();
@@ -854,15 +854,15 @@ public class ModbusDatumDataSourceTests {
 		final short[] range5 = shortArray(new int[] { 0x42F6, 0xE979 }); // [200..201]
 
 		// first read normal property registers
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 1))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 1))
 				.andReturn(range1);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 2, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 2, 2))
 				.andReturn(range2);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 8, 1))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 8, 1))
 				.andReturn(range3);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 10, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 10, 2))
 				.andReturn(range4);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 2))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 200, 2))
 				.andReturn(range5);
 
 		replayAll();
@@ -915,9 +915,9 @@ public class ModbusDatumDataSourceTests {
 		final short[] range2 = shortArray(new int[] { 0x3340, 0x3341, 0x42F6, 0xE979 }); // [198..201]
 
 		// first read normal property registers
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 1, 4))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 1, 4))
 				.andReturn(range1);
-		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 198, 4))
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 198, 4))
 				.andReturn(range2);
 
 		replayAll();

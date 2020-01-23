@@ -69,19 +69,19 @@ public class ModelDataFactoryTests {
 		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister, 40000, 2, true,
 				ModbusDataUtils.ASCII_CHARSET)).andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40002, 2))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40002, 2))
 				.andReturn(new short[] { 1, 65 });
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40004, 65))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40004, 65))
 				.andReturn(ModelDataTests.COMMON_MODEL_02);
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40069, 2))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40069, 2))
 				.andReturn(IntegerMeterModelAccessorTests.INT_METER_MODEL_HEADER_69);
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40176, 2))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40176, 2))
 				.andReturn(new short[] { (short) 0xFFFF, 0x0000 });
 
-		expect(conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 40071, 105))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40071, 105))
 				.andReturn(IntegerMeterModelAccessorTests.INT_METER_MODEL_71);
 
 		replay(conn);

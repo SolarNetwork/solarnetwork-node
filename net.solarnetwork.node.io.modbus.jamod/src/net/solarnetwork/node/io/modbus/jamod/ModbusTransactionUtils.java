@@ -420,7 +420,8 @@ public class ModbusTransactionUtils {
 	}
 
 	/**
-	 * Get the values of specific registers as an array of signed 16-bit shorts.
+	 * Get the values of specific 16-bit Modbus registers as an array of 16-bit
+	 * words.
 	 * 
 	 * @param trans
 	 *        the Modbus transaction to use
@@ -437,8 +438,9 @@ public class ModbusTransactionUtils {
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
 	 */
-	public static short[] readSignedShorts(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusReadFunction function, Integer address, int count) {
+	public static short[] readWords(final ModbusTransaction trans, final int unitId,
+			final boolean headless, final ModbusReadFunction function, final int address,
+			final int count) {
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {

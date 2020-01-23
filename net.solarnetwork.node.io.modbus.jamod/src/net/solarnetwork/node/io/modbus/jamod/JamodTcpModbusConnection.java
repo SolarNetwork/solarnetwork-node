@@ -128,8 +128,8 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readSignedShorts(createTransaction(), getUnitId(), isHeadless(),
+	public short[] readWords(ModbusReadFunction function, int address, int count) {
+		return ModbusTransactionUtils.readWords(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count);
 	}
 

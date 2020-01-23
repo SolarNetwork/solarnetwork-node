@@ -324,7 +324,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.getMin(),
 						r.getMin() + r.length());
 			}
-			short[] data = conn.readSignedShorts(function, r.getMin(), r.length());
+			short[] data = conn.readWords(function, r.getMin(), r.length());
 			m.saveDataArray(data, r.getMin());
 		}
 	}
@@ -341,7 +341,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				// load in our model header to find the common model length (65/66)
-				short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, baseAddress,
+				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress,
 						2);
 				m.saveDataArray(data, baseAddress);
 				updateData(conn, m, getAddressRanges(maxReadWordsCount));

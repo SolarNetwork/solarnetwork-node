@@ -133,7 +133,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
 	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
 		for ( IntRange r : ranges ) {
-			short[] data = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
+			short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());
 			m.saveDataArray(data, r.getMin());
 		}

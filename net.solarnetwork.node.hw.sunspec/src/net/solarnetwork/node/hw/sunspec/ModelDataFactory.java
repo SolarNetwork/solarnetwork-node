@@ -172,7 +172,7 @@ public class ModelDataFactory {
 		ModelAccessor model = data;
 		do {
 			int nextModelAddress = model.getBlockAddress() + model.getModelLength();
-			short[] words = conn.readSignedShorts(ModbusReadFunction.ReadHoldingRegister,
+			short[] words = conn.readWords(ModbusReadFunction.ReadHoldingRegister,
 					nextModelAddress, 2);
 			model = null;
 			if ( words != null && words.length > 1 ) {

@@ -122,8 +122,8 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
-		return ModbusTransactionUtils.readSignedShorts(createTransaction(), getUnitId(), isHeadless(),
+	public short[] readWords(final ModbusReadFunction function, final int address, final int count) {
+		return ModbusTransactionUtils.readWords(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count);
 	}
 

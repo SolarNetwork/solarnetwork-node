@@ -131,7 +131,8 @@ public interface ModbusConnection {
 	BitSet readInputDiscreteValues(int address, int count);
 
 	/**
-	 * Get the values of specific registers as an array of signed 16-bit shorts.
+	 * Get the values of specific 16-bit Modbus registers as an array of 16-bit
+	 * words.
 	 * 
 	 * <p>
 	 * Note that the raw short values can be treated as unsigned shorts by
@@ -151,9 +152,9 @@ public interface ModbusConnection {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
-	 * @since 1.2
+	 * @since 2.0
 	 */
-	short[] readSignedShorts(ModbusReadFunction function, Integer address, int count);
+	short[] readWords(ModbusReadFunction function, int address, int count);
 
 	/**
 	 * Write signed 16-bit short values to registers.
@@ -164,7 +165,7 @@ public interface ModbusConnection {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the signed 16-bit values to write
-	 * @since 1.2
+	 * @since 2.0
 	 */
 	void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values);
 
@@ -176,8 +177,8 @@ public interface ModbusConnection {
 	 * Note that the raw int values can be treated as signed shorts by casting
 	 * them to shorts, like {@code short signed = (short)s}. Thus the values
 	 * returned by this method are technically the same as those returned by
-	 * {@link #readSignedShorts(ModbusReadFunction, Integer, int)}, having been
-	 * cast to ints.
+	 * {@link #readWords(ModbusReadFunction, int, int)}, having been cast to
+	 * ints.
 	 * </p>
 	 * 
 	 * @param function
