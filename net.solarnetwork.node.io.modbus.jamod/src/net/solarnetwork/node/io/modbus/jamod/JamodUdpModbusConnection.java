@@ -124,8 +124,8 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		ModbusTransactionUtils.writeSignedShorts(createTransaction(), getUnitId(), isHeadless(),
+	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
+		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(),
 				function, address, values);
 	}
 

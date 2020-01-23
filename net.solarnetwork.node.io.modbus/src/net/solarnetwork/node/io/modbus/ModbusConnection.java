@@ -157,17 +157,17 @@ public interface ModbusConnection {
 	short[] readWords(ModbusReadFunction function, int address, int count);
 
 	/**
-	 * Write signed 16-bit short values to registers.
+	 * Write 16-bit word values to 16-bit Modbus registers.
 	 * 
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
-	 *        the signed 16-bit values to write
+	 *        the 16-bit values to write
 	 * @since 2.0
 	 */
-	void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values);
+	void writeWords(ModbusWriteFunction function, int address, short[] values);
 
 	/**
 	 * Get the values of specific registers as an array of unsigned 16-bit

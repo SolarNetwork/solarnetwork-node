@@ -75,7 +75,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
 		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
 			data.putValue(address + i, (int) values[i]);

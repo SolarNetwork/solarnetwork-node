@@ -287,7 +287,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 				}
 				if ( dataToWrite != null && dataToWrite.length > 0 ) {
-					conn.writeSignedShorts(function, address, dataToWrite);
+					conn.writeWords(function, address, dataToWrite);
 					return true;
 				}
 				return false;

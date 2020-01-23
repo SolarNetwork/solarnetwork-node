@@ -493,7 +493,7 @@ public class ModbusTransactionUtils {
 	}
 
 	/**
-	 * Write signed 16-bit short values to registers.
+	 * Write 16-bit word values to 16-bit Modbus registers.
 	 * 
 	 * @param trans
 	 *        the Modbus transaction to use
@@ -510,8 +510,8 @@ public class ModbusTransactionUtils {
 	 * @param values
 	 *        the signed 16-bit values to write
 	 */
-	public static void writeSignedShorts(ModbusTransaction trans, int unitId, boolean headless,
-			ModbusWriteFunction function, Integer address, short[] values) {
+	public static void writeWords(ModbusTransaction trans, int unitId, boolean headless,
+			ModbusWriteFunction function, int address, short[] values) {
 		int len = values.length;
 		int[] unsigned = new int[len];
 		for ( int i = 0; i < len; i += 1 ) {
