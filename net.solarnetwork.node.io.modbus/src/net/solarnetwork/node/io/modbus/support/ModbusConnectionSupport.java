@@ -109,11 +109,6 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public short[] readSignedShorts(Integer address, int count) {
-		return null;
-	}
-
-	@Override
 	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
 		throw new UnsupportedOperationException();
 	}

@@ -122,11 +122,6 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	}
 
 	@Override
-	public short[] readSignedShorts(Integer address, int count) {
-		return readSignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count);
-	}
-
-	@Override
 	public Integer[] readValues(Integer address, int count) {
 		return integerArray(readSignedShorts(ModbusReadFunction.ReadHoldingRegister, address, count));
 	}
