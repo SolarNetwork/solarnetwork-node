@@ -24,19 +24,18 @@ package net.solarnetwork.node.datum.modbus;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ExpressionRoot {
 
@@ -93,6 +92,8 @@ public class ExpressionRoot {
 				: Collections.emptyMap());
 	}
 
+	private static IntRangeSet EMPTY_SET = new IntRangeSet().immutableCopy();
+
 	/**
 	 * Get a set of referenced Modbus register addresses in the configured
 	 * expression.
@@ -107,14 +108,14 @@ public class ExpressionRoot {
 	 *        the expression to inspect
 	 * @return the referenced addresses, never {@literal null}
 	 */
-	public static Set<Integer> registerAddressReferences(String expression) {
+	public static IntRangeSet registerAddressReferences(String expression) {
 		if ( expression == null || expression.isEmpty() ) {
-			return Collections.emptySet();
+			return EMPTY_SET;
 		}
-		Set<Integer> result = new TreeSet<>();
+		IntRangeSet result = new IntRangeSet(8);
 		Matcher m = ExpressionRoot.REGISTER_REF.matcher(expression);
 		while ( m.find() ) {
-			result.add(Integer.valueOf(m.group(1)));
+			result.add(Integer.parseInt(m.group(1)));
 		}
 
 		m = ExpressionRoot.SAMPLE_GETTER_REF.matcher(expression);
@@ -122,18 +123,17 @@ public class ExpressionRoot {
 			for ( int i = 1; i <= m.groupCount(); i++ ) {
 				String s = m.group(i);
 				if ( s != null ) {
-					result.add(Integer.valueOf(m.group(i)));
+					result.add(Integer.parseInt(m.group(i)));
 				}
 			}
 		}
 
 		m = ExpressionRoot.SAMPLE_RANGE_GETTER_REF.matcher(expression);
 		while ( m.find() ) {
-			int start = Integer.valueOf(m.group(1));
-			int len = Integer.valueOf(m.group(2));
-
-			for ( int i = start; i < len; i++ ) {
-				result.add(i);
+			int start = Integer.parseInt(m.group(1));
+			int len = Integer.parseInt(m.group(2));
+			if ( len > 0 ) {
+				result.addRange(start, start + len - 1);
 			}
 		}
 		return result;

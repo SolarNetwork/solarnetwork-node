@@ -32,6 +32,7 @@ import static net.solarnetwork.node.io.modbus.ModbusDataType.Int64;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -67,7 +68,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
@@ -80,7 +81,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * Test cases for the {@link ModbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class ModbusDatumDataSourceTests {
 
@@ -127,21 +128,21 @@ public class ModbusDatumDataSourceTests {
 		EasyMock.verify(modbusNetwork, modbusConnection, datumMetadataService);
 	}
 
-	private static int[] stringToModbusWordArray(String s, String charset, int minOutputLength) {
+	private static short[] stringToModbusWordArray(String s, String charset, int minOutputLength) {
 		byte[] bytes;
 		try {
 			bytes = s.getBytes(charset);
 		} catch ( UnsupportedEncodingException e ) {
 			throw new RuntimeException(e);
 		}
-		int[] ints = new int[Math.max((int) Math.ceil(bytes.length / 2.0), minOutputLength)];
-		Arrays.fill(ints, 0);
+		short[] ints = new short[Math.max((int) Math.ceil(bytes.length / 2.0), minOutputLength)];
+		Arrays.fill(ints, (short) 0);
 		for ( int i = 0; i < bytes.length; i += 2 ) {
 			int n = ((bytes[i]) & 0xFF) << 8;
 			if ( i + 1 < bytes.length ) {
 				n |= ((bytes[i + 1]) & 0xFF);
 			}
-			ints[i / 2] = n;
+			ints[i / 2] = (short) n;
 		}
 		return ints;
 	}
@@ -173,12 +174,12 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512,
-				0xdfee };
-		final int[] range2 = new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		final short[] range1 = shortArray(
+				new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee });
+		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(range1);
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
 				.andReturn(range2);
 
 		replayAll();
@@ -228,9 +229,9 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final String message = "Hello, world.";
-		final int[] strWords = stringToModbusWordArray(message, ModbusHelper.UTF8_CHARSET,
+		final short[] strWords = stringToModbusWordArray(message, ModbusDataUtils.UTF8_CHARSET,
 				propConfig.getWordLength());
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(strWords);
 
 		replayAll();
@@ -271,9 +272,9 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
-				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		final short[] range1 = shortArray(new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee,
+				0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -321,9 +322,9 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee, 0x44f6, 0xc651,
-				0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		final short[] range1 = shortArray(new int[] { 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee,
+				0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -372,9 +373,9 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x68e7, 0x02e3, 0xdfee, 0x1512, 0x1376, 0x0002, 0xc651, 0x44f6,
-				0x8ce7, 0x6328, 0xd3d1, 0x4172 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
+		final short[] range1 = shortArray(new int[] { 0x68e7, 0x02e3, 0xdfee, 0x1512, 0x1376, 0x0002,
+				0xc651, 0x44f6, 0x8ce7, 0x6328, 0xd3d1, 0x4172 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 12))
 				.andReturn(range1);
 
 		replayAll();
@@ -419,8 +420,8 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x44f6, 0xc651 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadInputRegister, 0, 2))
+		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadInputRegister, 0, 2))
 				.andReturn(range1);
 
 		replayAll();
@@ -463,8 +464,8 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x44f6, 0xc651 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		// no metadata returned
@@ -531,8 +532,8 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x44f6, 0xc614 }; // 1974.1900
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		final long now = System.currentTimeMillis();
@@ -611,12 +612,12 @@ public class ModbusDatumDataSourceTests {
 					}
 				}).times(2);
 
-		final int[] range1 = new int[] { 0x44f6, 0xc651 }; // 1974.1974
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 }); // 1974.1974
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
-		final int[] range2 = new int[] { 0x44f6, 0xc614 }; // 1974.1900
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range2);
 
 		final long now = System.currentTimeMillis();
@@ -708,8 +709,8 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0x44f6, 0xc614 }; // 1974.1900
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
+		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 2))
 				.andReturn(range1);
 
 		final long now = System.currentTimeMillis();
@@ -794,12 +795,12 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512,
-				0xdfee };
-		final int[] range2 = new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
+		final short[] range1 = shortArray(
+				new int[] { 0xfc1e, 0xf0c3, 0x02e3, 0x68e7, 0x0002, 0x1376, 0x1512, 0xdfee });
+		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc651, 0x4172, 0xd3d1, 0x6328, 0x8ce7 });
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(range1);
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 6))
 				.andReturn(range2);
 
 		replayAll();
@@ -846,15 +847,23 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final int[] range1 = new int[] { 0xfc1e, 0x0000, 0x02e3, 0x68e7 };
-		final int[] range2 = new int[] { 0x44f6, 0xc651 };
-		final int[] range3 = new int[] { 0x3330, 0x0000, 0x3340, 0x3341 };
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 4))
+		final short[] range1 = shortArray(new int[] { 0xfc1e }); // [0..0]
+		final short[] range2 = shortArray(new int[] { 0x02e3, 0x68e7 }); // [2..3]
+		final short[] range3 = shortArray(new int[] { 0x3330 }); // [8..8]
+		final short[] range4 = shortArray(new int[] { 0x3340, 0x3341 }); // [10..11]
+		final short[] range5 = shortArray(new int[] { 0x42F6, 0xE979 }); // [200..201]
+
+		// first read normal property registers
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 0, 1))
 				.andReturn(range1);
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 2))
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 2, 2))
 				.andReturn(range2);
-		expect(modbusConnection.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 8, 4))
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 8, 1))
 				.andReturn(range3);
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 10, 2))
+				.andReturn(range4);
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 200, 2))
+				.andReturn(range5);
 
 		replayAll();
 
@@ -866,9 +875,66 @@ public class ModbusDatumDataSourceTests {
 		assertThat("Created", datum.getCreated(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
 		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
-				equalTo(64542));
+				equalTo(0xfc1e));
 		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
-				equalTo(48457959));
+				equalTo(0x02e368e7));
+		assertThat("Float32 value", datum.getInstantaneousSampleFloat(TEST_FLOAT32_PROP_NAME),
+				equalTo(123.456f));
+		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
+	}
+
+	@Test
+	public void readDatumWithExpressionsWithAdditionalRegistersMerged() throws IOException {
+		// GIVEN
+
+		ModbusPropertyConfig[] propConfigs = new ModbusPropertyConfig[] {
+				new ModbusPropertyConfig(TEST_INT16_PROP_NAME, Instantaneous, UInt16, 1),
+				new ModbusPropertyConfig(TEST_INT32_PROP_NAME, Instantaneous, UInt32, 2),
+				new ModbusPropertyConfig(TEST_FLOAT32_PROP_NAME, Instantaneous, Float32, 200,
+						BigDecimal.ONE, -1), };
+		dataSource.setPropConfigs(propConfigs);
+
+		ExpressionConfig[] exprConfigs = new ExpressionConfig[] {
+				new ExpressionConfig("raw-add", Instantaneous, "regs[4] + sample.getInt32(198, 199)",
+						SpelExpressionService.class.getName()), };
+		dataSource.setExpressionConfigs(exprConfigs);
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final short[] range1 = shortArray(new int[] { 0xfc1e, 0x02e3, 0x68e7, 0x3330 }); // [1..4]
+		final short[] range2 = shortArray(new int[] { 0x3340, 0x3341, 0x42F6, 0xE979 }); // [198..201]
+
+		// first read normal property registers
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 1, 4))
+				.andReturn(range1);
+		expect(modbusConnection.readSignedShorts(ModbusReadFunction.ReadHoldingRegister, 198, 4))
+				.andReturn(range2);
+
+		replayAll();
+
+		// WHEN
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
+				equalTo(0xfc1e));
+		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
+				equalTo(0x02e368e7));
+		assertThat("Float32 value", datum.getInstantaneousSampleFloat(TEST_FLOAT32_PROP_NAME),
+				equalTo(123.456f));
 		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
 				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
 	}
