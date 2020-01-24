@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.rfxcom;
 
-import static net.solarnetwork.node.util.DataUtils.unsigned;
+import static net.solarnetwork.util.NumberUtils.unsigned;
 
 /**
  * An energy message, e.g. Owl CM119, CM160.
@@ -68,8 +68,8 @@ public class EnergyMessage extends BaseAddressSourceDataMessage {
 		return ((unsigned(getData()[IDX_TOTAL1]) * 0x10000000000L)
 				+ (unsigned(getData()[IDX_TOTAL2]) * 0x100000000L)
 				+ (unsigned(getData()[IDX_TOTAL3]) * 0x1000000)
-				+ (unsigned(getData()[IDX_TOTAL4]) * 0x10000)
-				+ (unsigned(getData()[IDX_TOTAL5]) * 0x100) + unsigned(getData()[IDX_TOTAL6])) / 223.666;
+				+ (unsigned(getData()[IDX_TOTAL4]) * 0x10000) + (unsigned(getData()[IDX_TOTAL5]) * 0x100)
+				+ unsigned(getData()[IDX_TOTAL6])) / 223.666;
 	}
 
 	public boolean isBatteryLow() {
