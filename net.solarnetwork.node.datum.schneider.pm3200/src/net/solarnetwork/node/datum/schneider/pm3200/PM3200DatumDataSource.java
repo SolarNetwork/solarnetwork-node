@@ -222,7 +222,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.schneider.pm3200";
+		return "net.solarnetwork.node.consumption.schneider.pm3200";
 	}
 
 	@Override
