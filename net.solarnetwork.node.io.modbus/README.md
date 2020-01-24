@@ -17,7 +17,7 @@ The main method used by clients is the `createConnection(int unitId)` method. Th
 returns a [`ModbusConnection`](src/net/solarnetwork/node/io/modbus/ModbusConnection.java)
 for a specific device on the network.
 
-The `performAction(ModbusConnectionAction<T> action, int unitId)` method is
+The `performAction(int unitId, ModbusConnectionAction<T> action)` method is
 a handy way for clients to perform an action such as read or write to a Modbus
 device safely. Here's an example that reads 8 "coil" registers from device 123:
 
