@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.ae.inverter;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -117,11 +117,11 @@ public enum AE250TxRegister implements ModbusReference {
 
 	StatusPvMonitoringStatus(2108, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			AE250TxRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createAddressSet(
 			AE250TxRegister.class, new HashSet<>(asList("Inverter"))).immutableCopy();
-	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createAddressSet(
 			AE250TxRegister.class, new HashSet<>(asList("Status"))).immutableCopy();
 
 	private final int address;

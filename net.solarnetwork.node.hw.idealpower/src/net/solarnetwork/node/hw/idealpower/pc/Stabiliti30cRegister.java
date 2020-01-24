@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.idealpower.pc;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -278,24 +278,12 @@ public enum Stabiliti30cRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet POWER_CONTROL_REGISTER_ADDRESS_SET = createPowerControlRegisterAddressSet();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("Info", "Config"))).immutableCopy();
-	}
-
-	private static IntRangeSet createPowerControlRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("PowerControl", "Status"))).immutableCopy();
-	}
-
-	private static IntRangeSet createControlRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class, new HashSet<>(asList("Control")))
-				.immutableCopy();
-	}
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet POWER_CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("PowerControl", "Status"))).immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("Control"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this

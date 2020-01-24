@@ -23,10 +23,10 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -178,9 +178,9 @@ public enum ION6200Register implements ModbusReference {
 	/** The programmable power scale (PPS) enumeration. */
 	ConfigProgrammablePowerScale(4014, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			ION6200Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
 			ION6200Register.class, new HashSet<>(asList("ConfigProgrammable", "Meter"))).immutableCopy();
 
 	private final int address;

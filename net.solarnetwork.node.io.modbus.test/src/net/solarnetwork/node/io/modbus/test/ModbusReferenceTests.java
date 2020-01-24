@@ -1,7 +1,7 @@
 /* ==================================================================
- * IntRangeSetUtilsTests.java - 14/05/2018 6:56:22 PM
+ * ModbusReferenceTests.java - 24/01/2020 3:45:07 pm
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -26,25 +26,25 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import static net.solarnetwork.util.IntRange.rangeOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import java.util.HashSet;
 import org.junit.Test;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.util.IntRangeSet;
 
 /**
- * Test cases for the {@link IntRangeSetUtils} class.
+ * Test cases for the {@link ModbusReference} interface.
  * 
  * @author matt
- * @version 2.0
+ * @version 1.0
  */
-public class IntRangeSetUtilsTests {
+public class ModbusReferenceTests {
 
 	private static enum FooRegister implements ModbusReference {
 
@@ -94,43 +94,42 @@ public class IntRangeSetUtilsTests {
 
 	@Test
 	public void enumAddressSet_All() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class, null);
+		IntRangeSet result = createAddressSet(FooRegister.class, null);
 		assertThat("Resolved ranges", result.ranges(), contains(rangeOf(0, 7)));
 	}
 
 	@Test
 	public void enumAddressSet_Info() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class,
-				singleton("Info"));
+		IntRangeSet result = createAddressSet(FooRegister.class, singleton("Info"));
 		assertThat("Resolved ranges", result.ranges(), contains(rangeOf(0, 5)));
 	}
 
 	@Test
 	public void enumAddressSet_InfoAndSetup() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class,
+		IntRangeSet result = createAddressSet(FooRegister.class,
 				new HashSet<>(asList("Info", "Setup")));
 		assertThat("Resolved ranges", result.ranges(), contains(rangeOf(0, 6)));
 	}
 
 	@Test
 	public void enumAddressSet_InfoAndSetupAndThing() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class,
+		IntRangeSet result = createAddressSet(FooRegister.class,
 				new HashSet<>(asList("Info", "Setup", "Thing")));
 		assertThat("Resolved ranges", result.ranges(), contains(rangeOf(0, 7)));
 	}
 
 	@Test
 	public void enumAddressSet_InfoAndThing() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class,
+		IntRangeSet result = createAddressSet(FooRegister.class,
 				new HashSet<>(asList("Info", "Thing")));
 		assertThat("Resolved ranges", result.ranges(), contains(rangeOf(0, 5), rangeOf(7, 7)));
 	}
 
 	@Test
 	public void enumAddressSet_NoMatch() {
-		IntRangeSet result = IntRangeSetUtils.createRegisterAddressSet(FooRegister.class,
-				new HashSet<>(asList("Hello")));
+		IntRangeSet result = createAddressSet(FooRegister.class, new HashSet<>(asList("Hello")));
 		assertThat("Resolved ranges", stream(result.ranges().spliterator(), false).collect(toList()),
 				hasSize(0));
 	}
+
 }

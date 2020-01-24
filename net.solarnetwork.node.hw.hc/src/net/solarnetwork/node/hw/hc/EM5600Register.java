@@ -23,10 +23,10 @@
 package net.solarnetwork.node.hw.hc;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -241,18 +241,10 @@ public enum EM5600Register implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createMeterRegisterAddressSet();
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(EM5600Register.class, new HashSet<>(asList("Info", "Config")))
-				.immutableCopy();
-	}
-
-	private static IntRangeSet createMeterRegisterAddressSet() {
-		return createRegisterAddressSet(EM5600Register.class, new HashSet<>(asList("Meter", "Config")))
-				.immutableCopy();
-	}
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			EM5600Register.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
+			EM5600Register.class, new HashSet<>(asList("Meter", "Config"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this

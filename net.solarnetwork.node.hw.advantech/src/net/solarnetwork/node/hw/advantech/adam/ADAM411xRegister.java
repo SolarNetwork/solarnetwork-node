@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.advantech.adam;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -97,12 +97,12 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	ConfigChannelEnable(220, ModbusDataType.UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			ADAM411xRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createAddressSet(
 			ADAM411xRegister.class, new HashSet<>(asList("Channel"))).immutableCopy();
 	private static final IntRangeSet CHANNEL_CONFIG_REGISTER_ADDRESS_SET = createChannelConfigRegisterAddressSet();
-	private static final IntRangeSet COIL_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet COIL_REGISTER_ADDRESS_SET = createAddressSet(
 			ADAM411xRegister.class, new HashSet<>(asList("Coil"))).immutableCopy();
 	private static final IntRangeSet CHANNEL_WITH_CONFIG_REGISTER_ADDRESS_SET = createChannelWithConfigRegisterAddressSet();
 

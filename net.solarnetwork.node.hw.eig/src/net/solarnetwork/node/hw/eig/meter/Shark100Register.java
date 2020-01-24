@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.eig.meter;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -158,9 +158,9 @@ public enum Shark100Register implements ModbusReference {
 	 */
 	MeterReactiveEnergyDelivered(0x455, Int32);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			Shark100Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
 			Shark100Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;

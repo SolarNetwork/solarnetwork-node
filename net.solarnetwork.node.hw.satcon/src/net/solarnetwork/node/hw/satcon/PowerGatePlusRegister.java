@@ -23,10 +23,10 @@
 package net.solarnetwork.node.hw.satcon;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Bytes;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -287,26 +287,12 @@ public enum PowerGatePlusRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet()
-			.immutableCopy();
-	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet()
-			.immutableCopy();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet()
-			.immutableCopy();
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(PowerGatePlusRegister.class,
-				new HashSet<>(asList("Info", "Config")));
-	}
-
-	private static IntRangeSet createInverterRegisterAddressSet() {
-		return createRegisterAddressSet(PowerGatePlusRegister.class,
-				new HashSet<>(asList("Inverter", "Status")));
-	}
-
-	private static IntRangeSet createControlRegisterAddressSet() {
-		return createRegisterAddressSet(PowerGatePlusRegister.class, new HashSet<>(asList("Control")));
-	}
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			PowerGatePlusRegister.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createAddressSet(
+			PowerGatePlusRegister.class, new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
+			PowerGatePlusRegister.class, new HashSet<>(asList("Control"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this

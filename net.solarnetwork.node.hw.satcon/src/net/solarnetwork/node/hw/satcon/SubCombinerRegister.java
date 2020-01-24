@@ -23,10 +23,10 @@
 package net.solarnetwork.node.hw.satcon;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -287,19 +287,10 @@ public enum SubCombinerRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet()
-			.immutableCopy();
-	private static final IntRangeSet COMBINER_REGISTER_ADDRESS_SET = createCombinerRegisterAddressSet()
-			.immutableCopy();
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(SubCombinerRegister.class, new HashSet<>(asList("Info")));
-	}
-
-	private static IntRangeSet createCombinerRegisterAddressSet() {
-		return createRegisterAddressSet(SubCombinerRegister.class,
-				new HashSet<>(asList("Combiner", "Status")));
-	}
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			SubCombinerRegister.class, new HashSet<>(asList("Info"))).immutableCopy();
+	private static final IntRangeSet COMBINER_REGISTER_ADDRESS_SET = createAddressSet(
+			SubCombinerRegister.class, new HashSet<>(asList("Combiner", "Status"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this

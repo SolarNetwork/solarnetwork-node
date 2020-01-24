@@ -23,8 +23,8 @@
 package net.solarnetwork.node.hw.deson.meter;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -152,9 +152,9 @@ public enum SDM630Register implements ModbusReference {
 	/** Total reactive energy received (exported), in kVARh. */
 	MeterReactiveEnergyReceived(78);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			SDM630Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
 			SDM630Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;

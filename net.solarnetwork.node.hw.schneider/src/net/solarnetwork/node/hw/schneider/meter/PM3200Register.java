@@ -23,12 +23,12 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int64;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringUtf8;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -222,9 +222,9 @@ public enum PM3200Register implements ModbusReference {
 	/** Phase C apparent energy delivered (imported), in VAh. */
 	MeterApparentEnergyDeliveredPhaseC(3550, Int64);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
 			PM3200Register.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createRegisterAddressSet(
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
 			PM3200Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;
