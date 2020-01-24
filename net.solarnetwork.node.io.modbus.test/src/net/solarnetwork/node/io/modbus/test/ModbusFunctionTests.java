@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusHelperTests.java - 1/03/2014 7:28:50 AM
+ * ModbusFunctionTests.java - 24/01/2020 3:28:29 pm
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -25,29 +25,29 @@ package net.solarnetwork.node.io.modbus.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusFunction;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 
 /**
- * Test cases for the {@link ModbusHelper} class.
+ * Test cases for the {@link ModbusFunction} interface.
  * 
  * @author matt
- * @version 2.0
+ * @version 1.0
  */
-public class ModbusHelperTests {
+public class ModbusFunctionTests {
 
 	@Test
 	public void functionForCode_read() {
 		for ( ModbusReadFunction f : ModbusReadFunction.values() ) {
-			assertThat("Code returned", ModbusHelper.functionForCode(f.getCode()), equalTo(f));
+			assertThat("Code returned", ModbusFunction.functionForCode(f.getCode()), equalTo(f));
 		}
 	}
 
 	@Test
 	public void functionForCode_write() {
 		for ( ModbusWriteFunction f : ModbusWriteFunction.values() ) {
-			assertThat("Code returned", ModbusHelper.functionForCode(f.getCode()), equalTo(f));
+			assertThat("Code returned", ModbusFunction.functionForCode(f.getCode()), equalTo(f));
 		}
 	}
 

@@ -24,10 +24,10 @@ package net.solarnetwork.node.io.modbus.jamod;
 
 import java.io.IOException;
 import java.util.BitSet;
-import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.io.modbus.support.AbstractModbusConnection;
 import net.wimpi.modbus.io.ModbusUDPTransaction;
 import net.wimpi.modbus.net.UDPMasterConnection;
 

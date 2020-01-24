@@ -25,8 +25,13 @@ package net.solarnetwork.node.io.modbus;
 /**
  * Modbus read functions.
  * 
+ * <p>
+ * These functions are separated from the write functions to help API methods be
+ * explicit about requiring read versus write functions.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.5
  */
 public enum ModbusReadFunction implements ModbusFunction {
@@ -92,19 +97,4 @@ public enum ModbusReadFunction implements ModbusFunction {
 		}
 	}
 
-	/**
-	 * Alias for {@link ModbusHelper#functionForCode(int)}.
-	 * 
-	 * @param code
-	 *        the code
-	 * @return the instance, or {@literal null} if not known
-	 */
-	public static ModbusFunction functionForCode(int code) {
-		try {
-			return ModbusHelper.functionForCode(code);
-		} catch ( IllegalArgumentException e ) {
-			// ignore
-			return null;
-		}
-	}
 }

@@ -25,7 +25,6 @@ package net.solarnetwork.node.io.modbus.support;
 import java.io.IOException;
 import java.util.BitSet;
 import net.solarnetwork.node.LockTimeoutException;
-import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
