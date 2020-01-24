@@ -1,9 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Modbus Communication Support
+Bundle-Name: Modbus Communication Support API
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus
 Automatic-Module-Name: net.solarnetwork.node.io.modbus
-Bundle-Description: Communication support for the Modbus network protocol.
+Bundle-Description: SolarNode API for the Modbus network protocol. Another 
+ plugin that implements this API must be provided, for example the Jamod 
+ plugin.
 Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
