@@ -22,17 +22,30 @@
 
 package net.solarnetwork.node.io.modbus.jamod.test;
 
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.byteArray;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import org.easymock.Capture;
+import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.jamod.ModbusTransactionUtils;
+import net.wimpi.modbus.ModbusException;
+import net.wimpi.modbus.io.ModbusTransaction;
 import net.wimpi.modbus.msg.ModbusRequest;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
 import net.wimpi.modbus.msg.ReadInputRegistersRequest;
 import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
+import net.wimpi.modbus.msg.ReadMultipleRegistersResponse;
+import net.wimpi.modbus.procimg.Register;
+import net.wimpi.modbus.procimg.SimpleRegister;
 
 /**
  * Test cases for the {@link ModbusTransactionUtils} class.
@@ -98,4 +111,84 @@ public class ModbusTransactionUtilsTests {
 		assertThat("Count", ((ReadInputRegistersRequest) req).getWordCount(), equalTo(4));
 	}
 
+	@Test
+	public void readBytes() throws ModbusException {
+		// given
+		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
+
+		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		trans.setRequest(capture(requestCaptor));
+		trans.execute();
+
+		Register[] regs = new Register[] { new SimpleRegister(0x1234), new SimpleRegister(0x4567),
+				new SimpleRegister(0x8900) };
+		ReadMultipleRegistersResponse res = new ReadMultipleRegistersResponse(regs);
+		expect(trans.getResponse()).andReturn(res);
+
+		// when
+		replay(trans);
+		byte[] result = ModbusTransactionUtils.readBytes(trans, 1, true,
+				ModbusReadFunction.ReadHoldingRegister, 0, 3);
+
+		verify(trans);
+		assertThat("Result size 2x reg read size", result.length, equalTo(6));
+		assertThat("Result bytes", byteArray(result), arrayContaining((byte) 0x12, (byte) 0x34,
+				(byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0x00));
+	}
+
+	private Register[] registersForBytes(final byte[] data) {
+		Register[] regs = new Register[(int) Math.ceil(data.length / (double) 2)];
+		for ( int i = 0, w = 0, stop = data.length - 1; i <= stop; i += 2, w++ ) {
+			regs[w] = new SimpleRegister(data[i], i < stop ? data[i + 1] : 0);
+		}
+		return regs;
+	}
+
+	@Test
+	public void readAsciiString() throws Exception {
+		// given
+		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
+
+		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		trans.setRequest(capture(requestCaptor));
+		trans.execute();
+
+		final String s = "Hello, world.";
+
+		Register[] regs = registersForBytes(s.getBytes("US-ASCII"));
+		ReadMultipleRegistersResponse res = new ReadMultipleRegistersResponse(regs);
+		expect(trans.getResponse()).andReturn(res);
+
+		// when
+		replay(trans);
+		String result = ModbusTransactionUtils.readString(trans, 1, true,
+				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, "US-ASCII");
+
+		verify(trans);
+		assertThat("Result ", result, equalTo(s));
+	}
+
+	@Test
+	public void readUtf8String() throws Exception {
+		// given
+		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
+
+		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		trans.setRequest(capture(requestCaptor));
+		trans.execute();
+
+		final String s = "\u2766, world.";
+
+		Register[] regs = registersForBytes(s.getBytes("UTF-8"));
+		ReadMultipleRegistersResponse res = new ReadMultipleRegistersResponse(regs);
+		expect(trans.getResponse()).andReturn(res);
+
+		// when
+		replay(trans);
+		String result = ModbusTransactionUtils.readString(trans, 1, true,
+				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, "UTF-8");
+
+		verify(trans);
+		assertThat("Result ", result, equalTo(s));
+	}
 }

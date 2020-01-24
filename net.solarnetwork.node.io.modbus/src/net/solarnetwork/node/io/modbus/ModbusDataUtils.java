@@ -51,6 +51,27 @@ public final class ModbusDataUtils {
 	public static final String LATIN1_CHARSET = "ISO-8859-1";
 
 	/**
+	 * Convert an array of bytes to Byte objects.
+	 * 
+	 * @param array
+	 * @param array
+	 *        the array to convert
+	 * @return the converted array, or {@literal null} if {@code array} is
+	 *         {@literal null}
+	 */
+	public static Byte[] byteArray(byte[] array) {
+		if ( array == null ) {
+			return null;
+		}
+		final int count = array.length;
+		final Byte[] result = new Byte[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
 	 * Convert an array of shorts to Integer objects.
 	 * 
 	 * @param array

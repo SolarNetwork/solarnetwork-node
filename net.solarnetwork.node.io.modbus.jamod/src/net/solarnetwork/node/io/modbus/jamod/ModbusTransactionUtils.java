@@ -27,7 +27,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.wimpi.modbus.ModbusException;
@@ -231,56 +230,6 @@ public class ModbusTransactionUtils {
 			LOG.debug("Read {} Modbus input discrete {} values: {}", count, address, result);
 		}
 		return result;
-	}
-
-	/**
-	 * Read a set of "holding" type registers and interpret as a US-ASCII
-	 * encoded string.
-	 * 
-	 * @param trans
-	 *        the Modbus transaction to use
-	 * @param address
-	 *        the Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @param unitId
-	 *        the Modbus unit ID to use in the read request
-	 * @param trim
-	 *        if <em>true</em> then remove leading/trailing whitespace from the
-	 *        resulting string
-	 * @return String from interpreting raw bytes as a US-ASCII encoded string
-	 * @see #readString(ModbusTransaction, int, boolean, ModbusReadFunction,
-	 *      int, int, boolean, String)
-	 */
-	public static String readASCIIString(final ModbusTransaction trans, final int address,
-			final int count, final int unitId, final boolean trim) {
-		return readString(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count,
-				trim, ModbusDataUtils.ASCII_CHARSET);
-	}
-
-	/**
-	 * Read a set of "holding" type registers and interpret as a UTF-8 encoded
-	 * string.
-	 * 
-	 * @param trans
-	 *        the Modbus transaction to use
-	 * @param address
-	 *        the Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus "words" to read
-	 * @param unitId
-	 *        the Modbus unit ID to use in the read request
-	 * @param trim
-	 *        if <em>true</em> then remove leading/trailing whitespace from the
-	 *        resulting string
-	 * @return String from interpreting raw bytes as a UTF-8 encoded string
-	 * @see #readString(ModbusTransaction, int, boolean, ModbusReadFunction,
-	 *      int, int, boolean, String)
-	 */
-	public static String readUTF8String(final ModbusTransaction trans, final int address,
-			final int count, final int unitId, final boolean trim) {
-		return readString(trans, unitId, true, ModbusReadFunction.ReadHoldingRegister, address, count,
-				trim, ModbusDataUtils.UTF8_CHARSET);
 	}
 
 	/**
@@ -649,7 +598,9 @@ public class ModbusTransactionUtils {
 				if ( LOG.isTraceEnabled() ) {
 					LOG.trace("Got Modbus read {} response {}", address + i, res.getRegisterValue(i));
 				}
-				System.arraycopy(registers[i].toBytes(), 0, result, i * 2, 2);
+				byte[] b = registers[i].toBytes();
+				result[i * 2] = b[0];
+				result[i * 2 + 1] = b[1];
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {

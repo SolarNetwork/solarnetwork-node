@@ -210,14 +210,19 @@ public interface ModbusConnection {
 	/**
 	 * Get the raw bytes of specific registers.
 	 * 
+	 * <p>
+	 * Each 16-bit modbus register value will be decomposed into two output
+	 * bytes, so that the returned result will have a length equal to
+	 * {@code count * 2}.
+	 * </p>
+	 * 
 	 * @param function
 	 *        the Modbus function code to use
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
 	 * @param count
 	 *        the number of Modbus 16-bit registers to read
-	 * @return array of register bytes; the result will have a length equal to
-	 *         {@code count * 2}
+	 * @return register words as an array of bytes
 	 */
 	byte[] readBytes(ModbusReadFunction function, int address, int count);
 

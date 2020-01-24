@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.test;
 
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.byteArray;
 import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignificant;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.closeTo;
@@ -254,27 +255,27 @@ public class ModbusDataUtilsTests {
 	}
 
 	@Test
+	public void testByteArray() {
+		byte[] data = new byte[] { 1, 2, 3, 4, 5, 0 };
+		Byte[] result = byteArray(data);
+		assertThat("Bytes turned to objects", result,
+				arrayContaining((byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 0));
+	}
+
+	@Test
 	public void testParseBytes() {
 		short[] words = new short[] { 0x0103, 0x0507, 0x090b, 0x0d00 };
 		byte[] data = ModbusDataUtils.parseBytes(words, 0);
-		Byte[] bytes = new Byte[data.length];
-		for ( int i = 0; i < bytes.length; i++ ) {
-			bytes[i] = data[i];
-		}
-		assertThat(bytes, arrayContaining((byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb,
-				(byte) 0xd, (byte) 0));
+		assertThat("Parse 16-bit words into bytes", byteArray(data), arrayContaining((byte) 1, (byte) 3,
+				(byte) 5, (byte) 7, (byte) 9, (byte) 0xb, (byte) 0xd, (byte) 0));
 	}
 
 	@Test
 	public void testParseBytesLeastToMostSignificant() {
 		short[] words = new short[] { 0x0d00, 0x090b, 0x0507, 0x0103 };
 		byte[] data = ModbusDataUtils.parseBytes(words, 0, LeastToMostSignificant);
-		Byte[] bytes = new Byte[data.length];
-		for ( int i = 0; i < bytes.length; i++ ) {
-			bytes[i] = data[i];
-		}
-		assertThat(bytes, arrayContaining((byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb,
-				(byte) 0xd, (byte) 0));
+		assertThat("Parse 16-bit words into bytes in reverse order", byteArray(data), arrayContaining(
+				(byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb, (byte) 0xd, (byte) 0));
 	}
 
 }
