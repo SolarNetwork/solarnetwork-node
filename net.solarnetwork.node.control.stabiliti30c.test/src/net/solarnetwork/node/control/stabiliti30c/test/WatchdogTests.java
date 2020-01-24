@@ -86,7 +86,7 @@ public class WatchdogTests {
 	private class TestModbusNetwork extends AbstractModbusNetwork {
 
 		@Override
-		public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
+		public <T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException {
 			return action.doWithConnection(conn);
 		}
 
@@ -139,7 +139,7 @@ public class WatchdogTests {
 		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), anyObject(Date.class),
 				anyLong())).andReturn(scheduledFuture());
 
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		conn.writeWords(eq(WriteHoldingRegister), eq(40), aryEq(new int[] { 44 }));

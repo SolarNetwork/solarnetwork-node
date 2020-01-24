@@ -94,11 +94,11 @@ public class ModbusPCMControllerTest {
 				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "50");
 
-		expect(modbus.performAction(anyAction(Boolean.class), EasyMock.eq(UNIT_ID)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -128,11 +128,11 @@ public class ModbusPCMControllerTest {
 
 	@Test
 	public void readControlInfo() throws IOException {
-		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(BitSet.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -155,11 +155,11 @@ public class ModbusPCMControllerTest {
 
 	@Test
 	public void readControlInfoAsPercent() throws IOException {
-		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(BitSet.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -190,11 +190,11 @@ public class ModbusPCMControllerTest {
 		service.setControlId(TEST_CONTROL_ID);
 		service.setUnitId(UNIT_ID);
 		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
-		expect(modbus.performAction(anyAction(BitSet.class), eq(UNIT_ID)))
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(BitSet.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -220,11 +220,11 @@ public class ModbusPCMControllerTest {
 		service.setControlId(TEST_CONTROL_ID);
 		service.setUnitId(UNIT_ID);
 		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
-		expect(modbus.performAction(anyAction(Boolean.class), eq(UNIT_ID)))
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}

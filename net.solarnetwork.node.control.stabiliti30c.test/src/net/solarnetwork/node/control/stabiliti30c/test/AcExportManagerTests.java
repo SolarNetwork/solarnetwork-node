@@ -97,7 +97,7 @@ public class AcExportManagerTests {
 	private class TestModbusNetwork extends AbstractModbusNetwork {
 
 		@Override
-		public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
+		public <T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException {
 			return action.doWithConnection(conn);
 		}
 
@@ -241,7 +241,7 @@ public class AcExportManagerTests {
 	@Test
 	public void startupResetsDeviceStateToKnownValues() throws IOException {
 		// GIVEN
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		// first reset state to known safe values...
@@ -277,7 +277,7 @@ public class AcExportManagerTests {
 
 		resetAll();
 
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
@@ -314,7 +314,7 @@ public class AcExportManagerTests {
 		startupResetsDeviceStateToKnownValues();
 		resetAll();
 
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
@@ -346,7 +346,7 @@ public class AcExportManagerTests {
 		startupResetsDeviceStateToKnownValues();
 		resetAll();
 
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS
@@ -383,7 +383,7 @@ public class AcExportManagerTests {
 		startupResetsDeviceStateToKnownValues();
 		resetAll();
 
-		expect(modbus.performAction(anyAction(Void.class), eq(TEST_UNIT_ID)))
+		expect(modbus.performAction(eq(TEST_UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new TestModbusNetwork());
 
 		// depending on speed of test, a new snapshot may be read because of TEST_SAMPLE_CACHE_MS

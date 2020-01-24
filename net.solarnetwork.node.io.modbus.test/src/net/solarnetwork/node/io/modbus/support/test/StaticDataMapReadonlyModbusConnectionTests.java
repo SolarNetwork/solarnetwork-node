@@ -45,13 +45,13 @@ public class StaticDataMapReadonlyModbusConnectionTests {
 		for ( int i = 0; i < raw.length; i++ ) {
 			data.putValue((10 + i), raw[i]);
 		}
-		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(data);
-		short[] result = conn.readWords(ModbusReadFunction.ReadHoldingRegister, 10, raw.length);
-		assertThat("Read data length", result.length, equalTo(raw.length));
-		for ( int i = 0; i < raw.length; i++ ) {
-			assertThat("Read data " + (10 + i), result[i], equalTo((short) raw[i]));
+		try (ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(data)) {
+			short[] result = conn.readWords(ModbusReadFunction.ReadHoldingRegister, 10, raw.length);
+			assertThat("Read data length", result.length, equalTo(raw.length));
+			for ( int i = 0; i < raw.length; i++ ) {
+				assertThat("Read data " + (10 + i), result[i], equalTo((short) raw[i]));
+			}
 		}
-
 	}
 
 	@Test
@@ -61,11 +61,13 @@ public class StaticDataMapReadonlyModbusConnectionTests {
 		for ( int i = 0; i < raw.length; i++ ) {
 			data.putValue((10 + i), raw[i]);
 		}
-		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(data);
-		int[] result = conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, 10, raw.length);
-		assertThat("Read data", result.length, equalTo(raw.length));
-		for ( int i = 0; i < raw.length; i++ ) {
-			assertThat("Read data " + (10 + i), result[i], equalTo(raw[i]));
+		try (ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(data)) {
+			int[] result = conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, 10,
+					raw.length);
+			assertThat("Read data", result.length, equalTo(raw.length));
+			for ( int i = 0; i < raw.length; i++ ) {
+				assertThat("Read data " + (10 + i), result[i], equalTo(raw[i]));
+			}
 		}
 	}
 

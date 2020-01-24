@@ -177,7 +177,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 		T result = null;
 		ModbusNetwork device = (modbusNetwork == null ? null : modbusNetwork.service());
 		if ( device != null ) {
-			result = device.performAction(action, unitId);
+			result = device.performAction(unitId, action);
 		}
 		return result;
 	}

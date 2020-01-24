@@ -44,11 +44,12 @@ public class StaticDataMapModbusConnectionTests {
 	public void writeData() {
 		IntShortMap data = new IntShortMap();
 		int[] raw = new int[] { 0x1234, 0x4321, 0xFFFF, 0x1000 };
-		ModbusConnection conn = new StaticDataMapModbusConnection(data);
-		conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, 10, shortArray(raw));
-		assertThat("Stored data size", data.keySet(), hasSize(raw.length));
-		for ( int i = 0; i < raw.length; i++ ) {
-			assertThat("Stored data " + (10 + i), data, hasEntry(10 + i, (short) raw[i]));
+		try (ModbusConnection conn = new StaticDataMapModbusConnection(data)) {
+			conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, 10, shortArray(raw));
+			assertThat("Stored data size", data.keySet(), hasSize(raw.length));
+			for ( int i = 0; i < raw.length; i++ ) {
+				assertThat("Stored data " + (10 + i), data, hasEntry(10 + i, (short) raw[i]));
+			}
 		}
 	}
 

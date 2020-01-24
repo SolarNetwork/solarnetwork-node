@@ -143,7 +143,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			}
 			log.info("Setting watchdog timeout to {}s on Stabiliti {}", timeout, modbusDeviceName());
 			try {
-				modbus.performAction(new ModbusConnectionAction<Void>() {
+				modbus.performAction(unitId, new ModbusConnectionAction<Void>() {
 
 					@Override
 					public Void doWithConnection(ModbusConnection conn) throws IOException {
@@ -151,7 +151,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 						acc.setWatchdogTimeout(timeout);
 						return null;
 					}
-				}, unitId);
+				});
 				updateStatus(Instant.now(), null);
 			} catch ( Exception e ) {
 				updateStatus(Instant.now(), e);

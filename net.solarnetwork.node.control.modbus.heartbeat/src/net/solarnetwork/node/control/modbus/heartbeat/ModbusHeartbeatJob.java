@@ -125,14 +125,14 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 		bits.set(0, desiredValue);
 		log.info("Setting modbus unit {} register {} value to {}", unitId, address, desiredValue);
 		final int[] addresses = new int[] { address };
-		return network.performAction(new ModbusConnectionAction<Boolean>() {
+		return network.performAction(unitId, new ModbusConnectionAction<Boolean>() {
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
 				conn.writeDiscreetValues(addresses, bits);
 				return true;
 			}
-		}, unitId);
+		});
 	}
 
 	// SettingSpecifierProvider

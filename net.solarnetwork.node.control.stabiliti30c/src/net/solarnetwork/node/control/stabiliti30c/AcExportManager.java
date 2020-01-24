@@ -275,7 +275,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		log.info("Setting AC export power setpoint to {}W on Stabiliti {}", targetPower,
 				modbusDeviceName());
 		try {
-			modbus.performAction(new ModbusConnectionAction<Void>() {
+			modbus.performAction(unitId, new ModbusConnectionAction<Void>() {
 
 				@Override
 				public Void doWithConnection(ModbusConnection connection) throws IOException {
@@ -291,7 +291,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 					});
 					return null;
 				}
-			}, unitId);
+			});
 		} catch ( Exception e ) {
 			log.error("Exception adjusting AC export power to {} for Stabiliti {}: {}", targetPower,
 					modbusDeviceName(), e.getMessage(), e);

@@ -23,12 +23,8 @@ device safely. Here's an example that reads 8 "coil" registers from device 123:
 
 ```java
 ModbusNetwork modbus = getModbusNetwork(); // e.g. lookup service in runtime
-BitSet result = modbus.performAction(123, new ModbusConnectionAction<BitSet>() {
-
-	@Override
-	public BitSet doWithConnection(ModbusConnection conn) throws IOException {
-		return conn.readDiscreetValues(0, 8);
-	}
+BitSet result = modbus.performAction(123, conn -> {
+	return conn.readDiscreetValues(0, 8);
 });
 ```
 

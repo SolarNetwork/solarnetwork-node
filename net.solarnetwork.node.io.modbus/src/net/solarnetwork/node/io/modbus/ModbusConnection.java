@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.BitSet;
 import net.solarnetwork.node.LockTimeoutException;
@@ -38,7 +39,7 @@ import net.solarnetwork.node.LockTimeoutException;
  * @version 2.0
  * @since 2.0
  */
-public interface ModbusConnection {
+public interface ModbusConnection extends Closeable {
 
 	/**
 	 * Get the Modbus Unit ID this device represents.
@@ -53,12 +54,16 @@ public interface ModbusConnection {
 	 * 
 	 * @throws IOException
 	 *         if the connection cannot be opened
+	 * @throws LockTimeoutException
+	 *         if a lock is required to open the connection and it could not be
+	 *         obtained within a configured maximum amount of time
 	 */
 	void open() throws IOException, LockTimeoutException;
 
 	/**
 	 * Close the connection, if it is open.
 	 */
+	@Override
 	void close();
 
 	/**

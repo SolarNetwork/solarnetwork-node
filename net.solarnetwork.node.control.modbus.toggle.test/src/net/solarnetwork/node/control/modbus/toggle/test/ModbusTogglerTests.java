@@ -100,11 +100,11 @@ public class ModbusTogglerTests {
 
 	private <T> IExpectationSetters<T> expectModbusAction(Class<T> type) {
 		try {
-			return expect(network.performAction(anyAction(type), eq(TEST_UNIT_ID)))
+			return expect(network.performAction(eq(TEST_UNIT_ID), anyAction(type)))
 					.andDelegateTo(new AbstractModbusNetwork() {
 
 						@Override
-						public <A> A performAction(ModbusConnectionAction<A> action, int unitId)
+						public <A> A performAction(int unitId, ModbusConnectionAction<A> action)
 								throws IOException {
 							return action.doWithConnection(conn);
 						}

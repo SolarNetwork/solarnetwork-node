@@ -164,7 +164,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(propConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -218,7 +218,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -262,7 +262,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(propConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -312,7 +312,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(propConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -363,7 +363,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -410,7 +410,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -454,7 +454,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -522,7 +522,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -602,7 +602,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setSampleCacheMs(0);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -699,7 +699,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -785,7 +785,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setExpressionConfigs(exprConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -837,7 +837,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setExpressionConfigs(exprConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override
@@ -901,7 +901,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setExpressionConfigs(exprConfigs);
 
 		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
 					@Override

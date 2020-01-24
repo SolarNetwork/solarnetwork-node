@@ -141,7 +141,7 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	}
 
 	@Override
-	public <T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException {
+	public <T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException {
 		ModbusConnection conn = null;
 		try {
 			conn = createConnection(unitId);

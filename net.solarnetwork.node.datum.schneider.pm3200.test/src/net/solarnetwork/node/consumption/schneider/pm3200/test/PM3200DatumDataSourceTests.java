@@ -96,11 +96,11 @@ public class PM3200DatumDataSourceTests extends AbstractNodeTest {
 	public void testReadConsumptionDatumMain() throws IOException {
 		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
 				parseTestData("test-data-01.txt"));
-		expect(modbus.performAction(anyAction(PM3200Data.class), EasyMock.eq(UNIT_ID)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(PM3200Data.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}

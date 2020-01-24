@@ -82,7 +82,7 @@ public class SunSpecInverterDatumDataSourceTests {
 		ModbusConnection modbusConnection = ModelDataUtils.getStaticDataConnection(getClass(),
 				dataResource);
 		Capture<ModbusConnectionAction<Object>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(capture(connActionCapture), eq(1)))
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<Object>() {
 
 					@Override
