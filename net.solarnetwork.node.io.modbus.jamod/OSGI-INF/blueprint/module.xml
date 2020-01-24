@@ -17,7 +17,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodSerialModbusNetwork</value>
-				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
 			</list>
 		</property>
 	</bean>
@@ -49,7 +49,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodTcpModbusNetwork</value>
-				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
 			</list>
 		</property>
 	</bean>
@@ -81,7 +81,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodUdpModbusNetwork</value>
-				<value>net.solarnetwork.node.io.modbus.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
 			</list>
 		</property>
 	</bean>
