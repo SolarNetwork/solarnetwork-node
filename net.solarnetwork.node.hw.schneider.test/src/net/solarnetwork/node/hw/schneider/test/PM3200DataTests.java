@@ -55,7 +55,7 @@ import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Register;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.test.DataUtils;
 
 /**

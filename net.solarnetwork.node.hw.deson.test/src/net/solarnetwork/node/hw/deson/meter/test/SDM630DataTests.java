@@ -35,7 +35,7 @@ import net.solarnetwork.node.hw.deson.meter.SDMDeviceType;
 import net.solarnetwork.node.hw.deson.meter.SDMWiringMode;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 
 /**
  * Test cases for the {@link SDM630Data} class.

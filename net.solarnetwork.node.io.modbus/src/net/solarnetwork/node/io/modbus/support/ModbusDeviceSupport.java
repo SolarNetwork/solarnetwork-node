@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusDeviceDatumDataSourceSupport.java - 26/09/2017 11:16:38 AM
+ * ModbusDeviceSupport.java - Jul 29, 2014 2:29:54 PM
  * 
- * Copyright 2017 SolarNetwork.net Dev Team
+ * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,49 +20,68 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * A base helper class to support {@link ModbusNetwork} based
- * {@link DatumDataSource} implementations.
+ * A base helper class to support {@link ModbusNetwork} based services.
  * 
  * @author matt
  * @version 2.0
+ * @since 2.0
  */
-public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
+public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = ModbusDeviceSupport.INFO_KEY_DEVICE_NAME;
+	public static final String INFO_KEY_DEVICE_NAME = "Name";
 
 	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL;
+	public static final String INFO_KEY_DEVICE_MODEL = "Model";
 
 	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER;
+	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
 
 	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
+	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
+
+	/**
+	 * The default value for the {@code unitId} property.
+	 * 
+	 * @since 1.2
+	 */
+	public static final int DEFAULT_UNIT_ID = 1;
+
+	/**
+	 * The default value for the {@link ModbusNetwork#getUID()} property filter
+	 * value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String DEFAULT_NETWORK_UID = "Modbus Port";
 
 	/**
 	 * Key for the device manufacture date, as a
 	 * {@link org.joda.time.ReadablePartial}.
 	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
+	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	private Map<String, Object> deviceInfo;
-	private int unitId = 1;
+	private int unitId = DEFAULT_UNIT_ID;
 	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
@@ -70,19 +89,26 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
 	 * 
 	 * @return list of setting specifiers
-	 * @since 1.1
+	 * @since 1.2
 	 */
-	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
-				"Modbus Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
+	public static List<SettingSpecifier> modbusNetworkSettings(String prefix) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['UID']",
+				DEFAULT_NETWORK_UID));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "unitId", String.valueOf(DEFAULT_UNIT_ID)));
 		return results;
 	}
 
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
-	 * service, or {@literal null} if not available or not configured.
+	 * service, or <em>null</em> if not available or not configured.
 	 * 
 	 * @return ModbusNetwork
 	 */
@@ -91,12 +117,9 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Read general device info and return a map of the results.
-	 * 
-	 * <p>
-	 * See the various {@code INFO_KEY_*} constants for information on the
-	 * values returned in the result map.
-	 * </p>
+	 * Read general device info and return a map of the results. See the various
+	 * {@code INFO_KEY_*} constants for information on the values returned in
+	 * the result map.
 	 * 
 	 * @param conn
 	 *        the connection to use
@@ -105,13 +128,10 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn);
 
 	/**
-	 * Return an informational message composed of general device info.
-	 * 
-	 * <p>
-	 * This method will call {@link #getDeviceInfo()} and return a {@code /}
-	 * (forward slash) delimited string of the resulting values, or
-	 * {@literal null} if that method returns {@literal null}.
-	 * </p>
+	 * Return an informational message composed of general device info. This
+	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
+	 * slash) delimited string of the resulting values, or <em>null</em> if that
+	 * method returns <em>null</em>.
 	 * 
 	 * @return info message
 	 */
@@ -124,15 +144,12 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Get the device info data as a Map.
+	 * Get the device info data as a Map. This method will call
+	 * {@link #readMeterInfo(ModbusConnection)}. The map is cached so subsequent
+	 * calls will not attempt to read from the device. Note the returned map
+	 * cannot be modified.
 	 * 
-	 * <p>
-	 * This method will call {@link #readMeterInfo(ModbusConnection)}. The map
-	 * is cached so subsequent calls will not attempt to read from the device.
-	 * Note the returned map cannot be modified.
-	 * </p>
-	 * 
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or <em>null</em>
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
 	public Map<String, ?> getDeviceInfo() {
@@ -156,18 +173,15 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Perform some work with a Modbus {@link ModbusConnection}.
-	 * 
-	 * <p>
-	 * This method attempts to obtain a {@link ModbusNetwork} from the
-	 * configured {@code modbusNetwork} service, calling
+	 * Perform some work with a Modbus {@link ModbusConnection}. This method
+	 * attempts to obtain a {@link ModbusNetwork} from the configured
+	 * {@code modbusNetwork} service, calling
 	 * {@link ModbusNetwork#performAction(ModbusConnectionAction)} if one can be
 	 * obtained.
-	 * </p>
 	 * 
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or {@literal null} if the action is
+	 * @return the result of the callback, or <em>null</em> if the action is
 	 *         never invoked
 	 */
 	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
@@ -182,21 +196,18 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Get direct access to the device info data.
 	 * 
-	 * @return the device info, or {@literal null}
+	 * @return the device info, or <em>null</em>
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data.
-	 * 
-	 * <p>
-	 * Setting the {@code deviceInfo} to {@literal null} will force the next
-	 * call to {@link #getDeviceInfo()} to read from the device to populate this
-	 * data, and setting this to anything else will force all subsequent calls
-	 * to {@link #getDeviceInfo()} to simply return that map.
-	 * </p>
+	 * Set the device info data. Setting the {@code deviceInfo} to <em>null</em>
+	 * will force the next call to {@link #getDeviceInfo()} to read from the
+	 * device to populate this data, and setting this to anything else will
+	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
+	 * that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
@@ -209,35 +220,50 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * Get the configured Modbus device name.
 	 * 
 	 * @return the modbus device name
-	 * @since 1.3
+	 * @since 1.1
 	 */
 	public String modbusDeviceName() {
 		return getUnitId() + "@" + modbusNetwork();
 	}
 
 	/**
-	 * Get the configured {@link ModbusNetwork}.
+	 * Get the Modbus network to use.
 	 * 
-	 * @return the modbus network
+	 * @return the network
 	 */
 	public OptionalService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
 	/**
-	 * Set the {@link ModbusNetwork} to use.
+	 * Set the Modbus network to use.
 	 * 
 	 * @param modbusDevice
-	 *        the modbus network
+	 *        the network
 	 */
 	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 
+	/**
+	 * Get the Modbus unit ID.
+	 * 
+	 * @return the unit ID; defaults to {@link #DEFAULT_UNIT_ID}
+	 */
 	public int getUnitId() {
 		return unitId;
 	}
 
+	/**
+	 * Set the Modbus unit ID.
+	 * 
+	 * <p>
+	 * The <i>unit ID</i> is the unique ID of the device on the Modbus network.
+	 * </p>
+	 * 
+	 * @param unitId
+	 *        the ID to use
+	 */
 	public void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}

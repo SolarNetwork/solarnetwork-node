@@ -48,7 +48,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDataDeviceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;

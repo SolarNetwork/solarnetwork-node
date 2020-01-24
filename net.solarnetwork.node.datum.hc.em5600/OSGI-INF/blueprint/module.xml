@@ -29,8 +29,8 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

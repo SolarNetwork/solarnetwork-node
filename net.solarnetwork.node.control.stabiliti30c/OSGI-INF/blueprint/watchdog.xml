@@ -18,7 +18,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.stabiliti30c.Watchdog</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

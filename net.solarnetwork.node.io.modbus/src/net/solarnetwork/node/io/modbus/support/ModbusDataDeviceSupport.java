@@ -1,7 +1,7 @@
 /* ==================================================================
- * ModbusDataDatumDataSourceSupport.java - 30/07/2018 9:51:07 AM
+ * ModbusDataDeviceSupport.java - 2/09/2019 10:03:41 am
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2019 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,31 +20,59 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.modbus;
+package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * A base helper class to support {@link ModbusNetwork} based
- * {@link DatumDataSource} implementations using {@link ModbusData} as a model
- * object.
+ * A base helper class to support {@link ModbusNetwork} based device
+ * implementations using {@link ModbusData} as a model object.
  * 
+ * @param <T>
+ *        the {@link ModbusData} type
  * @author matt
- * @version 1.2
- * @since 2.9
+ * @version 1.0
+ * @since 2.14
  */
-public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
-		extends ModbusDeviceDatumDataSourceSupport {
+public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccessor>
+		extends ModbusDeviceSupport {
+
+	/** The default value for the {@code sampleCacheMs} property. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 
 	private final T sample;
-	private long sampleCacheMs = 5000;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 
-	public ModbusDataDatumDataSourceSupport(T data) {
+	public ModbusDataDeviceSupport(T data) {
 		super();
 		this.sample = data;
+	}
+
+	/**
+	 * Get setting specifiers for the {@literal unitId} and
+	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.2
+	 */
+	public static List<SettingSpecifier> modbusDeviceNetworkSettings(String prefix) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(1);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "sampleCacheMs",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		return results;
 	}
 
 	/**
@@ -238,4 +266,5 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
+
 }

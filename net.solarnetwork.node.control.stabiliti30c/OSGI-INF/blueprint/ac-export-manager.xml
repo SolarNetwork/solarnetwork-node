@@ -15,7 +15,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.stabiliti30c.AcExportManager</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>

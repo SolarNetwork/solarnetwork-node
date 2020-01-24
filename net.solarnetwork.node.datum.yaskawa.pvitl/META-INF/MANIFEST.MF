@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Solectria PVI-14-36TL Inverter Data Source
 Bundle-Description: Collect generation data from Solectria PVI-14-36TL series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.yaskawa.pvitl
-Bundle-Version: 1.0.1
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.yaskawa.pvitl
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,14 +11,15 @@ Import-Package:
  net.solarnetwork.domain;version="1.14.0",
  net.solarnetwork.node;version="1.24.0",
  net.solarnetwork.node.domain;version="1.15.0",
- net.solarnetwork.node.hw.yaskawa.mb.inverter;version="1.0.0",
- net.solarnetwork.node.io.modbus;version="2.11.0",
+ net.solarnetwork.node.hw.yaskawa.mb.inverter;version="[2.0,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
  net.solarnetwork.node.job;version="1.11.0",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.1",
  net.solarnetwork.node.support;version="1.15.1",
  net.solarnetwork.node.util;version="1.7.2",
- net.solarnetwork.util;version="1.33.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",
