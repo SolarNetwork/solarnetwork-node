@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.jamod.test;
 
-import static net.solarnetwork.node.io.modbus.ModbusDataUtils.byteArray;
+import static net.solarnetwork.util.ByteUtils.objectArray;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -36,6 +36,7 @@ import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.jamod.ModbusTransactionUtils;
+import net.solarnetwork.util.ByteUtils;
 import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusTransaction;
 import net.wimpi.modbus.msg.ModbusRequest;
@@ -132,7 +133,7 @@ public class ModbusTransactionUtilsTests {
 
 		verify(trans);
 		assertThat("Result size 2x reg read size", result.length, equalTo(6));
-		assertThat("Result bytes", byteArray(result), arrayContaining((byte) 0x12, (byte) 0x34,
+		assertThat("Result bytes", objectArray(result), arrayContaining((byte) 0x12, (byte) 0x34,
 				(byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0x00));
 	}
 
@@ -162,7 +163,7 @@ public class ModbusTransactionUtilsTests {
 		// when
 		replay(trans);
 		String result = ModbusTransactionUtils.readString(trans, 1, true,
-				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, "US-ASCII");
+				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, ByteUtils.ASCII);
 
 		verify(trans);
 		assertThat("Result ", result, equalTo(s));
@@ -186,7 +187,7 @@ public class ModbusTransactionUtilsTests {
 		// when
 		replay(trans);
 		String result = ModbusTransactionUtils.readString(trans, 1, true,
-				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, "UTF-8");
+				ModbusReadFunction.ReadHoldingRegister, 0, regs.length, true, ByteUtils.UTF8);
 
 		verify(trans);
 		assertThat("Result ", result, equalTo(s));

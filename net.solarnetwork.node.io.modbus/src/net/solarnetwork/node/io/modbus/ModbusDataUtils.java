@@ -41,36 +41,6 @@ import java.util.Arrays;
  */
 public final class ModbusDataUtils {
 
-	/** The UTF-8 character set name. */
-	public static final String UTF8_CHARSET = "UTF-8";
-
-	/** The ASCII character set name. */
-	public static final String ASCII_CHARSET = "US-ASCII";
-
-	/** The ISO-8859-1 (ISO-LATIN-1) character set name. */
-	public static final String LATIN1_CHARSET = "ISO-8859-1";
-
-	/**
-	 * Convert an array of bytes to Byte objects.
-	 * 
-	 * @param array
-	 * @param array
-	 *        the array to convert
-	 * @return the converted array, or {@literal null} if {@code array} is
-	 *         {@literal null}
-	 */
-	public static Byte[] byteArray(byte[] array) {
-		if ( array == null ) {
-			return null;
-		}
-		final int count = array.length;
-		final Byte[] result = new Byte[count];
-		for ( int i = 0; i < count; i++ ) {
-			result[i] = array[i];
-		}
-		return result;
-	}
-
 	/**
 	 * Convert an array of shorts to Integer objects.
 	 * 

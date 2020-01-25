@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.io.serial.rxtx.test;
 
-import gnu.io.SerialPort;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,24 +30,28 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import net.solarnetwork.node.LockTimeoutException;
-import net.solarnetwork.node.io.serial.SerialUtils;
-import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
+import gnu.io.SerialPort;
+import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.io.serial.SerialUtils;
+import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
+import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPort;
+import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortConnection;
+import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortInputStream;
+import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortOutputStream;
+import net.solarnetwork.node.support.SerialPortBeanParameters;
 
 /**
  * Test cases for the {@link SerialPortConnection} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SerialConnectionTests extends AbstractNodeTest {
+public class SerialConnectionTests {
 
 	private ExecutorService executor;
 

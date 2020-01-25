@@ -23,7 +23,7 @@
 package net.solarnetwork.node.io.modbus.jamod;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -658,7 +658,7 @@ public class ModbusTransactionUtils {
 	 * @param trim
 	 *        if <em>true</em> then remove leading/trailing whitespace from the
 	 *        resulting string
-	 * @param charsetName
+	 * @param charset
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(ModbusTransaction, int, boolean, ModbusReadFunction, int,
@@ -666,17 +666,13 @@ public class ModbusTransactionUtils {
 	 */
 	public static String readString(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusReadFunction function, final int address,
-			final int count, final boolean trim, final String charsetName) {
+			final int count, final boolean trim, final Charset charset) {
 		final byte[] bytes = readBytes(trans, unitId, headless, function, address, count);
 		String result = null;
 		if ( bytes != null ) {
-			try {
-				result = new String(bytes, charsetName);
-				if ( trim ) {
-					result = result.trim();
-				}
-			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e);
+			result = new String(bytes, charset);
+			if ( trim ) {
+				result = result.trim();
 			}
 		}
 		if ( LOG.isDebugEnabled() ) {
@@ -701,18 +697,13 @@ public class ModbusTransactionUtils {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param value
 	 *        the string value to write
-	 * @param charsetName
+	 * @param charset
 	 *        the character set to interpret the bytes as
 	 */
 	public static void writeString(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusWriteFunction function, final int address,
-			final String value, final String charsetName) {
-		try {
-			byte[] bytes = value.getBytes(charsetName);
-			writeBytes(trans, unitId, headless, function, address, bytes);
-		} catch ( UnsupportedEncodingException e ) {
-			throw new RuntimeException(e);
-		}
-
+			final String value, final Charset charset) {
+		byte[] bytes = value.getBytes(charset);
+		writeBytes(trans, unitId, headless, function, address, bytes);
 	}
 }

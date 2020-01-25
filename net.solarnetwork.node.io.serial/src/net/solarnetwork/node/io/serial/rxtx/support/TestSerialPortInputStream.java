@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.serial.rxtx.test;
+package net.solarnetwork.node.io.serial.rxtx.support;
 
 import java.io.IOException;
 import java.io.InputStream;

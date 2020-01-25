@@ -45,8 +45,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -68,11 +68,11 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
@@ -128,13 +128,8 @@ public class ModbusDatumDataSourceTests {
 		EasyMock.verify(modbusNetwork, modbusConnection, datumMetadataService);
 	}
 
-	private static short[] stringToModbusWordArray(String s, String charset, int minOutputLength) {
-		byte[] bytes;
-		try {
-			bytes = s.getBytes(charset);
-		} catch ( UnsupportedEncodingException e ) {
-			throw new RuntimeException(e);
-		}
+	private static short[] stringToModbusWordArray(String s, Charset charset, int minOutputLength) {
+		byte[] bytes = s.getBytes(charset);
 		short[] ints = new short[Math.max((int) Math.ceil(bytes.length / 2.0), minOutputLength)];
 		Arrays.fill(ints, (short) 0);
 		for ( int i = 0; i < bytes.length; i += 2 ) {
@@ -229,7 +224,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final String message = "Hello, world.";
-		final short[] strWords = stringToModbusWordArray(message, ModbusDataUtils.UTF8_CHARSET,
+		final short[] strWords = stringToModbusWordArray(message, ByteUtils.UTF8,
 				propConfig.getWordLength());
 		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 8))
 				.andReturn(strWords);
@@ -421,8 +416,7 @@ public class ModbusDatumDataSourceTests {
 				});
 
 		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadInputRegister, 0, 2))
-				.andReturn(range1);
+		expect(modbusConnection.readWords(ModbusReadFunction.ReadInputRegister, 0, 2)).andReturn(range1);
 
 		replayAll();
 

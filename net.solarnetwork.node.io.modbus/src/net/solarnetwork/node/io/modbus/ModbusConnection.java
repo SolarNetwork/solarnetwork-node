@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.LockTimeoutException;
 
@@ -256,13 +257,13 @@ public interface ModbusConnection extends Closeable {
 	 * @param trim
 	 *        if <em>true</em> then remove leading/trailing whitespace from the
 	 *        resulting string
-	 * @param charsetName
+	 * @param charset
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(ModbusReadFunction, int, int)
 	 */
 	String readString(ModbusReadFunction function, int address, int count, boolean trim,
-			String charsetName);
+			Charset charset);
 
 	/**
 	 * Write a string as raw byte values to registers.
@@ -276,6 +277,6 @@ public interface ModbusConnection extends Closeable {
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
 	 */
-	void writeString(ModbusWriteFunction function, int address, String value, String charsetName);
+	void writeString(ModbusWriteFunction function, int address, String value, Charset charset);
 
 }

@@ -30,8 +30,8 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * A factory for creating concrete {@link ModelData} instances based on
@@ -118,7 +118,7 @@ public class ModelDataFactory {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
 			try {
 				String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
-						r.getWordLength(), true, ModbusDataUtils.ASCII_CHARSET);
+						r.getWordLength(), true, ByteUtils.ASCII);
 				if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
 					return r.getAddress();
 				}
@@ -172,8 +172,7 @@ public class ModelDataFactory {
 		ModelAccessor model = data;
 		do {
 			int nextModelAddress = model.getBlockAddress() + model.getModelLength();
-			short[] words = conn.readWords(ModbusReadFunction.ReadHoldingRegister,
-					nextModelAddress, 2);
+			short[] words = conn.readWords(ModbusReadFunction.ReadHoldingRegister, nextModelAddress, 2);
 			model = null;
 			if ( words != null && words.length > 1 ) {
 				if ( (words[0] & 0xFFFF) != ModelId.SUN_SPEC_END_ID ) {

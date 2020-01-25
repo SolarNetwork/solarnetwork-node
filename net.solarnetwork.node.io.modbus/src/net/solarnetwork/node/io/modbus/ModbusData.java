@@ -22,13 +22,16 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.CollectionUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
@@ -462,21 +465,48 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
-	 * @return the parsed string, or {@literal null} if {@code charsetName} is
-	 *         not supported
+	 * @return the parsed string, or {@literal null} if {@code count} is
+	 *         {@literal 0}
+	 * @throws IllegalCharsetNameException
+	 *         If the given character set name is illegal
+	 * @throws IllegalArgumentException
+	 *         If {@code charsetName} is null
+	 * @throws UnsupportedCharsetException
+	 *         If no support for the named character set is available
 	 */
 	public String getString(final int addr, final int count, final boolean trim,
 			final String charsetName) {
+		return getString(addr, count, trim, Charset.forName(charsetName));
+	}
+
+	/**
+	 * Construct a string out of a data address range.
+	 * 
+	 * <p>
+	 * This method calls {@link #getBytes(int, int)} to interpret the data
+	 * addresses as a raw byte array, and then interprets the result as a string
+	 * in the given character set.
+	 * </p>
+	 * 
+	 * @param addr
+	 *        the starting address of the 16-bit register to read
+	 * @param count
+	 *        the number of 16-bit registers to read
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @param charset
+	 *        the character set to interpret the bytes as
+	 * @return the parsed string, or {@literal null} if {@code count} is
+	 *         {@literal 0}
+	 */
+	public String getString(final int addr, final int count, final boolean trim, final Charset charset) {
 		final byte[] bytes = getBytes(addr, count);
 		String result = null;
 		if ( bytes != null ) {
-			try {
-				result = new String(bytes, charsetName);
-				if ( trim ) {
-					result = result.trim();
-				}
-			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e);
+			result = new String(bytes, charset);
+			if ( trim ) {
+				result = result.trim();
 			}
 		}
 		return result;
@@ -495,7 +525,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 */
 	public String getUtf8String(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusDataUtils.UTF8_CHARSET);
+		return getString(addr, count, trim, ByteUtils.UTF8);
 	}
 
 	/**
@@ -511,7 +541,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 */
 	public String getAsciiString(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusDataUtils.ASCII_CHARSET);
+		return getString(addr, count, trim, ByteUtils.ASCII);
 	}
 
 	/**
@@ -543,8 +573,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.4
 	 */
 	public String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusDataUtils.UTF8_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.UTF8);
 	}
 
 	/**
@@ -576,8 +605,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.4
 	 */
 	public String getAsciiString(final ModbusReference ref, final int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusDataUtils.ASCII_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.ASCII);
 	}
 
 	/**
@@ -594,8 +622,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.8
 	 */
 	public String getLatin1String(final ModbusReference ref, final int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusDataUtils.LATIN1_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.LATIN1);
 	}
 
 	/**

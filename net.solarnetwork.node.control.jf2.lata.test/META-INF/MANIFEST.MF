@@ -9,7 +9,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  gnu.io,
  net.solarnetwork.node.io.serial.rxtx;version="1.0.0",
- net.solarnetwork.node.io.serial.rxtx.test;version="1.0.0",
+ net.solarnetwork.node.io.serial.rxtx.support;version="1.0.0",
  net.solarnetwork.node.test;version="[1.1.0,2.0.0)",
  org.easymock;version="[3.1,4.0)",
  org.junit;version="[4.5,5.0)",

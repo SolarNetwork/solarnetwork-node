@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.support;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
@@ -60,17 +60,11 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, int address, String value,
-			String charsetName) {
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
 		if ( value == null || value.isEmpty() ) {
 			return;
 		}
-		byte[] data;
-		try {
-			data = value.getBytes(charsetName);
-		} catch ( UnsupportedEncodingException e ) {
-			throw new RuntimeException("Unsupported charset [" + charsetName + "]", e);
-		}
+		byte[] data = value.getBytes(charset);
 		writeBytes(function, address, data);
 	}
 

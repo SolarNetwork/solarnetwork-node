@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -66,8 +67,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, int address, String value,
-			String charsetName) {
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -88,7 +88,7 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 
 	@Override
 	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
-			String charsetName) {
+			Charset charset) {
 		return null;
 	}
 

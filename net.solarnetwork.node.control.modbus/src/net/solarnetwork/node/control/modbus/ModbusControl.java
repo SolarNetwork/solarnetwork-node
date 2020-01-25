@@ -49,11 +49,11 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -64,6 +64,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -245,14 +246,12 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				switch (config.getDataType()) {
 					case StringAscii:
 						conn.writeString(function, address,
-								desiredValue != null ? desiredValue.toString() : "",
-								ModbusDataUtils.ASCII_CHARSET);
+								desiredValue != null ? desiredValue.toString() : "", ByteUtils.ASCII);
 						break;
 
 					case StringUtf8:
 						conn.writeString(function, address,
-								desiredValue != null ? desiredValue.toString() : "",
-								ModbusDataUtils.UTF8_CHARSET);
+								desiredValue != null ? desiredValue.toString() : "", ByteUtils.UTF8);
 						break;
 
 					case Bytes:

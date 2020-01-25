@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.jamod;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -119,14 +120,14 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public short[] readWords(ModbusReadFunction function, int address, int count) {
-		return ModbusTransactionUtils.readWords(createTransaction(), getUnitId(), isHeadless(),
-				function, address, count);
+		return ModbusTransactionUtils.readWords(createTransaction(), getUnitId(), isHeadless(), function,
+				address, count);
 	}
 
 	@Override
 	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
-		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(),
-				function, address, values);
+		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(), function,
+				address, values);
 	}
 
 	@Override
@@ -137,8 +138,8 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
-		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(),
-				function, address, values);
+		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(), function,
+				address, values);
 	}
 
 	@Override
@@ -155,16 +156,15 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
-			String charsetName) {
+			Charset charset) {
 		return ModbusTransactionUtils.readString(createTransaction(), getUnitId(), isHeadless(),
-				function, address, count, trim, charsetName);
+				function, address, count, trim, charset);
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, int address, String value,
-			String charsetName) {
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
 		ModbusTransactionUtils.writeString(createTransaction(), getUnitId(), isHeadless(), function,
-				address, value, charsetName);
+				address, value, charset);
 	}
 
 }
