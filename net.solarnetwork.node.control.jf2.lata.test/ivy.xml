@@ -20,8 +20,7 @@
 		
 		<!-- Testing support -->
 		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
-		
-		<!-- SolarNetwork -->
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial.rxtx" rev="[1.0,2.0)"/>
 		
 		<exclude module="commons-logging"/>
 		<exclude module="com.springsource.slf4j.api"/>
