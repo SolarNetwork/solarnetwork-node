@@ -43,7 +43,7 @@ import net.solarnetwork.node.hw.yaskawa.ecb.PVI3800Identification;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;

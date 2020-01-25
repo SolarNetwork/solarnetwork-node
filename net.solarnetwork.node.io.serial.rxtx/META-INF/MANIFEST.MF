@@ -1,0 +1,29 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Modbus Communication Support (RXTX)
+Bundle-Description: SolarNode serial communication API implementation using the RXTX framework.
+Bundle-SymbolicName: net.solarnetwork.node.io.serial.rxtx
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.io.serial.rxtx
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: 
+ net.solarnetwork.node.io.serial.rxtx;version="2.0.0",
+ net.solarnetwork.node.io.serial.rxtx.support;version="1.0.0"
+Import-Package: 
+ gnu.io,
+ net.solarnetwork.node;version="1.16.0",
+ net.solarnetwork.node.io.serial;version="[2.0,3.0)",
+ net.solarnetwork.node.io.serial.support;version="[1.0,2.0)",
+ net.solarnetwork.node.settings;version="1.1.0",
+ net.solarnetwork.node.settings.support;version="1.0.0",
+ net.solarnetwork.node.support;version="1.12.0",
+ net.solarnetwork.node.util;version="1.5.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
+ org.apache.commons.codec;version="1.4.0",
+ org.apache.commons.codec.binary;version="1.4.0",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)"

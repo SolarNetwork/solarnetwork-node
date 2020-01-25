@@ -20,12 +20,15 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.serial;
+package net.solarnetwork.node.io.serial.support;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;

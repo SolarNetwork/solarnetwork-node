@@ -30,7 +30,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.currentcost.CCDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.currentcost.CCSupport</value>
-				<value>net.solarnetwork.node.io.serial.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Unit tests for JF2 LATA
 Bundle-SymbolicName: net.solarnetwork.node.control.jf2.lata.test
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.control.jf2.lata;bundle-version="2.1.0"
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Fragment-Host: net.solarnetwork.node.control.jf2.lata;bundle-version="[3.0,4.0)"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  gnu.io,
  net.solarnetwork.node.io.serial.rxtx;version="1.0.0",

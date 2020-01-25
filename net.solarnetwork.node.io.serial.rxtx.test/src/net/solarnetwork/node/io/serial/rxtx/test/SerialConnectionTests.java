@@ -37,13 +37,13 @@ import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
 import gnu.io.SerialPort;
 import net.solarnetwork.node.LockTimeoutException;
-import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPort;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortConnection;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortInputStream;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortOutputStream;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link SerialPortConnection} class.
@@ -78,8 +78,8 @@ public class SerialConnectionTests {
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
 				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
-				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
+		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+				"</msg>".getBytes(ByteUtils.ASCII));
 		Assert.assertArrayEquals(xml, result);
 	}
 
@@ -97,8 +97,8 @@ public class SerialConnectionTests {
 		SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
 		serialParams.setReceiveThreshold(64);
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
-				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
+		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+				"</msg>".getBytes(ByteUtils.ASCII));
 		Assert.assertArrayEquals(xml, result);
 	}
 
@@ -117,8 +117,8 @@ public class SerialConnectionTests {
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
 				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(SerialUtils.ASCII_CHARSET),
-				"</msg>".getBytes(SerialUtils.ASCII_CHARSET));
+		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+				"</msg>".getBytes(ByteUtils.ASCII));
 		Assert.assertArrayEquals(xml, result);
 	}
 

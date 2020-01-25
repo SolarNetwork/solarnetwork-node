@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.serial;
+package net.solarnetwork.node.io.serial.support;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +32,9 @@ import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
@@ -56,7 +59,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
 public abstract class SerialDeviceSupport {
 
@@ -205,7 +208,6 @@ public abstract class SerialDeviceSupport {
 	 * properties.
 	 * 
 	 * @return list of setting specifiers
-	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
@@ -225,7 +227,6 @@ public abstract class SerialDeviceSupport {
 	 * 
 	 * @param event
 	 *        the event to post
-	 * @since 1.1
 	 */
 	protected final void postEvent(Event event) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
@@ -272,7 +273,6 @@ public abstract class SerialDeviceSupport {
 	 * Get the configured {@link EventAdmin}.
 	 * 
 	 * @return the event admin service
-	 * @since 1.1
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
@@ -283,7 +283,6 @@ public abstract class SerialDeviceSupport {
 	 * 
 	 * @param eventAdmin
 	 *        The service to use.
-	 * @since 1.1
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
@@ -293,7 +292,6 @@ public abstract class SerialDeviceSupport {
 	 * Get the configured {@link MessageSource}.
 	 * 
 	 * @return the message source, or {@literal null}
-	 * @since 1.1
 	 */
 	public MessageSource getMessageSource() {
 		return messageSource;
@@ -304,7 +302,6 @@ public abstract class SerialDeviceSupport {
 	 * 
 	 * @param messageSource
 	 *        the message source to use
-	 * @since 1.1
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;

@@ -26,13 +26,13 @@ import java.io.IOException;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.io.serial.SerialUtils;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * {@link SerialConnectionAction} to get the LATA version.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class GetVersionAction implements SerialConnectionAction<String> {
 
@@ -57,7 +57,7 @@ public class GetVersionAction implements SerialConnectionAction<String> {
 		if ( result == null || result.length < 2 ) {
 			return null;
 		}
-		String ver = new String(result, SerialUtils.ASCII_CHARSET);
+		String ver = new String(result, ByteUtils.ASCII);
 		return ver.substring(1, ver.length() - 1);
 	}
 
