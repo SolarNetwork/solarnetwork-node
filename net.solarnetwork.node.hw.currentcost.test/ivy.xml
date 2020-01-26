@@ -21,7 +21,6 @@
 		<!-- Testing support -->
 		
 		<!-- SolarNetwork -->
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.rxtx" rev="latest.version"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="latest.version"/>
 
 		<exclude module="commons-logging"/>

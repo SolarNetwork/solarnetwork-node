@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Satcon PowerGate Inverter Data Source
 Bundle-Description: Collect data from Satcon PowerGate series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.satcon.powergate
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.satcon.powergate
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,8 +11,9 @@ Import-Package:
  net.solarnetwork.domain;version="1.18.0",
  net.solarnetwork.node;version="1.29.0",
  net.solarnetwork.node.domain;version="1.18.0",
- net.solarnetwork.node.hw.satcon;version="1.0.0",
- net.solarnetwork.node.io.modbus;version="2.13.0",
+ net.solarnetwork.node.hw.satcon;version="[2.0,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
  net.solarnetwork.node.job;version="1.15.0",
  net.solarnetwork.node.reactor;version="1.6.0",
  net.solarnetwork.node.reactor.support;version="1.4.1",
@@ -20,7 +21,7 @@ Import-Package:
  net.solarnetwork.node.settings.support;version="1.10.0",
  net.solarnetwork.node.support;version="1.20.0",
  net.solarnetwork.node.util;version="1.7.2",
- net.solarnetwork.util;version="1.39.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",

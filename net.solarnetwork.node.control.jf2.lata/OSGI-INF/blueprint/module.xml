@@ -18,7 +18,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.jf2.lata.LATAController</value>
-				<value>net.solarnetwork.node.io.serial.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

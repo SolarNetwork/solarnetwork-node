@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
-import bak.pcj.set.IntRange;
+import net.solarnetwork.util.IntRange;
 
 /**
  * API for accessing model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface ModelAccessor {
 

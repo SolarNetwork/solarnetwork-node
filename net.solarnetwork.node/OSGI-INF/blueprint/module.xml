@@ -198,7 +198,7 @@
 		<property name="applicationContextSchedulerContextKey" value="applicationContext"/>
 		<property name="waitForJobsToCompleteOnShutdown" value="true"/>
 		<property name="startupDelay" value="${scheduler.startupDelay}"/>
-		<property name="schedulerName" value="Solar Node"/>
+		<property name="schedulerName" value="SolarNode"/>
 		<property name="quartzProperties">
 			<props>
 				<prop key="org.quartz.threadPool.threadCount">${jobScheduler.poolSize}</prop>

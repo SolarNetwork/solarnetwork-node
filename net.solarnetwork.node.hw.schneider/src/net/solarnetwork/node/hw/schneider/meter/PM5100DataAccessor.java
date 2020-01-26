@@ -71,6 +71,6 @@ public interface PM5100DataAccessor extends MeterDataAccessor {
 	 * 
 	 * @return the power system
 	 */
-	PM5100PowerSystem getPowerSystem();
+	PowerSystem getPowerSystem();
 
 }

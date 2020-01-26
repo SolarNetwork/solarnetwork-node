@@ -23,35 +23,59 @@
 package net.solarnetwork.node.datum.deson.sdm;
 
 import java.util.Date;
+import java.util.Map;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.deson.meter.SDMData;
+import net.solarnetwork.node.hw.deson.meter.SDMDataAccessor;
 
 /**
  * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
  * supported by the SDM-XXX series meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SDMDatum extends GeneralNodeACEnergyDatum {
+public class SDMDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
 
-	private final SDMData sample;
+	private final SDMDataAccessor data;
+	private final boolean backwards;
 
 	/**
 	 * Construct with a sample.
 	 * 
-	 * @param sample
-	 *        the sample
+	 * @param data
+	 *        the data
+	 * @param phase
+	 *        the phase
+	 * @param backward
+	 *        the backwards setting
 	 */
-	public SDMDatum(SDMData sample, ACPhase phase) {
+	public SDMDatum(SDMDataAccessor data, ACPhase phase, boolean backwards) {
 		super();
-		this.sample = sample;
-		setPhase(phase);
-		if ( sample.getMeterDataTimestamp() > 0 ) {
-			setCreated(new Date(sample.getMeterDataTimestamp()));
+		this.data = data;
+		this.backwards = backwards;
+		if ( data.getDataTimestamp() > 0 ) {
+			setCreated(new Date(data.getDataTimestamp()));
 		}
-		sample.populateMeasurements(phase, this);
+		setPhase(phase);
+		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
+		populateMeasurements(phaseData, phase);
+	}
+
+	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
+		setPhase(phase);
+		setFrequency(data.getFrequency());
+		setVoltage(data.getVoltage());
+		setLineVoltage(data.getLineVoltage());
+		setCurrent(data.getCurrent());
+		setNeutralCurrent(data.getNeutralCurrent());
+		setPowerFactor(data.getPowerFactor());
+		setApparentPower(data.getApparentPower());
+		setReactivePower(data.getReactivePower());
+		setWatts(data.getActivePower());
+		setWattHourReading(data.getActiveEnergyDelivered());
+		setReverseWattHourReading(data.getActiveEnergyReceived());
 	}
 
 	/**
@@ -63,13 +87,63 @@ public class SDMDatum extends GeneralNodeACEnergyDatum {
 		return (getWatts() != null || getWattHourReading() != null);
 	}
 
-	/**
-	 * Get the raw sample data used by this datum.
-	 * 
-	 * @return the sample data
-	 */
-	public SDMData getSample() {
-		return sample;
+	@Override
+	public long getDataTimestamp() {
+		return data.getDataTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return data.getDeviceInfo();
+	}
+
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
+		}
+		return phaseData;
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return data.reversed();
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return data.getActivePower();
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return data.getActiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return data.getActiveEnergyReceived();
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return data.getApparentEnergyDelivered();
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return data.getApparentEnergyReceived();
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return data.getReactiveEnergyDelivered();
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return data.getReactiveEnergyReceived();
 	}
 
 }

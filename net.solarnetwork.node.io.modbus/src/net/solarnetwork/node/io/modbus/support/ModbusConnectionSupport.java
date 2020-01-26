@@ -23,10 +23,9 @@
 package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.LockTimeoutException;
-import net.solarnetwork.node.io.modbus.AbstractModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
@@ -41,7 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusConnectionSupport extends AbstractModbusConnection implements ModbusConnection {
 
@@ -63,99 +62,63 @@ public class ModbusConnectionSupport extends AbstractModbusConnection implements
 	}
 
 	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, Integer address, String value,
-			String charsetName) {
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
+		return null;
+	}
+
+	@Override
+	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+			Charset charset) {
+		return null;
+	}
+
+	@Override
+	public short[] readWords(ModbusReadFunction function, int address, int count) {
+		return null;
+	}
+
+	@Override
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Integer[] readValues(Integer address, int count) {
+	public BitSet readInputDiscreteValues(final int address, final int count) {
 		return null;
 	}
 
 	@Override
-	public int[] readUnsignedShorts(ModbusReadFunction function, Integer address, int count) {
+	public BitSet readDiscreetValues(final int address, final int count) {
 		return null;
 	}
 
 	@Override
-	public String readString(ModbusReadFunction function, Integer address, int count, boolean trim,
-			String charsetName) {
+	public BitSet readDiscreetValues(final int[] addresses, final int count) {
 		return null;
 	}
 
 	@Override
-	public String readString(Integer address, int count, boolean trim, String charsetName) {
-		return null;
-	}
-
-	@Override
-	public short[] readSignedShorts(ModbusReadFunction function, Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public short[] readSignedShorts(Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public int[] readInts(Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public int[] readInputValues(Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public Map<Integer, Integer> readInputValues(Integer[] addresses, int count) {
-		return null;
-	}
-
-	@Override
-	public BitSet readInputDiscreteValues(Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public BitSet readDiscreetValues(Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public BitSet readDiscreetValues(Integer[] addresses, int count) {
-		return null;
-	}
-
-	@Override
-	public byte[] readBytes(ModbusReadFunction function, Integer address, int count) {
-		return null;
-	}
-
-	@Override
-	public byte[] readBytes(Integer address, int count) {
+	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
 		return null;
 	}
 

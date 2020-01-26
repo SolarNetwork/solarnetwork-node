@@ -25,7 +25,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.sunspec.meter.SunSpecMeterDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

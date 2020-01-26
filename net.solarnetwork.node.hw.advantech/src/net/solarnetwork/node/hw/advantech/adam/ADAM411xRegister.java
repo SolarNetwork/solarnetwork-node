@@ -22,21 +22,20 @@
 
 package net.solarnetwork.node.hw.advantech.adam;
 
-import java.util.Arrays;
-import java.util.Collections;
+import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
-import java.util.Set;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the ADAM 411x series input
  * modules.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public enum ADAM411xRegister implements ModbusReference {
 
@@ -98,10 +97,14 @@ public enum ADAM411xRegister implements ModbusReference {
 
 	ConfigChannelEnable(220, ModbusDataType.UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createChannelRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			ADAM411xRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet CHANNEL_REGISTER_ADDRESS_SET = createAddressSet(
+			ADAM411xRegister.class, new HashSet<>(asList("Channel"))).immutableCopy();
 	private static final IntRangeSet CHANNEL_CONFIG_REGISTER_ADDRESS_SET = createChannelConfigRegisterAddressSet();
-	private static final IntRangeSet COIL_REGISTER_ADDRESS_SET = createCoilRegisterAddressSet();
+	private static final IntRangeSet COIL_REGISTER_ADDRESS_SET = createAddressSet(
+			ADAM411xRegister.class, new HashSet<>(asList("Coil"))).immutableCopy();
+	private static final IntRangeSet CHANNEL_WITH_CONFIG_REGISTER_ADDRESS_SET = createChannelWithConfigRegisterAddressSet();
 
 	private final int address;
 	private final int length;
@@ -124,34 +127,6 @@ public enum ADAM411xRegister implements ModbusReference {
 		this.function = function;
 	}
 
-	private static IntRangeSet createRegisterAddressSet(Set<String> prefixes) {
-		IntRangeSet set = new IntRangeSet();
-		for ( ADAM411xRegister r : ADAM411xRegister.values() ) {
-			for ( String prefix : prefixes ) {
-				if ( r.name().startsWith(prefix) ) {
-					int len = r.getWordLength();
-					if ( len > 0 ) {
-						set.addAll(r.getAddress(), r.getAddress() + len - 1);
-					}
-					break;
-				}
-			}
-		}
-		return set;
-	}
-
-	private static IntRangeSet createChannelRegisterAddressSet() {
-		return createRegisterAddressSet(Collections.singleton("Channel"));
-	}
-
-	private static IntRangeSet createCoilRegisterAddressSet() {
-		return createRegisterAddressSet(Collections.singleton("Coil"));
-	}
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Info", "Config")));
-	}
-
 	private static IntRangeSet createChannelConfigRegisterAddressSet() {
 		IntRangeSet set = new IntRangeSet();
 		ADAM411xRegister[] regs = new ADAM411xRegister[] { ConfigChannel0InputType,
@@ -160,9 +135,15 @@ public enum ADAM411xRegister implements ModbusReference {
 				ConfigChannel7InputType };
 		for ( ADAM411xRegister r : regs ) {
 			int len = r.getWordLength();
-			set.addAll(r.getAddress(), r.getAddress() + len - 1);
+			set.addRange(r.getAddress(), r.getAddress() + len - 1);
 		}
-		return set;
+		return set.immutableCopy();
+	}
+
+	private static IntRangeSet createChannelWithConfigRegisterAddressSet() {
+		IntRangeSet s = new IntRangeSet(CHANNEL_REGISTER_ADDRESS_SET);
+		s.addAll(CHANNEL_CONFIG_REGISTER_ADDRESS_SET);
+		return s.immutableCopy();
 	}
 
 	@Override
@@ -209,7 +190,7 @@ public enum ADAM411xRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -224,7 +205,7 @@ public enum ADAM411xRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getChannelRegisterAddressSet() {
-		return (IntRangeSet) CHANNEL_REGISTER_ADDRESS_SET.clone();
+		return CHANNEL_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -239,9 +220,7 @@ public enum ADAM411xRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getChannelWithConfigRegisterAddressSet() {
-		IntRangeSet s = new IntRangeSet(CHANNEL_REGISTER_ADDRESS_SET);
-		s.addAll(CHANNEL_CONFIG_REGISTER_ADDRESS_SET);
-		return s;
+		return CHANNEL_WITH_CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -257,7 +236,7 @@ public enum ADAM411xRegister implements ModbusReference {
 	 * @since 1.1
 	 */
 	public static IntRangeSet getCoilRegisterAddressSet() {
-		return (IntRangeSet) COIL_REGISTER_ADDRESS_SET.clone();
+		return COIL_REGISTER_ADDRESS_SET;
 	}
 
 }

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.test;
 
 import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignificant;
+import static net.solarnetwork.util.ByteUtils.objectArray;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
@@ -38,20 +39,20 @@ import net.solarnetwork.node.io.modbus.ModbusDataUtils;
  * Test cases for the {@link ModbusDataUtils} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseFloat32() {
-		Float result = ModbusDataUtils.parseFloat32(0x403F, 0xA7F6);
+		Float result = ModbusDataUtils.parseFloat32((short) 0x403F, (short) 0xA7F6);
 		assertThat(result, notNullValue());
 		assertThat("Float value", result.doubleValue(), closeTo(2.994626, 0.000001));
 	}
 
 	@Test
 	public void testParseFloat32NaN() {
-		Float result = ModbusDataUtils.parseFloat32(0xFFC0, 0x0000);
+		Float result = ModbusDataUtils.parseFloat32((short) 0xFFC0, (short) 0x0000);
 		assertThat("Float value is NaN", result, nullValue());
 	}
 
@@ -70,7 +71,8 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseInt32() {
-		assertThat(ModbusDataUtils.parseInt32(0xFF44, 0x1C6F), Matchers.equalTo(-12313489));
+		assertThat(ModbusDataUtils.parseInt32((short) 0xFF44, (short) 0x1C6F),
+				Matchers.equalTo(-12313489));
 	}
 
 	@Test
@@ -173,8 +175,8 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseUnsignedIntegerWayLargerThan64() {
-		int[] words = new int[] { 0x0032, 0x8586, 0x616F, 0x5866, 0xFF00, 0x1755, 0x8668, 0x16FE, 0x2F58,
-				0x6685, 0x866B, 0x5866 };
+		short[] words = new short[] { (short) 0x0032, (short) 0x8586, 0x616F, 0x5866, (short) 0xFF00,
+				0x1755, (short) 0x8668, 0x16FE, 0x2F58, 0x6685, (short) 0x866B, 0x5866 };
 		BigInteger bint = ModbusDataUtils.parseUnsignedInteger(words, 0);
 		assertThat(bint,
 				equalTo(new BigInteger("00328586616F5866FF001755866816FE2F586685866B5866", 16)));
@@ -182,8 +184,8 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseUnsignedIntegerWayLargerThan64LeastSignificantWordOrder() {
-		int[] words = new int[] { 0x5866, 0x866B, 0x6685, 0x2F58, 0x16FE, 0x8668, 0x1755, 0xFF00, 0x5866,
-				0x616F, 0x8586, 0x0032 };
+		short[] words = new short[] { 0x5866, (short) 0x866B, 0x6685, 0x2F58, 0x16FE, (short) 0x8668,
+				0x1755, (short) 0xFF00, 0x5866, 0x616F, (short) 0x8586, 0x0032 };
 		BigInteger bint = ModbusDataUtils.parseUnsignedInteger(words, 0, LeastToMostSignificant);
 		assertThat(bint,
 				equalTo(new BigInteger("00328586616F5866FF001755866816FE2F586685866B5866", 16)));
@@ -191,8 +193,8 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseUnsignedIntegerWayLargerThan64NoLeadingZeros() {
-		int[] words = new int[] { 0xDC32, 0x8586, 0x616F, 0x5866, 0xFF00, 0x1755, 0x8668, 0x16FE, 0x2F58,
-				0x6685, 0x866B, 0x5866 };
+		short[] words = new short[] { (short) 0xDC32, (short) 0x8586, 0x616F, 0x5866, (short) 0xFF00,
+				0x1755, (short) 0x8668, 0x16FE, 0x2F58, 0x6685, (short) 0x866B, 0x5866 };
 		BigInteger bint = ModbusDataUtils.parseUnsignedInteger(words, 0);
 		assertThat(bint,
 				equalTo(new BigInteger("DC328586616F5866FF001755866816FE2F586685866B5866", 16)));
@@ -200,8 +202,8 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseUnsignedIntegerWayLargerThan64NoLeadingZerosLeastSignificantWordOrder() {
-		int[] words = new int[] { 0x5866, 0x866B, 0x6685, 0x2F58, 0x16FE, 0x8668, 0x1755, 0xFF00, 0x5866,
-				0x616F, 0x8586, 0xDC32 };
+		short[] words = new short[] { 0x5866, (short) 0x866B, 0x6685, 0x2F58, 0x16FE, (short) 0x8668,
+				0x1755, (short) 0xFF00, 0x5866, 0x616F, (short) 0x8586, (short) 0xDC32 };
 		BigInteger bint = ModbusDataUtils.parseUnsignedInteger(words, 0, LeastToMostSignificant);
 		assertThat(bint,
 				equalTo(new BigInteger("DC328586616F5866FF001755866816FE2F586685866B5866", 16)));
@@ -254,26 +256,18 @@ public class ModbusDataUtilsTests {
 
 	@Test
 	public void testParseBytes() {
-		int[] words = new int[] { 0x0103, 0x0507, 0x090b, 0x0d00 };
+		short[] words = new short[] { 0x0103, 0x0507, 0x090b, 0x0d00 };
 		byte[] data = ModbusDataUtils.parseBytes(words, 0);
-		Byte[] bytes = new Byte[data.length];
-		for ( int i = 0; i < bytes.length; i++ ) {
-			bytes[i] = data[i];
-		}
-		assertThat(bytes, arrayContaining((byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb,
-				(byte) 0xd, (byte) 0));
+		assertThat("Parse 16-bit words into bytes", objectArray(data), arrayContaining((byte) 1,
+				(byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb, (byte) 0xd, (byte) 0));
 	}
 
 	@Test
 	public void testParseBytesLeastToMostSignificant() {
-		int[] words = new int[] { 0x0d00, 0x090b, 0x0507, 0x0103 };
+		short[] words = new short[] { 0x0d00, 0x090b, 0x0507, 0x0103 };
 		byte[] data = ModbusDataUtils.parseBytes(words, 0, LeastToMostSignificant);
-		Byte[] bytes = new Byte[data.length];
-		for ( int i = 0; i < bytes.length; i++ ) {
-			bytes[i] = data[i];
-		}
-		assertThat(bytes, arrayContaining((byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb,
-				(byte) 0xd, (byte) 0));
+		assertThat("Parse 16-bit words into bytes in reverse order", objectArray(data), arrayContaining(
+				(byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb, (byte) 0xd, (byte) 0));
 	}
 
 }

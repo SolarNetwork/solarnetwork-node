@@ -22,24 +22,23 @@
 
 package net.solarnetwork.node.hw.ae.inverter;
 
+import static java.util.Arrays.asList;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
-import java.util.Arrays;
-import java.util.Collections;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
-import java.util.Set;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the AE 250 TX series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum AE250TxRegister implements ModbusReference {
 
@@ -118,9 +117,12 @@ public enum AE250TxRegister implements ModbusReference {
 
 	StatusPvMonitoringStatus(2108, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createInverterRegisterAddressSet();
-	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createStatusRegisterAddressSet();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			AE250TxRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createAddressSet(
+			AE250TxRegister.class, new HashSet<>(asList("Inverter"))).immutableCopy();
+	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createAddressSet(
+			AE250TxRegister.class, new HashSet<>(asList("Status"))).immutableCopy();
 
 	private final int address;
 	private final int length;
@@ -134,34 +136,6 @@ public enum AE250TxRegister implements ModbusReference {
 		this.address = address;
 		this.length = length;
 		this.dataType = dataType;
-	}
-
-	private static IntRangeSet createRegisterAddressSet(Set<String> prefixes) {
-		IntRangeSet set = new IntRangeSet();
-		for ( AE250TxRegister r : AE250TxRegister.values() ) {
-			for ( String prefix : prefixes ) {
-				if ( r.name().startsWith(prefix) ) {
-					int len = r.getWordLength();
-					if ( len > 0 ) {
-						set.addAll(r.getAddress(), r.getAddress() + len - 1);
-					}
-					break;
-				}
-			}
-		}
-		return set;
-	}
-
-	private static IntRangeSet createInverterRegisterAddressSet() {
-		return createRegisterAddressSet(Collections.singleton("Inverter"));
-	}
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(new HashSet<>(Arrays.asList("Info", "Config")));
-	}
-
-	private static IntRangeSet createStatusRegisterAddressSet() {
-		return createRegisterAddressSet(Collections.singleton("Status"));
 	}
 
 	@Override
@@ -209,7 +183,7 @@ public enum AE250TxRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -224,7 +198,7 @@ public enum AE250TxRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getInverterRegisterAddressSet() {
-		return (IntRangeSet) INVERTER_REGISTER_ADDRESS_SET.clone();
+		return INVERTER_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -239,6 +213,6 @@ public enum AE250TxRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getStatusRegisterAddressSet() {
-		return (IntRangeSet) STATUS_REGISTER_ADDRESS_SET.clone();
+		return STATUS_REGISTER_ADDRESS_SET;
 	}
 }

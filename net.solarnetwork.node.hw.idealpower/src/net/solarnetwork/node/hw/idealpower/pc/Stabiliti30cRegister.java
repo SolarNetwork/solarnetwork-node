@@ -23,23 +23,23 @@
 package net.solarnetwork.node.hw.idealpower.pc;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.createRegisterAddressSet;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for Stabiliti Series power conversion
  * system devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum Stabiliti30cRegister implements ModbusReference {
 
@@ -278,23 +278,12 @@ public enum Stabiliti30cRegister implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createConfigRegisterAddressSet();
-	private static final IntRangeSet POWER_CONTROL_REGISTER_ADDRESS_SET = createPowerControlRegisterAddressSet();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createControlRegisterAddressSet();
-
-	private static IntRangeSet createConfigRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("Info", "Config")));
-	}
-
-	private static IntRangeSet createPowerControlRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class,
-				new HashSet<>(asList("PowerControl", "Status")));
-	}
-
-	private static IntRangeSet createControlRegisterAddressSet() {
-		return createRegisterAddressSet(Stabiliti30cRegister.class, new HashSet<>(asList("Control")));
-	}
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet POWER_CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("PowerControl", "Status"))).immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
+			Stabiliti30cRegister.class, new HashSet<>(asList("Control"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this
@@ -320,7 +309,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getConfigRegisterAddressSet() {
-		return (IntRangeSet) CONFIG_REGISTER_ADDRESS_SET.clone();
+		return CONFIG_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -335,7 +324,7 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getPowerControlRegisterAddressSet() {
-		return (IntRangeSet) POWER_CONTROL_REGISTER_ADDRESS_SET.clone();
+		return POWER_CONTROL_REGISTER_ADDRESS_SET;
 	}
 
 	/**
@@ -350,6 +339,6 @@ public enum Stabiliti30cRegister implements ModbusReference {
 	 * @return the range set
 	 */
 	public static IntRangeSet getControlRegisterAddressSet() {
-		return (IntRangeSet) CONTROL_REGISTER_ADDRESS_SET.clone();
+		return CONTROL_REGISTER_ADDRESS_SET;
 	}
 }

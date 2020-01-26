@@ -66,13 +66,13 @@ public class Stabiliti30cDataTests {
 	@Test
 	public void pvFirmingAndDemandChargeManagementExample() {
 		// GIVEN
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(129), aryEq(new int[] { 0x0001 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(65), aryEq(new int[] { 0x0402 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(193), aryEq(new int[] { 0x0002 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(68), aryEq(new int[] { 0x0000 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(199), aryEq(new int[] { 0x0000 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(200), aryEq(new int[] { 1440 }));
-		conn.writeUnsignedShorts(eq(WriteHoldingRegister), eq(263), aryEq(new int[] { 1 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(129), aryEq(new int[] { 0x0001 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(65), aryEq(new int[] { 0x0402 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(193), aryEq(new int[] { 0x0002 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(68), aryEq(new int[] { 0x0000 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(199), aryEq(new int[] { 0x0000 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(200), aryEq(new int[] { 1440 }));
+		conn.writeWords(eq(WriteHoldingRegister), eq(263), aryEq(new int[] { 1 }));
 
 		// WHEN
 		replayAll();

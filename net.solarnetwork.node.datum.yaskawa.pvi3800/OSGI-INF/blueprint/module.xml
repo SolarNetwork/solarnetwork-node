@@ -24,7 +24,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.yaskawa.pvi3800.PVI3800DatumDataSource</value>
-				<value>net.solarnetwork.node.io.serial.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.util.Set;
+import net.solarnetwork.util.IntRangeSet;
+
 /**
  * A reference to a Modbus register (or registers).
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.8
  */
 public interface ModbusReference {
@@ -58,5 +61,64 @@ public interface ModbusReference {
 	 * @return the word length
 	 */
 	int getWordLength();
+
+	/**
+	 * Create a Modbus register address set from enum {@link ModbusReference}
+	 * values.
+	 * 
+	 * @param <T>
+	 *        the enum type that also implements {@link ModbusReference}
+	 * @param clazz
+	 *        the enum class to extract the register set from
+	 * @param prefixes
+	 *        an optional set of enum prefixes to restrict the result to; if not
+	 *        provided then all enum values will be included
+	 * @return the range set, never {@literal null}
+	 * @see createRegisterAddressSet
+	 * @since 2.0
+	 */
+	static <T extends Enum<?> & ModbusReference> IntRangeSet createAddressSet(Class<T> clazz,
+			Set<String> prefixes) {
+		return createAddressSet(clazz.getEnumConstants(), prefixes);
+	}
+
+	/**
+	 * Create a Modbus register address set from an array of
+	 * {@link ModbusReference} values.
+	 * 
+	 * @param refs
+	 *        the list of references to extract addresses from
+	 * @param prefixes
+	 *        an optional set of enum prefixes to restrict the result to, which
+	 *        are compared to the {@link Object#toString()} value of each
+	 *        {@link ModbusReference} in {@code refs}; if not provided then all
+	 *        values will be included
+	 * @return the range set, never {@literal null}
+	 * @since 2.0
+	 */
+	static IntRangeSet createAddressSet(ModbusReference[] refs, Set<String> prefixes) {
+		IntRangeSet set = new IntRangeSet();
+		for ( ModbusReference r : refs ) {
+			if ( prefixes != null ) {
+				String name = r.toString();
+				boolean found = false;
+				for ( String prefix : prefixes ) {
+					if ( name.startsWith(prefix) ) {
+						found = true;
+						break;
+					}
+				}
+				if ( !found ) {
+					continue;
+				}
+			}
+
+			int len = r.getWordLength();
+			if ( len > 0 ) {
+				set.addRange(r.getAddress(), r.getAddress() + len - 1);
+			}
+		}
+		return set;
+	}
 
 }

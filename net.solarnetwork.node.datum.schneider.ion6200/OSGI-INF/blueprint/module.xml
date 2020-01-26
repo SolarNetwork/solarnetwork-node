@@ -24,7 +24,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.schneider.ion6200.ION6200DatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

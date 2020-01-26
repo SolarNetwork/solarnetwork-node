@@ -26,7 +26,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.carrel.dts.DTSConsumptionDatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

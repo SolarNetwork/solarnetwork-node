@@ -41,7 +41,7 @@ import net.solarnetwork.node.hw.csi.inverter.KTLCTData;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
