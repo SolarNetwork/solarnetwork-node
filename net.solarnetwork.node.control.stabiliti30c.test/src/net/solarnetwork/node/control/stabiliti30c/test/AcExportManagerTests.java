@@ -23,6 +23,7 @@
 package net.solarnetwork.node.control.stabiliti30c.test;
 
 import static java.lang.System.arraycopy;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static net.solarnetwork.node.io.modbus.ModbusReadFunction.ReadHoldingRegister;
 import static net.solarnetwork.node.io.modbus.ModbusWriteFunction.WriteHoldingRegister;
 import static org.easymock.EasyMock.anyObject;
@@ -124,83 +125,88 @@ public class AcExportManagerTests {
 	private void expectReadDeviceInfo(int[] data, int[] serialNumber, int[] commsVersion) {
 		final int[] read1 = new int[49];
 		arraycopy(data, Stabiliti30cRegister.StatusFaultActive0.getAddress(), read1, 0, 49);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.StatusFaultActive0.getAddress(), 49)).andReturn(read1);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusFaultActive0.getAddress(),
+				49)).andReturn(shortArray(read1));
 
 		final int[] read2 = new int[55];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), read2, 0, 55);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), 55)).andReturn(read2);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), 55))
+						.andReturn(shortArray(read2));
 
 		final int[] read3 = new int[53];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP2Power.getAddress(), read3, 0, 53);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP2Power.getAddress(), 53)).andReturn(read3);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.PowerControlP2Power.getAddress(),
+				53)).andReturn(shortArray(read3));
 
 		final int[] read4 = new int[50];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP3Power.getAddress(), read4, 0, 50);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP3Power.getAddress(), 50)).andReturn(read4);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.PowerControlP3Power.getAddress(),
+				50)).andReturn(shortArray(read4));
 
-		expect(conn.readWordsUnsigned(ReadHoldingRegister, Stabiliti30cRegister.StatusInfo.getAddress(),
-				1)).andReturn(new int[] { data[Stabiliti30cRegister.StatusInfo.getAddress()] });
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusInfo.getAddress(), 1))
+				.andReturn(shortArray(new int[] { data[Stabiliti30cRegister.StatusInfo.getAddress()] }));
 
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.InfoSerialNumber.getAddress(), 8)).andReturn(serialNumber);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.InfoSerialNumber.getAddress(),
+				8)).andReturn(shortArray(serialNumber));
 
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.InfoCommsVersion.getAddress(), 2)).andReturn(commsVersion);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.InfoCommsVersion.getAddress(),
+				2)).andReturn(shortArray(commsVersion));
 	}
 
 	private void expectReadControlData(int[] data, int controlCommand) {
 		final int[] read5 = new int[51];
 		arraycopy(data, Stabiliti30cRegister.ControlWatchdogSeconds.getAddress(), read5, 0, 51);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.ControlWatchdogSeconds.getAddress(), 51)).andReturn(read5);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.ControlWatchdogSeconds.getAddress(), 51))
+						.andReturn(shortArray(read5));
 
 		final int[] read6 = new int[26];
 		arraycopy(data, Stabiliti30cRegister.ControlP2ControlMethod.getAddress(), read6, 0, 26);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.ControlP2ControlMethod.getAddress(), 26)).andReturn(read6);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.ControlP2ControlMethod.getAddress(), 26))
+						.andReturn(shortArray(read6));
 
 		final int[] read7 = new int[26];
 		arraycopy(data, Stabiliti30cRegister.ControlP3ControlMethod.getAddress(), read7, 0, 26);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.ControlP3ControlMethod.getAddress(), 26)).andReturn(read7);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.ControlP3ControlMethod.getAddress(), 26))
+						.andReturn(shortArray(read7));
 
 		final int[] read8 = new int[2];
 		arraycopy(data, Stabiliti30cRegister.ControlManualModeStart.getAddress(), read8, 0, 2);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.ControlManualModeStart.getAddress(), 2)).andReturn(read8);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.ControlManualModeStart.getAddress(), 2))
+						.andReturn(shortArray(read8));
 
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.ControlCommand.getAddress(), 1))
-						.andReturn(new int[] { controlCommand });
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.ControlCommand.getAddress(), 1))
+				.andReturn(shortArray(new int[] { controlCommand }));
 	}
 
 	private void expectReadRuntimeData(int[] data) {
 		final int[] read8 = new int[49];
 		arraycopy(data, Stabiliti30cRegister.StatusFaultActive0.getAddress(), read8, 0, 4);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.StatusFaultActive0.getAddress(), 4)).andReturn(read8);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusFaultActive0.getAddress(),
+				4)).andReturn(shortArray(read8));
 
 		final int[] read2a = new int[55];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), read2a, 0, 55);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), 55)).andReturn(read2a);
+		expect(conn.readWords(ReadHoldingRegister,
+				Stabiliti30cRegister.PowerControlP1RealPower.getAddress(), 55))
+						.andReturn(shortArray(read2a));
 
 		final int[] read3a = new int[53];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP2Power.getAddress(), read3a, 0, 53);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP2Power.getAddress(), 53)).andReturn(read3a);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.PowerControlP2Power.getAddress(),
+				53)).andReturn(shortArray(read3a));
 
 		final int[] read4a = new int[50];
 		arraycopy(data, Stabiliti30cRegister.PowerControlP3Power.getAddress(), read4a, 0, 50);
-		expect(conn.readWordsUnsigned(ReadHoldingRegister,
-				Stabiliti30cRegister.PowerControlP3Power.getAddress(), 50)).andReturn(read4a);
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.PowerControlP3Power.getAddress(),
+				50)).andReturn(shortArray(read4a));
 
-		expect(conn.readWordsUnsigned(ReadHoldingRegister, Stabiliti30cRegister.StatusInfo.getAddress(),
-				1)).andReturn(new int[] { data[Stabiliti30cRegister.StatusInfo.getAddress()] });
+		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusInfo.getAddress(), 1))
+				.andReturn(shortArray(new int[] { data[Stabiliti30cRegister.StatusInfo.getAddress()] }));
 	}
 
 	private void expectStartupResetDeviceState() throws IOException {
