@@ -44,7 +44,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 public class ModelDataTests {
 
 	// @formatter:off
-	public static final int[] COMMON_MODEL_02 = new int[] {
+	public static final short[] COMMON_MODEL_02 = new short[] {
 			0x0001,
 			0x0041,
 			0x5665,

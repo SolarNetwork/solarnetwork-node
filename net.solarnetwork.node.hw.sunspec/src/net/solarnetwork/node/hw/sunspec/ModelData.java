@@ -30,16 +30,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import bak.pcj.set.IntRange;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Base object for model data.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -321,11 +321,11 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			ModbusReadFunction function, IntRange[] ranges) {
 		for ( IntRange r : ranges ) {
 			if ( LOG.isDebugEnabled() ) {
-				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.first(),
-						r.first() + r.length());
+				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.getMin(),
+						r.getMin() + r.length());
 			}
-			int[] data = conn.readUnsignedShorts(function, r.first(), r.length());
-			m.saveDataArray(data, r.first());
+			short[] data = conn.readWords(function, r.getMin(), r.length());
+			m.saveDataArray(data, r.getMin());
 		}
 	}
 
@@ -341,7 +341,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				// load in our model header to find the common model length (65/66)
-				int[] data = conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, baseAddress,
+				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress,
 						2);
 				m.saveDataArray(data, baseAddress);
 				updateData(conn, m, getAddressRanges(maxReadWordsCount));

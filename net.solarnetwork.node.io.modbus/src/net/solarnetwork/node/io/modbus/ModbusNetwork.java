@@ -30,7 +30,7 @@ import net.solarnetwork.node.Identifiable;
  * 
  * <p>
  * This API aims to simplify accessing Modbus capable devices without having any
- * direct dependency on Jamod (or any other Modbus implementation).
+ * direct dependency on any specific Modbus implementation.
  * </p>
  * 
  * @author matt
@@ -41,23 +41,26 @@ public interface ModbusNetwork extends Identifiable {
 
 	/**
 	 * Perform some action that requires a {@link ModbusConnection}, returning
-	 * the result. The
-	 * {@link ModbusConnectionAction#doWithConnection(ModbusConnection)} method
-	 * will be called and the result returned by this method.
+	 * the result.
 	 * 
-	 * The {@link ModbusConnection} passed will already be opened, and it will
-	 * be closed automatically after the action is complete.
+	 * <p>
+	 * The {@link ModbusConnectionAction#doWithConnection(ModbusConnection)}
+	 * method will be called and the result returned by this method. The
+	 * {@link ModbusConnection} passed will already be opened, and it will be
+	 * closed automatically after the action is complete.
+	 * </p>
 	 * 
-	 * @param action
-	 *        the callback whose result to return
 	 * @param unitId
 	 *        the Modbus unit ID to address
+	 * @param action
+	 *        the callback whose result to return
+	 * 
 	 * @return the result of calling
 	 *         {@link ModbusConnectionAction#doWithConnection(ModbusConnection)}
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	<T> T performAction(ModbusConnectionAction<T> action, int unitId) throws IOException;
+	<T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException;
 
 	/**
 	 * Create a connection to a specific Modbus device. The returned connection

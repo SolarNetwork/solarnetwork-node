@@ -54,17 +54,17 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 public class IntegerMeterModelAccessorTests {
 
 	// @formatter:off
-	public static final int[] INT_METER_MODEL_HEADER_69 = new int[] {
+	public static final short[] INT_METER_MODEL_HEADER_69 = new short[] {
 			0x00CB,
 			0x0069,
 	};
 	
-	public static final int[] INT_METER_MODEL_71 = new int[] {
+	public static final short[] INT_METER_MODEL_71 = new short[] {
 			0x0038,
 			0x0013,
 			0x0012,
 			0x0012,
-			0xFFFF,
+			(short)0xFFFF,
 			0x04D0,
 			0x0531,
 			0x03E6,
@@ -73,9 +73,9 @@ public class IntegerMeterModelAccessorTests {
 			0x0848,
 			0x0840,
 			0x084E,
-			0xFFFF,
+			(short)0xFFFF,
 			0x1768,
-			0xFFFE,
+			(short)0xFFFE,
 			0x0000,
 			0x0000,
 			0x0000,
@@ -92,10 +92,10 @@ public class IntegerMeterModelAccessorTests {
 			0x0003,
 			0x0002,
 			0x000A,
-			0xFAC2,
+			(short)0xFAC2,
 			0x00FC,
 			0x0497,
-			0xFFFC,
+			(short)0xFFFC,
 			0x0000,
 			0x2A94,
 			0x0000,
@@ -105,16 +105,16 @@ public class IntegerMeterModelAccessorTests {
 			0x0000,
 			0x01D9,
 			0x0098,
-			0xD172,
+			(short)0xD172,
 			0x0035,
 			0x7C10,
 			0x0029,
-			0xAB62,
+			(short)0xAB62,
 			0x0039,
-			0xAA00,
+			(short)0xAA00,
 			0x0002,
 			0x0000,
-			0x9C67,
+			(short)0x9C67,
 			0x0001,
 			0x3324,
 			0x0000,
@@ -122,16 +122,16 @@ public class IntegerMeterModelAccessorTests {
 			0x0000,
 			0x0315,
 			0x009F,
-			0xE2B1,
+			(short)0xE2B1,
 			0x0038,
-			0x8E20,
+			(short)0x8E20,
 			0x002B,
-			0x9D4B,
+			(short)0x9D4B,
 			0x003C,
 			0x45DC,
 			0x0002,
 			0x0018,
-			0xBDFF,
+			(short)0xBDFF,
 			0x000E,
 			0x7389,
 			0x0005,
@@ -155,11 +155,11 @@ public class IntegerMeterModelAccessorTests {
 			0x0000,
 			0x0000,
 			0x0006,
-			0xC73F,
+			(short)0xC73F,
 			0x0000,
 			0x0000,
 			0x0001,
-			0x9307,
+			(short)0x9307,
 			0x0005,
 			0x3437,
 			0x0002,
@@ -167,8 +167,8 @@ public class IntegerMeterModelAccessorTests {
 			0x0018,
 	};
 	
-	public static final int[] END_OF_MODEL_176 = new int[] {
-			0xFFFF,
+	public static final short[] END_OF_MODEL_176 = new short[] {
+			(short)0xFFFF,
 			0x0000,
 	};
 	

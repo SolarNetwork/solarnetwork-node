@@ -32,7 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import org.springframework.expression.Expression;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
@@ -41,6 +40,7 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Configuration for a single datum property to be set via an expression.
@@ -50,7 +50,7 @@ import net.solarnetwork.support.ExpressionServiceExpression;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.4
  */
 public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
@@ -198,7 +198,7 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * 
 	 * @return the referenced addresses, never {@literal null}
 	 */
-	public Set<Integer> registerAddressReferences() {
+	public IntRangeSet registerAddressReferences() {
 		return ExpressionRoot.registerAddressReferences(getExpression());
 	}
 

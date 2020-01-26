@@ -39,8 +39,8 @@ import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cControlAccessor;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -143,7 +143,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			}
 			log.info("Setting watchdog timeout to {}s on Stabiliti {}", timeout, modbusDeviceName());
 			try {
-				modbus.performAction(new ModbusConnectionAction<Void>() {
+				modbus.performAction(unitId, new ModbusConnectionAction<Void>() {
 
 					@Override
 					public Void doWithConnection(ModbusConnection conn) throws IOException {
@@ -151,7 +151,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 						acc.setWatchdogTimeout(timeout);
 						return null;
 					}
-				}, unitId);
+				});
 				updateStatus(Instant.now(), null);
 			} catch ( Exception e ) {
 				updateStatus(Instant.now(), e);

@@ -24,8 +24,8 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.ae.ae250tx.AE250TxDatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDataDatumDataSourceSupport</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

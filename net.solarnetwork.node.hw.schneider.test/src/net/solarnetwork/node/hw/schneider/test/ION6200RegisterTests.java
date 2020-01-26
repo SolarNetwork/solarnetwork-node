@@ -22,21 +22,24 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.hw.schneider.meter.ION6200Register;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for the {@link ION6200Register} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ION6200RegisterTests {
 
@@ -44,44 +47,32 @@ public class ION6200RegisterTests {
 	public void intRangeSet() {
 		// [0-2,12-12,99-110,114-115,119-121,137-144,4000-4000,4011-4014]
 		IntRangeSet set = ION6200Register.getRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(8));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Register set length", ranges, hasSize(8));
 	}
 
 	@Test
 	public void configIntRangeSet() {
 		IntRangeSet set = ION6200Register.getConfigRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(4));
-		IntRange[] ranges = set.ranges();
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(0, 2)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(12, 12)));
-		assertThat("Range 2", ranges[2], equalTo(new IntRange(4000, 4000)));
-		assertThat("Range 3", ranges[3], equalTo(new IntRange(4011, 4014)));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Ranges", ranges,
+				contains(rangeOf(0, 2), rangeOf(12, 12), rangeOf(4000, 4000), rangeOf(4011, 4014)));
 	}
 
 	@Test
 	public void meterIntRangeSet() {
 		IntRangeSet set = ION6200Register.getMeterRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(5));
-		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
-		IntRange[] ranges = reduced.ranges();
-		assertThat("Register set length", ranges, arrayWithSize(2));
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(99, 144)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(4011, 4014)));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Register set length", ranges, hasSize(5));
+		List<IntRange> reduced = coveringIntRanges(set, 64);
+		assertThat("Reduced ranges", reduced, contains(rangeOf(99, 144), rangeOf(4011, 4014)));
 	}
 
 	@Test
 	public void reducedIntRangeSet() {
 		// [0-12,102-144,4000-4014]
-		IntRangeSet set = IntRangeSetUtils.combineToReduceSize(ION6200Register.getRegisterAddressSet(),
-				64);
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(3));
-		IntRange[] ranges = set.ranges();
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(0, 12)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(99, 144)));
-		assertThat("Range 2", ranges[2], equalTo(new IntRange(4000, 4014)));
+		List<IntRange> ranges = coveringIntRanges(ION6200Register.getRegisterAddressSet(), 64);
+		assertThat("Reduced ranges", ranges,
+				contains(rangeOf(0, 12), rangeOf(99, 144), rangeOf(4000, 4014)));
 	}
 }

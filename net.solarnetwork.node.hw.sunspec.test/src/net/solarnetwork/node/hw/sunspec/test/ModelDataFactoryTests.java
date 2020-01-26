@@ -42,6 +42,7 @@ import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModelDataFactory} class.
@@ -65,22 +66,22 @@ public class ModelDataFactoryTests {
 		expect(conn.getUnitId()).andReturn(1).anyTimes();
 
 		// find base address
-		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister, 40000, 2, true,
-				ModbusConnection.ASCII_CHARSET)).andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);
+		expect(conn.readString(ModbusReadFunction.ReadHoldingRegister, 40000, 2, true, ByteUtils.ASCII))
+				.andReturn(ModelRegister.BASE_ADDRESS_MAGIC_STRING);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 40002, 2))
-				.andReturn(new int[] { 1, 65 });
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40002, 2))
+				.andReturn(new short[] { 1, 65 });
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 40004, 65))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40004, 65))
 				.andReturn(ModelDataTests.COMMON_MODEL_02);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 40069, 2))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40069, 2))
 				.andReturn(IntegerMeterModelAccessorTests.INT_METER_MODEL_HEADER_69);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 40176, 2))
-				.andReturn(new int[] { 0xFFFF, 0x0000 });
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40176, 2))
+				.andReturn(new short[] { (short) 0xFFFF, 0x0000 });
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, 40071, 105))
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 40071, 105))
 				.andReturn(IntegerMeterModelAccessorTests.INT_METER_MODEL_71);
 
 		replay(conn);

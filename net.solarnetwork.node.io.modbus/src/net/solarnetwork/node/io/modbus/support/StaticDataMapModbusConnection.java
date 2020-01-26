@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.io.modbus.support;
 
+import java.nio.charset.Charset;
 import java.util.BitSet;
-import java.util.Map;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * {@link ModbusConnection} for reading/writing static data.
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.16
  */
 public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusConnection {
@@ -46,41 +47,45 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 	 * @param data
 	 *        the starting data
 	 */
-	public StaticDataMapModbusConnection(Map<Integer, Integer> data) {
+	public StaticDataMapModbusConnection(IntShortMap data) {
 		super(data);
 	}
 
 	@Override
-	public void writeUnsignedShorts(ModbusWriteFunction function, Integer address, int[] values) {
-		Map<Integer, Integer> data = getData();
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
+		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
-			data.put(address + i, values[i]);
+			data.putValue(address + i, values[i]);
 		}
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, Integer address, String value,
-			String charsetName) {
-		// TODO Auto-generated method stub
-		super.writeString(function, address, value, charsetName);
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
+		if ( value == null || value.isEmpty() ) {
+			return;
+		}
+		byte[] data = value.getBytes(charset);
+		writeBytes(function, address, data);
 	}
 
 	@Override
-	public void writeSignedShorts(ModbusWriteFunction function, Integer address, short[] values) {
-		Map<Integer, Integer> data = getData();
+	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
+		final IntShortMap data = getData();
 		for ( int i = 0, len = values.length; i < len; i++ ) {
-			data.put(address + i, (int) values[i]);
+			data.putValue(address + i, (int) values[i]);
 		}
 	}
 
 	@Override
-	public Boolean writeDiscreetValues(Integer[] addresses, BitSet bits) {
-		// TODO Auto-generated method stub
-		return super.writeDiscreetValues(addresses, bits);
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+		final IntShortMap data = getData();
+		for ( int i = 0; i < addresses.length; i++ ) {
+			data.putValue(addresses[i], bits.get(i) ? (short) 1 : (short) 0);
+		}
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, Integer address, byte[] values) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
 		int[] unsigned = new int[(int) Math.ceil(values.length / 2.0)];
 		for ( int i = 0; i < values.length; i += 2 ) {
 			int v = ((values[i] & 0xFF) << 8);
@@ -89,7 +94,7 @@ public class StaticDataMapModbusConnection extends StaticDataMapReadonlyModbusCo
 			}
 			unsigned[i / 2] = v;
 		}
-		writeUnsignedShorts(function, address, unsigned);
+		writeWords(function, address, unsigned);
 	}
 
 }

@@ -22,37 +22,36 @@
 
 package net.solarnetwork.node.datum.modbus.test;
 
-import static org.hamcrest.Matchers.arrayWithSize;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
-import org.hamcrest.Matchers;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for how we expect to use {@link IntRangeSet}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class IntRangeSetTests {
 
 	@Test
 	public void nonOrderedInputOrderedAndCombined() {
 		IntRangeSet set = new IntRangeSet();
-		set.addAll(3109, 3109 + 2);
-		set.addAll(3059, 3059 + 2);
-		set.addAll(3009, 3009 + 2);
-		set.addAll(3035, 3035 + 2);
-		set.addAll(3203, 3203 + 4);
-		set.addAll(3207, 3207 + 4);
-		IntRange[] ranges = set.ranges();
-		assertThat(ranges, arrayWithSize(5));
-		assertThat("Range 0", ranges[0], Matchers.equalTo(new IntRange(3009, 3011)));
-		assertThat("Range 1", ranges[1], Matchers.equalTo(new IntRange(3035, 3037)));
-		assertThat("Range 2", ranges[2], Matchers.equalTo(new IntRange(3059, 3061)));
-		assertThat("Range 3", ranges[3], Matchers.equalTo(new IntRange(3109, 3111)));
-		assertThat("Range 4", ranges[4], Matchers.equalTo(new IntRange(3203, 3211)));
+		set.addRange(3109, 3109 + 2);
+		set.addRange(3059, 3059 + 2);
+		set.addRange(3009, 3009 + 2);
+		set.addRange(3035, 3035 + 2);
+		set.addRange(3203, 3203 + 4);
+		set.addRange(3207, 3207 + 4);
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Ranges", ranges, contains(rangeOf(3009, 3011), rangeOf(3035, 3037),
+				rangeOf(3059, 3061), rangeOf(3109, 3111), rangeOf(3203, 3211)));
 	}
 
 }

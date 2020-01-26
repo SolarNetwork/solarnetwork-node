@@ -23,7 +23,6 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.Set;
-import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -31,12 +30,13 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Data access object for an integer inverter model.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class IntegerInverterModelAccessor extends BaseModelAccessor implements InverterModelAccessor {
 

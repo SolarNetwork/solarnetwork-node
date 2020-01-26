@@ -22,21 +22,24 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Register;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for the {@link PM5330Register} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PM5100RegisterTests {
 
@@ -44,51 +47,34 @@ public class PM5100RegisterTests {
 	public void intRangeSet() {
 		// [29-48,89-89,128-134,1637-1638,1640-1640,2013-2015,2999-3010,3019-3032,3035-3036,3053-3060,3067-3068,3075-3076,3083-3084,3109-3110,3203-3210,3219-3226,3235-3242]
 		IntRangeSet set = PM5100Register.getRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(17));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Register set length", ranges, hasSize(17));
 	}
 
 	@Test
 	public void configIntRangeSet() {
 		IntRangeSet set = PM5100Register.getConfigRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(6));
-		IntRange[] ranges = set.ranges();
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(29, 48)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(89, 89)));
-		assertThat("Range 2", ranges[2], equalTo(new IntRange(128, 134)));
-		assertThat("Range 3", ranges[3], equalTo(new IntRange(1637, 1638)));
-		assertThat("Range 4", ranges[4], equalTo(new IntRange(1640, 1640)));
-		assertThat("Range 5", ranges[5], equalTo(new IntRange(2013, 2015)));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Ranges", ranges, contains(rangeOf(29, 48), rangeOf(89), rangeOf(128, 134),
+				rangeOf(1637, 1638), rangeOf(1640, 1640), rangeOf(2013, 2015)));
 	}
 
 	@Test
 	public void meterIntRangeSet() {
 		IntRangeSet set = PM5100Register.getMeterRegisterAddressSet();
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(11));
-		IntRangeSet reduced = IntRangeSetUtils.combineToReduceSize(set, 64);
-		IntRange[] ranges = reduced.ranges();
-		assertThat("Reduced register set length", ranges, arrayWithSize(3));
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(2999, 3060)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(3067, 3110)));
-		assertThat("Range 2", ranges[2], equalTo(new IntRange(3203, 3242)));
+		List<IntRange> ranges = stream(set.ranges().spliterator(), false).collect(toList());
+		assertThat("Register set length", ranges, hasSize(11));
+		List<IntRange> reduced = coveringIntRanges(set, 64);
+		assertThat("Reduced ranges", reduced,
+				contains(rangeOf(2999, 3060), rangeOf(3067, 3110), rangeOf(3203, 3242)));
 	}
 
 	@Test
 	public void reducedIntRangeSet() {
 		// [29-80,128-135,1637-1641,2013-2016,3009-3069,3075-3111,3203-3243]
-		IntRangeSet set = IntRangeSetUtils.combineToReduceSize(PM5100Register.getRegisterAddressSet(),
-				64);
-		assertThat("Register set", notNullValue());
-		assertThat("Register set length", set.ranges(), arrayWithSize(7));
-		IntRange[] ranges = set.ranges();
-		assertThat("Range 0", ranges[0], equalTo(new IntRange(29, 89)));
-		assertThat("Range 1", ranges[1], equalTo(new IntRange(128, 134)));
-		assertThat("Range 3", ranges[2], equalTo(new IntRange(1637, 1640)));
-		assertThat("Range 2", ranges[3], equalTo(new IntRange(2013, 2015)));
-		assertThat("Range 4", ranges[4], equalTo(new IntRange(2999, 3060)));
-		assertThat("Range 5", ranges[5], equalTo(new IntRange(3067, 3110)));
-		assertThat("Range 6", ranges[6], equalTo(new IntRange(3203, 3242)));
+		List<IntRange> ranges = coveringIntRanges(PM5100Register.getRegisterAddressSet(), 64);
+		assertThat("Reduced ranges", ranges,
+				contains(rangeOf(29, 89), rangeOf(128, 134), rangeOf(1637, 1640), rangeOf(2013, 2015),
+						rangeOf(2999, 3060), rangeOf(3067, 3110), rangeOf(3203, 3242)));
 	}
 }

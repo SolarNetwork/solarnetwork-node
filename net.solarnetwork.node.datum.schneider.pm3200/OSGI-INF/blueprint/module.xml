@@ -23,9 +23,9 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource</value>
-				<value>net.solarnetwork.node.hw.schneider.meter.PM3200Support</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -96,7 +96,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="modbusNetwork">

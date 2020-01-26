@@ -206,7 +206,7 @@ public class SocketcandCanbusConnectionTests {
 	}
 
 	@Test
-	public void subscribe_receive_unsubscribe_noReceive() throws IOException {
+	public void subscribe_receive_unsubscribe_noReceive() throws Exception {
 		// GIVEN
 		expect(socketProvider.createCanbusSocket()).andReturn(socket);
 
@@ -225,6 +225,8 @@ public class SocketcandCanbusConnectionTests {
 
 			// mock a frame message from the server
 			socket.respondMessage(new FrameMessageImpl(asList("1 23.424242 11 22 33 44".split(" "))));
+
+			Thread.sleep(400L);
 
 			conn.unsubscribe(1, false);
 

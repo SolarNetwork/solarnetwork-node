@@ -24,19 +24,19 @@ package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Map;
 import java.util.Set;
-import bak.pcj.set.IntRange;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRange;
 
 /**
  * Data object for an integer meter model.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class IntegerMeterModelAccessor extends BaseModelAccessor implements MeterModelAccessor {
 

@@ -22,94 +22,43 @@
 
 package net.solarnetwork.node.hw.advantech.adam.test;
 
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.equalTo;
+import static net.solarnetwork.util.IntRange.rangeOf;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import java.util.List;
 import org.junit.Test;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.hw.advantech.adam.ADAM411xRegister;
-import net.solarnetwork.node.io.modbus.IntRangeSetUtils;
+import net.solarnetwork.util.CollectionUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Test cases for the {@link ADAM411xRegister} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ADAM411xRegisterTests {
 
 	@Test
 	public void channelRegisterSet() {
 		IntRangeSet set = ADAM411xRegister.getChannelRegisterAddressSet();
-		IntRangeSet combined = IntRangeSetUtils.combineToReduceSize(set, 8);
-		assertThat("Range set", combined.ranges(), arrayWithSize(1));
-		assertThat("Range min", combined.first(), equalTo(0));
-		assertThat("Range last", combined.last(), equalTo(7));
+		List<IntRange> combined = CollectionUtils.coveringIntRanges(set, 8);
+		assertThat("Range set", combined, contains(rangeOf(0, 7)));
 	}
 
 	@Test
 	public void configRegisterSet() {
 		IntRangeSet set = ADAM411xRegister.getConfigRegisterAddressSet();
-		IntRangeSet combined = IntRangeSetUtils.combineToReduceSize(set, 1);
-		assertThat("Range set", combined.ranges(), arrayWithSize(3));
-		for ( int i = 0; i < combined.ranges().length; i++ ) {
-			IntRange r = combined.ranges()[i];
-			switch (i) {
-				case 0:
-					assertThat("Range min", r.first(), equalTo(200));
-					assertThat("Range last", r.last(), equalTo(207));
-					break;
-
-				case 1:
-					assertThat("Range min", r.first(), equalTo(210));
-					assertThat("Range last", r.last(), equalTo(213));
-					break;
-
-				case 2:
-					assertThat("Range min", r.first(), equalTo(220));
-					assertThat("Range last", r.last(), equalTo(220));
-					break;
-
-				default:
-					fail("Unexpected range " + i);
-			}
-		}
+		assertThat("Range set", set.ranges(),
+				contains(rangeOf(200, 207), rangeOf(210, 213), rangeOf(220)));
 	}
 
 	@Test
 	public void allRegisterSet() {
 		IntRangeSet set = ADAM411xRegister.getRegisterAddressSet();
-		IntRangeSet combined = IntRangeSetUtils.combineToReduceSize(set, 1);
-		assertThat("Range set", combined.ranges(), arrayWithSize(4));
-		for ( int i = 0; i < combined.ranges().length; i++ ) {
-			IntRange r = combined.ranges()[i];
-			switch (i) {
-				case 0:
-					assertThat("Range min", r.first(), equalTo(0));
-					assertThat("Range last", r.last(), equalTo(7));
-					break;
-
-				case 1:
-					assertThat("Range min", r.first(), equalTo(200));
-					assertThat("Range last", r.last(), equalTo(207));
-					break;
-
-				case 2:
-					assertThat("Range min", r.first(), equalTo(210));
-					assertThat("Range last", r.last(), equalTo(213));
-					break;
-
-				case 3:
-					assertThat("Range min", r.first(), equalTo(220));
-					assertThat("Range last", r.last(), equalTo(220));
-					break;
-
-				default:
-					fail("Unexpected range " + i);
-			}
-		}
+		assertThat("Range set", set.ranges(),
+				contains(rangeOf(0, 7), rangeOf(200, 207), rangeOf(210, 213), rangeOf(220)));
 	}
 
 }

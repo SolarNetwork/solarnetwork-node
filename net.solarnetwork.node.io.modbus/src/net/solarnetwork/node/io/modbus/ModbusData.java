@@ -22,23 +22,20 @@
 
 package net.solarnetwork.node.io.modbus;
 
-import static net.solarnetwork.node.io.modbus.IntRangeSetUtils.combineToReduceSize;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
-import java.util.Arrays;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import bak.pcj.map.IntKeyShortMap;
-import bak.pcj.map.IntKeyShortMapIterator;
-import bak.pcj.map.IntKeyShortOpenHashMap;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.util.ByteUtils;
+import net.solarnetwork.util.CollectionUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * Object to hold raw data extracted from a Modbus device.
@@ -52,12 +49,12 @@ import net.solarnetwork.node.domain.DataAccessor;
  * </p>
  * 
  * @author matt
- * @version 1.8
+ * @version 2.0
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
 
-	private final IntKeyShortMap dataRegisters;
+	private final IntShortMap dataRegisters;
 	private long dataTimestamp = 0;
 	private ModbusWordOrder wordOrder;
 
@@ -66,7 +63,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public ModbusData() {
 		super();
-		this.dataRegisters = new IntKeyShortOpenHashMap(64);
+		this.dataRegisters = new IntShortMap(64);
 		this.wordOrder = ModbusWordOrder.MostToLeastSignificant;
 	}
 
@@ -82,7 +79,7 @@ public class ModbusData implements DataAccessor {
 	 */
 	public ModbusData(ModbusData other) {
 		synchronized ( other.dataRegisters ) {
-			this.dataRegisters = new IntKeyShortOpenHashMap(other.dataRegisters);
+			this.dataRegisters = (IntShortMap) other.dataRegisters.clone();
 			this.dataTimestamp = other.dataTimestamp;
 			this.wordOrder = other.wordOrder;
 		}
@@ -158,19 +155,19 @@ public class ModbusData implements DataAccessor {
 				return getFloat64(addr);
 
 			case Int16:
-				return getSignedInt16(addr);
+				return getInt16(addr);
 
 			case Int32:
-				return getSignedInt32(addr);
+				return getInt32(addr);
 
 			case Int64:
 				return getInt64(addr);
 
 			case UInt16:
-				return getInt16(addr);
+				return getUnsignedInt16(addr);
 
 			case UInt32:
-				return getInt32(addr);
+				return getUnsignedInt32(addr);
 
 			case UInt64:
 				return getUnsignedInt64(addr);
@@ -188,7 +185,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the boolean, never {@literal null}
 	 */
 	public final Boolean getBoolean(final int addr) {
-		short s = dataRegisters.get(addr);
+		short s = dataRegisters.getValue(addr);
 		return (s != 0);
 	}
 
@@ -198,8 +195,8 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 * @return the integer, never {@literal null}
 	 */
-	public final Integer getInt16(final int addr) {
-		short s = dataRegisters.get(addr);
+	public final Integer getUnsignedInt16(final int addr) {
+		short s = dataRegisters.getValue(addr);
 		return s & 0xFFFF;
 	}
 
@@ -209,8 +206,8 @@ public class ModbusData implements DataAccessor {
 	 * @param addr
 	 * @return the short, never {@literal null}
 	 */
-	public final Short getSignedInt16(final int addr) {
-		return dataRegisters.get(addr);
+	public final Short getInt16(final int addr) {
+		return dataRegisters.getValue(addr);
 	}
 
 	/**
@@ -222,8 +219,9 @@ public class ModbusData implements DataAccessor {
 	 *        the address of the low 16 bits
 	 * @return the parsed value, or {@literal null} if not available
 	 */
-	public final Long getInt32(final int hiAddr, final int loAddr) {
-		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+	public final Long getUnsignedInt32(final int hiAddr, final int loAddr) {
+		return ModbusDataUtils.parseUnsignedInt32(dataRegisters.getValue(hiAddr),
+				dataRegisters.getValue(loAddr));
 	}
 
 	/**
@@ -236,8 +234,9 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
-	public final Integer getSignedInt32(final int hiAddr, final int loAddr) {
-		return ModbusDataUtils.parseInt32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+	public final Integer getInt32(final int hiAddr, final int loAddr) {
+		return ModbusDataUtils.parseInt32(dataRegisters.getValue(hiAddr),
+				dataRegisters.getValue(loAddr));
 	}
 
 	/**
@@ -253,9 +252,9 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed value, or {@literal null} if not available
 	 * @since 1.1
 	 */
-	public final Integer getSignedInt32(final int addr) {
-		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getSignedInt32(addr, addr + 1)
-				: getSignedInt32(addr + 1, addr));
+	public final Integer getInt32(final int addr) {
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
+				: getInt32(addr + 1, addr));
 	}
 
 	/**
@@ -271,9 +270,9 @@ public class ModbusData implements DataAccessor {
 	 *        to be {@code addr + 1}
 	 * @return the parsed value, or {@literal null} if not available
 	 */
-	public final Long getInt32(final int addr) {
-		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getInt32(addr, addr + 1)
-				: getInt32(addr + 1, addr));
+	public final Long getUnsignedInt32(final int addr) {
+		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getUnsignedInt32(addr, addr + 1)
+				: getUnsignedInt32(addr + 1, addr));
 	}
 
 	/**
@@ -286,7 +285,8 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed value, or {@literal null} if not available.
 	 */
 	public final Float getFloat32(final int hiAddr, final int loAddr) {
-		return ModbusDataUtils.parseFloat32(dataRegisters.get(hiAddr), dataRegisters.get(loAddr));
+		return ModbusDataUtils.parseFloat32(dataRegisters.getValue(hiAddr),
+				dataRegisters.getValue(loAddr));
 	}
 
 	/**
@@ -320,8 +320,8 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed long
 	 */
 	public final Long getInt64(final int h1Addr, final int h2Addr, final int l1Addr, final int l2Addr) {
-		return ModbusDataUtils.parseInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
-				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
+		return ModbusDataUtils.parseInt64(dataRegisters.getValue(h1Addr), dataRegisters.getValue(h2Addr),
+				dataRegisters.getValue(l1Addr), dataRegisters.getValue(l2Addr));
 	}
 
 	/**
@@ -359,8 +359,9 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final BigInteger getUnsignedInt64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
-		return ModbusDataUtils.parseUnsignedInt64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
-				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
+		return ModbusDataUtils.parseUnsignedInt64(dataRegisters.getValue(h1Addr),
+				dataRegisters.getValue(h2Addr), dataRegisters.getValue(l1Addr),
+				dataRegisters.getValue(l2Addr));
 	}
 
 	/**
@@ -398,8 +399,9 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final Double getFloat64(final int h1Addr, final int h2Addr, final int l1Addr,
 			final int l2Addr) {
-		return ModbusDataUtils.parseFloat64(dataRegisters.get(h1Addr), dataRegisters.get(h2Addr),
-				dataRegisters.get(l1Addr), dataRegisters.get(l2Addr));
+		return ModbusDataUtils.parseFloat64(dataRegisters.getValue(h1Addr),
+				dataRegisters.getValue(h2Addr), dataRegisters.getValue(l1Addr),
+				dataRegisters.getValue(l2Addr));
 	}
 
 	/**
@@ -437,8 +439,8 @@ public class ModbusData implements DataAccessor {
 	public byte[] getBytes(final int addr, final int count) {
 		byte[] result = new byte[count * 2];
 		for ( int i = addr, end = addr + count, index = 0; i < end; i++, index += 2 ) {
-			short word = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? dataRegisters.get(i)
-					: dataRegisters.get(end - i - 1));
+			short word = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? dataRegisters.getValue(i)
+					: dataRegisters.getValue(end - i - 1));
 			result[index] = (byte) ((word >> 8) & 0xFF);
 			result[index + 1] = (byte) (word & 0xFF);
 		}
@@ -463,21 +465,48 @@ public class ModbusData implements DataAccessor {
 	 *        the resulting string
 	 * @param charsetName
 	 *        the character set to interpret the bytes as
-	 * @return the parsed string, or {@literal null} if {@code charsetName} is
-	 *         not supported
+	 * @return the parsed string, or {@literal null} if {@code count} is
+	 *         {@literal 0}
+	 * @throws IllegalCharsetNameException
+	 *         If the given character set name is illegal
+	 * @throws IllegalArgumentException
+	 *         If {@code charsetName} is null
+	 * @throws UnsupportedCharsetException
+	 *         If no support for the named character set is available
 	 */
 	public String getString(final int addr, final int count, final boolean trim,
 			final String charsetName) {
+		return getString(addr, count, trim, Charset.forName(charsetName));
+	}
+
+	/**
+	 * Construct a string out of a data address range.
+	 * 
+	 * <p>
+	 * This method calls {@link #getBytes(int, int)} to interpret the data
+	 * addresses as a raw byte array, and then interprets the result as a string
+	 * in the given character set.
+	 * </p>
+	 * 
+	 * @param addr
+	 *        the starting address of the 16-bit register to read
+	 * @param count
+	 *        the number of 16-bit registers to read
+	 * @param trim
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
+	 * @param charset
+	 *        the character set to interpret the bytes as
+	 * @return the parsed string, or {@literal null} if {@code count} is
+	 *         {@literal 0}
+	 */
+	public String getString(final int addr, final int count, final boolean trim, final Charset charset) {
 		final byte[] bytes = getBytes(addr, count);
 		String result = null;
 		if ( bytes != null ) {
-			try {
-				result = new String(bytes, charsetName);
-				if ( trim ) {
-					result = result.trim();
-				}
-			} catch ( UnsupportedEncodingException e ) {
-				throw new RuntimeException(e);
+			result = new String(bytes, charset);
+			if ( trim ) {
+				result = result.trim();
 			}
 		}
 		return result;
@@ -496,7 +525,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 */
 	public String getUtf8String(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusDataUtils.UTF8_CHARSET);
+		return getString(addr, count, trim, ByteUtils.UTF8);
 	}
 
 	/**
@@ -512,7 +541,7 @@ public class ModbusData implements DataAccessor {
 	 * @return the parsed string
 	 */
 	public String getAsciiString(final int addr, final int count, final boolean trim) {
-		return getString(addr, count, trim, ModbusDataUtils.ASCII_CHARSET);
+		return getString(addr, count, trim, ByteUtils.ASCII);
 	}
 
 	/**
@@ -544,8 +573,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.4
 	 */
 	public String getUtf8String(final ModbusReference ref, int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.UTF8_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.UTF8);
 	}
 
 	/**
@@ -577,8 +605,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.4
 	 */
 	public String getAsciiString(final ModbusReference ref, final int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.ASCII_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.ASCII);
 	}
 
 	/**
@@ -595,8 +622,7 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.8
 	 */
 	public String getLatin1String(final ModbusReference ref, final int offset, final boolean trim) {
-		return getString(ref.getAddress() + offset, ref.getWordLength(), trim,
-				ModbusTransactionUtils.LATIN1_CHARSET);
+		return getString(ref.getAddress() + offset, ref.getWordLength(), trim, ByteUtils.LATIN1);
 	}
 
 	/**
@@ -609,7 +635,7 @@ public class ModbusData implements DataAccessor {
 	public final ModbusData performUpdates(ModbusDataUpdateAction action) {
 		synchronized ( dataRegisters ) {
 			final long now = System.currentTimeMillis();
-			if ( action.updateModbusData(new MutableModbusDataView()) ) {
+			if ( action.updateModbusData(new MutableModbusDataView(dataRegisters, wordOrder)) ) {
 				dataTimestamp = now;
 			}
 		}
@@ -730,19 +756,37 @@ public class ModbusData implements DataAccessor {
 	}
 
 	/**
-	 * Internal mutable view of this class, meant to be used for thread-safe
+	 * Mutable view of Modbus data registers, meant to be used for thread-safe
 	 * writes.
 	 * 
 	 * <p>
 	 * All methods are assumed to be synchronized on {@code dataRegsiters}.
 	 * </p>
 	 */
-	private class MutableModbusDataView implements MutableModbusData {
+	public static class MutableModbusDataView implements MutableModbusData {
+
+		private final IntShortMap dataRegisters;
+		private final ModbusWordOrder wordOrder;
+
+		/**
+		 * Construct with data registers to mutate.
+		 * 
+		 * @param dataRegisters
+		 *        the registers to mutate; calling code should by synchronized
+		 *        on this instance
+		 * @param wordOrder
+		 *        the word order to use
+		 */
+		public MutableModbusDataView(IntShortMap dataRegisters, ModbusWordOrder wordOrder) {
+			super();
+			this.dataRegisters = dataRegisters;
+			this.wordOrder = wordOrder;
+		}
 
 		@Override
 		public final void saveDataMap(final Map<Integer, ? extends Number> data) {
 			for ( Map.Entry<Integer, ? extends Number> me : data.entrySet() ) {
-				dataRegisters.put(me.getKey(), me.getValue().shortValue());
+				dataRegisters.putValue(me.getKey(), me.getValue().shortValue());
 			}
 		}
 
@@ -752,7 +796,7 @@ public class ModbusData implements DataAccessor {
 				return;
 			}
 			for ( short v : data ) {
-				dataRegisters.put(addr, v);
+				dataRegisters.putValue(addr, v);
 				addr++;
 			}
 		}
@@ -763,7 +807,7 @@ public class ModbusData implements DataAccessor {
 				return;
 			}
 			for ( int v : data ) {
-				dataRegisters.put(addr, (short) (v & 0xFFFF));
+				dataRegisters.putValue(addr, (short) (v & 0xFFFF));
 				addr++;
 			}
 		}
@@ -774,7 +818,7 @@ public class ModbusData implements DataAccessor {
 				return;
 			}
 			for ( Integer v : data ) {
-				dataRegisters.put(addr, (short) (v.intValue() & 0xFFFF));
+				dataRegisters.putValue(addr, (short) (v.intValue() & 0xFFFF));
 				addr++;
 			}
 		}
@@ -792,7 +836,7 @@ public class ModbusData implements DataAccessor {
 				}
 				int idx = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? addr + j
 						: addr + wordLength - j - 1);
-				dataRegisters.put(idx, (short) n);
+				dataRegisters.putValue(idx, (short) n);
 			}
 		}
 
@@ -820,33 +864,52 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final String dataDebugString() {
 		final StringBuilder buf = new StringBuilder(getClass().getSimpleName()).append("{");
-		int[] keys = dataRegisters.keySet().toArray();
-		if ( keys.length > 0 ) {
-			Arrays.sort(keys);
-			boolean odd = false;
-			int last = -2;
-			for ( int k : keys ) {
-				odd = k % 2 == 1 ? true : false;
-				if ( k > last + 1 ) {
+		if ( !dataRegisters.isEmpty() ) {
+			final int[] last = new int[] { -2 };
+			dataRegisters.forEachOrdered((k, v) -> {
+				boolean odd = k % 2 == 1 ? true : false;
+				if ( k > last[0] + 1 ) {
 					int rowAddr = odd ? k - 1 : k;
 					buf.append("\n\t").append(String.format("%5d", rowAddr)).append(": ");
 					if ( odd ) {
 						// fill in empty space for start of row
 						buf.append("      , ");
 					}
-					last = k;
+					last[0] = k;
 					if ( odd ) {
-						last -= 1;
+						last[0] -= 1;
 					}
 				} else if ( odd ) {
 					buf.append(", ");
 				}
-				buf.append(String.format("0x%04X", dataRegisters.get(k)));
-			}
+				buf.append(String.format("0x%04X", v));
+			});
 			buf.append("\n");
 		}
 		buf.append("}");
 		return buf.toString();
+	}
+
+	/**
+	 * Copy the raw modbus data for a set of addresses into an array.
+	 * 
+	 * @param dest
+	 *        the destination array
+	 * @param destFrom
+	 *        the starting destination array index to populate
+	 * @param address
+	 *        the Modbus address to start from
+	 * @param length
+	 *        the number of Modbus registers to copy
+	 * @since 2.0
+	 */
+	public final void slice(short[] dest, int destFrom, int address, int length) {
+		dataRegisters.forEachOrdered(address, address + length, (i, v) -> {
+			int idx = i - address + destFrom;
+			if ( idx < dest.length ) {
+				dest[idx] = v;
+			}
+		});
 	}
 
 	/**
@@ -906,19 +969,53 @@ public class ModbusData implements DataAccessor {
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
 			final IntRangeSet rangeSet, final int maxResults) {
-		final IntRangeSet reducedRangeSet = combineToReduceSize(rangeSet, maxResults);
+		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxResults);
+		refreshData(conn, readFunction, ranges);
+	}
+
+	/**
+	 * Refresh a range of data from the Modbus device into this object.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param readFunction
+	 *        the Modbus read function to use
+	 * @param rangeSet
+	 *        the Modbus registers to read, where each {@link IntRange} in the
+	 *        set defines <i>inclusive</i> address ranges to read
+	 * @since 2.0
+	 */
+	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
+			final Collection<IntRange> ranges) {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
-				IntRange[] ranges = reducedRangeSet.ranges();
-				for ( IntRange r : ranges ) {
-					int[] data = conn.readUnsignedShorts(readFunction, r.first(), r.length());
-					m.saveDataArray(data, r.first());
-				}
+				refreshData(conn, readFunction, ranges, m);
 				return true;
 			}
 		});
+	}
+
+	/**
+	 * Read data from the device and update a mutable data instance.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param readFunction
+	 *        the read function
+	 * @param ranges
+	 *        the ranges of Modbus addresses to read/update
+	 * @param m
+	 *        the mutable data to update
+	 * @since 2.0
+	 */
+	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
+			final Collection<IntRange> ranges, final MutableModbusData m) {
+		for ( IntRange r : ranges ) {
+			short[] data = conn.readWords(readFunction, r.getMin(), r.length());
+			m.saveDataArray(data, r.getMin());
+		}
 	}
 
 	/**
@@ -929,64 +1026,8 @@ public class ModbusData implements DataAccessor {
 	 * @since 1.7
 	 */
 	public Map<Integer, Integer> getUnsignedDataMap() {
-		final ModbusData copy = this.copy();
-		final IntKeyShortMap data = copy.dataRegisters;
-		Set<Entry<Integer, Integer>> entrySet = new AbstractSet<Map.Entry<Integer, Integer>>() {
-
-			@Override
-			public Iterator<Entry<Integer, Integer>> iterator() {
-				IntKeyShortMapIterator itr = data.entries();
-				return new Iterator<Map.Entry<Integer, Integer>>() {
-
-					@Override
-					public boolean hasNext() {
-						return itr.hasNext();
-					}
-
-					@Override
-					public Entry<Integer, Integer> next() {
-						itr.next();
-						return new AbstractMap.SimpleImmutableEntry<Integer, Integer>(itr.getKey(),
-								Short.toUnsignedInt(itr.getValue()));
-					}
-				};
-			}
-
-			@Override
-			public int size() {
-				return data.size();
-			}
-		};
-		return new AbstractMap<Integer, Integer>() {
-
-			@Override
-			public boolean containsKey(Object key) {
-				boolean result = false;
-				if ( key instanceof Number ) {
-					final int r = ((Number) key).intValue();
-					result = data.containsKey(r);
-				}
-				return result;
-			}
-
-			@Override
-			public Integer get(Object key) {
-				Integer result = null;
-				if ( key instanceof Number ) {
-					final int r = ((Number) key).intValue();
-					if ( data.containsKey(r) ) {
-						result = Short.toUnsignedInt(data.get(r));
-					}
-				}
-				return result;
-			}
-
-			@Override
-			public Set<Entry<Integer, Integer>> entrySet() {
-				return entrySet;
-			}
-
-		};
+		final IntShortMap data = (IntShortMap) this.dataRegisters.clone();
+		return data.unsignedMap();
 	}
 
 }

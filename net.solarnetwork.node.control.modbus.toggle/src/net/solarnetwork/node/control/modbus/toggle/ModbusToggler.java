@@ -40,10 +40,10 @@ import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusFunction;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -60,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class ModbusToggler extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -113,14 +113,14 @@ public class ModbusToggler extends ModbusDeviceSupport
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
 				if ( function == ModbusWriteFunction.WriteCoil
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
-					BitSet bits = conn.readDiscreetValues(new Integer[] { address }, 1);
+					BitSet bits = conn.readDiscreetValues(address, 1);
 					return (bits != null ? bits.get(0) : null);
 				}
 
 				// for all other functions, write as unsigned short value with 1 for true, 0 for false
 				ModbusFunction readFunction = function.oppositeFunction();
 				if ( readFunction != null ) {
-					int[] data = conn.readUnsignedShorts(
+					int[] data = conn.readWordsUnsigned(
 							ModbusReadFunction.forCode(readFunction.getCode()), address, 1);
 					return (data != null && data.length > 0 && data[0] == 1 ? true : false);
 				} else {
@@ -155,11 +155,12 @@ public class ModbusToggler extends ModbusDeviceSupport
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue);
-					return conn.writeDiscreetValues(new Integer[] { address }, bits);
+					conn.writeDiscreetValues(new int[] { address }, bits);
+					return true;
 				}
 
 				// for all other functions, write as unsigned short value with 1 for true, 0 for false
-				conn.writeUnsignedShorts(function, address,
+				conn.writeWords(function, address,
 						new int[] { Boolean.TRUE.equals(desiredValue) ? 1 : 0 });
 				return true;
 			}

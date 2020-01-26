@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Panasonic Device Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.panasonic
-Bundle-Version: 0.2.1
+Bundle-Version: 0.3.0
 Bundle-Vendor: SoalrNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node.hw.panasonic.battery;version="0.1.0"
+ net.solarnetwork.node.hw.panasonic.battery;version="0.1.1"
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.core;version="[2.4,3.0)",
@@ -20,7 +20,7 @@ Import-Package:
  net.solarnetwork.node.settings.support;version="1.2.0",
  net.solarnetwork.node.support;version="1.13.0",
  net.solarnetwork.node.util;version="1.5.0",
- net.solarnetwork.util;version="1.14.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",
  org.joda.time.format;version="[2.4,3.0)",

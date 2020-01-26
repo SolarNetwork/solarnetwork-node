@@ -38,7 +38,7 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.hw.lctech.relay.UsbRelayUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.io.serial.SerialDeviceSupport;
+import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -51,7 +51,7 @@ import net.solarnetwork.util.StringUtils;
  * Control a relay state: open or closed.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class UsbRelayToggler extends SerialDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {

@@ -38,7 +38,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -47,6 +46,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -232,7 +232,7 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 			if ( sslService != null && connection instanceof HttpsURLConnection ) {
 				SSLService service = sslService.service();
 				if ( service != null ) {
-					SSLSocketFactory factory = service.getSolarInSocketFactory();
+					SSLSocketFactory factory = service.getSSLSocketFactory();
 					if ( factory != null ) {
 						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
 						sslConnection.setSSLSocketFactory(factory);

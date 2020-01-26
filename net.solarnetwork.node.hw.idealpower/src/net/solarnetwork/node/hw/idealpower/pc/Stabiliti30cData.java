@@ -32,19 +32,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Implementation for Stabiliti 30C series power control system data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAccessor {
 
@@ -501,7 +501,7 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 
 		private void update(final ModbusReference register, final int[] data) {
 			final int addr = register.getAddress();
-			conn.writeUnsignedShorts(WriteHoldingRegister, addr, data);
+			conn.writeWords(WriteHoldingRegister, addr, data);
 			if ( state != null ) {
 				state.saveDataArray(data, addr);
 			}

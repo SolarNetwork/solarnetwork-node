@@ -167,14 +167,14 @@ public class ION6200DataTests {
 		assertThat("Firmware revision", data.getFirmwareRevision(), equalTo(211));
 		assertThat("Serial number", data.getSerialNumber(), equalTo(80101592L));
 		assertThat("Volts mode", data.getVoltsMode(), equalTo(ION6200VoltsMode.FourWire));
-		assertThat("PVS", data.getInt16(ION6200Register.ConfigProgrammableVoltageScale.getAddress()),
+		assertThat("PVS", data.getUnsignedInt16(ION6200Register.ConfigProgrammableVoltageScale.getAddress()),
 				equalTo(4));
-		assertThat("PCS", data.getInt16(ION6200Register.ConfigProgrammableCurrentScale.getAddress()),
+		assertThat("PCS", data.getUnsignedInt16(ION6200Register.ConfigProgrammableCurrentScale.getAddress()),
 				equalTo(4));
 		assertThat("PnS",
-				data.getInt16(ION6200Register.ConfigProgrammableNeutralCurrentScale.getAddress()),
+				data.getUnsignedInt16(ION6200Register.ConfigProgrammableNeutralCurrentScale.getAddress()),
 				equalTo(4));
-		assertThat("PPS", data.getInt16(ION6200Register.ConfigProgrammablePowerScale.getAddress()),
+		assertThat("PPS", data.getUnsignedInt16(ION6200Register.ConfigProgrammablePowerScale.getAddress()),
 				equalTo(5));
 	}
 

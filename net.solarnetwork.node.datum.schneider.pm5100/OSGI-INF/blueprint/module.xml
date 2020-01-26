@@ -24,7 +24,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.schneider.pm5100.PM5100DatumDataSource</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>

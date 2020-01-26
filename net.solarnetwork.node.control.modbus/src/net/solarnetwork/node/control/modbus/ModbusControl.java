@@ -51,10 +51,9 @@ import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusTransactionUtils;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -65,6 +64,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -73,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
@@ -121,19 +121,19 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				break;
 
 			case Int16:
-				propVal = sample.getSignedInt16(config.getAddress());
-				break;
-
-			case UInt16:
 				propVal = sample.getInt16(config.getAddress());
 				break;
 
+			case UInt16:
+				propVal = sample.getUnsignedInt16(config.getAddress());
+				break;
+
 			case Int32:
-				propVal = sample.getSignedInt32(config.getAddress());
+				propVal = sample.getInt32(config.getAddress());
 				break;
 
 			case UInt32:
-				propVal = sample.getInt32(config.getAddress());
+				propVal = sample.getUnsignedInt32(config.getAddress());
 				break;
 
 			case Int64:
@@ -238,21 +238,20 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
-					return conn.writeDiscreetValues(new Integer[] { address }, bits);
+					conn.writeDiscreetValues(new int[] { address }, bits);
+					return true;
 				}
 
-				int[] dataToWrite = null;
+				short[] dataToWrite = null;
 				switch (config.getDataType()) {
 					case StringAscii:
 						conn.writeString(function, address,
-								desiredValue != null ? desiredValue.toString() : "",
-								ModbusTransactionUtils.ASCII_CHARSET);
+								desiredValue != null ? desiredValue.toString() : "", ByteUtils.ASCII);
 						break;
 
 					case StringUtf8:
 						conn.writeString(function, address,
-								desiredValue != null ? desiredValue.toString() : "",
-								ModbusTransactionUtils.UTF8_CHARSET);
+								desiredValue != null ? desiredValue.toString() : "", ByteUtils.UTF8);
 						break;
 
 					case Bytes:
@@ -260,9 +259,10 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 						break;
 
 					case Boolean:
-						dataToWrite = new int[] {
-								desiredValue != null && ((Boolean) desiredValue).booleanValue() ? 1
-										: 0 };
+						dataToWrite = new short[] {
+								desiredValue != null && ((Boolean) desiredValue).booleanValue()
+										? (short) 1
+										: (short) 0 };
 						break;
 
 					case Float32:
@@ -286,7 +286,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 				}
 				if ( dataToWrite != null && dataToWrite.length > 0 ) {
-					conn.writeUnsignedShorts(function, address, dataToWrite);
+					conn.writeWords(function, address, dataToWrite);
 					return true;
 				}
 				return false;
@@ -378,12 +378,12 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 								break;
 
 							case ReadHoldingRegister:
-								m.saveDataArray(conn.readUnsignedShorts(
+								m.saveDataArray(conn.readWordsUnsigned(
 										ModbusReadFunction.ReadHoldingRegister, start, len), start);
 								break;
 
 							case ReadInputRegister:
-								m.saveDataArray(conn.readUnsignedShorts(
+								m.saveDataArray(conn.readWordsUnsigned(
 										ModbusReadFunction.ReadInputRegister, start, len), start);
 								break;
 						}

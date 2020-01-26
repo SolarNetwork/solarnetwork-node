@@ -26,7 +26,7 @@ package net.solarnetwork.node.io.modbus;
  * API for a modbus function.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.5
  */
 public interface ModbusFunction {
@@ -64,5 +64,29 @@ public interface ModbusFunction {
 	 * @return the function, or {@code null} if not applicable
 	 */
 	ModbusFunction oppositeFunction();
+
+	/**
+	 * Get a {@link ModbusFunction} for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the function
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
+	 * @since 2.0
+	 */
+	static ModbusFunction functionForCode(int code) {
+		ModbusFunction f;
+		try {
+			f = ModbusReadFunction.forCode(code);
+		} catch ( IllegalArgumentException e ) {
+			try {
+				f = ModbusWriteFunction.forCode(code);
+			} catch ( IllegalArgumentException e2 ) {
+				throw new IllegalArgumentException("Unknown Modbus function code: " + code);
+			}
+		}
+		return f;
+	}
 
 }

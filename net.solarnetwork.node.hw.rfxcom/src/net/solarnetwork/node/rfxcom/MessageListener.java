@@ -24,44 +24,43 @@
 
 package net.solarnetwork.node.rfxcom;
 
+import static net.solarnetwork.util.NumberUtils.unsigned;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.util.DataUtils;
 
 /**
- * A {@link ConversationalDataCollector.DataListener} suitable for parsing RFXCOM
- * messages.
+ * A {@link ConversationalDataCollector.DataListener} suitable for parsing
+ * RFXCOM messages.
  * 
  * @author matt
  * @version $Revision$
  */
 public class MessageListener implements ConversationalDataCollector.DataListener {
-	
+
 	private int packetSize = -1;
 
 	/**
 	 * Reset so another packet can be read.
 	 */
+	@Override
 	public void reset() {
 		packetSize = -1;
 	}
-	
+
 	@Override
 	public int getDesiredByteCount(ConversationalDataCollector dataCollector, int sinkSize) {
 		return (packetSize < 1 ? 1 : packetSize - sinkSize + 1);
 	}
 
 	@Override
-	public boolean receivedData(ConversationalDataCollector dataCollector,
-			byte[] data, int offset, int length, OutputStream sink, int sinkSize)
-	throws IOException {
+	public boolean receivedData(ConversationalDataCollector dataCollector, byte[] data, int offset,
+			int length, OutputStream sink, int sinkSize) throws IOException {
 		if ( packetSize < 1 ) {
-			packetSize = DataUtils.unsigned(data[offset]);
+			packetSize = unsigned(data[offset]);
 		}
 		sink.write(data, offset, length);
 		return (packetSize + 1 - sinkSize - length) > 0;
 	}
-	
+
 }

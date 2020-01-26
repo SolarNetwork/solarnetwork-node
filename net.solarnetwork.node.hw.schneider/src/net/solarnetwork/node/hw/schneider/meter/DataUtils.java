@@ -28,7 +28,7 @@ import org.joda.time.LocalDateTime;
  * Utilities for dealing with Schneider meter data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.4
  */
 public final class DataUtils {
@@ -44,7 +44,7 @@ public final class DataUtils {
 	 *        the data array
 	 * @return the parsed date, or {@literal null} if not available
 	 */
-	public static LocalDateTime parseDateTime(final int[] data) {
+	public static LocalDateTime parseDateTime(final short[] data) {
 		LocalDateTime result = null;
 		if ( data != null && data.length == 4 ) {
 			int year = 2000 + (data[0] & 0x7F);
@@ -52,7 +52,7 @@ public final class DataUtils {
 			int day = (data[1] & 0x1F);
 			int hour = (data[2] & 0x1F00) >> 8;
 			int minute = (data[2] & 0x3F);
-			int ms = (data[3]); // this is really seconds + milliseconds
+			int ms = (data[3] & 0xFFFF); // this is really seconds + milliseconds
 			int sec = ms / 1000;
 			ms = ms - (sec * 1000);
 			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);

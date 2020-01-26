@@ -31,18 +31,15 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntConsumer;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.springframework.expression.ExpressionException;
-import bak.pcj.set.IntRange;
-import bak.pcj.set.IntRangeSet;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumDataSource;
@@ -53,7 +50,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -66,6 +63,8 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
@@ -75,7 +74,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
 		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
@@ -174,19 +173,19 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					break;
 
 				case Int16:
-					propVal = sample.getSignedInt16(conf.getAddress());
-					break;
-
-				case UInt16:
 					propVal = sample.getInt16(conf.getAddress());
 					break;
 
+				case UInt16:
+					propVal = sample.getUnsignedInt16(conf.getAddress());
+					break;
+
 				case Int32:
-					propVal = sample.getSignedInt32(conf.getAddress());
+					propVal = sample.getInt32(conf.getAddress());
 					break;
 
 				case UInt32:
-					propVal = sample.getInt32(conf.getAddress());
+					propVal = sample.getUnsignedInt32(conf.getAddress());
 					break;
 
 				case Int64:
@@ -457,7 +456,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				if ( len == -1 ) {
 					len = config.getWordLength();
 				}
-				set.addAll(config.getAddress(), config.getAddress() + len);
+				set.addRange(config.getAddress(), config.getAddress() + len - 1);
 			}
 		}
 		return set;
@@ -578,8 +577,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 				final int maxReadLen = maxReadWordCount;
 				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getReadFunctionSets(
 						propConfigs);
-				Map<ModbusReadFunction, IntRangeSet> functionRangeMap = new HashMap<>(
-						functionMap.size());
+				IntRangeSet expressionRegisterSet = expressionRegisterSet();
 				for ( Map.Entry<ModbusReadFunction, List<ModbusPropertyConfig>> me : functionMap
 						.entrySet() ) {
 					ModbusReadFunction function = me.getKey();
@@ -588,12 +586,23 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					// into single calls, but limited to at most maxReadWordCount addresses at a time
 					// because some devices have trouble returning large word counts
 					IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
-					functionRangeMap.put(function, addressRangeSet);
+					if ( function == ModbusReadFunction.ReadHoldingRegister ) {
+						// add expressions
+						expressionRegisterSet.forEachOrdered(new IntConsumer() {
+
+							@Override
+							public void accept(int value) {
+								addressRangeSet.add(value);
+							}
+						});
+						expressionRegisterSet = null; // so don't handle later
+					}
 					log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
-					IntRange[] ranges = addressRangeSet.ranges();
+					Iterable<IntRange> ranges = addressRangeSet.ranges();
 					for ( IntRange range : ranges ) {
-						for ( int start = range.first(); start < range.last(); ) {
-							int len = Math.min(range.last() - start, maxReadLen);
+						for ( int start = range.getMin(), stop = start
+								+ range.length(); start < stop; ) {
+							int len = Math.min(range.length(), maxReadLen);
 							switch (function) {
 								case ReadCoil:
 									m.saveDataArray(shortArrayForBitSet(
@@ -608,14 +617,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 									break;
 
 								case ReadHoldingRegister:
-									m.saveDataArray(
-											conn.readUnsignedShorts(
-													ModbusReadFunction.ReadHoldingRegister, start, len),
-											start);
+									m.saveDataArray(conn.readWords(
+											ModbusReadFunction.ReadHoldingRegister, start, len), start);
 									break;
 
 								case ReadInputRegister:
-									m.saveDataArray(conn.readUnsignedShorts(
+									m.saveDataArray(conn.readWords(
 											ModbusReadFunction.ReadInputRegister, start, len), start);
 									break;
 							}
@@ -624,27 +631,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 					}
 				}
 
-				// handle expression references
-				ExpressionConfig[] exprConfigs = getExpressionConfigs();
-				if ( exprConfigs != null && exprConfigs.length > 0 ) {
-					IntRangeSet readHoldingRegSet = functionRangeMap
-							.get(ModbusReadFunction.ReadHoldingRegister);
-					IntRangeSet exprAddressRangeSet = new IntRangeSet();
-					for ( ExpressionConfig config : exprConfigs ) {
-						Set<Integer> addrSet = config.registerAddressReferences();
-						for ( Integer addr : addrSet ) {
-							// don't add addresses already read
-							if ( !readHoldingRegSet.contains(addr) ) {
-								exprAddressRangeSet.addAll(addr, addr + 1);
-							}
-						}
-					}
-					IntRange[] ranges = exprAddressRangeSet.ranges();
+				// handle expression references, if not already handled
+				if ( expressionRegisterSet != null ) {
+					Iterable<IntRange> ranges = expressionRegisterSet.ranges();
 					for ( IntRange range : ranges ) {
-						for ( int start = range.first(); start < range.last(); ) {
-							int len = Math.min(range.last() - start, maxReadLen);
-							m.saveDataArray(conn.readUnsignedShorts(
-									ModbusReadFunction.ReadHoldingRegister, start, len), start);
+						for ( int start = range.getMin(), stop = start
+								+ range.length(); start < stop; ) {
+							int len = Math.min(range.length(), maxReadLen);
+							m.saveDataArray(conn.readWords(ModbusReadFunction.ReadHoldingRegister,
+									start, len), start);
 							start += len;
 						}
 					}
@@ -654,6 +649,23 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 			}
 		});
 		return sample.copy();
+	}
+
+	private IntRangeSet expressionRegisterSet() {
+		ExpressionConfig[] exprConfigs = getExpressionConfigs();
+		IntRangeSet result = new IntRangeSet();
+		if ( exprConfigs != null && exprConfigs.length > 0 ) {
+			for ( ExpressionConfig config : exprConfigs ) {
+				config.registerAddressReferences().forEachOrdered(new IntConsumer() {
+
+					@Override
+					public void accept(int value) {
+						result.add(value);
+					}
+				});
+			}
+		}
+		return result;
 	}
 
 	private ModbusData getCurrentSample() {

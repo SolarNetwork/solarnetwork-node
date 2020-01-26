@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.rfxcom;
 
-import static net.solarnetwork.node.util.DataUtils.unsigned;
+import static net.solarnetwork.util.NumberUtils.unsigned;
 
 /**
  * A current meter message, e.g. Owl CM113, Electrisave, Cent-a-meter.

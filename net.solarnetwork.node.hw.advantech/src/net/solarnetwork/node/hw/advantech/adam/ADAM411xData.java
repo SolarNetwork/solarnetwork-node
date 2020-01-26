@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the ADAM 411x series devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 
@@ -60,23 +60,13 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 	}
 
 	@Override
-	public ModbusData copy() {
+	public ADAM411xData copy() {
 		return new ADAM411xData(this);
-	}
-
-	/**
-	 * Get a snapshot copy of the data.
-	 * 
-	 * @return a copy of the data
-	 * @see #copy()
-	 */
-	public ADAM411xData getSnapshot() {
-		return (ADAM411xData) copy();
 	}
 
 	@Override
 	public Map<String, Object> getDeviceInfo() {
-		ADAM411xDataAccessor data = getSnapshot();
+		ADAM411xDataAccessor data = copy();
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String modelName = data.getModelName();
 		if ( modelName != null ) {

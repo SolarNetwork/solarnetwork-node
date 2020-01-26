@@ -475,7 +475,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 			update = null;
 		}
 		if ( update != null ) {
-			conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerSwitchAddr,
+			conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, powerSwitchAddr,
 					new int[] { update });
 			performUpdates(new ModbusDataUpdateAction() {
 
@@ -511,7 +511,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	public void setOutputPowerLimitPercent(ModbusConnection conn, Float percent) {
 		final int update = (percent != null ? (int) (percent.floatValue() * 1000) : 1000);
 		final int powerLimitAddr = KTLCTRegister.ControlDevicePowerLimit.getAddress();
-		conn.writeUnsignedShorts(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr,
+		conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr,
 				new int[] { update });
 		performUpdates(new ModbusDataUpdateAction() {
 

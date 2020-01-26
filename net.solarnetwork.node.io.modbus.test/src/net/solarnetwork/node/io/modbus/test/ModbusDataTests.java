@@ -35,14 +35,14 @@ import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusData} class.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public class ModbusDataTests {
 
@@ -101,7 +101,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -117,7 +117,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -134,7 +134,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -151,7 +151,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("Unsigned 32-bit integer", d.getInt32(0), equalTo(l));
+		assertThat("Unsigned 32-bit integer", d.getUnsignedInt32(0), equalTo(l));
 	}
 
 	@Test
@@ -324,7 +324,7 @@ public class ModbusDataTests {
 	@Test
 	public void readUtf8String() throws Exception {
 		final String str = "Four score and seven years ago...";
-		final byte[] b = str.getBytes(ModbusHelper.UTF8_CHARSET);
+		final byte[] b = str.getBytes(ByteUtils.UTF8);
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
@@ -341,7 +341,7 @@ public class ModbusDataTests {
 	@Test
 	public void readUtf8StringLeastToMostSignificant() throws Exception {
 		final String str = "Four score and seven years ago...";
-		final byte[] b = str.getBytes(ModbusHelper.UTF8_CHARSET);
+		final byte[] b = str.getBytes(ByteUtils.UTF8);
 		ModbusData d = new ModbusData();
 		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -359,7 +359,7 @@ public class ModbusDataTests {
 	@Test
 	public void readAsciiString() throws Exception {
 		final String str = "To be or not to be...";
-		final byte[] b = str.getBytes(ModbusHelper.ASCII_CHARSET);
+		final byte[] b = str.getBytes(ByteUtils.ASCII);
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
@@ -376,7 +376,7 @@ public class ModbusDataTests {
 	@Test
 	public void readAsciiStringLeastToMostSignificant() throws Exception {
 		final String str = "To be or not to be...";
-		final byte[] b = str.getBytes(ModbusHelper.ASCII_CHARSET);
+		final byte[] b = str.getBytes(ByteUtils.ASCII);
 		ModbusData d = new ModbusData();
 		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -404,7 +404,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("Signed 16-bit integer", d.getSignedInt16(0), equalTo(s));
+		assertThat("Signed 16-bit integer", d.getInt16(0), equalTo(s));
 	}
 
 	@Test

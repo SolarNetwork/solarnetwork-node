@@ -47,12 +47,12 @@ import org.junit.Test;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.modbus.toggle.ModbusToggler;
-import net.solarnetwork.node.io.modbus.AbstractModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.util.StaticOptionalService;
@@ -61,7 +61,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link ModbusToggler} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusTogglerTests {
 
@@ -100,11 +100,11 @@ public class ModbusTogglerTests {
 
 	private <T> IExpectationSetters<T> expectModbusAction(Class<T> type) {
 		try {
-			return expect(network.performAction(anyAction(type), eq(TEST_UNIT_ID)))
+			return expect(network.performAction(eq(TEST_UNIT_ID), anyAction(type)))
 					.andDelegateTo(new AbstractModbusNetwork() {
 
 						@Override
-						public <A> A performAction(ModbusConnectionAction<A> action, int unitId)
+						public <A> A performAction(int unitId, ModbusConnectionAction<A> action)
 								throws IOException {
 							return action.doWithConnection(conn);
 						}
@@ -155,8 +155,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0);
-		expect(conn.writeDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(writeBitSet)))
-				.andReturn(true);
+		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -175,7 +174,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
 				aryEq(new int[] { 1 }));
 
 		// when
@@ -196,8 +195,7 @@ public class ModbusTogglerTests {
 
 		BitSet writeBitSet = new BitSet();
 		writeBitSet.set(0, false);
-		expect(conn.writeDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(writeBitSet)))
-				.andReturn(true);
+		conn.writeDiscreetValues(aryEq(new int[] { TEST_ADDRESS }), eq(writeBitSet));
 
 		// when
 		replayAll();
@@ -216,7 +214,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		conn.writeUnsignedShorts(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
+		conn.writeWords(eq(ModbusWriteFunction.WriteHoldingRegister), eq(TEST_ADDRESS),
 				aryEq(new int[] { 0 }));
 
 		// when
@@ -237,7 +235,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -259,7 +257,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+		expect(conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
 				.andReturn(new int[] { 1 });
 
 		// when
@@ -283,7 +281,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, false);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -305,7 +303,7 @@ public class ModbusTogglerTests {
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
 
-		expect(conn.readUnsignedShorts(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
+		expect(conn.readWordsUnsigned(ModbusReadFunction.ReadHoldingRegister, TEST_ADDRESS, 1))
 				.andReturn(new int[] { 0 });
 
 		// when
@@ -330,7 +328,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet);
 
 		// when
 		replayAll();
@@ -351,8 +349,7 @@ public class ModbusTogglerTests {
 
 		BitSet bitSet = new BitSet();
 		bitSet.set(0, true);
-		expect(conn.readDiscreetValues(aryEq(new Integer[] { TEST_ADDRESS }), eq(1))).andReturn(bitSet)
-				.times(2);
+		expect(conn.readDiscreetValues(eq(TEST_ADDRESS), eq(1))).andReturn(bitSet).times(2);
 
 		// when
 		replayAll();

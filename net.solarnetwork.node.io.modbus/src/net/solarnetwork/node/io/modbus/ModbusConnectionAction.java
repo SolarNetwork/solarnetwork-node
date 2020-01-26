@@ -39,6 +39,7 @@ import java.io.IOException;
  * @version 1.0
  * @since 2.0
  */
+@FunctionalInterface
 public interface ModbusConnectionAction<T> {
 
 	/**

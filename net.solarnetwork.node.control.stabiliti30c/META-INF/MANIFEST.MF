@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Stabiliti 30C Power Control
 Bundle-SymbolicName: net.solarnetwork.node.control.stabiliti30c
 Bundle-Description: Manage an Ideal Power Stabiliti 30C series power control system.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.stabiliti30c
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -12,15 +12,16 @@ Import-Package:
  net.solarnetwork.node;version="1.29.0",
  net.solarnetwork.node.dao;version="1.9.0",
  net.solarnetwork.node.domain;version="1.18.0",
- net.solarnetwork.node.hw.idealpower.pc;version="1.0.0",
- net.solarnetwork.node.io.modbus;version="2.12.0",
+ net.solarnetwork.node.hw.idealpower.pc;version="[2.0,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
  net.solarnetwork.node.job;version="1.13.4",
  net.solarnetwork.node.reactor;version="1.5.0",
  net.solarnetwork.node.settings;version="1.11.0",
  net.solarnetwork.node.settings.support;version="1.9.1",
  net.solarnetwork.node.support;version="1.18.1",
  net.solarnetwork.node.util;version="1.7.2",
- net.solarnetwork.util;version="1.37.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.quartz;version="[2.2,3.0)",
