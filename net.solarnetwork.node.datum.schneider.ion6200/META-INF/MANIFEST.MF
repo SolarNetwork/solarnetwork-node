@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Schneider ION6200 Meter Data Source
+Bundle-Name: Schneider Electric ION6200 Meter Data Source
 Bundle-Description: Collect data from Schneider Electric ION6200 series meter devices. 
 Bundle-SymbolicName: net.solarnetwork.node.datum.schneider.ion6200
 Bundle-Version: 2.0.0
