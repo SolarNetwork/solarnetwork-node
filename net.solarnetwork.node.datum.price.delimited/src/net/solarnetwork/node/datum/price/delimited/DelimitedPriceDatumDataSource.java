@@ -438,7 +438,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	 * 
 	 * @param timeZone
 	 *        the timeZone to set
-	 * @sine 1.3
+	 * @since 1.3
 	 */
 	public void setTimeZoneId(String timeZoneId) {
 		this.timeZoneId = timeZoneId;

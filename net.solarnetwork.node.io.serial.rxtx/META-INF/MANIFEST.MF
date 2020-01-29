@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Modbus Communication Support (RXTX)
+Bundle-Name: Serial Communication Support (RXTX)
 Bundle-Description: SolarNode serial communication API implementation using the RXTX framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.serial.rxtx
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.serial.rxtx
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
