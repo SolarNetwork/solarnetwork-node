@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: JSON Metadata Service
 Bundle-Description: Support for loading/publishing node and source-level metadata from/to SolarNet.
 Bundle-SymbolicName: net.solarnetwork.node.metadata.json
-Bundle-Version: 1.1.0
+Bundle-Version: 1.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metadata.json
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -13,13 +13,14 @@ Import-Package:
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
- net.solarnetwork.domain;version="1.14.0",
- net.solarnetwork.node;version="1.29.0",
- net.solarnetwork.node.dao;version="1.9.0",
- net.solarnetwork.node.domain;version="1.18.0",
- net.solarnetwork.node.settings;version="1.12.0",
- net.solarnetwork.node.support;version="1.19.0",
- net.solarnetwork.util;version="1.32.0",
+ net.solarnetwork.domain;version="[1.14,2.0)",
+ net.solarnetwork.node;version="[1.29,2.0)",
+ net.solarnetwork.node.dao;version="[1.9,2.0)",
+ net.solarnetwork.node.domain;version="[1.18,2.0)",
+ net.solarnetwork.node.settings;version="[1.12,2.0)",
+ net.solarnetwork.node.support;version="[1.19,2.0)",
+ net.solarnetwork.util;version="[1.32,2.0)",
+ net.solarnetwork.support;version="[1.4,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.core.io;version="[4.2,5.0)",
  org.springframework.util;version="[4.2,5.0)"

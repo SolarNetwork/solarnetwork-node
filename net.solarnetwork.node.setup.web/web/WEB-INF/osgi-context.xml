@@ -48,7 +48,7 @@
 		filter="(app=node)"/>
 	
 	<osgi:reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.node.SSLService">
+		interface="net.solarnetwork.support.SSLService">
 		<osgi:reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
 	

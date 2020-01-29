@@ -43,7 +43,7 @@
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
 	</bean>
 
 	<bean id="reactorService" class="net.solarnetwork.util.DynamicServiceTracker">

@@ -48,14 +48,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import javax.net.ssl.SSLSocketFactory;
 import javax.security.auth.x500.X500Principal;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Base64OutputStream;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -74,17 +72,18 @@ import net.solarnetwork.support.ConfigurableSSLService;
  * <p>
  * This implementation maintains a key store with two primary aliases:
  * {@code ca} and {@code node}. The key store is created as needed, and a random
- * password is generated and assigned to the key store. The password is stored
- * in the Settings database, using the {@link #KEY_PASSWORD} key. This key store
- * is then used to implement {@link SSLService} and is used as both the key and
+ * password is generated and assigned to the key store. The password is saved
+ * via {@link SetupIdentityDao#saveSetupIdentityInfo(SetupIdentityInfo)}. This
+ * key store is then used to implement
+ * {@link net.solarnetwork.support.SSLService} and is used as both the key and
  * trust store for SSL connections returned by that API.
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class DefaultKeystoreService extends ConfigurableSSLService
-		implements PKIService, SSLService, BackupResourceProvider {
+		implements PKIService, BackupResourceProvider {
 
 	private static final String BACKUP_RESOURCE_NAME_KEYSTORE = "node.jks";
 
@@ -103,7 +102,12 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 	private final CertificateService certificateService;
 
 	/**
-	 * Default constructor.
+	 * Constructor.
+	 * 
+	 * @param setupIdentityDao
+	 *        the DAO to use for persisting the node identity details
+	 * @param certificateService
+	 *        the service to use for managing certificates
 	 */
 	public DefaultKeystoreService(SetupIdentityDao setupIdentityDao,
 			CertificateService certificateService) {
@@ -578,11 +582,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		} catch ( KeyStoreException e ) {
 			throw new CertificateException("Error opening node certificate", e);
 		}
-	}
-
-	@Override
-	public synchronized SSLSocketFactory getSolarInSocketFactory() {
-		return getSSLSocketFactory();
 	}
 
 	private synchronized void saveKeyStore(KeyStore keyStore) {

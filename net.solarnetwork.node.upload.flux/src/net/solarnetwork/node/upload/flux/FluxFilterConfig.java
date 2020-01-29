@@ -113,6 +113,10 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * @param previousSourceIdPublishDate
 	 *        the last known publish date for the given {@code sourceId} value,
 	 *        or {@literal null} if not known
+	 * @param sourceId
+	 *        the source ID to test, or {@literal null} if none
+	 * @param datum
+	 *        the datum data
 	 * @return {@literal false} if the datum should <b>not</b> be published,
 	 *         {@literal true} if the datum <b>may</b> be published, although
 	 *         another filter might determine it should not be
@@ -332,7 +336,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * Get a list of property name regular expression values to limit data to.
 	 * 
 	 * @return a list of expressions, or {@literal null}
-	 * @see #getPropIncludes()
+	 * @see #getPropIncludeValues()
 	 */
 	public String[] getPropIncludeValues() {
 		return propIncludeValues;
@@ -343,7 +347,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * 
 	 * @param propIncludes
 	 *        a list of expressions, or {@literal null}
-	 * @see #setPropIncludes(Pattern[])
+	 * @see #setPropIncludeValues(String[])
 	 */
 	public void setPropIncludeValues(String[] propIncludes) {
 		this.propIncludeValues = propIncludes;
@@ -376,7 +380,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * datum.
 	 * 
 	 * @return a list of patterns, or {@literal null}
-	 * @see #getPropExcludes()
+	 * @see #getPropExcludeValues()
 	 */
 	public String[] getPropExcludeValues() {
 		return propExcludeValues;
@@ -388,7 +392,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * 
 	 * @param propExcludes
 	 *        a lit of expressions, or {@literal null}
-	 * @see #setPropExcludes(Pattern[])
+	 * @see #setPropExcludeValues(String[])
 	 */
 	public void setPropExcludeValues(String[] propExcludes) {
 		this.propExcludeValues = propExcludes;
