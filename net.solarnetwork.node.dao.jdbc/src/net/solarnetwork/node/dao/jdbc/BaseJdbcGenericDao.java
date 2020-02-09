@@ -27,11 +27,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.UUID;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.RowMapper;
 import net.solarnetwork.dao.Entity;
@@ -40,6 +42,11 @@ import net.solarnetwork.domain.SortDescriptor;
 
 /**
  * Base implementation of {@link GenericDao} for SolarNode using JDBC.
+ * 
+ * <p>
+ * Note that {@link UUID} values are handled as two long columns for purposes of
+ * {@link #get(K)} and {@link #delete(T)}.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -196,7 +203,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( id == null ) {
 			throw new IllegalArgumentException("The id parameter must not be null.");
 		}
-		List<T> results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper, id);
+		List<T> results;
+		if ( id instanceof UUID ) {
+			results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper,
+					((UUID) id).getMostSignificantBits(), ((UUID) id).getLeastSignificantBits());
+		} else {
+			results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper, id);
+		}
 		if ( results != null && results.size() > 0 ) {
 			return results.get(0);
 		}
@@ -213,7 +226,13 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( entity == null || entity.getId() == null ) {
 			throw new IllegalArgumentException("The entity id parameter must not be null.");
 		}
-		getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), entity.getId());
+		if ( entity.getId() instanceof UUID ) {
+			getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK),
+					((UUID) entity.getId()).getMostSignificantBits(),
+					((UUID) entity.getId()).getLeastSignificantBits());
+		} else {
+			getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), entity.getId());
+		}
 	}
 
 	/**
@@ -230,8 +249,12 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 */
 	public static void setInstantParameter(PreparedStatement stmt, int parameterIndex, Instant time)
 			throws SQLException {
-		stmt.setTimestamp(parameterIndex, new Timestamp(time.toEpochMilli()),
-				(Calendar) UTC_CALENDAR.clone());
+		if ( time == null ) {
+			stmt.setNull(parameterIndex, Types.TIMESTAMP);
+		} else {
+			stmt.setTimestamp(parameterIndex, new Timestamp(time.toEpochMilli()),
+					(Calendar) UTC_CALENDAR.clone());
+		}
 	}
 
 	/**
@@ -241,13 +264,56 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 *        the result set
 	 * @param columnIndex
 	 *        the column index
-	 * @return the new instant
+	 * @return the new instant, or {@literal null} if the column was null
 	 * @throws SQLException
 	 *         if any SQL error occurs
 	 */
 	public static Instant getInstantColumn(ResultSet rs, int columnIndex) throws SQLException {
 		Timestamp ts = rs.getTimestamp(columnIndex, (Calendar) UTC_CALENDAR.clone());
-		return Instant.ofEpochMilli(ts.getTime());
+		return ts != null ? Instant.ofEpochMilli(ts.getTime()) : null;
+	}
+
+	/**
+	 * Set a {@link UUID} as a pair of long statement parameters.
+	 * 
+	 * @param stmt
+	 *        the statement
+	 * @param parameterIndex
+	 *        the statement parameter index to set the UUID upper bits; the
+	 *        lower bits will be set on parameter {@code parameterIndex + 1}
+	 * @param uuid
+	 *        the UUID to set
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
+	public static void setUuidParameters(PreparedStatement stmt, int parameterIndex, UUID uuid)
+			throws SQLException {
+		stmt.setLong(parameterIndex, uuid.getMostSignificantBits());
+		stmt.setLong(parameterIndex + 1, uuid.getLeastSignificantBits());
+	}
+
+	/**
+	 * Get a {@link UUID} from a pair of long result set columns.
+	 * 
+	 * @param rs
+	 *        the result set
+	 * @param columnIndex
+	 *        the column index of the UUID upper bits; the lower bits will be
+	 *        read from column {@code columnIndex + 1}
+	 * @return the new UUID, or {@literal null} if either column was null
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
+	public static UUID getUuidColumns(ResultSet rs, int columnIndex) throws SQLException {
+		long hi = rs.getLong(columnIndex);
+		if ( rs.wasNull() ) {
+			return null;
+		}
+		long lo = rs.getLong(columnIndex + 1);
+		if ( rs.wasNull() ) {
+			return null;
+		}
+		return new UUID(hi, lo);
 	}
 
 }
