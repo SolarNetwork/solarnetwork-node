@@ -203,17 +203,33 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( id == null ) {
 			throw new IllegalArgumentException("The id parameter must not be null.");
 		}
-		List<T> results;
-		if ( id instanceof UUID ) {
-			results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper,
-					((UUID) id).getMostSignificantBits(), ((UUID) id).getLeastSignificantBits());
-		} else {
-			results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper, id);
-		}
+		List<T> results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper,
+				primaryKeyArguments(id));
 		if ( results != null && results.size() > 0 ) {
 			return results.get(0);
 		}
 		return null;
+	}
+
+	/**
+	 * Get an argument list for a primary key.
+	 * 
+	 * <p>
+	 * This method handles {@link java.util.UUID} values as a pair of
+	 * {@code Long} arguments for the most and least significant bits. All other
+	 * keys are returned as a single argument list as-is.
+	 * </p>
+	 * 
+	 * @param id
+	 *        the primary key
+	 * @return the arguments
+	 */
+	protected Object[] primaryKeyArguments(K id) {
+		if ( id instanceof UUID ) {
+			return new Object[] { ((UUID) id).getMostSignificantBits(),
+					((UUID) id).getLeastSignificantBits() };
+		}
+		return new Object[] { id };
 	}
 
 	@Override
@@ -226,13 +242,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( entity == null || entity.getId() == null ) {
 			throw new IllegalArgumentException("The entity id parameter must not be null.");
 		}
-		if ( entity.getId() instanceof UUID ) {
-			getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK),
-					((UUID) entity.getId()).getMostSignificantBits(),
-					((UUID) entity.getId()).getLeastSignificantBits());
-		} else {
-			getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), entity.getId());
-		}
+		getJdbcTemplate().update(getSqlResource(SQL_DELETE_BY_PK), primaryKeyArguments(entity.getId()));
 	}
 
 	/**
