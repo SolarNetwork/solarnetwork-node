@@ -65,7 +65,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -566,8 +566,11 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @since 1.5
 	 */
 	protected final void postEvent(Event event) {
+		if ( event == null ) {
+			return;
+		}
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || event == null ) {
+		if ( ea == null ) {
 			return;
 		}
 		ea.postEvent(event);
