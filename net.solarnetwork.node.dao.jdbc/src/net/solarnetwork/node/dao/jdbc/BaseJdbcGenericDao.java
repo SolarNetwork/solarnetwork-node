@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
@@ -43,11 +44,6 @@ import net.solarnetwork.domain.SortDescriptor;
 
 /**
  * Base implementation of {@link GenericDao} for SolarNode using JDBC.
- * 
- * <p>
- * Note that {@link UUID} values are handled as two long columns for purposes of
- * {@link #get(K)} and {@link #delete(T)}.
- * </p>
  * 
  * @author matt
  * @version 1.0
@@ -88,6 +84,9 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 * The SQL resource suffix for deleting by primary key.
 	 */
 	public static final String SQL_DELETE_BY_PK = "delete-pk";
+
+	/** The SQL {@literal ORDER BY} term. */
+	public static final String ORDER_BY = "ORDER BY";
 
 	/** A UTC based Calendar for managing time based column values. */
 	protected static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -264,7 +263,128 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 
 	@Override
 	public Collection<T> getAll(List<SortDescriptor> sorts) {
-		return getJdbcTemplate().query(getSqlResource(SQL_FIND_ALL), rowMapper);
+		return getJdbcTemplate().query(querySql(SQL_FIND_ALL, sorts), rowMapper);
+	}
+
+	/**
+	 * Get the SQL to use for a query with optional sort descriptors applied.
+	 * 
+	 * <p>
+	 * This method will call {@link #sqlOrderClauses(String, List)} and if that
+	 * returns any values, {@link #applySqlOrderClauses(String, String[])}.
+	 * </p>
+	 * 
+	 * @param classPathResource
+	 *        the base SQL resource to load
+	 * @param sorts
+	 *        the sorts to apply
+	 * @return the SQL
+	 */
+	protected String querySql(String classPathResource, List<SortDescriptor> sorts) {
+		String sql = getSqlResource(classPathResource);
+		List<String> orders = sqlOrderClauses(classPathResource, sorts);
+		if ( orders != null ) {
+			sql = applySqlOrderClauses(sql, orders);
+		}
+		return sql;
+	}
+
+	/**
+	 * Get a list of SQL {@literal ORDER BY} clause values to apply for a given
+	 * query and sort descriptors.
+	 * 
+	 * <p>
+	 * The returned array should contain just the clause values, like
+	 * {@literal my_id DESC}.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method handles the sort keys defined in {@link StandardSortKey} by
+	 * generating order clauses that are named after the enumeration values
+	 * themselves. Extending classes can override this method to support more
+	 * keys, or override this behaviour.
+	 * </p>
+	 * 
+	 * @param classPathResource
+	 *        the SQL resource the order clauses is to be applied to
+	 * @param sorts
+	 *        the sort descriptors
+	 * @return
+	 */
+	protected List<String> sqlOrderClauses(String classPathResource, List<SortDescriptor> sorts) {
+		List<String> clauses = null;
+		if ( sorts != null && !sorts.isEmpty() ) {
+			for ( SortDescriptor d : sorts ) {
+				String clause = null;
+				for ( StandardSortKey k : StandardSortKey.values() ) {
+					String lc = k.toString().toLowerCase();
+					if ( lc.equalsIgnoreCase(d.getSortKey()) ) {
+						clause = sqlOrderClause(lc, d.isDescending());
+						break;
+					}
+				}
+				if ( clause != null ) {
+					if ( clauses == null ) {
+						clauses = new ArrayList<>(sorts.size());
+					}
+					clauses.add(clause);
+				}
+			}
+		}
+		return clauses;
+	}
+
+	/**
+	 * Apply a list of SQL order clauses to a SQL statement.
+	 * 
+	 * <p>
+	 * This method looks for the last {@literal ORDER BY} in {@code sql}, and
+	 * replaces it with a newly generated order clause derived from the
+	 * {@code orderClauses} list. If no {@literal ORDER BY} is found, it will be
+	 * appended along with the generated order clause.
+	 * </p>
+	 * 
+	 * @param sql
+	 *        the SQL
+	 * @param orderClauses
+	 *        the order clauses, as returned from
+	 *        {@link #sqlOrderClause(String, boolean)}
+	 * @return the SQL
+	 */
+	public static String applySqlOrderClauses(String sql, List<String> orderClauses) {
+		final int len = orderClauses != null ? orderClauses.size() : 0;
+		if ( len < 1 ) {
+			return sql;
+		}
+		StringBuilder buf = new StringBuilder(sql);
+		int orderIdx = sql.toUpperCase().lastIndexOf(ORDER_BY);
+		if ( orderIdx < 0 ) {
+			buf.append(' ').append(ORDER_BY);
+		} else {
+			buf.delete(orderIdx + ORDER_BY.length(), buf.length());
+		}
+		for ( int i = 0; i < len; i++ ) {
+			if ( i > 0 ) {
+				buf.append(',');
+			}
+			buf.append(' ');
+			buf.append(orderClauses.get(i));
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Get a single SQL order clause for a given column and direction.
+	 * 
+	 * @param columnName
+	 *        the column name
+	 * @param descending
+	 *        {@literal true} for descending order, {@literal false} for
+	 *        ascending
+	 * @return the SQL clause
+	 */
+	public static String sqlOrderClause(String columnName, boolean descending) {
+		return columnName + " " + (descending ? "DESC" : "ASC");
 	}
 
 	@Override
