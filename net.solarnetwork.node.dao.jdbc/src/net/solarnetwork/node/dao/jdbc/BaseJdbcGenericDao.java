@@ -241,6 +241,24 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	}
 
 	/**
+	 * Get the first returned query result.
+	 * 
+	 * <p>
+	 * The {@link #getRowMapper()} will be used to map the results.
+	 * </p>
+	 * 
+	 * @param sql
+	 *        the SQL to execute
+	 * @param parameters
+	 *        the optional parameters
+	 * @return the first result, or {@literal null}
+	 */
+	protected T findFirst(String sql, Object... parameters) {
+		List<T> results = getJdbcTemplate().query(sql, rowMapper, parameters);
+		return (results != null && !results.isEmpty() ? results.get(0) : null);
+	}
+
+	/**
 	 * Get an argument list for a primary key.
 	 * 
 	 * <p>
