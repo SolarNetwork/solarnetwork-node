@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static java.util.Collections.sort;
 import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -56,12 +57,14 @@ import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingResourceHandler;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
+import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
@@ -72,7 +75,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -107,10 +110,13 @@ public class SettingsController {
 		if ( settingsService != null ) {
 			List<SettingSpecifierProviderFactory> factories = settingsService.getProviderFactories();
 			if ( factories != null ) {
-				Collections.sort(factories,
-						new SettingSpecifierProviderFactoryMessageComparator(locale, "title"));
+				sort(factories, new SettingSpecifierProviderFactoryMessageComparator(locale));
 			}
-			model.put(KEY_PROVIDERS, settingsService.getProviders());
+			List<SettingSpecifierProvider> providers = settingsService.getProviders();
+			if ( providers != null ) {
+				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
+			}
+			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORIES, factories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
