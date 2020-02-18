@@ -232,12 +232,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( id == null ) {
 			throw new IllegalArgumentException("The id parameter must not be null.");
 		}
-		List<T> results = getJdbcTemplate().query(getSqlResource(SQL_GET_BY_PK), rowMapper,
-				primaryKeyArguments(id));
-		if ( results != null && results.size() > 0 ) {
-			return results.get(0);
-		}
-		return null;
+		return findFirst(getSqlResource(SQL_GET_BY_PK), primaryKeyArguments(id));
 	}
 
 	/**
