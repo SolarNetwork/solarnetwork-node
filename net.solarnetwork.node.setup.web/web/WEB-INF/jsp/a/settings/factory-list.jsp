@@ -39,6 +39,10 @@
 	
 			<fieldset>
 				<legend>
+					<a id="${instance.key}" 
+						class="anchor" 
+						href="#${instance.key}"
+						aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
 					<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
 					${' '}
 					${instance.key}

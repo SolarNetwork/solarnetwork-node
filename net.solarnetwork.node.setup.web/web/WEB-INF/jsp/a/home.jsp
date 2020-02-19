@@ -7,7 +7,11 @@
 </p>
 
 <section id="external-node-links" class="hide">
-	<h2><fmt:message key="home.external-links.title"/></h2>	
+	<h2>
+		<a id="links" href="#links"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="home.external-links.title"/>
+	</h2>	
 	<p><fmt:message key="home.external-links.intro"/></p>
 	<dl class="dl-horizontal">
 		<dt class="node-dashboard hide">
@@ -32,13 +36,21 @@
 </section>
 
 <section id="datum-activity-charts" class="hide">
-	<h2><fmt:message key="datum.charts.title"/></h2>
+	<h2>
+		<a id="charts" href="#charts"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="datum.charts.title"/>
+	</h2>
 	<div id="datum-activity-charts-container"></div>
 	<div class="clearfix"></div>
 </section>
 
 <section id="datum-activity-seenprops" class="hide">
-	<h2><fmt:message key="datum.activity.seenprops.title"/></h2>	
+	<h2>
+		<a id="datum-props" href="#datum-props"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="datum.activity.seenprops.title"/>
+	</h2>	
 	<p><fmt:message key="datum.activity.seenprops.intro"/></p>
 	<table class="table datum-activity-seenprops">
 		<thead>
@@ -64,7 +76,11 @@
 </section>
 
 <section id="datum-activity" class="hide">
-	<h2><fmt:message key="datum.activity.title"/></h2>	
+	<h2>
+		<a id="datum-activity" href="#datum-activity"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="datum.activity.title"/>
+	</h2>	
 	<p><fmt:message key="datum.activity.intro"/></p>
 	<table class="table datum-activity">
 		<thead>
