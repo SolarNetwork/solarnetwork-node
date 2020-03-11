@@ -76,7 +76,7 @@ public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataA
 	AEInverterConfiguration getInverterConfiguration();
 
 	/**
-	 * Get the inverter's rated power, in kW.
+	 * Get the inverter's rated power, in W.
 	 * 
 	 * @return the rated power
 	 */

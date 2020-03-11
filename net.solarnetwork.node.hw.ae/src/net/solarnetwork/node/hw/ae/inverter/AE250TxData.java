@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.ae.inverter;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -29,6 +30,8 @@ import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Data object for the AE 250TX series inverter.
@@ -133,6 +136,26 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 				AE250TxRegister.getStatusRegisterAddressSet(), MAX_RESULTS);
 	}
 
+	private Integer getKiloValueAsInteger(ModbusReference ref) {
+		Number n = getNumber(ref);
+		BigDecimal d = NumberUtils.scaled(n, 3);
+		if ( d == null ) {
+			return null;
+		}
+		return d.intValue();
+
+	}
+
+	private Long getKiloValueAsLong(ModbusReference ref) {
+		Number n = getNumber(ref);
+		BigDecimal d = NumberUtils.scaled(n, 3);
+		if ( d == null ) {
+			return null;
+		}
+		return d.longValue();
+
+	}
+
 	@Override
 	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
 		throw new UnsupportedOperationException();
@@ -177,8 +200,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
 	@Override
 	public Integer getInverterRatedPower() {
-		Number n = getNumber(AE250TxRegister.InfoRatedPower);
-		return (n != null ? n.intValue() : null);
+		return getKiloValueAsInteger(AE250TxRegister.InfoRatedPower);
 	}
 
 	@Override
@@ -218,14 +240,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
 	@Override
 	public Integer getActivePower() {
-		Number kw = getNumber(AE250TxRegister.InverterActivePowerTotal);
-		return (kw != null ? (int) (kw.doubleValue() * 1000) : null);
+		return getKiloValueAsInteger(AE250TxRegister.InverterActivePowerTotal);
 	}
 
 	@Override
 	public Long getActiveEnergyDelivered() {
-		Number n = getNumber(AE250TxRegister.InverterActiveEnergyDelivered);
-		return (n != null ? n.longValue() : null);
+		return getKiloValueAsLong(AE250TxRegister.InverterActiveEnergyDelivered);
 	}
 
 	@Override
@@ -236,8 +256,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
 	@Override
 	public Integer getDCPower() {
-		Number n = getNumber(AE250TxRegister.InverterDcPower);
-		return (n != null ? (int) (n.doubleValue() * 1000) : null);
+		return getKiloValueAsInteger(AE250TxRegister.InverterDcPower);
 	}
 
 	@Override
