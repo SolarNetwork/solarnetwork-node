@@ -119,7 +119,7 @@ public enum AEInverterType {
 	/**
 	 * Get an enumeration for a given code value.
 	 * 
-	 * @param code
+	 * @param modelCode
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 * @throws IllegalArgumentException

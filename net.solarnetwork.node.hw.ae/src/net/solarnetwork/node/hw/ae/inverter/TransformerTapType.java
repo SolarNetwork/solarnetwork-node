@@ -91,7 +91,7 @@ public enum TransformerTapType {
 	 * {@link #V_265} that is returned, otherwise {@link #V_295} is.
 	 * </p>
 	 * 
-	 * @param code
+	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 */
