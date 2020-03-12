@@ -52,7 +52,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	/** The default tables version. */
 	public static final int DEFAULT_TABLES_VERSION = 2;
 
-	/** The table name for {@link PowerDatum} data. */
+	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */

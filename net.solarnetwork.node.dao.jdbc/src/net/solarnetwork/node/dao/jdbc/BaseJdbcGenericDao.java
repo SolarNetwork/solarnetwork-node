@@ -284,7 +284,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 * 
 	 * <p>
 	 * This method will call {@link #sqlOrderClauses(String, List)} and if that
-	 * returns any values, {@link #applySqlOrderClauses(String, String[])}.
+	 * returns any values, {@link #applySqlOrderClauses(String, List)}.
 	 * </p>
 	 * 
 	 * @param classPathResource
@@ -322,7 +322,7 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 	 *        the SQL resource the order clauses is to be applied to
 	 * @param sorts
 	 *        the sort descriptors
-	 * @return
+	 * @return the order clauses
 	 */
 	protected List<String> sqlOrderClauses(String classPathResource, List<SortDescriptor> sorts) {
 		List<String> clauses = null;

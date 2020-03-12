@@ -81,7 +81,7 @@ public class ShutdownSQLExceptionHandler implements SQLExceptionHandler {
 	 * Set a list of regular expressions that should trigger a restore from
 	 * backup.
 	 * 
-	 * @param regexes
+	 * @param sqlStatePatterns
 	 *        The regular expressions that should trigger a restore from backup.
 	 */
 	public void setSqlStatePatterns(List<Pattern> sqlStatePatterns) {
