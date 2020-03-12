@@ -144,13 +144,10 @@ public class LoginKeyHelper {
 
 	/**
 	 * Decrypt a Base64-encoded string that has been encrypted using the key
-	 * returned from {@link #generateKey(String)}.
+	 * returned from {@link #generateKey(String, String)}.
 	 * 
 	 * @param saltyUsername
 	 *        the Base64 encoded salt + username
-	 * @param salt
-	 *        Base64 encoded salt, must be at least 12 bytes long (decoded) and
-	 *        the same value as passed to {@link #generateKey(String, String)}
 	 * @param cipherText
 	 *        the Base64-encoded AES-CBC encrypted data
 	 * @return the decrypted username and password value

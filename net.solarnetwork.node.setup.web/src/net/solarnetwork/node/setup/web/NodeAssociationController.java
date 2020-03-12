@@ -228,6 +228,8 @@ public class NodeAssociationController extends BaseSetupController {
 	 *        the errors associated with the command
 	 * @param details
 	 *        the session details objects
+	 * @param identity
+	 *        the association identity
 	 * @param model
 	 *        the view model
 	 * @return the view name
