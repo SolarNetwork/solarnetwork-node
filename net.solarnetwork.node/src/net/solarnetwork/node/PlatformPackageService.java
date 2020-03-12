@@ -182,8 +182,8 @@ public interface PlatformPackageService {
 	 * <p>
 	 * This method is used to install named packages that are "available" to be
 	 * installed, i.e. one that is returned from the
-	 * {@link #listPackages(String, Boolean)} method when {@literal false} is
-	 * passed. The package might have to be downloaded from a remote package
+	 * {@link #listNamedPackages(String, Boolean)} method when {@literal false}
+	 * is passed. The package might have to be downloaded from a remote package
 	 * repository and then installed.
 	 * </p>
 	 * 

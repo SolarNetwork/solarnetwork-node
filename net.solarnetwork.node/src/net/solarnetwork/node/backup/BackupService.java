@@ -50,7 +50,7 @@ public interface BackupService {
 	/**
 	 * Get general status information about the service.
 	 * 
-	 * @return status info (never <em>null</em>)
+	 * @return status info (never {@literal null})
 	 */
 	BackupServiceInfo getInfo();
 
@@ -83,7 +83,7 @@ public interface BackupService {
 	 * These should be ideally ordered in newest to oldest order.
 	 * </p>
 	 * 
-	 * @return the available backups, never <em>null</em>
+	 * @return the available backups, never {@literal null}
 	 */
 	Collection<Backup> getAvailableBackups();
 
@@ -99,16 +99,16 @@ public interface BackupService {
 	/**
 	 * Get a {@link SettingSpecifierProvider} for this service.
 	 * 
-	 * @return provider, or <em>null</em> if not supported
+	 * @return provider, or {@literal null} if not supported
 	 */
 	SettingSpecifierProvider getSettingSpecifierProvider();
 
 	/**
 	 * Mark a specific backup to be restored in the future call to
-	 * {@link #markedBackupForRestore()}.
+	 * {@link #markedBackupForRestore(Map)}.
 	 * 
 	 * @param backup
-	 *        The backup to mark for restoration later, or <em>null</em> to
+	 *        The backup to mark for restoration later, or {@literal null} to
 	 *        clear a previous marked backup.
 	 * @param props
 	 *        An optional map of properties to save with the mark.
@@ -119,13 +119,13 @@ public interface BackupService {
 
 	/**
 	 * Get a backup previously set via
-	 * {@link BackupService#markBackupForRestore(Backup)}.
+	 * {@link BackupService#markBackupForRestore(Backup, Map)}.
 	 * 
 	 * @param props
 	 *        An optional map in which any properties passed to
 	 *        {@link #markBackupForRestore(Backup, Map)} should be populated
 	 *        into
-	 * @return The marked backup, or <em>null</em> if none exists.
+	 * @return The marked backup, or {@literal null} if none exists.
 	 * @since 1.1
 	 */
 	Backup markedBackupForRestore(Map<String, String> props);

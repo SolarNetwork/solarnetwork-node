@@ -23,9 +23,9 @@
 package net.solarnetwork.node.setup;
 
 import java.util.Locale;
-import net.solarnetwork.util.SerializeIgnore;
 import org.osgi.framework.Bundle;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.util.SerializeIgnore;
 
 /**
  * Implementation of {@link Plugin} that wraps a {@link Bundle}.
@@ -45,6 +45,8 @@ public class BundlePlugin implements Plugin {
 	 * 
 	 * @param bundle
 	 *        the bundle
+	 * @param coreFeature
+	 *        {@literal true} if the bundle represents a core feature
 	 */
 	public BundlePlugin(Bundle bundle, boolean coreFeature) {
 		super();

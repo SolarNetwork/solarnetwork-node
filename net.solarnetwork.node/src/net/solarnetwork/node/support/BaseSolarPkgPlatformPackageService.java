@@ -92,7 +92,7 @@ import net.solarnetwork.util.ProgressListener;
  * <dd>Refresh the available packages from remote repositories.</dd>
  * <dt><code>remove</code> <i>name</i></dt>
  * <dd>Remove the installed package <i>name</i>.</dd>
- * <dt><code>upgrade [<i>major</i>]</dt>
+ * <dt><code>upgrade</code> [<i>major</i>]</dt>
  * <dd>Upgrade all packages. If <i>major</i> defined, then perform a "major"
  * upgrade, allowing for more aggressive upgrading.</dd>
  * </dl>
@@ -115,6 +115,7 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	 * The "solarpkg" actions.
 	 */
 	public static enum Action {
+
 		Clean("clean"),
 
 		Install("install"),

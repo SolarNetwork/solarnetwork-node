@@ -28,8 +28,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
 
 /**
- * Extension of {@link CronTriggerBean} that can randomize specific fields of
- * the cron expression to distribute a job across several nodes over time.
+ * Extension of {@link CronTriggerFactoryBean} that can randomize specific
+ * fields of the cron expression to distribute a job across several nodes over
+ * time.
  * 
  * <p>
  * The cron expression is only randomized if the

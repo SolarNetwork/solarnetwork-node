@@ -52,6 +52,8 @@ public class SimplePlatformTaskInfo implements PlatformTaskInfo {
 	 *        the message
 	 * @param percentComplete
 	 *        the percent complete
+	 * @param complete
+	 *        {@literal true} if the task is complete
 	 * @param restartRequired
 	 *        the restart required flag
 	 */

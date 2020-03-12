@@ -124,8 +124,8 @@ public class SettingValueBean implements SettingsUpdates.Change {
 	 *        The flag to set.
 	 * @since 1.1
 	 */
-	public void setRemove(boolean delete) {
-		this.remove = delete;
+	public void setRemove(boolean remove) {
+		this.remove = remove;
 	}
 
 	@Override

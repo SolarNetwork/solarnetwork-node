@@ -99,6 +99,8 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Ge
 	/**
 	 * Get a sample value.
 	 * 
+	 * @param <V>
+	 *        the value type
 	 * @param type
 	 *        the type of sample data to get
 	 * @param key

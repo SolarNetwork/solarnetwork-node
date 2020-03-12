@@ -35,13 +35,16 @@ import java.util.Map;
 public interface TitleSettingSpecifier extends KeyedSettingSpecifier<String> {
 
 	/**
-	 * An optional mapping of possible values for this setting to associated titles.
+	 * An optional mapping of possible values for this setting to associated
+	 * titles.
 	 * 
-	 * <p>This can be used to display user-friendly titles for setting
-	 * values if the setting value itself is cryptic.</p>
+	 * <p>
+	 * This can be used to display user-friendly titles for setting values if
+	 * the setting value itself is cryptic.
+	 * </p>
 	 * 
-	 * @return
+	 * @return the mapping of titles
 	 */
 	Map<String, String> getValueTitles();
-	
+
 }

@@ -49,7 +49,7 @@ import net.solarnetwork.node.setup.SetupException;
  * non-null {@link BulkUploadResult#getId()} tracking ID returned, the
  * associated {@link BulkUploadResult#getDatum()} will be passed to the
  * appropriate {@link DatumDao} instance's
- * {@link DatumDao#storeDatumUpload(Datum, String, Long)} method.
+ * {@link DatumDao#setDatumUploaded(Datum, Date, String, String)} method.
  * </p>
  * 
  * <p>

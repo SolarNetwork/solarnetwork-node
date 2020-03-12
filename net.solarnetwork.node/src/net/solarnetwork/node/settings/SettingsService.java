@@ -255,6 +255,8 @@ public interface SettingsService {
 	 * 
 	 * @param out
 	 *        the output stream
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	void exportSettingsCSV(Writer out) throws IOException;
 
@@ -263,6 +265,8 @@ public interface SettingsService {
 	 * 
 	 * @param in
 	 *        the input stream
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	void importSettingsCSV(Reader in) throws IOException;
 
@@ -273,6 +277,8 @@ public interface SettingsService {
 	 *        The input stream to import.
 	 * @param options
 	 *        The import options.
+	 * @throws IOException
+	 *         if any IO error occurs
 	 * @since 1.2
 	 */
 	void importSettingsCSV(Reader in, SettingsImportOptions options) throws IOException;

@@ -131,9 +131,8 @@ public class DatumDataSourceSupport implements Identifiable {
 	 *        the source ID to add metadata to
 	 * @param meta
 	 *        the metadata to add
-	 * @param returns
-	 *        <em>true</em> if the metadata was saved successfully, or does not
-	 *        need to be updated
+	 * @return {@literal true} if the metadata was saved successfully, or does
+	 *         not need to be updated
 	 */
 	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
 		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(sourceId);
@@ -197,6 +196,7 @@ public class DatumDataSourceSupport implements Identifiable {
 	 * Set the unique ID for this service.
 	 * 
 	 * @param uid
+	 *        the unique ID
 	 */
 	public void setUid(String uid) {
 		this.uid = uid;

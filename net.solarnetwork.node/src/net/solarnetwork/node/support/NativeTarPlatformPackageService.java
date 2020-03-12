@@ -198,6 +198,7 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	 * tar file path and the value of the {@code destinationPath} property.
 	 * 
 	 * @param tarCommand
+	 *        the OS tar command to use
 	 */
 	public void setTarCommand(List<String> tarCommand) {
 		this.tarCommand = tarCommand;

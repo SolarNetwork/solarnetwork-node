@@ -130,7 +130,7 @@ public interface OperationalModesService {
 	 * 
 	 * @param modes
 	 *        the modes to enable
-	 * @param exipre
+	 * @param expire
 	 *        a date after which {@code modes} should be automatically disabled,
 	 *        or {@literal null} for no expiration
 	 * @return the active operational modes, after activating {@code modes},

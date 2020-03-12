@@ -132,6 +132,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data} object as the provided type.
 	 * 
+	 * @param <T>
+	 *        the element type
 	 * @param in
 	 *        the InputStream to read, which will be closed before returning
 	 *        from this method
@@ -171,6 +173,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data} array as a collection of objects of the provided type.
 	 * 
+	 * @param <T>
+	 *        the collection element type
 	 * @param in
 	 *        the InputStream to read, which will be closed before returning
 	 *        from this method
@@ -218,6 +222,8 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 * Parse a standard {@code Response} HTTP response and return the
 	 * {@code data.results} array as objects of the provided type.
 	 * 
+	 * @param <T>
+	 *        the collection element type
 	 * @param in
 	 *        the InputStream to read, which will be closed before returning
 	 *        from this method

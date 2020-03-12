@@ -45,7 +45,7 @@ import net.solarnetwork.node.domain.Datum;
  * This job will call {@link DatumDao#getDatumNotUploaded(String)} and for each
  * {@link Datum} returned pass that to {@link UploadService#uploadDatum(Datum)}.
  * If that returns a non-null tracking ID, then that will be passed to
- * {@link DatumDao#storeDatumUpload(Datum, String, Long)}.
+ * {@link DatumDao#setDatumUploaded(Datum, Date, String, String)}.
  * </p>
  * 
  * <p>

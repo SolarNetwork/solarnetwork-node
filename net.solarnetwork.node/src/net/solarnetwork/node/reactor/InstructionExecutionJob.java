@@ -149,11 +149,15 @@ public class InstructionExecutionJob extends AbstractJob {
 	 * Set a list of {@link InstructionHandler} instances to process
 	 * instructions with.
 	 * 
-	 * <p> Note that {@link FeedbackInstructionHandler} instances <em>are</em>
-	 * allowed to be configured here, and will be treated as such. </p>
+	 * <p>
+	 * Note that {@link FeedbackInstructionHandler} instances <em>are</em>
+	 * allowed to be configured here, and will be treated as such.
+	 * </p>
 	 * 
-	 * @param handlers the handlers @deprecated use {@link
-	 * #setInstructionExecutionService(InstructionExecutionService)
+	 * @param handlers
+	 *        the handlers
+	 * @deprecated use
+	 *             {@link #setInstructionExecutionService(InstructionExecutionService)}
 	 */
 	@Deprecated
 	public void setHandlers(List<InstructionHandler> handlers) {
@@ -174,8 +178,10 @@ public class InstructionExecutionJob extends AbstractJob {
 	 * Set a list of {@link FeedbackInstructionHandler} instances to process
 	 * instructions with.
 	 * 
-	 * @param feedbackHandlers the feedbackHandlers to set @deprecated use
-	 * {@link #setInstructionExecutionService(InstructionExecutionService)
+	 * @param feedbackHandlers
+	 *        the feedbackHandlers to set
+	 * @deprecated use
+	 *             {@link #setInstructionExecutionService(InstructionExecutionService)}
 	 */
 	@Deprecated
 	public void setFeedbackHandlers(List<FeedbackInstructionHandler> feedbackHandlers) {
@@ -198,8 +204,10 @@ public class InstructionExecutionJob extends AbstractJob {
 	 * not handled by any handler from sticking around on the node indefinitely.
 	 * Defaults to {@link #DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT}.
 	 * 
-	 * @param executionReceivedHourLimit the hour limit @deprecated use {@link
-	 * #setInstructionExecutionService(InstructionExecutionService)
+	 * @param executionReceivedHourLimit
+	 *        the hour limit
+	 * @deprecated use
+	 *             {@link #setInstructionExecutionService(InstructionExecutionService)}
 	 */
 	@Deprecated
 	public void setExecutionReceivedHourLimit(int executionReceivedHourLimit) {

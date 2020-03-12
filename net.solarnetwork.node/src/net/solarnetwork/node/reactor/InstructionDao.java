@@ -37,6 +37,7 @@ public interface InstructionDao {
 	 * Store an Instruction instance and return its primary key.
 	 * 
 	 * @param instruction
+	 *        the instruction to store
 	 * @return the local primary key
 	 */
 	Long storeInstruction(Instruction instruction);

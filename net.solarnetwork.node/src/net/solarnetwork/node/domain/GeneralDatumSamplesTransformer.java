@@ -27,7 +27,7 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 
 /**
  * API for taking a {@link GeneralDatumSamples} object and transforming it in
- * some way into a different {@link GeneralDatumSamples) object.
+ * some way into a different {@link GeneralDatumSamples} object.
  * 
  * @author matt
  * @version 1.2

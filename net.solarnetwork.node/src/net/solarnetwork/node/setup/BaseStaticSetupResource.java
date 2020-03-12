@@ -110,6 +110,8 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 * @param resource
 	 *        A {@link Resource} to get {@code contentLength} and
 	 *        {@code lastModified} values from.
+	 * @param scope
+	 *        the resource scope
 	 * @throws IOException
 	 *         if the {@link Resource} throws one when accessed
 	 * @since 1.1
@@ -128,6 +130,8 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 *        the {@code resourceUID}
 	 * @param contentType
 	 *        the content type
+	 * @param locale
+	 *        the locale
 	 * @param cacheSeconds
 	 *        the maximum cache seconds
 	 * @param contentLength
@@ -152,6 +156,8 @@ public abstract class BaseStaticSetupResource implements SetupResource {
 	 *        the {@code resourceUID}
 	 * @param contentType
 	 *        the content type
+	 * @param locale
+	 *        the locale
 	 * @param cacheSeconds
 	 *        the maximum cache seconds
 	 * @param contentLength

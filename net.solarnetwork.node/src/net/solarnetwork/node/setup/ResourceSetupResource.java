@@ -55,6 +55,8 @@ public class ResourceSetupResource extends BaseStaticSetupResource {
 	 *        the optional consumer types
 	 * @param roles
 	 *        the optional required roles
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	public ResourceSetupResource(Resource resource, String uid, String contentType, int cacheSeconds,
 			Set<String> consumerTypes, Set<String> roles) throws IOException {
@@ -81,6 +83,8 @@ public class ResourceSetupResource extends BaseStaticSetupResource {
 	 *        the optional required roles
 	 * @param scope
 	 *        the scope to use
+	 * @throws IOException
+	 *         if any IO error occurs
 	 * @since 1.1
 	 */
 	public ResourceSetupResource(Resource resource, String uid, String contentType, int cacheSeconds,
@@ -107,6 +111,8 @@ public class ResourceSetupResource extends BaseStaticSetupResource {
 	 *        the optional consumer types
 	 * @param roles
 	 *        the optional required roles
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	public ResourceSetupResource(Resource resource, String uid, String contentType, Locale locale,
 			int cacheSeconds, Set<String> consumerTypes, Set<String> roles) throws IOException {
@@ -133,6 +139,8 @@ public class ResourceSetupResource extends BaseStaticSetupResource {
 	 *        the optional required roles
 	 * @param scope
 	 *        the scope to use
+	 * @throws IOException
+	 *         if any IO error occurs
 	 * @since 1.1
 	 */
 	public ResourceSetupResource(Resource resource, String uid, String contentType, Locale locale,

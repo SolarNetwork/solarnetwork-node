@@ -34,6 +34,9 @@ public interface JobService extends SettingSpecifierProvider {
 
 	/**
 	 * Execute the service job.
+	 * 
+	 * @throws Exception
+	 *         if anything goes wrong
 	 */
 	void executeJobService() throws Exception;
 

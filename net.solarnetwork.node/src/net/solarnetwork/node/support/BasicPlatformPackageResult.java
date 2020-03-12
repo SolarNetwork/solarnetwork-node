@@ -25,11 +25,12 @@ package net.solarnetwork.node.support;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import net.solarnetwork.node.PlatformPackageService;
 import net.solarnetwork.node.PlatformPackageService.PlatformPackageResult;
 
 /**
  * A basic, immutable implementation of
- * {@Link PlatformPackageService.PlatformPackageResult}.
+ * {@link PlatformPackageService.PlatformPackageResult}.
  * 
  * @param <T>
  *        the context type

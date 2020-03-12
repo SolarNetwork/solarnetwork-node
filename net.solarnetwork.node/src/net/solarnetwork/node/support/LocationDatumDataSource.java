@@ -326,7 +326,7 @@ public class LocationDatumDataSource<T extends Datum>
 	 * </p>
 	 * 
 	 * @param delegate
-	 *        the delegate to set; must implement {@link DatumDataSource<T>}
+	 *        the delegate to set; must implement {@link DatumDataSource}
 	 * @see #setDelegateDatumDataSource(DatumDataSource)
 	 */
 	@SuppressWarnings("unchecked")
@@ -443,6 +443,7 @@ public class LocationDatumDataSource<T extends Datum>
 	 * Set the type of location to search for.
 	 * 
 	 * @param locationType
+	 *        the location type
 	 */
 	public void setLocationType(String locationType) {
 		this.locationType = locationType;

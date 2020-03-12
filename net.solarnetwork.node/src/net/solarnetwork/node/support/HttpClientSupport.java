@@ -165,7 +165,7 @@ public abstract class HttpClientSupport {
 	 * <p>
 	 * This method also sets up the request property
 	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
-	 * The {@link #getInputSourceFromURLConnection(URLConnection)} automatically
+	 * The {@link #getInputStreamFromURLConnection(URLConnection)} automatically
 	 * handles compressed responses.
 	 * </p>
 	 * 
@@ -216,8 +216,11 @@ public abstract class HttpClientSupport {
 	 * Append a URL-escaped key/value pair to a string buffer.
 	 * 
 	 * @param buf
+	 *        the buffer to append to
 	 * @param key
+	 *        the parameter key
 	 * @param value
+	 *        the parameter value
 	 */
 	protected void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
 		if ( value == null ) {
