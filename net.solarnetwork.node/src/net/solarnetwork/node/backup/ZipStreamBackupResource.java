@@ -52,8 +52,8 @@ public class ZipStreamBackupResource implements BackupResource {
 	/**
 	 * Construct with values.
 	 * 
-	 * @param archiveFile
-	 *        the archive file
+	 * @param stream
+	 *        the zip archive stream
 	 * @param entry
 	 *        the entry previously obtained from the zip archive
 	 * @param providerKey

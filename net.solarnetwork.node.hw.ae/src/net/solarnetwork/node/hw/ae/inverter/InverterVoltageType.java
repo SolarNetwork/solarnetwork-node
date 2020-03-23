@@ -90,7 +90,7 @@ public enum InverterVoltageType {
 	/**
 	 * Get an enumeration for a given code value.
 	 * 
-	 * @param code
+	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 * @throws IllegalArgumentException

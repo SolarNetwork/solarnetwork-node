@@ -64,6 +64,7 @@ public class SettingsCommand implements SettingsUpdates {
 	 * </p>
 	 * 
 	 * @param force
+	 *        {@literal true} to force updating the setting
 	 */
 	public SettingsCommand(boolean force) {
 		this(null);

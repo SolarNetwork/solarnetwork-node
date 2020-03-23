@@ -33,7 +33,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * <p>
  * The {@code dataBits}, {@code stopBits}, and {@code parity} class properties
  * should be initialized to values corresponding to the constants defined in the
- * {@link gnu.io.SerialPort} class (e.g. {@link gnu.io.SerialPort#DATABITS_8},
+ * {@code gnu.io.SerialPort} class (e.g. {@code gnu.io.SerialPort#DATABITS_8},
  * etc.).
  * </p>
  * 

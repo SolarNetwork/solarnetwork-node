@@ -495,7 +495,7 @@ public class DefaultBackupManager implements BackupManager {
 	/**
 	 * Set the tracker for the desired backup service to use.
 	 * 
-	 * @param tracker
+	 * @param backupServiceTracker
 	 *        the tracker to use
 	 * @deprecated use {@link #setBackupServices(Collection)}
 	 */

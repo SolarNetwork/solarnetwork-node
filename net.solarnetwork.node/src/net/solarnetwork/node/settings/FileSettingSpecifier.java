@@ -56,7 +56,7 @@ public interface FileSettingSpecifier extends KeyedSettingSpecifier<Resource> {
 	 * are acceptable.
 	 * </p>
 	 * 
-	 * @return
+	 * @return the set of acceptable types
 	 */
 	Set<String> getAcceptableFileTypeSpecifiers();
 

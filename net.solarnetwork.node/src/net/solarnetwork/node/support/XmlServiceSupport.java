@@ -160,7 +160,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributed. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;powerDatum
@@ -187,7 +187,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;powerDatum
@@ -236,7 +236,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * <p>
 	 * The returned XML will be a document with a single element with all
 	 * JavaBean properties turned into attributes. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;powerDatum
@@ -275,7 +275,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes and the element named after the bean object's
 	 * class name. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;PowerDatum
@@ -291,6 +291,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * 
 	 * @param bean
 	 *        the object to turn into XML
+	 * @param dom
+	 *        the XML document
 	 * @return the element, as an XML DOM Document
 	 */
 	protected Element getElement(BeanWrapper bean, Document dom) {
@@ -305,7 +307,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributes. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;powerDatum
@@ -323,6 +325,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the object to turn into XML
 	 * @param elementName
 	 *        the name of the XML element
+	 * @param dom
+	 *        the XML document
 	 * @return the element, as an XML DOM Element
 	 */
 	protected Element getElement(BeanWrapper bean, String elementName, Document dom) {
@@ -364,7 +368,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * <p>
 	 * The returned XML will be a single element with all JavaBean properties
 	 * turned into attributed. For example:
-	 * <p>
+	 * </p>
 	 * 
 	 * <pre>
 	 * &lt;powerDatum
@@ -759,9 +763,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the source ID to add metadata to
 	 * @param meta
 	 *        the metadata to add
-	 * @param returns
-	 *        <em>true</em> if the metadata was saved successfully, or does not
-	 *        need to be updated
+	 * @return {@literal true} if the metadata was saved successfully, or does
+	 *         not need to be updated
 	 */
 	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
 		if ( sourceId == null ) {

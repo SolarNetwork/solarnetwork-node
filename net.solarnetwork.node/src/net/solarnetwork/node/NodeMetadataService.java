@@ -38,8 +38,6 @@ public interface NodeMetadataService {
 	 * values will be merged such that tags are only added and only new info
 	 * values will be added.
 	 * 
-	 * @param sourceId
-	 *        the source ID to add to
 	 * @param meta
 	 *        the metadata to add
 	 */
@@ -48,9 +46,7 @@ public interface NodeMetadataService {
 	/**
 	 * Get all metadata for the active node.
 	 * 
-	 * @param sourceId
-	 *        the sourceId to get the metadta for
-	 * @return the metadata, or <em>null</em> if none available
+	 * @return the metadata, or {@literal null} if none available
 	 */
 	GeneralDatumMetadata getNodeMetadata();
 

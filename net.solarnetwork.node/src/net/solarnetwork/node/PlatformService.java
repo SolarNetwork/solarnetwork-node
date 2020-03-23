@@ -57,7 +57,7 @@ public interface PlatformService {
 	 * A message topic for task info updates.
 	 * 
 	 * <p>
-	 * The message body will contain a {@link new.solarnetwork.domain.Result}
+	 * The message body will contain a {@code new.solarnetwork.domain.Result}
 	 * with {@link PlatformTaskInfo} content.
 	 * </p>
 	 */
@@ -113,7 +113,7 @@ public interface PlatformService {
 		 * Get the amount of work that has been completed, as a fractional
 		 * percentage between {@literal 0} and {@literal 1}.
 		 * 
-		 * @return the amount of work completed, or anything < 0 if not known
+		 * @return the amount of work completed, or anything &lt; 0 if not known
 		 */
 		double getPercentComplete();
 
@@ -168,7 +168,7 @@ public interface PlatformService {
 		 * Get the amount of work that has been completed, as a fractional
 		 * percentage between {@literal 0} and {@literal 1}.
 		 * 
-		 * @return the amount of work completed, or anything < 0 if not known
+		 * @return the amount of work completed, or anything &lt; 0 if not known
 		 */
 		double getPercentComplete();
 
@@ -196,7 +196,8 @@ public interface PlatformService {
 		/**
 		 * Update the task info for a task.
 		 * 
-		 * @param info
+		 * @param status
+		 *        the status
 		 */
 		void taskStatusUpdated(PlatformTaskStatus status);
 	}
@@ -214,8 +215,6 @@ public interface PlatformService {
 		 * 
 		 * @param handler
 		 *        the handler
-		 * @param locale
-		 *        the desired locale
 		 */
 		void registerStatusHandler(PlatformTaskStatusHandler handler);
 

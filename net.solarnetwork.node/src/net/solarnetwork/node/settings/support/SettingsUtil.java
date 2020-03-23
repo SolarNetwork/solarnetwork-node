@@ -69,6 +69,10 @@ public final class SettingsUtil {
 	/**
 	 * Get a dynamic list {@link GroupSettingSpecifier}.
 	 * 
+	 * @param <T>
+	 *        the setting type
+	 * @param key
+	 *        the list setting key
 	 * @param collection
 	 *        The collection to turn into settings.
 	 * @param mapper
@@ -132,6 +136,7 @@ public final class SettingsUtil {
 	 * </p>
 	 * 
 	 * @param settings
+	 *        the settings to adapt
 	 * @return the adapted settings, never {@literal null}
 	 * @since 1.1
 	 * @see #adapt(net.solarnetwork.settings.SettingSpecifier)

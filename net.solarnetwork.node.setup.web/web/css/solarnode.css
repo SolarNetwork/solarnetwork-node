@@ -58,6 +58,34 @@ legend {
 	margin: 20px 0;
 }
 
+.anchor {
+	font-size: 14px;
+	float: left;
+	padding-right: 6px;
+	margin-left: -20px;
+	color: #999;
+	opacity: 0;
+	-webkit-transition: opacity 0.2s ease-in-out 0.1s;
+	-moz-transition: opacity 0.2s ease-in-out 0.1s;
+	-ms-transition: opacity 0.2s ease-in-out 0.1s;
+}
+
+legend .anchor {
+	line-height: 21px;
+}
+
+legend:hover .anchor {
+	opacity: 1;
+}
+
+h2 .anchor {
+	line-height: 28px;
+}
+
+h2:hover .anchor {
+	opacity: 1;
+}
+
 .control-group.grouped {
 	border-top: 1px dotted #e5e5e5;
 	padding-top: 20px;

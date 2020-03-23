@@ -62,6 +62,9 @@ public class MethodAndIgnoreRequestMatcher implements RequestMatcher {
 	 * <p>
 	 * Uses the {@link #DEFAULT_ALLOWED_METHODS} allowed methods.
 	 * </p>
+	 * 
+	 * @param ignoreMatcher
+	 *        the matcher to filter requests
 	 */
 	public MethodAndIgnoreRequestMatcher(RequestMatcher ignoreMatcher) {
 		this(DEFAULT_ALLOWED_METHODS, ignoreMatcher);

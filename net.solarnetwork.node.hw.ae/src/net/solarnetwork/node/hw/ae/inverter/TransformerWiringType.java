@@ -91,7 +91,7 @@ public enum TransformerWiringType {
 	 * {@link #Delta} that is returned, otherwise {@link #Wye} is.
 	 * </p>
 	 * 
-	 * @param code
+	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 */

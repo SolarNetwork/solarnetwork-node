@@ -192,7 +192,7 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * @param phase
 	 *        the phase
 	 * @return the phase
-	 * @sicne 1.2
+	 * @since 1.2
 	 */
 	Float getCurrent(ACPhase phase);
 

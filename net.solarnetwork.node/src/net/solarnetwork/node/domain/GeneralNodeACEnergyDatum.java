@@ -241,8 +241,8 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	 * {@literal P} is the phase line key.
 	 * </p>
 	 * 
-	 * @param phaseVoltage
-	 *        the phase voltage
+	 * @param lineVoltage
+	 *        the line voltage
 	 * @param phase
 	 *        the phase
 	 * @since 1.2

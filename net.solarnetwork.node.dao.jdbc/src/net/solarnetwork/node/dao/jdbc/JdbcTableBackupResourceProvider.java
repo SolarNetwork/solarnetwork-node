@@ -88,14 +88,12 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 *        A transaction template to use, for supporting savepoints.
 	 * @param taskExecutor
 	 *        A task executor to use.
-	 * @param messageSource
-	 *        The {@link MessageSource} to use.
 	 */
-	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate, TransactionTemplate txTemplate,
-			TaskExecutor taskExecutor) {
+	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate,
+			TransactionTemplate transactionTemplate, TaskExecutor taskExecutor) {
 		super();
 		this.jdbcTemplate = jdbcTemplate;
-		this.transactionTemplate = txTemplate;
+		this.transactionTemplate = transactionTemplate;
 		this.taskExecutor = taskExecutor;
 	}
 

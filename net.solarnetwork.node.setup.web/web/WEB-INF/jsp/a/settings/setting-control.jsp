@@ -174,7 +174,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
-						<span class="title">${fn:escapeXml(settingValue)}</span>
+						<span class="title">${settingValue}</span>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
 						<span id="${settingId}">

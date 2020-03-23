@@ -40,7 +40,6 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.SchedulingTaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.dao.SettingDao;
@@ -348,8 +347,8 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	 * A startup delay before posting an event of the active operational modes.
 	 * 
 	 * <p>
-	 * Note this requires a {@link #setTaskScheduler(SchedulingTaskExecutor)} to
-	 * be configured if set to anything > {@literal 0}.
+	 * Note this requires a {@link #setTaskScheduler(TaskScheduler)} to be
+	 * configured if set to anything &gt; {@literal 0}.
 	 * </p>
 	 * 
 	 * @param startupDelay

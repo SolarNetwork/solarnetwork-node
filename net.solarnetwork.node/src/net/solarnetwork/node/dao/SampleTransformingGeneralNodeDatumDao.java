@@ -66,7 +66,7 @@ public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNo
 	 * 
 	 * <p>
 	 * This constructor is to work around Gemini Blueprint "reified type"
-	 * exceptions on DatumDao<T>.
+	 * exceptions on DatumDao&lt;T&gt;.
 	 * </p>
 	 * 
 	 * @param delegate

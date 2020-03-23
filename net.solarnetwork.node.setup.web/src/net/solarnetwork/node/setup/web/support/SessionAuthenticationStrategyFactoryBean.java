@@ -36,7 +36,9 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
  * @author matt
  * @version 1.0
  * @since 1.41
- * @see https://github.com/spring-projects/spring-security/issues/3995
+ * @see <a href=
+ *      "https://github.com/spring-projects/spring-security/issues/3995">Issue
+ *      3995</a>
  */
 public class SessionAuthenticationStrategyFactoryBean
 		implements BeanFactoryAware, FactoryBean<SessionAuthenticationStrategy> {

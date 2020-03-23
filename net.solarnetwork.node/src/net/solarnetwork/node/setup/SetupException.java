@@ -47,7 +47,7 @@ public class SetupException extends RuntimeException {
 	 * 
 	 * @param message
 	 *        message
-	 * @param t
+	 * @param cause
 	 *        the original exception
 	 */
 	public SetupException(String message, Throwable cause) {

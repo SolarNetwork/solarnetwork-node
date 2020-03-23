@@ -72,14 +72,14 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </p>
  * 
  * <pre>
- * &lt;reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail">
- * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind">
- * 			&lt;bean class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener">
- * 				&lt;property name="scheduler" ref="scheduler"/>
- *              &lt;property name="bundleContext" ref="bundleContext"/>
- * 			&lt;/bean>
- * 		&lt;/reference-listener>
- * &lt;/reference-list>
+ * &lt;reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail"&gt;
+ * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind"&gt;
+ * 			&lt;bean class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"&gt;
+ * 				&lt;property name="scheduler" ref="scheduler"/&gt;
+ *              &lt;property name="bundleContext" ref="bundleContext"/&gt;
+ * 			&lt;/bean&gt;
+ * 		&lt;/reference-listener&gt;
+ * &lt;/reference-list&gt;
  * </pre>
  * 
  * <p>

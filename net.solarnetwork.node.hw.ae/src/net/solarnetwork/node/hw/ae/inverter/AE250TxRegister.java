@@ -38,7 +38,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the AE 250 TX series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public enum AE250TxRegister implements ModbusReference {
 
@@ -91,7 +91,7 @@ public enum AE250TxRegister implements ModbusReference {
 	InverterActivePowerTotal(1018, Float32),
 
 	/** The meter active energy delivered, in kWh. */
-	InverterActiveEnergyDelivered(1022, UInt32),
+	InverterActiveEnergyDelivered(1020, UInt32),
 
 	/** The PV input voltage, in V. */
 	InverterPvVoltage(1022, Float32),

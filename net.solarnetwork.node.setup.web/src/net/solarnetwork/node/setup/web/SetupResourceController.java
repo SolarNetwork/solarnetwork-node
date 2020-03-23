@@ -76,7 +76,7 @@ public class SetupResourceController extends BaseSetupWebServiceController {
 	 * 
 	 * @param e
 	 *        the exception
-	 * @param response
+	 * @param res
 	 *        the response
 	 */
 	@ExceptionHandler(IOException.class)

@@ -1,7 +1,7 @@
 /* ==================================================================
  * BeanConfigurationServiceRegistrationListener.java - Dec 8, 2009 10:25:17 AM
  * 
- * Copyright 2007-2009 SolarNetwork.net Dev Team
+ * Copyright 2007 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -18,17 +18,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.util;
 
 import java.util.Hashtable;
 import java.util.Map;
-import net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
+import net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
 
 /**
  * An OSGi service registration listener for {@link BeanConfiguration} objects,
@@ -55,8 +53,8 @@ import org.springframework.beans.PropertyAccessorFactory;
  * </p>
  * 
  * <p>
- * The {@Link BeanConfiguration#getOrdering()} Integer will be used to
- * assign an OSGi ranking to the service when it is registered.
+ * The {@link BeanConfiguration#getOrdering()} Integer will be used to assign an
+ * OSGi ranking to the service when it is registered.
  * </p>
  * 
  * <p>
@@ -71,18 +69,18 @@ import org.springframework.beans.PropertyAccessorFactory;
  * 
  * <pre>
  * &lt;osgi:list id="myConfigurationList"
- * 		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N">
- * 		&lt;osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="myServiceBean"/>
- * &lt;/osgi:list>
+ * 		interface="net.solarnetwork.node.util.BeanConfiguration" cardinality="0..N"&gt;
+ * 		&lt;osgi:listener bind-method="onBind" unbind-method="onUnbind" ref="myServiceBean"/&gt;
+ * &lt;/osgi:list&gt;
  * 
  * &lt;bean id="myServiceBean" 
- * 		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener">
+ * 		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener"&gt;
  * 		&lt;property name="serviceClass"
- * 			value="net.solarnetwork.node.impl.MyServiceImplementation"/>
+ * 			value="net.solarnetwork.node.impl.MyServiceImplementation"/&gt;
  * 		&lt;property name="serviceInterfaces"
- * 			value="net.solarnetwork.node.MyService"/>
- * 		&lt;property name="bundleContext" ref="bundleContext"/>
- * &lt;/bean>
+ * 			value="net.solarnetwork.node.MyService"/&gt;
+ * 		&lt;property name="bundleContext" ref="bundleContext"/&gt;
+ * &lt;/bean&gt;
  * </pre>
  * 
  * <p>
@@ -102,10 +100,10 @@ import org.springframework.beans.PropertyAccessorFactory;
  * </dl>
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
-public class BeanConfigurationServiceRegistrationListener extends
-		BaseServiceListener<BeanConfiguration, BeanConfigurationRegisteredService> {
+public class BeanConfigurationServiceRegistrationListener
+		extends BaseServiceListener<BeanConfiguration, BeanConfigurationRegisteredService> {
 
 	private Class<?> serviceClass = null;
 	private String[] serviceInterfaces = null;

@@ -66,7 +66,6 @@ public interface DatumDao<T extends Datum> {
 	 * 
 	 * @param datum
 	 *        the datum to persist
-	 * @return the generated primary key
 	 */
 	void storeDatum(T datum);
 
@@ -87,7 +86,7 @@ public interface DatumDao<T extends Datum> {
 	List<T> getDatumNotUploaded(String destination);
 
 	/**
-	 * Persist a {@link DatumUpload} instance.
+	 * Mark a datum as uploaded.
 	 * 
 	 * @param datum
 	 *        the Datum that has been uploaded successfully

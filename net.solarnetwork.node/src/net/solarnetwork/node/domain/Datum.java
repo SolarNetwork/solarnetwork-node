@@ -50,7 +50,7 @@ public interface Datum {
 	 * datum represents.
 	 * 
 	 * <p>
-	 * The <em>core<em> data type is the most specific interface defined on a
+	 * The <em>core</em> data type is the most specific interface defined on a
 	 * datum class, which will be the first value in the
 	 * {@link #DATUM_TYPES_PROPERTY} property.
 	 * </p>

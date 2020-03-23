@@ -1,7 +1,7 @@
 /* ==================================================================
- * FactoryTitleComparator.java - 23/11/2018 11:07:38 AM
+ * SettingSpecifierProviderMessageComparator.java - 18/02/2020 8:40:29 am
  * 
- * Copyright 2018 SolarNetwork.net Dev Team
+ * Copyright 2020 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -24,30 +24,30 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.Locale;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
- * Sort {@link SettingSpecifierProviderFactory} by their localized titles.
+ * Sort {@link SettingSpecifierProvider} by their localized titles.
  * 
  * @author matt
- * @version 1.1
- * @since 1.61
+ * @version 1.0
+ * @since 1.74
  */
-public class SettingSpecifierProviderFactoryMessageComparator
-		extends MessageSourceMessageComparator<SettingSpecifierProviderFactory> {
+public class SettingSpecifierProviderMessageComparator
+		extends MessageSourceMessageComparator<SettingSpecifierProvider> {
 
 	/**
 	 * Constructor.
 	 * 
 	 * <p>
-	 * This defaults the {@code messageKey} to {link
-	 * {@link MessageSourceMessageComparator#DEFAULT_MESSAGE_KEY}}.
+	 * This defaults the {@code messageKey} to
+	 * {@link MessageSourceMessageComparator#DEFAULT_MESSAGE_KEY}.
 	 * </p>
 	 * 
 	 * @param locale
 	 *        the desired locale of the messages to compare
 	 */
-	public SettingSpecifierProviderFactoryMessageComparator(Locale locale) {
+	public SettingSpecifierProviderMessageComparator(Locale locale) {
 		super(locale);
 	}
 
@@ -59,12 +59,12 @@ public class SettingSpecifierProviderFactoryMessageComparator
 	 * @param messageKey
 	 *        the message key to compare
 	 */
-	public SettingSpecifierProviderFactoryMessageComparator(Locale locale, String messageKey) {
+	public SettingSpecifierProviderMessageComparator(Locale locale, String messageKey) {
 		super(locale, messageKey);
 	}
 
 	@Override
-	public int compare(SettingSpecifierProviderFactory left, SettingSpecifierProviderFactory right) {
+	public int compare(SettingSpecifierProvider left, SettingSpecifierProvider right) {
 		String leftDefault = null;
 		MessageSource leftMessageSource = null;
 		String rightDefault = null;

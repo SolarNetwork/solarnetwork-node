@@ -44,6 +44,8 @@ import net.solarnetwork.util.OptionalService;
  * and will apply those transformations before uploading.
  * </p>
  * 
+ * @param T
+ *        the datum type
  * @author matt
  * @version 1.1
  */
@@ -78,17 +80,17 @@ public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
 	 * 
 	 * <p>
 	 * This constructor exists to work around a Gemini Blueprint bug where it
-	 * complains about setting the DatumDao<T> argument due to some reified type
-	 * error.
+	 * complains about setting the DatumDao&lt;T&gt; argument due to some
+	 * reified type error.
 	 * </p>
 	 * 
 	 * @param delegate
-	 *        the delegate DAO; will be cast to DatumDao<T>
+	 *        the delegate DAO; will be cast to DatumDao&lt;T&gt;
 	 * @param uploadService
 	 *        the upload service
 	 * @param samplesTransformService
 	 *        the transform service
-	 * @see UploadServiceDatumDao(UploadService, DatumDao)
+	 * @see #UploadServiceDatumDao(UploadService, DatumDao, OptionalService)
 	 */
 	@SuppressWarnings("unchecked")
 	public UploadServiceDatumDao(Object delegate, UploadService uploadService,

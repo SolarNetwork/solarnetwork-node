@@ -103,20 +103,17 @@ public class MqttUploadService extends BaseMqttConnectionService
 	/**
 	 * Constructor.
 	 * 
+	 * @param connectionFactory
+	 *        the MQTT connection factory
 	 * @param objectMapper
 	 *        the object mapper to use
 	 * @param identityService
 	 *        the identity service
-	 * @param taskScheduler
-	 *        an optional task scheduler to auto-connect with, or
-	 *        {@literal null} for no auto-connect support
-	 * @param sslService
-	 *        the optional SSL service
 	 * @param reactorService
 	 *        the optional reactor service
 	 * @param instructionExecutionService
 	 *        the instruction execution service
-	 * @param eventAdminService
+	 * @param eventAdmin
 	 *        the event admin service
 	 */
 	public MqttUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
@@ -505,11 +502,11 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	/**
-	 * Set the "inclue version tag" toggle.
+	 * Set the "include version tag" toggle.
 	 * 
 	 * @param includeVersionTag
-	 *        {@literal true} to include the {@link #TAG_VERSION} property with
-	 *        each datum; only disable if you can be sure that all receivers of
+	 *        {@literal true} to include the {@literal _v} version tag with each
+	 *        datum; only disable if you can be sure that all receivers of
 	 *        SolarFlux messages interpret the data in the same way
 	 * @since 1.3
 	 */

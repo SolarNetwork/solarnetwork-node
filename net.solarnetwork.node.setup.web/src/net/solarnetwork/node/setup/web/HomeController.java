@@ -50,8 +50,7 @@ public class HomeController {
 	/**
 	 * Setup the home view.
 	 * 
-	 * @param model
-	 * @return
+	 * @return the view name
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {

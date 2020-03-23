@@ -31,8 +31,8 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <p>
  * The {@code id} value represents the remote ID received from the server for
- * the given {@code datum}. This value can be stored in {@link DatumUpload}
- * objects as a receipt for the upload transaction.
+ * the given {@code datum}. This value can be stored in {@link Datum} objects as
+ * a receipt for the upload transaction.
  * </p>
  * 
  * @author matt

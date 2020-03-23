@@ -356,7 +356,8 @@ public class TimeBasedTableDiskSizeManager {
 	 * {@literal 92.5}. Defaults to {@literal 90}.
 	 * </p>
 	 * 
-	 * @param maxFilesystemUseThreshold
+	 * @param maxFileSystemUseThreshold
+	 *        the max file system use percentage
 	 */
 	public void setMaxFileSystemUseThreshold(float maxFileSystemUseThreshold) {
 		this.maxFileSystemUseThreshold = maxFileSystemUseThreshold;

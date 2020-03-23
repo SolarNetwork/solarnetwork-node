@@ -49,6 +49,8 @@ public interface BackupResource {
 	 * Get an {@link InputStream} to the resource.
 	 * 
 	 * @return an InputStream to the data for the resource
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	InputStream getInputStream() throws IOException;
 

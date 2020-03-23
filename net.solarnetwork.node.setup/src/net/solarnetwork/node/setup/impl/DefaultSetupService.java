@@ -176,6 +176,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	private static final String SOLAR_IN_RENEW_CERT_URL = "/api/v1/sec/cert/renew";
 
 	private static enum SolarApplication {
+
 		SolarIn("solarin"),
 		SolarUser("solaruser");
 
@@ -622,7 +623,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	/**
 	 * Set the URL path prefix to use for the SolarIn application.
 	 * 
-	 * @param solarUserUrlPrefix
+	 * @param solarInUrlPrefix
 	 *        the prefix to use; defaults to {@link #DEFAULT_SOLARIN_URL_PREFIX}
 	 */
 	public void setSolarInUrlPrefix(String solarInUrlPrefix) {

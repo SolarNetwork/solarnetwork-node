@@ -23,13 +23,13 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.util.Locale;
+import org.osgi.framework.Version;
+import org.osgi.service.obr.Resource;
 import net.solarnetwork.node.setup.BundlePluginVersion;
 import net.solarnetwork.node.setup.LocalizedPluginInfo;
 import net.solarnetwork.node.setup.Plugin;
 import net.solarnetwork.node.setup.PluginInfo;
 import net.solarnetwork.node.setup.PluginVersion;
-import org.osgi.framework.Version;
-import org.osgi.service.obr.Resource;
 
 /**
  * Plugin implementation that wraps an OBR {link Resource}.
@@ -47,8 +47,8 @@ public class OBRResourcePlugin implements Plugin {
 	/**
 	 * Construct with a {@link Resource}.
 	 * 
-	 * @param the
-	 *        Resource to wrap
+	 * @param resource
+	 *        the Resource to wrap
 	 * @param coreFeature
 	 *        the core feature flag
 	 */

@@ -46,7 +46,7 @@
 		<property name="sslService">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.SSLService"/>
+				<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
 			</bean>	
 		</property>
 		<property name="cacheTtl" value="${WebServiceLocationService.cacheTtl}"/>

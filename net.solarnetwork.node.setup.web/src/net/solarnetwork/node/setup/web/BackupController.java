@@ -89,8 +89,7 @@ public class BackupController extends BaseSetupController {
 	/**
 	 * Create a new backup.
 	 * 
-	 * @param model
-	 * @return
+	 * @return the backup
 	 */
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
 	@ResponseBody
@@ -178,7 +177,10 @@ public class BackupController extends BaseSetupController {
 	 * Restore a backup.
 	 * 
 	 * @param options
-	 * @return
+	 *        the options
+	 * @param locale
+	 *        the locale
+	 * @return the restore status
 	 */
 	@RequestMapping(value = "/restore", method = RequestMethod.POST)
 	@ResponseBody

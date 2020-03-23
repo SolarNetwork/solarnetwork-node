@@ -122,8 +122,9 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * 
 	 * @param key
 	 *        the key to get the settings for
-	 * @return list of {@link KeyValuePair} objects, where the {@code key} will
-	 *         be set to the {@code type} value
+	 * @return list of {@link net.solarnetwork.node.support.KeyValuePair}
+	 *         objects, where the {@code key} will be set to the {@code type}
+	 *         value
 	 * @deprecated since 1.3
 	 * @see #getSettingValues(String)
 	 */
@@ -195,9 +196,10 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * Get the most recent modification date of all settings.
 	 * 
 	 * <p>
-	 * The special {@code type} value {@link #TYPE_IGNORE_MODIFICATION_DATE} is
-	 * considered by this method, and rows with this type are ignored when
-	 * calculating the most recent modification date.
+	 * The special {@code type} value
+	 * {@link Setting.SettingFlag#IgnoreModificationDate} is considered by this
+	 * method, and rows with this type are ignored when calculating the most
+	 * recent modification date.
 	 * </p>
 	 * 
 	 * @return the modification date

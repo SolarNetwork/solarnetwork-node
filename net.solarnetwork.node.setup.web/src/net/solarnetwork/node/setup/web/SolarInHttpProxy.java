@@ -130,6 +130,7 @@ public class SolarInHttpProxy extends HttpClientSupport {
 	 * Configure a set of HTTP headers to <b>not</b> proxy.
 	 * 
 	 * @param proxyHeadersIgnore
+	 *        the headers to ignore
 	 */
 	public void setProxyHeadersIgnore(Set<String> proxyHeadersIgnore) {
 		Set<String> ignores = null;
