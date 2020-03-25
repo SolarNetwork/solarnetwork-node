@@ -50,7 +50,7 @@ import net.solarnetwork.util.OptionalService;
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class HttpClientSupport {
 
@@ -61,7 +61,7 @@ public abstract class HttpClientSupport {
 	public static final String ACCEPT_JSON = "application/json,text/json";
 
 	/** The default value for the {@code connectionTimeout} property. */
-	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+	public static final int DEFAULT_CONNECTION_TIMEOUT = 55000;
 
 	/** The HTTP method GET. */
 	public static final String HTTP_METHOD_GET = "GET";
