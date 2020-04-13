@@ -95,7 +95,7 @@ public enum StringCombinerModelRegister implements SunspecModbusReference {
 	/** Input ID. */
 	InputId(0, UInt16),
 
-	/** Input events, see {@link StringCombinerEvent}. */
+	/** Input events, see {@link StringCombinerModelEvent}. */
 	InputEventsBitmask(1, UInt32, Bitfield),
 
 	/** Input vendor events. */

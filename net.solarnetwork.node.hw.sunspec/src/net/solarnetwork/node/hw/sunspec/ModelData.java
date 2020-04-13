@@ -99,6 +99,9 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param baseAddress
+	 *        the base Modbus address
 	 */
 	public ModelData(int baseAddress) {
 		super();
@@ -184,6 +187,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 
 	/**
 	 * Get the first-available model instance.
+	 * 
+	 * @return the first available model, or {@literal null}
 	 */
 	public ModelAccessor getModel() {
 		return (models != null && !models.isEmpty() ? models.get(0) : null);
@@ -192,6 +197,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	/**
 	 * Get the first-available model as a specific type.
 	 * 
+	 * @param <T>
+	 *        the model type
 	 * @return the model
 	 * @throws ClassCastException
 	 *         if the model is not of the requested type
@@ -205,6 +212,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	/**
 	 * Find the first-available model of a specific type.
 	 * 
+	 * @param <T>
+	 *        the model type
 	 * @param type
 	 *        the type of model to get
 	 * @return the found model, or {@literal null} if not found
@@ -341,8 +350,7 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			@Override
 			public boolean updateModbusData(MutableModbusData m) {
 				// load in our model header to find the common model length (65/66)
-				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress,
-						2);
+				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress, 2);
 				m.saveDataArray(data, baseAddress);
 				updateData(conn, m, getAddressRanges(maxReadWordsCount));
 				return true;
@@ -353,8 +361,6 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	/**
 	 * Add a model accessor to this model.
 	 * 
-	 * @param modelId
-	 *        the model ID
 	 * @param modelLength
 	 *        the model length
 	 * @param accessor
