@@ -26,7 +26,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.domain.PVEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -42,14 +44,14 @@ import net.solarnetwork.util.SerializeIgnore;
  * Datum for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PVEnergyDatum {
 
 	/**
 	 * The status sample key for {@link #getOperatingState()} values.
 	 */
-	public static final String OPERATING_STATE_KEY = "opState";
+	public static final String OPERATING_STATE_KEY = "sunsOpState";
 
 	/**
 	 * The status sample key for {@link #getEvents()} values.
@@ -65,13 +67,6 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	 *        the sample data
 	 * @param phase
 	 *        the phase to associate with the data
-	 * @param backwards
-	 *        if {@literal true} then treat the meter as being installed
-	 *        backwards with respect to the current direction; in this case
-	 *        certain instantaneous measurements will be negated and certain
-	 *        accumulating properties will be switched (like <i>received</i>
-	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
-	 *        energy as {@code wattHoursReverse})
 	 */
 	public SunSpecInverterDatum(InverterModelAccessor data, ACPhase phase) {
 		super();
@@ -97,7 +92,10 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyExported());
 
-		setOperatingState(data.getOperatingState());
+		if ( data.getOperatingState() != null ) {
+			setOperatingState(data.getOperatingState());
+			setDeviceOperatingState(data.getOperatingState().asDeviceOperatingState());
+		}
 		setEvents(data.getEvents());
 	}
 
@@ -203,6 +201,42 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	}
 
 	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the device operating state, or {@literal null}
+	 */
+	@JsonIgnore
+	@SerializeIgnore
+	public DeviceOperatingState getDeviceOperatingState() {
+		DeviceOperatingState result = null;
+		Integer code = getStatusSampleInteger(Datum.OP_STATE);
+		if ( code != null ) {
+			try {
+				result = DeviceOperatingState.forCode(code);
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		} else {
+			OperatingState opState = getOperatingState();
+			if ( opState != null ) {
+				result = opState.asDeviceOperatingState();
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Set the operating state.
+	 * 
+	 * @param state
+	 *        the state to set, or {@literal null}
+	 */
+	public void setDeviceOperatingState(DeviceOperatingState state) {
+		Integer code = (state != null ? state.getCode() : null);
+		putStatusSampleValue(Datum.OP_STATE, code);
+	}
+
+	/**
 	 * Get the operating state.
 	 * 
 	 * @return the operating state, or {@literal null}
@@ -225,8 +259,8 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	/**
 	 * Set the events.
 	 * 
-	 * @param state
-	 *        the state to set, or {@literal null}
+	 * @param events
+	 *        the events to set, or {@literal null}
 	 */
 	public void setEvents(Set<ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
