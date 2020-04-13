@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 
@@ -29,7 +30,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * Operating state for inverters.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public enum InverterOperatingState implements OperatingState {
 
@@ -69,6 +70,42 @@ public enum InverterOperatingState implements OperatingState {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	/**
+	 * Get a {@link DeviceOperatingState}.
+	 * 
+	 * @return the device operating state, never {@literal null}
+	 * @since 1.2
+	 */
+	public DeviceOperatingState asDeviceOperatingState() {
+		switch (this) {
+			case Normal:
+			case Mppt:
+				return DeviceOperatingState.Normal;
+
+			case Off:
+			case ShuttingDown:
+				return DeviceOperatingState.Shutdown;
+
+			case Sleeping:
+			case Standby:
+				return DeviceOperatingState.Standby;
+
+			case Starting:
+			case Test:
+				return DeviceOperatingState.Starting;
+
+			case Throttled:
+				return DeviceOperatingState.Override;
+
+			case Fault:
+				return DeviceOperatingState.Fault;
+
+			default:
+				return DeviceOperatingState.Unknown;
+
+		}
 	}
 
 	/**

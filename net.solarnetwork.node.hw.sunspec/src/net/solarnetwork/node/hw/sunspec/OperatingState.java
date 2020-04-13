@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import net.solarnetwork.domain.DeviceOperatingState;
+
 /**
  * API for an operational state.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface OperatingState {
 
@@ -43,5 +45,13 @@ public interface OperatingState {
 	 * @return a description
 	 */
 	String getDescription();
+
+	/**
+	 * Get a {@link DeviceOperatingState} out of this state.
+	 * 
+	 * @return the device operating state, never {@literal null}
+	 * @since 1.1
+	 */
+	DeviceOperatingState asDeviceOperatingState();
 
 }
