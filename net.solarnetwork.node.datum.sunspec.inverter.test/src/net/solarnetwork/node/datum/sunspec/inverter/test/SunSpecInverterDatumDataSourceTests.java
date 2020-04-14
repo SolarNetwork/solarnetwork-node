@@ -37,8 +37,10 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
@@ -139,7 +141,10 @@ public class SunSpecInverterDatumDataSourceTests {
 		assertThat("Datum power", d.getInstantaneousSampleInteger("watts"), equalTo(70));
 		assertThat("Datum energy", d.getAccumulatingSampleLong("wattHours"), equalTo(11937020L));
 		assertThat("Datum status", d.getStatusSampleString("phase"), equalTo("Total"));
-		assertThat("Datum power", d.getStatusSampleInteger("opState"), equalTo(4));
+		assertThat("Datum opState", d.getStatusSampleInteger("opState"),
+				equalTo(DeviceOperatingState.Normal.getCode()));
+		assertThat("Datum sunsOpState", d.getStatusSampleInteger("sunsOpState"),
+				equalTo(InverterOperatingState.Mppt.getCode()));
 		assertThat("Datum eve ts", d.getStatusSampleInteger("events"), equalTo(0));
 	}
 

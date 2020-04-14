@@ -96,8 +96,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * <p>
 	 * This returns cached data if possible. Otherwise it will query the device
 	 * and cache the results. When refreshing data, only the data for the model
-	 * returned from {@link #getPrimaryModelAccessorType()} and any types in
-	 * [@link {@link #getSecondaryModelAccessorTypes()}} will be refreshed.
+	 * returned from {@link #getPrimaryModelAccessorType()} and any accessors in
+	 * {@link #getSecondaryModelAccessors(ModelData)} will be refreshed.
 	 * </p>
 	 * 
 	 * @return the model data
@@ -211,6 +211,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	/**
 	 * Test if the sample data has expired.
 	 * 
+	 * @param data
+	 *        the model data
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired(ModelData data) {
@@ -354,6 +356,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * be the primary model.
 	 * </p>
 	 * 
+	 * @param sample
+	 *        the model data
 	 * @return the message, or {@literal N/A} if no secondary types are
 	 *         available
 	 */
@@ -385,7 +389,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -404,7 +408,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {

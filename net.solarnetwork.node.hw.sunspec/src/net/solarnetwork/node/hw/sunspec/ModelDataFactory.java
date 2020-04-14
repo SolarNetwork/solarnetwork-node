@@ -41,12 +41,12 @@ import net.solarnetwork.util.ByteUtils;
  * This factory looks for a
  * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
  * resource that contains a mapping of SunSpec model IDs to associated
- * {@link ModalAccessor} classes. The classes are expected to provide a public
+ * {@link ModelAccessor} classes. The classes are expected to provide a public
  * constructor that accepts the following arguments:
  * </p>
  * 
  * <ol>
- * <li>a {@link ModalData} instance</li>
+ * <li>a {@link ModelData} instance</li>
  * <li>an {@code int} base Modbus address for the associated model data</li>
  * <li>an {@code int} model ID value</li>
  * </ol>
@@ -192,13 +192,13 @@ public class ModelDataFactory {
 	}
 
 	/**
-	 * Load the {@link ModalAccessor} properties.
+	 * Load the {@link ModelAccessor} properties.
 	 * 
 	 * <p>
 	 * This factory looks for a
 	 * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
 	 * resource that contains a mapping of SunSpec model IDs to associated
-	 * {@link ModalAccessor} classes. If that resource is not available, then
+	 * {@link ModelAccessor} classes. If that resource is not available, then
 	 * the
 	 * {@literal net/solarnetwork/node/hw/sunspec/model-accessors-default.properties}
 	 * resource provided by this bundle will be used. Here's an example of the

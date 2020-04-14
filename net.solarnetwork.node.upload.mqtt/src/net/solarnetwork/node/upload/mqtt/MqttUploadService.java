@@ -459,7 +459,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	@Override
-	public void onMqttServerConnectionEstablisehd(MqttConnection connection, boolean reconnected) {
+	public void onMqttServerConnectionEstablished(MqttConnection connection, boolean reconnected) {
 		Long nodeId = identityService.getNodeId();
 		if ( nodeId == null ) {
 			return;
@@ -513,4 +513,5 @@ public class MqttUploadService extends BaseMqttConnectionService
 	public void setIncludeVersionTag(boolean includeVersionTag) {
 		this.includeVersionTag = includeVersionTag;
 	}
+
 }
