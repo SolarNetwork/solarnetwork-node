@@ -32,6 +32,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +46,10 @@ import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTests;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
+import net.solarnetwork.node.test.DataUtils;
 import net.solarnetwork.util.ByteUtils;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * Test cases for the {@link ModelDataFactory} class.
@@ -109,6 +116,32 @@ public class ModelDataFactoryTests {
 				equalTo(273085000L));
 		assertThat("Energy import Phase C", model.accessorForPhase(PhaseC).getActiveEnergyImported(),
 				equalTo(377907200L));
+
+	}
+
+	@Test
+	public void createModelForNonStandardAddress() throws IOException {
+		// GIVEN
+		Map<Integer, Integer> registers = DataUtils
+				.parseModbusHexRegisterMappingLines(new BufferedReader(
+						new InputStreamReader(getClass().getResourceAsStream("test-data-01.txt"))));
+		IntShortMap map = new IntShortMap(registers.size());
+		for ( Map.Entry<Integer, Integer> entry : registers.entrySet() ) {
+			map.putValue(entry.getKey(), entry.getValue());
+		}
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(map);
+
+		// WHEN
+		ModelData data = ModelDataFactory.getInstance().getModelData(conn,
+				ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, 1000);
+
+		// THEN
+		assertThat("Manufacturer", data.getManufacturer(), equalTo("Veris Industries"));
+		assertThat("Model name", data.getModelName(), equalTo("E51C2"));
+		assertThat("Options", data.getOptions(), equalTo("None"));
+		assertThat("Version", data.getVersion(), equalTo("2.115"));
+		assertThat("Serial number", data.getSerialNumber(), equalTo("4E4C3699"));
+		assertThat("Device address", data.getDeviceAddress(), equalTo(7));
 
 	}
 

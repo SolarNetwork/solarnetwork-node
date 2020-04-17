@@ -59,7 +59,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class ModelDataFactory {
 
@@ -117,9 +117,7 @@ public class ModelDataFactory {
 	private int findSunSpecBaseAddress(ModbusConnection conn) {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
 			try {
-				String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, r.getAddress(),
-						r.getWordLength(), true, ByteUtils.ASCII);
-				if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
+				if ( isSunSpecBaseAddress(conn, r.getAddress()) ) {
 					return r.getAddress();
 				}
 			} catch ( RuntimeException e ) {
@@ -129,6 +127,20 @@ public class ModelDataFactory {
 			}
 		}
 		throw new RuntimeException("SunSpec ID 'SunS' not found at any known base address.");
+	}
+
+	private boolean isSunSpecBaseAddress(ModbusConnection conn, final int address) {
+		try {
+			String s = conn.readString(ModbusReadFunction.ReadHoldingRegister, address,
+					ModelRegister.BaseAddress.getWordLength(), true, ByteUtils.ASCII);
+			if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
+				return true;
+			}
+		} catch ( RuntimeException e ) {
+			// in case device throws error reading from address that is not base address, fail
+			log.warn("Error looking for SunSpec ID at base address {}: {}", address, e.toString());
+		}
+		return false;
 	}
 
 	/**
@@ -154,6 +166,12 @@ public class ModelDataFactory {
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
 	 * 
+	 * <p>
+	 * This method will look for the Modbus base address at any of the SunSpec
+	 * defined base addresses, as defined in
+	 * {@link ModelRegister#BASE_ADDRESSES}.
+	 * </p>
+	 * 
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -165,6 +183,35 @@ public class ModelDataFactory {
 	 */
 	public ModelData getModelData(ModbusConnection conn, int maxReadWordsCount) {
 		final int sunSpecBaseAddress = findSunSpecBaseAddress(conn);
+		return readModelData(conn, maxReadWordsCount, sunSpecBaseAddress);
+	}
+
+	/**
+	 * Create a new model data instance by discovering the model from a device
+	 * via a Modbus connection.
+	 * 
+	 * @param conn
+	 *        the modbus connection
+	 * @param maxReadWordsCount
+	 *        the maxReadWordsCount to set; anything less than {@literal 1} is
+	 *        ignored; pass {@link Integer#MAX_VALUE} for no limit
+	 * @param baseAddress
+	 *        the Modbus address where the {@literal SunS} magic bytes start
+	 * @return the data
+	 * @throws RuntimeException
+	 *         if no supported model data can be discovered
+	 * @since 1.5
+	 */
+	public ModelData getModelData(ModbusConnection conn, int maxReadWordsCount, int baseAddress) {
+		if ( !isSunSpecBaseAddress(conn, baseAddress) ) {
+			throw new RuntimeException(String
+					.format("SunSpec ID 'SunS' not found at base address 0x%1$04x (%1$d)", baseAddress));
+		}
+		return readModelData(conn, maxReadWordsCount, baseAddress);
+	}
+
+	private ModelData readModelData(ModbusConnection conn, int maxReadWordsCount,
+			int sunSpecBaseAddress) {
 		ModelData data = new ModelData(sunSpecBaseAddress + 2);
 		data.setMaxReadWordsCount(maxReadWordsCount);
 		data.readCommonModelData(conn);
