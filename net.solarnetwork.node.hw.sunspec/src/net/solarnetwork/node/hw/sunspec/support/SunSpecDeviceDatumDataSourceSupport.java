@@ -49,7 +49,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -58,6 +58,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	private long sampleCacheMs = 5000;
 	private String sourceId = "SunSpec-Device";
+	private Integer baseAddress = null;
 	private Set<Integer> secondaryModelIds;
 
 	/**
@@ -112,7 +113,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 					@Override
 					public ModelData doWithConnection(ModbusConnection connection) throws IOException {
 						if ( data == null ) {
-							ModelData result = ModelDataFactory.getInstance().getModelData(connection);
+							ModelData result = modelData(connection);
 							if ( result != null ) {
 								sample.set(result);
 							}
@@ -148,6 +149,15 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 			}
 		}
 		return (currSample != null ? currSample.getSnapshot() : null);
+	}
+
+	private ModelData modelData(ModbusConnection conn) {
+		Integer manualBaseAddress = getBaseAddress();
+		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
+			return ModelDataFactory.getInstance().getModelData(conn,
+					ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT, manualBaseAddress);
+		}
+		return ModelDataFactory.getInstance().getModelData(conn);
 	}
 
 	private List<ModelAccessor> getSecondaryModelAccessors(ModelData data) {
@@ -200,7 +210,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) {
 		CommonModelAccessor data = getSample();
 		if ( data == null ) {
-			data = ModelDataFactory.getInstance().getModelData(connection);
+			data = modelData(connection);
 		}
 		if ( data == null ) {
 			return null;
@@ -294,6 +304,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
 		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue", ""));
+		results.add(new BasicTextFieldSettingSpecifier("baseAddress", ""));
 
 		return results;
 	}
@@ -467,6 +478,32 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 			}
 		}
 		setSecondaryModelIds(ids);
+	}
+
+	/**
+	 * Get the manual base address to use.
+	 * 
+	 * @return the manual base address, or {@literal null} to automatically
+	 *         discover the base address
+	 * @since 1.5
+	 */
+	public Integer getBaseAddress() {
+		return baseAddress;
+	}
+
+	/**
+	 * Set the manual base address to set.
+	 * 
+	 * @param baseAddress
+	 *        the base address to set, or anything less than {@literal 0} to
+	 *        automatically discover the base address
+	 * @since 1.5
+	 */
+	public void setBaseAddress(Integer baseAddress) {
+		if ( baseAddress != null && baseAddress.intValue() < 0 ) {
+			baseAddress = null;
+		}
+		this.baseAddress = baseAddress;
 	}
 
 }
