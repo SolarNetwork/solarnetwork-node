@@ -110,7 +110,7 @@ public enum AE500NxRegister implements ModbusReference {
 	InverterBusVoltage(34, Int32),
 
 	/** The ground current, in A. */
-	InverterGroundCurrent(36, Float32),
+	InverterCurrentGround(36, Float32),
 
 	/** The reactive power, in kVAR. */
 	InverterReactivePowerTotal(38, Float32),

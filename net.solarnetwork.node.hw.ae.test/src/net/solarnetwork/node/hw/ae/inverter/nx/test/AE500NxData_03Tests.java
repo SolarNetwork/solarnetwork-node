@@ -50,14 +50,14 @@ import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnec
  * @author matt
  * @version 1.0
  */
-public class AE500NxData_01Tests {
+public class AE500NxData_03Tests {
 
 	static ModbusConnection conn = null;
 
 	@BeforeClass
 	public static void setupStatic() throws IOException {
 		final int[] data = parseModbusHexRegisterLines(new BufferedReader(new InputStreamReader(
-				AE500NxData_01Tests.class.getResourceAsStream("test-data-500nx-01.txt"))));
+				AE500NxData_03Tests.class.getResourceAsStream("test-data-500nx-03.txt"))));
 		conn = new StaticDataMapReadonlyModbusConnection(data);
 	}
 
@@ -78,13 +78,13 @@ public class AE500NxData_01Tests {
 	@Test
 	public void firmwareVersion() {
 		assertThat("Firmware version", data.getFirmwareVersion(),
-				equalTo("CHKSM: 0xd36c; APP: 7450015J.00; CFG: 7200082H.00; FPGA: 7/8/08"));
+				equalTo("CHKSM: 0xd36c; APP: 7450015J.00; CFG: 7200089J.00; FPGA: 7/8/08"));
 	}
 
 	@Test
 	public void serialNumber() {
 		assertThat("Serial number", data.getSerialNumber(),
-				equalTo("M/N 3159500-1000 AD; S/N 781322; F/R AD"));
+				equalTo("M/N 3159000-0000 AE; S/N 817053; F/R AE"));
 	}
 
 	@Test
@@ -97,7 +97,7 @@ public class AE500NxData_01Tests {
 	public void systemStatus() {
 		Set<AE500NxSystemStatus> status = data.getSystemStatus();
 		assertThat("Status", status, containsInAnyOrder(AE500NxSystemStatus.Autostart,
-				AE500NxSystemStatus.Enabled, AE500NxSystemStatus.Mppt, AE500NxSystemStatus.Power));
+				AE500NxSystemStatus.Mppt, AE500NxSystemStatus.Sleep));
 	}
 
 	@Test
@@ -108,17 +108,17 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void dcPower() {
-		assertThat("DC power", data.getDCPower(), equalTo((int) (68.6f * 760f)));
+		assertThat("DC power", data.getDCPower(), equalTo(0));
 	}
 
 	@Test
 	public void dcVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(760f));
+		assertThat("DC voltage", data.getDCVoltage(), equalTo(0f));
 	}
 
 	@Test
 	public void activeEnergyDelivered() {
-		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(209385220L));
+		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(131410310L));
 	}
 
 	@Test
@@ -128,7 +128,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void activePower() {
-		assertThat("Active energy power", data.getActivePower(), equalTo(51700));
+		assertThat("Active energy power", data.getActivePower(), equalTo(0));
 	}
 
 	@Test
@@ -148,12 +148,12 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void current() {
-		assertThat("Current", data.getCurrent(), equalTo(59.9f));
+		assertThat("Current", data.getCurrent(), equalTo(0f));
 	}
 
 	@Test
 	public void frequency() {
-		assertThat("Frequency", data.getFrequency(), equalTo(60.0f));
+		assertThat("Frequency", data.getFrequency(), equalTo(59.97f));
 	}
 
 	@Test
@@ -163,7 +163,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void neutralCurrent() {
-		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.73f));
+		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.29f));
 	}
 
 	@Test
@@ -188,7 +188,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void voltage() {
-		assertThat("Voltage", data.getVoltage(), equalTo(-2.6f));
+		assertThat("Voltage", data.getVoltage(), equalTo(0.1f));
 	}
 
 }

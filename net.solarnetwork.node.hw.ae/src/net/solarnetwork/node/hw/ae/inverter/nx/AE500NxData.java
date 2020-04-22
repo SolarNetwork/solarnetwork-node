@@ -174,7 +174,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 
 	@Override
 	public Float getNeutralCurrent() {
-		Number n = getNumber(AE500NxRegister.InverterGroundCurrent);
+		Number n = getNumber(AE500NxRegister.InverterCurrentGround);
 		return (n != null ? n.floatValue() : null);
 	}
 
@@ -262,7 +262,12 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 
 	@Override
 	public String getFirmwareVersion() {
-		return getAsciiString(AE500NxRegister.InfoSoftwareVersions, true);
+		String s = getAsciiString(AE500NxRegister.InfoSoftwareVersions, true);
+		if ( s != null ) {
+			// remove internal whitespace
+			s = s.replaceAll("\\s+(?=;)", "");
+		}
+		return s;
 	}
 
 	@Override
@@ -273,7 +278,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 
 	@Override
 	public Set<AE500NxSystemLimit> getSystemLimits() {
-		Number n = getNumber(AE500NxRegister.StatusFaults1);
+		Number n = getNumber(AE500NxRegister.StatusSystemLimits);
 		return (n != null ? setForBitmask(n.intValue(), AE500NxSystemLimit.class) : null);
 	}
 

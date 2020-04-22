@@ -23,10 +23,8 @@
 package net.solarnetwork.node.hw.ae.inverter.nx.test;
 
 import static net.solarnetwork.node.test.DataUtils.parseModbusHexRegisterLines;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,9 +36,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxData;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault;
+import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault1;
+import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault2;
+import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault3;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxSystemLimit;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxSystemStatus;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxWarning;
+import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxWarning1;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 
@@ -50,14 +52,14 @@ import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnec
  * @author matt
  * @version 1.0
  */
-public class AE500NxData_01Tests {
+public class AE500NxData_04Tests {
 
 	static ModbusConnection conn = null;
 
 	@BeforeClass
 	public static void setupStatic() throws IOException {
 		final int[] data = parseModbusHexRegisterLines(new BufferedReader(new InputStreamReader(
-				AE500NxData_01Tests.class.getResourceAsStream("test-data-500nx-01.txt"))));
+				AE500NxData_04Tests.class.getResourceAsStream("test-data-500nx-04.txt"))));
 		conn = new StaticDataMapReadonlyModbusConnection(data);
 	}
 
@@ -72,123 +74,31 @@ public class AE500NxData_01Tests {
 	@Test
 	public void faults() {
 		SortedSet<AE500NxFault> faults = data.getFaults();
-		assertThat("Faults", faults, empty());
-	}
-
-	@Test
-	public void firmwareVersion() {
-		assertThat("Firmware version", data.getFirmwareVersion(),
-				equalTo("CHKSM: 0xd36c; APP: 7450015J.00; CFG: 7200082H.00; FPGA: 7/8/08"));
-	}
-
-	@Test
-	public void serialNumber() {
-		assertThat("Serial number", data.getSerialNumber(),
-				equalTo("M/N 3159500-1000 AD; S/N 781322; F/R AD"));
+		assertThat("Faults", faults,
+				contains(AE500NxFault1.DspWatchdog, AE500NxFault1.PosCurrent, AE500NxFault1.FrequencyLow,
+						AE500NxFault2.CommonMode, AE500NxFault2.OverPower, AE500NxFault3.PhaseALow,
+						AE500NxFault3.PhaseBLow));
 	}
 
 	@Test
 	public void systemLimits() {
 		Set<AE500NxSystemLimit> limits = data.getSystemLimits();
-		assertThat("Limits", limits, empty());
+		assertThat("Limits", limits, containsInAnyOrder(AE500NxSystemLimit.Iac, AE500NxSystemLimit.Pac,
+				AE500NxSystemLimit.Headroom, AE500NxSystemLimit.MaxPowerInhibit));
 	}
 
 	@Test
 	public void systemStatus() {
 		Set<AE500NxSystemStatus> status = data.getSystemStatus();
 		assertThat("Status", status, containsInAnyOrder(AE500NxSystemStatus.Autostart,
-				AE500NxSystemStatus.Enabled, AE500NxSystemStatus.Mppt, AE500NxSystemStatus.Power));
+				AE500NxSystemStatus.Mppt, AE500NxSystemStatus.Sleep));
 	}
 
 	@Test
 	public void warnings() {
 		SortedSet<AE500NxWarning> warnings = data.getWarnings();
-		assertThat("Warnings", warnings, empty());
-	}
-
-	@Test
-	public void dcPower() {
-		assertThat("DC power", data.getDCPower(), equalTo((int) (68.6f * 760f)));
-	}
-
-	@Test
-	public void dcVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(760f));
-	}
-
-	@Test
-	public void activeEnergyDelivered() {
-		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(209385220L));
-	}
-
-	@Test
-	public void activeEnergyReceived() {
-		assertThat("Active energy received", data.getActiveEnergyReceived(), nullValue());
-	}
-
-	@Test
-	public void activePower() {
-		assertThat("Active energy power", data.getActivePower(), equalTo(51700));
-	}
-
-	@Test
-	public void apparentEnergyDelivered() {
-		assertThat("Apparent energy delivered", data.getApparentEnergyDelivered(), nullValue());
-	}
-
-	@Test
-	public void apparentEnergyReceived() {
-		assertThat("Apparent energy received", data.getApparentEnergyReceived(), nullValue());
-	}
-
-	@Test
-	public void apparentPower() {
-		assertThat("Apparent power", data.getApparentPower(), nullValue());
-	}
-
-	@Test
-	public void current() {
-		assertThat("Current", data.getCurrent(), equalTo(59.9f));
-	}
-
-	@Test
-	public void frequency() {
-		assertThat("Frequency", data.getFrequency(), equalTo(60.0f));
-	}
-
-	@Test
-	public void lineVoltage() {
-		assertThat("Line voltage", data.getLineVoltage(), nullValue());
-	}
-
-	@Test
-	public void neutralCurrent() {
-		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.73f));
-	}
-
-	@Test
-	public void powerFactor() {
-		assertThat("Power factor", data.getPowerFactor(), nullValue());
-	}
-
-	@Test
-	public void reactiveEnergyDelivered() {
-		assertThat("Reactive energy delivered", data.getReactiveEnergyDelivered(), nullValue());
-	}
-
-	@Test
-	public void reactiveEnergyReceived() {
-		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), nullValue());
-	}
-
-	@Test
-	public void reactivePower() {
-		assertThat("Reactive power", data.getReactivePower(), equalTo(0));
-	}
-
-	@Test
-	public void voltage() {
-		assertThat("Voltage", data.getVoltage(), equalTo(-2.6f));
+		assertThat("Warnings", warnings,
+				contains(AE500NxWarning1.Fan1, AE500NxWarning1.Fan5, AE500NxWarning1.Fan8));
 	}
 
 }

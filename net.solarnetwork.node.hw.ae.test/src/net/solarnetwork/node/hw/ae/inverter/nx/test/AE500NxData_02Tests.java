@@ -50,14 +50,14 @@ import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnec
  * @author matt
  * @version 1.0
  */
-public class AE500NxData_01Tests {
+public class AE500NxData_02Tests {
 
 	static ModbusConnection conn = null;
 
 	@BeforeClass
 	public static void setupStatic() throws IOException {
 		final int[] data = parseModbusHexRegisterLines(new BufferedReader(new InputStreamReader(
-				AE500NxData_01Tests.class.getResourceAsStream("test-data-500nx-01.txt"))));
+				AE500NxData_02Tests.class.getResourceAsStream("test-data-500nx-02.txt"))));
 		conn = new StaticDataMapReadonlyModbusConnection(data);
 	}
 
@@ -84,7 +84,7 @@ public class AE500NxData_01Tests {
 	@Test
 	public void serialNumber() {
 		assertThat("Serial number", data.getSerialNumber(),
-				equalTo("M/N 3159500-1000 AD; S/N 781322; F/R AD"));
+				equalTo("M/N 3159500-1000 AD; S/N 780348; F/R AD"));
 	}
 
 	@Test
@@ -108,17 +108,17 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void dcPower() {
-		assertThat("DC power", data.getDCPower(), equalTo((int) (68.6f * 760f)));
+		assertThat("DC power", data.getDCPower(), equalTo((int) (45.1f * 757f)));
 	}
 
 	@Test
 	public void dcVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(760f));
+		assertThat("DC voltage", data.getDCVoltage(), equalTo(757f));
 	}
 
 	@Test
 	public void activeEnergyDelivered() {
-		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(209385220L));
+		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(215367200L));
 	}
 
 	@Test
@@ -128,7 +128,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void activePower() {
-		assertThat("Active energy power", data.getActivePower(), equalTo(51700));
+		assertThat("Active energy power", data.getActivePower(), equalTo(33700));
 	}
 
 	@Test
@@ -148,12 +148,12 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void current() {
-		assertThat("Current", data.getCurrent(), equalTo(59.9f));
+		assertThat("Current", data.getCurrent(), equalTo(38.6f));
 	}
 
 	@Test
 	public void frequency() {
-		assertThat("Frequency", data.getFrequency(), equalTo(60.0f));
+		assertThat("Frequency", data.getFrequency(), equalTo(59.96f));
 	}
 
 	@Test
@@ -163,7 +163,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void neutralCurrent() {
-		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.73f));
+		assertThat("Neutral current", data.getNeutralCurrent(), equalTo(0.74f));
 	}
 
 	@Test
@@ -188,7 +188,7 @@ public class AE500NxData_01Tests {
 
 	@Test
 	public void voltage() {
-		assertThat("Voltage", data.getVoltage(), equalTo(-2.6f));
+		assertThat("Voltage", data.getVoltage(), equalTo(5.5f));
 	}
 
 }
