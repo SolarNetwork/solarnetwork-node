@@ -49,7 +49,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -427,7 +427,8 @@ public class ModbusData implements DataAccessor {
 	 * Construct a byte array out of a data address range.
 	 * 
 	 * <p>
-	 * This method will respect the configured {@link #getWordOrder()} value.
+	 * This method will assume {@link ModbusWordOrder#MostToLeastSignificant}
+	 * word ordering.
 	 * </p>
 	 * 
 	 * @param addr
@@ -439,8 +440,7 @@ public class ModbusData implements DataAccessor {
 	public byte[] getBytes(final int addr, final int count) {
 		byte[] result = new byte[count * 2];
 		for ( int i = addr, end = addr + count, index = 0; i < end; i++, index += 2 ) {
-			short word = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? dataRegisters.getValue(i)
-					: dataRegisters.getValue(end - i - 1));
+			short word = dataRegisters.getValue(i);
 			result[index] = (byte) ((word >> 8) & 0xFF);
 			result[index + 1] = (byte) (word & 0xFF);
 		}
@@ -635,7 +635,7 @@ public class ModbusData implements DataAccessor {
 	public final ModbusData performUpdates(ModbusDataUpdateAction action) {
 		synchronized ( dataRegisters ) {
 			final long now = System.currentTimeMillis();
-			if ( action.updateModbusData(new MutableModbusDataView(dataRegisters, wordOrder)) ) {
+			if ( action.updateModbusData(new MutableModbusDataView(dataRegisters)) ) {
 				dataTimestamp = now;
 			}
 		}
@@ -727,8 +727,8 @@ public class ModbusData implements DataAccessor {
 		 * </p>
 		 * 
 		 * <p>
-		 * This method will respect the configured {@link #getWordOrder()}
-		 * value.
+		 * This method will assume
+		 * {@link ModbusWordOrder#MostToLeastSignificant} word ordering.
 		 * </p>
 		 * 
 		 * @param data
@@ -766,7 +766,18 @@ public class ModbusData implements DataAccessor {
 	public static class MutableModbusDataView implements MutableModbusData {
 
 		private final IntShortMap dataRegisters;
-		private final ModbusWordOrder wordOrder;
+
+		/**
+		 * Construct with data registers to mutate.
+		 * 
+		 * @param dataRegisters
+		 *        the registers to mutate; calling code should by synchronized
+		 *        on this instance
+		 */
+		public MutableModbusDataView(IntShortMap dataRegisters) {
+			super();
+			this.dataRegisters = dataRegisters;
+		}
 
 		/**
 		 * Construct with data registers to mutate.
@@ -775,12 +786,11 @@ public class ModbusData implements DataAccessor {
 		 *        the registers to mutate; calling code should by synchronized
 		 *        on this instance
 		 * @param wordOrder
-		 *        the word order to use
+		 *        this parameter is not used, but maintained for backwards
+		 *        compatibility
 		 */
 		public MutableModbusDataView(IntShortMap dataRegisters, ModbusWordOrder wordOrder) {
-			super();
-			this.dataRegisters = dataRegisters;
-			this.wordOrder = wordOrder;
+			this(dataRegisters);
 		}
 
 		@Override
@@ -828,14 +838,12 @@ public class ModbusData implements DataAccessor {
 			if ( data == null || data.length < 1 ) {
 				return;
 			}
-			final int wordLength = (int) Math.ceil(data.length / 2.0);
 			for ( int i = 0, j = 0; i < data.length; i += 2, j++ ) {
 				int n = ((data[i] & 0xFF) << 8);
 				if ( i + 1 < data.length ) {
 					n = n | (data[i + 1] & 0xFF);
 				}
-				int idx = (wordOrder == ModbusWordOrder.MostToLeastSignificant ? addr + j
-						: addr + wordLength - j - 1);
+				int idx = addr + j;
 				dataRegisters.putValue(idx, (short) n);
 			}
 		}
