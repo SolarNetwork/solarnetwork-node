@@ -30,11 +30,11 @@ import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxRegister;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.util.NumberUtils;
 
 /**
@@ -53,6 +53,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	 */
 	public AE500NxData() {
 		super();
+		setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 	}
 
 	/**
@@ -200,7 +201,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 
 	@Override
 	public Long getActiveEnergyDelivered() {
-		return getKiloValueAsLong(AE250TxRegister.InverterActiveEnergyDelivered);
+		return getKiloValueAsLong(AE500NxRegister.InverterActiveEnergyDelivered);
 	}
 
 	@Override
