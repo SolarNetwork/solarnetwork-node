@@ -176,7 +176,7 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {
