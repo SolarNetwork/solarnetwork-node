@@ -32,8 +32,8 @@ import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxData;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxDataAccessor;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxData;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,

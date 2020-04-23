@@ -36,6 +36,7 @@ import java.util.SortedSet;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxData;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxSystemLimit;
@@ -67,6 +68,12 @@ public class AE500NxData_03Tests {
 	public void setup() {
 		data = new AE500NxData();
 		data.readConfigurationData(conn);
+	}
+
+	@Test
+	public void deviceOperatingState() {
+		assertThat("Device operating state", data.getDeviceOperatingState(),
+				equalTo(DeviceOperatingState.Standby));
 	}
 
 	@Test

@@ -20,12 +20,12 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter.test;
+package net.solarnetwork.node.hw.ae.inverter.tx.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import org.junit.Test;
-import net.solarnetwork.node.hw.ae.inverter.AEInverterType;
+import net.solarnetwork.node.hw.ae.inverter.tx.AEInverterType;
 
 /**
  * Test cases for the {@link AEInverterType} class.

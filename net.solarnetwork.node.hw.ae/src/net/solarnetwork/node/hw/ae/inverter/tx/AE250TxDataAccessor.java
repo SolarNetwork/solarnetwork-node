@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;

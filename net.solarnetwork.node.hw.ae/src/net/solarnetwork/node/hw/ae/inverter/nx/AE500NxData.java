@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -295,6 +296,24 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	public SortedSet<AE500NxWarning> getWarnings() {
 		Number f0 = getNumber(AE500NxRegister.StatusWarnings1);
 		return AE500NxUtils.warningSet(f0 != null ? f0.intValue() : 0);
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		Set<AE500NxSystemStatus> status = getSystemStatus();
+		if ( status.contains(AE500NxSystemStatus.Startup) ) {
+			return DeviceOperatingState.Starting;
+		} else if ( status.contains(AE500NxSystemStatus.Sleep) ) {
+			return DeviceOperatingState.Standby;
+		} else if ( status.contains(AE500NxSystemStatus.Fault)
+				|| status.contains(AE500NxSystemStatus.BadMov) ) {
+			return DeviceOperatingState.Fault;
+		} else if ( !status.contains(AE500NxSystemStatus.Enabled) ) {
+			return DeviceOperatingState.Disabled;
+		} else if ( !status.contains(AE500NxSystemStatus.Power) ) {
+			return DeviceOperatingState.Shutdown;
+		}
+		return DeviceOperatingState.Normal;
 	}
 
 }

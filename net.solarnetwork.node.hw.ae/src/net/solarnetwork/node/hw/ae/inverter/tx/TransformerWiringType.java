@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 /**
  * Enumeration of transformer tap position configuration.
@@ -28,16 +28,16 @@ package net.solarnetwork.node.hw.ae.inverter;
  * @author matt
  * @version 1.0
  */
-public enum TransformerTapType {
+public enum TransformerWiringType {
 
-	V_265(0x0008, "265 volts"),
+	Wye(0x0010, "Wye wiring"),
 
-	V_295(0x0000, "295 volts");
+	Delta(0x0000, "Delta wiring");
 
 	private final int code;
 	private final String description;
 
-	private TransformerTapType(int value, String description) {
+	private TransformerWiringType(int value, String description) {
 		this.code = value;
 		this.description = description;
 	}
@@ -66,8 +66,8 @@ public enum TransformerTapType {
 	 * <p>
 	 * The register value is the raw data read from Modbus and contains a
 	 * bitmask of configuration data. The encoding is an either/or bit flag
-	 * only, so either the {@link #V_265} bit is set or the default of
-	 * {@link #V_295} is assumed.
+	 * only, so either the {@link #Delta} bit is set or the default of
+	 * {@link #Wye} is assumed.
 	 * </p>
 	 * 
 	 * @param word
@@ -76,11 +76,11 @@ public enum TransformerTapType {
 	 * @throws IllegalArgumentException
 	 *         if {@code word} does not contain a supported value
 	 */
-	public static TransformerTapType forRegisterValue(int word) {
-		if ( (TransformerTapType.V_265.code & word) == TransformerTapType.V_265.code ) {
-			return TransformerTapType.V_265;
+	public static TransformerWiringType forRegisterValue(int word) {
+		if ( (TransformerWiringType.Delta.code & word) == TransformerWiringType.Delta.code ) {
+			return TransformerWiringType.Delta;
 		}
-		return TransformerTapType.V_295;
+		return TransformerWiringType.Wye;
 	}
 
 	/**
@@ -88,16 +88,16 @@ public enum TransformerTapType {
 	 * 
 	 * <p>
 	 * As this is an either/or bit flag, if {@code value} is the same value as
-	 * {@link #V_265} that is returned, otherwise {@link #V_295} is.
+	 * {@link #Delta} that is returned, otherwise {@link #Wye} is.
 	 * </p>
 	 * 
 	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
 	 */
-	public static TransformerTapType forCode(int value) {
-		return (value == TransformerTapType.V_265.code ? TransformerTapType.V_265
-				: TransformerTapType.V_295);
+	public static TransformerWiringType forCode(int value) {
+		return (value == TransformerWiringType.Delta.code ? TransformerWiringType.Delta
+				: TransformerWiringType.Wye);
 	}
 
 }

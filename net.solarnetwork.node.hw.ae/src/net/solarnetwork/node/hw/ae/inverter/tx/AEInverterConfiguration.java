@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import java.util.HashMap;
 import java.util.Map;

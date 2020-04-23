@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
 
 import java.util.Set;
 import java.util.SortedSet;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -77,5 +78,12 @@ public interface AE500NxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataA
 	 * @return the active warnings
 	 */
 	SortedSet<AE500NxWarning> getWarnings();
+
+	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the device operating state
+	 */
+	DeviceOperatingState getDeviceOperatingState();
 
 }

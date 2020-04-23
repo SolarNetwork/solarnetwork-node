@@ -1,5 +1,5 @@
 /* ==================================================================
- * InverterVoltageType.java - 27/07/2018 2:18:29 PM
+ * TransformerTapType.java - 27/07/2018 2:28:35 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,28 +20,24 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 /**
- * Inverter voltage type enumeration.
+ * Enumeration of transformer tap position configuration.
  * 
  * @author matt
  * @version 1.0
  */
-public enum InverterVoltageType {
+public enum TransformerTapType {
 
-	AC_208(0x001, "AC 208 volts"),
+	V_265(0x0008, "265 volts"),
 
-	AC_240(0x002, "AC 240 volts"),
-
-	AC_480(0x004, "AC 480 volts"),
-
-	AC_600(0x200, "AC 600 volts");
+	V_295(0x0000, "295 volts");
 
 	private final int code;
 	private final String description;
 
-	private InverterVoltageType(int value, String description) {
+	private TransformerTapType(int value, String description) {
 		this.code = value;
 		this.description = description;
 	}
@@ -69,7 +65,9 @@ public enum InverterVoltageType {
 	 * 
 	 * <p>
 	 * The register value is the raw data read from Modbus and contains a
-	 * bitmask of configuration data.
+	 * bitmask of configuration data. The encoding is an either/or bit flag
+	 * only, so either the {@link #V_265} bit is set or the default of
+	 * {@link #V_295} is assumed.
 	 * </p>
 	 * 
 	 * @param word
@@ -78,30 +76,28 @@ public enum InverterVoltageType {
 	 * @throws IllegalArgumentException
 	 *         if {@code word} does not contain a supported value
 	 */
-	public static InverterVoltageType forRegisterValue(int word) {
-		for ( InverterVoltageType e : values() ) {
-			if ( (word & e.code) == e.code ) {
-				return e;
-			}
+	public static TransformerTapType forRegisterValue(int word) {
+		if ( (TransformerTapType.V_265.code & word) == TransformerTapType.V_265.code ) {
+			return TransformerTapType.V_265;
 		}
-		throw new IllegalArgumentException("Unsupported voltage type value: " + word);
+		return TransformerTapType.V_295;
 	}
 
 	/**
 	 * Get an enumeration for a given code value.
 	 * 
+	 * <p>
+	 * As this is an either/or bit flag, if {@code value} is the same value as
+	 * {@link #V_265} that is returned, otherwise {@link #V_295} is.
+	 * </p>
+	 * 
 	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
-	 * @throws IllegalArgumentException
-	 *         if {@code code} is not supported
 	 */
-	public static InverterVoltageType forCode(int value) {
-		for ( InverterVoltageType s : values() ) {
-			if ( s.code == value ) {
-				return s;
-			}
-		}
-		throw new IllegalArgumentException("Unsupported voltage type value: " + value);
+	public static TransformerTapType forCode(int value) {
+		return (value == TransformerTapType.V_265.code ? TransformerTapType.V_265
+				: TransformerTapType.V_295);
 	}
+
 }

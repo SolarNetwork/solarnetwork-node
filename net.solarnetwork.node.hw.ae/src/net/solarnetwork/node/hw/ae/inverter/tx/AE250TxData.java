@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;

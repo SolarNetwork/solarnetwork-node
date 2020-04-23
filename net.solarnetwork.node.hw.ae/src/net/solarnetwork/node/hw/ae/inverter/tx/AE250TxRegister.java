@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import static java.util.Arrays.asList;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;

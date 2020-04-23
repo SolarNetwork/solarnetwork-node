@@ -63,7 +63,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="shark100DatumLoggerTrigger"/>
+					<property name="name" value="ae250txDatumLoggerTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -90,7 +90,7 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="shark100DatumLoggerJob"/>
+					<property name="name" value="ae250txDatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>

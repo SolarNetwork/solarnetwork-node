@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.ae.inverter.nx.test;
 import static net.solarnetwork.node.test.DataUtils.parseModbusHexRegisterLines;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -34,6 +35,7 @@ import java.util.SortedSet;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxData;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault1;
@@ -69,6 +71,12 @@ public class AE500NxData_04Tests {
 	public void setup() {
 		data = new AE500NxData();
 		data.readConfigurationData(conn);
+	}
+
+	@Test
+	public void deviceOperatingState() {
+		assertThat("Device operating state", data.getDeviceOperatingState(),
+				equalTo(DeviceOperatingState.Standby));
 	}
 
 	@Test

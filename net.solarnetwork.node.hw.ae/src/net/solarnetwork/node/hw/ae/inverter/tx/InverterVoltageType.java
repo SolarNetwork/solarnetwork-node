@@ -1,5 +1,5 @@
 /* ==================================================================
- * TransformerTapType.java - 27/07/2018 2:28:35 PM
+ * InverterVoltageType.java - 27/07/2018 2:18:29 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,24 +20,28 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.ae.inverter;
+package net.solarnetwork.node.hw.ae.inverter.tx;
 
 /**
- * Enumeration of transformer tap position configuration.
+ * Inverter voltage type enumeration.
  * 
  * @author matt
  * @version 1.0
  */
-public enum TransformerWiringType {
+public enum InverterVoltageType {
 
-	Wye(0x0010, "Wye wiring"),
+	AC_208(0x001, "AC 208 volts"),
 
-	Delta(0x0000, "Delta wiring");
+	AC_240(0x002, "AC 240 volts"),
+
+	AC_480(0x004, "AC 480 volts"),
+
+	AC_600(0x200, "AC 600 volts");
 
 	private final int code;
 	private final String description;
 
-	private TransformerWiringType(int value, String description) {
+	private InverterVoltageType(int value, String description) {
 		this.code = value;
 		this.description = description;
 	}
@@ -65,9 +69,7 @@ public enum TransformerWiringType {
 	 * 
 	 * <p>
 	 * The register value is the raw data read from Modbus and contains a
-	 * bitmask of configuration data. The encoding is an either/or bit flag
-	 * only, so either the {@link #Delta} bit is set or the default of
-	 * {@link #Wye} is assumed.
+	 * bitmask of configuration data.
 	 * </p>
 	 * 
 	 * @param word
@@ -76,28 +78,30 @@ public enum TransformerWiringType {
 	 * @throws IllegalArgumentException
 	 *         if {@code word} does not contain a supported value
 	 */
-	public static TransformerWiringType forRegisterValue(int word) {
-		if ( (TransformerWiringType.Delta.code & word) == TransformerWiringType.Delta.code ) {
-			return TransformerWiringType.Delta;
+	public static InverterVoltageType forRegisterValue(int word) {
+		for ( InverterVoltageType e : values() ) {
+			if ( (word & e.code) == e.code ) {
+				return e;
+			}
 		}
-		return TransformerWiringType.Wye;
+		throw new IllegalArgumentException("Unsupported voltage type value: " + word);
 	}
 
 	/**
 	 * Get an enumeration for a given code value.
 	 * 
-	 * <p>
-	 * As this is an either/or bit flag, if {@code value} is the same value as
-	 * {@link #Delta} that is returned, otherwise {@link #Wye} is.
-	 * </p>
-	 * 
 	 * @param value
 	 *        the code to get the enum value for
 	 * @return the enumeration value
+	 * @throws IllegalArgumentException
+	 *         if {@code code} is not supported
 	 */
-	public static TransformerWiringType forCode(int value) {
-		return (value == TransformerWiringType.Delta.code ? TransformerWiringType.Delta
-				: TransformerWiringType.Wye);
+	public static InverterVoltageType forCode(int value) {
+		for ( InverterVoltageType s : values() ) {
+			if ( s.code == value ) {
+				return s;
+			}
+		}
+		throw new IllegalArgumentException("Unsupported voltage type value: " + value);
 	}
-
 }
