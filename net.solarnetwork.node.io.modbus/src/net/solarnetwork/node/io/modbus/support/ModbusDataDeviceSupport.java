@@ -62,6 +62,8 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
 	 * 
+	 * @param prefix
+	 *        a setting prefix to prepend
 	 * @return list of setting specifiers
 	 * @since 1.2
 	 */
@@ -206,6 +208,8 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 * to {@code T}.
 	 * </p>
 	 * 
+	 * @param sample
+	 *        the sample to copy
 	 * @return the copy of the sample data
 	 */
 	@SuppressWarnings("unchecked")
@@ -260,7 +264,7 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {

@@ -115,7 +115,6 @@ public interface ModbusConnection extends Closeable {
 	 * @param bits
 	 *        the bits to write, each index corresponding to an index in
 	 *        {@code addresses}
-	 * @return {@literal true} if the write succeeded
 	 */
 	void writeDiscreetValues(int[] addresses, BitSet bits);
 
@@ -274,7 +273,7 @@ public interface ModbusConnection extends Closeable {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param value
 	 *        the string value to write
-	 * @param charsetName
+	 * @param charset
 	 *        the character set to interpret the bytes as
 	 */
 	void writeString(ModbusWriteFunction function, int address, String value, Charset charset);

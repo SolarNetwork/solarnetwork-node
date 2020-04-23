@@ -182,6 +182,8 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 * to {@code T}.
 	 * </p>
 	 * 
+	 * @param sample
+	 *        the sample to copy
 	 * @return the copy of the sample data
 	 */
 	@SuppressWarnings("unchecked")
@@ -236,7 +238,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {

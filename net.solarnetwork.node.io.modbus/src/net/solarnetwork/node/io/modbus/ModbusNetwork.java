@@ -50,6 +50,8 @@ public interface ModbusNetwork extends Identifiable {
 	 * closed automatically after the action is complete.
 	 * </p>
 	 * 
+	 * @param <T>
+	 *        the result type
 	 * @param unitId
 	 *        the Modbus unit ID to address
 	 * @param action

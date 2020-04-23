@@ -193,6 +193,7 @@ public class ModbusData implements DataAccessor {
 	 * Construct an unsigned 16-bit integer from a data register address.
 	 * 
 	 * @param addr
+	 *        the register address
 	 * @return the integer, never {@literal null}
 	 */
 	public final Integer getUnsignedInt16(final int addr) {
@@ -204,6 +205,7 @@ public class ModbusData implements DataAccessor {
 	 * Construct a signed 16-bit integer from a data register address.
 	 * 
 	 * @param addr
+	 *        the register address
 	 * @return the short, never {@literal null}
 	 */
 	public final Short getInt16(final int addr) {
@@ -973,11 +975,13 @@ public class ModbusData implements DataAccessor {
 	 * @param rangeSet
 	 *        the Modbus registers to read, where each {@link IntRange} in the
 	 *        set defines <i>inclusive</i> address ranges to read
+	 * @param maxRangeLength
+	 *        the maximum length of any combined range in the resulting set
 	 * @since 1.6
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final IntRangeSet rangeSet, final int maxResults) {
-		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxResults);
+			final IntRangeSet rangeSet, final int maxRangeLength) {
+		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxRangeLength);
 		refreshData(conn, readFunction, ranges);
 	}
 
@@ -988,7 +992,7 @@ public class ModbusData implements DataAccessor {
 	 *        the connection
 	 * @param readFunction
 	 *        the Modbus read function to use
-	 * @param rangeSet
+	 * @param ranges
 	 *        the Modbus registers to read, where each {@link IntRange} in the
 	 *        set defines <i>inclusive</i> address ranges to read
 	 * @since 2.0

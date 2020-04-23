@@ -130,7 +130,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * Get the device info data as a Map.
 	 * 
 	 * <p>
-	 * This method will call {@link #readMeterInfo(ModbusConnection)}. The map
+	 * This method will call {@link #readDeviceInfo(ModbusConnection)}. The map
 	 * is cached so subsequent calls will not attempt to read from the device.
 	 * Note the returned map cannot be modified.
 	 * </p>
@@ -164,14 +164,18 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * <p>
 	 * This method attempts to obtain a {@link ModbusNetwork} from the
 	 * configured {@code modbusNetwork} service, calling
-	 * {@link ModbusNetwork#performAction(ModbusConnectionAction)} if one can be
-	 * obtained.
+	 * {@link ModbusNetwork#performAction(int, ModbusConnectionAction)} if one
+	 * can be obtained.
 	 * </p>
 	 * 
+	 * @param <T>
+	 *        the result type
 	 * @param action
 	 *        the connection action
 	 * @return the result of the callback, or {@literal null} if the action is
 	 *         never invoked
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
 		T result = null;
