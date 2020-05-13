@@ -48,7 +48,7 @@ public class SDMDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAc
 	 *        the data
 	 * @param phase
 	 *        the phase
-	 * @param backward
+	 * @param backwards
 	 *        the backwards setting
 	 */
 	public SDMDatum(SDMDataAccessor data, ACPhase phase, boolean backwards) {

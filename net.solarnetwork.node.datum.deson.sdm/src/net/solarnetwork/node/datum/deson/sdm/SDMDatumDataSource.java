@@ -386,7 +386,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	/**
 	 * Get the configured device type.
 	 * 
-	 * @return
+	 * @return the device type
 	 */
 	public SDMDeviceType getDeviceType() {
 		return getSample().getDeviceType();
@@ -442,7 +442,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	/**
 	 * Set the backwards setting.
 	 * 
-	 * @param backwards
+	 * @param value
 	 *        {@literal true} if should interpret the meter data as "backwards"
 	 *        in terms of the direction of current
 	 */
