@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * with the SDM series watt meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -147,7 +147,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem readiong from SDM device: {}", e.getMessage());
+			log.error("Communication problem reading from SDM device: {}", e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {

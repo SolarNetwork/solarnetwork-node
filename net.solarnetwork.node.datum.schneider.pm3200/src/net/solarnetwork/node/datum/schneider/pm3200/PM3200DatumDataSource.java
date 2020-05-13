@@ -48,7 +48,7 @@ import net.solarnetwork.util.StringUtils;
  * PM3200 series kWh meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM3200Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -164,7 +164,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem readiong from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {

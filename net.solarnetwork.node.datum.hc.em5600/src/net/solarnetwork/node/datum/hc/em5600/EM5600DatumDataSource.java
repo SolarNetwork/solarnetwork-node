@@ -52,11 +52,10 @@ import net.solarnetwork.util.StringUtils;
  * EM5600 series watt meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data>
-		implements DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>,
-		SettingSpecifierProvider {
+public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data> implements
+		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
 
 	/** The default source ID. */
 	public static final String MAIN_SOURCE_ID = "Main";
@@ -169,7 +168,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem readiong from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {
