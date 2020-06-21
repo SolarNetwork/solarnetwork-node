@@ -202,6 +202,17 @@ SolarNode.Settings.addLocationFinder = function(params) {
 						var td = $(el);
 						var prop = td.data('tprop');
 						var val = SolarNode.extractJSONPath(meta, prop);
+						if ( prop === 'location.region' ) {
+							// special case for Region to also show State if available
+							var state = SolarNode.extractJSONPath(meta, 'location.stateOrProvince');
+							if ( !val ) {
+								// no region value available, so use state instead
+								val = state;
+							} else if ( state && state !== val ) {
+								// both region and state available and not the same, so use "region, state"
+								val = val +', ' +state;
+							}
+						}
 						if ( val ) {
 							td.text(val);
 						}
