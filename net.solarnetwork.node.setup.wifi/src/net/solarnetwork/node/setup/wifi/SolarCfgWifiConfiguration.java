@@ -27,15 +27,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Settings provider for WiFi.
@@ -65,7 +70,17 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 	}
 
 	@Override
-	public void configurationChanged(Map<String, Object> properties) {
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		if ( country == null || country.isEmpty() || ssid == null || ssid.isEmpty() ) {
+			// in case we haven't loaded current settings ever, do that now
+			Settings s = currentSettings();
+			if ( country == null || country.isEmpty() ) {
+				country = s.country;
+			}
+			if ( ssid == null || ssid.isEmpty() ) {
+				ssid = s.ssid;
+			}
+		}
 		if ( command == null || command.isEmpty() || country == null || country.isEmpty() || ssid == null
 				|| ssid.isEmpty() || password == null || password.isEmpty() ) {
 			return;
@@ -81,24 +96,55 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		final Settings s = currentSettings();
+		final Settings settings = currentSettings();
+		final Status status = currentStatus();
 
-		final List<SettingSpecifier> result = new ArrayList<>(8);
-		result.add(new BasicTextFieldSettingSpecifier("command", DEFAULT_COMMAND));
+		final List<SettingSpecifier> result = new ArrayList<>(4);
+		result.add(new BasicTitleSettingSpecifier("status", statusMessage(status)));
 
 		// note how all WiFi settings have transient = true; this prevents them from getting copied into
 		// the settings database; thus we rely on the OS-configured values
 
-		BasicTextFieldSettingSpecifier f = new BasicTextFieldSettingSpecifier("country", s.country);
+		BasicTextFieldSettingSpecifier f = new BasicTextFieldSettingSpecifier("country",
+				settings.country);
 		f.setTransient(true);
 		result.add(f);
-		f = new BasicTextFieldSettingSpecifier("ssid", s.ssid);
+		f = new BasicTextFieldSettingSpecifier("ssid", settings.ssid);
 		f.setTransient(true);
 		result.add(f);
 		f = new BasicTextFieldSettingSpecifier("password", "", true);
 		f.setTransient(true);
 		result.add(f);
 		return result;
+	}
+
+	private String statusMessage(Status status) {
+		StringBuffer buf = new StringBuffer();
+		MessageSource messageSource = getMessageSource();
+		if ( messageSource != null ) {
+			if ( status.active ) {
+				buf.append(
+						messageSource.getMessage("active.label", null, "Active", Locale.getDefault()));
+			} else {
+				buf.append(messageSource.getMessage("inactive.label", null, "Inactive",
+						Locale.getDefault()));
+			}
+			if ( status.addresses != null && !status.addresses.isEmpty() ) {
+				buf.append("; ");
+				if ( status.addresses.size() == 1 ) {
+					buf.append(messageSource
+							.getMessage("address.label", null, "address", Locale.getDefault())
+							.toLowerCase());
+				} else {
+					buf.append(messageSource
+							.getMessage("addresses.label", null, "addresses", Locale.getDefault())
+							.toLowerCase());
+				}
+				buf.append(": ");
+				buf.append(StringUtils.delimitedStringFromCollection(status.addresses, ", "));
+			}
+		}
+		return buf.toString();
 	}
 
 	private static final class Settings {
@@ -111,6 +157,34 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 			this.country = country;
 			this.ssid = ssid;
 		}
+	}
+
+	private static final class Status {
+
+		private final boolean active;
+		private final List<String> addresses;
+
+		private Status(boolean active, List<String> addresses) {
+			super();
+			this.active = active;
+			this.addresses = addresses;
+		}
+	}
+
+	private Status currentStatus() {
+		boolean active = false;
+		List<String> addresses = Collections.emptyList();
+		try {
+			List<String> result = executeAction("status");
+			if ( result != null && !result.isEmpty() ) {
+				active = "active".equalsIgnoreCase(result.get(0));
+				result.remove(0);
+				addresses = result;
+			}
+		} catch ( Throwable t ) {
+			log.warn("Error getting current WiFi settings: {}", t.getMessage());
+		}
+		return new Status(active, addresses);
 	}
 
 	private Settings currentSettings() {
