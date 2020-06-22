@@ -36,6 +36,8 @@
 						<c:if test="${not empty systemService}">
 							<li role="separator" class="divider"></li>
 							<li><a class="restart" href="#"><fmt:message key='link.restart'/></a></li>
+							<li role="separator" class="divider"></li>
+							<li><a class="reset" href="#"><fmt:message key='link.reset'/></a></li>
 						</c:if>
 					</ul>
 				</li>
@@ -61,6 +63,31 @@
 					<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
 					<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
 					<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
+				</div>
+				<input type="hidden" name="reboot" value="false"/>
+				<sec:csrfInput/>
+			</form>
+			<form id="reset-modal" class="modal hide fade" action="<setup:url value='/a/home/reset'/>" method="post">
+				<div class="modal-header">
+					<button type="button" class="close start" data-dismiss="modal">&times;</button>
+					<h3><fmt:message key='reset.title'/></h3>
+				</div>
+				<div class="modal-body start">
+					<p><fmt:message key='reset.intro'/></p>
+					<label class="checkbox">
+						<input type="checkbox" name="applicationOnly" value="true"/>
+						<fmt:message key='reset.applicationOnly.label'/>
+					</label>
+				</div>
+				<div class="modal-body success" style="display: none;">
+					<div class="progress progress-info progress-striped active">
+						<div class="bar" style="width:100%"></div>
+					</div>
+					<p><fmt:message key='reset.underway'/></p>
+				</div>
+				<div class="modal-footer start">
+					<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+					<button type="submit" class="btn btn-danger reboot"><fmt:message key="reset.action.reset"/></button>
 				</div>
 				<input type="hidden" name="reboot" value="false"/>
 				<sec:csrfInput/>
