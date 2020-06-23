@@ -61,7 +61,7 @@ public interface SystemService {
 	 * SolarNode device.
 	 * 
 	 * <p>
-	 * In practice this could mean invoking the {@link #reset()} method.
+	 * In practice this could mean invoking the {@link #reset(boolean)} method.
 	 * </p>
 	 * 
 	 * @since 1.2
