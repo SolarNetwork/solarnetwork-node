@@ -168,7 +168,7 @@ public class CmdlineSystemService
 		List<String> arguments = new ArrayList<>(2);
 		arguments.add(resetCommand);
 		if ( applicationOnly ) {
-			arguments.add("-d");
+			arguments.add("-a");
 		}
 		handleOSCommand(arguments);
 	}
@@ -209,17 +209,31 @@ public class CmdlineSystemService
 				Scanner sc = new Scanner(src);
 				try {
 					while ( sc.hasNextLine() ) {
-						if ( errorStream ) {
-							log.error(sc.nextLine());
-						} else {
-							log.info(sc.nextLine());
-						}
+						handleInputStreamLine(errorStream, sc.nextLine());
 					}
 				} finally {
 					sc.close();
 				}
 			}
 		}).start();
+	}
+
+	/**
+	 * Handle a line of input from the OS command process.
+	 * 
+	 * @param errorStream
+	 *        {@literal true} if the line is from STDERR, {@literal false} from
+	 *        STDOUT
+	 * @param line
+	 *        the line
+	 * @since 1.2
+	 */
+	protected void handleInputStreamLine(boolean errorStream, String line) {
+		if ( errorStream ) {
+			log.error(line);
+		} else {
+			log.info(line);
+		}
 	}
 
 	// FeedbackInstructionHandler
@@ -332,7 +346,7 @@ public class CmdlineSystemService
 	 * 
 	 * <p>
 	 * This command will <b>not</b> be split on whitespaces. It will be passed a
-	 * {@literal -d} argument if {@literal true} is passed to
+	 * {@literal -a} argument if {@literal true} is passed to
 	 * {@link #reset(boolean)}, otherwise no arguments will be included.
 	 * </p>
 	 * 
