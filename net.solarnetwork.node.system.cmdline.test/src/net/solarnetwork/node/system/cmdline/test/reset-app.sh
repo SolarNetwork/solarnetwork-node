@@ -2,4 +2,4 @@
 #
 # Test implementation of reset system service testing
 
-echo "Reset"
+echo "ResetApp"

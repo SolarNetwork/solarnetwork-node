@@ -72,6 +72,7 @@ public class CmdlineSystemServiceTests {
 	}
 
 	private File resetScript;
+	private File resetAppScript;
 
 	@Before
 	public void setup() throws IOException {
@@ -83,6 +84,12 @@ public class CmdlineSystemServiceTests {
 		FileCopyUtils.copy(getClass().getResourceAsStream("reset.sh"),
 				new FileOutputStream(resetScript));
 		service.setResetCommand(resetScript.getAbsolutePath());
+
+		resetAppScript = File.createTempFile("reset-app-", ".sh");
+		resetAppScript.setExecutable(true, true);
+		FileCopyUtils.copy(getClass().getResourceAsStream("reset-app.sh"),
+				new FileOutputStream(resetAppScript));
+		service.setResetAppCommand(resetAppScript.getAbsolutePath());
 	}
 
 	@After
@@ -90,29 +97,34 @@ public class CmdlineSystemServiceTests {
 		if ( resetScript != null ) {
 			resetScript.delete();
 		}
+		if ( resetAppScript != null ) {
+			resetAppScript.delete();
+		}
 	}
 
 	@Test
-	public void reset() {
+	public void reset() throws Exception {
 		// GIVEN
 
 		// WHEN
 		service.reset(false);
+		Thread.sleep(1500);
 
 		// THEN
 		assertThat("Command exectued as expected", service.stdout, hasItems("Reset"));
 	}
 
 	@Test
-	public void reset_applicationOnly() {
+	public void reset_applicationOnly() throws Exception {
 		// GIVEN
 
 		// WHEN
 		service.reset(true);
+		Thread.sleep(1500);
 
 		// THEN
 		log.debug("STDOUT: " + service.stdout);
 		log.debug("STDERR: " + service.stderr);
-		assertThat("Command exectued as expected", service.stdout, hasItems("Reset1"));
+		assertThat("Command exectued as expected", service.stdout, hasItems("ResetApp"));
 	}
 }

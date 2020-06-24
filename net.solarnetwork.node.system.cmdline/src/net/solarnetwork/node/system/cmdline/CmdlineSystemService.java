@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.system.cmdline;
 
-import static net.solarnetwork.node.Constants.solarNodeHome;
 import static net.solarnetwork.util.StringUtils.delimitedStringFromCollection;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,11 +62,15 @@ public class CmdlineSystemService
 	public static final String DEFAULT_REBOOT_COMMAND = "sudo reboot";
 
 	/** The default value for the {@code resetCommand} property. */
-	public static final String DEFAULT_RESET_COMMAND = solarNodeHome() + "/bin/reset";
+	public static final String DEFAULT_RESET_COMMAND = "sudo systemctl start sn-reset";
+
+	/** The default value for the {@code resetAooCommand} property. */
+	public static final String DEFAULT_RESET_APP_COMMAND = "sudo systemctl start sn-reset-app";
 
 	private String exitCommand = DEFAULT_EXIT_COMMAND;
 	private String rebootCommand = DEFAULT_REBOOT_COMMAND;
 	private String resetCommand = DEFAULT_RESET_COMMAND;
+	private String resetAppCommand = DEFAULT_RESET_APP_COMMAND;
 
 	private BundleContext bundleContext;
 	private MessageSource messageSource;
@@ -165,12 +168,31 @@ public class CmdlineSystemService
 
 	@Override
 	public void reset(boolean applicationOnly) {
-		List<String> arguments = new ArrayList<>(2);
-		arguments.add(resetCommand);
-		if ( applicationOnly ) {
-			arguments.add("-a");
+		if ( shutdownThread != null ) {
+			return;
 		}
-		handleOSCommand(arguments);
+		log.warn("Reboot requested");
+		shutdownThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				if ( applicationOnly ) {
+					log.warn("Reset application sequence initiated");
+				} else {
+					log.warn("Reset sequence initiated");
+				}
+
+				// pause slightly at start to give time for original calling thread time to complete
+				try {
+					Thread.sleep(1000);
+				} catch ( Exception e ) {
+					// ignore
+				}
+
+				handleOSCommand(applicationOnly ? resetAppCommand : resetCommand);
+			}
+		}, "System Service Reset");
+		shutdownThread.start();
 	}
 
 	private void handleOSCommand(String command) {
@@ -342,13 +364,7 @@ public class CmdlineSystemService
 	}
 
 	/**
-	 * Set the OS command to use to reset the application or whole device.
-	 * 
-	 * <p>
-	 * This command will <b>not</b> be split on whitespaces. It will be passed a
-	 * {@literal -a} argument if {@literal true} is passed to
-	 * {@link #reset(boolean)}, otherwise no arguments will be included.
-	 * </p>
+	 * Set the OS command to use to reset the whole device.
 	 * 
 	 * @param resetCommand
 	 *        the command to set
@@ -356,6 +372,17 @@ public class CmdlineSystemService
 	 */
 	public void setResetCommand(String resetCommand) {
 		this.resetCommand = resetCommand;
+	}
+
+	/**
+	 * Set the OS command to use to reset the application.
+	 * 
+	 * @param resetAppCommand
+	 *        the command to set
+	 * @since 1.2
+	 */
+	public void setResetAppCommand(String resetAppCommand) {
+		this.resetAppCommand = resetAppCommand;
 	}
 
 }
