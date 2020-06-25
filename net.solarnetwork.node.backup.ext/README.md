@@ -58,4 +58,8 @@ title = Network Devices
 desc = Backs up network device settings.
 ```
 
+When restoring from a backup with this service registered, SolarNode will display these messages:
+
+![SolarNode restore external backup](docs/solarnode-backup-restore-ext.png)
+
 [sn-solarbackup]: https://github.com/SolarNetwork/solarnode-os-packages/tree/develop/solarbackup/debian
