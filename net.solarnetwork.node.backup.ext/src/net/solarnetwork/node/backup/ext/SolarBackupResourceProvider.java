@@ -115,8 +115,8 @@ public class SolarBackupResourceProvider implements BackupResourceProvider {
 
 	@Override
 	public BackupResourceProviderInfo providerInfo(Locale locale) {
-		String name = "Database Table Backup Provider";
-		String desc = "Backs up the SolarNode database tables.";
+		String name = "External Backup Provider";
+		String desc = "Backs up device resources.";
 		MessageSource ms = messageSource();
 		if ( ms != null ) {
 			name = ms.getMessage("title", null, name, locale);
