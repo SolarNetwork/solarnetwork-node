@@ -5,10 +5,14 @@ _solarbackup_. The [`sn-solarbackup`][sn-solarbackup] package provides this comm
 
 # Configuration
 
-This plugin provides a managed service factory using the `net.solarnetwork.node.backup.ext` factory
-PID. You must configure a properties file in the SolarNode's service configuration directory,
-typically `/etc/solarnode/services`, for each desired instance of this factory. The file name
-of the properties file must follow this pattern:
+This plugin does not provide any UI-configurable settings in SolarNode. Instead it provides a
+managed service factory using the `net.solarnetwork.node.backup.ext` factory PID. This can be
+done manually, however the expected use case for this plugin is that other SolarNodeOS packages
+contribute the necessary configuration to back up specific sets of device resources.
+
+To register a service, you must configure a properties file in the SolarNode's service configuration
+directory, typically `/etc/solarnode/services`, for each desired instance of this factory. The file
+name of the properties file must follow this pattern:
 
 ```
 net.solarnetwork.node.backup.ext-NAME.cfg
