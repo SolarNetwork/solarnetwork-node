@@ -21,6 +21,11 @@ SolarNode.Backups.generateBackupList = function(backupInfo, container) {
 		});
 	}
 
+	// sort providers by display name
+	backupInfo.providerInfos.sort(function(l,r) {
+		return (l.name ? l.name : l.providerKey).localeCompare(r.name ? r.name : r.providerKey);
+	});
+
 	backupInfo.providerInfos.forEach(function(provider) {
 		var row = $('<div class="row-fluid menu-item selected" data-provider="'+provider.providerKey+'"></div>'),
 			resources = resourcesForProvider(provider.providerKey);

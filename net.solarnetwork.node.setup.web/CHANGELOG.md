@@ -4,6 +4,7 @@
 
  * Support setting configuration on node association screen, to support
    things like WiFi connection settings (NODE-184)
+ * When restoring from backup, sort backup providers by display name.
 
 ## 2019-06-17 - v1.39.1
 
