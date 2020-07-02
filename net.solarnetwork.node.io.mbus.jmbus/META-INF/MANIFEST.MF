@@ -14,6 +14,7 @@ Import-Package:
  net.solarnetwork.support;version="[1.11,2.0)",
  org.openmuc.jmbus;version="[3.2,4.0)",
  org.openmuc.jmbus.transportlayer;version="[3.2,4.0)",
+ org.openmuc.jmbus.wireless;version="3.2.1",
  org.openmuc.jrxtx;version="[1.0,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.context;version="[4.2,5.0)"
