@@ -47,9 +47,11 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 	private org.openmuc.jmbus.wireless.WMBusConnection connection;
 	private ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<JMBusWMBusConnection>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<JMBusWMBusConnection>>();
 
-	protected abstract org.openmuc.jmbus.wireless.WMBusConnection createJMBusConnection();
+	protected abstract org.openmuc.jmbus.wireless.WMBusConnection createJMBusConnection()
+			throws IOException;
 
-	private synchronized org.openmuc.jmbus.wireless.WMBusConnection getOrCreateConnection() {
+	private synchronized org.openmuc.jmbus.wireless.WMBusConnection getOrCreateConnection()
+			throws IOException {
 		if ( connection == null ) {
 			connection = createJMBusConnection();
 		}
