@@ -10,8 +10,13 @@ Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.mbus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node.io.mbus;version="0.1.0"
+ net.solarnetwork.node.io.mbus;version="0.1.0",
+ net.solarnetwork.node.io.mbus.support
 Import-Package: 
  net.solarnetwork.node;version="[1.29,2.0)",
+ net.solarnetwork.node.settings;version="1.12.0",
+ net.solarnetwork.node.settings.support;version="1.11.0",
+ net.solarnetwork.node.support;version="1.20.0",
+ net.solarnetwork.util;version="1.44.0",
  org.apache.commons.codec.binary;version="1.11.0"
 Require-Bundle: org.apache.commons.codec

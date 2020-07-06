@@ -44,6 +44,11 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	private JMBusSerialParameters serialParams = getDefaultSerialParametersInstance();
 	private JMBusWirelessParameters wirelessParams = getDefaultWirelessParametersInstance();
 
+	public JMBusSerialWMBusNetwork() {
+		super();
+		setUid("Wireless M-Bus Network");
+	}
+
 	private static JMBusSerialParameters getDefaultSerialParametersInstance() {
 		final JMBusSerialParameters params = new JMBusSerialParameters();
 		params.setPortName("/dev/ttyS0");
@@ -79,6 +84,7 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		JMBusSerialWMBusNetwork defaults = new JMBusSerialWMBusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				defaults.serialParams.getPortName()));
 		results.add(new BasicTextFieldSettingSpecifier("wirelessParams.manufacturerString",
