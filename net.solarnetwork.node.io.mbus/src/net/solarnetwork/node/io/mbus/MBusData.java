@@ -1,5 +1,5 @@
 /* ==================================================================
- * MBusMessage.java - 01/07/2020 13:34:05 pm
+ * MBusMessage.java - 09/07/2020 11:50:01 am
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 
  * A class representing an MBus Message
@@ -29,8 +32,35 @@ package net.solarnetwork.node.io.mbus;
  * @author alex
  * @version 1.0
  */
-public class MBusMessage extends MBusData {
+public class MBusData {
 
-	public boolean moreRecordsFollow = false;
+	public List<MBusDataRecord> dataRecords = new ArrayList<MBusDataRecord>();
 
+	public MBusData() {
+	}
+
+	public MBusData(MBusData data) {
+		addRecordsFrom(data);
+	}
+
+	public void addRecordsFrom(MBusData data) {
+		for ( MBusDataRecord record : data.dataRecords ) {
+			dataRecords.add(new MBusDataRecord(record));
+		}
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this ) {
+			return true;
+		}
+
+		if ( !(o instanceof MBusData) ) {
+			return false;
+		}
+
+		MBusData d = (MBusData) o;
+
+		return d.dataRecords.equals(this.dataRecords);
+	}
 }

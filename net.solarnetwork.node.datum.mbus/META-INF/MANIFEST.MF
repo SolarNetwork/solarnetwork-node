@@ -7,6 +7,8 @@ Bundle-Version: 0.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
+ net.solarnetwork.domain;version="1.22.0",
+ net.solarnetwork.node.domain;version="1.18.0",
  net.solarnetwork.node.io.mbus;version="0.1.0",
  net.solarnetwork.node.io.mbus.support,
  net.solarnetwork.node.job;version="1.13.4",

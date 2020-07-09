@@ -24,8 +24,6 @@ package net.solarnetwork.node.io.mbus;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * High level Wireless M-Bus device connection API.
@@ -35,12 +33,28 @@ import java.util.concurrent.ConcurrentMap;
  */
 public abstract class WMBusConnection implements Closeable, MBusMessageHandler {
 
-	private ConcurrentMap<MBusDataType, MBusDataRecord> dataRecords = new ConcurrentHashMap<MBusDataType, MBusDataRecord>();
+	private MBusData partialData = null;
+	private MBusData latestData = null;
+	private final Object dataLock = new Object();
 
 	@Override
 	public void handleMessage(MBusMessage message) {
-		for ( MBusDataRecord record : message.dataRecords ) {
-			dataRecords.put(record.getType(), record);
+		synchronized ( dataLock ) {
+			if ( message.moreRecordsFollow ) {
+				if ( partialData == null ) {
+					partialData = new MBusData(message);
+				} else {
+					partialData.addRecordsFrom(message);
+				}
+			} else {
+				if ( partialData == null ) {
+					latestData = new MBusData(message);
+				} else {
+					latestData = partialData;
+					latestData.addRecordsFrom(message);
+					partialData = null;
+				}
+			}
 		}
 	}
 
@@ -53,7 +67,9 @@ public abstract class WMBusConnection implements Closeable, MBusMessageHandler {
 	 */
 	public abstract void open() throws IOException;
 
-	public MBusDataRecord getDataRecord(MBusDataType type) {
-		return dataRecords.get(type);
+	public MBusData getData() {
+		synchronized ( dataLock ) {
+			return new MBusData(latestData);
+		}
 	}
 }

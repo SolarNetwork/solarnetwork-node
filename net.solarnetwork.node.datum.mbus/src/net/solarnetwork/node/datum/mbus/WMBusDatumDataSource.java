@@ -22,13 +22,35 @@
 
 package net.solarnetwork.node.datum.mbus;
 
+import java.util.Date;
 import java.util.List;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		implements SettingSpecifierProvider {
+
+	@Override
+	public GeneralNodeDatum readCurrentDatum() {
+		final long start = System.currentTimeMillis();
+		final ModbusData currSample = getCurrentSample();
+		if ( currSample == null ) {
+			return null;
+		}
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setCreated(new Date(currSample.getDataTimestamp()));
+		d.setSourceId(sourceId);
+		populateDatumProperties(currSample, d, propConfigs);
+		populateDatumProperties(currSample, d, virtualMeterConfigs);
+		populateDatumProperties(currSample, d, expressionConfigs);
+		if ( currSample.getDataTimestamp() >= start ) {
+			// we read from the device
+			postDatumCapturedEvent(d);
+		}
+		return d;
+	}
 
 	@Override
 	public String getSettingUID() {

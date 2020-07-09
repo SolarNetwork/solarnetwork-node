@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.io.mbus.jmbus;
 
+import java.util.Date;
 import org.openmuc.jmbus.Bcd;
 import org.openmuc.jmbus.DataRecord;
 import org.openmuc.jmbus.DataRecord.Description;
 import org.openmuc.jmbus.SecondaryAddress;
 import org.openmuc.jmbus.wireless.WMBusMessage;
+import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
 import net.solarnetwork.node.io.mbus.MBusDataType;
 import net.solarnetwork.node.io.mbus.MBusMessage;
@@ -77,202 +79,200 @@ public class JMBusConversion {
 				msg.dataRecords.add(rec);
 			}
 		}
+		msg.moreRecordsFollow = message.getVariableDataResponse().moreRecordsFollow();
 		return msg;
 	}
 
 	private static MBusDataRecord from(DataRecord record) {
-		final MBusDataType type = from(record.getDescription());
-		if ( type == null ) {
+		final MBusDataDescription description = from(record.getDescription());
+		if ( description == null ) {
 			return null;
 		}
 		switch (record.getDataValueType()) {
 			case BCD:
-				return new MBusDataRecord(type, ((Bcd) record.getDataValue()).doubleValue()
-						* Math.pow(10, record.getMultiplierExponent()));
+				return new MBusDataRecord(description, MBusDataType.BCD,
+						((Bcd) record.getDataValue()).longValue());
 			case DATE:
-				// TODO
-				break;
+				return new MBusDataRecord(description,
+						new Date(((Date) record.getDataValue()).getTime()));
 			case DOUBLE:
-				return new MBusDataRecord(type, (double) record.getDataValue());
+				return new MBusDataRecord(description, (Double) record.getDataValue());
 			case LONG:
-				// TODO
-				break;
-			case NONE:
-				// TODO
-				break;
+				return new MBusDataRecord(description, MBusDataType.Long, (Long) record.getDataValue());
 			case STRING:
-				// TODO
-				break;
+				return new MBusDataRecord(description, (String) record.getDataValue());
+			case NONE:
+				return new MBusDataRecord();
 			default:
 				break;
 		}
 		return null;
 	}
 
-	private static MBusDataType from(Description description) {
+	private static MBusDataDescription from(Description description) {
 		switch (description) {
 			case ACCSESS_CODE_OPERATOR:
-				return MBusDataType.AccessCodeOperator;
+				return MBusDataDescription.AccessCodeOperator;
 			case ACCSESS_CODE_SYSTEM_DEVELOPER:
-				return MBusDataType.AccessCodeSystemDeveloper;
+				return MBusDataDescription.AccessCodeSystemDeveloper;
 			case ACCSESS_CODE_SYSTEM_OPERATOR:
-				return MBusDataType.AccessCodeSytemOperator;
+				return MBusDataDescription.AccessCodeSytemOperator;
 			case ACCSESS_CODE_USER:
-				return MBusDataType.AccessCodeUser;
+				return MBusDataDescription.AccessCodeUser;
 			case ACTUALITY_DURATION:
-				return MBusDataType.ActualityDuration;
+				return MBusDataDescription.ActualityDuration;
 			case ADDRESS:
-				return MBusDataType.Address;
+				return MBusDataDescription.Address;
 			case APPARENT_ENERGY:
-				return MBusDataType.ApparentEnergy;
+				return MBusDataDescription.ApparentEnergy;
 			case AVERAGING_DURATION:
-				return MBusDataType.AveragingDuration;
+				return MBusDataDescription.AveragingDuration;
 			case BAUDRATE:
-				return MBusDataType.BaudRate;
+				return MBusDataDescription.BaudRate;
 			case CONTROL_SIGNAL:
-				return MBusDataType.ControlSignal;
+				return MBusDataDescription.ControlSignal;
 			case CUMULATION_COUNTER:
-				return MBusDataType.CumulationCounter;
+				return MBusDataDescription.CumulationCounter;
 			case CURRENT:
-				return MBusDataType.Current;
+				return MBusDataDescription.Current;
 			case CUSTOMER:
-				return MBusDataType.Customer;
+				return MBusDataDescription.Customer;
 			case CUSTOMER_LOCATION:
-				return MBusDataType.CustomerLocation;
+				return MBusDataDescription.CustomerLocation;
 			case DATE:
-				return MBusDataType.Date;
+				return MBusDataDescription.Date;
 			case DATE_TIME:
-				return MBusDataType.DateTime;
+				return MBusDataDescription.DateTime;
 			case DAY_OF_WEEK:
-				return MBusDataType.DayOfWeek;
+				return MBusDataDescription.DayOfWeek;
 			case DIGITAL_INPUT:
-				return MBusDataType.DigitalInput;
+				return MBusDataDescription.DigitalInput;
 			case DIGITAL_OUTPUT:
-				return MBusDataType.DigitalOutput;
+				return MBusDataDescription.DigitalOutput;
 			case DURATION_LAST_READOUT:
-				return MBusDataType.DurationLastReadout;
+				return MBusDataDescription.DurationLastReadout;
 			case ENERGY:
-				return MBusDataType.Energy;
+				return MBusDataDescription.Energy;
 			case ERROR_FLAGS:
-				return MBusDataType.ErrorFlags;
+				return MBusDataDescription.ErrorFlags;
 			case ERROR_MASK:
-				return MBusDataType.ErrorMask;
+				return MBusDataDescription.ErrorMask;
 			case EXTENDED_IDENTIFICATION:
-				return MBusDataType.ExtendedIdentification;
+				return MBusDataDescription.ExtendedIdentification;
 			case EXTERNAL_TEMPERATURE:
-				return MBusDataType.ExternalTemperature;
+				return MBusDataDescription.ExternalTemperature;
 			case FABRICATION_NO:
-				return MBusDataType.FabricationNo;
+				return MBusDataDescription.FabricationNo;
 			case FIRMWARE_VERSION:
-				return MBusDataType.FirmwareVersion;
+				return MBusDataDescription.FirmwareVersion;
 			case FIRST_STORAGE_NUMBER_CYCLIC:
-				return MBusDataType.FirstStorageNumberCyclic;
+				return MBusDataDescription.FirstStorageNumberCyclic;
 			case FLOW_TEMPERATURE:
-				return MBusDataType.FlowTemperature;
+				return MBusDataDescription.FlowTemperature;
 			case FREQUENCY:
-				return MBusDataType.Frequency;
+				return MBusDataDescription.Frequency;
 			case FUTURE_VALUE:
-				return MBusDataType.Frequency;
+				return MBusDataDescription.Frequency;
 			case HARDWARE_VERSION:
-				return MBusDataType.HardwareVersion;
+				return MBusDataDescription.HardwareVersion;
 			case HCA:
-				return MBusDataType.HCA;
+				return MBusDataDescription.HCA;
 			case LAST_CUMULATION_DURATION:
-				return MBusDataType.LastCumulationDuration;
+				return MBusDataDescription.LastCumulationDuration;
 			case LAST_STORAGE_NUMBER_CYCLIC:
-				return MBusDataType.LastStorageNumberCyclic;
+				return MBusDataDescription.LastStorageNumberCyclic;
 			case MANUFACTURER_SPECIFIC:
-				return MBusDataType.ManufacturerSpecific;
+				return MBusDataDescription.ManufacturerSpecific;
 			case MASS:
-				return MBusDataType.Mass;
+				return MBusDataDescription.Mass;
 			case MASS_FLOW:
-				return MBusDataType.MassFlow;
+				return MBusDataDescription.MassFlow;
 			case MAX_POWER:
-				return MBusDataType.MaxPower;
+				return MBusDataDescription.MaxPower;
 			case MODEL_VERSION:
-				return MBusDataType.ModelVersion;
+				return MBusDataDescription.ModelVersion;
 			case NOT_SUPPORTED:
-				return MBusDataType.NotSupported;
+				return MBusDataDescription.NotSupported;
 			case NUMBER_STOPS:
-				return MBusDataType.NumberStops;
+				return MBusDataDescription.NumberStops;
 			case ON_TIME:
-				return MBusDataType.OnTime;
+				return MBusDataDescription.OnTime;
 			case OPERATING_TIME:
-				return MBusDataType.OperatingTime;
+				return MBusDataDescription.OperatingTime;
 			case OPERATING_TIME_BATTERY:
-				return MBusDataType.OperatingTimeBattery;
+				return MBusDataDescription.OperatingTimeBattery;
 			case OPERATOR_SPECIFIC_DATA:
-				return MBusDataType.OperatorSpecificData;
+				return MBusDataDescription.OperatorSpecificData;
 			case OTHER_SOFTWARE_VERSION:
-				return MBusDataType.OtherSoftwareVersion;
+				return MBusDataDescription.OtherSoftwareVersion;
 			case PARAMETER_ACTIVATION_STATE:
-				return MBusDataType.ParameterActivationState;
+				return MBusDataDescription.ParameterActivationState;
 			case PARAMETER_SET_ID:
-				return MBusDataType.ParameterSetId;
+				return MBusDataDescription.ParameterSetId;
 			case PASSWORD:
-				return MBusDataType.Password;
+				return MBusDataDescription.Password;
 			case PHASE:
-				return MBusDataType.Phase;
+				return MBusDataDescription.Phase;
 			case POWER:
-				return MBusDataType.Power;
+				return MBusDataDescription.Power;
 			case PRESSURE:
-				return MBusDataType.Pressure;
+				return MBusDataDescription.Pressure;
 			case REACTIVE_ENERGY:
-				return MBusDataType.ReactiveEnergy;
+				return MBusDataDescription.ReactiveEnergy;
 			case REACTIVE_POWER:
-				return MBusDataType.ReactivePower;
+				return MBusDataDescription.ReactivePower;
 			case REL_HUMIDITY:
-				return MBusDataType.RelativeHumidity;
+				return MBusDataDescription.RelativeHumidity;
 			case REMAINING_BATTERY_LIFE_TIME:
-				return MBusDataType.RemainingBatteryLifeTime;
+				return MBusDataDescription.RemainingBatteryLifeTime;
 			case REMOTE_CONTROL:
-				return MBusDataType.RemoteControl;
+				return MBusDataDescription.RemoteControl;
 			case RESERVED:
-				return MBusDataType.Reserved;
+				return MBusDataDescription.Reserved;
 			case RESET_COUNTER:
-				return MBusDataType.ResetCounter;
+				return MBusDataDescription.ResetCounter;
 			case RESPONSE_DELAY_TIME:
-				return MBusDataType.ResponseDelayTime;
+				return MBusDataDescription.ResponseDelayTime;
 			case RETRY:
-				return MBusDataType.Retry;
+				return MBusDataDescription.Retry;
 			case RETURN_TEMPERATURE:
-				return MBusDataType.ReturnTemperature;
+				return MBusDataDescription.ReturnTemperature;
 			case RF_LEVEL:
-				return MBusDataType.RFLevel;
+				return MBusDataDescription.RFLevel;
 			case SECURITY_KEY:
-				return MBusDataType.SecurityKey;
+				return MBusDataDescription.SecurityKey;
 			case SIZE_STORAGE_BLOCK:
-				return MBusDataType.SizeStorageBlock;
+				return MBusDataDescription.SizeStorageBlock;
 			case SPECIAL_SUPPLIER_INFORMATION:
-				return MBusDataType.SpecialSupplierInformation;
+				return MBusDataDescription.SpecialSupplierInformation;
 			case STORAGE_INTERVALL:
-				return MBusDataType.StorageInterval;
+				return MBusDataDescription.StorageInterval;
 			case TARIF_DURATION:
-				return MBusDataType.TariffDuration;
+				return MBusDataDescription.TariffDuration;
 			case TARIF_PERIOD:
-				return MBusDataType.TariffPeriod;
+				return MBusDataDescription.TariffPeriod;
 			case TARIF_START:
-				return MBusDataType.TariffStart;
+				return MBusDataDescription.TariffStart;
 			case TEMPERATURE_DIFFERENCE:
-				return MBusDataType.TemperatureDifference;
+				return MBusDataDescription.TemperatureDifference;
 			case TEMPERATURE_LIMIT:
-				return MBusDataType.TemperatureLimit;
+				return MBusDataDescription.TemperatureLimit;
 			case TIME_POINT:
-				return MBusDataType.TimePoint;
+				return MBusDataDescription.TimePoint;
 			case TIME_POINT_DAY_CHANGE:
-				return MBusDataType.TimePointDayChange;
+				return MBusDataDescription.TimePointDayChange;
 			case USER_DEFINED:
-				return MBusDataType.UserDefined;
+				return MBusDataDescription.UserDefined;
 			case VOLTAGE:
-				return MBusDataType.Voltage;
+				return MBusDataDescription.Voltage;
 			case VOLUME:
-				return MBusDataType.Volume;
+				return MBusDataDescription.Volume;
 			case VOLUME_FLOW:
-				return MBusDataType.VolumeFlow;
+				return MBusDataDescription.VolumeFlow;
 			case VOLUME_FLOW_EXT:
-				return MBusDataType.VolumeFlowExt;
+				return MBusDataDescription.VolumeFlowExt;
 			case WEEK_NUMBER:
-				return MBusDataType.WeekNumber;
+				return MBusDataDescription.WeekNumber;
 			default:
 				return null;
 		}

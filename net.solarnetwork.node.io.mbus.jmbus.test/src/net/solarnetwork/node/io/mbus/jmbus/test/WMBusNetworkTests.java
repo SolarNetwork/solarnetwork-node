@@ -23,8 +23,8 @@
 package net.solarnetwork.node.io.mbus.jmbus.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.BeforeClass;
@@ -33,6 +33,8 @@ import org.openmuc.jmbus.DecodingException;
 import org.openmuc.jmbus.SecondaryAddress;
 import org.openmuc.jmbus.wireless.WMBusMessage;
 import org.openmuc.jmbus.wireless.WMBusMessageDecoder;
+import net.solarnetwork.node.io.mbus.MBusData;
+import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
 import net.solarnetwork.node.io.mbus.MBusDataType;
 import net.solarnetwork.node.io.mbus.WMBusConnection;
@@ -106,11 +108,13 @@ public class WMBusNetworkTests {
 	}
 
 	@Test
-	public void readDouble() {
-		final double expected = 0.027;
-		final MBusDataRecord record = conn.getDataRecord(MBusDataType.Volume);
-		assertNotNull(record);
-		assertEquals(expected, record.getDoubleValue(), 0.0000000001);
+	public void readData() {
+		final MBusData expected = new MBusData();
+		expected.dataRecords.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L));
+		expected.dataRecords
+				.add(new MBusDataRecord(MBusDataDescription.DateTime, new Date(1593064440000L)));
+		final MBusData data = conn.getData();
+		assertEquals(expected, data);
 	}
 
 }

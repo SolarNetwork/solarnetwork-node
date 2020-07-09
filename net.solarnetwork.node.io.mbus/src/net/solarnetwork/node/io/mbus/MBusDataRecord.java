@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.util.Date;
+
 /**
  * Object to hold data record information extracted from an M-Bus device.
  * 
@@ -30,13 +32,63 @@ package net.solarnetwork.node.io.mbus;
  */
 public class MBusDataRecord {
 
-	private MBusDataType type;
+	private MBusDataDescription description;
+	private MBusDataType type = MBusDataType.None;
+	private Object value = null;
 
-	private double doubleValue;
+	public MBusDataRecord() {
+	}
 
-	public MBusDataRecord(MBusDataType type, double doubleValue) {
+	public MBusDataRecord(MBusDataDescription description, Double value) {
+		this.description = description;
+		this.type = MBusDataType.Double;
+		this.value = value;
+	}
+
+	public MBusDataRecord(MBusDataDescription description, MBusDataType type, Long value) {
+		this.description = description;
 		this.type = type;
-		this.doubleValue = doubleValue;
+		this.value = value;
+	}
+
+	public MBusDataRecord(MBusDataDescription description, Date date) {
+		this.description = description;
+		this.type = MBusDataType.Date;
+		this.value = new Date(date.getTime());
+	}
+
+	public MBusDataRecord(MBusDataDescription description, String value) {
+		this.description = description;
+		this.type = MBusDataType.String;
+		this.value = new String(value);
+	}
+
+	public MBusDataRecord(MBusDataRecord record) {
+		this.description = record.description;
+		this.type = record.type;
+		switch (type) {
+			case Date:
+				this.value = new Date((record.getDateValue().getTime() / 1000) * 1000);
+				break;
+			case Double:
+				this.value = record.getDoubleValue();
+				break;
+			case BCD:
+			case Long:
+				this.value = record.getLongValue();
+				break;
+			case String:
+				this.value = new String(record.getStringValue());
+				break;
+			case None:
+			default:
+				break;
+
+		}
+	}
+
+	public MBusDataDescription getDescription() {
+		return description;
 	}
 
 	public MBusDataType getType() {
@@ -44,7 +96,34 @@ public class MBusDataRecord {
 	}
 
 	public double getDoubleValue() {
-		return doubleValue;
+		return (Double) value;
 	}
 
+	public Date getDateValue() {
+		return new Date(((Date) value).getTime());
+	}
+
+	public Long getLongValue() {
+		return (Long) value;
+	}
+
+	public String getStringValue() {
+		return new String((String) value);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this ) {
+			return true;
+		}
+
+		if ( !(o instanceof MBusDataRecord) ) {
+			return false;
+		}
+
+		MBusDataRecord dr = (MBusDataRecord) o;
+
+		return dr.description == this.description && dr.type == this.type
+				&& (dr.type == MBusDataType.None || dr.value.equals(this.value));
+	}
 }
