@@ -110,11 +110,12 @@ public class WMBusNetworkTests {
 	@Test
 	public void readData() {
 		final MBusData expected = new MBusData();
-		expected.dataRecords.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L));
+		expected.dataRecords
+				.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L, -3));
 		expected.dataRecords
 				.add(new MBusDataRecord(MBusDataDescription.DateTime, new Date(1593064440000L)));
-		final MBusData data = conn.getData();
-		assertEquals(expected, data);
+		final MBusData actual = conn.getData();
+		assertEquals(expected, actual);
 	}
 
 }

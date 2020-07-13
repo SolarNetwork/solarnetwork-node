@@ -35,20 +35,24 @@ public class MBusDataRecord {
 	private MBusDataDescription description;
 	private MBusDataType type = MBusDataType.None;
 	private Object value = null;
+	private int multiplierExponent = 0;
 
 	public MBusDataRecord() {
 	}
 
-	public MBusDataRecord(MBusDataDescription description, Double value) {
+	public MBusDataRecord(MBusDataDescription description, Double value, int multiplierExponent) {
 		this.description = description;
 		this.type = MBusDataType.Double;
 		this.value = value;
+		this.multiplierExponent = multiplierExponent;
 	}
 
-	public MBusDataRecord(MBusDataDescription description, MBusDataType type, Long value) {
+	public MBusDataRecord(MBusDataDescription description, MBusDataType type, Long value,
+			int multiplierExponent) {
 		this.description = description;
 		this.type = type;
 		this.value = value;
+		this.multiplierExponent = multiplierExponent;
 	}
 
 	public MBusDataRecord(MBusDataDescription description, Date date) {
@@ -85,6 +89,7 @@ public class MBusDataRecord {
 				break;
 
 		}
+		this.multiplierExponent = record.multiplierExponent;
 	}
 
 	public MBusDataDescription getDescription() {
@@ -111,6 +116,10 @@ public class MBusDataRecord {
 		return new String((String) value);
 	}
 
+	public int getMultiplierExponent() {
+		return multiplierExponent;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if ( o == this ) {
@@ -124,6 +133,7 @@ public class MBusDataRecord {
 		MBusDataRecord dr = (MBusDataRecord) o;
 
 		return dr.description == this.description && dr.type == this.type
-				&& (dr.type == MBusDataType.None || dr.value.equals(this.value));
+				&& (dr.type == MBusDataType.None || dr.value.equals(this.value))
+				&& dr.multiplierExponent == this.multiplierExponent;
 	}
 }

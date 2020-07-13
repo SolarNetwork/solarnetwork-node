@@ -91,14 +91,16 @@ public class JMBusConversion {
 		switch (record.getDataValueType()) {
 			case BCD:
 				return new MBusDataRecord(description, MBusDataType.BCD,
-						((Bcd) record.getDataValue()).longValue());
+						((Bcd) record.getDataValue()).longValue(), record.getMultiplierExponent());
 			case DATE:
 				return new MBusDataRecord(description,
 						new Date(((Date) record.getDataValue()).getTime()));
 			case DOUBLE:
-				return new MBusDataRecord(description, (Double) record.getDataValue());
+				return new MBusDataRecord(description, (Double) record.getDataValue(),
+						record.getMultiplierExponent());
 			case LONG:
-				return new MBusDataRecord(description, MBusDataType.Long, (Long) record.getDataValue());
+				return new MBusDataRecord(description, MBusDataType.Long, (Long) record.getDataValue(),
+						record.getMultiplierExponent());
 			case STRING:
 				return new MBusDataRecord(description, (String) record.getDataValue());
 			case NONE:
