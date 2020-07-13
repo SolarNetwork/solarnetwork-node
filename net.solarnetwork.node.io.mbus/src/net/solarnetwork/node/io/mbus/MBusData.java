@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.mbus;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -34,9 +35,11 @@ import java.util.List;
  */
 public class MBusData {
 
+	public Date receivedTime = new Date();
 	public List<MBusDataRecord> dataRecords = new ArrayList<MBusDataRecord>();
 
-	public MBusData() {
+	public MBusData(Date receivedTime) {
+		this.receivedTime = receivedTime;
 	}
 
 	public MBusData(MBusData data) {
@@ -47,6 +50,21 @@ public class MBusData {
 		for ( MBusDataRecord record : data.dataRecords ) {
 			dataRecords.add(new MBusDataRecord(record));
 		}
+	}
+
+	/**
+	 * Get timestamp of data. If a time cannot be found in the data records,
+	 * message reception time will be used
+	 * 
+	 * @return data timestamp
+	 */
+	public long getDataTimestamp() {
+		for ( MBusDataRecord record : dataRecords ) {
+			if ( record.getDescription() == MBusDataDescription.DateTime ) {
+				return record.getDateValue().getTime();
+			}
+		}
+		return receivedTime.getTime();
 	}
 
 	@Override

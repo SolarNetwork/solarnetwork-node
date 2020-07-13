@@ -24,31 +24,57 @@ package net.solarnetwork.node.datum.mbus;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.io.mbus.MBusData;
+import net.solarnetwork.node.io.mbus.MBusMessage;
+import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
-		implements SettingSpecifierProvider {
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, MBusMessageHandler {
+
+	private String sourceId;
+	private MBusPropertyConfig[] propConfigs;
+
+	// Partial message, awaiting more messages
+	private MBusData partialData = null;
+	// Latest complete data
+	private MBusData latestData = null;
+	private final Object dataLock = new Object();
+
+	public WMBusDatumDataSource() {
+		super();
+		sourceId = "wmbus";
+	}
+
+	/**
+	 * Set the property configurations to use.
+	 * 
+	 * @param propConfigs
+	 *        the configs to use
+	 */
+	public void setPropConfigs(MBusPropertyConfig[] propConfigs) {
+		this.propConfigs = propConfigs;
+	}
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
-		final ModbusData currSample = getCurrentSample();
+		final MBusData currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
 		GeneralNodeDatum d = new GeneralNodeDatum();
 		d.setCreated(new Date(currSample.getDataTimestamp()));
 		d.setSourceId(sourceId);
-		populateDatumProperties(currSample, d, propConfigs);
-		populateDatumProperties(currSample, d, virtualMeterConfigs);
-		populateDatumProperties(currSample, d, expressionConfigs);
-		if ( currSample.getDataTimestamp() >= start ) {
-			// we read from the device
-			postDatumCapturedEvent(d);
-		}
+		//populateDatumProperties(currSample, d, propConfigs);
+		//populateDatumProperties(currSample, d, virtualMeterConfigs);
+		//populateDatumProperties(currSample, d, expressionConfigs);
 		return d;
 	}
 
@@ -63,10 +89,61 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	@Override
+	public void handleMessage(MBusMessage message) {
+		synchronized ( dataLock ) {
+			if ( message.moreRecordsFollow ) {
+				if ( partialData == null ) {
+					partialData = new MBusData(message);
+				} else {
+					partialData.addRecordsFrom(message);
+				}
+			} else {
+				if ( partialData == null ) {
+					latestData = new MBusData(message);
+				} else {
+					latestData = partialData;
+					latestData.addRecordsFrom(message);
+					partialData = null;
+				}
+			}
+		}
+	}
+
+	private MBusData getCurrentSample() {
+		synchronized ( dataLock ) {
+			if ( latestData == null ) {
+				return null;
+			}
+			return new MBusData(latestData);
+		}
+	}
+
+	private String getSampleMessage(MBusData sample) {
+		if ( sample.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		//		populateDatumProperties(sample, d, propConfigs);
+
+		Map<String, ?> data = d.getSampleData();
+		if ( data == null || data.isEmpty() ) {
+			return "No data.";
+		}
+
+		StringBuilder buf = new StringBuilder();
+		buf.append(StringUtils.delimitedStringFromMap(data));
+		//		buf.append("; sampled at ")
+		//				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		return buf.toString();
+	}
+
+	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 
-		//results.add(0, new BasicTitleSettingSpecifier("sample", getSampleMessage(sample.copy()), true));
+		results.add(0,
+				new BasicTitleSettingSpecifier("sample", getSampleMessage(getCurrentSample()), true));
 
 		results.addAll(getWMBusNetworkSettingSpecifiers());
 
@@ -90,6 +167,11 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		 */
 
 		return results;
+	}
+
+	@Override
+	public Class<? extends GeneralNodeDatum> getDatumType() {
+		return GeneralNodeDatum.class;
 	}
 
 }

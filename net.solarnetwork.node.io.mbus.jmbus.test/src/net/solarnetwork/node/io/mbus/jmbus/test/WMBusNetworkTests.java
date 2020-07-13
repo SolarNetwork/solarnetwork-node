@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.io.mbus.jmbus.test;
 
-import static org.junit.Assert.assertEquals;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import org.easymock.EasyMock;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openmuc.jmbus.DecodingException;
@@ -37,6 +40,8 @@ import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
 import net.solarnetwork.node.io.mbus.MBusDataType;
+import net.solarnetwork.node.io.mbus.MBusMessage;
+import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.jmbus.JMBusConversion;
 import net.solarnetwork.node.io.mbus.jmbus.JMBusSerialWMBusNetwork;
@@ -82,6 +87,7 @@ public class WMBusNetworkTests {
 
 	private static JMBusWMBusNetwork network = new MockJMBusWMBusNetwork();
 	private static WMBusConnection conn;
+	private static Map<SecondaryAddress, byte[]> keyMap = new HashMap<SecondaryAddress, byte[]>();
 
 	/**
 	 * 
@@ -94,28 +100,34 @@ public class WMBusNetworkTests {
 	public static void prepareConnection() throws IOException, DecodingException {
 		final byte[] bytes = WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin")
 				.readAllBytes();
-		final Map<SecondaryAddress, byte[]> keyMap = new HashMap<SecondaryAddress, byte[]>();
 		final byte[] key = { (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB,
 				(byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB,
 				(byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB };
 		final SecondaryAddress address = SecondaryAddress.newFromWMBusHeader(bytes, 2);
 		keyMap.put(address, key);
 		conn = network.createConnection(JMBusConversion.from(address), key);
-		conn.open();
-		final WMBusMessage msg = WMBusMessageDecoder.decode(bytes, 0, keyMap);
-		msg.getVariableDataResponse().decode();
-		network.newMessage(msg);
 	}
 
 	@Test
-	public void readData() {
-		final MBusData expected = new MBusData();
+	public void receiveMessage() throws IOException, DecodingException {
+		final byte[] bytes = WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin")
+				.readAllBytes();
+		final WMBusMessage msg = WMBusMessageDecoder.decode(bytes, 0, keyMap);
+		msg.getVariableDataResponse().decode();
+
+		final MBusData expected = new MBusData(new Date());
 		expected.dataRecords
 				.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L, -3));
 		expected.dataRecords
 				.add(new MBusDataRecord(MBusDataDescription.DateTime, new Date(1593064440000L)));
-		final MBusData actual = conn.getData();
-		assertEquals(expected, actual);
+
+		MBusMessageHandler messageHandler = EasyMock.createMock(MBusMessageHandler.class);
+		messageHandler.handleMessage(new MBusMessage(expected));
+		expectLastCall();
+		replay(messageHandler);
+		conn.open(messageHandler);
+		network.newMessage(msg);
+		verify(messageHandler);
 	}
 
 }

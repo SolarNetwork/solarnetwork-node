@@ -1,5 +1,5 @@
 /* ==================================================================
- * WMBusConnection.java - 29/06/2020 11:51:53 AM
+ * MBusPropertyConfig.java - 09/07/2020 10:43:58 am
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,26 +20,27 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus;
+package net.solarnetwork.node.datum.mbus;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.math.BigDecimal;
+import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
+import net.solarnetwork.node.io.mbus.MBusDataDescription;
 
 /**
- * High level Wireless M-Bus device connection API.
+ * Configuration for a single datum property to be set via M-Bus.
+ * 
+ * <p>
+ * The {@link #getConfig()} value represents the mbus address to read from.
+ * </p>
  * 
  * @author alex
  * @version 1.0
  */
-public interface WMBusConnection extends Closeable {
+public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
 
-	/**
-	 * Open the connection, if it is not already open. The connection must be
-	 * opened before calling any of the other methods in this API.
-	 * 
-	 * @throws IOException
-	 *         if the connection cannot be opened
-	 */
-	public void open(MBusMessageHandler messageHandler) throws IOException;
+	private MBusDataDescription dataType;
+	private int wordLength;
+	private BigDecimal unitMultiplier;
+	private int decimalScale;
 
 }

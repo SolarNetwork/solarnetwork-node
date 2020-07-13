@@ -45,7 +45,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBusNetwork, WMBusListener {
 
 	private org.openmuc.jmbus.wireless.WMBusConnection connection;
-	private ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<JMBusWMBusConnection>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<JMBusWMBusConnection>>();
+	private ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>>();
 
 	protected abstract org.openmuc.jmbus.wireless.WMBusConnection createJMBusConnection()
 			throws IOException;
@@ -69,12 +69,11 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 
 		// route message to all registered listeners
 		if ( addr != null ) {
-			Set<JMBusWMBusConnection> conns = listeners.get(addr);
-			if ( conns != null ) {
+			Set<MBusMessageHandler> handlers = listeners.get(addr);
+			if ( handlers != null ) {
 				MBusMessage msg = JMBusConversion.from(message);
-				for ( JMBusWMBusConnection conn : conns ) {
-					// invoke net.solarnetwork.node.io.mbus.MessageHandler handleMessage() method
-					conn.handleMessage(msg);
+				for ( MBusMessageHandler handler : handlers ) {
+					handler.handleMessage(msg);
 				}
 			}
 		}
@@ -93,7 +92,7 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 	 * 
 	 * Proxying connection class
 	 */
-	private class JMBusWMBusConnection extends WMBusConnection implements MBusMessageHandler {
+	private class JMBusWMBusConnection implements WMBusConnection {
 
 		private final SecondaryAddress address;
 		private byte[] key;
@@ -105,13 +104,13 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 		}
 
 		@Override
-		public void open() throws IOException {
+		public void open(MBusMessageHandler messageHandler) throws IOException {
 			if ( conn == null ) {
 				this.conn = getOrCreateConnection();
 				if ( conn != null ) {
-					Set<JMBusWMBusConnection> conns = listeners.computeIfAbsent(address,
+					Set<MBusMessageHandler> handlers = listeners.computeIfAbsent(address,
 							k -> new CopyOnWriteArraySet<>());
-					conns.add(this);
+					handlers.add(messageHandler);
 					conn.addKey(this.address, key);
 				}
 			}
@@ -121,9 +120,9 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 		public synchronized void close() {
 			if ( conn != null ) {
 				conn.removeKey(address);
-				Set<JMBusWMBusConnection> conns = listeners.get(address);
-				if ( conns != null ) {
-					conns.remove(this);
+				Set<MBusMessageHandler> handlers = listeners.get(address);
+				if ( handlers != null ) {
+					handlers.remove(this);
 				}
 			}
 		}

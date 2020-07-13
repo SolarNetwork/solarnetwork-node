@@ -72,7 +72,7 @@ public class JMBusConversion {
 	 * @return A message
 	 */
 	public static MBusMessage from(WMBusMessage message) {
-		final MBusMessage msg = new MBusMessage();
+		final MBusMessage msg = new MBusMessage(new Date());
 		for ( DataRecord record : message.getVariableDataResponse().getDataRecords() ) {
 			final MBusDataRecord rec = from(record);
 			if ( rec != null ) {

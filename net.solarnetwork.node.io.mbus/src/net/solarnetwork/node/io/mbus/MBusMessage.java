@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.util.Date;
+
 /**
  * 
  * A class representing an MBus Message
@@ -33,4 +35,26 @@ public class MBusMessage extends MBusData {
 
 	public boolean moreRecordsFollow = false;
 
+	public MBusMessage(MBusData data) {
+		super(data);
+	}
+
+	public MBusMessage(Date receivedTime) {
+		super(receivedTime);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this ) {
+			return true;
+		}
+
+		if ( !(o instanceof MBusData) ) {
+			return false;
+		}
+
+		MBusMessage m = (MBusMessage) o;
+
+		return super.equals(this) && m.moreRecordsFollow == this.moreRecordsFollow;
+	}
 }
