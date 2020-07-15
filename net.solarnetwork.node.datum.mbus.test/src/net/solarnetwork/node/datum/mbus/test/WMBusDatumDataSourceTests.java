@@ -22,20 +22,22 @@
 
 package net.solarnetwork.node.datum.mbus.test;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
-import org.easymock.EasyMock;
-import org.junit.After;
+import java.math.BigDecimal;
+import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.datum.mbus.MBusPropertyConfig;
 import net.solarnetwork.node.datum.mbus.WMBusDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.io.mbus.WMBusConnection;
-import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.io.mbus.MBusDataDescription;
+import net.solarnetwork.node.io.mbus.MBusDataRecord;
+import net.solarnetwork.node.io.mbus.MBusDataType;
+import net.solarnetwork.node.io.mbus.MBusMessage;
 
 /**
  * Test cases for the {@link WMBusDatumDataSource} class.
@@ -45,45 +47,51 @@ import net.solarnetwork.util.StaticOptionalService;
  */
 public class WMBusDatumDataSourceTests {
 
-	private WMBusNetwork mbusNetwork;
-	private WMBusConnection mbusConnection;
-	private DatumMetadataService datumMetadataService;
+	private static final String TEST_SOURCE_ID = "test.source";
+	private static final String TEST_BCD_PROP_NAME = "bcd";
+	private static final String TEST_DOUBLE_PROP_NAME = "double";
+	private static final String TEST_LONG_PROP_NAME = "long";
+	private static final String TEST_STRING_PROP_NAME = "string";
+	private static final String TEST_DATE_PROP_NAME = "date";
 
 	private WMBusDatumDataSource dataSource;
 
 	@Before
 	public void setup() {
-		mbusNetwork = EasyMock.createMock(WMBusNetwork.class);
-		mbusConnection = EasyMock.createMock(WMBusConnection.class);
-		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
-
 		dataSource = new WMBusDatumDataSource();
-		dataSource.setWMBusNetwork(new StaticOptionalService<WMBusNetwork>(mbusNetwork));
-		dataSource.setDatumMetadataService(
-				new StaticOptionalService<DatumMetadataService>(datumMetadataService));
-	}
-
-	private void replayAll() {
-		EasyMock.replay(mbusNetwork, mbusConnection, datumMetadataService);
-	}
-
-	@After
-	public void teardown() {
-		EasyMock.verify(mbusNetwork, mbusConnection, datumMetadataService);
+		dataSource.setSourceId(TEST_SOURCE_ID);
 	}
 
 	@Test
 	public void readDatumWithInstantaneousValues() throws IOException {
 		// GIVEN
-		MBusPropertyConfig[] propConfigs = new MBusPropertyConfig[] { new MBusPropertyConfig(), };
+		MBusPropertyConfig[] propConfigs = new MBusPropertyConfig[] {
+				new MBusPropertyConfig(TEST_BCD_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+						MBusDataType.BCD, MBusDataDescription.Volume, BigDecimal.ONE, 3),
+				new MBusPropertyConfig(TEST_DOUBLE_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+						MBusDataType.Double, MBusDataDescription.Energy, BigDecimal.ONE, 3),
+				new MBusPropertyConfig(TEST_LONG_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+						MBusDataType.Long, MBusDataDescription.Current, BigDecimal.ONE, 0), };
 		dataSource.setPropConfigs(propConfigs);
+		final MBusMessage msg = new MBusMessage(new Date());
+		msg.dataRecords.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L, -3));
+		msg.dataRecords.add(new MBusDataRecord(MBusDataDescription.Energy, 1.234, 0));
+		msg.dataRecords
+				.add(new MBusDataRecord(MBusDataDescription.Current, MBusDataType.Long, 874234L, 0));
 
 		// WHEN
+		dataSource.handleMessage(msg);
 		GeneralNodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
 		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("BCD value", datum.getInstantaneousSampleDouble(TEST_BCD_PROP_NAME), equalTo(0.027));
+		assertThat("Double value", datum.getInstantaneousSampleDouble(TEST_DOUBLE_PROP_NAME),
+				equalTo(1.234));
+		assertThat("Long value", datum.getInstantaneousSampleDouble(TEST_LONG_PROP_NAME),
+				equalTo(874234.0));
 	}
 
 }

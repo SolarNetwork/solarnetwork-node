@@ -30,7 +30,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.OptionalService;
 
-public class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
+public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
 	private OptionalService<WMBusNetwork> wmbusNetwork;
 

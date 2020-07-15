@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.datum.mbus;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
@@ -63,6 +66,16 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		this.propConfigs = propConfigs;
 	}
 
+	/**
+	 * Set the source ID to use for returned datum.
+	 * 
+	 * @param soruceId
+	 *        the source ID to use; defaults to {@literal wmbus}
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
+	}
+
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
 		final MBusData currSample = getCurrentSample();
@@ -72,10 +85,83 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		GeneralNodeDatum d = new GeneralNodeDatum();
 		d.setCreated(new Date(currSample.getDataTimestamp()));
 		d.setSourceId(sourceId);
-		//populateDatumProperties(currSample, d, propConfigs);
-		//populateDatumProperties(currSample, d, virtualMeterConfigs);
-		//populateDatumProperties(currSample, d, expressionConfigs);
+		populateDatumProperties(currSample, d, propConfigs);
 		return d;
+	}
+
+	private void populateDatumProperties(MBusData sample, GeneralNodeDatum d,
+			MBusPropertyConfig[] propConfs) {
+		if ( propConfs == null ) {
+			return;
+		}
+		for ( MBusPropertyConfig conf : propConfs ) {
+			// skip configurations without a property to set
+			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
+				continue;
+			}
+			Object propVal = null;
+			switch (conf.getDataType()) {
+				case BCD:
+				case Double:
+				case Long:
+					propVal = sample.getScaledValue(conf.getDataDescription());
+					break;
+				case Date:
+					propVal = sample.getDateValue(conf.getDataDescription());
+					break;
+				case String:
+					propVal = sample.getStringValue(conf.getDataDescription());
+				case None:
+					break;
+				default:
+					break;
+			}
+
+			if ( propVal instanceof Number ) {
+				if ( conf.getUnitMultiplier() != null ) {
+					propVal = applyUnitMultiplier((Number) propVal, conf.getUnitMultiplier());
+				}
+				if ( conf.getDecimalScale() >= 0 ) {
+					propVal = applyDecimalScale((Number) propVal, conf.getDecimalScale());
+				}
+			}
+
+			if ( propVal != null ) {
+				switch (conf.getPropertyType()) {
+					case Accumulating:
+					case Instantaneous:
+						if ( !(propVal instanceof Number) ) {
+							log.warn(
+									"Cannot set datum accumulating property {} to non-number value [{}]",
+									conf.getPropertyKey(), propVal);
+							continue;
+						}
+
+					default:
+						// nothing
+				}
+				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
+			}
+		}
+	}
+
+	private Number applyDecimalScale(Number value, int decimalScale) {
+		if ( decimalScale < 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		if ( v.scale() > decimalScale ) {
+			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
+		}
+		return v;
+	}
+
+	private Number applyUnitMultiplier(Number value, BigDecimal multiplier) {
+		if ( BigDecimal.ONE.compareTo(multiplier) == 0 ) {
+			return value;
+		}
+		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
+		return v.multiply(multiplier);
 	}
 
 	@Override

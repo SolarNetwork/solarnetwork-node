@@ -100,7 +100,7 @@ public class MBusDataRecord {
 		return type;
 	}
 
-	public double getDoubleValue() {
+	public Double getDoubleValue() {
 		return (Double) value;
 	}
 
@@ -118,6 +118,21 @@ public class MBusDataRecord {
 
 	public int getMultiplierExponent() {
 		return multiplierExponent;
+	}
+
+	public Double getScaledValue() {
+		switch (type) {
+			case Double:
+				return getDoubleValue() * Math.pow(10, multiplierExponent);
+			case BCD:
+			case Long:
+				return getLongValue().doubleValue() * Math.pow(10, multiplierExponent);
+			case Date:
+			case None:
+			case String:
+			default:
+				return null;
+		}
 	}
 
 	@Override

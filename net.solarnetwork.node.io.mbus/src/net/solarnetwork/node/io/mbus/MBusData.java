@@ -59,12 +59,80 @@ public class MBusData {
 	 * @return data timestamp
 	 */
 	public long getDataTimestamp() {
+		final MBusDataRecord record = getRecord(MBusDataDescription.DateTime);
+
+		if ( record == null )
+			return receivedTime.getTime();
+
+		if ( record.getType() != MBusDataType.Date )
+			return receivedTime.getTime();
+
+		final Date date = record.getDateValue();
+		if ( date == null )
+			return receivedTime.getTime();
+
+		return date.getTime();
+	}
+
+	/**
+	 * Find a data record given a description
+	 * 
+	 * @param description
+	 *        description type to find record for
+	 * @return data record
+	 */
+	private MBusDataRecord getRecord(MBusDataDescription description) {
 		for ( MBusDataRecord record : dataRecords ) {
-			if ( record.getDescription() == MBusDataDescription.DateTime ) {
-				return record.getDateValue().getTime();
+			if ( record.getDescription() == description ) {
+				return record;
 			}
 		}
-		return receivedTime.getTime();
+		return null;
+	}
+
+	/**
+	 * Get a scaled numeric value (long, double or BCD), given a description
+	 * 
+	 * @param description
+	 *        description type to find record for
+	 * @return scaled value
+	 */
+	public Double getScaledValue(MBusDataDescription description) {
+		final MBusDataRecord record = getRecord(description);
+		if ( record == null )
+			return null;
+
+		return record.getScaledValue();
+	}
+
+	/**
+	 * Get a string value, given a description
+	 * 
+	 * @param description
+	 *        description type to find record for
+	 * @return string value
+	 */
+	public String getStringValue(MBusDataDescription description) {
+		final MBusDataRecord record = getRecord(description);
+		if ( record == null )
+			return null;
+
+		return record.getStringValue();
+	}
+
+	/**
+	 * Get a date value, given a description
+	 * 
+	 * @param description
+	 *        description type to find record for
+	 * @return date value
+	 */
+	public Date getDateValue(MBusDataDescription description) {
+		final MBusDataRecord record = getRecord(description);
+		if ( record == null )
+			return null;
+
+		return record.getDateValue();
 	}
 
 	@Override
