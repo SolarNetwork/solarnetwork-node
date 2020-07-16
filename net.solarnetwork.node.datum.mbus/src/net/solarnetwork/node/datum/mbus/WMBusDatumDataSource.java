@@ -27,29 +27,24 @@ import java.math.RoundingMode;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.mbus.MBusData;
-import net.solarnetwork.node.io.mbus.MBusMessage;
-import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, MBusMessageHandler {
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
 
 	private String sourceId;
 	private MBusPropertyConfig[] propConfigs;
-
-	// Partial message, awaiting more messages
-	private MBusData partialData = null;
-	// Latest complete data
-	private MBusData latestData = null;
-	private final Object dataLock = new Object();
 
 	public WMBusDatumDataSource() {
 		super();
@@ -174,43 +169,13 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		return "Generic Wireless M-Bus Device";
 	}
 
-	@Override
-	public void handleMessage(MBusMessage message) {
-		synchronized ( dataLock ) {
-			if ( message.moreRecordsFollow ) {
-				if ( partialData == null ) {
-					partialData = new MBusData(message);
-				} else {
-					partialData.addRecordsFrom(message);
-				}
-			} else {
-				if ( partialData == null ) {
-					latestData = new MBusData(message);
-				} else {
-					latestData = partialData;
-					latestData.addRecordsFrom(message);
-					partialData = null;
-				}
-			}
-		}
-	}
-
-	private MBusData getCurrentSample() {
-		synchronized ( dataLock ) {
-			if ( latestData == null ) {
-				return null;
-			}
-			return new MBusData(latestData);
-		}
-	}
-
 	private String getSampleMessage(MBusData sample) {
-		if ( sample.getDataTimestamp() < 1 ) {
+		if ( sample == null || sample.getDataTimestamp() < 1 ) {
 			return "N/A";
 		}
 
 		GeneralNodeDatum d = new GeneralNodeDatum();
-		//		populateDatumProperties(sample, d, propConfigs);
+		populateDatumProperties(sample, d, propConfigs);
 
 		Map<String, ?> data = d.getSampleData();
 		if ( data == null || data.isEmpty() ) {
@@ -219,8 +184,8 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		//		buf.append("; sampled at ")
-		//				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ")
+				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
 		return buf.toString();
 	}
 
@@ -233,24 +198,8 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 		results.addAll(getWMBusNetworkSettingSpecifiers());
 
-		/*
-		 * WMBusDatumDataSource defaults = new WMBusDatumDataSource();
-		 * results.add(new BasicTextFieldSettingSpecifier("sourceId",
-		 * defaults.sourceId)); results.add(new
-		 * BasicTextFieldSettingSpecifier("sampleCacheMs",
-		 * String.valueOf(defaults.sampleCacheMs))); results.add(new
-		 * BasicTextFieldSettingSpecifier("maxReadWordCount",
-		 * String.valueOf(defaults.maxReadWordCount)));
-		 * 
-		 * // drop-down menu for word order BasicMultiValueSettingSpecifier
-		 * wordOrderSpec = new BasicMultiValueSettingSpecifier( "wordOrderKey",
-		 * String.valueOf(defaults.getWordOrder().getKey())); Map<String,
-		 * String> wordOrderTitles = new LinkedHashMap<String, String>(2); for (
-		 * ModbusWordOrder e : ModbusWordOrder.values() ) {
-		 * wordOrderTitles.put(String.valueOf(e.getKey()), e.toDisplayString());
-		 * } wordOrderSpec.setValueTitles(wordOrderTitles);
-		 * results.add(wordOrderSpec);
-		 */
+		WMBusDatumDataSource defaults = new WMBusDatumDataSource();
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
 		return results;
 	}

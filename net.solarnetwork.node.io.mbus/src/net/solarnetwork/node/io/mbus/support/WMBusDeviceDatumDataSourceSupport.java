@@ -22,22 +22,40 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import net.solarnetwork.node.io.mbus.MBusData;
+import net.solarnetwork.node.io.mbus.MBusMessage;
+import net.solarnetwork.node.io.mbus.MBusMessageHandler;
+import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
+import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.OptionalService;
 
-public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
+public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
+		implements MBusMessageHandler {
 
 	private OptionalService<WMBusNetwork> wmbusNetwork;
+	private MBusSecondaryAddress address;
+	private byte[] key;
+	private WMBusConnection connection = null;
+
+	// Partial message, awaiting more messages
+	private MBusData partialData = null;
+	// Latest complete data
+	private MBusData latestData = null;
+	private final Object dataLock = new Object();
 
 	/**
 	 * Get the configured {@link WMBusNetwork}.
 	 * 
-	 * @return the modbus network
+	 * @return the WMBus network
 	 */
 	public OptionalService<WMBusNetwork> getWMBusNetwork() {
 		return wmbusNetwork;
@@ -54,8 +72,103 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	}
 
 	/**
+	 * Get the configured {@link MBusSecondaryAddress}.
+	 * 
+	 * @return the MBus secondary address
+	 */
+	public MBusSecondaryAddress getSecondaryAddress() {
+		return address;
+	}
+
+	/**
+	 * Set the {@link MBusSecondaryAddress} to use.
+	 * 
+	 * @param address
+	 *        the MBus secondary address
+	 */
+	public void setSecondaryAddress(MBusSecondaryAddress address) {
+		this.address = address;
+		reconfigureConnection();
+	}
+
+	/**
+	 * Get the configured key.
+	 * 
+	 * @return the key
+	 */
+	public String getKey() {
+		return Hex.encodeHexString(key);
+	}
+
+	/**
+	 * Set the {@link MBusSecondaryAddress} to use.
+	 * 
+	 * @param address
+	 *        the MBus secondary address
+	 */
+	public void setKey(String key) {
+		try {
+			this.key = Hex.decodeHex(key);
+			reconfigureConnection();
+		} catch ( DecoderException e ) {
+		}
+	}
+
+	/**
+	 * Reconfigure connection to network
+	 */
+	private void reconfigureConnection() {
+		if ( connection != null ) {
+			try {
+				connection.close();
+			} catch ( IOException e ) {
+			}
+		}
+		WMBusNetwork device = (wmbusNetwork == null ? null : wmbusNetwork.service());
+		if ( device != null && address != null && key != null ) {
+			connection = device.createConnection(address, key);
+			try {
+				connection.open(this);
+			} catch ( IOException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	@Override
+	public void handleMessage(MBusMessage message) {
+		synchronized ( dataLock ) {
+			if ( message.moreRecordsFollow ) {
+				if ( partialData == null ) {
+					partialData = new MBusData(message);
+				} else {
+					partialData.addRecordsFrom(message);
+				}
+			} else {
+				if ( partialData == null ) {
+					latestData = new MBusData(message);
+				} else {
+					latestData = partialData;
+					latestData.addRecordsFrom(message);
+					partialData = null;
+				}
+			}
+		}
+	}
+
+	protected MBusData getCurrentSample() {
+		synchronized ( dataLock ) {
+			if ( latestData == null ) {
+				return null;
+			}
+			return new MBusData(latestData);
+		}
+	}
+
+	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal wMBusNetwork.propertyFilters['UID']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1

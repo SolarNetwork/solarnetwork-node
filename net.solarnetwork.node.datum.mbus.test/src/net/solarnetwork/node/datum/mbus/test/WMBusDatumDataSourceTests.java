@@ -93,5 +93,4 @@ public class WMBusDatumDataSourceTests {
 		assertThat("Long value", datum.getInstantaneousSampleDouble(TEST_LONG_PROP_NAME),
 				equalTo(874234.0));
 	}
-
 }

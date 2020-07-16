@@ -97,6 +97,7 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 		private final SecondaryAddress address;
 		private byte[] key;
 		private org.openmuc.jmbus.wireless.WMBusConnection conn;
+		private MBusMessageHandler messageHandler = null;
 
 		private JMBusWMBusConnection(MBusSecondaryAddress address, byte[] key) {
 			this.address = JMBusConversion.to(address);
@@ -110,6 +111,7 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 				if ( conn != null ) {
 					Set<MBusMessageHandler> handlers = listeners.computeIfAbsent(address,
 							k -> new CopyOnWriteArraySet<>());
+					this.messageHandler = messageHandler;
 					handlers.add(messageHandler);
 					conn.addKey(this.address, key);
 				}
@@ -120,9 +122,11 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 		public synchronized void close() {
 			if ( conn != null ) {
 				conn.removeKey(address);
-				Set<MBusMessageHandler> handlers = listeners.get(address);
-				if ( handlers != null ) {
-					handlers.remove(this);
+				if ( messageHandler != null ) {
+					Set<MBusMessageHandler> handlers = listeners.get(address);
+					if ( handlers != null ) {
+						handlers.remove(messageHandler);
+					}
 				}
 			}
 		}
