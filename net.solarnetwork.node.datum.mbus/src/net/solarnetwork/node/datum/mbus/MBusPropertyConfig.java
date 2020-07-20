@@ -207,6 +207,87 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	}
 
 	/**
+	 * Get the datum property type.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyType()}.
+	 * </p>
+	 * 
+	 * @return the type
+	 */
+	public GeneralDatumSamplesType getDatumPropertyType() {
+		return getPropertyType();
+	}
+
+	/**
+	 * Set the datum property type.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
+	 * and ignores a {@literal null} argument.
+	 * </p>
+	 * </p>
+	 * 
+	 * @param datumPropertyType
+	 *        the datum property type to set
+	 */
+	public void setDatumPropertyType(GeneralDatumSamplesType datumPropertyType) {
+		if ( datumPropertyType == null ) {
+			return;
+		}
+		setPropertyType(datumPropertyType);
+	}
+
+	/**
+	 * Get the property type key.
+	 * 
+	 * <p>
+	 * This returns the configured {@link #getPropertyType()}
+	 * {@link GeneralDatumSamplesType#toKey()} value as a string. If the type is
+	 * not available, {@link GeneralDatumSamplesType#Instantaneous} will be
+	 * returned.
+	 * </p>
+	 * 
+	 * @return the property type key
+	 */
+	public String getDatumPropertyTypeKey() {
+		GeneralDatumSamplesType type = getDatumPropertyType();
+		if ( type == null ) {
+			type = GeneralDatumSamplesType.Instantaneous;
+		}
+		return Character.toString(type.toKey());
+	}
+
+	/**
+	 * Set the property type via a key value.
+	 * 
+	 * <p>
+	 * This uses the first character of {@code key} as a
+	 * {@link GeneralDatumSamplesType} key value to call
+	 * {@link #setPropertyType(GeneralDatumSamplesType)}. If there is any
+	 * problem parsing the type, {@link GeneralDatumSamplesType#Instantaneous}
+	 * is set.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the datum property type key to set
+	 */
+	public void setDatumPropertyTypeKey(String key) {
+		GeneralDatumSamplesType type = null;
+		if ( key != null && key.length() > 0 ) {
+			try {
+				type = GeneralDatumSamplesType.valueOf(key.charAt(0));
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		}
+		if ( type == null ) {
+			type = GeneralDatumSamplesType.Instantaneous;
+		}
+		setDatumPropertyType(type);
+	}
+
+	/**
 	 * Get the data type.
 	 * 
 	 * @return the type
