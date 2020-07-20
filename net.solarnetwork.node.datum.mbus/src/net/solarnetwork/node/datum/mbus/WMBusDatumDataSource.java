@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.mbus.MBusData;
@@ -131,6 +132,12 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 			return;
 		}
 		for ( MBusPropertyConfig conf : propConfs ) {
+			// Special case for status
+			if ( conf.getDatumPropertyType() == GeneralDatumSamplesType.Status ) {
+				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), sample.status);
+				continue;
+			}
+
 			// skip configurations without a property to set
 			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
 				continue;

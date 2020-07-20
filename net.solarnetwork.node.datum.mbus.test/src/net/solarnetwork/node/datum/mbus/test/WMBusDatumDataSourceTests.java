@@ -51,8 +51,7 @@ public class WMBusDatumDataSourceTests {
 	private static final String TEST_BCD_PROP_NAME = "bcd";
 	private static final String TEST_DOUBLE_PROP_NAME = "double";
 	private static final String TEST_LONG_PROP_NAME = "long";
-	private static final String TEST_STRING_PROP_NAME = "string";
-	private static final String TEST_DATE_PROP_NAME = "date";
+	private static final String TEST_STATUS_PROP_NAME = "status";
 
 	private WMBusDatumDataSource dataSource;
 
@@ -93,4 +92,25 @@ public class WMBusDatumDataSourceTests {
 		assertThat("Long value", datum.getInstantaneousSampleDouble(TEST_LONG_PROP_NAME),
 				equalTo(874234.0));
 	}
+
+	@Test
+	public void readDatumWithStatusInteger() throws IOException {
+		// GIVEN
+		MBusPropertyConfig[] propConfigs = new MBusPropertyConfig[] {
+				new MBusPropertyConfig(TEST_STATUS_PROP_NAME, GeneralDatumSamplesType.Status), };
+		dataSource.setPropConfigs(propConfigs);
+		final MBusMessage msg = new MBusMessage(new Date());
+		final int expected = 7;
+		msg.status = expected;
+
+		// WHEN
+		dataSource.handleMessage(msg);
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Status", datum.getStatusSampleInteger(TEST_STATUS_PROP_NAME), equalTo(expected));
+	}
+
 }

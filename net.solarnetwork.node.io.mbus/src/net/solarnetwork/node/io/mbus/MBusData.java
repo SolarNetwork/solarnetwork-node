@@ -36,6 +36,7 @@ import java.util.List;
 public class MBusData {
 
 	public Date receivedTime = new Date();
+	public int status = 0;
 	public List<MBusDataRecord> dataRecords = new ArrayList<MBusDataRecord>();
 
 	public MBusData(Date receivedTime) {
@@ -43,6 +44,8 @@ public class MBusData {
 	}
 
 	public MBusData(MBusData data) {
+		this.receivedTime = data.receivedTime;
+		this.status = data.status;
 		addRecordsFrom(data);
 	}
 

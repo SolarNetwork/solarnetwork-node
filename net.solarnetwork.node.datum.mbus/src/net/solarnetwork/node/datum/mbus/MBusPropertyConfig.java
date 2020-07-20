@@ -105,6 +105,18 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	}
 
 	/**
+	 * Construct with values.
+	 * 
+	 * @param name
+	 *        the datum property name
+	 * @param datumPropertyType
+	 *        the datum property type
+	 */
+	public MBusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType) {
+		super(name, datumPropertyType, null);
+	}
+
+	/**
 	 * Get settings suitable for configuring an instance of this class.
 	 * 
 	 * @param prefix
