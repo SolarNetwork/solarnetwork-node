@@ -113,7 +113,6 @@ public class WMBusNetworkTests {
 		final byte[] bytes = WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin")
 				.readAllBytes();
 		final WMBusMessage msg = WMBusMessageDecoder.decode(bytes, 0, keyMap);
-		msg.getVariableDataResponse().decode();
 
 		final MBusData expected = new MBusData(new Date());
 		expected.dataRecords

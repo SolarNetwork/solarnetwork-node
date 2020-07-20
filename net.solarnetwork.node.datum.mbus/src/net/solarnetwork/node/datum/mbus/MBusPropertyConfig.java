@@ -23,10 +23,17 @@
 package net.solarnetwork.node.datum.mbus;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataType;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via M-Bus.
@@ -98,6 +105,108 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	}
 
 	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @return the settings, never {@literal null}
+	 */
+	public static List<SettingSpecifier> settings(String prefix) {
+		MBusPropertyConfig defaults = new MBusPropertyConfig();
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
+
+		// drop-down menu for datumPropertyType
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "datumPropertyTypeKey", defaults.getDatumPropertyTypeValue());
+		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
+		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
+		// drop-down menu for dataDescription
+		BasicMultiValueSettingSpecifier dataDescriptionSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "dataDescriptionKey", defaults.getDataDescriptionKey());
+		Map<String, String> dataDescriptionTitles = new LinkedHashMap<String, String>(256);
+		for ( MBusDataDescription e : MBusDataDescription.values() ) {
+			dataDescriptionTitles.put(e.toString(), e.toString());
+		}
+		dataDescriptionSpec.setValueTitles(dataDescriptionTitles);
+		results.add(dataDescriptionSpec);
+
+		// drop-down menu for dataType
+		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "dataTypeKey", defaults.getDataTypeKey());
+		Map<String, String> dataTypeTitles = new LinkedHashMap<String, String>(8);
+		for ( MBusDataType e : MBusDataType.values() ) {
+			dataTypeTitles.put(e.toString(), e.toString());
+		}
+		dataTypeSpec.setValueTitles(dataTypeTitles);
+		results.add(dataTypeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", "1"));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale", "0"));
+		return results;
+	}
+
+	/**
+	 * Get the datum property name used for this configuration.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyKey()}.
+	 * </p>
+	 * 
+	 * @return the property name
+	 */
+	public String getName() {
+		return getPropertyKey();
+	}
+
+	/**
+	 * Set the datum property name to use.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyKey(String)}.
+	 * </p>
+	 * 
+	 * @param name
+	 *        the property name
+	 */
+	public void setName(String name) {
+		setPropertyKey(name);
+	}
+
+	/**
+	 * Get the datum property type key.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyTypeKey()}.
+	 * </p>
+	 * 
+	 * @return the property type key
+	 */
+	public String getDatumPropertyTypeValue() {
+		return getPropertyTypeKey();
+	}
+
+	/**
+	 * Set the datum property type via a key value.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyTypeKey(String)}.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the datum property type key to set
+	 */
+	public void setDatumPropertyTypeValue(String key) {
+		setPropertyTypeKey(key);
+	}
+
+	/**
 	 * Get the data type.
 	 * 
 	 * @return the type
@@ -117,6 +226,26 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 			return;
 		}
 		this.dataType = dataType;
+	}
+
+	/**
+	 * Get the data type as a key value.
+	 * 
+	 * @return the ype as a key
+	 */
+	public String getDataTypeKey() {
+		MBusDataType type = getDataType();
+		return (type != null ? type.toString() : null);
+	}
+
+	/**
+	 * Set the data type as a string value.
+	 * 
+	 * @param dataType
+	 *        the type to set
+	 */
+	public void setDataTypeKey(String key) {
+		setDataType(MBusDataType.valueOf(key));
 	}
 
 	/**
@@ -145,8 +274,28 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * @param desc
 	 *        the data description to set
 	 */
-	public void setAddress(MBusDataDescription desc) {
+	public void setDataDescription(MBusDataDescription desc) {
 		setConfig(desc);
+	}
+
+	/**
+	 * Get the data description as a key value.
+	 * 
+	 * @return the description as a key
+	 */
+	public String getDataDescriptionKey() {
+		MBusDataDescription desc = getDataDescription();
+		return (desc != null ? desc.toString() : null);
+	}
+
+	/**
+	 * Set the data description as a string value.
+	 * 
+	 * @param dataDescription
+	 *        the description to set
+	 */
+	public void setDataDescriptionKey(String key) {
+		setDataDescription(MBusDataDescription.valueOf(key));
 	}
 
 	/**

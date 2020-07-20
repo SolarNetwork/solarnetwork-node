@@ -94,4 +94,22 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 		return results;
 	}
 
+	// Accessors
+
+	public JMBusSerialParameters getSerialParams() {
+		return serialParams;
+	}
+
+	public void setSerialParams(JMBusSerialParameters serialParams) {
+		this.serialParams = serialParams;
+	}
+
+	public JMBusWirelessParameters getWirelessParams() {
+		return wirelessParams;
+	}
+
+	public void setWirelessParams(JMBusWirelessParameters wirelessParams) {
+		this.wirelessParams = wirelessParams;
+	}
+
 }

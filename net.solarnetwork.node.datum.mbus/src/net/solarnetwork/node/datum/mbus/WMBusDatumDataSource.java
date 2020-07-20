@@ -24,6 +24,9 @@ package net.solarnetwork.node.datum.mbus;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +38,11 @@ import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -52,6 +58,15 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	/**
+	 * Get the property configurations.
+	 * 
+	 * @return the property configurations
+	 */
+	public MBusPropertyConfig[] getPropConfigs() {
+		return propConfigs;
+	}
+
+	/**
 	 * Set the property configurations to use.
 	 * 
 	 * @param propConfigs
@@ -59,6 +74,32 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	 */
 	public void setPropConfigs(MBusPropertyConfig[] propConfigs) {
 		this.propConfigs = propConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code propConfigs} elements.
+	 * 
+	 * @return the number of {@code propConfigs} elements
+	 */
+	public int getPropConfigsCount() {
+		MBusPropertyConfig[] confs = this.propConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propConfigs} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link MBusPropertyConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propConfigs} elements.
+	 */
+	public void setPropConfigsCount(int count) {
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, MBusPropertyConfig.class,
+				null);
 	}
 
 	/**
@@ -200,6 +241,21 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 		WMBusDatumDataSource defaults = new WMBusDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+
+		MBusPropertyConfig[] confs = getPropConfigs();
+		List<MBusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<MBusPropertyConfig> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingsUtil.KeyedListCallback<MBusPropertyConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(MBusPropertyConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								MBusPropertyConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
 
 		return results;
 	}

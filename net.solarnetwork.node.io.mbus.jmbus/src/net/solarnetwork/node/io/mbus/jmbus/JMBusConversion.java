@@ -26,7 +26,9 @@ import java.util.Date;
 import org.openmuc.jmbus.Bcd;
 import org.openmuc.jmbus.DataRecord;
 import org.openmuc.jmbus.DataRecord.Description;
+import org.openmuc.jmbus.DecodingException;
 import org.openmuc.jmbus.SecondaryAddress;
+import org.openmuc.jmbus.VariableDataStructure;
 import org.openmuc.jmbus.wireless.WMBusMessage;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
@@ -73,12 +75,21 @@ public class JMBusConversion {
 	 */
 	public static MBusMessage from(WMBusMessage message) {
 		final MBusMessage msg = new MBusMessage(new Date());
-		for ( DataRecord record : message.getVariableDataResponse().getDataRecords() ) {
+
+		final VariableDataStructure vds = message.getVariableDataResponse();
+		try {
+			vds.decode();
+		} catch ( DecodingException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for ( DataRecord record : vds.getDataRecords() ) {
 			final MBusDataRecord rec = from(record);
 			if ( rec != null ) {
 				msg.dataRecords.add(rec);
 			}
 		}
+
 		msg.moreRecordsFollow = message.getVariableDataResponse().moreRecordsFollow();
 		return msg;
 	}
