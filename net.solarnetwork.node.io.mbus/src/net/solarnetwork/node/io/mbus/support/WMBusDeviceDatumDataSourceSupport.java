@@ -178,7 +178,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		results.add(
 				new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['UID']", "M-Bus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("secondaryAddress", ""));
-		results.add(new BasicTextFieldSettingSpecifier("key", ""));
+		results.add(new BasicTextFieldSettingSpecifier("key", "", true));
 		return results;
 	}
 
