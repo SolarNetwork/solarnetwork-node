@@ -27,6 +27,7 @@ import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import static net.solarnetwork.util.NumberUtils.scaled;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
@@ -103,7 +104,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 	 * @param conn
 	 *        the connection
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -121,6 +122,29 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 					r.length());
 			m.saveDataArray(data, r.getMin());
 		}
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		WattsOnDataAccessor data = copy();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		Number firmwareVersion = data.getFirmwareRevision();
+		if ( firmwareVersion != null ) {
+			result.put(INFO_KEY_DEVICE_MODEL, firmwareVersion);
+		}
+		Ratio ptRatio = data.getPowerTransformerRatio();
+		if ( ptRatio != null ) {
+			result.put("PT Ratio", ptRatio);
+		}
+		Ratio ctRatio = data.getCurrentTransformerRatio();
+		if ( ctRatio != null ) {
+			result.put("CT Ratio", ctRatio);
+		}
+		Number n = data.getSerialNumber();
+		if ( n != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, n);
+		}
+		return result;
 	}
 
 	/**

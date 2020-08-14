@@ -1,0 +1,28 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Elkor WattsOn Meter Data Source
+Bundle-SymbolicName: net.solarnetwork.node.datum.elkor.wattson
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.datum.elkor.wattson
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.domain;version="[1.22,2.0)",
+ net.solarnetwork.node;version="[1.30,2.0)",
+ net.solarnetwork.node.domain;version="[1.18,2.0)",
+ net.solarnetwork.node.hw.elkor.upt;version="[1.0,2.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
+ net.solarnetwork.node.job;version="[1.16,2.0)",
+ net.solarnetwork.node.settings;version="[1.12,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.11,2.0)",
+ net.solarnetwork.node.support;version="[1.20,2.0)",
+ net.solarnetwork.node.util;version="[1.7,2.0)",
+ net.solarnetwork.util;version="[1.44,2.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)"

@@ -6,15 +6,11 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.elkor
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: 
+ net.solarnetwork.node.hw.elkor.upt;version="1.0.0"
 Import-Package: 
- net.solarnetwork.domain;version="[1.23,2.0)",
- net.solarnetwork.node;version="[1.30,2.0)",
  net.solarnetwork.node.domain;version="[1.18,2.0)",
  net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
- net.solarnetwork.node.settings;version="[1.12,2.0)",
- net.solarnetwork.node.settings.support;version="[1.11,2.0)",
- net.solarnetwork.node.support;version="[1.20,2.0)",
  net.solarnetwork.node.util;version="[1.7,2.0)",
- net.solarnetwork.util;version="[1.45,2.0)",
- org.osgi.service.event;version="[1.2,2.0)",
+ net.solarnetwork.util;version="[1.44,2.0)",
  org.slf4j;version="[1.7,2.0)"
